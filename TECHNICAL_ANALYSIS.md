@@ -107,6 +107,22 @@ export interface Request {
 
 **Implementation Impact:** 2025-06-18 servers can accept arbitrary metadata fields in `_meta`, requiring more flexible parsing.
 
+### 1.3 Widespread _meta Field Addition (2025-06-18)
+
+**Major Infrastructure Enhancement:**
+
+2025-06-18 added the `_meta?: { [key: string]: unknown }` field to **10+ core interfaces**:
+
+**Content Interfaces:**
+- `TextContent`, `ImageContent`, `AudioContent`
+- `EmbeddedResource`
+
+**Protocol Entity Interfaces:**
+- `Resource`, `ResourceTemplate`, `ResourceContents` 
+- `Prompt`, `Tool`, `Root`
+
+**Impact:** This enables extensible metadata attachment across the entire protocol surface, requiring parsers to handle optional metadata on all major types.
+
 ## 2. Capabilities System Evolution
 
 ### 2.1 Client Capabilities
@@ -172,6 +188,30 @@ export interface ServerCapabilities {
     };
 }
 ```
+
+### 2.3 Completion Request Enhancement (2025-06-18)
+
+**Context Field Addition:**
+
+2025-06-18 enhanced `CompleteRequest` with context information:
+
+```typescript
+export interface CompleteRequest extends Request {
+    method: "completion/complete";
+    params: {
+        ref: PromptReference | ResourceTemplateReference;
+        argument: {
+            name: string;
+            value: string;
+        };
+        context?: {                    // NEW in 2025-06-18
+            arguments?: { [key: string]: string };
+        };
+    };
+}
+```
+
+**Usage:** Enables completion requests to include previously-resolved variables for better context-aware suggestions.
 
 ## 3. Authorization Framework
 
@@ -244,7 +284,7 @@ MCP-Protocol-Version: 2025-06-18
 
 **2025-03-26:**
 - Added audio content support
-- Enhanced ProgressNotification with message field
+- **Breaking Change:** Enhanced ProgressNotification with message field (affects parsing)
 
 **2025-06-18:**
 - Added structured tool output support
@@ -274,6 +314,46 @@ export interface Implementation extends BaseMetadata {
 ```
 
 **Impact:** Clear separation between programmatic identifiers (`name`) and human-readable labels (`title`).
+
+### 5.3 BaseMetadata Extension Evolution
+
+**2025-06-18 Introduced Widespread BaseMetadata Extension:**
+
+Multiple core interfaces now extend `BaseMetadata` to provide consistent naming conventions:
+
+```typescript
+// Core interfaces extending BaseMetadata in 2025-06-18:
+export interface Tool extends BaseMetadata { /* ... */ }
+export interface Resource extends BaseMetadata { /* ... */ }
+export interface ResourceTemplate extends BaseMetadata { /* ... */ }
+export interface Prompt extends BaseMetadata { /* ... */ }
+export interface PromptArgument extends BaseMetadata { /* ... */ }
+export interface PromptReference extends BaseMetadata { /* ... */ }
+export interface Implementation extends BaseMetadata { /* ... */ }
+```
+
+**Migration Impact:** This architectural change standardizes how display names are handled across all major protocol entities, affecting UI implementations significantly.
+
+### 5.4 ContentBlock Union Type Introduction (2025-06-18)
+
+**Major Content System Refactor:**
+
+2025-06-18 introduced a unified `ContentBlock` union type to consolidate content handling:
+
+```typescript
+export type ContentBlock =
+    | TextContent
+    | ImageContent
+    | AudioContent
+    | ResourceLink      // NEW in 2025-06-18
+    | EmbeddedResource;
+```
+
+**Usage Changes:**
+- `PromptMessage.content`: Now uses `ContentBlock` instead of individual content types
+- `CallToolResult.content`: Now uses `ContentBlock[]` for unified content handling
+
+**Breaking Change Impact:** Existing content parsing logic must be updated to handle the new union type and `ResourceLink` content type.
 
 ## 6. New Feature: Elicitation (2025-06-18)
 
@@ -323,12 +403,59 @@ Added comprehensive tool behavior descriptions:
 - Safety classifications
 - Operational metadata
 
-### 7.2 Structured Tool Output (2025-06-18)
+### 7.2 Annotations Interface Evolution
 
-**New Capability:**
-- Tools can return structured content
-- Enhanced result formatting
+**Interface Rename and Enhancement:**
+
+**2024-11-05 & 2025-03-26:** Used `Annotated` interface
+```typescript
+export interface Annotated {
+    annotations?: {
+        audience?: Role[];
+        priority?: number;
+    }
+}
+```
+
+**2025-06-18:** Renamed to `Annotations` interface with new field
+```typescript
+export interface Annotations {
+    audience?: Role[];
+    priority?: number;
+    lastModified?: string;  // NEW: ISO 8601 timestamp
+}
+```
+
+**Breaking Change:** Interfaces extending `Annotated` now use `Annotations` directly, requiring code updates.
+
+### 7.3 Structured Tool Output (2025-06-18)
+
+**New Capabilities:**
+- Tools can return structured content via `structuredContent` field
+- Enhanced result formatting with `ContentBlock[]`
 - Resource links in tool results
+- **Tool Output Schema Definition**: New `outputSchema` field in `Tool` interface
+
+**Tool Interface Enhancement:**
+```typescript
+export interface Tool extends BaseMetadata {
+    // ... existing fields
+    outputSchema?: {          // NEW in 2025-06-18
+        type: "object";
+        properties?: { [key: string]: object };
+        required?: string[];
+    };
+}
+```
+
+**CallToolResult Enhancement:**
+```typescript
+export interface CallToolResult extends Result {
+    content: ContentBlock[];
+    structuredContent?: { [key: string]: unknown };  // NEW structured output
+    isError?: boolean;
+}
+```
 
 **Example Enhancement:**
 ```json
@@ -357,14 +484,22 @@ Added comprehensive tool behavior descriptions:
 
 **Breaking Change:**
 - Changed lifecycle operation requirements from **SHOULD** to **MUST**
+- **Impact:** Previously optional initialization behaviors are now mandatory
+- **Risk:** Existing implementations may fail if they relied on optional lifecycle steps
 - Stricter initialization sequence enforcement
 
 ### 8.2 Security Documentation (2025-06-18)
 
 **New Security Framework:**
-- Added `security_best_practices.mdx`
+- Added comprehensive `spec/mcp-2025-06-18/basic/security_best_practices.mdx`
 - Enhanced authorization security considerations
 - Clear trust and safety guidelines
+- Mandatory security requirements for production deployments
+
+**Critical Security References:**
+- **Authorization:** `spec/mcp-2025-06-18/basic/authorization.mdx`
+- **Security Best Practices:** `spec/mcp-2025-06-18/basic/security_best_practices.mdx`
+- **Elicitation Security:** `spec/mcp-2025-06-18/client/elicitation.mdx` (Security Considerations section)
 
 ## 9. Implementation Strategy for Multi-Version Support
 
@@ -387,19 +522,25 @@ switch (serverProtocolVersion) {
 
 ### 9.2 Feature Capability Matrix
 
-| Feature | 2024-11-05 | 2025-03-26 | 2025-06-18 |
-|---------|-------------|-------------|-------------|
-| Basic JSON-RPC | ✅ | ✅ | ✅ |
-| JSON-RPC Batching | ❌ | ✅ | ❌ |
-| OAuth 2.1 Authorization | ❌ | ✅ | ✅ Enhanced |
-| Tool Annotations | Basic | ✅ | ✅ Enhanced |
-| Audio Content | ❌ | ✅ | ✅ |
-| Completions | ❌ | ✅ | ✅ |
-| Elicitation | ❌ | ❌ | ✅ |
-| Structured Tool Output | ❌ | ❌ | ✅ |
-| Resource Links | ❌ | ❌ | ✅ |
-| BaseMetadata | ❌ | ❌ | ✅ |
-| MCP-Protocol-Version Header | ❌ | ❌ | ✅ Required |
+| Feature                              | 2024-11-05 | 2025-03-26 | 2025-06-18    |
+|--------------------------------------|------------|------------|---------------|
+| Basic JSON-RPC                       | ✅          | ✅          | ✅             |
+| JSON-RPC Batching                    | ❌          | ✅          | ❌ **REMOVED** |
+| OAuth 2.1 Authorization              | ❌          | ✅          | ✅ Enhanced    |
+| Tool Annotations                     | Basic      | ✅          | ✅ Enhanced    |
+| Audio Content                        | ❌          | ✅          | ✅             |
+| Completions                          | ❌          | ✅          | ✅ Enhanced    |
+| Elicitation                          | ❌          | ❌          | ✅             |
+| Structured Tool Output               | ❌          | ❌          | ✅             |
+| Resource Links                       | ❌          | ❌          | ✅             |
+| BaseMetadata Extensions              | ❌          | ❌          | ✅             |
+| ContentBlock Union Type              | ❌          | ❌          | ✅             |
+| Widespread _meta Fields              | ❌          | ❌          | ✅             |
+| Tool Output Schema                   | ❌          | ❌          | ✅             |
+| Completion Context                   | ❌          | ❌          | ✅             |
+| Annotations Interface (vs Annotated) | ❌          | ❌          | ✅             |
+| MCP-Protocol-Version Header          | ❌          | ❌          | ✅ Required    |
+| Lifecycle MUST Requirements          | ❌          | ❌          | ✅ Breaking    |
 
 ### 9.3 Backward Compatibility Considerations
 
@@ -424,11 +565,22 @@ switch (serverProtocolVersion) {
 
 ## 10. Migration Path Recommendations
 
-### 10.1 Server Implementation Priority
+### 10.1 Server Implementation Strategy
 
-1. **Phase 1:** Implement 2024-11-05 base functionality
-2. **Phase 2:** Add 2025-03-26 features (auth, batching, tool annotations)
-3. **Phase 3:** Upgrade to 2025-06-18 (remove batching, add elicitation)
+**⚠️ Critical Implementation Note:** Due to JSON-RPC batching being added in 2025-03-26 and **removed** in 2025-06-18, sequential implementation is not optimal.
+
+**Recommended Branching Strategy:**
+
+1. **Base Implementation:** Start with 2024-11-05 core functionality
+2. **Branch A - Conservative Path:** 2024-11-05 → 2025-06-18 (skip batching entirely)
+3. **Branch B - Full Feature Path:** 2024-11-05 → 2025-03-26 → 2025-06-18 (implement then remove batching)
+
+**Feature-Based Implementation:**
+- **Core Features:** Implement across all versions (tools, resources, prompts)
+- **Authorization:** 2025-03-26+ (evolving in 2025-06-18)
+- **Batching:** 2025-03-26 only (removed in 2025-06-18)
+- **Elicitation:** 2025-06-18 only
+- **Structured Output:** 2025-06-18 only
 
 ### 10.2 Client Implementation Strategy
 
