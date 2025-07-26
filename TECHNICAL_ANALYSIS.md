@@ -294,7 +294,9 @@ export interface CompleteRequest extends Request {
 **OAuth 2.1 Draft Evolution:**
 
 - 2025-03-26: References `draft-ietf-oauth-v2-1-12`
-- 2025-06-18: Updated to `draft-ietf-oauth-v2-1-13` (with included HTML specification file)
+- 2025-06-18: Updated to `draft-ietf-oauth-v2-1-13`
+  - **Reference:** `spec/mcp-2025-06-18/basic/authorization.mdx:33` 
+  - **Included Specification:** `spec/mcp-2025-06-18/basic/draft-ietf-oauth-v2-1-13.html` (complete HTML specification included for implementers)
 
 ### 3.2 Enhancement in 2025-06-18
 
@@ -302,23 +304,33 @@ export interface CompleteRequest extends Request {
 
 1. **OAuth Resource Server Classification:**
     - MCP servers classified as OAuth 2.1 Resource Servers
-    - MUST implement Protected Resource Metadata (RFC9728)
+    - **MUST** implement Protected Resource Metadata (RFC9728)
+    - **Reference:** `spec/mcp-2025-06-18/basic/authorization.mdx:63-64`
 
-2. **Authorization Server Discovery:**
+2. **Authorization Server Discovery Architecture:**
    ```
    MCP servers MUST implement OAuth 2.0 Protected Resource Metadata (RFC9728)
    MCP clients MUST use Protected Resource Metadata for authorization server discovery
    ```
+   - **Major Architectural Change:** Replaces simple metadata discovery with structured Protected Resource Metadata
+   - **Multiple Authorization Servers:** Supports multiple authorization servers per resource
+   - **Client Selection Responsibility:** MCP clients select appropriate authorization server
+   - **Reference:** `spec/mcp-2025-06-18/basic/authorization.mdx:78-87`
 
 3. **Security Enhancements:**
-    - Resource Indicators required (RFC8707)
-    - Enhanced security considerations
-    - New security best practices document
+    - **Resource Indicators (RFC8707):** MUST implement to prevent token confusion attacks
+    - **Token Binding:** Access tokens bound to specific MCP server resources
+    - **Canonical URI Usage:** MUST use canonical MCP server URI for resource parameter
+    - **Reference:** `spec/mcp-2025-06-18/basic/authorization.mdx:196-209`
+    - Enhanced security considerations document: `spec/mcp-2025-06-18/basic/security_best_practices.mdx`
 
-4. **WWW-Authenticate Header:**
+4. **WWW-Authenticate Header (Mandatory):**
    ```
    MCP servers MUST use HTTP header WWW-Authenticate when returning 401 Unauthorized
+   MCP clients MUST parse WWW-Authenticate headers and respond appropriately
    ```
+   - **Indicates:** Resource server metadata URL location
+   - **Reference:** `spec/mcp-2025-06-18/basic/authorization.mdx:89-92` (RFC9728 Section 5.1)
 
 **Implementation Impact:** Clients must support multiple authorization discovery methods:
 
@@ -756,6 +768,23 @@ export interface ProgressNotification extends Notification {
 - Enhanced authorization security considerations
 - Clear trust and safety guidelines
 - Mandatory security requirements for production deployments
+
+**Documented Attack Scenarios and Mitigations:**
+
+1. **Confused Deputy Problem:** 
+   - **Attack:** MCP proxy servers can be exploited to bypass user consent via static client IDs
+   - **Mitigation:** MUST obtain user consent for each dynamically registered client
+   - **Reference:** `spec/mcp-2025-06-18/basic/security_best_practices.mdx:19-118`
+
+2. **Token Passthrough Anti-Pattern:**
+   - **Risk:** Security control circumvention, accountability issues, trust boundary violations
+   - **Mitigation:** MCP servers MUST NOT accept tokens not explicitly issued for the MCP server
+   - **Reference:** `spec/mcp-2025-06-18/basic/security_best_practices.mdx:120-143`
+
+3. **Session Hijacking:**
+   - **Attack:** Session ID exploitation for prompt injection and impersonation
+   - **Mitigation:** Secure session IDs, request verification, user-specific binding
+   - **Reference:** `spec/mcp-2025-06-18/basic/security_best_practices.mdx:145-230`
 
 **Critical Security References:**
 
