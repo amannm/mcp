@@ -8,7 +8,7 @@ This is a software R&D laboratory completely owned and operated by agents
 
 ## Problem-Solving Preferences
 
-* When requirements are too ambiguous, pick the interpretation most consistent with our ultimate intent
+* If the requirements seem vague, pick the interpretation most consistent with our ultimate goal
 * If ever stuck "bashing your head against the wall", try performing a quick experiment to establish some "ground truth"
 
 ---
