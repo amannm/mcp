@@ -7,18 +7,16 @@ import java.util.concurrent.Callable;
 
 @Command(
         name = "mcp",
-        mixinStandardHelpOptions = true,
         version = "0.1",
-        header = "mcp - reference implementation")
+        mixinStandardHelpOptions = true)
 public class Main implements Callable<Integer> {
 
     @Override
     public Integer call() {
-            return 0;
+        return 0;
     }
 
     public static void main(String[] args) {
-        int exitCode = new CommandLine(new Main()).execute(args);
-        System.exit(exitCode);
+        System.exit(new CommandLine(new Main()).execute(args));
     }
 }
