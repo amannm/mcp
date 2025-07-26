@@ -8,42 +8,38 @@ This is a software R&D laboratory completely owned and operated by agents
 
 ## Problem-Solving Preferences
 
-* When requirements are too ambiguous, pick the interpretation most consistent with the group's ultimate intent
-* Aim to end every session with a **COMPLETELY FULL CONTEXT WINDOW** with around a third exhausted by "reasoning" tokens
-* Instead of "bashing your head against the wall" over more challenging problems, perform a quick experiment to establish "ground truth" necessary to continue making progress
-* Always leave projects you've modified in a compilable/buildable state
-* When you are directly tasked with adding, updating, enhancing *TESTING* structures:
-  * If you've uncovered a previously unknown, legitimate bug in the codebase:
-    1. Add a `@Disabled` with a short message about why
-    2. Continue with the remainder of your task
+* When requirements are too ambiguous, pick the interpretation most consistent with our ultimate intent
+* If ever stuck "bashing your head against the wall", try performing a quick experiment to establish some "ground truth"
 
 ---
 
 ## Coding Preferences
 
-* Leverage the latest Java language features, up to and including `24`
+* Follow latest Java language practices, up to and including `24`
 * Aim for **high code density**
-* Optimize for amount of information that can be held within one human field of vision cone (their visual context)
-* Fully spell out and use precise naming for all things that have names (self-documenting code)
-* No comments or Javadoc or anything redundant with the code itself
-* Pull out "compute"-like functions into private static methods when possible
-* Always use `Optional<T>` to indicate nullability on return types and record parameters
-  * Shield as much of the system as possible from values that could potentially be `null`
+  * Optimize for amount of valuable information held within one human vision cone (their visual context)
+* Fully spell out and use precise naming for all things worth naming (self-documenting code)
+  * Ok to use `_` when necessary
+  * Reserve comments for only the trickiest of situations people need to be aware of
+* Pull out stateless calculations into a `private static` when sufficiently complex or duplicated
+  * `::` is pretty when properly used
+* Seal the codebase off from `null` values
+  * Leverage `Optional<T>` on method return types and record parameter types
+* Disfavor approaches requiring `Object` type-erasure or unchecked casts or annotation processing or reflection
+  * Favor approaches amenable to static analysis and properly specified, typed, idiomatic, standard, modern Java
 
 ---
 
 ## Design Preferences
-
-* Ensure one class exists to act as a buffer/bastion/conduit between your code and any big 3rd party library/dependency/service
-* Prefer to bundle together `imports` from the same third party namespace in one place
-* Prefer few classes per package over many
-* Prefer few packages per project over many
-* Prefer flat package organization over nested
-* Avoid large 3rd party library ecosystems/middleware/framework/utils/networks like spring, osgi, guava, jackson, gson
-* Prefer use of jakarta (formerly javax namespace) ecosystem reference implementations/libraries
-* Prefer libraries in relation to their closeness to Oracle and/or any sort of free support or upgrades we will get due to its ongoing funding and development
-* Prefer using modern Java standard library equivalents instead of previously 3rd party library niches like apache httpclient or commons
-* Prefer directly integrating with a Java library instead of spawning new `Process` to call executables not guaranteed to exist on that platform
+* Prefer composition
+* Prefer fewer classes
+* Prefer fewer packages
+* Prefer flatter organization
+* Prefer fewer dependencies
+* Select dependencies based on trajectory of and proximity to capital investment
+  * Avoid legacy ecosystems/middleware/frameworks/utils/networks like Spring, OSGi, Guava, Gson, Jackson
+  * Prefer use of `jakarta` (formerly `javax`) reference implementations/libraries
+* Isolate each dependency's usage to a single spot on the periphery of the codebase
 
 ---
 

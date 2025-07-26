@@ -1,1 +1,13 @@
-.idea
+# Gradle artifacts
+.gradle/
+build/
+build-resources/
+!gradle/wrapper/gradle-wrapper.jar
+
+# IDE folders
+.idea/
+.vscode/
+
+# OS files
+.DS_Store
+Thumbs.db
