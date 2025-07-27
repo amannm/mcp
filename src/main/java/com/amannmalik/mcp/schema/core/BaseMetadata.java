@@ -3,7 +3,7 @@ package com.amannmalik.mcp.schema.core;
 import java.util.Optional;
 
 /** Base metadata with a required name and optional title. */
-public sealed interface BaseMetadata permits BaseMetadataRecord, Implementation {
+public interface BaseMetadata {
     String name();
     Optional<String> title();
 }
