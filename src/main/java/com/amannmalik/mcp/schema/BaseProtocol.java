@@ -27,7 +27,8 @@ public final class BaseProtocol {
                     Prompts.GetPromptRequest,
                     Tools.ListToolsRequest, Tools.CallToolRequest,
                     Roots.ListRootsRequest,
-                    Sampling.CreateMessageRequest {
+                    Sampling.CreateMessageRequest,
+                    Elicitation.ElicitRequest {
     }
 
     /** Base result type. */
@@ -38,7 +39,8 @@ public final class BaseProtocol {
                     Resources.ListResourceTemplatesResult,
                     Tools.ListToolsResult, Tools.CallToolResult,
                     Roots.ListRootsResult,
-                    Prompts.ListPromptsResult, Prompts.GetPromptResult {
+                    Prompts.ListPromptsResult, Prompts.GetPromptResult,
+                    Elicitation.ElicitResult {
     }
 
     /** Base notification type. */
