@@ -21,7 +21,7 @@ public final class BaseOperations {
         @Override public String method() { return "ping"; }
     }
 
-    /** Notification providing progress updates for long running operations. */
+    /** Notification providing progress updates for long-running operations. */
     public record ProgressNotification(BaseProtocol.ProgressToken progressToken,
                                        double progress,
                                        Optional<Double> total,
