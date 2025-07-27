@@ -178,7 +178,7 @@ public final class JsonCodec {
                     .add("jsonrpc", JsonRpcTypes.JSONRPC_VERSION)
                     .add("id", idToJson(result.id()))
                     .add("result", res.build());
-            if (result instanceof BaseProtocol.WithMeta wm) addMeta(b, wm._meta());
+            addMeta(b, result._meta());
             return b.build();
         }
 
@@ -861,12 +861,12 @@ public final class JsonCodec {
 
         private static JsonObject modelHintToJson(Sampling.ModelHint hint) {
             JsonObjectBuilder b = Json.createObjectBuilder();
-            if (hint instanceof Sampling.NamedModel n) {
+            if (hint instanceof Sampling.NamedModel(String value)) {
                 b.add("type", "named");
-                b.add("value", n.value());
-            } else if (hint instanceof Sampling.ProviderModel p) {
+                b.add("value", value);
+            } else if (hint instanceof Sampling.ProviderModel(String value)) {
                 b.add("type", "provider");
-                b.add("value", p.value());
+                b.add("value", value);
             }
             return b.build();
         }
@@ -910,12 +910,12 @@ public final class JsonCodec {
 
         private static JsonObject completionRefToJson(Completion.CompletionReference ref) {
             JsonObjectBuilder b = Json.createObjectBuilder();
-            if (ref instanceof Completion.PromptReference p) {
+            if (ref instanceof Completion.PromptReference(String name)) {
                 b.add("type", "prompt");
-                b.add("name", p.name());
-            } else if (ref instanceof Completion.ResourceTemplateReference r) {
+                b.add("name", name);
+            } else if (ref instanceof Completion.ResourceTemplateReference(String name)) {
                 b.add("type", "resourceTemplate");
-                b.add("name", r.name());
+                b.add("name", name);
             }
             return b.build();
         }
