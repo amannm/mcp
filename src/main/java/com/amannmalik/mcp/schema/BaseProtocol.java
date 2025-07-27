@@ -20,7 +20,9 @@ public final class BaseProtocol {
             permits StubRequest, BaseOperations.PingRequest,
                     Initialization.InitializeRequest,
                     Prompts.ListPromptsRequest,
-                    Prompts.GetPromptRequest {
+                    Prompts.GetPromptRequest,
+                    Tools.ListToolsRequest, Tools.CallToolRequest,
+                    Sampling.CreateMessageRequest {
     }
 
     /** Base result type. */
