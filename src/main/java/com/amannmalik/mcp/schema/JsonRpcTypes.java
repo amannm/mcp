@@ -12,7 +12,7 @@ public final class JsonRpcTypes {
 
     /** All JSON-RPC messages carry the version field. */
     public sealed interface JsonRpcMessage
-            permits JsonRpcRequest, JsonRpcNotification, JsonRpcResponse {
+            permits JsonRpcRequest, JsonRpcNotification, JsonRpcResponse, JsonRpcError {
         String jsonrpc();
     }
 
@@ -52,7 +52,8 @@ public final class JsonRpcTypes {
     }
 
     /** JSON-RPC error response. */
-    public sealed interface JsonRpcError extends JsonRpcResponse permits BasicError {
+    public sealed interface JsonRpcError extends JsonRpcMessage, JsonRpcResponse
+            permits BasicError {
         int code();
         String message();
     }
