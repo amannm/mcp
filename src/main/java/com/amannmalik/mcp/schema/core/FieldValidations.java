@@ -16,6 +16,11 @@ public final class FieldValidations {
         return value;
     }
 
+    public static String requireMimeType(String value) {
+        requireNotBlank("mimeType", value);
+        if (!value.contains("/")) throw new IllegalArgumentException("invalid mimeType");
+    }
+  
     public static String requireUri(String value) {
         requireNotBlank("uri", value);
         try { java.net.URI.create(value); } catch (IllegalArgumentException e) { throw new IllegalArgumentException("uri invalid", e); }
