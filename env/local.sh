@@ -8,22 +8,22 @@ SPEC_ROOT="${HOME}/IdeaProjects/modelcontextprotocol"
 
 latest() {
   mkdir -p spec/2025-06-18
-  ln -s "${SPEC_ROOT}"/docs/specification/2025-06-18/* spec/2025-06-18/
-  ln -s "${SPEC_ROOT}"/schema/2025-06-18/* spec/2025-06-18/
+  cp -r "${SPEC_ROOT}"/docs/specification/2025-06-18/* spec/2025-06-18/
+  cp -r "${SPEC_ROOT}"/schema/2025-06-18/* spec/2025-06-18/
 }
 
 all() {
   mkdir -p spec/2024-11-05
-  ln -s "${SPEC_ROOT}"/docs/specification/2024-11-05/* spec/2024-11-05/
-  ln -s "${SPEC_ROOT}"/schema/2024-11-05/* spec/2024-11-05/
+  cp -r "${SPEC_ROOT}"/docs/specification/2024-11-05/* spec/2024-11-05/
+  cp -r "${SPEC_ROOT}"/schema/2024-11-05/* spec/2024-11-05/
 
   mkdir -p spec/2025-03-26
-  ln -s "${SPEC_ROOT}"/docs/specification/2025-03-26/* spec/2025-03-26/
-  ln -s "${SPEC_ROOT}"/schema/2025-03-26/* spec/2025-03-26/
+  cp -r "${SPEC_ROOT}"/docs/specification/2025-03-26/* spec/2025-03-26/
+  cp -r "${SPEC_ROOT}"/schema/2025-03-26/* spec/2025-03-26/
 
   mkdir -p spec/2025-06-18
-  ln -s "${SPEC_ROOT}"/docs/specification/2025-06-18/* spec/2025-06-18/
-  ln -s "${SPEC_ROOT}"/schema/2025-06-18/* spec/2025-06-18/
+  cp -r "${SPEC_ROOT}"/docs/specification/2025-06-18/* spec/2025-06-18/
+  cp -r "${SPEC_ROOT}"/schema/2025-06-18/* spec/2025-06-18/
 }
 
 clear() {
