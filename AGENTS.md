@@ -19,7 +19,7 @@
   * `::` looks and feels nice
 * Seal the codebase off from `null` values
   * Leverage `Optional<T>` on method return types and record parameter types
-* Disfavor approaches requiring `Object` type-erasure or unchecked casts or annotation processing or reflection or any of that wacko stuff
+* Avoid approaches requiring `Object` type-erasure or unchecked casts or annotation processing or reflection
   * Favor approaches amenable to static analysis and properly specified, typed, strict, idiomatic, standard, modern Java
 
 ---
