@@ -26,8 +26,10 @@ public final class BaseProtocol {
                     Prompts.ListPromptsRequest,
                     Prompts.GetPromptRequest,
                     Tools.ListToolsRequest, Tools.CallToolRequest,
+                    Completion.CompleteRequest,
+                    Roots.ListRootsRequest,
                     Sampling.CreateMessageRequest,
-                    Completion.CompleteRequest {
+                    Elicitation.ElicitRequest {
     }
 
     /** Base result type. */
@@ -37,8 +39,10 @@ public final class BaseProtocol {
                     Resources.ReadResourceResult,
                     Resources.ListResourceTemplatesResult,
                     Tools.ListToolsResult, Tools.CallToolResult,
+                    Completion.CompleteResult,
+                    Roots.ListRootsResult,
                     Prompts.ListPromptsResult, Prompts.GetPromptResult,
-                    Completion.CompleteResult {
+                    Elicitation.ElicitResult {
     }
 
     /** Base notification type. */
@@ -46,7 +50,8 @@ public final class BaseProtocol {
             permits StubNotification, BaseOperations.ProgressNotification,
                     BaseOperations.CancelledNotification,
                     Initialization.InitializedNotification,
-                    Resources.ResourcesChangedNotification {
+                    Resources.ResourcesChangedNotification,
+                    Roots.RootsListChangedNotification {
     }
 
     /** Progress token can be string or number. */
