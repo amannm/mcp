@@ -7,7 +7,7 @@
 * Flatter organization
 * Fewer dependencies
 * Name all parts worth naming (self-documenting code)
-* Reserve comments for clarifying only the trickiest of situations
+* Reserve clarifying comments for only the trickiest of situations
 * Leverage types to make illegal states unrepresentable and valid operations obvious
 * Write simple/typed/strict/idiomatic/standard/modern Java, up to and including `24`
 * When a nullable/optional field represents distinct business states, create explicit types
