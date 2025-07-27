@@ -34,7 +34,9 @@ public final class BaseProtocol {
             permits EmptyResult, Initialization.InitializeResult,
                     Resources.ListResourcesResult,
                     Resources.ReadResourceResult,
-                    Resources.ListResourceTemplatesResult {
+                    Resources.ListResourceTemplatesResult,
+                    Tools.ListToolsResult, Tools.CallToolResult,
+                    Prompts.ListPromptsResult, Prompts.GetPromptResult {
     }
 
     /** Base notification type. */

@@ -57,6 +57,20 @@ public final class Tools {
         }
     }
 
+    /** Response to list available tools. */
+    public record ListToolsResult(JsonRpcTypes.RequestId id,
+                                  List<Tool> tools,
+                                  Optional<Cursor> nextCursor,
+                                  Optional<Map<String, Object>> _meta)
+            implements BaseProtocol.Result {
+        public ListToolsResult {
+            Objects.requireNonNull(id);
+            tools = List.copyOf(tools);
+            Objects.requireNonNull(nextCursor);
+            Objects.requireNonNull(_meta);
+        }
+    }
+
     /** Request to invoke a tool with arguments. */
     public record CallToolRequest(JsonRpcTypes.RequestId id,
                                   String name,
@@ -70,5 +84,19 @@ public final class Tools {
             Objects.requireNonNull(_meta);
         }
         @Override public String method() { return "tools/call"; }
+    }
+
+    /** Response to tool invocation. */
+    public record CallToolResult(JsonRpcTypes.RequestId id,
+                                 List<ContentBlock> content,
+                                 Optional<Boolean> isError,
+                                 Optional<Map<String, Object>> _meta)
+            implements BaseProtocol.Result {
+        public CallToolResult {
+            Objects.requireNonNull(id);
+            content = List.copyOf(content);
+            Objects.requireNonNull(isError);
+            Objects.requireNonNull(_meta);
+        }
     }
 }

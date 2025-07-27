@@ -44,6 +44,20 @@ public final class Prompts {
         }
     }
 
+    /** Response to list available prompts. */
+    public record ListPromptsResult(JsonRpcTypes.RequestId id,
+                                    List<Prompt> prompts,
+                                    Optional<Cursor> nextCursor,
+                                    Optional<Map<String, Object>> _meta)
+            implements BaseProtocol.Result {
+        public ListPromptsResult {
+            Objects.requireNonNull(id);
+            prompts = List.copyOf(prompts);
+            Objects.requireNonNull(nextCursor);
+            Objects.requireNonNull(_meta);
+        }
+    }
+
     /** Request to retrieve a prompt with arguments applied. */
     public record GetPromptRequest(JsonRpcTypes.RequestId id,
                                    String name,
@@ -57,5 +71,17 @@ public final class Prompts {
             Objects.requireNonNull(_meta);
         }
         @Override public String method() { return "prompts/get"; }
+    }
+
+    /** Response to prompt retrieval with arguments applied. */
+    public record GetPromptResult(JsonRpcTypes.RequestId id,
+                                  List<ContentBlock> content,
+                                  Optional<Map<String, Object>> _meta)
+            implements BaseProtocol.Result {
+        public GetPromptResult {
+            Objects.requireNonNull(id);
+            content = List.copyOf(content);
+            Objects.requireNonNull(_meta);
+        }
     }
 }
