@@ -24,7 +24,6 @@ repositories {
 }
 
 dependencies {
-    annotationProcessor("info.picocli:picocli-codegen:$picocliVersion")
     implementation("info.picocli:picocli:$picocliVersion")
     implementation("org.eclipse.parsson:parsson:1.1.7")
     implementation("org.slf4j:slf4j-api:$slf4jVersion")
@@ -46,6 +45,10 @@ java {
         languageVersion = JavaLanguageVersion.of(24)
         nativeImageCapable = true
     }
+}
+
+tasks.withType<JavaCompile>().configureEach {
+    options.compilerArgs.addAll(listOf("-Xlint:all", "-Xlint:-serial"))
 }
 
 tasks.test {
