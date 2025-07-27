@@ -17,17 +17,17 @@ public final class BaseProtocol {
 
     /** Base request type. */
     public sealed interface Request extends JsonRpcTypes.JsonRpcRequest, WithMeta
-            permits StubRequest {
+            permits Initialization.InitializeRequest, StubRequest {
     }
 
     /** Base result type. */
     public sealed interface Result extends JsonRpcTypes.JsonRpcResponse, WithMeta
-            permits EmptyResult /* additional result types */ {
+            permits EmptyResult, Initialization.InitializeResult /* additional result types */ {
     }
 
     /** Base notification type. */
     public sealed interface Notification extends JsonRpcTypes.JsonRpcNotification, WithMeta
-            permits StubNotification {
+            permits Initialization.InitializedNotification, StubNotification {
     }
 
     /** Progress token can be string or number. */
