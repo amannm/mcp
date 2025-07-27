@@ -1,27 +1,10 @@
-Execute Phase 1.1 JSON-RPC Base Protocol in CODING_AGENTS_PLAN.md
-Execute Phase 1.2 Core Value Objects & Enums in CODING_AGENTS_PLAN.md
-Execute Phase 1.3 JSON Serialization Framework in CODING_AGENTS_PLAN.md
-
-Execute Phase 2.1 Content Block Types in CODING_AGENTS_PLAN.md
-Execute Phase 2.2 Schema Definition System in CODING_AGENTS_PLAN.md
-Execute Phase 2.3 Resource System in CODING_AGENTS_PLAN.md
-
-Execute Phase 3.1 Initialization & Lifecycle in CODING_AGENTS_PLAN.md
-Execute Phase 3.2 Server Feature Messages in CODING_AGENTS_PLAN.md
-Execute Phase 3.3 Client Feature Messages in CODING_AGENTS_PLAN.md
-Execute Phase 3.4 Notification & Progress System in CODING_AGENTS_PLAN.md
-
-Execute Phase 4.1 Prompt & Tool Definitions in CODING_AGENTS_PLAN.md
-Execute Phase 4.2 Advanced Content & Messaging in CODING_AGENTS_PLAN.md
-Execute Phase 4.3 Pagination & Collection Utilities in CODING_AGENTS_PLAN.md
-
-Execute Phase 5.1 Message Routing & Dispatch in CODING_AGENTS_PLAN.md
-Execute Phase 5.2 Protocol State Management in CODING_AGENTS_PLAN.md
-Execute Phase 5.3 Validation & Error Handling in CODING_AGENTS_PLAN.md
-
-Execute Phase 6.1 Transport Abstraction in CODING_AGENTS_PLAN.md
-Execute Phase 6.2 HTTP Transport Implementation in CODING_AGENTS_PLAN.md
-
-Execute Phase 7.1 Unit Testing Framework in CODING_AGENTS_PLAN.md
-Execute Phase 7.2 Integration Testing in CODING_AGENTS_PLAN.md
-Execute Phase 7.3 Compliance & Validation in CODING_AGENTS_PLAN.md
+Think deeply about `./CODING_AGENTS_PLAN.md` ... now execute all of Wave 1
+Think deeply about `./CODING_AGENTS_PLAN.md` ... now execute all of Wave 2
+Think deeply about `./CODING_AGENTS_PLAN.md` ... now execute all of Wave 3
+Think deeply about `./CODING_AGENTS_PLAN.md` ... now execute all of Wave 4
+Think deeply about `./CODING_AGENTS_PLAN.md` ... now execute all of Wave 5
+Think deeply about `./CODING_AGENTS_PLAN.md` ... now execute all of Wave 6
+Think deeply about `./CODING_AGENTS_PLAN.md` ... now execute all of Wave 7
+Think deeply about `./CODING_AGENTS_PLAN.md` ... now execute all of Wave 8
+Think deeply about `./CODING_AGENTS_PLAN.md` ... now execute all of Wave 9
+Think deeply about `./CODING_AGENTS_PLAN.md` ... now execute all of Wave 10
