@@ -14,7 +14,6 @@
   * Avoid declaring `null` or `Object`
   * Use `Optional` _only_ for return values
   * Leverage `instanceof` to test type and exclude `null` in a single statement
-* Ask "What domain states does this represent?" before "How do I map this field?"
 * Prefer impossible-to-misuse APIs over convenient-to-implement ones
 * Avoid `Optional` in data models - use polymorphism, defaults, or sentinel values instead
   * `Optional` signals computation uncertainty, not data optionality
