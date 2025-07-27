@@ -26,6 +26,7 @@ public final class BaseProtocol {
                     Prompts.ListPromptsRequest,
                     Prompts.GetPromptRequest,
                     Tools.ListToolsRequest, Tools.CallToolRequest,
+                    Completion.CompleteRequest,
                     Roots.ListRootsRequest,
                     Sampling.CreateMessageRequest,
                     Elicitation.ElicitRequest {
@@ -38,6 +39,7 @@ public final class BaseProtocol {
                     Resources.ReadResourceResult,
                     Resources.ListResourceTemplatesResult,
                     Tools.ListToolsResult, Tools.CallToolResult,
+                    Completion.CompleteResult,
                     Roots.ListRootsResult,
                     Prompts.ListPromptsResult, Prompts.GetPromptResult,
                     Elicitation.ElicitResult {
