@@ -21,12 +21,12 @@
   * Leverage `Optional<T>` on method return types and record parameter types
   * Leverage `instanceof` to discriminate both type and `null` in a single concise statement
     * For example: `if (jsonObject.get("key") instanceof JsonString value) { return value.getJsonString(); }`
-* Favor approaches amenable to static analysis
-  * Always aim for clear, typed, strict, idiomatic, standard, modern Java
-  * _Never_ use the `Object` type
-  * _Never_ use unchecked casts
-  * Never use `java.lang.reflect`
-  * Never rely on annotation processing
+* Always aim for simple, typed, strict, idiomatic, standard, modern Java
+  * Never resort to the `Object` type
+  * Never resort to unchecked operations
+  * Never resort to `@SuppressWarnings`
+  * Never resort to `java.lang.reflect`
+  * Never resort to annotation processing
 * Favor composition
 * Favor fewer classes
 * Favor fewer packages

@@ -19,25 +19,26 @@ public final class JsonRegistry {
         BY_NAME.put(name, codec);
     }
 
-    @SuppressWarnings("unchecked")
     public static <T> Optional<JsonCodec<T>> codec(Class<T> type) {
-        return Optional.ofNullable((JsonCodec<T>) BY_TYPE.get(type));
+        var codec = (JsonCodec<T>) BY_TYPE.get(type);
+        return Optional.ofNullable(codec);
     }
 
     public static Optional<JsonCodec<?>> codec(String name) {
         return Optional.ofNullable(BY_NAME.get(name));
     }
 
-    @SuppressWarnings("unchecked")
     public static <T> Optional<T> fromUnion(JsonObject obj) {
         return Optional.ofNullable(obj.getString("type", null))
                 .flatMap(JsonRegistry::codec)
-                .map(c -> (T) c.fromJson(obj));
+                .map(c -> {
+                    var result = (T) c.fromJson(obj);
+                    return result;
+                });
     }
 
     public static JsonObject toUnion(Object value) {
-        @SuppressWarnings("unchecked")
-        JsonCodec<Object> codec = (JsonCodec<Object>) BY_TYPE.get(value.getClass());
+        var codec = (JsonCodec<Object>) BY_TYPE.get(value.getClass());
         if (codec == null) throw new IllegalArgumentException("No codec for " + value.getClass());
         return (JsonObject) codec.toJson(value);
     }

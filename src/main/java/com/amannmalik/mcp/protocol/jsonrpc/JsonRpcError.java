@@ -3,14 +3,14 @@ package com.amannmalik.mcp.protocol.jsonrpc;
 import jakarta.json.Json;
 import jakarta.json.JsonObject;
 import jakarta.json.JsonValue;
+import java.util.Objects;
 import java.util.Optional;
 
 public record JsonRpcError(RequestId id, int code, String message, Optional<JsonValue> data) implements JsonRpcMessage {
-    public JsonRpcError(RequestId id, int code, String message, Optional<JsonValue> data) {
-        this.id = id;
-        this.code = code;
-        this.message = message;
-        this.data = data == null ? Optional.empty() : data;
+    public JsonRpcError {
+        Objects.requireNonNull(id);
+        Objects.requireNonNull(message);
+        Objects.requireNonNull(data);
     }
 
     @Override
