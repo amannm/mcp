@@ -26,9 +26,10 @@ public final class BaseProtocol {
                     Prompts.ListPromptsRequest,
                     Prompts.GetPromptRequest,
                     Tools.ListToolsRequest, Tools.CallToolRequest,
+                    Sampling.CreateMessageRequest,
+                    Logging.SetLevelRequest,
                     Completion.CompleteRequest,
                     Roots.ListRootsRequest,
-                    Sampling.CreateMessageRequest,
                     Elicitation.ElicitRequest {
     }
 
@@ -51,6 +52,7 @@ public final class BaseProtocol {
                     BaseOperations.CancelledNotification,
                     Initialization.InitializedNotification,
                     Resources.ResourcesChangedNotification,
+                    Logging.LoggingMessageNotification,
                     Roots.RootsListChangedNotification {
     }
 
