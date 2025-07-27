@@ -2,7 +2,7 @@
 ## Dense, Phased-Out, Parallelizable Schema & Serialization Implementation
 
 ### Project Overview
-Implement the Model Context Protocol (MCP) 2025-06-18 specification in Java 24, establishing comprehensive schema definitions and JSON serialization/deserialization using Jakarta JSON-P (Eclipse Parsson). Target: production-ready, type-safe, GraalVM-native compatible implementation.
+Implement the [Model Context Protocol (MCP) 2025-06-18 specification](spec/2025-06-18/index.mdx) in Java 24, establishing comprehensive schema definitions and JSON serialization/deserialization using Jakarta JSON-P (Eclipse Parsson). Target: production-ready, type-safe, GraalVM-native compatible implementation.
 
 ---
 
