@@ -17,7 +17,7 @@ public final class BaseProtocol {
 
     /** Base request type. */
     public sealed interface Request extends JsonRpcTypes.JsonRpcRequest, WithMeta
-            permits StubRequest {
+            permits StubRequest, BaseOperations.PingRequest {
     }
 
     /** Base result type. */
@@ -27,7 +27,8 @@ public final class BaseProtocol {
 
     /** Base notification type. */
     public sealed interface Notification extends JsonRpcTypes.JsonRpcNotification, WithMeta
-            permits StubNotification {
+            permits StubNotification, BaseOperations.ProgressNotification,
+                    BaseOperations.CancelledNotification {
     }
 
     /** Progress token can be string or number. */
