@@ -23,8 +23,8 @@
     * For example: `if (jsonObject.get("key") instanceof JsonString value) { return value.getJsonString(); }`
 * Favor approaches amenable to static analysis
   * Always aim for clear, typed, strict, idiomatic, standard, modern Java
-  * Never use the `Object` type
-  * Never use unchecked casts
+  * _Never_ use the `Object` type
+  * _Never_ use unchecked casts
   * Never use `java.lang.reflect`
   * Never rely on annotation processing
 * Favor composition
