@@ -19,6 +19,8 @@ public final class BaseProtocol {
     public sealed interface Request extends JsonRpcTypes.JsonRpcRequest, WithMeta
             permits StubRequest, BaseOperations.PingRequest,
                     Initialization.InitializeRequest,
+                    Prompts.ListPromptsRequest,
+                    Prompts.GetPromptRequest,
                     Tools.ListToolsRequest, Tools.CallToolRequest,
                     Sampling.CreateMessageRequest {
     }
