@@ -24,7 +24,7 @@
 * Favor approaches amenable to static analysis
   * Always aim for clear, typed, strict, idiomatic, standard, modern Java
   * _Never_ use the `Object` type
-  * _Never_ use unchecked casts
+  * **ABSOLUTELY NEVER** use unchecked casts, or unchecked ANYTHING
   * Never use `java.lang.reflect`
   * Never rely on annotation processing
 * Favor composition
