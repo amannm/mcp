@@ -26,7 +26,8 @@ public final class BaseProtocol {
                     Prompts.ListPromptsRequest,
                     Prompts.GetPromptRequest,
                     Tools.ListToolsRequest, Tools.CallToolRequest,
-                    Sampling.CreateMessageRequest {
+                    Sampling.CreateMessageRequest,
+                    Logging.SetLevelRequest {
     }
 
     /** Base result type. */
@@ -44,7 +45,8 @@ public final class BaseProtocol {
             permits StubNotification, BaseOperations.ProgressNotification,
                     BaseOperations.CancelledNotification,
                     Initialization.InitializedNotification,
-                    Resources.ResourcesChangedNotification {
+                    Resources.ResourcesChangedNotification,
+                    Logging.LoggingMessageNotification {
     }
 
     /** Progress token can be string or number. */
