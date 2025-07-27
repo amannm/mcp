@@ -7,42 +7,36 @@
 
 ---
 
-## Preferences
+## Design Preferences
 
-* Follow latest Java language recommended practices, up to and including `24`
-* Aim for **high code density**
-    * Optimize for amount of valuable information held within one human field of view (their visual context)
-* Spell out and precisely name all things worth naming (self-documenting code)
-    * Ok to use `_` when necessary
-    * Reserve comments for clarifying only the trickiest of situations
-* Pull out stateless calculations into a `private static` when sufficiently complex or duplicated
-    * `::` looks and feels nice
-* Write simple/typed/strict/idiomatic/standard/modern Java that would move the language stewards themselves to tears
-    * `null` is banned
-    * `Optional` is restricted to method return types
-    * `Object` is banned
-    * Unchecked operations are banned
-    * `@SuppressWarnings` is banned
-    * Use `instanceof` to distinguish type and reject `null` in a single statement
-    * Avoid approaches that make static analysis difficult
-        * `java.lang.reflect` is banned
-        * `javax.annotation` is banned
-* Prefer Immutability to Mutability
-* Prefer Composition to Inheritance
+* Favor immutable over mutable
+* Favor composition over inheritance
+* Favor flatter organization
 * Favor fewer classes
 * Favor fewer packages
-* Favor flatter organization
 * Favor fewer dependencies
-* Isolate each dependency's usage to a single spot on the periphery of the codebase
-* Select dependencies based on trajectory of and proximity to capital investment
-    * Avoid legacy ecosystems/middleware/frameworks/utils/networks like Spring, OSGi, Guava, Gson, Jackson
-    * Prefer use of `jakarta` (formerly `javax`) reference implementations/libraries
 
 ---
 
-## Useful Commands
+## Coding Style
 
-* `gradle` for building projects
-* `javap` for analyzing compiled artifacts
-* `jdb` for debugging running applications
-* `jcmd` for platform diagnostics
+* Aim for **high code density**
+    * Optimize amount of useful information held within one human cone of vision
+* Spell out and precisely name all parts worth naming (self-documenting code)
+    * Reserve comments for clarifying only the trickiest of situations
+    * Ok to use `_` when necessary
+* Write simple/typed/strict/idiomatic/standard/modern Java, up to and including `24`
+    * `null` is banned
+    * `Optional` is allowed on method return types
+    * `Object` is banned
+    * Unchecked operations are banned
+    * `@SuppressWarnings` is banned
+* Leverage `instanceof` to distinguish type and reject `null` in a single statement
+* Avoid approaches that make analysis difficult
+    * `java.lang.reflect` is banned
+    * `javax.annotation` is banned
+* Pull out stateless calculations into a `private static` when sufficiently complex or duplicated
+  * `::` looks and feels nice
+* Isolate each dependency's usage to a single spot on the periphery of the codebase
+
+---
