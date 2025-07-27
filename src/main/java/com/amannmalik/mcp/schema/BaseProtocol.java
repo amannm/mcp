@@ -26,7 +26,8 @@ public final class BaseProtocol {
                     Prompts.ListPromptsRequest,
                     Prompts.GetPromptRequest,
                     Tools.ListToolsRequest, Tools.CallToolRequest,
-                    Sampling.CreateMessageRequest {
+                    Sampling.CreateMessageRequest,
+                    Completion.CompleteRequest {
     }
 
     /** Base result type. */
@@ -36,7 +37,8 @@ public final class BaseProtocol {
                     Resources.ReadResourceResult,
                     Resources.ListResourceTemplatesResult,
                     Tools.ListToolsResult, Tools.CallToolResult,
-                    Prompts.ListPromptsResult, Prompts.GetPromptResult {
+                    Prompts.ListPromptsResult, Prompts.GetPromptResult,
+                    Completion.CompleteResult {
     }
 
     /** Base notification type. */
