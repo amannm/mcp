@@ -19,8 +19,14 @@
   * `::` looks and feels nice
 * Seal the codebase off from `null` values
   * Leverage `Optional<T>` on method return types and record parameter types
-* Avoid approaches requiring `Object` type-erasure or unchecked casts or annotation processing or reflection
-  * Favor approaches amenable to static analysis and properly specified, typed, strict, idiomatic, standard, modern Java
+  * Leverage `instanceof` to discriminate both type and `null` in a single concise statement
+    * For example: `if (jsonObject.get("key") instanceof JsonString value) { return value.getJsonString(); }`
+* Favor approaches amenable to static analysis
+  * Always aim for clear, typed, strict, idiomatic, standard, modern Java
+  * Never use the `Object` type
+  * Never use unchecked casts
+  * Never use `java.lang.reflect`
+  * Never rely on annotation processing
 
 ---
 
