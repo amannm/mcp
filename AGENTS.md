@@ -7,7 +7,7 @@
 
 ---
 
-## Coding Preferences
+## Preferences
 
 * Follow latest Java language recommended practices, up to and including `24`
 * Aim for **high code density**
@@ -27,15 +27,11 @@
   * Never use unchecked casts
   * Never use `java.lang.reflect`
   * Never rely on annotation processing
-
----
-
-## Design Preferences
-* Prefer composition
-* Prefer fewer classes
-* Prefer fewer packages
-* Prefer flatter organization
-* Prefer fewer dependencies
+* Favor composition
+* Favor fewer classes
+* Favor fewer packages
+* Favor flatter organization
+* Favor fewer dependencies
 * Isolate each dependency's usage to a single spot on the periphery of the codebase
 * Select dependencies based on trajectory of and proximity to capital investment
   * Avoid legacy ecosystems/middleware/frameworks/utils/networks like Spring, OSGi, Guava, Gson, Jackson
