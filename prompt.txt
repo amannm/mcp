@@ -3,83 +3,51 @@
 ## Phase 1: Core Protocol Foundation
 
 Execute `CODING_AGENTS_PLAN.md` Phase 1A: JSON-RPC Base Types
-Implement JSON-RPC 2.0 base types in `src/main/java/com/amannmalik/mcp/schema/JsonRpcTypes.java`. Create sealed interface JsonRpcMessage with permits JsonRpcRequest, JsonRpcNotification, JsonRpcResponse, JsonRpcError. Implement RequestId as sealed interface with StringRequestId and NumberRequestId records. Use JSONRPC_VERSION constant "2.0". Follow immutable record patterns with proper validation.
 
 Execute `CODING_AGENTS_PLAN.md` Phase 1B: Base Protocol Interfaces
-Implement base protocol interfaces in `src/main/java/com/amannmalik/mcp/schema/BaseProtocol.java`. Create sealed interfaces Request, Result, Notification with _meta support. Add ProgressToken type (string | number). Include EmptyResult typedef. Ensure all interfaces support metadata with Optional<Map<String, Object>> _meta field.
 
 Execute `CODING_AGENTS_PLAN.md` Phase 1C: Primitive Schema Support
-Implement JSON Schema primitive types in `src/main/java/com/amannmalik/mcp/schema/SchemaTypes.java`. Create sealed interface PrimitiveSchemaDefinition with permits StringSchema, NumberSchema, BooleanSchema, EnumSchema. Each schema record should include title, description fields. StringSchema needs format, minLength, maxLength. NumberSchema needs minimum, maximum. EnumSchema needs enum values and optional enumNames.
 
 Execute `CODING_AGENTS_PLAN.md` Phase 1D: Content Block System
-Implement content types in `src/main/java/com/amannmalik/mcp/schema/ContentBlocks.java`. Create sealed interface ContentBlock with permits TextContent, ImageContent, AudioContent, ResourceLink, EmbeddedResource. TextContent has type="text" and text field. ImageContent/AudioContent have data (base64), mimeType fields. Include Annotations record with audience, priority, lastModified fields.
 
 ## Phase 2: Protocol Capabilities & Lifecycle
 
 Execute `CODING_AGENTS_PLAN.md` Phase 2A: Capabilities & Implementation Info
-Implement capabilities in `src/main/java/com/amannmalik/mcp/schema/Capabilities.java`. Create ClientCapabilities record with Optional<RootsCapability>, Optional<SamplingCapability>, Optional<ElicitationCapability>, Optional<Map<String, Object>> experimental. Create ServerCapabilities with Optional<PromptsCapability>, Optional<ResourcesCapability>, Optional<ToolsCapability>, Optional<LoggingCapability>, Optional<CompletionsCapability>. Add Implementation record extending BaseMetadata with version field.
 
 Execute `CODING_AGENTS_PLAN.md` Phase 2B: Initialization Protocol
-Implement initialization in `src/main/java/com/amannmalik/mcp/schema/Initialization.java`. Create InitializeRequest record implementing Request with method="initialize", protocolVersion, capabilities, clientInfo. Create InitializeResult implementing Result with protocolVersion, capabilities, serverInfo, Optional<String> instructions. Add InitializedNotification record with method="notifications/initialized".
 
 Execute `CODING_AGENTS_PLAN.md` Phase 2C: Base Operations
-Implement base operations in `src/main/java/com/amannmalik/mcp/schema/BaseOperations.java`. Create PingRequest record with method="ping". Create ProgressNotification with method="notifications/progress", progressToken, progress (number), Optional<Number> total, Optional<String> message. Add CancelledNotification with method="notifications/cancelled", requestId, Optional<String> reason. Include Cursor typedef as String.
 
 ## Phase 3: Core Feature Domains
 
 Execute `CODING_AGENTS_PLAN.md` Phase 3A: Resources System
-Implement resources in `src/main/java/com/amannmalik/mcp/schema/Resources.java`. Create ListResourcesRequest extending PaginatedRequest with method="resources/list". Create Resource record extending BaseMetadata with uri, Optional<String> description, Optional<String> mimeType, Optional<Annotations> annotations, Optional<Integer> size. Create sealed interface ResourceContents with TextResourceContents (text field) and BlobResourceContents (blob base64 field). Add ResourceTemplate, ResourceLink, EmbeddedResource records. Include subscription/notification types.
 
 Execute `CODING_AGENTS_PLAN.md` Phase 3B: Tools System
-Implement tools in `src/main/java/com/amannmalik/mcp/schema/Tools.java`. Create ListToolsRequest with method="tools/list". Create Tool record extending BaseMetadata with Optional<String> description, ToolInputSchema inputSchema, Optional<ToolOutputSchema> outputSchema, Optional<ToolAnnotations> annotations. Create CallToolRequest with method="tools/call", name, Optional<Map<String, Object>> arguments. Add CallToolResult with content array, Optional<Map<String, Object>> structuredContent, Optional<Boolean> isError. Include ToolAnnotations with hint flags.
 
 Execute `CODING_AGENTS_PLAN.md` Phase 3C: Prompts System
-Implement prompts in `src/main/java/com/amannmalik/mcp/schema/Prompts.java`. Create ListPromptsRequest with method="prompts/list". Create Prompt record extending BaseMetadata with Optional<String> description, Optional<List<PromptArgument>> arguments. Create PromptArgument extending BaseMetadata with Optional<String> description, Optional<Boolean> required. Add GetPromptRequest with method="prompts/get", name, Optional<Map<String, String>> arguments. Create GetPromptResult with Optional<String> description, List<PromptMessage> messages. Include PromptMessage record with Role, ContentBlock.
 
 Execute `CODING_AGENTS_PLAN.md` Phase 3D: Sampling System
-Implement sampling in `src/main/java/com/amannmalik/mcp/schema/Sampling.java`. Create CreateMessageRequest with method="sampling/createMessage", List<SamplingMessage> messages, Optional<ModelPreferences> modelPreferences, Optional<String> systemPrompt, Optional<String> includeContext, Optional<Double> temperature, int maxTokens, Optional<List<String>> stopSequences, Optional<Object> metadata. Add ModelPreferences with Optional<List<ModelHint>> hints, Optional<Double> costPriority, speedPriority, intelligencePriority. Include SamplingMessage, CreateMessageResult records. Add Role enum (user, assistant).
 
 ## Phase 4: Extended Features
 
 Execute `CODING_AGENTS_PLAN.md` Phase 4A: Roots System
-Implement roots in `src/main/java/com/amannmalik/mcp/schema/Roots.java`. Create ListRootsRequest with method="roots/list". Create Root record with uri (file:// required), Optional<String> name. Add ListRootsResult with List<Root> roots. Create RootsListChangedNotification with method="notifications/roots/list_changed". Ensure URI validation for file:// scheme.
 
 Execute `CODING_AGENTS_PLAN.md` Phase 4B: Logging System
-Implement logging in `src/main/java/com/amannmalik/mcp/schema/Logging.java`. Create LoggingLevel enum with DEBUG, INFO, NOTICE, WARNING, ERROR, CRITICAL, ALERT, EMERGENCY values (RFC-5424). Create SetLevelRequest with method="logging/setLevel", LoggingLevel level. Add LoggingMessageNotification with method="notifications/message", LoggingLevel level, Object data, Optional<String> logger.
 
 Execute `CODING_AGENTS_PLAN.md` Phase 4C: Completion System
-Implement completion in `src/main/java/com/amannmalik/mcp/schema/Completion.java`. Create CompleteRequest with method="completion/complete", CompletionReference ref, CompletionArgument argument, Optional<CompletionContext> context. Create sealed interface CompletionReference with PromptReference (type="ref/prompt") and ResourceTemplateReference (type="ref/resource"). Add CompleteResult with CompletionData completion containing List<String> values, Optional<Integer> total, Optional<Boolean> hasMore.
 
 Execute `CODING_AGENTS_PLAN.md` Phase 4D: Elicitation System
-Implement elicitation in `src/main/java/com/amannmalik/mcp/schema/Elicitation.java`. Create ElicitRequest with method="elicitation/create", String message, ElicitationSchema requestedSchema. Create ElicitationSchema record with type="object", Map<String, PrimitiveSchemaDefinition> properties, Optional<List<String>> required. Add ElicitResult with ElicitAction action (accept/decline/cancel enum), Optional<Map<String, Object>> content. Ensure content only present when action=accept.
 
 ## Phase 5: JSON Serialization Layer
 
 Execute `CODING_AGENTS_PLAN.md` Phase 5A: JSON Codec System
-Implement JSON serialization in `src/main/java/com/amannmalik/mcp/schema/JsonCodec.java`. Create McpJsonCodec utility class with static methods for Jakarta JSON-P integration. Implement toJson(JsonRpcMessage) returning JsonObject. Add fromJson(JsonObject, Class<T>) with type-safe deserialization. Include specialized methods for Request, Result, Notification types. Handle sealed interface dispatch with pattern matching. Provide error handling for malformed JSON.
 
 Execute `CODING_AGENTS_PLAN.md` Phase 5B: Schema Validation
-Implement validation in `src/main/java/com/amannmalik/mcp/schema/SchemaValidator.java`. Create McpSchemaValidator utility class with validateToolInput(Tool, Map<String, Object>) and validateElicitationData(ElicitationSchema, Map<String, Object>). Return ValidationResult record with success boolean and List<String> errors. Implement JSON Schema validation logic for primitive types, required fields, format validation.
 
 Execute `CODING_AGENTS_PLAN.md` Phase 5C: Protocol Utilities
-Implement utilities in `src/main/java/com/amannmalik/mcp/schema/ProtocolUtils.java`. Create McpProtocol utility class with constants PROTOCOL_VERSION="2025-06-18", JSONRPC_VERSION="2.0". Add factory methods createError(RequestId, int, String), createInitializeRequest(ClientCapabilities, Implementation). Include message ID generation, error code constants (PARSE_ERROR=-32700, etc.). Provide common operation helpers.
 
 ## Phase 6: Integration & Testing Infrastructure
 
 Execute `CODING_AGENTS_PLAN.md` Phase 6A: Comprehensive Test Suite
-Create test classes in `src/test/java/com/amannmalik/mcp/schema/` for all schema types. Implement JSON round-trip tests verifying toJson/fromJson correctness for every message type. Add schema validation tests with valid/invalid inputs. Create protocol compliance tests checking required fields, type constraints. Include JMH performance benchmarks for serialization hot paths. Test sealed interface exhaustiveness and Optional handling.
 
 Execute `CODING_AGENTS_PLAN.md` Phase 6B: Integration Layer
-Implement integration in `src/main/java/com/amannmalik/mcp/schema/McpSchemaRegistry.java`. Create McpSchemaRegistry utility class with message handler registration. Add registerMessageHandler(String method, MessageHandler handler) and handleRequest(Request) methods. Implement notification processing with processNotification(Notification). Provide protocol state management and method dispatch logic. Include handler interface definitions.
-
-## Implementation Notes
-
-- All records should use compact constructors for validation
-- Sealed interfaces must list all permitted subtypes
-- Use Optional.empty() instead of null for missing values
-- Include proper JavaDoc for all public APIs
-- Follow naming convention: records use PascalCase, methods use camelCase
-- Static factory methods should validate inputs and throw descriptive exceptions
-- JSON field names must match MCP specification exactly
-- Implement equals/hashCode through record auto-generation
-- Use method references (::) for functional operations where appropriate
