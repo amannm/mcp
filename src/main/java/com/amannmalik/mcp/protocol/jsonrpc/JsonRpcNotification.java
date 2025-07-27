@@ -3,12 +3,15 @@ package com.amannmalik.mcp.protocol.jsonrpc;
 import jakarta.json.Json;
 import jakarta.json.JsonObject;
 import jakarta.json.JsonValue;
+
+import java.util.Objects;
 import java.util.Optional;
 
 public record JsonRpcNotification(String method, Optional<JsonValue> params) implements JsonRpcMessage {
-    public JsonRpcNotification(String method, Optional<JsonValue> params) {
-        this.method = method;
-        this.params = params == null ? Optional.empty() : params;
+
+    public JsonRpcNotification {
+        Objects.requireNonNull(method);
+        Objects.requireNonNull(params);
     }
 
     @Override

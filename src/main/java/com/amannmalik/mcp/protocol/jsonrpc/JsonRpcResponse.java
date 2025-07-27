@@ -4,7 +4,13 @@ import jakarta.json.Json;
 import jakarta.json.JsonObject;
 import jakarta.json.JsonValue;
 
+import java.util.Objects;
+
 public record JsonRpcResponse(RequestId id, JsonValue result) implements JsonRpcMessage {
+    public JsonRpcResponse {
+        Objects.requireNonNull(id);
+        Objects.requireNonNull(result);
+    }
     @Override
     public JsonObject toJson() {
         return Json.createObjectBuilder()
