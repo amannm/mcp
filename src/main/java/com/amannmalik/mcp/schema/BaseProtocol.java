@@ -22,7 +22,11 @@ public final class BaseProtocol {
                     Resources.ListResourcesRequest,
                     Resources.ReadResourceRequest,
                     Resources.SubscribeResourcesRequest,
-                    Resources.ListResourceTemplatesRequest {
+                    Resources.ListResourceTemplatesRequest,
+                    Prompts.ListPromptsRequest,
+                    Prompts.GetPromptRequest,
+                    Tools.ListToolsRequest, Tools.CallToolRequest,
+                    Sampling.CreateMessageRequest {
     }
 
     /** Base result type. */
