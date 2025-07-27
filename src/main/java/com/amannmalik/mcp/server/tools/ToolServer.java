@@ -1,0 +1,49 @@
+package com.amannmalik.mcp.server.tools;
+
+import com.amannmalik.mcp.jsonrpc.*;
+import com.amannmalik.mcp.lifecycle.ServerCapability;
+import com.amannmalik.mcp.server.McpServer;
+import com.amannmalik.mcp.transport.Transport;
+import jakarta.json.JsonObject;
+
+import java.util.EnumSet;
+
+/** McpServer extension providing tool listing and invocation support. */
+public class ToolServer extends McpServer {
+    private final ToolProvider provider;
+
+    public ToolServer(ToolProvider provider, Transport transport) {
+        super(EnumSet.of(ServerCapability.TOOLS), transport);
+        this.provider = provider;
+        registerRequestHandler("tools/list", this::listTools);
+        registerRequestHandler("tools/call", this::callTool);
+    }
+
+    private JsonRpcMessage listTools(JsonRpcRequest req) {
+        String cursor = req.params() == null ? null : req.params().getString("cursor", null);
+        ToolPage page = provider.list(cursor);
+        JsonObject result = ToolCodec.toJsonObject(page);
+        return new JsonRpcResponse(req.id(), result);
+    }
+
+    private JsonRpcMessage callTool(JsonRpcRequest req) {
+        JsonObject params = req.params();
+        if (params == null) {
+            return new JsonRpcError(req.id(), new JsonRpcError.ErrorDetail(
+                    JsonRpcErrorCode.INVALID_PARAMS.code(), "Missing params", null));
+        }
+        String name = params.getString("name", null);
+        JsonObject args = params.getJsonObject("arguments");
+        if (name == null || args == null) {
+            return new JsonRpcError(req.id(), new JsonRpcError.ErrorDetail(
+                    JsonRpcErrorCode.INVALID_PARAMS.code(), "Missing name or arguments", null));
+        }
+        try {
+            ToolResult result = provider.call(name, args);
+            return new JsonRpcResponse(req.id(), ToolCodec.toJsonObject(result));
+        } catch (IllegalArgumentException e) {
+            return new JsonRpcError(req.id(), new JsonRpcError.ErrorDetail(
+                    JsonRpcErrorCode.INVALID_PARAMS.code(), e.getMessage(), null));
+        }
+    }
+}
