@@ -235,7 +235,7 @@
 
 ## Implementation Notes
 
-- Follow `CLAUDE.md` principles: composition over inheritance, explicit types over optionals
+- Follow `AGENTS.md` principles: composition over inheritance, explicit types over optionals
 - Leverage Java 24 features: pattern matching, records, sealed interfaces
 - Use Maven Central dependencies only (Parsson JSON, Jetty HTTP, Picocli CLI)
 - Target GraalVM native image compatibility throughout
