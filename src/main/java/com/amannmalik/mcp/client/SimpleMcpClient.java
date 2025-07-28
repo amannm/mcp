@@ -5,6 +5,11 @@ import com.amannmalik.mcp.lifecycle.*;
 import com.amannmalik.mcp.transport.Transport;
 import jakarta.json.JsonObject;
 
+import java.util.Map;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutionException;
+
 import java.io.IOException;
 import java.util.EnumSet;
 import java.util.Set;
@@ -16,6 +21,8 @@ public final class SimpleMcpClient implements McpClient {
     private final Set<ClientCapability> capabilities;
     private final Transport transport;
     private final AtomicLong id = new AtomicLong(1);
+    private final Map<RequestId, CompletableFuture<JsonRpcMessage>> pending = new ConcurrentHashMap<>();
+    private Thread reader;
     private volatile boolean connected;
     private Set<ServerCapability> serverCapabilities = Set.of();
     private String instructions;
@@ -45,6 +52,9 @@ public final class SimpleMcpClient implements McpClient {
         JsonRpcMessage msg = JsonRpcCodec.fromJsonObject(transport.receive());
         if (msg instanceof JsonRpcResponse resp) {
             InitializeResponse ir = LifecycleCodec.toInitializeResponse(resp.result());
+            if (!ProtocolLifecycle.SUPPORTED_VERSION.equals(ir.protocolVersion())) {
+                throw new UnsupportedProtocolVersionException(ir.protocolVersion(), ProtocolLifecycle.SUPPORTED_VERSION);
+            }
             serverCapabilities = ir.capabilities().server();
             instructions = ir.instructions();
         } else if (msg instanceof JsonRpcError err) {
@@ -54,6 +64,9 @@ public final class SimpleMcpClient implements McpClient {
         }
         JsonRpcNotification note = new JsonRpcNotification("notifications/initialized", null);
         transport.send(JsonRpcCodec.toJsonObject(note));
+        reader = new Thread(this::readLoop);
+        reader.setDaemon(true);
+        reader.start();
         connected = true;
     }
 
@@ -62,6 +75,10 @@ public final class SimpleMcpClient implements McpClient {
         if (!connected) return;
         connected = false;
         transport.close();
+        if (reader != null) {
+            try { reader.join(100); } catch (InterruptedException ignore) { Thread.currentThread().interrupt(); }
+            reader = null;
+        }
     }
 
     @Override
@@ -77,20 +94,49 @@ public final class SimpleMcpClient implements McpClient {
     public JsonRpcMessage request(String method, JsonObject params) throws IOException {
         if (!connected) throw new IllegalStateException("not connected");
         RequestId reqId = new RequestId.NumericId(id.getAndIncrement());
-        JsonRpcRequest req = new JsonRpcRequest(reqId, method, params);
-        transport.send(JsonRpcCodec.toJsonObject(req));
-        while (true) {
-            JsonRpcMessage msg = JsonRpcCodec.fromJsonObject(transport.receive());
-            if (msg instanceof JsonRpcResponse resp && resp.id().equals(reqId)) {
-                return resp;
-            }
-            if (msg instanceof JsonRpcError err && err.id().equals(reqId)) {
-                return err;
-            }
+        CompletableFuture<JsonRpcMessage> future = new CompletableFuture<>();
+        pending.put(reqId, future);
+        transport.send(JsonRpcCodec.toJsonObject(new JsonRpcRequest(reqId, method, params)));
+        try {
+            return future.get();
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new IOException(e);
+        } catch (ExecutionException e) {
+            Throwable cause = e.getCause();
+            if (cause instanceof IOException io) throw io;
+            throw new IOException(cause);
+        } finally {
+            pending.remove(reqId);
         }
     }
 
     public Set<ServerCapability> serverCapabilities() {
         return serverCapabilities;
+    }
+
+    private void readLoop() {
+        while (connected) {
+            JsonRpcMessage msg;
+            try {
+                msg = JsonRpcCodec.fromJsonObject(transport.receive());
+            } catch (IOException e) {
+                pending.values().forEach(f -> f.completeExceptionally(e));
+                break;
+            }
+            switch (msg) {
+                case JsonRpcResponse resp -> {
+                    CompletableFuture<JsonRpcMessage> f = pending.remove(resp.id());
+                    if (f != null) f.complete(resp);
+                }
+                case JsonRpcError err -> {
+                    CompletableFuture<JsonRpcMessage> f = pending.remove(err.id());
+                    if (f != null) f.complete(err);
+                }
+                default -> {
+                    // ignore notifications
+                }
+            }
+        }
     }
 }
