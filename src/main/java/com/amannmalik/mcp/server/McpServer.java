@@ -36,6 +36,7 @@ public abstract class McpServer implements AutoCloseable {
 
         registerRequestHandler("initialize", this::initialize);
         registerNotificationHandler("notifications/initialized", this::initialized);
+        registerRequestHandler("ping", this::ping);
     }
 
     protected final ProtocolLifecycle lifecycle() {
@@ -87,6 +88,10 @@ public abstract class McpServer implements AutoCloseable {
 
     private void initialized(JsonRpcNotification note) {
         lifecycle.initialized();
+    }
+
+    private JsonRpcMessage ping(JsonRpcRequest req) {
+        return new JsonRpcResponse(req.id(), jakarta.json.Json.createObjectBuilder().build());
     }
 
     protected final void send(JsonRpcMessage msg) throws IOException {
