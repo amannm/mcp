@@ -48,7 +48,6 @@ class McpProtocolIntegrationTest {
     }
 
     @Test
-    @Disabled("Flaky in CI")
     @DisplayName("Happy path: Complete MCP protocol lifecycle via CLI")
     void testCompleteProtocolLifecycleViaCli() throws Exception {
         // Start server process via CLI with timeout
