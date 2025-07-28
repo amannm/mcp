@@ -35,7 +35,7 @@ class ToolServerTest {
         PipedOutputStream clientOut = new PipedOutputStream(serverIn);
         clientTransport = new StdioTransport(clientIn, clientOut);
         serverTransport = new StdioTransport(serverIn, serverOut);
-        server = new ToolServer(new EchoProvider(), serverTransport);
+        server = ToolServer.create(new EchoProvider(), serverTransport);
         serverThread = new Thread(() -> {
             try {
                 server.serve();

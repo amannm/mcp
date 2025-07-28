@@ -7,7 +7,7 @@ import com.amannmalik.mcp.transport.StdioTransport;
 /** Example web API tool server using stdio. */
 public final class WebApiServerExample {
     public static void main(String[] args) throws Exception {
-        try (ToolServer server = new ToolServer(new WebApiToolProvider(),
+        try (ToolServer server = ToolServer.create(new WebApiToolProvider(),
                 new StdioTransport(System.in, System.out))) {
             server.serve();
         }

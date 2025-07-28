@@ -12,11 +12,16 @@ import java.util.EnumSet;
 public class ToolServer extends McpServer {
     private final ToolProvider provider;
 
-    public ToolServer(ToolProvider provider, Transport transport) {
+    private ToolServer(ToolProvider provider, Transport transport) {
         super(EnumSet.of(ServerCapability.TOOLS), transport);
         this.provider = provider;
-        registerRequestHandler("tools/list", this::listTools);
-        registerRequestHandler("tools/call", this::callTool);
+    }
+
+    public static ToolServer create(ToolProvider provider, Transport transport) {
+        ToolServer server = new ToolServer(provider, transport);
+        server.registerRequestHandler("tools/list", server::listTools);
+        server.registerRequestHandler("tools/call", server::callTool);
+        return server;
     }
 
     private JsonRpcMessage listTools(JsonRpcRequest req) {

@@ -13,7 +13,7 @@ public final class DatabaseServerExample {
         var rows = Json.createArrayBuilder()
                 .add(Json.createObjectBuilder().add("name", "bob"))
                 .build();
-        try (ToolServer server = new ToolServer(new DatabaseToolProvider(Map.of("select *", rows)),
+        try (ToolServer server = ToolServer.create(new DatabaseToolProvider(Map.of("select *", rows)),
                 new StdioTransport(System.in, System.out))) {
             server.serve();
         }
