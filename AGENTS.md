@@ -1,11 +1,16 @@
 # `AGENTS.md`
 
+---
+
 * High information density
 * Precision over convenience
 * Immutable over mutable
 * Composition over inheritance
 * Flatter organization
 * Fewer dependencies
+
+---
+
 * Name all parts worth naming (self-documenting code)
 * Reserve clarifying comments for only the trickiest of situations
 * Leverage types to make illegal states unrepresentable and valid operations obvious
@@ -19,6 +24,12 @@
 * Avoid `java.lang.reflect` and `javax.annotation`
 * UN-checked casts are UN-acceptable... hahaha... but really
 * Isolate each dependency's usage to a single spot on the periphery of the codebase
-* If the requirements seem vague, follow your heart
+
+---
+
 * Experiment to establish "ground truth" instead of "bashing your head against the wall"
+* If the requirements seem vague, follow your heart
 * If no time, drop a `KT.md` instead of shoveling out some half-baked slop
+* Ensure `./verify.sh` passes
+
+---
