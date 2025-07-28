@@ -15,6 +15,7 @@ import java.io.OutputStreamWriter;
 import java.io.StringReader;
 import java.nio.charset.StandardCharsets;
 import java.util.Objects;
+import java.time.Duration;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 
@@ -23,6 +24,7 @@ public final class StdioTransport implements Transport {
     private final BufferedWriter out;
     private final Process process;
     private final Thread logReader;
+    private static final Duration WAIT = Duration.ofSeconds(2);
 
     public StdioTransport(InputStream in, OutputStream out) {
         this.in = new BufferedReader(new InputStreamReader(in, StandardCharsets.UTF_8));
@@ -48,7 +50,11 @@ public final class StdioTransport implements Transport {
 
     @Override
     public synchronized void send(JsonObject message) throws IOException {
-        out.write(message.toString());
+        String s = message.toString();
+        if (s.indexOf('\n') >= 0 || s.indexOf('\r') >= 0) {
+            throw new IllegalArgumentException("message contains newline");
+        }
+        out.write(s);
         out.write('\n');
         out.flush();
     }
@@ -70,9 +76,9 @@ public final class StdioTransport implements Transport {
         if (process != null) {
             process.destroy();
             try {
-                if (!process.waitFor(2, TimeUnit.SECONDS)) {
+                if (!process.waitFor(WAIT.toMillis(), TimeUnit.MILLISECONDS)) {
                     process.destroyForcibly();
-                    process.waitFor(2, TimeUnit.SECONDS);
+                    process.waitFor(WAIT.toMillis(), TimeUnit.MILLISECONDS);
                 }
             } catch (InterruptedException ignore) {
                 Thread.currentThread().interrupt();
