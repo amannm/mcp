@@ -28,7 +28,7 @@ class PromptServerTest {
         );
         PromptTemplate tmpl = new PromptTemplate(
                 meta,
-                List.of(new PromptMessageTemplate(Role.USER, "Hello {name}!"))
+                List.of(new PromptMessageTemplate(Role.USER, new PromptContent.Text("Hello {name}!")))
         );
         provider.add(tmpl);
 

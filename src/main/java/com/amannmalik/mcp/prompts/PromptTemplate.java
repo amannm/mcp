@@ -16,9 +16,16 @@ public record PromptTemplate(Prompt prompt, List<PromptMessageTemplate> messages
     PromptInstance instantiate(Map<String, String> args) {
         List<PromptMessage> list = new ArrayList<>();
         for (PromptMessageTemplate t : messages) {
-            list.add(new PromptMessage(t.role(), substitute(t.template(), args)));
+            list.add(new PromptMessage(t.role(), instantiate(t.content(), args)));
         }
         return new PromptInstance(prompt.description(), list);
+    }
+
+    private static PromptContent instantiate(PromptContent tmpl, Map<String, String> args) {
+        return switch (tmpl) {
+            case PromptContent.Text t -> new PromptContent.Text(substitute(t.text(), args));
+            default -> tmpl;
+        };
     }
 
     private static String substitute(String template, Map<String, String> args) {

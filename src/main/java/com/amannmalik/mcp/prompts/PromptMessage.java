@@ -1,10 +1,10 @@
 package com.amannmalik.mcp.prompts;
 
-/** A single message in a prompt. Only text content is currently supported. */
-public record PromptMessage(Role role, String text) {
+/** A single message in a prompt. */
+public record PromptMessage(Role role, PromptContent content) {
     public PromptMessage {
-        if (role == null || text == null) {
-            throw new IllegalArgumentException("role and text are required");
+        if (role == null || content == null) {
+            throw new IllegalArgumentException("role and content are required");
         }
     }
 }

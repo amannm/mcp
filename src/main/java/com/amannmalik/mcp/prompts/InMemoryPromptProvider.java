@@ -14,16 +14,16 @@ public final class InMemoryPromptProvider implements PromptProvider {
     }
 
     @Override
-    public List<Prompt> listPrompts() {
+    public PromptPage list(String cursor) {
         List<Prompt> list = new ArrayList<>();
         for (PromptTemplate t : templates.values()) {
             list.add(t.prompt());
         }
-        return list;
+        return new PromptPage(list, null);
     }
 
     @Override
-    public PromptInstance getPrompt(String name, Map<String, String> arguments) {
+    public PromptInstance get(String name, Map<String, String> arguments) {
         PromptTemplate tmpl = templates.get(name);
         if (tmpl == null) throw new IllegalArgumentException("unknown prompt: " + name);
         return tmpl.instantiate(arguments);
