@@ -11,12 +11,11 @@
 * Leverage types to make illegal states unrepresentable and valid operations obvious
 * Write simple/typed/strict/idiomatic/standard/modern Java, up to and including `24`
 * When a nullable/optional field represents distinct business states, create explicit types
-  * Avoid declaring `null` or `Object`
-  * Use `Optional` _only_ for return values
-  * Leverage `instanceof` to test type and exclude `null` in a single statement
+* Avoid `null` or `Object`
+* Use `Optional` for nullable return values
+* Use polymorphism/default/sentinels to avoid null in data models
+* Use `instanceof` to test type and exclude `null` in a single statement
 * Prefer impossible-to-misuse APIs over convenient-to-implement ones
-* Avoid `Optional` in data models - use polymorphism, defaults, or sentinel values instead
-  * `Optional` signals computation uncertainty, not data optionality
 * Avoid `java.lang.reflect` and `javax.annotation`
 * UN-checked casts are UN-acceptable... hahaha... but really
 * Isolate each dependency's usage to a single spot on the periphery of the codebase
