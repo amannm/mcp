@@ -7,6 +7,8 @@ import org.junit.jupiter.api.Test;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
@@ -24,5 +26,18 @@ class StdioTransportTest {
         StdioTransport server = new StdioTransport(in, new ByteArrayOutputStream());
         JsonObject read = server.receive();
         assertEquals(msg, read);
+    }
+
+    @Test
+    void spawnProcess() throws Exception {
+        ProcessBuilder pb = new ProcessBuilder("sh", "-c", "echo err >&2; cat");
+        List<String> logs = new ArrayList<>();
+        try (StdioTransport t = new StdioTransport(pb, logs::add)) {
+            JsonObject msg = Json.createObjectBuilder().add("ping", true).build();
+            t.send(msg);
+            JsonObject resp = t.receive();
+            assertEquals(msg, resp);
+        }
+        assertEquals(List.of("err"), logs);
     }
 }
