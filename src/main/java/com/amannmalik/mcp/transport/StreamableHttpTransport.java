@@ -20,9 +20,11 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.net.InetSocketAddress;
 import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.atomic.AtomicReference;
 
 /** Jetty-based HTTP transport with basic SSE support. */
 public final class StreamableHttpTransport implements Transport {
@@ -30,8 +32,9 @@ public final class StreamableHttpTransport implements Transport {
     private final int port;
     private final OriginValidator originValidator;
     private final BlockingQueue<JsonObject> incoming = new LinkedBlockingQueue<>();
-    private final BlockingQueue<JsonObject> outgoing = new LinkedBlockingQueue<>();
     private final Set<SseClient> sseClients = ConcurrentHashMap.newKeySet();
+    private final AtomicReference<String> sessionId = new AtomicReference<>();
+    private final ConcurrentHashMap<String, BlockingQueue<JsonObject>> responseQueues = new ConcurrentHashMap<>();
 
     public StreamableHttpTransport(int port, OriginValidator validator) throws Exception {
         server = new Server(new InetSocketAddress("127.0.0.1", port));
@@ -57,7 +60,14 @@ public final class StreamableHttpTransport implements Transport {
 
     @Override
     public void send(JsonObject message) {
-        outgoing.add(message);
+        String id = message.containsKey("id") ? message.get("id").toString() : null;
+        if (id != null) {
+            var q = responseQueues.remove(id);
+            if (q != null) {
+                q.add(message);
+                return;
+            }
+        }
         sseClients.forEach(c -> c.send(message));
     }
 
@@ -87,31 +97,62 @@ public final class StreamableHttpTransport implements Transport {
                 resp.sendError(HttpServletResponse.SC_FORBIDDEN);
                 return;
             }
+
+            String session = sessionId.get();
+            String header = req.getHeader("Mcp-Session-Id");
+            JsonObject obj;
             try (JsonReader reader = Json.createReader(req.getInputStream())) {
-                JsonObject obj = reader.readObject();
-                incoming.put(obj);
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-                resp.sendError(HttpServletResponse.SC_SERVICE_UNAVAILABLE);
+                obj = reader.readObject();
+            }
+            boolean initializing = "initialize".equals(obj.getString("method", null));
+
+            if (session == null && initializing) {
+                session = UUID.randomUUID().toString();
+                sessionId.set(session);
+                resp.setHeader("Mcp-Session-Id", session);
+            } else if (session == null) {
+                resp.sendError(HttpServletResponse.SC_BAD_REQUEST);
+                return;
+            } else if (!session.equals(header)) {
+                resp.sendError(HttpServletResponse.SC_NOT_FOUND);
                 return;
             }
-            JsonObject response;
+
+            BlockingQueue<JsonObject> q = new LinkedBlockingQueue<>(1);
+            if (obj.containsKey("id")) {
+                responseQueues.put(obj.get("id").toString(), q);
+            }
+
             try {
-                response = outgoing.take();
+                incoming.put(obj);
+                JsonObject response = q.take();
+                resp.setContentType("application/json");
+                resp.setCharacterEncoding("UTF-8");
+                resp.getWriter().write(response.toString());
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
                 resp.sendError(HttpServletResponse.SC_SERVICE_UNAVAILABLE);
-                return;
+            } finally {
+                if (obj.containsKey("id")) {
+                    responseQueues.remove(obj.get("id").toString());
+                }
             }
-            resp.setContentType("application/json");
-            resp.setCharacterEncoding("UTF-8");
-            resp.getWriter().write(response.toString());
         }
 
         @Override
         protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws IOException {
             if (!originValidator.isValid(req.getHeader("Origin"))) {
                 resp.sendError(HttpServletResponse.SC_FORBIDDEN);
+                return;
+            }
+            String session = sessionId.get();
+            String header = req.getHeader("Mcp-Session-Id");
+            if (session == null) {
+                resp.sendError(HttpServletResponse.SC_BAD_REQUEST);
+                return;
+            }
+            if (!session.equals(header)) {
+                resp.sendError(HttpServletResponse.SC_NOT_FOUND);
                 return;
             }
             resp.setStatus(HttpServletResponse.SC_OK);
@@ -142,6 +183,22 @@ public final class StreamableHttpTransport implements Transport {
                 public void onStartAsync(AsyncEvent event) {
                 }
             });
+        }
+
+        @Override
+        protected void doDelete(HttpServletRequest req, HttpServletResponse resp) throws IOException {
+            if (!originValidator.isValid(req.getHeader("Origin"))) {
+                resp.sendError(HttpServletResponse.SC_FORBIDDEN);
+                return;
+            }
+            String session = sessionId.get();
+            String header = req.getHeader("Mcp-Session-Id");
+            if (session == null || !session.equals(header)) {
+                resp.sendError(HttpServletResponse.SC_NOT_FOUND);
+                return;
+            }
+            sessionId.set(null);
+            resp.setStatus(HttpServletResponse.SC_OK);
         }
     }
 
