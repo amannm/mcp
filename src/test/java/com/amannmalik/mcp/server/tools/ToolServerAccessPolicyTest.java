@@ -83,7 +83,7 @@ class ToolServerAccessPolicyTest {
                             .add("message", Json.createObjectBuilder().add("type", "string")))
                     .add("required", Json.createArrayBuilder().add("message"))
                     .build();
-            tool = new Tool("echo", "Echo", "Echo text", schema, null);
+            tool = new Tool("echo", "Echo", "Echo text", schema, null, null);
         }
 
         @Override
