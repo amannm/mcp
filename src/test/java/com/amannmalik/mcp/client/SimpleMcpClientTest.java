@@ -64,7 +64,7 @@ class SimpleMcpClientTest {
         JsonRpcMessage msg = client.request("ping", Json.createObjectBuilder().build());
         assertTrue(msg instanceof JsonRpcResponse);
         JsonObject result = ((JsonRpcResponse) msg).result();
-        assertEquals(Json.createObjectBuilder().add("pong", true).build(), result);
+        assertEquals(Json.createObjectBuilder().build(), result);
         client.disconnect();
         assertFalse(client.connected());
     }
@@ -72,7 +72,6 @@ class SimpleMcpClientTest {
     private static class TestServer extends McpServer {
         TestServer(Transport t) {
             super(EnumSet.noneOf(ServerCapability.class), t);
-            registerRequestHandler("ping", req -> new JsonRpcResponse(req.id(), Json.createObjectBuilder().add("pong", true).build()));
         }
     }
 }
