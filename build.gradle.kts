@@ -26,6 +26,7 @@ repositories {
 dependencies {
     implementation("info.picocli:picocli:$picocliVersion")
     implementation("org.eclipse.parsson:parsson:1.1.7")
+    implementation("org.yaml:snakeyaml:2.2")
     implementation("org.slf4j:slf4j-api:$slf4jVersion")
     implementation("org.slf4j:slf4j-nop:$slf4jVersion")
     implementation("org.eclipse.jetty.ee10:jetty-ee10-servlet:$jettyVersion")
