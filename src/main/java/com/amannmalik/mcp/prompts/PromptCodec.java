@@ -5,6 +5,10 @@ import jakarta.json.JsonArrayBuilder;
 import jakarta.json.JsonObject;
 import jakarta.json.JsonObjectBuilder;
 
+import com.amannmalik.mcp.server.resources.ResourcesCodec;
+
+import java.util.Base64;
+
 import java.util.List;
 import java.util.Map;
 
@@ -36,15 +40,33 @@ public final class PromptCodec {
         for (PromptMessage m : inst.messages()) {
             msgs.add(Json.createObjectBuilder()
                     .add("role", m.role().name().toLowerCase())
-                    .add("content", Json.createObjectBuilder()
-                            .add("type", "text")
-                            .add("text", m.text())
-                            .build())
+                    .add("content", toJsonObject(m.content()))
                     .build());
         }
         JsonObjectBuilder obj = Json.createObjectBuilder().add("messages", msgs.build());
         if (inst.description() != null) obj.add("description", inst.description());
         return obj.build();
+    }
+
+    public static JsonObject toJsonObject(PromptPage page) {
+        JsonArrayBuilder arr = Json.createArrayBuilder();
+        page.prompts().forEach(p -> arr.add(toJsonObject(p)));
+        JsonObjectBuilder builder = Json.createObjectBuilder().add("prompts", arr.build());
+        if (page.nextCursor() != null) builder.add("nextCursor", page.nextCursor());
+        return builder.build();
+    }
+
+    static JsonObject toJsonObject(PromptContent content) {
+        JsonObjectBuilder b = Json.createObjectBuilder().add("type", content.type());
+        switch (content) {
+            case PromptContent.Text t -> b.add("text", t.text());
+            case PromptContent.Image i -> b.add("data", Base64.getEncoder().encodeToString(i.data()))
+                    .add("mimeType", i.mimeType());
+            case PromptContent.Audio a -> b.add("data", Base64.getEncoder().encodeToString(a.data()))
+                    .add("mimeType", a.mimeType());
+            case PromptContent.ResourceContent r -> b.add("resource", ResourcesCodec.toJsonObject(r.resource()));
+        }
+        return b.build();
     }
 
     public static Map<String, String> toArguments(JsonObject obj) {

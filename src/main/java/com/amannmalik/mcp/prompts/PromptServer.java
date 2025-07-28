@@ -11,6 +11,7 @@ import com.amannmalik.mcp.server.McpServer;
 import com.amannmalik.mcp.transport.Transport;
 import jakarta.json.Json;
 import jakarta.json.JsonObject;
+import jakarta.json.JsonObjectBuilder;
 
 import java.io.IOException;
 import java.util.EnumSet;
@@ -29,13 +30,13 @@ public class PromptServer extends McpServer {
     }
 
     private JsonRpcMessage listPrompts(JsonRpcRequest req) {
-        List<Prompt> prompts = provider.listPrompts();
+        String cursor = req.params() == null ? null : req.params().getString("cursor", null);
+        PromptPage page = provider.list(cursor);
         var arr = Json.createArrayBuilder();
-        for (Prompt p : prompts) arr.add(PromptCodec.toJsonObject(p));
-        JsonObject result = Json.createObjectBuilder()
-                .add("prompts", arr.build())
-                .build();
-        return new JsonRpcResponse(req.id(), result);
+        for (Prompt p : page.prompts()) arr.add(PromptCodec.toJsonObject(p));
+        JsonObjectBuilder builder = Json.createObjectBuilder().add("prompts", arr.build());
+        if (page.nextCursor() != null) builder.add("nextCursor", page.nextCursor());
+        return new JsonRpcResponse(req.id(), builder.build());
     }
 
     private JsonRpcMessage getPrompt(JsonRpcRequest req) {
@@ -48,7 +49,7 @@ public class PromptServer extends McpServer {
         }
         Map<String, String> args = PromptCodec.toArguments(params.getJsonObject("arguments"));
         try {
-            PromptInstance inst = provider.getPrompt(name, args);
+            PromptInstance inst = provider.get(name, args);
             JsonObject result = PromptCodec.toJsonObject(inst);
             return new JsonRpcResponse(req.id(), result);
         } catch (IllegalArgumentException e) {
