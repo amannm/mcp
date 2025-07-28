@@ -50,6 +50,11 @@ public final class JsonRpcCodec {
     }
 
     public static JsonRpcMessage fromJsonObject(JsonObject obj) {
+        var version = obj.getString("jsonrpc", null);
+        if (!JsonRpc.VERSION.equals(version)) {
+            throw new IllegalArgumentException("Unsupported jsonrpc version: " + version);
+        }
+
         var idValue = obj.get("id");
         var method = obj.getString("method", null);
         var hasError = obj.containsKey("error");

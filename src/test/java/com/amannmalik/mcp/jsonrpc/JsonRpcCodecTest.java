@@ -1,5 +1,6 @@
 package com.amannmalik.mcp.jsonrpc;
 
+import jakarta.json.Json;
 import jakarta.json.JsonObject;
 import jakarta.json.JsonValue;
 import org.junit.jupiter.api.Test;
@@ -22,5 +23,15 @@ class JsonRpcCodecTest {
         JsonObject json = JsonRpcCodec.toJsonObject(error);
         var parsed = JsonRpcCodec.fromJsonObject(json);
         assertEquals(error, parsed);
+    }
+
+    @Test
+    void rejectsUnsupportedVersion() {
+        var json = Json.createObjectBuilder()
+                .add("jsonrpc", "1.0")
+                .add("id", 1)
+                .add("method", "ping")
+                .build();
+        assertThrows(IllegalArgumentException.class, () -> JsonRpcCodec.fromJsonObject(json));
     }
 }
