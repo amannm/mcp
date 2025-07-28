@@ -1,11 +1,12 @@
 package com.amannmalik.mcp.client.roots;
 
+import com.amannmalik.mcp.validation.UriValidator;
+import com.amannmalik.mcp.validation.InputSanitizer;
+
 /** Filesystem boundary made available to a server. */
 public record Root(String uri, String name) {
     public Root {
-        if (uri == null) throw new IllegalArgumentException("uri is required");
-        if (!uri.startsWith("file:")) {
-            throw new IllegalArgumentException("uri must start with file:");
-        }
+        uri = UriValidator.requireFileUri(uri);
+        name = name == null ? null : InputSanitizer.requireClean(name);
     }
 }

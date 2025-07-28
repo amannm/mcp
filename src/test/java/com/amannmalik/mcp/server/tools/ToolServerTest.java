@@ -6,6 +6,7 @@ import com.amannmalik.mcp.jsonrpc.JsonRpcResponse;
 import com.amannmalik.mcp.lifecycle.ClientCapability;
 import com.amannmalik.mcp.lifecycle.ClientInfo;
 import com.amannmalik.mcp.transport.StdioTransport;
+import com.amannmalik.mcp.validation.SchemaValidator;
 import jakarta.json.Json;
 import jakarta.json.JsonArray;
 import jakarta.json.JsonObject;
