@@ -4,6 +4,7 @@ import com.amannmalik.mcp.jsonrpc.*;
 import com.amannmalik.mcp.lifecycle.ServerCapability;
 import com.amannmalik.mcp.server.McpServer;
 import com.amannmalik.mcp.transport.Transport;
+import com.amannmalik.mcp.security.RateLimiter;
 import jakarta.json.JsonObject;
 
 import java.util.EnumSet;
@@ -11,14 +12,20 @@ import java.util.EnumSet;
 /** McpServer extension providing tool listing and invocation support. */
 public class ToolServer extends McpServer {
     private final ToolProvider provider;
+    private final RateLimiter limiter;
 
-    private ToolServer(ToolProvider provider, Transport transport) {
+    private ToolServer(ToolProvider provider, Transport transport, RateLimiter limiter) {
         super(EnumSet.of(ServerCapability.TOOLS), transport);
         this.provider = provider;
+        this.limiter = limiter;
     }
 
     public static ToolServer create(ToolProvider provider, Transport transport) {
-        ToolServer server = new ToolServer(provider, transport);
+        return create(provider, transport, new RateLimiter(Integer.MAX_VALUE, 1));
+    }
+
+    public static ToolServer create(ToolProvider provider, Transport transport, RateLimiter limiter) {
+        ToolServer server = new ToolServer(provider, transport, limiter);
         server.registerRequestHandler("tools/list", server::listTools);
         server.registerRequestHandler("tools/call", server::callTool);
         return server;
@@ -42,6 +49,12 @@ public class ToolServer extends McpServer {
         if (name == null || args == null) {
             return new JsonRpcError(req.id(), new JsonRpcError.ErrorDetail(
                     JsonRpcErrorCode.INVALID_PARAMS.code(), "Missing name or arguments", null));
+        }
+        try {
+            limiter.requireAllowance(name);
+        } catch (SecurityException e) {
+            return new JsonRpcError(req.id(), new JsonRpcError.ErrorDetail(
+                    JsonRpcErrorCode.INVALID_PARAMS.code(), e.getMessage(), null));
         }
         try {
             ToolResult result = provider.call(name, args);
