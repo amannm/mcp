@@ -196,8 +196,12 @@ class CliHappyPathTest {
         }
     }
 
+    private static final String JAVA_BIN = System.getProperty("java.home") +
+            File.separator + "bin" + File.separator + "java";
+
     private ProcessBuilder createCliProcess(String... args) {
-        ProcessBuilder pb = new ProcessBuilder("java", "-cp", System.getProperty("java.class.path"), 
+        ProcessBuilder pb = new ProcessBuilder(JAVA_BIN, "-cp",
+                System.getProperty("java.class.path"),
                 "com.amannmalik.mcp.Main");
         pb.command().addAll(java.util.Arrays.asList(args));
         return pb;
