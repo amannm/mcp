@@ -17,6 +17,7 @@ import com.amannmalik.mcp.lifecycle.ServerCapability;
 import com.amannmalik.mcp.transport.Transport;
 import jakarta.json.JsonObject;
 
+import java.io.EOFException;
 import java.io.IOException;
 import java.util.EnumSet;
 import java.util.Map;
@@ -53,12 +54,19 @@ public abstract class McpServer implements AutoCloseable {
 
     public final void serve() throws IOException {
         while (lifecycle.state() != LifecycleState.SHUTDOWN) {
-            JsonObject obj = transport.receive();
+            JsonObject obj;
+            try {
+                obj = transport.receive();
+            } catch (EOFException e) {
+                lifecycle.shutdown();
+                break;
+            }
             JsonRpcMessage msg = JsonRpcCodec.fromJsonObject(obj);
             switch (msg) {
                 case JsonRpcRequest req -> onRequest(req);
                 case JsonRpcNotification note -> onNotification(note);
-                default -> {}
+                default -> {
+                }
             }
         }
     }
@@ -112,6 +120,7 @@ public abstract class McpServer implements AutoCloseable {
 
     @Override
     public void close() throws IOException {
+        lifecycle.shutdown();
         transport.close();
     }
 
