@@ -7,6 +7,7 @@ import com.amannmalik.mcp.jsonrpc.JsonRpcMessage;
 import com.amannmalik.mcp.jsonrpc.JsonRpcNotification;
 import com.amannmalik.mcp.jsonrpc.JsonRpcRequest;
 import com.amannmalik.mcp.jsonrpc.JsonRpcResponse;
+import com.amannmalik.mcp.jsonrpc.RequestId;
 import com.amannmalik.mcp.lifecycle.ClientCapability;
 import com.amannmalik.mcp.lifecycle.InitializeRequest;
 import com.amannmalik.mcp.lifecycle.InitializeResponse;
@@ -15,6 +16,7 @@ import com.amannmalik.mcp.lifecycle.LifecycleState;
 import com.amannmalik.mcp.lifecycle.ProtocolLifecycle;
 import com.amannmalik.mcp.lifecycle.ServerCapability;
 import com.amannmalik.mcp.transport.Transport;
+import com.amannmalik.mcp.util.*;
 import jakarta.json.JsonObject;
 
 import java.io.IOException;
@@ -29,6 +31,9 @@ public abstract class McpServer implements AutoCloseable {
     private final ProtocolLifecycle lifecycle;
     private final Map<String, RequestHandler> requestHandlers = new ConcurrentHashMap<>();
     private final Map<String, NotificationHandler> notificationHandlers = new ConcurrentHashMap<>();
+    private final ProgressTracker progressTracker = new ProgressTracker();
+    private final Map<RequestId, ProgressToken> progressTokens = new ConcurrentHashMap<>();
+    private final CancellationTracker cancellationTracker = new CancellationTracker();
 
     protected McpServer(Set<ServerCapability> capabilities, Transport transport) {
         this.transport = transport;
@@ -37,6 +42,7 @@ public abstract class McpServer implements AutoCloseable {
         registerRequestHandler("initialize", this::initialize);
         registerNotificationHandler("notifications/initialized", this::initialized);
         registerRequestHandler("ping", this::ping);
+        registerNotificationHandler("notifications/cancelled", this::cancelled);
     }
 
     protected final ProtocolLifecycle lifecycle() {
@@ -71,8 +77,17 @@ public abstract class McpServer implements AutoCloseable {
                     "Unknown method: " + req.method(), null)));
             return;
         }
+        ProgressToken token = parseProgressToken(req.params());
+        if (token != null) {
+            progressTracker.register(token);
+            progressTokens.put(req.id(), token);
+        }
+        cancellationTracker.register(req.id());
         JsonRpcMessage resp = handler.handle(req);
-        if (resp != null) send(resp);
+        if (!cancellationTracker.isCancelled(req.id()) && resp != null) {
+            send(resp);
+        }
+        cleanup(req.id());
     }
 
     protected void onNotification(JsonRpcNotification note) throws IOException {
@@ -108,6 +123,37 @@ public abstract class McpServer implements AutoCloseable {
         if (!lifecycle.serverCapabilities().contains(cap)) {
             throw new IllegalStateException("Server capability not declared: " + cap);
         }
+    }
+
+    private ProgressToken parseProgressToken(JsonObject params) {
+        if (params == null || !params.containsKey("_meta")) return null;
+        JsonObject meta = params.getJsonObject("_meta");
+        if (!meta.containsKey("progressToken")) return null;
+        var val = meta.get("progressToken");
+        return switch (val.getValueType()) {
+            case STRING -> new ProgressToken.StringToken(meta.getString("progressToken"));
+            case NUMBER -> new ProgressToken.NumericToken(meta.getJsonNumber("progressToken").longValue());
+            default -> null;
+        };
+    }
+
+    private void cancelled(JsonRpcNotification note) {
+        CancelledNotification cn = CancellationCodec.toCancelledNotification(note.params());
+        cancellationTracker.cancel(cn.requestId(), cn.reason());
+        ProgressToken token = progressTokens.get(cn.requestId());
+        if (token != null) {
+            progressTracker.release(token);
+        }
+    }
+
+    private void cleanup(RequestId id) {
+        ProgressToken token = progressTokens.remove(id);
+        if (token != null) progressTracker.release(token);
+        cancellationTracker.release(id);
+    }
+
+    protected final void sendProgress(ProgressNotification note) throws IOException {
+        send(new JsonRpcNotification("notifications/progress", ProgressCodec.toJsonObject(note)));
     }
 
     @Override
