@@ -13,6 +13,7 @@ import org.eclipse.jetty.server.ServerConnector;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.PrintWriter;
 import java.net.InetSocketAddress;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
@@ -74,6 +75,7 @@ public final class StreamableHttpServer implements Transport {
         final String id;
         final BlockingQueue<JsonObject> inbound = new ArrayBlockingQueue<>(16);
         final BlockingQueue<JsonObject> outbound = new ArrayBlockingQueue<>(16);
+        volatile PrintWriter sse;
 
         Session(String id) {
             this.id = id;
@@ -83,6 +85,7 @@ public final class StreamableHttpServer implements Transport {
     private final class TransportServlet extends HttpServlet {
         @Override
         protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws IOException {
+            if (!checkOrigin(req, resp)) return;
             try (InputStream in = req.getInputStream(); JsonReader r = Json.createReader(in)) {
                 JsonObject obj = r.readObject();
                 Session session = getSession(req, resp, true);
@@ -92,6 +95,30 @@ public final class StreamableHttpServer implements Transport {
                 resp.setStatus(HttpServletResponse.SC_OK);
                 resp.setContentType("application/json");
                 resp.getWriter().write(out.toString());
+            }
+        }
+
+        @Override
+        protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws IOException {
+            if (!checkOrigin(req, resp)) return;
+            Session session = getSession(req, resp, false);
+            if (session == null) return;
+            resp.setStatus(HttpServletResponse.SC_OK);
+            resp.setContentType("text/event-stream");
+            resp.setHeader("Cache-Control", "no-cache");
+            resp.flushBuffer();
+            PrintWriter writer = resp.getWriter();
+            session.sse = writer;
+            new Thread(() -> streamSse(session, writer)).start();
+        }
+
+        @Override
+        protected void doDelete(HttpServletRequest req, HttpServletResponse resp) throws IOException {
+            if (!checkOrigin(req, resp)) return;
+            Session session = getSession(req, resp, false);
+            if (session != null) {
+                sessionRef.set(null);
+                resp.setStatus(HttpServletResponse.SC_OK);
             }
         }
 
@@ -119,6 +146,29 @@ public final class StreamableHttpServer implements Transport {
                 Thread.currentThread().interrupt();
                 throw new RuntimeException(e);
             }
+        }
+
+        private void streamSse(Session session, PrintWriter writer) {
+            try {
+                while (true) {
+                    JsonObject obj = take(session.outbound);
+                    writer.write("data: "+obj.toString()+"\n\n");
+                    writer.flush();
+                }
+            } catch (Exception ignore) {
+            } finally {
+                writer.close();
+                session.sse = null;
+            }
+        }
+
+        private boolean checkOrigin(HttpServletRequest req, HttpServletResponse resp) {
+            String origin = req.getHeader("Origin");
+            if (origin != null && !origin.contains("localhost")) {
+                resp.setStatus(HttpServletResponse.SC_FORBIDDEN);
+                return false;
+            }
+            return true;
         }
     }
 }

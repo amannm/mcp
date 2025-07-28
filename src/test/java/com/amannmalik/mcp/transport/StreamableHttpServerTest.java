@@ -47,4 +47,15 @@ class StreamableHttpServerTest {
             assertEquals(Json.createObjectBuilder().add("pong", true).build(), resp);
         }
     }
+
+    @Test
+    void sseGet() throws Exception {
+        try (StreamableHttpTransport client = new StreamableHttpTransport(endpoint)) {
+            client.listen();
+            JsonObject msg = Json.createObjectBuilder().add("hello", "world").build();
+            server.send(msg);
+            JsonObject recv = client.receive();
+            assertEquals(msg, recv);
+        }
+    }
 }
