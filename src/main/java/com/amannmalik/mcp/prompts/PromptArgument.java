@@ -1,5 +1,7 @@
 package com.amannmalik.mcp.prompts;
 
+import com.amannmalik.mcp.validation.InputSanitizer;
+
 /** Definition of a parameter that can be passed to a prompt template. */
 public record PromptArgument(
         String name,
@@ -8,6 +10,8 @@ public record PromptArgument(
         boolean required
 ) {
     public PromptArgument {
-        if (name == null) throw new IllegalArgumentException("name is required");
+        name = InputSanitizer.requireClean(name);
+        title = title == null ? null : InputSanitizer.requireClean(title);
+        description = description == null ? null : InputSanitizer.requireClean(description);
     }
 }
