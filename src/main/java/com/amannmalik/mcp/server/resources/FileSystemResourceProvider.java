@@ -13,6 +13,7 @@ import java.nio.file.WatchKey;
 import java.nio.file.WatchService;
 import java.util.ArrayList;
 import java.util.List;
+import com.amannmalik.mcp.util.Pagination;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /** Simple ResourceProvider backed by the filesystem. */
@@ -25,7 +26,7 @@ public final class FileSystemResourceProvider implements ResourceProvider {
 
     @Override
     public ResourceList list(String cursor) throws IOException {
-        List<Resource> list = new ArrayList<>();
+        List<Resource> all = new ArrayList<>();
         Files.walk(root).filter(Files::isRegularFile).forEach(p -> {
             String uri = p.toUri().toString();
             String name = p.getFileName().toString();
@@ -37,9 +38,10 @@ public final class FileSystemResourceProvider implements ResourceProvider {
                 size = -1;
             }
             Resource r = new Resource(uri, name, null, null, mime, size < 0 ? null : size, null);
-            list.add(r);
+            all.add(r);
         });
-        return new ResourceList(list, null);
+        Pagination.Page<Resource> page = Pagination.page(all, cursor, 100);
+        return new ResourceList(page.items(), page.nextCursor());
     }
 
     @Override

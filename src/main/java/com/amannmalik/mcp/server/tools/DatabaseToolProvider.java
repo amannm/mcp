@@ -8,6 +8,7 @@ import jakarta.json.JsonValue;
 
 import java.util.List;
 import java.util.Map;
+import com.amannmalik.mcp.util.Pagination;
 
 /** Minimal ToolProvider that returns canned results for SQL queries. */
 public final class DatabaseToolProvider implements ToolProvider {
@@ -26,7 +27,8 @@ public final class DatabaseToolProvider implements ToolProvider {
 
     @Override
     public ToolPage list(String cursor) {
-        return new ToolPage(List.of(tool), null);
+        Pagination.Page<Tool> page = Pagination.page(List.of(tool), cursor, 100);
+        return new ToolPage(page.items(), page.nextCursor());
     }
 
     @Override
