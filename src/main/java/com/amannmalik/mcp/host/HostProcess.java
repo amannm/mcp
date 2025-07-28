@@ -1,6 +1,8 @@
 package com.amannmalik.mcp.host;
 
 import com.amannmalik.mcp.client.McpClient;
+import com.amannmalik.mcp.auth.Principal;
+import com.amannmalik.mcp.security.ConsentManager;
 
 import java.io.IOException;
 import java.util.Collections;
@@ -15,15 +17,20 @@ import java.util.stream.Collectors;
 public final class HostProcess implements AutoCloseable {
     private final Map<String, McpClient> clients = new ConcurrentHashMap<>();
     private final SecurityPolicy policy;
+    private final ConsentManager consents;
+    private final Principal principal;
 
-    public HostProcess(SecurityPolicy policy) {
+    public HostProcess(SecurityPolicy policy, ConsentManager consents, Principal principal) {
         this.policy = policy;
+        this.consents = consents;
+        this.principal = principal;
     }
 
     public void register(String id, McpClient client) throws IOException {
         if (!policy.allow(client)) {
             throw new SecurityException("Client not authorized: " + client.info().name());
         }
+        consents.requireConsent(principal, client.info().name());
         if (clients.putIfAbsent(id, client) != null) {
             throw new IllegalArgumentException("Client already registered: " + id);
         }
@@ -35,6 +42,14 @@ public final class HostProcess implements AutoCloseable {
         if (client != null) {
             client.disconnect();
         }
+    }
+
+    public void grantConsent(String scope) {
+        consents.grant(principal.id(), scope);
+    }
+
+    public void revokeConsent(String scope) {
+        consents.revoke(principal.id(), scope);
     }
 
     public Set<String> clientIds() {

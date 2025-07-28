@@ -2,6 +2,8 @@ package com.amannmalik.mcp.host;
 
 import com.amannmalik.mcp.client.McpClient;
 import com.amannmalik.mcp.lifecycle.ClientInfo;
+import com.amannmalik.mcp.auth.Principal;
+import com.amannmalik.mcp.security.ConsentManager;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
@@ -43,7 +45,10 @@ class HostProcessTest {
     @Test
     void registersAndAggregates() throws IOException {
         SecurityPolicy allowAll = c -> true;
-        HostProcess host = new HostProcess(allowAll);
+        ConsentManager consents = new ConsentManager();
+        Principal principal = new Principal("u", Set.of());
+        HostProcess host = new HostProcess(allowAll, consents, principal);
+        host.grantConsent("fake");
         FakeClient client = new FakeClient();
         host.register("one", client);
         assertTrue(client.connected());
@@ -56,7 +61,22 @@ class HostProcessTest {
     @Test
     void rejectsUnauthorizedClient() {
         SecurityPolicy denyAll = c -> false;
-        HostProcess host = new HostProcess(denyAll);
+        ConsentManager consents = new ConsentManager();
+        Principal principal = new Principal("u", Set.of());
+        HostProcess host = new HostProcess(denyAll, consents, principal);
+        host.grantConsent("fake");
         assertThrows(SecurityException.class, () -> host.register("x", new FakeClient()));
+    }
+
+    @Test
+    void requiresUserConsent() {
+        SecurityPolicy allowAll = c -> true;
+        ConsentManager consents = new ConsentManager();
+        Principal principal = new Principal("u", Set.of());
+        HostProcess host = new HostProcess(allowAll, consents, principal);
+        FakeClient client = new FakeClient();
+        assertThrows(SecurityException.class, () -> host.register("one", client));
+        host.grantConsent("fake");
+        assertDoesNotThrow(() -> host.register("one", client));
     }
 }
