@@ -12,6 +12,30 @@ import java.util.List;
 public final class RootsCodec {
     private RootsCodec() {}
 
+    public static JsonObject toJsonObject(ListRootsRequest req) {
+        return Json.createObjectBuilder().build();
+    }
+
+    public static ListRootsRequest toListRootsRequest(JsonObject obj) {
+        return new ListRootsRequest();
+    }
+
+    public static JsonObject toJsonObject(ListRootsResponse resp) {
+        return toJsonObject(resp.roots());
+    }
+
+    public static ListRootsResponse toListRootsResponse(JsonObject obj) {
+        return new ListRootsResponse(toRoots(obj));
+    }
+
+    public static JsonObject toJsonObject(RootsListChangedNotification n) {
+        return Json.createObjectBuilder().build();
+    }
+
+    public static RootsListChangedNotification toRootsListChangedNotification(JsonObject obj) {
+        return new RootsListChangedNotification();
+    }
+
     public static JsonObject toJsonObject(Root root) {
         JsonObjectBuilder b = Json.createObjectBuilder().add("uri", root.uri());
         if (root.name() != null) b.add("name", root.name());
