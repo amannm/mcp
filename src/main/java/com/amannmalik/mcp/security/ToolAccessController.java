@@ -7,7 +7,7 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 /** Enforces which tools a principal may invoke. */
-public final class ToolAccessController {
+public final class ToolAccessController implements ToolAccessPolicy {
     private final Map<String, Set<String>> permissions = new ConcurrentHashMap<>();
 
     public void allow(String principalId, String tool) {
@@ -20,6 +20,7 @@ public final class ToolAccessController {
         if (set != null) set.remove(tool);
     }
 
+    @Override
     public void requireAllowed(Principal principal, String tool) {
         if (principal == null) throw new IllegalArgumentException("principal required");
         if (tool == null || tool.isBlank()) throw new IllegalArgumentException("tool required");

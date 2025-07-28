@@ -5,27 +5,40 @@ import com.amannmalik.mcp.lifecycle.ServerCapability;
 import com.amannmalik.mcp.server.McpServer;
 import com.amannmalik.mcp.transport.Transport;
 import com.amannmalik.mcp.security.RateLimiter;
+import com.amannmalik.mcp.security.ToolAccessPolicy;
+import com.amannmalik.mcp.auth.Principal;
 import jakarta.json.JsonObject;
 
 import java.util.EnumSet;
+import java.util.Set;
 
 /** McpServer extension providing tool listing and invocation support. */
 public class ToolServer extends McpServer {
     private final ToolProvider provider;
     private final RateLimiter limiter;
+    private final ToolAccessPolicy access;
+    private final Principal principal;
 
-    private ToolServer(ToolProvider provider, Transport transport, RateLimiter limiter) {
+    private static final Principal DEFAULT_PRINCIPAL = new Principal("system", java.util.Set.of());
+
+    private ToolServer(ToolProvider provider, Transport transport, RateLimiter limiter, ToolAccessPolicy access, Principal principal) {
         super(EnumSet.of(ServerCapability.TOOLS), transport);
         this.provider = provider;
         this.limiter = limiter;
+        this.access = access;
+        this.principal = principal;
     }
 
     public static ToolServer create(ToolProvider provider, Transport transport) {
-        return create(provider, transport, new RateLimiter(Integer.MAX_VALUE, 1));
+        return create(provider, transport, new RateLimiter(Integer.MAX_VALUE, 1), ToolAccessPolicy.PERMISSIVE, DEFAULT_PRINCIPAL);
     }
 
     public static ToolServer create(ToolProvider provider, Transport transport, RateLimiter limiter) {
-        ToolServer server = new ToolServer(provider, transport, limiter);
+        return create(provider, transport, limiter, ToolAccessPolicy.PERMISSIVE, DEFAULT_PRINCIPAL);
+    }
+
+    public static ToolServer create(ToolProvider provider, Transport transport, RateLimiter limiter, ToolAccessPolicy access, Principal principal) {
+        ToolServer server = new ToolServer(provider, transport, limiter, access, principal);
         server.registerRequestHandler("tools/list", server::listTools);
         server.registerRequestHandler("tools/call", server::callTool);
         return server;
@@ -52,6 +65,12 @@ public class ToolServer extends McpServer {
         }
         try {
             limiter.requireAllowance(name);
+        } catch (SecurityException e) {
+            return new JsonRpcError(req.id(), new JsonRpcError.ErrorDetail(
+                    JsonRpcErrorCode.INVALID_PARAMS.code(), e.getMessage(), null));
+        }
+        try {
+            access.requireAllowed(principal, name);
         } catch (SecurityException e) {
             return new JsonRpcError(req.id(), new JsonRpcError.ErrorDetail(
                     JsonRpcErrorCode.INVALID_PARAMS.code(), e.getMessage(), null));

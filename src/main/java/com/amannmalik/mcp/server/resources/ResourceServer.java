@@ -4,20 +4,32 @@ import com.amannmalik.mcp.jsonrpc.*;
 import com.amannmalik.mcp.lifecycle.ServerCapability;
 import com.amannmalik.mcp.server.McpServer;
 import com.amannmalik.mcp.transport.Transport;
+import com.amannmalik.mcp.security.ResourceAccessController;
+import com.amannmalik.mcp.auth.Principal;
 import jakarta.json.Json;
 import jakarta.json.JsonArrayBuilder;
 import jakarta.json.JsonObject;
 
 import java.io.IOException;
 import java.util.EnumSet;
+import java.util.Set;
 
 /** McpServer extension that exposes resource operations. */
 public class ResourceServer extends McpServer {
+    private static final Principal DEFAULT_PRINCIPAL = new Principal("system", java.util.Set.of());
     private final ResourceProvider provider;
+    private final ResourceAccessController access;
+    private final Principal principal;
 
     public ResourceServer(ResourceProvider provider, Transport transport) {
+        this(provider, transport, ResourceAccessController.ALLOW_ALL, DEFAULT_PRINCIPAL);
+    }
+
+    public ResourceServer(ResourceProvider provider, Transport transport, ResourceAccessController access, Principal principal) {
         super(EnumSet.of(ServerCapability.RESOURCES), transport);
         this.provider = provider;
+        this.access = access;
+        this.principal = principal;
         registerRequestHandler("resources/list", this::listResources);
         registerRequestHandler("resources/read", this::readResource);
         registerRequestHandler("resources/templates/list", this::listTemplates);
@@ -34,7 +46,12 @@ public class ResourceServer extends McpServer {
                     JsonRpcErrorCode.INTERNAL_ERROR.code(), e.getMessage(), null));
         }
         JsonArrayBuilder arr = Json.createArrayBuilder();
-        for (Resource r : list.resources()) arr.add(ResourcesCodec.toJsonObject(r));
+        for (Resource r : list.resources()) {
+            try {
+                access.requireAllowed(principal, r.annotations());
+                arr.add(ResourcesCodec.toJsonObject(r));
+            } catch (SecurityException ignored) {}
+        }
         var builder = Json.createObjectBuilder().add("resources", arr.build());
         if (list.nextCursor() != null) builder.add("nextCursor", list.nextCursor());
         return new JsonRpcResponse(req.id(), builder.build());
@@ -58,6 +75,12 @@ public class ResourceServer extends McpServer {
             return new JsonRpcError(req.id(), new JsonRpcError.ErrorDetail(
                     JsonRpcErrorCode.INVALID_PARAMS.code(), "unknown resource", null));
         }
+        try {
+            access.requireAllowed(principal, block.annotations());
+        } catch (SecurityException e) {
+            return new JsonRpcError(req.id(), new JsonRpcError.ErrorDetail(
+                    JsonRpcErrorCode.INVALID_PARAMS.code(), e.getMessage(), null));
+        }
         JsonObject result = Json.createObjectBuilder()
                 .add("contents", Json.createArrayBuilder().add(ResourcesCodec.toJsonObject(block)).build())
                 .build();
@@ -67,7 +90,12 @@ public class ResourceServer extends McpServer {
     private JsonRpcMessage listTemplates(JsonRpcRequest req) {
         JsonArrayBuilder arr = Json.createArrayBuilder();
         try {
-            for (ResourceTemplate t : provider.templates()) arr.add(ResourcesCodec.toJsonObject(t));
+            for (ResourceTemplate t : provider.templates()) {
+                try {
+                    access.requireAllowed(principal, t.annotations());
+                    arr.add(ResourcesCodec.toJsonObject(t));
+                } catch (SecurityException ignored) {}
+            }
         } catch (IOException e) {
             return new JsonRpcError(req.id(), new JsonRpcError.ErrorDetail(
                     JsonRpcErrorCode.INTERNAL_ERROR.code(), e.getMessage(), null));
@@ -84,6 +112,13 @@ public class ResourceServer extends McpServer {
         }
         String uri = params.getString("uri");
         try {
+            ResourceBlock block = provider.read(uri);
+            if (block != null) {
+                access.requireAllowed(principal, block.annotations());
+            } else {
+                return new JsonRpcError(req.id(), new JsonRpcError.ErrorDetail(
+                        JsonRpcErrorCode.INVALID_PARAMS.code(), "unknown resource", null));
+            }
             provider.subscribe(uri, update -> {
                 try {
                     var b = Json.createObjectBuilder().add("uri", update.uri());
@@ -92,6 +127,9 @@ public class ResourceServer extends McpServer {
                 } catch (IOException ignored) {}
             });
             return new JsonRpcResponse(req.id(), Json.createObjectBuilder().build());
+        } catch (SecurityException e) {
+            return new JsonRpcError(req.id(), new JsonRpcError.ErrorDetail(
+                    JsonRpcErrorCode.INVALID_PARAMS.code(), e.getMessage(), null));
         } catch (IOException e) {
             return new JsonRpcError(req.id(), new JsonRpcError.ErrorDetail(
                     JsonRpcErrorCode.INTERNAL_ERROR.code(), e.getMessage(), null));
