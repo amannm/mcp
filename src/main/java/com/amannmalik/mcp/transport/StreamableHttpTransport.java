@@ -11,6 +11,7 @@ import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import com.amannmalik.mcp.security.OriginValidator;
+import com.amannmalik.mcp.lifecycle.ProtocolLifecycle;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.ServerConnector;
 import org.eclipse.jetty.ee10.servlet.ServletContextHandler;
@@ -31,6 +32,7 @@ public final class StreamableHttpTransport implements Transport {
     private final Server server;
     private final int port;
     private final OriginValidator originValidator;
+    private static final String PROTOCOL_HEADER = "MCP-Protocol-Version";
     private final BlockingQueue<JsonObject> incoming = new LinkedBlockingQueue<>();
     private final Set<SseClient> sseClients = ConcurrentHashMap.newKeySet();
     private final AtomicReference<String> sessionId = new AtomicReference<>();
@@ -100,6 +102,7 @@ public final class StreamableHttpTransport implements Transport {
 
             String session = sessionId.get();
             String header = req.getHeader("Mcp-Session-Id");
+            String version = req.getHeader(PROTOCOL_HEADER);
             JsonObject obj;
             try (JsonReader reader = Json.createReader(req.getInputStream())) {
                 obj = reader.readObject();
@@ -115,6 +118,9 @@ public final class StreamableHttpTransport implements Transport {
                 return;
             } else if (!session.equals(header)) {
                 resp.sendError(HttpServletResponse.SC_NOT_FOUND);
+                return;
+            } else if (version == null || !version.equals(ProtocolLifecycle.SUPPORTED_VERSION)) {
+                resp.sendError(HttpServletResponse.SC_BAD_REQUEST);
                 return;
             }
 
@@ -147,12 +153,17 @@ public final class StreamableHttpTransport implements Transport {
             }
             String session = sessionId.get();
             String header = req.getHeader("Mcp-Session-Id");
+            String version = req.getHeader(PROTOCOL_HEADER);
             if (session == null) {
                 resp.sendError(HttpServletResponse.SC_BAD_REQUEST);
                 return;
             }
             if (!session.equals(header)) {
                 resp.sendError(HttpServletResponse.SC_NOT_FOUND);
+                return;
+            }
+            if (version == null || !version.equals(ProtocolLifecycle.SUPPORTED_VERSION)) {
+                resp.sendError(HttpServletResponse.SC_BAD_REQUEST);
                 return;
             }
             resp.setStatus(HttpServletResponse.SC_OK);
@@ -193,8 +204,13 @@ public final class StreamableHttpTransport implements Transport {
             }
             String session = sessionId.get();
             String header = req.getHeader("Mcp-Session-Id");
+            String version = req.getHeader(PROTOCOL_HEADER);
             if (session == null || !session.equals(header)) {
                 resp.sendError(HttpServletResponse.SC_NOT_FOUND);
+                return;
+            }
+            if (version == null || !version.equals(ProtocolLifecycle.SUPPORTED_VERSION)) {
+                resp.sendError(HttpServletResponse.SC_BAD_REQUEST);
                 return;
             }
             sessionId.set(null);
