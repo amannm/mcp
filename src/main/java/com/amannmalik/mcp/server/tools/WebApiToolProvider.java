@@ -25,7 +25,7 @@ public final class WebApiToolProvider implements ToolProvider {
                 .add("properties", Json.createObjectBuilder().add("url", Json.createObjectBuilder().add("type", "string")))
                 .add("required", Json.createArrayBuilder().add("url"))
                 .build();
-        this.tool = new Tool("http_get", "HTTP GET", "Fetch URL", schema, null);
+        this.tool = new Tool("http_get", "HTTP GET", "Fetch URL", schema, null, null);
     }
 
     @Override

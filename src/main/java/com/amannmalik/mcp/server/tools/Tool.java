@@ -9,7 +9,8 @@ public record Tool(String name,
                     String title,
                     String description,
                     JsonObject inputSchema,
-                    JsonObject outputSchema) {
+                    JsonObject outputSchema,
+                    ToolAnnotations annotations) {
     public Tool {
         name = InputSanitizer.requireClean(name);
         if (inputSchema == null) {
@@ -17,5 +18,6 @@ public record Tool(String name,
         }
         title = title == null ? null : InputSanitizer.requireClean(title);
         description = description == null ? null : InputSanitizer.requireClean(description);
+        annotations = annotations == null || annotations.audience().isEmpty() && annotations.priority() == null && annotations.lastModified() == null ? null : annotations;
     }
 }
