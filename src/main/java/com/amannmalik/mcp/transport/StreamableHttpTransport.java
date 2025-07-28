@@ -23,21 +23,43 @@ public final class StreamableHttpTransport implements Transport {
     private final URI endpoint;
     private final BlockingQueue<JsonObject> queue = new ArrayBlockingQueue<>(16);
     private volatile InputStream sseStream;
+    private volatile String sessionId;
 
     public StreamableHttpTransport(URI endpoint) {
         this.client = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(5)).build();
         this.endpoint = endpoint;
     }
 
-    @Override
-    public void send(JsonObject message) throws IOException {
-        HttpRequest request = HttpRequest.newBuilder(endpoint)
-                .header("Content-Type", "application/json")
-                .header("Accept", "application/json, text/event-stream")
-                .POST(HttpRequest.BodyPublishers.ofString(message.toString()))
-                .build();
+    public void listen() throws IOException {
+        HttpRequest.Builder builder = HttpRequest.newBuilder(endpoint)
+                .header("Accept", "text/event-stream");
+        if (sessionId != null) builder.header("Mcp-Session-Id", sessionId);
+        HttpRequest request = builder.GET().build();
         try {
             HttpResponse<InputStream> response = client.send(request, HttpResponse.BodyHandlers.ofInputStream());
+            sessionId = response.headers().firstValue("Mcp-Session-Id").orElse(sessionId);
+            String contentType = response.headers().firstValue("Content-Type").orElse("");
+            if (contentType.startsWith("text/event-stream")) {
+                if (sseStream != null) sseStream.close();
+                sseStream = response.body();
+                new Thread(() -> readSse(sseStream)).start();
+            }
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new IOException(e);
+        }
+    }
+
+    @Override
+    public void send(JsonObject message) throws IOException {
+        HttpRequest.Builder builder = HttpRequest.newBuilder(endpoint)
+                .header("Content-Type", "application/json")
+                .header("Accept", "application/json, text/event-stream");
+        if (sessionId != null) builder.header("Mcp-Session-Id", sessionId);
+        HttpRequest request = builder.POST(HttpRequest.BodyPublishers.ofString(message.toString())).build();
+        try {
+            HttpResponse<InputStream> response = client.send(request, HttpResponse.BodyHandlers.ofInputStream());
+            sessionId = response.headers().firstValue("Mcp-Session-Id").orElse(sessionId);
             String contentType = response.headers().firstValue("Content-Type").orElse("");
             if (contentType.startsWith("text/event-stream")) {
                 if (sseStream != null) sseStream.close();
@@ -89,5 +111,6 @@ public final class StreamableHttpTransport implements Transport {
     @Override
     public void close() throws IOException {
         if (sseStream != null) sseStream.close();
+        sessionId = null;
     }
 }

@@ -46,7 +46,22 @@ class StreamableHttpTransportTest {
         }
     }
 
+    @Test
+    void simpleGet() throws Exception {
+        try (StreamableHttpTransport transport = new StreamableHttpTransport(endpoint)) {
+            transport.listen();
+            JsonObject msg = Json.createObjectBuilder().add("hi", 1).build();
+            Handler.push(msg);
+            JsonObject r = transport.receive();
+            assertEquals(msg, r);
+        }
+    }
+
     private static class Handler implements HttpHandler {
+        private static JsonObject message;
+
+        static synchronized void push(JsonObject m) { message = m; }
+
         @Override
         public void handle(HttpExchange exchange) throws IOException {
             if ("POST".equals(exchange.getRequestMethod())) {
@@ -66,7 +81,17 @@ class StreamableHttpTransportTest {
                 }
                 exchange.sendResponseHeaders(202, -1);
             } else {
-                exchange.sendResponseHeaders(405, -1);
+                if ("GET".equals(exchange.getRequestMethod())) {
+                    exchange.getResponseHeaders().add("Content-Type", "text/event-stream");
+                    exchange.sendResponseHeaders(200, 0);
+                    try (OutputStream os = exchange.getResponseBody()) {
+                        if (message != null) {
+                            os.write(("data: " + message.toString() + "\n\n").getBytes(StandardCharsets.UTF_8));
+                        }
+                    }
+                } else {
+                    exchange.sendResponseHeaders(405, -1);
+                }
             }
             exchange.close();
         }
