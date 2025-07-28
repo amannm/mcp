@@ -15,6 +15,8 @@ public final class ServerCommand implements Callable<Integer> {
     @CommandLine.Option(names = {"-c", "--config"}, description = "Config file")
     private Path config;
 
+    private ServerConfig resolved;
+
     @CommandLine.Option(names = "--http", description = "HTTP port")
     private Integer httpPort;
 
@@ -24,10 +26,19 @@ public final class ServerCommand implements Callable<Integer> {
     @CommandLine.Option(names = {"-v", "--verbose"}, description = "Verbose logging")
     private boolean verbose;
 
+    public ServerCommand() {}
+
+    public ServerCommand(ServerConfig config, boolean verbose) {
+        this.resolved = config;
+        this.verbose = verbose;
+    }
+
     @Override
     public Integer call() throws Exception {
         ServerConfig cfg;
-        if (config != null) {
+        if (resolved != null) {
+            cfg = resolved;
+        } else if (config != null) {
             CliConfig loaded = ConfigLoader.load(config);
             if (!(loaded instanceof ServerConfig sc)) throw new IllegalArgumentException("server config expected");
             cfg = sc;

@@ -18,16 +18,27 @@ public final class ClientCommand implements Callable<Integer> {
     @CommandLine.Option(names = {"-c", "--config"}, description = "Config file")
     private Path config;
 
+    private ClientConfig resolved;
+
     @CommandLine.Option(names = "--command", description = "Server command for stdio")
     private String command;
 
     @CommandLine.Option(names = {"-v", "--verbose"}, description = "Verbose logging")
     private boolean verbose;
 
+    public ClientCommand() {}
+
+    public ClientCommand(ClientConfig config, boolean verbose) {
+        this.resolved = config;
+        this.verbose = verbose;
+    }
+
     @Override
     public Integer call() throws Exception {
         ClientConfig cfg;
-        if (config != null) {
+        if (resolved != null) {
+            cfg = resolved;
+        } else if (config != null) {
             CliConfig loaded = ConfigLoader.load(config);
             if (!(loaded instanceof ClientConfig cc)) throw new IllegalArgumentException("client config expected");
             cfg = cc;
