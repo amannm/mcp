@@ -10,7 +10,7 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 /** Enforces audience-based privacy boundaries. */
-public final class PrivacyBoundaryEnforcer {
+public final class PrivacyBoundaryEnforcer implements ResourceAccessController {
     private final Map<String, Set<Audience>> permissions = new ConcurrentHashMap<>();
 
     public void allow(String principalId, Audience audience) {
@@ -23,6 +23,7 @@ public final class PrivacyBoundaryEnforcer {
         if (set != null) set.remove(audience);
     }
 
+    @Override
     public void requireAllowed(Principal principal, ResourceAnnotations ann) {
         if (principal == null) throw new IllegalArgumentException("principal required");
         if (ann == null || ann.audience().isEmpty()) return; // no restriction
