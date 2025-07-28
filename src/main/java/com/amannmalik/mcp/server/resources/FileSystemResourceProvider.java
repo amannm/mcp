@@ -7,8 +7,13 @@ import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardWatchEventKinds;
+import java.nio.file.WatchEvent;
+import java.nio.file.WatchKey;
+import java.nio.file.WatchService;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /** Simple ResourceProvider backed by the filesystem. */
 public final class FileSystemResourceProvider implements ResourceProvider {
@@ -60,7 +65,41 @@ public final class FileSystemResourceProvider implements ResourceProvider {
 
     @Override
     public ResourceSubscription subscribe(String uri, ResourceListener listener) {
-        return () -> {};
+        UriValidator.requireFileUri(uri);
+        Path target = root.resolve(root.relativize(Path.of(URI.create(uri)))).normalize();
+        if (!target.startsWith(root)) {
+            throw new IllegalArgumentException("uri outside of root");
+        }
+        Path dir = target.getParent();
+        try {
+            WatchService ws = dir.getFileSystem().newWatchService();
+            dir.register(ws, StandardWatchEventKinds.ENTRY_MODIFY, StandardWatchEventKinds.ENTRY_CREATE);
+            AtomicBoolean running = new AtomicBoolean(true);
+            Thread t = Thread.startVirtualThread(() -> {
+                try {
+                    while (running.get()) {
+                        WatchKey key = ws.take();
+                        for (WatchEvent<?> e : key.pollEvents()) {
+                            Path changed = dir.resolve((Path) e.context()).normalize();
+                            if (changed.equals(target)) {
+                                listener.updated(new ResourceUpdate(uri, null));
+                            }
+                        }
+                        key.reset();
+                    }
+                } catch (InterruptedException ignored) {
+                } finally {
+                    try { ws.close(); } catch (IOException ignored) {}
+                }
+            });
+            return () -> {
+                running.set(false);
+                t.interrupt();
+                try { ws.close(); } catch (IOException ignored) {}
+            };
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     private static String probeMime(Path p) {
