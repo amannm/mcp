@@ -1,15 +1,30 @@
 package com.amannmalik.mcp;
 
-import com.amannmalik.mcp.cli.ClientCommand;
-import com.amannmalik.mcp.cli.ServerCommand;
+import com.amannmalik.mcp.cli.*;
 import picocli.CommandLine;
 
 import java.util.concurrent.Callable;
+import java.nio.file.Path;
 
-@CommandLine.Command(name = "mcp", subcommands = {ServerCommand.class, ClientCommand.class}, mixinStandardHelpOptions = true)
+@CommandLine.Command(name = "mcp",
+        subcommands = {ServerCommand.class, ClientCommand.class},
+        mixinStandardHelpOptions = true)
 public final class Main implements Callable<Integer> {
+    @CommandLine.Option(names = {"-c", "--config"}, description = "Config file")
+    private Path config;
+
+    @CommandLine.Option(names = {"-v", "--verbose"}, description = "Verbose logging")
+    private boolean verbose;
+
     @Override
-    public Integer call() {
+    public Integer call() throws Exception {
+        if (config != null) {
+            CliConfig cfg = ConfigLoader.load(config);
+            return switch (cfg) {
+                case ServerConfig sc -> new ServerCommand(sc, verbose).call();
+                case ClientConfig cc -> new ClientCommand(cc, verbose).call();
+            };
+        }
         CommandLine.usage(this, System.out);
         return 0;
     }
