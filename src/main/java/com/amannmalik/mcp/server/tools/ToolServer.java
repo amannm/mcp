@@ -6,6 +6,7 @@ import com.amannmalik.mcp.server.McpServer;
 import com.amannmalik.mcp.transport.Transport;
 import com.amannmalik.mcp.security.RateLimiter;
 import jakarta.json.JsonObject;
+import java.io.IOException;
 
 import java.util.EnumSet;
 
@@ -63,5 +64,10 @@ public class ToolServer extends McpServer {
             return new JsonRpcError(req.id(), new JsonRpcError.ErrorDetail(
                     JsonRpcErrorCode.INVALID_PARAMS.code(), e.getMessage(), null));
         }
+    }
+
+    /** Notify clients that the list of tools has changed. */
+    public void listChanged() throws IOException {
+        send(new JsonRpcNotification("notifications/tools/list_changed", null));
     }
 }

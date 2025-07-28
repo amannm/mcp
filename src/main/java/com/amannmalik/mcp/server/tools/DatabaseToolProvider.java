@@ -20,7 +20,7 @@ public final class DatabaseToolProvider implements ToolProvider {
                 .add("properties", Json.createObjectBuilder().add("sql", Json.createObjectBuilder().add("type", "string")))
                 .add("required", Json.createArrayBuilder().add("sql"))
                 .build();
-        this.tool = new Tool("query", "Database Query", "Execute SQL", schema, null);
+        this.tool = new Tool("query", "Database Query", "Execute SQL", schema, null, null);
         this.queries = Map.copyOf(queries);
     }
 

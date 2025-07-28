@@ -16,6 +16,7 @@ public final class ToolCodec {
         if (tool.description() != null) builder.add("description", tool.description());
         builder.add("inputSchema", tool.inputSchema());
         if (tool.outputSchema() != null) builder.add("outputSchema", tool.outputSchema());
+        if (tool.annotations() != null) builder.add("annotations", toJsonObject(tool.annotations()));
         return builder.build();
     }
 
@@ -33,5 +34,17 @@ public final class ToolCodec {
                 .add("isError", result.isError());
         if (result.structuredContent() != null) builder.add("structuredContent", result.structuredContent());
         return builder.build();
+    }
+
+    private static JsonObject toJsonObject(ToolAnnotations ann) {
+        JsonObjectBuilder b = Json.createObjectBuilder();
+        if (!ann.audience().isEmpty()) {
+            var arr = Json.createArrayBuilder();
+            ann.audience().forEach(a -> arr.add(a.name().toLowerCase()));
+            b.add("audience", arr);
+        }
+        if (ann.priority() != null) b.add("priority", ann.priority());
+        if (ann.lastModified() != null) b.add("lastModified", ann.lastModified().toString());
+        return b.build();
     }
 }
