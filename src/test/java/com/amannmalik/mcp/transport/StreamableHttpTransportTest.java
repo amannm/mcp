@@ -16,10 +16,10 @@ import java.util.concurrent.TimeUnit;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-class HttpTransportTest {
+class StreamableHttpTransportTest {
     @Test
     void roundTrip() throws Exception {
-        HttpTransport transport = new HttpTransport();
+        StreamableHttpTransport transport = new StreamableHttpTransport();
         try {
             JsonObject msg = Json.createObjectBuilder().add("ping", true).build();
 
@@ -50,7 +50,7 @@ class HttpTransportTest {
 
     @Test
     void sse() throws Exception {
-        HttpTransport transport = new HttpTransport();
+        StreamableHttpTransport transport = new StreamableHttpTransport();
         try {
             JsonObject msg = Json.createObjectBuilder().add("hello", "world").build();
 
@@ -88,7 +88,7 @@ class HttpTransportTest {
 
     @Test
     void invalidOriginRejected() throws Exception {
-        HttpTransport transport = new HttpTransport();
+        StreamableHttpTransport transport = new StreamableHttpTransport();
         try {
             HttpRequest req = HttpRequest.newBuilder()
                     .uri(URI.create("http://localhost:" + transport.port() + "/"))

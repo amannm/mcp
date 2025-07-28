@@ -25,7 +25,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.LinkedBlockingQueue;
 
 /** Jetty-based HTTP transport with basic SSE support. */
-public final class HttpTransport implements Transport {
+public final class StreamableHttpTransport implements Transport {
     private final Server server;
     private final int port;
     private final OriginValidator originValidator;
@@ -33,7 +33,7 @@ public final class HttpTransport implements Transport {
     private final BlockingQueue<JsonObject> outgoing = new LinkedBlockingQueue<>();
     private final Set<SseClient> sseClients = ConcurrentHashMap.newKeySet();
 
-    public HttpTransport(int port, OriginValidator validator) throws Exception {
+    public StreamableHttpTransport(int port, OriginValidator validator) throws Exception {
         server = new Server(new InetSocketAddress("127.0.0.1", port));
         ServletContextHandler ctx = new ServletContextHandler();
         ctx.addServlet(new ServletHolder(new McpServlet()), "/");
@@ -43,11 +43,11 @@ public final class HttpTransport implements Transport {
         this.originValidator = validator;
     }
 
-    public HttpTransport(int port) throws Exception {
+    public StreamableHttpTransport(int port) throws Exception {
         this(port, new OriginValidator(Set.of("http://localhost", "http://127.0.0.1")));
     }
 
-    public HttpTransport() throws Exception {
+    public StreamableHttpTransport() throws Exception {
         this(0);
     }
 

@@ -2,7 +2,7 @@ package com.amannmalik.mcp.cli;
 
 import com.amannmalik.mcp.server.McpServer;
 import com.amannmalik.mcp.server.SimpleServer;
-import com.amannmalik.mcp.transport.HttpTransport;
+import com.amannmalik.mcp.transport.StreamableHttpTransport;
 import com.amannmalik.mcp.transport.StdioTransport;
 import com.amannmalik.mcp.transport.Transport;
 import picocli.CommandLine;
@@ -42,7 +42,7 @@ public final class ServerCommand implements Callable<Integer> {
         switch (cfg.transport()) {
             case STDIO -> t = new StdioTransport(System.in, System.out);
             case HTTP -> {
-                HttpTransport ht = new HttpTransport(cfg.port());
+                StreamableHttpTransport ht = new StreamableHttpTransport(cfg.port());
                 if (verbose) System.err.println("Listening on http://127.0.0.1:" + ht.port());
                 t = ht;
             }
