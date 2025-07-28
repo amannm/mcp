@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import com.amannmalik.mcp.util.Pagination;
 
 /** Simple PromptProvider backed by in-memory templates. */
 public final class InMemoryPromptProvider implements PromptProvider {
@@ -15,11 +16,12 @@ public final class InMemoryPromptProvider implements PromptProvider {
 
     @Override
     public PromptPage list(String cursor) {
-        List<Prompt> list = new ArrayList<>();
+        List<Prompt> all = new ArrayList<>();
         for (PromptTemplate t : templates.values()) {
-            list.add(t.prompt());
+            all.add(t.prompt());
         }
-        return new PromptPage(list, null);
+        Pagination.Page<Prompt> page = Pagination.page(all, cursor, 100);
+        return new PromptPage(page.items(), page.nextCursor());
     }
 
     @Override

@@ -12,6 +12,7 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.util.List;
+import com.amannmalik.mcp.util.Pagination;
 
 /** Minimal ToolProvider performing HTTP GET requests. */
 public final class WebApiToolProvider implements ToolProvider {
@@ -29,7 +30,8 @@ public final class WebApiToolProvider implements ToolProvider {
 
     @Override
     public ToolPage list(String cursor) {
-        return new ToolPage(List.of(tool), null);
+        Pagination.Page<Tool> page = Pagination.page(List.of(tool), cursor, 100);
+        return new ToolPage(page.items(), page.nextCursor());
     }
 
     @Override

@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
+import com.amannmalik.mcp.util.Pagination;
 
 public final class InMemoryResourceProvider implements ResourceProvider {
     private final List<Resource> resources;
@@ -19,7 +20,8 @@ public final class InMemoryResourceProvider implements ResourceProvider {
 
     @Override
     public ResourceList list(String cursor) {
-        return new ResourceList(resources, null);
+        Pagination.Page<Resource> page = Pagination.page(resources, cursor, 100);
+        return new ResourceList(page.items(), page.nextCursor());
     }
 
     @Override
