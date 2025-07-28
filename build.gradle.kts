@@ -17,6 +17,7 @@ val jmhVersion by extra("1.37")
 val slf4jVersion by extra("2.0.16")
 val jettyVersion by extra("12.0.9")
 val jakartaServletVersion by extra("6.1.0")
+val snakeyamlVersion by extra("2.7")
 
 repositories {
     mavenLocal()
@@ -31,6 +32,7 @@ dependencies {
     implementation("org.eclipse.jetty.ee10:jetty-ee10-servlet:$jettyVersion")
     implementation("org.eclipse.jetty:jetty-util:$jettyVersion")
     implementation("jakarta.servlet:jakarta.servlet-api:$jakartaServletVersion")
+    implementation("org.snakeyaml:snakeyaml-engine:$snakeyamlVersion")
     testImplementation("org.junit.jupiter:junit-jupiter:$junitVersion")
     jmh("org.openjdk.jmh:jmh-core:$jmhVersion")
     jmh("org.openjdk.jmh:jmh-generator-annprocess:$jmhVersion")
