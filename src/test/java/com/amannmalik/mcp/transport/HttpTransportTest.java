@@ -85,4 +85,22 @@ class HttpTransportTest {
             transport.close();
         }
     }
+
+    @Test
+    void invalidOriginRejected() throws Exception {
+        HttpTransport transport = new HttpTransport();
+        try {
+            HttpRequest req = HttpRequest.newBuilder()
+                    .uri(URI.create("http://localhost:" + transport.port() + "/"))
+                    .header("Origin", "http://evil.com")
+                    .header("Accept", "application/json")
+                    .POST(HttpRequest.BodyPublishers.ofString("{}"))
+                    .build();
+            HttpClient client = HttpClient.newHttpClient();
+            HttpResponse<String> resp = client.send(req, HttpResponse.BodyHandlers.ofString());
+            assertEquals(403, resp.statusCode());
+        } finally {
+            transport.close();
+        }
+    }
 }
