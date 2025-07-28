@@ -10,6 +10,7 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import com.amannmalik.mcp.security.OriginValidator;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.ServerConnector;
 import org.eclipse.jetty.ee10.servlet.ServletContextHandler;
@@ -27,17 +28,23 @@ import java.util.concurrent.LinkedBlockingQueue;
 public final class HttpTransport implements Transport {
     private final Server server;
     private final int port;
+    private final OriginValidator originValidator;
     private final BlockingQueue<JsonObject> incoming = new LinkedBlockingQueue<>();
     private final BlockingQueue<JsonObject> outgoing = new LinkedBlockingQueue<>();
     private final Set<SseClient> sseClients = ConcurrentHashMap.newKeySet();
 
-    public HttpTransport(int port) throws Exception {
+    public HttpTransport(int port, OriginValidator validator) throws Exception {
         server = new Server(new InetSocketAddress("127.0.0.1", port));
         ServletContextHandler ctx = new ServletContextHandler();
         ctx.addServlet(new ServletHolder(new McpServlet()), "/");
         server.setHandler(ctx);
         server.start();
         this.port = ((ServerConnector) server.getConnectors()[0]).getLocalPort();
+        this.originValidator = validator;
+    }
+
+    public HttpTransport(int port) throws Exception {
+        this(port, new OriginValidator(Set.of("http://localhost", "http://127.0.0.1")));
     }
 
     public HttpTransport() throws Exception {
@@ -76,6 +83,10 @@ public final class HttpTransport implements Transport {
     private class McpServlet extends HttpServlet {
         @Override
         protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+            if (!originValidator.isValid(req.getHeader("Origin"))) {
+                resp.sendError(HttpServletResponse.SC_FORBIDDEN);
+                return;
+            }
             try (JsonReader reader = Json.createReader(req.getInputStream())) {
                 JsonObject obj = reader.readObject();
                 incoming.put(obj);
@@ -99,6 +110,10 @@ public final class HttpTransport implements Transport {
 
         @Override
         protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws IOException {
+            if (!originValidator.isValid(req.getHeader("Origin"))) {
+                resp.sendError(HttpServletResponse.SC_FORBIDDEN);
+                return;
+            }
             resp.setStatus(HttpServletResponse.SC_OK);
             resp.setContentType("text/event-stream;charset=UTF-8");
             resp.setHeader("Cache-Control", "no-cache");
