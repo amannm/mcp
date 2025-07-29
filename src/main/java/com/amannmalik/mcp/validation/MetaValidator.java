@@ -22,7 +22,14 @@ public final class MetaValidator {
         String prefix = slash >= 0 ? key.substring(0, slash) : null;
         String name = slash >= 0 ? key.substring(slash + 1) : key;
 
-        if (prefix != null && !prefix.isEmpty()) {
+        if (slash == 0) {
+            throw new IllegalArgumentException("_meta prefix must not be empty: " + key);
+        }
+        if (slash >= 0 && key.indexOf('/', slash + 1) >= 0) {
+            throw new IllegalArgumentException("_meta key may contain at most one '/' character: " + key);
+        }
+
+        if (prefix != null) {
             for (String label : prefix.split("\\.")) {
                 if (!LABEL.matcher(label).matches()) {
                     throw new IllegalArgumentException("Invalid _meta prefix: " + key);
