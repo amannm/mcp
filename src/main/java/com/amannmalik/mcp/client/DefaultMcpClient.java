@@ -90,6 +90,7 @@ public final class DefaultMcpClient implements McpClient {
         return instructions == null ? "" : instructions;
     }
 
+    @Override
     public JsonRpcMessage request(String method, JsonObject params) throws IOException {
         if (!connected) throw new IllegalStateException("not connected");
         RequestId reqId = new RequestId.NumericId(id.getAndIncrement());
@@ -117,6 +118,7 @@ public final class DefaultMcpClient implements McpClient {
         }
     }
 
+    @Override
     public void notify(String method, JsonObject params) throws IOException {
         if (!connected) throw new IllegalStateException("not connected");
         JsonRpcNotification notification = new JsonRpcNotification(method, params);
