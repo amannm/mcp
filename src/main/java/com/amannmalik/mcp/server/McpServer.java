@@ -7,6 +7,8 @@ import com.amannmalik.mcp.client.elicitation.ElicitationResponse;
 import com.amannmalik.mcp.client.roots.ListRootsRequest;
 import com.amannmalik.mcp.client.roots.Root;
 import com.amannmalik.mcp.client.roots.RootsCodec;
+import com.amannmalik.mcp.client.roots.RootsListener;
+import com.amannmalik.mcp.client.roots.RootsSubscription;
 import com.amannmalik.mcp.client.sampling.CreateMessageRequest;
 import com.amannmalik.mcp.client.sampling.CreateMessageResponse;
 import com.amannmalik.mcp.client.sampling.SamplingCodec;
@@ -89,6 +91,7 @@ import java.io.IOException;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
@@ -112,6 +115,7 @@ public final class McpServer implements AutoCloseable {
     private ResourceListSubscription resourceListSubscription;
     private ToolListSubscription toolListSubscription;
     private PromptsSubscription promptsSubscription;
+    private final List<RootsListener> rootsListeners = new CopyOnWriteArrayList<>();
     private final ResourceAccessController resourceAccess;
     private final Principal principal;
     private volatile LoggingLevel logLevel = LoggingLevel.INFO;
@@ -196,6 +200,7 @@ public final class McpServer implements AutoCloseable {
         registerNotificationHandler("notifications/initialized", this::initialized);
         registerRequestHandler("ping", this::ping);
         registerNotificationHandler("notifications/cancelled", this::cancelled);
+        registerNotificationHandler("notifications/roots/list_changed", n -> rootsListChanged());
 
         registerRequestHandler("resources/list", this::listResources);
         registerRequestHandler("resources/read", this::readResource);
@@ -704,6 +709,15 @@ public final class McpServer implements AutoCloseable {
             return RootsCodec.toRoots(resp.result());
         }
         throw new IOException(((JsonRpcError) msg).error().message());
+    }
+
+    public RootsSubscription subscribeRoots(RootsListener listener) {
+        rootsListeners.add(listener);
+        return () -> rootsListeners.remove(listener);
+    }
+
+    private void rootsListChanged() {
+        rootsListeners.forEach(RootsListener::listChanged);
     }
 
     public ElicitationResponse elicit(ElicitationRequest req) throws IOException {
