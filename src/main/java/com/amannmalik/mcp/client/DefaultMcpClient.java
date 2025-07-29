@@ -3,6 +3,7 @@ package com.amannmalik.mcp.client;
 import com.amannmalik.mcp.jsonrpc.*;
 import com.amannmalik.mcp.lifecycle.*;
 import com.amannmalik.mcp.transport.Transport;
+import com.amannmalik.mcp.client.roots.*;
 import jakarta.json.JsonObject;
 
 import java.util.Map;
@@ -19,6 +20,8 @@ public final class DefaultMcpClient implements McpClient {
     private final ClientInfo info;
     private final Set<ClientCapability> capabilities;
     private final Transport transport;
+    private final RootsProvider roots;
+    private RootsSubscription rootsSub;
     private final AtomicLong id = new AtomicLong(1);
     private final Map<RequestId, CompletableFuture<JsonRpcMessage>> pending = new ConcurrentHashMap<>();
     private Thread reader;
@@ -26,10 +29,20 @@ public final class DefaultMcpClient implements McpClient {
     private Set<ServerCapability> serverCapabilities = Set.of();
     private String instructions;
 
-    public DefaultMcpClient(ClientInfo info, Set<ClientCapability> capabilities, Transport transport) {
+    public DefaultMcpClient(ClientInfo info,
+                            Set<ClientCapability> capabilities,
+                            Transport transport) {
+        this(info, capabilities, transport, null);
+    }
+
+    public DefaultMcpClient(ClientInfo info,
+                            Set<ClientCapability> capabilities,
+                            Transport transport,
+                            RootsProvider roots) {
         this.info = info;
         this.capabilities = capabilities.isEmpty() ? Set.of() : EnumSet.copyOf(capabilities);
         this.transport = transport;
+        this.roots = roots;
     }
 
     @Override
@@ -64,6 +77,16 @@ public final class DefaultMcpClient implements McpClient {
         JsonRpcNotification note = new JsonRpcNotification("notifications/initialized", null);
         transport.send(JsonRpcCodec.toJsonObject(note));
         connected = true;
+        if (roots != null) {
+            rootsSub = roots.subscribe(() -> {
+                if (connected) {
+                    try {
+                        notify("notifications/roots/list_changed",
+                                RootsCodec.toJsonObject(new RootsListChangedNotification()));
+                    } catch (IOException ignore) {}
+                }
+            });
+        }
         reader = new Thread(this::readLoop);
         reader.setDaemon(true);
         reader.start();
@@ -73,6 +96,13 @@ public final class DefaultMcpClient implements McpClient {
     public synchronized void disconnect() throws IOException {
         if (!connected) return;
         connected = false;
+        if (rootsSub != null) {
+            rootsSub.close();
+            rootsSub = null;
+        }
+        if (roots != null) {
+            roots.close();
+        }
         transport.close();
         if (reader != null) {
             try { reader.join(100); } catch (InterruptedException ignore) { Thread.currentThread().interrupt(); }
@@ -139,6 +169,7 @@ public final class DefaultMcpClient implements McpClient {
                 break;
             }
             switch (msg) {
+                case JsonRpcRequest req -> handleRequest(req);
                 case JsonRpcResponse resp -> {
                     CompletableFuture<JsonRpcMessage> f = pending.remove(resp.id());
                     if (f != null) f.complete(resp);
@@ -151,6 +182,32 @@ public final class DefaultMcpClient implements McpClient {
                     // ignore notifications
                 }
             }
+        }
+    }
+
+    private void handleRequest(JsonRpcRequest req) {
+        try {
+            if ("roots/list".equals(req.method())) {
+                if (roots == null) {
+                    JsonRpcError err = new JsonRpcError(req.id(), new JsonRpcError.ErrorDetail(
+                            JsonRpcErrorCode.METHOD_NOT_FOUND.code(), "Roots not supported", null));
+                    transport.send(JsonRpcCodec.toJsonObject(err));
+                    return;
+                }
+                ListRootsResponse resp = new ListRootsResponse(roots.list());
+                JsonRpcResponse r = new JsonRpcResponse(req.id(), RootsCodec.toJsonObject(resp));
+                transport.send(JsonRpcCodec.toJsonObject(r));
+                return;
+            }
+            JsonRpcError err = new JsonRpcError(req.id(), new JsonRpcError.ErrorDetail(
+                    JsonRpcErrorCode.METHOD_NOT_FOUND.code(), "Unknown method: " + req.method(), null));
+            transport.send(JsonRpcCodec.toJsonObject(err));
+        } catch (Exception e) {
+            try {
+                JsonRpcError err = new JsonRpcError(req.id(), new JsonRpcError.ErrorDetail(
+                        JsonRpcErrorCode.INTERNAL_ERROR.code(), e.getMessage(), null));
+                transport.send(JsonRpcCodec.toJsonObject(err));
+            } catch (IOException ignore) {}
         }
     }
 }
