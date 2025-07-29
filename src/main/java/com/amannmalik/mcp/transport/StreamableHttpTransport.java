@@ -251,7 +251,7 @@ public final class StreamableHttpTransport implements Transport {
             resp.setHeader(PROTOCOL_HEADER, protocolVersion);
             resp.flushBuffer();
             AsyncContext ac = req.startAsync();
-            // Keep SSE connections open until explicitly closed
+
             ac.setTimeout(0);
 
             String lastIdHeader = req.getHeader("Last-Event-ID");
