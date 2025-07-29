@@ -1,24 +1,45 @@
 package com.amannmalik.mcp.client;
 
-import com.amannmalik.mcp.jsonrpc.*;
-import com.amannmalik.mcp.lifecycle.*;
+import com.amannmalik.mcp.client.elicitation.ElicitationCodec;
+import com.amannmalik.mcp.client.elicitation.ElicitationProvider;
+import com.amannmalik.mcp.client.elicitation.ElicitationRequest;
+import com.amannmalik.mcp.client.elicitation.ElicitationResponse;
+import com.amannmalik.mcp.client.roots.RootsCodec;
+import com.amannmalik.mcp.client.roots.RootsProvider;
+import com.amannmalik.mcp.client.roots.RootsSubscription;
+import com.amannmalik.mcp.client.sampling.CreateMessageRequest;
+import com.amannmalik.mcp.client.sampling.CreateMessageResponse;
+import com.amannmalik.mcp.client.sampling.SamplingCodec;
+import com.amannmalik.mcp.client.sampling.SamplingProvider;
+import com.amannmalik.mcp.jsonrpc.JsonRpcCodec;
+import com.amannmalik.mcp.jsonrpc.JsonRpcError;
+import com.amannmalik.mcp.jsonrpc.JsonRpcErrorCode;
+import com.amannmalik.mcp.jsonrpc.JsonRpcMessage;
+import com.amannmalik.mcp.jsonrpc.JsonRpcNotification;
+import com.amannmalik.mcp.jsonrpc.JsonRpcRequest;
+import com.amannmalik.mcp.jsonrpc.JsonRpcResponse;
+import com.amannmalik.mcp.jsonrpc.RequestId;
+import com.amannmalik.mcp.lifecycle.Capabilities;
+import com.amannmalik.mcp.lifecycle.ClientCapability;
+import com.amannmalik.mcp.lifecycle.ClientInfo;
+import com.amannmalik.mcp.lifecycle.InitializeRequest;
+import com.amannmalik.mcp.lifecycle.InitializeResponse;
+import com.amannmalik.mcp.lifecycle.LifecycleCodec;
+import com.amannmalik.mcp.lifecycle.ProtocolLifecycle;
+import com.amannmalik.mcp.lifecycle.ServerCapability;
+import com.amannmalik.mcp.lifecycle.UnsupportedProtocolVersionException;
 import com.amannmalik.mcp.ping.PingCodec;
 import com.amannmalik.mcp.ping.PingResponse;
 import com.amannmalik.mcp.transport.Transport;
-import com.amannmalik.mcp.client.sampling.*;
-import com.amannmalik.mcp.client.roots.*;
-import com.amannmalik.mcp.client.elicitation.*;
-
 import jakarta.json.JsonObject;
-
-import java.util.Map;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ExecutionException;
 
 import java.io.IOException;
 import java.util.EnumSet;
+import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicLong;
 
 public final class DefaultMcpClient implements McpClient {
@@ -37,13 +58,8 @@ public final class DefaultMcpClient implements McpClient {
     private String instructions;
 
     public DefaultMcpClient(ClientInfo info, Set<ClientCapability> capabilities, Transport transport) {
-        this(info, capabilities, transport, null, null);
+        this(info, capabilities, transport, null, null, null);
     }
-
-    public DefaultMcpClient(ClientInfo info, Set<ClientCapability> capabilities, Transport transport, SamplingProvider sampling) {
-        this(info, capabilities, transport, sampling, null);
-    }
-
 
     public DefaultMcpClient(ClientInfo info,
                             Set<ClientCapability> capabilities,
@@ -96,7 +112,8 @@ public final class DefaultMcpClient implements McpClient {
                 rootsSubscription = roots.subscribe(() -> {
                     try {
                         notify("notifications/roots/list_changed", null);
-                    } catch (IOException ignore) {}
+                    } catch (IOException ignore) {
+                    }
                 });
             } catch (Exception e) {
                 throw new IOException(e);
@@ -117,7 +134,11 @@ public final class DefaultMcpClient implements McpClient {
             rootsSubscription = null;
         }
         if (reader != null) {
-            try { reader.join(100); } catch (InterruptedException ignore) { Thread.currentThread().interrupt(); }
+            try {
+                reader.join(100);
+            } catch (InterruptedException ignore) {
+                Thread.currentThread().interrupt();
+            }
             reader = null;
         }
     }
@@ -131,7 +152,7 @@ public final class DefaultMcpClient implements McpClient {
     public String context() {
         return instructions == null ? "" : instructions;
     }
-    
+
     public PingResponse ping() throws IOException {
         if (!connected) throw new IllegalStateException("not connected");
         RequestId reqId = new RequestId.NumericId(id.getAndIncrement());
@@ -232,7 +253,7 @@ public final class DefaultMcpClient implements McpClient {
                     }
                 }
                 default -> {
-                    
+
 
                 }
             }
