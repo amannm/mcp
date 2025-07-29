@@ -1,16 +1,22 @@
 package com.amannmalik.mcp.cli;
 
+import com.amannmalik.mcp.auth.Principal;
 import com.amannmalik.mcp.client.DefaultMcpClient;
 import com.amannmalik.mcp.lifecycle.ClientCapability;
 import com.amannmalik.mcp.lifecycle.ClientInfo;
-import com.amannmalik.mcp.security.*;
-import com.amannmalik.mcp.auth.Principal;
+import com.amannmalik.mcp.security.ConsentManager;
+import com.amannmalik.mcp.security.HostProcess;
+import com.amannmalik.mcp.security.SecurityPolicy;
+import com.amannmalik.mcp.security.ToolAccessController;
 import com.amannmalik.mcp.transport.StdioTransport;
 import picocli.CommandLine;
 
-import java.io.IOException;
 import java.nio.file.Path;
-import java.util.*;
+import java.util.EnumSet;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.Callable;
 
 @CommandLine.Command(name = "host", description = "Run MCP host", mixinStandardHelpOptions = true)
@@ -26,7 +32,8 @@ public final class HostCommand implements Callable<Integer> {
     @CommandLine.Option(names = "--client", description = "Client as id:command", split = ",")
     private List<String> clientSpecs;
 
-    public HostCommand() {}
+    public HostCommand() {
+    }
 
     public HostCommand(HostConfig config, boolean verbose) {
         this.resolved = config;
@@ -64,7 +71,8 @@ public final class HostCommand implements Callable<Integer> {
             for (var entry : cfg.clients().entrySet()) {
                 host.grantConsent(entry.getKey());
                 var pb = new ProcessBuilder(entry.getValue().split(" "));
-                StdioTransport t = new StdioTransport(pb, verbose ? System.err::println : s -> {});
+                StdioTransport t = new StdioTransport(pb, verbose ? System.err::println : s -> {
+                });
                 DefaultMcpClient client = new DefaultMcpClient(
                         new ClientInfo(entry.getKey(), entry.getKey(), "0"),
                         EnumSet.noneOf(ClientCapability.class),

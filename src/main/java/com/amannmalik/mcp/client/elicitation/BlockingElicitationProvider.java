@@ -8,7 +8,7 @@ import java.util.concurrent.TimeUnit;
 public final class BlockingElicitationProvider implements ElicitationProvider {
     private final BlockingQueue<ElicitationResponse> responses = new LinkedBlockingQueue<>();
 
-    
+
     public void respond(ElicitationResponse response) {
         if (response == null) throw new IllegalArgumentException("response is required");
         responses.offer(response);

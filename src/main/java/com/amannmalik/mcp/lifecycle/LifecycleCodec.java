@@ -2,14 +2,14 @@ package com.amannmalik.mcp.lifecycle;
 
 import jakarta.json.Json;
 import jakarta.json.JsonObject;
-import jakarta.json.JsonValue;
 
 import java.util.EnumSet;
 import java.util.Set;
 
 
 public final class LifecycleCodec {
-    private LifecycleCodec() {}
+    private LifecycleCodec() {
+    }
 
     public static JsonObject toJsonObject(InitializeRequest req) {
         var caps = Json.createObjectBuilder();
@@ -39,7 +39,8 @@ public final class LifecycleCodec {
             capsObj.forEach((k, v) -> {
                 try {
                     client.add(ClientCapability.valueOf(k.toUpperCase()));
-                } catch (IllegalArgumentException ignore) {}
+                } catch (IllegalArgumentException ignore) {
+                }
             });
         }
         Set<ServerCapability> server = EnumSet.noneOf(ServerCapability.class);
@@ -64,7 +65,8 @@ public final class LifecycleCodec {
                 case PROMPTS -> b.add("listChanged", true);
                 case RESOURCES -> b.add("subscribe", true).add("listChanged", true);
                 case TOOLS -> b.add("listChanged", true);
-                default -> {}
+                default -> {
+                }
             }
             server.add(c.name().toLowerCase(), b.build());
         }
@@ -91,7 +93,8 @@ public final class LifecycleCodec {
             capsObj.forEach((k, v) -> {
                 try {
                     server.add(ServerCapability.valueOf(k.toUpperCase()));
-                } catch (IllegalArgumentException ignore) {}
+                } catch (IllegalArgumentException ignore) {
+                }
             });
         }
         Capabilities caps = new Capabilities(

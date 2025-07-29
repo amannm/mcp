@@ -6,7 +6,8 @@ import java.util.regex.Pattern;
 
 
 public final class MetaValidator {
-    private MetaValidator() {}
+    private MetaValidator() {
+    }
 
     private static final Pattern LABEL =
             Pattern.compile("[A-Za-z](?:[A-Za-z0-9-]*[A-Za-z0-9])?");

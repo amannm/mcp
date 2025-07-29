@@ -14,7 +14,8 @@ import java.util.Set;
  * properties are allowed.
  */
 public final class ElicitationSchemaValidator {
-    private ElicitationSchemaValidator() {}
+    private ElicitationSchemaValidator() {
+    }
 
     public static void requireValid(JsonObject schema) {
         if (schema == null) throw new IllegalArgumentException("schema required");
@@ -75,7 +76,8 @@ public final class ElicitationSchemaValidator {
         }
         if (prop.containsKey("format")) {
             switch (prop.getString("format")) {
-                case "email", "uri", "date", "date-time" -> {}
+                case "email", "uri", "date", "date-time" -> {
+                }
                 default -> throw new IllegalArgumentException("invalid format for " + name);
             }
         }

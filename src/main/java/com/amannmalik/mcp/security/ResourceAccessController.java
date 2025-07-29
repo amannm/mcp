@@ -7,5 +7,6 @@ import com.amannmalik.mcp.server.resources.ResourceAnnotations;
 public interface ResourceAccessController {
     void requireAllowed(Principal principal, ResourceAnnotations annotations);
 
-    ResourceAccessController ALLOW_ALL = (p, a) -> {};
+    ResourceAccessController ALLOW_ALL = (p, a) -> {
+    };
 }

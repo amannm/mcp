@@ -1,8 +1,9 @@
 package com.amannmalik.mcp.client;
 
-import com.amannmalik.mcp.lifecycle.ClientInfo;
 import com.amannmalik.mcp.jsonrpc.JsonRpcMessage;
+import com.amannmalik.mcp.lifecycle.ClientInfo;
 import jakarta.json.JsonObject;
+
 import java.io.IOException;
 
 
@@ -15,7 +16,7 @@ public interface McpClient extends AutoCloseable {
 
     boolean connected();
 
-    
+
     String context();
 
     JsonRpcMessage request(String method, JsonObject params) throws IOException;

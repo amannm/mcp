@@ -9,7 +9,7 @@ public final class ProgressTracker {
     private final Set<ProgressToken> active = ConcurrentHashMap.newKeySet();
     private final Map<ProgressToken, Double> progress = new ConcurrentHashMap<>();
 
-    
+
     public void register(ProgressToken token) {
         if (!active.add(token)) {
             throw new IllegalArgumentException("Duplicate token: " + token);
@@ -17,18 +17,18 @@ public final class ProgressTracker {
         progress.put(token, Double.NEGATIVE_INFINITY);
     }
 
-    
+
     public void release(ProgressToken token) {
         active.remove(token);
         progress.remove(token);
     }
 
-    
+
     public boolean isActive(ProgressToken token) {
         return active.contains(token);
     }
 
-    
+
     public void update(ProgressNotification note) {
         ProgressToken token = note.token();
         if (!active.contains(token)) {

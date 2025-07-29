@@ -4,11 +4,11 @@ import com.amannmalik.mcp.jsonrpc.JsonRpcRequest;
 import com.amannmalik.mcp.jsonrpc.JsonRpcResponse;
 import com.amannmalik.mcp.jsonrpc.RequestId;
 import jakarta.json.Json;
-import jakarta.json.JsonObject;
 
 
 public final class PingCodec {
-    private PingCodec() {}
+    private PingCodec() {
+    }
 
     public static JsonRpcRequest toRequest(RequestId id) {
         return new JsonRpcRequest(id, "ping", null);

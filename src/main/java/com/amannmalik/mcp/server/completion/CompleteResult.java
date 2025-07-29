@@ -8,7 +8,7 @@ public record CompleteResult(Completion completion) {
         if (completion == null) throw new IllegalArgumentException("completion required");
     }
 
-    
+
     public record Completion(List<String> values, Integer total, Boolean hasMore) {
         public Completion {
             values = values == null ? List.of() : List.copyOf(values);

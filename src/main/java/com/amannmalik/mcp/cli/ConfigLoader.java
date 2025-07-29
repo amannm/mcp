@@ -13,7 +13,8 @@ import java.nio.file.Path;
 import java.util.Map;
 
 public final class ConfigLoader {
-    private ConfigLoader() {}
+    private ConfigLoader() {
+    }
 
     public static CliConfig load(Path path) throws IOException {
         String name = path.getFileName().toString().toLowerCase();
@@ -26,7 +27,7 @@ public final class ConfigLoader {
             if (name.endsWith(".yaml") || name.endsWith(".yml")) {
                 Load loader = new Load(LoadSettings.builder().build());
                 Object data = loader.loadFromInputStream(in);
-                if (!(data instanceof Map<?,?> map)) throw new IllegalArgumentException("invalid yaml");
+                if (!(data instanceof Map<?, ?> map)) throw new IllegalArgumentException("invalid yaml");
                 return parseMap(map);
             }
         }
@@ -49,7 +50,7 @@ public final class ConfigLoader {
         };
     }
 
-    private static CliConfig parseMap(Map<?,?> map) {
+    private static CliConfig parseMap(Map<?, ?> map) {
         String mode = map.get("mode").toString();
         Object tVal = map.get("transport");
         String transport = tVal == null ? "stdio" : tVal.toString();
@@ -60,7 +61,7 @@ public final class ConfigLoader {
             case "server" -> new ServerConfig(parseTransport(transport), portVal == null ? 0 : ((Number) portVal).intValue());
             case "client" -> new ClientConfig(parseTransport(transport), cmdVal.toString());
             case "host" -> {
-                if (!(clientsVal instanceof Map<?,?> cMap) || cMap.isEmpty()) {
+                if (!(clientsVal instanceof Map<?, ?> cMap) || cMap.isEmpty()) {
                     throw new IllegalArgumentException("clients required");
                 }
                 yield new HostConfig(cMap.entrySet().stream()

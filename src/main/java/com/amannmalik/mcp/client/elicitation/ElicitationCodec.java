@@ -6,7 +6,8 @@ import jakarta.json.JsonObjectBuilder;
 
 
 public final class ElicitationCodec {
-    private ElicitationCodec() {}
+    private ElicitationCodec() {
+    }
 
     public static JsonObject toJsonObject(ElicitationRequest req) {
         return Json.createObjectBuilder()

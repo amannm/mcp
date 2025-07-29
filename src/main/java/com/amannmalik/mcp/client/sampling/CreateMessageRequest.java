@@ -1,6 +1,7 @@
 package com.amannmalik.mcp.client.sampling;
 
 import jakarta.json.JsonObject;
+
 import java.util.List;
 
 
@@ -14,7 +15,7 @@ public record CreateMessageRequest(
         List<String> stopSequences,
         JsonObject metadata
 ) {
-    public enum IncludeContext { NONE, THIS_SERVER, ALL_SERVERS }
+    public enum IncludeContext {NONE, THIS_SERVER, ALL_SERVERS}
 
     public CreateMessageRequest {
         messages = messages == null || messages.isEmpty() ? List.of() : List.copyOf(messages);

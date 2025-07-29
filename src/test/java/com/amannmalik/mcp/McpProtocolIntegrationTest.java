@@ -1,7 +1,10 @@
 package com.amannmalik.mcp;
 
 import com.amannmalik.mcp.client.DefaultMcpClient;
-import com.amannmalik.mcp.jsonrpc.*;
+import com.amannmalik.mcp.jsonrpc.JsonRpcError;
+import com.amannmalik.mcp.jsonrpc.JsonRpcErrorCode;
+import com.amannmalik.mcp.jsonrpc.JsonRpcMessage;
+import com.amannmalik.mcp.jsonrpc.JsonRpcResponse;
 import com.amannmalik.mcp.lifecycle.ClientCapability;
 import com.amannmalik.mcp.lifecycle.ClientInfo;
 import com.amannmalik.mcp.lifecycle.ServerCapability;

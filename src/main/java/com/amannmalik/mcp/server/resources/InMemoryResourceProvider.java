@@ -1,10 +1,11 @@
 package com.amannmalik.mcp.server.resources;
 
+import com.amannmalik.mcp.util.Pagination;
+
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
-import com.amannmalik.mcp.util.Pagination;
 
 public final class InMemoryResourceProvider implements ResourceProvider {
     private final List<Resource> resources;

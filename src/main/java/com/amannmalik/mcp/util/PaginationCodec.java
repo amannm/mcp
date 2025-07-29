@@ -6,7 +6,8 @@ import jakarta.json.JsonObjectBuilder;
 
 
 public final class PaginationCodec {
-    private PaginationCodec() {}
+    private PaginationCodec() {
+    }
 
     public static JsonObject toJsonObject(PaginatedRequest req) {
         JsonObjectBuilder b = Json.createObjectBuilder();

@@ -1,22 +1,23 @@
 package com.amannmalik.mcp.prompts;
 
+import com.amannmalik.mcp.server.resources.ResourcesCodec;
+import com.amannmalik.mcp.util.PaginatedResult;
+import com.amannmalik.mcp.util.PaginationCodec;
 import jakarta.json.Json;
 import jakarta.json.JsonArrayBuilder;
 import jakarta.json.JsonObject;
 import jakarta.json.JsonObjectBuilder;
-
-import com.amannmalik.mcp.server.resources.ResourcesCodec;
-import com.amannmalik.mcp.util.PaginationCodec;
-import com.amannmalik.mcp.util.PaginatedResult;
+import jakarta.json.JsonString;
+import jakarta.json.JsonValue;
 
 import java.util.Base64;
-
-import java.util.List;
+import java.util.HashMap;
 import java.util.Map;
 
 
 public final class PromptCodec {
-    private PromptCodec() {}
+    private PromptCodec() {
+    }
 
     public static JsonObject toJsonObject(Prompt prompt) {
         var builder = Json.createObjectBuilder()
@@ -89,12 +90,12 @@ public final class PromptCodec {
 
     public static Map<String, String> toArguments(JsonObject obj) {
         if (obj == null) return Map.of();
-        java.util.Map<String, String> args = new java.util.HashMap<>();
+        Map<String, String> args = new HashMap<>();
         obj.forEach((k, v) -> {
-            if (v.getValueType() != jakarta.json.JsonValue.ValueType.STRING) {
+            if (v.getValueType() != JsonValue.ValueType.STRING) {
                 throw new IllegalArgumentException("argument values must be strings");
             }
-            args.put(k, ((jakarta.json.JsonString) v).getString());
+            args.put(k, ((JsonString) v).getString());
         });
         return args;
     }

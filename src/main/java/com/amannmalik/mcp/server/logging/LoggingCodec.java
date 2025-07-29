@@ -6,7 +6,8 @@ import jakarta.json.JsonObjectBuilder;
 
 
 public final class LoggingCodec {
-    private LoggingCodec() {}
+    private LoggingCodec() {
+    }
 
     public static JsonObject toJsonObject(LoggingNotification n) {
         JsonObjectBuilder b = Json.createObjectBuilder()

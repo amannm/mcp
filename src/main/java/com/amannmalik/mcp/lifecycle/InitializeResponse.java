@@ -5,4 +5,5 @@ public record InitializeResponse(
         Capabilities capabilities,
         ServerInfo serverInfo,
         String instructions
-) {}
+) {
+}

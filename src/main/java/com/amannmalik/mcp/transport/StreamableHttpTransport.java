@@ -1,11 +1,11 @@
 package com.amannmalik.mcp.transport;
 
-import com.amannmalik.mcp.security.OriginValidator;
-import com.amannmalik.mcp.lifecycle.ProtocolLifecycle;
 import com.amannmalik.mcp.jsonrpc.JsonRpcCodec;
 import com.amannmalik.mcp.jsonrpc.JsonRpcError;
 import com.amannmalik.mcp.jsonrpc.JsonRpcErrorCode;
 import com.amannmalik.mcp.jsonrpc.RequestId;
+import com.amannmalik.mcp.lifecycle.ProtocolLifecycle;
+import com.amannmalik.mcp.security.OriginValidator;
 import jakarta.json.Json;
 import jakarta.json.JsonObject;
 import jakarta.json.JsonReader;
@@ -16,10 +16,10 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import org.eclipse.jetty.server.Server;
-import org.eclipse.jetty.server.ServerConnector;
 import org.eclipse.jetty.ee10.servlet.ServletContextHandler;
 import org.eclipse.jetty.ee10.servlet.ServletHolder;
+import org.eclipse.jetty.server.Server;
+import org.eclipse.jetty.server.ServerConnector;
 
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -246,7 +246,7 @@ public final class StreamableHttpTransport implements Transport {
             resp.setHeader("Cache-Control", "no-cache");
             resp.flushBuffer();
             AsyncContext ac = req.startAsync();
-            ac.setTimeout(60000); 
+            ac.setTimeout(60000);
 
             String lastIdHeader = req.getHeader("Last-Event-ID");
             long lastId = -1;
@@ -350,7 +350,7 @@ public final class StreamableHttpTransport implements Transport {
                 closed = true;
             }
         }
-        
+
         void close() {
             if (closed) return;
             closed = true;

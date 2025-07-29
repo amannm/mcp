@@ -11,5 +11,6 @@ public interface RootsProvider extends AutoCloseable {
     RootsSubscription subscribe(RootsListener listener);
 
     @Override
-    default void close() {}
+    default void close() {
+    }
 }

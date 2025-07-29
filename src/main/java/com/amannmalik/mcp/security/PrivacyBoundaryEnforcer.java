@@ -26,7 +26,7 @@ public final class PrivacyBoundaryEnforcer implements ResourceAccessController {
     @Override
     public void requireAllowed(Principal principal, ResourceAnnotations ann) {
         if (principal == null) throw new IllegalArgumentException("principal required");
-        if (ann == null || ann.audience().isEmpty()) return; 
+        if (ann == null || ann.audience().isEmpty()) return;
 
         var set = permissions.get(principal.id());
         if (set == null || !set.containsAll(ann.audience())) {

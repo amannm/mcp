@@ -1,10 +1,11 @@
 package com.amannmalik.mcp.prompts;
 
+import com.amannmalik.mcp.util.Pagination;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-import com.amannmalik.mcp.util.Pagination;
 
 
 public final class InMemoryPromptProvider implements PromptProvider {

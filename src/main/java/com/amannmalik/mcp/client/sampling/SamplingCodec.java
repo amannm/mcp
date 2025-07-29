@@ -5,14 +5,14 @@ import jakarta.json.Json;
 import jakarta.json.JsonArrayBuilder;
 import jakarta.json.JsonObject;
 import jakarta.json.JsonObjectBuilder;
-import jakarta.json.JsonString;
 
 import java.util.Base64;
 import java.util.List;
 
 
 public final class SamplingCodec {
-    private SamplingCodec() {}
+    private SamplingCodec() {
+    }
 
     public static JsonObject toJsonObject(CreateMessageRequest req) {
         JsonArrayBuilder msgs = Json.createArrayBuilder();
@@ -57,7 +57,7 @@ public final class SamplingCodec {
         int max = obj.getInt("maxTokens");
         List<String> stops = obj.containsKey("stopSequences")
                 ? obj.getJsonArray("stopSequences").getValuesAs(jakarta.json.JsonString.class)
-                    .stream().map(jakarta.json.JsonString::getString).toList()
+                .stream().map(jakarta.json.JsonString::getString).toList()
                 : List.of();
         JsonObject metadata = obj.getJsonObject("metadata");
         return new CreateMessageRequest(messages, prefs, system, ctx, temp, max, stops, metadata);
@@ -130,8 +130,8 @@ public final class SamplingCodec {
     static ModelPreferences toModelPreferences(JsonObject obj) {
         List<ModelHint> hints = obj.containsKey("hints")
                 ? obj.getJsonArray("hints").stream()
-                    .map(v -> new ModelHint(v.asJsonObject().getString("name")))
-                    .toList()
+                .map(v -> new ModelHint(v.asJsonObject().getString("name")))
+                .toList()
                 : List.of();
         Double cost = obj.containsKey("costPriority") ? obj.getJsonNumber("costPriority").doubleValue() : null;
         Double speed = obj.containsKey("speedPriority") ? obj.getJsonNumber("speedPriority").doubleValue() : null;

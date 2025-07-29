@@ -8,7 +8,8 @@ import jakarta.json.JsonValue;
 
 
 public final class SchemaValidator {
-    private SchemaValidator() {}
+    private SchemaValidator() {
+    }
 
     public static void validate(JsonObject schema, JsonObject value) {
         if (schema == null) return;
@@ -97,7 +98,8 @@ public final class SchemaValidator {
                 case "uri" -> java.net.URI.create(value);
                 case "date" -> java.time.LocalDate.parse(value);
                 case "date-time" -> java.time.OffsetDateTime.parse(value);
-                default -> {}
+                default -> {
+                }
             }
         } catch (Exception e) {
             throw new IllegalArgumentException("Invalid " + format + " for " + field);

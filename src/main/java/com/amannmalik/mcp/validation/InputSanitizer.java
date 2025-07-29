@@ -2,7 +2,8 @@ package com.amannmalik.mcp.validation;
 
 
 public final class InputSanitizer {
-    private InputSanitizer() {}
+    private InputSanitizer() {
+    }
 
     public static String requireClean(String value) {
         if (value == null) throw new IllegalArgumentException("value is required");

@@ -1,32 +1,94 @@
 package com.amannmalik.mcp.server;
 
-import com.amannmalik.mcp.jsonrpc.*;
+import com.amannmalik.mcp.auth.Principal;
+import com.amannmalik.mcp.client.elicitation.ElicitationCodec;
+import com.amannmalik.mcp.client.elicitation.ElicitationRequest;
+import com.amannmalik.mcp.client.elicitation.ElicitationResponse;
+import com.amannmalik.mcp.client.roots.ListRootsRequest;
+import com.amannmalik.mcp.client.roots.Root;
+import com.amannmalik.mcp.client.roots.RootsCodec;
+import com.amannmalik.mcp.client.sampling.CreateMessageRequest;
+import com.amannmalik.mcp.client.sampling.CreateMessageResponse;
+import com.amannmalik.mcp.client.sampling.SamplingCodec;
+import com.amannmalik.mcp.jsonrpc.IdTracker;
+import com.amannmalik.mcp.jsonrpc.JsonRpcCodec;
+import com.amannmalik.mcp.jsonrpc.JsonRpcError;
+import com.amannmalik.mcp.jsonrpc.JsonRpcErrorCode;
+import com.amannmalik.mcp.jsonrpc.JsonRpcMessage;
+import com.amannmalik.mcp.jsonrpc.JsonRpcNotification;
+import com.amannmalik.mcp.jsonrpc.JsonRpcRequest;
+import com.amannmalik.mcp.jsonrpc.JsonRpcResponse;
+import com.amannmalik.mcp.jsonrpc.RequestId;
 import com.amannmalik.mcp.lifecycle.ClientCapability;
-import com.amannmalik.mcp.lifecycle.*;
+import com.amannmalik.mcp.lifecycle.InitializeRequest;
+import com.amannmalik.mcp.lifecycle.InitializeResponse;
+import com.amannmalik.mcp.lifecycle.LifecycleCodec;
+import com.amannmalik.mcp.lifecycle.LifecycleState;
+import com.amannmalik.mcp.lifecycle.ProtocolLifecycle;
+import com.amannmalik.mcp.lifecycle.ServerCapability;
 import com.amannmalik.mcp.ping.PingCodec;
 import com.amannmalik.mcp.ping.PingRequest;
-import com.amannmalik.mcp.transport.Transport;
-import com.amannmalik.mcp.prompts.*;
-import com.amannmalik.mcp.server.completion.*;
+import com.amannmalik.mcp.prompts.InMemoryPromptProvider;
+import com.amannmalik.mcp.prompts.Prompt;
+import com.amannmalik.mcp.prompts.PromptArgument;
+import com.amannmalik.mcp.prompts.PromptCodec;
+import com.amannmalik.mcp.prompts.PromptContent;
+import com.amannmalik.mcp.prompts.PromptInstance;
+import com.amannmalik.mcp.prompts.PromptMessageTemplate;
+import com.amannmalik.mcp.prompts.PromptPage;
+import com.amannmalik.mcp.prompts.PromptProvider;
+import com.amannmalik.mcp.prompts.PromptTemplate;
+import com.amannmalik.mcp.prompts.PromptsSubscription;
+import com.amannmalik.mcp.prompts.Role;
+import com.amannmalik.mcp.security.PrivacyBoundaryEnforcer;
+import com.amannmalik.mcp.security.RateLimiter;
+import com.amannmalik.mcp.security.ResourceAccessController;
+import com.amannmalik.mcp.server.completion.CompleteRequest;
+import com.amannmalik.mcp.server.completion.CompleteResult;
+import com.amannmalik.mcp.server.completion.CompletionCodec;
+import com.amannmalik.mcp.server.completion.CompletionProvider;
+import com.amannmalik.mcp.server.completion.InMemoryCompletionProvider;
 import com.amannmalik.mcp.server.logging.LoggingCodec;
 import com.amannmalik.mcp.server.logging.LoggingLevel;
 import com.amannmalik.mcp.server.logging.LoggingNotification;
-import com.amannmalik.mcp.server.resources.*;
-import com.amannmalik.mcp.server.tools.*;
-import com.amannmalik.mcp.client.roots.*;
-import com.amannmalik.mcp.client.elicitation.*;
-import com.amannmalik.mcp.client.sampling.*;
-import com.amannmalik.mcp.security.ResourceAccessController;
-import com.amannmalik.mcp.security.PrivacyBoundaryEnforcer;
-import com.amannmalik.mcp.auth.Principal;
-import com.amannmalik.mcp.util.*;
-import com.amannmalik.mcp.security.RateLimiter;
-import jakarta.json.JsonObject;
+import com.amannmalik.mcp.server.resources.Audience;
+import com.amannmalik.mcp.server.resources.InMemoryResourceProvider;
+import com.amannmalik.mcp.server.resources.Resource;
+import com.amannmalik.mcp.server.resources.ResourceAnnotations;
+import com.amannmalik.mcp.server.resources.ResourceBlock;
+import com.amannmalik.mcp.server.resources.ResourceList;
+import com.amannmalik.mcp.server.resources.ResourceListSubscription;
+import com.amannmalik.mcp.server.resources.ResourceProvider;
+import com.amannmalik.mcp.server.resources.ResourceSubscription;
+import com.amannmalik.mcp.server.resources.ResourceTemplate;
+import com.amannmalik.mcp.server.resources.ResourceTemplatePage;
+import com.amannmalik.mcp.server.resources.ResourceUpdatedNotification;
+import com.amannmalik.mcp.server.resources.ResourcesCodec;
+import com.amannmalik.mcp.server.tools.InMemoryToolProvider;
+import com.amannmalik.mcp.server.tools.Tool;
+import com.amannmalik.mcp.server.tools.ToolCodec;
+import com.amannmalik.mcp.server.tools.ToolListSubscription;
+import com.amannmalik.mcp.server.tools.ToolPage;
+import com.amannmalik.mcp.server.tools.ToolProvider;
+import com.amannmalik.mcp.server.tools.ToolResult;
+import com.amannmalik.mcp.transport.Transport;
+import com.amannmalik.mcp.util.CancellationCodec;
+import com.amannmalik.mcp.util.CancellationTracker;
+import com.amannmalik.mcp.util.CancelledNotification;
+import com.amannmalik.mcp.util.PaginatedResult;
+import com.amannmalik.mcp.util.PaginationCodec;
+import com.amannmalik.mcp.util.ProgressCodec;
+import com.amannmalik.mcp.util.ProgressNotification;
+import com.amannmalik.mcp.util.ProgressToken;
+import com.amannmalik.mcp.util.ProgressTracker;
 import jakarta.json.Json;
+import jakarta.json.JsonObject;
 
 import java.io.EOFException;
 import java.io.IOException;
-import java.util.*;
+import java.util.EnumSet;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
@@ -107,7 +169,8 @@ public final class McpServer implements AutoCloseable {
                 } catch (IOException ignore) {
                 }
             });
-        } catch (Exception ignore) {}
+        } catch (Exception ignore) {
+        }
 
         try {
             toolListSubscription = tools.subscribeList(() -> {
@@ -116,7 +179,8 @@ public final class McpServer implements AutoCloseable {
                 } catch (IOException ignore) {
                 }
             });
-        } catch (Exception ignore) {}
+        } catch (Exception ignore) {
+        }
 
         try {
             promptsSubscription = prompts.subscribe(() -> {
@@ -125,7 +189,8 @@ public final class McpServer implements AutoCloseable {
                 } catch (IOException ignore) {
                 }
             });
-        } catch (Exception ignore) {}
+        } catch (Exception ignore) {
+        }
 
         registerRequestHandler("initialize", this::initialize);
         registerNotificationHandler("notifications/initialized", this::initialized);
@@ -188,7 +253,8 @@ public final class McpServer implements AutoCloseable {
                         CompletableFuture<JsonRpcMessage> f = pending.remove(err.id());
                         if (f != null) f.complete(err);
                     }
-                    default -> {}
+                    default -> {
+                    }
                 }
             } catch (IllegalArgumentException e) {
                 System.err.println("Invalid request: " + e.getMessage());
@@ -335,8 +401,6 @@ public final class McpServer implements AutoCloseable {
                 ProgressCodec.toJsonObject(note)));
     }
 
-    
-
 
     private JsonRpcMessage listResources(JsonRpcRequest req) {
         String cursor = PaginationCodec.toPaginatedRequest(req.params()).cursor();
@@ -415,7 +479,10 @@ public final class McpServer implements AutoCloseable {
             });
             ResourceSubscription prev = resourceSubscriptions.put(uri, sub);
             if (prev != null) {
-                try { prev.close(); } catch (Exception ignore) {}
+                try {
+                    prev.close();
+                } catch (Exception ignore) {
+                }
             }
         } catch (Exception e) {
             return new JsonRpcError(req.id(), new JsonRpcError.ErrorDetail(
@@ -433,12 +500,13 @@ public final class McpServer implements AutoCloseable {
         String uri = params.getString("uri");
         ResourceSubscription sub = resourceSubscriptions.remove(uri);
         if (sub != null) {
-            try { sub.close(); } catch (Exception ignore) {}
+            try {
+                sub.close();
+            } catch (Exception ignore) {
+            }
         }
         return new JsonRpcResponse(req.id(), Json.createObjectBuilder().build());
     }
-
-    
 
 
     private JsonRpcMessage listTools(JsonRpcRequest req) {
@@ -481,8 +549,6 @@ public final class McpServer implements AutoCloseable {
         }
     }
 
-    
-
 
     private JsonRpcMessage listPrompts(JsonRpcRequest req) {
         String cursor = PaginationCodec.toPaginatedRequest(req.params()).cursor();
@@ -519,8 +585,6 @@ public final class McpServer implements AutoCloseable {
         }
     }
 
-    
-
 
     private JsonRpcMessage setLogLevel(JsonRpcRequest req) {
         JsonObject params = req.params();
@@ -548,8 +612,6 @@ public final class McpServer implements AutoCloseable {
     private void sendLog(LoggingLevel level, String logger, jakarta.json.JsonValue data) throws IOException {
         sendLog(new LoggingNotification(level, logger, data));
     }
-
-    
 
 
     private JsonRpcMessage complete(JsonRpcRequest req) {
@@ -625,8 +687,6 @@ public final class McpServer implements AutoCloseable {
         throw new IOException(((JsonRpcError) msg).error().message());
     }
 
-    
-
 
     private static ResourceProvider createDefaultResources() {
         Resource r = new Resource("test://example", "example", null, null, "text/plain", 5L, null, null);
@@ -674,19 +734,31 @@ public final class McpServer implements AutoCloseable {
     public void close() throws IOException {
         lifecycle.shutdown();
         for (ResourceSubscription sub : resourceSubscriptions.values()) {
-            try { sub.close(); } catch (Exception ignore) {}
+            try {
+                sub.close();
+            } catch (Exception ignore) {
+            }
         }
         resourceSubscriptions.clear();
         if (resourceListSubscription != null) {
-            try { resourceListSubscription.close(); } catch (Exception ignore) {}
+            try {
+                resourceListSubscription.close();
+            } catch (Exception ignore) {
+            }
             resourceListSubscription = null;
         }
         if (toolListSubscription != null) {
-            try { toolListSubscription.close(); } catch (Exception ignore) {}
+            try {
+                toolListSubscription.close();
+            } catch (Exception ignore) {
+            }
             toolListSubscription = null;
         }
         if (promptsSubscription != null) {
-            try { promptsSubscription.close(); } catch (Exception ignore) {}
+            try {
+                promptsSubscription.close();
+            } catch (Exception ignore) {
+            }
             promptsSubscription = null;
         }
         resources.close();

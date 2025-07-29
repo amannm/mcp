@@ -5,7 +5,8 @@ import java.util.List;
 
 
 public final class Pagination {
-    private Pagination() {}
+    private Pagination() {
+    }
 
     public static <T> Page<T> page(List<T> items, String cursor, int size) {
         int start = decode(cursor);
@@ -30,7 +31,7 @@ public final class Pagination {
         }
     }
 
-    
+
     public record Page<T>(List<T> items, String nextCursor) {
         public Page {
             items = items == null ? List.of() : List.copyOf(items);
