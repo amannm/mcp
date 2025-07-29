@@ -5,6 +5,7 @@ import jakarta.json.Json;
 import jakarta.json.JsonArrayBuilder;
 import jakarta.json.JsonObject;
 import jakarta.json.JsonObjectBuilder;
+import jakarta.json.JsonString;
 
 import java.util.Base64;
 import java.util.List;
@@ -19,7 +20,19 @@ public final class SamplingCodec {
         JsonObjectBuilder obj = Json.createObjectBuilder().add("messages", msgs.build());
         if (req.modelPreferences() != null) obj.add("modelPreferences", toJsonObject(req.modelPreferences()));
         if (req.systemPrompt() != null) obj.add("systemPrompt", req.systemPrompt());
-        if (req.maxTokens() != null) obj.add("maxTokens", req.maxTokens());
+        if (req.includeContext() != null) obj.add("includeContext", switch (req.includeContext()) {
+            case NONE -> "none";
+            case THIS_SERVER -> "thisServer";
+            case ALL_SERVERS -> "allServers";
+        });
+        if (req.temperature() != null) obj.add("temperature", req.temperature());
+        obj.add("maxTokens", req.maxTokens());
+        if (!req.stopSequences().isEmpty()) {
+            JsonArrayBuilder arr = Json.createArrayBuilder();
+            req.stopSequences().forEach(arr::add);
+            obj.add("stopSequences", arr.build());
+        }
+        if (req.metadata() != null) obj.add("metadata", req.metadata());
         return obj.build();
     }
 
@@ -31,8 +44,23 @@ public final class SamplingCodec {
                 ? toModelPreferences(obj.getJsonObject("modelPreferences"))
                 : null;
         String system = obj.getString("systemPrompt", null);
-        Integer max = obj.containsKey("maxTokens") ? obj.getInt("maxTokens") : null;
-        return new CreateMessageRequest(messages, prefs, system, max);
+        CreateMessageRequest.IncludeContext ctx = null;
+        if (obj.containsKey("includeContext")) {
+            ctx = switch (obj.getString("includeContext")) {
+                case "none" -> CreateMessageRequest.IncludeContext.NONE;
+                case "thisServer" -> CreateMessageRequest.IncludeContext.THIS_SERVER;
+                case "allServers" -> CreateMessageRequest.IncludeContext.ALL_SERVERS;
+                default -> throw new IllegalArgumentException("Unknown includeContext");
+            };
+        }
+        Double temp = obj.containsKey("temperature") ? obj.getJsonNumber("temperature").doubleValue() : null;
+        int max = obj.getInt("maxTokens");
+        List<String> stops = obj.containsKey("stopSequences")
+                ? obj.getJsonArray("stopSequences").getValuesAs(jakarta.json.JsonString.class)
+                    .stream().map(jakarta.json.JsonString::getString).toList()
+                : List.of();
+        JsonObject metadata = obj.getJsonObject("metadata");
+        return new CreateMessageRequest(messages, prefs, system, ctx, temp, max, stops, metadata);
     }
 
     public static JsonObject toJsonObject(CreateMessageResponse resp) {
