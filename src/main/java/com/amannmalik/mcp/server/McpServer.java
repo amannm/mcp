@@ -47,6 +47,7 @@ import com.amannmalik.mcp.prompts.Role;
 import com.amannmalik.mcp.security.PrivacyBoundaryEnforcer;
 import com.amannmalik.mcp.security.RateLimiter;
 import com.amannmalik.mcp.security.ResourceAccessController;
+import com.amannmalik.mcp.security.ToolAccessPolicy;
 import com.amannmalik.mcp.server.completion.CompleteRequest;
 import com.amannmalik.mcp.server.completion.CompleteResult;
 import com.amannmalik.mcp.server.completion.CompletionCodec;
@@ -130,6 +131,7 @@ public final class McpServer implements AutoCloseable {
     private final boolean promptsListChangedSupported;
     private final List<RootsListener> rootsListeners = new CopyOnWriteArrayList<>();
     private final ResourceAccessController resourceAccess;
+    private final ToolAccessPolicy toolAccess;
     private final Principal principal;
     private volatile LoggingLevel logLevel = LoggingLevel.INFO;
     private static final int RATE_LIMIT_CODE = -32001;
@@ -144,6 +146,7 @@ public final class McpServer implements AutoCloseable {
     public McpServer(Transport transport) {
         this(createDefaultResources(), createDefaultTools(), createDefaultPrompts(), createDefaultCompletions(),
                 createDefaultPrivacyBoundary("default"),
+                createDefaultToolAccess(),
                 new Principal("default", Set.of()),
                 transport);
     }
@@ -155,6 +158,7 @@ public final class McpServer implements AutoCloseable {
               Transport transport) {
         this(resources, tools, prompts, completions,
                 createDefaultPrivacyBoundary("default"),
+                createDefaultToolAccess(),
                 new Principal("default", Set.of()),
                 transport);
     }
@@ -164,6 +168,7 @@ public final class McpServer implements AutoCloseable {
               PromptProvider prompts,
               CompletionProvider completions,
               ResourceAccessController resourceAccess,
+              ToolAccessPolicy toolAccess,
               Principal principal,
               Transport transport) {
         this.transport = transport;
@@ -179,6 +184,7 @@ public final class McpServer implements AutoCloseable {
         this.prompts = prompts;
         this.completions = completions;
         this.resourceAccess = resourceAccess;
+        this.toolAccess = toolAccess == null ? ToolAccessPolicy.PERMISSIVE : toolAccess;
         this.principal = principal;
         this.toolListChangedSupported = tools != null && tools.supportsListChanged();
         this.resourcesSubscribeSupported = resources != null && resources.supportsSubscribe();
@@ -712,6 +718,12 @@ public final class McpServer implements AutoCloseable {
                     RATE_LIMIT_CODE, e.getMessage(), null));
         }
         try {
+            toolAccess.requireAllowed(principal, name);
+        } catch (SecurityException e) {
+            return new JsonRpcError(req.id(), new JsonRpcError.ErrorDetail(
+                    JsonRpcErrorCode.INTERNAL_ERROR.code(), "Access denied", null));
+        }
+        try {
             ToolResult result = tools.call(name, args);
             return new JsonRpcResponse(req.id(), ToolCodec.toJsonObject(result));
         } catch (IllegalArgumentException e) {
@@ -924,6 +936,10 @@ public final class McpServer implements AutoCloseable {
         InMemoryCompletionProvider provider = new InMemoryCompletionProvider();
         provider.add(new CompleteRequest.Ref.PromptRef("test_prompt"), "test_arg", Map.of(), List.of("test_completion"));
         return provider;
+    }
+
+    private static ToolAccessPolicy createDefaultToolAccess() {
+        return ToolAccessPolicy.PERMISSIVE;
     }
 
     private static ResourceAccessController createDefaultPrivacyBoundary(String principalId) {
