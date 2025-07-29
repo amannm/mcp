@@ -15,9 +15,9 @@ public final class InMemoryResourceProvider implements ResourceProvider {
     private final List<ResourceListListener> listListeners = new CopyOnWriteArrayList<>();
 
     public InMemoryResourceProvider(List<Resource> resources, Map<String, ResourceBlock> contents, List<ResourceTemplate> templates) {
-        this.resources = resources == null ? List.of() : List.copyOf(resources);
-        this.contents = contents == null ? Map.of() : Map.copyOf(contents);
-        this.templates = templates == null ? List.of() : List.copyOf(templates);
+        this.resources = resources == null ? new CopyOnWriteArrayList<>() : new CopyOnWriteArrayList<>(resources);
+        this.contents = contents == null ? new ConcurrentHashMap<>() : new ConcurrentHashMap<>(contents);
+        this.templates = templates == null ? new CopyOnWriteArrayList<>() : new CopyOnWriteArrayList<>(templates);
     }
 
     @Override
