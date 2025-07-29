@@ -3,6 +3,8 @@ package com.amannmalik.mcp.server;
 import com.amannmalik.mcp.jsonrpc.*;
 import com.amannmalik.mcp.lifecycle.ClientCapability;
 import com.amannmalik.mcp.lifecycle.*;
+import com.amannmalik.mcp.ping.PingCodec;
+import com.amannmalik.mcp.ping.PingRequest;
 import com.amannmalik.mcp.transport.Transport;
 import com.amannmalik.mcp.prompts.*;
 import com.amannmalik.mcp.server.completion.*;
@@ -172,7 +174,8 @@ public final class McpServer implements AutoCloseable {
     }
 
     private JsonRpcMessage ping(JsonRpcRequest req) {
-        return new JsonRpcResponse(req.id(), jakarta.json.Json.createObjectBuilder().build());
+        PingRequest ignored = PingCodec.toPingRequest(req);
+        return PingCodec.toResponse(req.id());
     }
 
     protected final void send(JsonRpcMessage msg) throws IOException {
