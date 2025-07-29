@@ -149,9 +149,6 @@ public final class StreamableHttpTransport implements Transport {
             if (session == null && initializing) {
                 session = UUID.randomUUID().toString();
                 sessionId.set(session);
-                JsonObject params = obj.getJsonObject("params");
-                protocolVersion = params == null ? ProtocolLifecycle.SUPPORTED_VERSION :
-                        params.getString("protocolVersion", ProtocolLifecycle.SUPPORTED_VERSION);
                 resp.setHeader("Mcp-Session-Id", session);
             } else if (session == null) {
                 resp.sendError(HttpServletResponse.SC_BAD_REQUEST);
@@ -199,8 +196,15 @@ public final class StreamableHttpTransport implements Transport {
                     resp.sendError(HttpServletResponse.SC_REQUEST_TIMEOUT);
                     return;
                 }
+                if (initializing && response.containsKey("result")) {
+                    JsonObject result = response.getJsonObject("result");
+                    if (result.containsKey("protocolVersion")) {
+                        protocolVersion = result.getString("protocolVersion");
+                    }
+                }
                 resp.setContentType("application/json");
                 resp.setCharacterEncoding("UTF-8");
+                resp.setHeader(PROTOCOL_HEADER, protocolVersion);
                 resp.getWriter().write(response.toString());
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
