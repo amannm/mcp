@@ -8,11 +8,6 @@ import jakarta.json.JsonValue;
 
 import java.util.Set;
 
-/**
- * Validates that an elicitation schema conforms to the restricted JSON Schema
- * subset defined by the specification. Only flat object schemas with primitive
- * properties are allowed.
- */
 public final class ElicitationSchemaValidator {
     private ElicitationSchemaValidator() {
     }

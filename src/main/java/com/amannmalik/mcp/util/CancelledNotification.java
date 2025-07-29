@@ -2,7 +2,6 @@ package com.amannmalik.mcp.util;
 
 import com.amannmalik.mcp.jsonrpc.RequestId;
 
-
 public record CancelledNotification(RequestId requestId, String reason) {
     public CancelledNotification {
         if (requestId == null) {

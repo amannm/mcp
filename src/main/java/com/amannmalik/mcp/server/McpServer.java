@@ -394,13 +394,13 @@ public final class McpServer implements AutoCloseable {
             progressLimiter.requireAllowance(note.token().toString());
             progressTracker.update(note);
         } catch (IllegalArgumentException | IllegalStateException ignore) {
-            return; // ignore stale or invalid notifications
+            return;
+
         }
         send(new JsonRpcNotification(
                 "notifications/progress",
                 ProgressCodec.toJsonObject(note)));
     }
-
 
     private JsonRpcMessage listResources(JsonRpcRequest req) {
         String cursor = PaginationCodec.toPaginatedRequest(req.params()).cursor();
@@ -509,7 +509,6 @@ public final class McpServer implements AutoCloseable {
         return new JsonRpcResponse(req.id(), Json.createObjectBuilder().build());
     }
 
-
     private JsonRpcMessage listTools(JsonRpcRequest req) {
         String cursor = PaginationCodec.toPaginatedRequest(req.params()).cursor();
         ToolPage page;
@@ -550,7 +549,6 @@ public final class McpServer implements AutoCloseable {
         }
     }
 
-
     private JsonRpcMessage listPrompts(JsonRpcRequest req) {
         String cursor = PaginationCodec.toPaginatedRequest(req.params()).cursor();
         PromptPage page;
@@ -586,7 +584,6 @@ public final class McpServer implements AutoCloseable {
         }
     }
 
-
     private JsonRpcMessage setLogLevel(JsonRpcRequest req) {
         JsonObject params = req.params();
         if (params == null) {
@@ -613,7 +610,6 @@ public final class McpServer implements AutoCloseable {
     private void sendLog(LoggingLevel level, String logger, jakarta.json.JsonValue data) throws IOException {
         sendLog(new LoggingNotification(level, logger, data));
     }
-
 
     private JsonRpcMessage complete(JsonRpcRequest req) {
         JsonObject params = req.params();
@@ -687,7 +683,6 @@ public final class McpServer implements AutoCloseable {
         }
         throw new IOException(((JsonRpcError) msg).error().message());
     }
-
 
     private static ResourceProvider createDefaultResources() {
         Resource r = new Resource("test://example", "example", null, null, "text/plain", 5L, null, null);

@@ -4,7 +4,6 @@ import jakarta.json.JsonObject;
 
 import java.util.List;
 
-
 public record CreateMessageRequest(
         List<SamplingMessage> messages,
         ModelPreferences modelPreferences,

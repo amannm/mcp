@@ -4,7 +4,6 @@ import jakarta.json.Json;
 import jakarta.json.JsonObject;
 import jakarta.json.JsonObjectBuilder;
 
-
 public final class PaginationCodec {
     private PaginationCodec() {
     }

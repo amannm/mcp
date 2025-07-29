@@ -9,7 +9,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
-
 public final class PrivacyBoundaryEnforcer implements ResourceAccessController {
     private final Map<String, Set<Audience>> permissions = new ConcurrentHashMap<>();
 

@@ -6,7 +6,6 @@ import jakarta.json.JsonObject;
 
 import java.io.IOException;
 
-
 public interface McpClient extends AutoCloseable {
     ClientInfo info();
 
@@ -15,7 +14,6 @@ public interface McpClient extends AutoCloseable {
     void disconnect() throws IOException;
 
     boolean connected();
-
 
     String context();
 

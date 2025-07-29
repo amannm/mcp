@@ -1,9 +1,7 @@
 package com.amannmalik.mcp.client.sampling;
 
-
 public sealed interface MessageContent permits MessageContent.Text, MessageContent.Image, MessageContent.Audio {
     String type();
-
 
     record Text(String text) implements MessageContent {
         public Text {
@@ -15,7 +13,6 @@ public sealed interface MessageContent permits MessageContent.Text, MessageConte
             return "text";
         }
     }
-
 
     record Image(byte[] data, String mimeType) implements MessageContent {
         public Image {
@@ -30,7 +27,6 @@ public sealed interface MessageContent permits MessageContent.Text, MessageConte
             return "image";
         }
     }
-
 
     record Audio(byte[] data, String mimeType) implements MessageContent {
         public Audio {

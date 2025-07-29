@@ -15,7 +15,6 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
-
 public final class HostProcess implements AutoCloseable {
     private final Map<String, McpClient> clients = new ConcurrentHashMap<>();
     private final SecurityPolicy policy;

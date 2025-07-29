@@ -5,7 +5,6 @@ import com.amannmalik.mcp.jsonrpc.JsonRpcResponse;
 import com.amannmalik.mcp.jsonrpc.RequestId;
 import jakarta.json.Json;
 
-
 public final class PingCodec {
     private PingCodec() {
     }

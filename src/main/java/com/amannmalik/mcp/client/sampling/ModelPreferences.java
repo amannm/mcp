@@ -2,7 +2,6 @@ package com.amannmalik.mcp.client.sampling;
 
 import java.util.List;
 
-
 public record ModelPreferences(
         List<ModelHint> hints,
         Double costPriority,

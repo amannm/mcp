@@ -6,7 +6,6 @@ import jakarta.json.JsonObject;
 import java.util.EnumSet;
 import java.util.Set;
 
-
 public final class LifecycleCodec {
     private LifecycleCodec() {
     }

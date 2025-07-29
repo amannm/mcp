@@ -7,7 +7,6 @@ import jakarta.json.JsonArrayBuilder;
 import jakarta.json.JsonObject;
 import jakarta.json.JsonObjectBuilder;
 
-
 public final class ToolCodec {
     private ToolCodec() {
     }

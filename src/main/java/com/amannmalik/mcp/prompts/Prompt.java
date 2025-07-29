@@ -4,7 +4,6 @@ import com.amannmalik.mcp.validation.InputSanitizer;
 
 import java.util.List;
 
-
 public record Prompt(
         String name,
         String title,

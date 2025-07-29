@@ -4,7 +4,6 @@ import com.amannmalik.mcp.validation.ElicitationSchemaValidator;
 import com.amannmalik.mcp.validation.InputSanitizer;
 import jakarta.json.JsonObject;
 
-
 public record ElicitationRequest(String message, JsonObject requestedSchema) {
     public ElicitationRequest {
         if (message == null || requestedSchema == null) {

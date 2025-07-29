@@ -2,7 +2,6 @@ package com.amannmalik.mcp.server.completion;
 
 import java.util.Map;
 
-
 public record CompleteRequest(
         Ref ref,
         Argument argument,
@@ -14,7 +13,6 @@ public record CompleteRequest(
         }
     }
 
-
     public record Argument(String name, String value) {
         public Argument {
             if (name == null || value == null) {
@@ -22,7 +20,6 @@ public record CompleteRequest(
             }
         }
     }
-
 
     public record Context(Map<String, String> arguments) {
         public Context {
@@ -35,10 +32,8 @@ public record CompleteRequest(
         }
     }
 
-
     public sealed interface Ref permits Ref.PromptRef, Ref.ResourceRef {
         String type();
-
 
         record PromptRef(String name) implements Ref {
             public PromptRef {
@@ -50,7 +45,6 @@ public record CompleteRequest(
                 return "ref/prompt";
             }
         }
-
 
         record ResourceRef(String uri) implements Ref {
             public ResourceRef {

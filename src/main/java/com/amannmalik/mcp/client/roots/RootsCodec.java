@@ -8,7 +8,6 @@ import jakarta.json.JsonObjectBuilder;
 import java.util.ArrayList;
 import java.util.List;
 
-
 public final class RootsCodec {
     private RootsCodec() {
     }

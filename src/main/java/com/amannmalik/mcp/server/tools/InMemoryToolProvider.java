@@ -11,7 +11,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.function.Function;
 
-
 public final class InMemoryToolProvider implements ToolProvider {
     private final List<Tool> tools;
     private final Map<String, Function<JsonObject, ToolResult>> handlers;

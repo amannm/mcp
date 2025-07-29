@@ -4,7 +4,6 @@ import com.amannmalik.mcp.server.resources.Resource;
 import com.amannmalik.mcp.server.resources.ResourceAnnotations;
 import com.amannmalik.mcp.server.resources.ResourceBlock;
 
-
 public sealed interface PromptContent
         permits PromptContent.Text,
         PromptContent.Image,
@@ -14,7 +13,6 @@ public sealed interface PromptContent
     String type();
 
     ResourceAnnotations annotations();
-
 
     record Text(String text, ResourceAnnotations annotations) implements PromptContent {
         public Text {
@@ -26,7 +24,6 @@ public sealed interface PromptContent
             return "text";
         }
     }
-
 
     record Image(byte[] data, String mimeType, ResourceAnnotations annotations) implements PromptContent {
         public Image {
@@ -42,7 +39,6 @@ public sealed interface PromptContent
         }
     }
 
-
     record Audio(byte[] data, String mimeType, ResourceAnnotations annotations) implements PromptContent {
         public Audio {
             if (data == null || mimeType == null) {
@@ -57,7 +53,6 @@ public sealed interface PromptContent
         }
     }
 
-
     record EmbeddedResource(ResourceBlock resource, ResourceAnnotations annotations) implements PromptContent {
         public EmbeddedResource {
             if (resource == null) throw new IllegalArgumentException("resource is required");
@@ -68,7 +63,6 @@ public sealed interface PromptContent
             return "resource";
         }
     }
-
 
     record ResourceLink(Resource resource) implements PromptContent {
         public ResourceLink {

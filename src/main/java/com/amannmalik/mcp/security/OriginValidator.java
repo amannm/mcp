@@ -2,7 +2,6 @@ package com.amannmalik.mcp.security;
 
 import java.util.Set;
 
-
 public final class OriginValidator {
     private final Set<String> allowedOrigins;
 

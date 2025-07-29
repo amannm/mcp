@@ -8,7 +8,6 @@ import jakarta.json.JsonObjectBuilder;
 import jakarta.json.JsonString;
 import jakarta.json.JsonValue;
 
-
 public final class CancellationCodec {
     private CancellationCodec() {
     }

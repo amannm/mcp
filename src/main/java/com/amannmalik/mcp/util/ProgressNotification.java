@@ -1,6 +1,5 @@
 package com.amannmalik.mcp.util;
 
-
 public record ProgressNotification(
         ProgressToken token,
         double progress,

@@ -3,7 +3,6 @@ package com.amannmalik.mcp.util;
 import java.util.Base64;
 import java.util.List;
 
-
 public final class Pagination {
     private Pagination() {
     }
@@ -30,7 +29,6 @@ public final class Pagination {
             throw new IllegalArgumentException("Invalid cursor");
         }
     }
-
 
     public record Page<T>(List<T> items, String nextCursor) {
         public Page {

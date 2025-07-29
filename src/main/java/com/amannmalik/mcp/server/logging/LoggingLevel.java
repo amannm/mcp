@@ -1,6 +1,5 @@
 package com.amannmalik.mcp.server.logging;
 
-
 public enum LoggingLevel {
     DEBUG,
     INFO,

@@ -2,9 +2,6 @@ package com.amannmalik.mcp.validation;
 
 import java.net.URI;
 
-/**
- * Utility for validating RFC6570 URI templates.
- */
 public final class UriTemplateValidator {
     private UriTemplateValidator() {
     }

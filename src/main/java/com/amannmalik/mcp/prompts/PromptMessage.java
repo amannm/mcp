@@ -1,6 +1,5 @@
 package com.amannmalik.mcp.prompts;
 
-
 public record PromptMessage(Role role, PromptContent content) {
     public PromptMessage {
         if (role == null || content == null) {

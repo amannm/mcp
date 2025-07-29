@@ -4,10 +4,8 @@ import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 
-
 public final class BlockingElicitationProvider implements ElicitationProvider {
     private final BlockingQueue<ElicitationResponse> responses = new LinkedBlockingQueue<>();
-
 
     public void respond(ElicitationResponse response) {
         if (response == null) throw new IllegalArgumentException("response is required");

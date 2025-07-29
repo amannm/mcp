@@ -6,7 +6,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
-
 public final class ConsentManager {
     private final Map<String, Set<String>> consents = new ConcurrentHashMap<>();
 

@@ -2,7 +2,6 @@ package com.amannmalik.mcp.client.sampling;
 
 import com.amannmalik.mcp.prompts.Role;
 
-
 public record CreateMessageResponse(
         Role role,
         MessageContent content,

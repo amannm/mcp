@@ -11,7 +11,6 @@ import jakarta.json.JsonObject;
 import jakarta.json.JsonObjectBuilder;
 import jakarta.json.JsonValue;
 
-
 public record ToolResult(JsonArray content,
                          JsonObject structuredContent,
                          boolean isError) {

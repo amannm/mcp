@@ -9,7 +9,6 @@ import jakarta.json.JsonObjectBuilder;
 import java.util.Base64;
 import java.util.List;
 
-
 public final class SamplingCodec {
     private SamplingCodec() {
     }

@@ -4,7 +4,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-
 public record PromptTemplate(Prompt prompt, List<PromptMessageTemplate> messages) {
     public PromptTemplate {
         messages = messages == null || messages.isEmpty() ? List.of() : List.copyOf(messages);

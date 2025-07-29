@@ -3,7 +3,6 @@ package com.amannmalik.mcp.client.roots;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 
-
 public final class InMemoryRootsProvider implements RootsProvider {
     private final List<Root> roots = new CopyOnWriteArrayList<>();
     private final List<RootsListener> listeners = new CopyOnWriteArrayList<>();

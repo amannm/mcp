@@ -6,7 +6,6 @@ import jakarta.json.JsonObject;
 import jakarta.json.JsonString;
 import jakarta.json.JsonValue;
 
-
 public final class SchemaValidator {
     private SchemaValidator() {
     }

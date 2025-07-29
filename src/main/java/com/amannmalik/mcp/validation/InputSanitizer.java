@@ -1,6 +1,5 @@
 package com.amannmalik.mcp.validation;
 
-
 public final class InputSanitizer {
     private InputSanitizer() {
     }

@@ -3,7 +3,6 @@ package com.amannmalik.mcp.server.tools;
 import com.amannmalik.mcp.validation.InputSanitizer;
 import jakarta.json.JsonObject;
 
-
 public record Tool(String name,
                    String title,
                    String description,

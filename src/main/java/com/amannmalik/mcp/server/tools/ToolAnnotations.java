@@ -2,7 +2,6 @@ package com.amannmalik.mcp.server.tools;
 
 import com.amannmalik.mcp.validation.InputSanitizer;
 
-
 public record ToolAnnotations(
         String title,
         Boolean readOnlyHint,

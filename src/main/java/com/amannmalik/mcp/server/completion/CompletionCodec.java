@@ -8,7 +8,6 @@ import jakarta.json.JsonObjectBuilder;
 import java.util.HashMap;
 import java.util.Map;
 
-
 public final class CompletionCodec {
     private CompletionCodec() {
     }

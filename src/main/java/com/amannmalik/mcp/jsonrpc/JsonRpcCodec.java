@@ -7,7 +7,6 @@ import jakarta.json.JsonObjectBuilder;
 import jakarta.json.JsonString;
 import jakarta.json.JsonValue;
 
-
 public final class JsonRpcCodec {
     private JsonRpcCodec() {
     }
@@ -62,13 +61,9 @@ public final class JsonRpcCodec {
         var hasResult = obj.containsKey("result");
 
         if (method != null && idValue != null && idValue.getValueType() != JsonValue.ValueType.NULL) {
-
-
             return new JsonRpcRequest(toId(idValue), method, obj.getJsonObject("params"));
         }
         if (method != null) {
-
-
             return new JsonRpcNotification(method, obj.getJsonObject("params"));
         }
         if (hasResult) {

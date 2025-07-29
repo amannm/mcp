@@ -2,7 +2,6 @@ package com.amannmalik.mcp.validation;
 
 import java.net.URI;
 
-
 public final class UriValidator {
     private UriValidator() {
     }

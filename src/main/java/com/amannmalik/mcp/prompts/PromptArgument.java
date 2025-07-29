@@ -2,7 +2,6 @@ package com.amannmalik.mcp.prompts;
 
 import com.amannmalik.mcp.validation.InputSanitizer;
 
-
 public record PromptArgument(
         String name,
         String title,
