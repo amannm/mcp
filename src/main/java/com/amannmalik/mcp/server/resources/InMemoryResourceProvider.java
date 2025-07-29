@@ -55,7 +55,10 @@ public final class InMemoryResourceProvider implements ResourceProvider {
     }
 
     public void addResource(Resource resource, ResourceBlock content) {
-        if (resource != null) resources.add(resource);
+        if (resource == null) {
+            throw new IllegalArgumentException("resource required");
+        }
+        resources.add(resource);
         if (content != null) contents.put(resource.uri(), content);
         notifyListListeners();
     }

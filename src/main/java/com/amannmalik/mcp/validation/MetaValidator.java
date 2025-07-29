@@ -13,8 +13,6 @@ public final class MetaValidator {
     private static final Pattern NAME =
             Pattern.compile("(?:[A-Za-z0-9](?:[A-Za-z0-9._-]*[A-Za-z0-9])?)?");
 
-    private static final Pattern RESERVED_PREFIX =
-            Pattern.compile("(?:^|\\.)(?:modelcontextprotocol|mcp)\\.", Pattern.CASE_INSENSITIVE);
 
     public static void requireValid(String key) {
         if (key == null) throw new IllegalArgumentException("key required");
@@ -34,9 +32,6 @@ public final class MetaValidator {
                 if (!LABEL.matcher(label).matches()) {
                     throw new IllegalArgumentException("Invalid _meta prefix: " + key);
                 }
-            }
-            if (RESERVED_PREFIX.matcher(prefix).find()) {
-                throw new IllegalArgumentException("Reserved _meta prefix: " + prefix + "/");
             }
         }
 

@@ -20,7 +20,6 @@ public class ProtocolLifecycle {
         clientCapabilities = requested.isEmpty()
                 ? EnumSet.noneOf(ClientCapability.class)
                 : EnumSet.copyOf(requested);
-
         String negotiatedVersion = request.protocolVersion();
         if (!SUPPORTED_VERSION.equals(request.protocolVersion())) {
             negotiatedVersion = SUPPORTED_VERSION;
