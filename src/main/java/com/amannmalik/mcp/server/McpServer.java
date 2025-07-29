@@ -29,6 +29,7 @@ import com.amannmalik.mcp.lifecycle.LifecycleCodec;
 import com.amannmalik.mcp.lifecycle.LifecycleState;
 import com.amannmalik.mcp.lifecycle.ProtocolLifecycle;
 import com.amannmalik.mcp.lifecycle.ServerCapability;
+import com.amannmalik.mcp.lifecycle.ServerInfo;
 import com.amannmalik.mcp.lifecycle.UnsupportedProtocolVersionException;
 import com.amannmalik.mcp.ping.PingCodec;
 import com.amannmalik.mcp.ping.PingRequest;
@@ -144,10 +145,15 @@ public final class McpServer implements AutoCloseable {
     private final Map<RequestId, CompletableFuture<JsonRpcMessage>> pending = new ConcurrentHashMap<>();
 
     public McpServer(Transport transport) {
+        this(transport, null);
+    }
+
+    public McpServer(Transport transport, String instructions) {
         this(createDefaultResources(), createDefaultTools(), createDefaultPrompts(), createDefaultCompletions(),
                 createDefaultPrivacyBoundary("default"),
                 createDefaultToolAccess(),
                 new Principal("default", Set.of()),
+                instructions,
                 transport);
     }
 
@@ -160,6 +166,7 @@ public final class McpServer implements AutoCloseable {
                 createDefaultPrivacyBoundary("default"),
                 createDefaultToolAccess(),
                 new Principal("default", Set.of()),
+                null,
                 transport);
     }
 
@@ -170,6 +177,7 @@ public final class McpServer implements AutoCloseable {
               ResourceAccessController resourceAccess,
               ToolAccessPolicy toolAccess,
               Principal principal,
+              String instructions,
               Transport transport) {
         this.transport = transport;
         EnumSet<ServerCapability> caps = EnumSet.noneOf(ServerCapability.class);
@@ -178,7 +186,7 @@ public final class McpServer implements AutoCloseable {
         if (prompts != null) caps.add(ServerCapability.PROMPTS);
         if (completions != null) caps.add(ServerCapability.COMPLETIONS);
         caps.add(ServerCapability.LOGGING);
-        this.lifecycle = new ProtocolLifecycle(caps);
+        this.lifecycle = new ProtocolLifecycle(caps, new ServerInfo("mcp-java", "MCP Java Reference", "0.1.0"), instructions);
         this.resources = resources;
         this.tools = tools;
         this.prompts = prompts;

@@ -22,6 +22,9 @@ public final class ServerCommand implements Callable<Integer> {
     @CommandLine.Option(names = "--stdio", description = "Use stdio transport")
     private boolean stdio;
 
+    @CommandLine.Option(names = "--instructions", description = "Instructions file")
+    private Path instructionsFile;
+
     @CommandLine.Option(names = {"-v", "--verbose"}, description = "Verbose logging")
     private boolean verbose;
 
@@ -46,7 +49,7 @@ public final class ServerCommand implements Callable<Integer> {
             TransportType type = httpPort == null ? TransportType.STDIO : TransportType.HTTP;
             int port = httpPort == null ? 0 : httpPort;
             if (stdio) type = TransportType.STDIO;
-            cfg = new ServerConfig(type, port);
+            cfg = new ServerConfig(type, port, null);
         }
 
         Transport t;
@@ -60,7 +63,12 @@ public final class ServerCommand implements Callable<Integer> {
             default -> throw new IllegalStateException();
         }
 
-        try (McpServer server = new McpServer(t)) {
+        String instructions = cfg.instructions();
+        if (instructionsFile != null) {
+            instructions = java.nio.file.Files.readString(instructionsFile);
+        }
+
+        try (McpServer server = new McpServer(t, instructions)) {
             server.serve();
         }
         return 0;
