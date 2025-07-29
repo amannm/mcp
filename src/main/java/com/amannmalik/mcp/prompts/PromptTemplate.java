@@ -11,6 +11,11 @@ public record PromptTemplate(Prompt prompt, List<PromptMessageTemplate> messages
     }
 
     PromptInstance instantiate(Map<String, String> args) {
+        for (PromptArgument a : prompt.arguments()) {
+            if (a.required() && (args == null || !args.containsKey(a.name()))) {
+                throw new IllegalArgumentException("missing argument: " + a.name());
+            }
+        }
         List<PromptMessage> list = new ArrayList<>();
         for (PromptMessageTemplate t : messages) {
             list.add(new PromptMessage(t.role(), instantiate(t.content(), args)));

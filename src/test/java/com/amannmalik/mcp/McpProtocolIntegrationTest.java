@@ -207,10 +207,19 @@ class McpProtocolIntegrationTest {
         JsonRpcMessage promptGetResponse = testProtocolOperationWithTimeout(() -> client.request("prompts/get",
                 Json.createObjectBuilder()
                         .add("name", "test_prompt")
-                        .add("arguments", Json.createObjectBuilder().build())
+                        .add("arguments", Json.createObjectBuilder()
+                                .add("test_arg", "value")
+                                .build())
                         .build()), "prompts/get", 3000);
         JsonObject result = ((JsonRpcResponse) promptGetResponse).result();
         assertTrue(result.containsKey("messages"), "Prompt get should return messages");
+
+        JsonRpcMessage missingArgResponse = testProtocolOperationWithTimeout(() -> client.request("prompts/get",
+                Json.createObjectBuilder()
+                        .add("name", "test_prompt")
+                        .add("arguments", Json.createObjectBuilder().build())
+                        .build()), "prompts/get", 3000);
+        assertInstanceOf(JsonRpcError.class, missingArgResponse, "Missing arguments should return error");
     }
 
     private void testLoggingFeatures(DefaultMcpClient client) {
