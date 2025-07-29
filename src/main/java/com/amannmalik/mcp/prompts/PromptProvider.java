@@ -10,11 +10,12 @@ public interface PromptProvider {
 
     /**
      * Subscribe to prompt list changes.
-     *
+     * <p>
      * Implementations that do not support subscriptions return a no-op handle
      * that can be safely closed.
      */
     default PromptsSubscription subscribe(PromptsListener listener) {
-        return () -> { };
+        return () -> {
+        };
     }
 }

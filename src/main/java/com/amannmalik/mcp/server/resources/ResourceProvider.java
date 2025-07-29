@@ -10,7 +10,8 @@ public interface ResourceProvider extends AutoCloseable {
     ResourceSubscription subscribe(String uri, ResourceListener listener);
 
     default ResourceListSubscription subscribeList(ResourceListListener listener) {
-        return () -> { };
+        return () -> {
+        };
     }
 
     @Override

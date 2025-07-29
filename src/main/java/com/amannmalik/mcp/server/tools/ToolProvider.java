@@ -10,11 +10,12 @@ public interface ToolProvider {
 
     /**
      * Subscribe to changes in the list of tools.
-     *
+     * <p>
      * Implementations that do not support list change notifications may
      * return a no-op subscription.
      */
     default ToolListSubscription subscribeList(ToolListListener listener) {
-        return () -> { };
+        return () -> {
+        };
     }
 }
