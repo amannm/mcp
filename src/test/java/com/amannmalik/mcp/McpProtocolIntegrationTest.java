@@ -3,8 +3,11 @@ package com.amannmalik.mcp;
 import com.amannmalik.mcp.client.DefaultMcpClient;
 import com.amannmalik.mcp.jsonrpc.JsonRpcMessage;
 import com.amannmalik.mcp.jsonrpc.JsonRpcResponse;
+import com.amannmalik.mcp.jsonrpc.JsonRpcError;
+import com.amannmalik.mcp.jsonrpc.JsonRpcErrorCode;
 import com.amannmalik.mcp.lifecycle.ClientCapability;
 import com.amannmalik.mcp.lifecycle.ClientInfo;
+import com.amannmalik.mcp.lifecycle.ServerCapability;
 import com.amannmalik.mcp.transport.StdioTransport;
 import jakarta.json.Json;
 import jakarta.json.JsonArray;
@@ -107,6 +110,7 @@ class McpProtocolIntegrationTest {
             Thread.sleep(1500);
             assertTrue(serverProcess.isAlive(), "Server process should be alive before protocol tests");
 
+            testServerCapabilities(client);
             testProtocolOperationExpectingSuccess(() -> client.request("ping", Json.createObjectBuilder().build()), "ping", 10000);
 
             JsonRpcMessage resourcesResponse = testProtocolOperationExpectingSuccess(() -> client.request("resources/list", Json.createObjectBuilder().build()), "resources/list", 5000);
@@ -124,6 +128,7 @@ class McpProtocolIntegrationTest {
             testCompletionFeatures(client);
             testProgressTracking(client);
             testCancellation(client);
+            testErrorHandling(client);
 
             CompletableFuture<Void> disconnectTask = CompletableFuture.runAsync(() -> {
                 try {
@@ -157,9 +162,7 @@ class McpProtocolIntegrationTest {
             }
         });
         try {
-            JsonRpcMessage response = task.get(timeoutMs, TimeUnit.MILLISECONDS);
-            assertTrue(response instanceof JsonRpcResponse);
-            return response;
+            return task.get(timeoutMs, TimeUnit.MILLISECONDS);
         } catch (TimeoutException e) {
             fail(operationName + " operation timed out after " + timeoutMs + "ms");
         } catch (ExecutionException e) {
@@ -253,6 +256,33 @@ class McpProtocolIntegrationTest {
                         .add("reason", "Test cancellation")
                         .build());
         Thread.sleep(100);
+    }
+
+    private void testServerCapabilities(DefaultMcpClient client) {
+        var expected = EnumSet.of(
+                ServerCapability.RESOURCES,
+                ServerCapability.TOOLS,
+                ServerCapability.PROMPTS,
+                ServerCapability.LOGGING,
+                ServerCapability.COMPLETIONS
+        );
+        assertEquals(expected, client.serverCapabilities(), "Server capabilities should match");
+    }
+
+    private void testErrorHandling(DefaultMcpClient client) {
+        JsonRpcMessage unknown = testProtocolOperationWithTimeout(
+                () -> client.request("unknown/method", Json.createObjectBuilder().build()),
+                "unknown/method", 3000);
+        assertInstanceOf(JsonRpcError.class, unknown, "Unknown method should return error");
+        assertEquals(JsonRpcErrorCode.METHOD_NOT_FOUND.code(),
+                ((JsonRpcError) unknown).error().code());
+
+        JsonRpcMessage badParams = testProtocolOperationWithTimeout(
+                () -> client.request("resources/read", Json.createObjectBuilder().build()),
+                "resources/read missing", 3000);
+        assertInstanceOf(JsonRpcError.class, badParams, "Invalid params should return error");
+        assertEquals(JsonRpcErrorCode.INVALID_PARAMS.code(),
+                ((JsonRpcError) badParams).error().code());
     }
 
     private int findAvailablePort() {
