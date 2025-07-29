@@ -23,8 +23,10 @@ public record PromptTemplate(Prompt prompt, List<PromptMessageTemplate> messages
 
     private static PromptContent instantiate(PromptContent tmpl, Map<String, String> args) {
         return switch (tmpl) {
-            case PromptContent.Text t -> new PromptContent.Text(substitute(t.text(), args));
-            default -> tmpl;
+            case PromptContent.Text t -> new PromptContent.Text(substitute(t.text(), args), t.annotations());
+            case PromptContent.Image i -> new PromptContent.Image(i.data(), i.mimeType(), i.annotations());
+            case PromptContent.Audio a -> new PromptContent.Audio(a.data(), a.mimeType(), a.annotations());
+            case PromptContent.ResourceContent r -> new PromptContent.ResourceContent(r.resource(), r.annotations());
         };
     }
 

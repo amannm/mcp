@@ -58,6 +58,9 @@ public final class PromptCodec {
 
     static JsonObject toJsonObject(PromptContent content) {
         JsonObjectBuilder b = Json.createObjectBuilder().add("type", content.type());
+        if (content.annotations() != null) {
+            b.add("annotations", ResourcesCodec.toJsonObject(content.annotations()));
+        }
         switch (content) {
             case PromptContent.Text t -> b.add("text", t.text());
             case PromptContent.Image i -> b.add("data", Base64.getEncoder().encodeToString(i.data()))

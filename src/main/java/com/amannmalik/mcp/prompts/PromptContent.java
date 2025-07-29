@@ -1,14 +1,16 @@
 package com.amannmalik.mcp.prompts;
 
 import com.amannmalik.mcp.server.resources.Resource;
+import com.amannmalik.mcp.server.resources.ResourceAnnotations;
 
 /** Supported content types for prompt messages. */
 public sealed interface PromptContent
         permits PromptContent.Text, PromptContent.Image, PromptContent.Audio, PromptContent.ResourceContent {
     String type();
+    ResourceAnnotations annotations();
 
     /** Text content. */
-    record Text(String text) implements PromptContent {
+    record Text(String text, ResourceAnnotations annotations) implements PromptContent {
         public Text {
             if (text == null) throw new IllegalArgumentException("text is required");
         }
@@ -16,7 +18,7 @@ public sealed interface PromptContent
     }
 
     /** Image content. */
-    record Image(byte[] data, String mimeType) implements PromptContent {
+    record Image(byte[] data, String mimeType, ResourceAnnotations annotations) implements PromptContent {
         public Image {
             if (data == null || mimeType == null) {
                 throw new IllegalArgumentException("data and mimeType are required");
@@ -26,7 +28,7 @@ public sealed interface PromptContent
     }
 
     /** Audio content. */
-    record Audio(byte[] data, String mimeType) implements PromptContent {
+    record Audio(byte[] data, String mimeType, ResourceAnnotations annotations) implements PromptContent {
         public Audio {
             if (data == null || mimeType == null) {
                 throw new IllegalArgumentException("data and mimeType are required");
@@ -36,7 +38,7 @@ public sealed interface PromptContent
     }
 
     /** Embedded resource content. */
-    record ResourceContent(Resource resource) implements PromptContent {
+    record ResourceContent(Resource resource, ResourceAnnotations annotations) implements PromptContent {
         public ResourceContent {
             if (resource == null) throw new IllegalArgumentException("resource is required");
         }
