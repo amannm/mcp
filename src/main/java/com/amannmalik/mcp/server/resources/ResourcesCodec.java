@@ -139,12 +139,16 @@ public final class ResourcesCodec {
     }
 
     public static JsonObject toJsonObject(ResourceUpdatedNotification n) {
-        return Json.createObjectBuilder()
-                .add("uri", n.uri())
-                .build();
+        JsonObjectBuilder b = Json.createObjectBuilder()
+                .add("uri", n.uri());
+        if (n.title() != null) b.add("title", n.title());
+        return b.build();
     }
 
     public static ResourceUpdatedNotification toResourceUpdatedNotification(JsonObject obj) {
-        return new ResourceUpdatedNotification(obj.getString("uri"));
+        return new ResourceUpdatedNotification(
+                obj.getString("uri"),
+                obj.getString("title", null)
+        );
     }
 }
