@@ -2,10 +2,15 @@ package com.amannmalik.mcp.prompts;
 
 import com.amannmalik.mcp.server.resources.Resource;
 import com.amannmalik.mcp.server.resources.ResourceAnnotations;
+import com.amannmalik.mcp.server.resources.ResourceBlock;
 
 /** Supported content types for prompt messages. */
 public sealed interface PromptContent
-        permits PromptContent.Text, PromptContent.Image, PromptContent.Audio, PromptContent.ResourceContent {
+        permits PromptContent.Text,
+        PromptContent.Image,
+        PromptContent.Audio,
+        PromptContent.EmbeddedResource,
+        PromptContent.ResourceLink {
     String type();
     ResourceAnnotations annotations();
 
@@ -38,10 +43,23 @@ public sealed interface PromptContent
     }
 
     /** Embedded resource content. */
-    record ResourceContent(Resource resource, ResourceAnnotations annotations) implements PromptContent {
-        public ResourceContent {
+    record EmbeddedResource(ResourceBlock resource, ResourceAnnotations annotations) implements PromptContent {
+        public EmbeddedResource {
             if (resource == null) throw new IllegalArgumentException("resource is required");
         }
         @Override public String type() { return "resource"; }
+    }
+
+    /** Link to a resource without embedding its contents. */
+    record ResourceLink(Resource resource) implements PromptContent {
+        public ResourceLink {
+            if (resource == null) throw new IllegalArgumentException("resource is required");
+        }
+
+        @Override public ResourceAnnotations annotations() {
+            return resource.annotations();
+        }
+
+        @Override public String type() { return "resource_link"; }
     }
 }

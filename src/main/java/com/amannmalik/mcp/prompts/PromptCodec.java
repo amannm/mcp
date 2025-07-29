@@ -67,7 +67,12 @@ public final class PromptCodec {
                     .add("mimeType", i.mimeType());
             case PromptContent.Audio a -> b.add("data", Base64.getEncoder().encodeToString(a.data()))
                     .add("mimeType", a.mimeType());
-            case PromptContent.ResourceContent r -> b.add("resource", ResourcesCodec.toJsonObject(r.resource()));
+            case PromptContent.EmbeddedResource r -> b.add("resource", ResourcesCodec.toJsonObject(r.resource()));
+            case PromptContent.ResourceLink l -> {
+                for (var e : ResourcesCodec.toJsonObject(l.resource()).entrySet()) {
+                    b.add(e.getKey(), e.getValue());
+                }
+            }
         }
         return b.build();
     }

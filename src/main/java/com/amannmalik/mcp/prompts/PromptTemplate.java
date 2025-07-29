@@ -26,7 +26,8 @@ public record PromptTemplate(Prompt prompt, List<PromptMessageTemplate> messages
             case PromptContent.Text t -> new PromptContent.Text(substitute(t.text(), args), t.annotations());
             case PromptContent.Image i -> new PromptContent.Image(i.data(), i.mimeType(), i.annotations());
             case PromptContent.Audio a -> new PromptContent.Audio(a.data(), a.mimeType(), a.annotations());
-            case PromptContent.ResourceContent r -> new PromptContent.ResourceContent(r.resource(), r.annotations());
+            case PromptContent.EmbeddedResource r -> new PromptContent.EmbeddedResource(r.resource(), r.annotations());
+            case PromptContent.ResourceLink l -> new PromptContent.ResourceLink(l.resource());
         };
     }
 
