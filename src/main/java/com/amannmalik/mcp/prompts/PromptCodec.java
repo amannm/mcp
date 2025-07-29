@@ -6,6 +6,8 @@ import jakarta.json.JsonObject;
 import jakarta.json.JsonObjectBuilder;
 
 import com.amannmalik.mcp.server.resources.ResourcesCodec;
+import com.amannmalik.mcp.util.PaginationCodec;
+import com.amannmalik.mcp.util.PaginatedResult;
 
 import java.util.Base64;
 
@@ -52,7 +54,7 @@ public final class PromptCodec {
         JsonArrayBuilder arr = Json.createArrayBuilder();
         page.prompts().forEach(p -> arr.add(toJsonObject(p)));
         JsonObjectBuilder builder = Json.createObjectBuilder().add("prompts", arr.build());
-        if (page.nextCursor() != null) builder.add("nextCursor", page.nextCursor());
+        PaginationCodec.toJsonObject(new PaginatedResult(page.nextCursor())).forEach(builder::add);
         return builder.build();
     }
 
