@@ -38,13 +38,11 @@ public final class ToolCodec {
 
     private static JsonObject toJsonObject(ToolAnnotations ann) {
         JsonObjectBuilder b = Json.createObjectBuilder();
-        if (!ann.audience().isEmpty()) {
-            var arr = Json.createArrayBuilder();
-            ann.audience().forEach(a -> arr.add(a.name().toLowerCase()));
-            b.add("audience", arr);
-        }
-        if (ann.priority() != null) b.add("priority", ann.priority());
-        if (ann.lastModified() != null) b.add("lastModified", ann.lastModified().toString());
+        if (ann.title() != null) b.add("title", ann.title());
+        if (ann.readOnlyHint() != null) b.add("readOnlyHint", ann.readOnlyHint());
+        if (ann.destructiveHint() != null) b.add("destructiveHint", ann.destructiveHint());
+        if (ann.idempotentHint() != null) b.add("idempotentHint", ann.idempotentHint());
+        if (ann.openWorldHint() != null) b.add("openWorldHint", ann.openWorldHint());
         return b.build();
     }
 }
