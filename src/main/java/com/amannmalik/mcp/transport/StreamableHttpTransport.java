@@ -119,6 +119,11 @@ public final class StreamableHttpTransport implements Transport {
                 resp.sendError(HttpServletResponse.SC_FORBIDDEN);
                 return;
             }
+            String accept = req.getHeader("Accept");
+            if (accept == null || !(accept.contains("application/json") && accept.contains("text/event-stream"))) {
+                resp.sendError(HttpServletResponse.SC_NOT_ACCEPTABLE);
+                return;
+            }
 
             String session = sessionId.get();
             String header = req.getHeader("Mcp-Session-Id");
@@ -194,6 +199,11 @@ public final class StreamableHttpTransport implements Transport {
         protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws IOException {
             if (!originValidator.isValid(req.getHeader("Origin"))) {
                 resp.sendError(HttpServletResponse.SC_FORBIDDEN);
+                return;
+            }
+            String accept = req.getHeader("Accept");
+            if (accept == null || !accept.contains("text/event-stream")) {
+                resp.sendError(HttpServletResponse.SC_NOT_ACCEPTABLE);
                 return;
             }
             String session = sessionId.get();
