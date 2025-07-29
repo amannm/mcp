@@ -26,16 +26,25 @@ public class ResourceServer extends McpServer {
         this(provider, transport, ResourceAccessController.ALLOW_ALL, DEFAULT_PRINCIPAL);
     }
 
+    public static ResourceServer create(ResourceProvider provider, Transport transport) {
+        return create(provider, transport, ResourceAccessController.ALLOW_ALL, DEFAULT_PRINCIPAL);
+    }
+
     public ResourceServer(ResourceProvider provider, Transport transport, ResourceAccessController access, Principal principal) {
         super(EnumSet.of(ServerCapability.RESOURCES), transport);
         this.provider = provider;
         this.access = access;
         this.principal = principal;
-        registerRequestHandler("resources/list", this::listResources);
-        registerRequestHandler("resources/read", this::readResource);
-        registerRequestHandler("resources/templates/list", this::listTemplates);
-        registerRequestHandler("resources/subscribe", this::subscribe);
-        registerRequestHandler("resources/unsubscribe", this::unsubscribe);
+    }
+
+    public static ResourceServer create(ResourceProvider provider, Transport transport, ResourceAccessController access, Principal principal) {
+        ResourceServer server = new ResourceServer(provider, transport, access, principal);
+        server.registerRequestHandler("resources/list", server::listResources);
+        server.registerRequestHandler("resources/read", server::readResource);
+        server.registerRequestHandler("resources/templates/list", server::listTemplates);
+        server.registerRequestHandler("resources/subscribe", server::subscribe);
+        server.registerRequestHandler("resources/unsubscribe", server::unsubscribe);
+        return server;
     }
 
     private JsonRpcMessage listResources(JsonRpcRequest req) {

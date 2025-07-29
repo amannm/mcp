@@ -20,7 +20,12 @@ public class LoggingServer extends McpServer {
 
     public LoggingServer(Transport transport) {
         super(EnumSet.of(ServerCapability.LOGGING), transport);
-        registerRequestHandler("logging/setLevel", this::setLevel);
+    }
+
+    public static LoggingServer create(Transport transport) {
+        LoggingServer server = new LoggingServer(transport);
+        server.registerRequestHandler("logging/setLevel", server::setLevel);
+        return server;
     }
 
     private JsonRpcMessage setLevel(JsonRpcRequest req) {

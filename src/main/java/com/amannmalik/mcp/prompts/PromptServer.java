@@ -25,8 +25,13 @@ public class PromptServer extends McpServer {
     public PromptServer(PromptProvider provider, Transport transport) {
         super(EnumSet.of(ServerCapability.PROMPTS), transport);
         this.provider = provider;
-        registerRequestHandler("prompts/list", this::listPrompts);
-        registerRequestHandler("prompts/get", this::getPrompt);
+    }
+
+    public static PromptServer create(PromptProvider provider, Transport transport) {
+        PromptServer server = new PromptServer(provider, transport);
+        server.registerRequestHandler("prompts/list", server::listPrompts);
+        server.registerRequestHandler("prompts/get", server::getPrompt);
+        return server;
     }
 
     private JsonRpcMessage listPrompts(JsonRpcRequest req) {

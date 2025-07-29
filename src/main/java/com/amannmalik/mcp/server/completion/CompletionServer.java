@@ -19,7 +19,12 @@ public class CompletionServer extends McpServer {
     public CompletionServer(CompletionProvider provider, Transport transport) {
         super(EnumSet.of(ServerCapability.COMPLETIONS), transport);
         this.provider = provider;
-        registerRequestHandler("completion/complete", this::complete);
+    }
+
+    public static CompletionServer create(CompletionProvider provider, Transport transport) {
+        CompletionServer server = new CompletionServer(provider, transport);
+        server.registerRequestHandler("completion/complete", server::complete);
+        return server;
     }
 
     private JsonRpcMessage complete(JsonRpcRequest req) {

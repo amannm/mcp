@@ -15,7 +15,12 @@ public class SamplingServer extends McpServer {
     public SamplingServer(SamplingProvider provider, Transport transport) {
         super(EnumSet.noneOf(ServerCapability.class), transport);
         this.provider = provider;
-        registerRequestHandler("sampling/createMessage", this::createMessage);
+    }
+
+    public static SamplingServer create(SamplingProvider provider, Transport transport) {
+        SamplingServer server = new SamplingServer(provider, transport);
+        server.registerRequestHandler("sampling/createMessage", server::createMessage);
+        return server;
     }
 
     private JsonRpcMessage createMessage(JsonRpcRequest req) {
