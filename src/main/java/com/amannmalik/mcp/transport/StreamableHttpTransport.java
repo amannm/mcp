@@ -42,6 +42,7 @@ public final class StreamableHttpTransport implements Transport {
     private static final String DEFAULT_VERSION = "2025-03-26";
     private final BlockingQueue<JsonObject> incoming = new LinkedBlockingQueue<>();
     private final Set<SseClient> sseClients = ConcurrentHashMap.newKeySet();
+    private final ConcurrentHashMap<String, SseClient> requestStreams = new ConcurrentHashMap<>();
     private final AtomicReference<String> sessionId = new AtomicReference<>();
     private final AtomicReference<String> lastSessionId = new AtomicReference<>();
     private volatile String protocolVersion;
@@ -73,6 +74,16 @@ public final class StreamableHttpTransport implements Transport {
         String id = message.containsKey("id") ? message.get("id").toString() : null;
         String method = message.getString("method", null);
         if (id != null) {
+            SseClient stream = requestStreams.get(id);
+            if (stream != null) {
+                stream.send(message, nextEventId.getAndIncrement());
+                if (method == null) {
+                    stream.close();
+                    requestStreams.remove(id);
+                    sseClients.remove(stream);
+                }
+                return;
+            }
             var q = responseQueues.remove(id);
             if (q != null) {
                 q.add(message);
@@ -108,6 +119,29 @@ public final class StreamableHttpTransport implements Transport {
                 }
             });
             sseClients.clear();
+            requestStreams.forEach((id, client) -> {
+                try {
+                    RequestId reqId;
+                    if (id.startsWith("\"") && id.endsWith("\"") && id.length() > 1) {
+                        reqId = new RequestId.StringId(id.substring(1, id.length() - 1));
+                    } else {
+                        try {
+                            reqId = new RequestId.NumericId(Long.parseLong(id));
+                        } catch (NumberFormatException e) {
+                            reqId = new RequestId.StringId(id);
+                        }
+                    }
+                    JsonRpcError err = new JsonRpcError(reqId,
+                            new JsonRpcError.ErrorDetail(
+                                    JsonRpcErrorCode.INTERNAL_ERROR.code(),
+                                    "Transport closed",
+                                    null));
+                    client.send(JsonRpcCodec.toJsonObject(err), nextEventId.getAndIncrement());
+                    client.close();
+                } catch (Exception ignore) {
+                }
+            });
+            requestStreams.clear();
 
             responseQueues.forEach((id, queue) -> {
                 RequestId reqId;
@@ -206,31 +240,91 @@ public final class StreamableHttpTransport implements Transport {
                 return;
             }
 
-            BlockingQueue<JsonObject> q = new LinkedBlockingQueue<>(1);
-            responseQueues.put(obj.get("id").toString(), q);
-
-            try {
-                incoming.put(obj);
-                JsonObject response = q.poll(30, TimeUnit.SECONDS);
-                if (response == null) {
-                    resp.sendError(HttpServletResponse.SC_REQUEST_TIMEOUT);
-                    return;
-                }
-                if (initializing && response.containsKey("result")) {
-                    JsonObject result = response.getJsonObject("result");
-                    if (result.containsKey("protocolVersion")) {
-                        protocolVersion = result.getString("protocolVersion");
+            if (initializing) {
+                BlockingQueue<JsonObject> q = new LinkedBlockingQueue<>(1);
+                responseQueues.put(obj.get("id").toString(), q);
+                try {
+                    incoming.put(obj);
+                    JsonObject response = q.poll(30, TimeUnit.SECONDS);
+                    if (response == null) {
+                        resp.sendError(HttpServletResponse.SC_REQUEST_TIMEOUT);
+                        return;
                     }
+                    if (response.containsKey("result")) {
+                        JsonObject result = response.getJsonObject("result");
+                        if (result.containsKey("protocolVersion")) {
+                            protocolVersion = result.getString("protocolVersion");
+                        }
+                    }
+                    resp.setContentType("application/json");
+                    resp.setCharacterEncoding("UTF-8");
+                    resp.setHeader(PROTOCOL_HEADER, protocolVersion);
+                    resp.getWriter().write(response.toString());
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                    resp.sendError(HttpServletResponse.SC_SERVICE_UNAVAILABLE);
+                } finally {
+                    responseQueues.remove(obj.get("id").toString());
                 }
-                resp.setContentType("application/json");
-                resp.setCharacterEncoding("UTF-8");
+            } else {
+                resp.setStatus(HttpServletResponse.SC_OK);
+                resp.setContentType("text/event-stream;charset=UTF-8");
+                resp.setHeader("Cache-Control", "no-cache");
                 resp.setHeader(PROTOCOL_HEADER, protocolVersion);
-                resp.getWriter().write(response.toString());
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-                resp.sendError(HttpServletResponse.SC_SERVICE_UNAVAILABLE);
-            } finally {
-                responseQueues.remove(obj.get("id").toString());
+                resp.flushBuffer();
+                AsyncContext ac = req.startAsync();
+                ac.setTimeout(0);
+                SseClient client = new SseClient(ac);
+                String key = obj.get("id").toString();
+                requestStreams.put(key, client);
+                sseClients.add(client);
+                ac.addListener(new AsyncListener() {
+                    @Override
+                    public void onComplete(AsyncEvent event) {
+                        requestStreams.remove(key);
+                        sseClients.remove(client);
+                        try {
+                            client.close();
+                        } catch (Exception e) {
+                            System.err.println("SSE close failed: " + e.getMessage());
+                        }
+                    }
+
+                    @Override
+                    public void onTimeout(AsyncEvent event) {
+                        requestStreams.remove(key);
+                        sseClients.remove(client);
+                        try {
+                            client.close();
+                        } catch (Exception e) {
+                            System.err.println("SSE close failed: " + e.getMessage());
+                        }
+                    }
+
+                    @Override
+                    public void onError(AsyncEvent event) {
+                        requestStreams.remove(key);
+                        sseClients.remove(client);
+                        try {
+                            client.close();
+                        } catch (Exception e) {
+                            System.err.println("SSE close failed: " + e.getMessage());
+                        }
+                    }
+
+                    @Override
+                    public void onStartAsync(AsyncEvent event) {
+                    }
+                });
+                try {
+                    incoming.put(obj);
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                    requestStreams.remove(key);
+                    sseClients.remove(client);
+                    client.close();
+                    resp.sendError(HttpServletResponse.SC_SERVICE_UNAVAILABLE);
+                }
             }
         }
 
@@ -348,6 +442,8 @@ public final class StreamableHttpTransport implements Transport {
             protocolVersion = ProtocolLifecycle.SUPPORTED_VERSION;
             sseClients.forEach(SseClient::close);
             sseClients.clear();
+            requestStreams.forEach((id, c) -> c.close());
+            requestStreams.clear();
             resp.setStatus(HttpServletResponse.SC_OK);
         }
     }
