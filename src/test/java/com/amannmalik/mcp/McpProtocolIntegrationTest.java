@@ -1,6 +1,6 @@
 package com.amannmalik.mcp;
 
-import com.amannmalik.mcp.client.DefaultMcpClient;
+import com.amannmalik.mcp.client.McpClient;
 import com.amannmalik.mcp.jsonrpc.JsonRpcError;
 import com.amannmalik.mcp.jsonrpc.JsonRpcErrorCode;
 import com.amannmalik.mcp.jsonrpc.JsonRpcMessage;
@@ -89,7 +89,7 @@ class McpProtocolIntegrationTest {
                     serverProcess.getOutputStream()
             );
 
-            DefaultMcpClient client = new DefaultMcpClient(
+            McpClient client = new McpClient(
                     new ClientInfo("test-client", "Test Client", "1.0"),
                     EnumSet.allOf(ClientCapability.class),
                     clientTransport
@@ -188,14 +188,14 @@ class McpProtocolIntegrationTest {
         assertInstanceOf(JsonArray.class, result.get(expectedArrayKey), expectedArrayKey + " should be an array");
     }
 
-    private void testResourceFeatures(DefaultMcpClient client) {
+    private void testResourceFeatures(McpClient client) {
         JsonRpcMessage templatesResponse = testProtocolOperationWithTimeout(() -> client.request("resources/templates/list", Json.createObjectBuilder().build()), "resources/templates/list", 3000);
         JsonRpcMessage readResponse = testProtocolOperationWithTimeout(() -> client.request("resources/read", Json.createObjectBuilder().add("uri", "test://example").build()), "resources/read", 3000);
         JsonObject result = ((JsonRpcResponse) readResponse).result();
         assertTrue(result.containsKey("contents"), "Resource read should return contents");
     }
 
-    private void testToolFeatures(DefaultMcpClient client) {
+    private void testToolFeatures(McpClient client) {
         JsonRpcMessage toolCallResponse = testProtocolOperationWithTimeout(() -> client.request("tools/call",
                 Json.createObjectBuilder()
                         .add("name", "test_tool")
@@ -206,7 +206,7 @@ class McpProtocolIntegrationTest {
         assertTrue(result.containsKey("content"), "Tool call should return content");
     }
 
-    private void testPromptFeatures(DefaultMcpClient client) {
+    private void testPromptFeatures(McpClient client) {
         JsonRpcMessage promptGetResponse = testProtocolOperationWithTimeout(() -> client.request("prompts/get",
                 Json.createObjectBuilder()
                         .add("name", "test_prompt")
@@ -225,12 +225,12 @@ class McpProtocolIntegrationTest {
         assertInstanceOf(JsonRpcError.class, missingArgResponse, "Missing arguments should return error");
     }
 
-    private void testLoggingFeatures(DefaultMcpClient client) {
+    private void testLoggingFeatures(McpClient client) {
         JsonRpcMessage logLevelResponse = testProtocolOperationWithTimeout(() -> client.request("logging/setLevel",
                 Json.createObjectBuilder().add("level", "info").build()), "logging/setLevel", 3000);
     }
 
-    private void testCompletionFeatures(DefaultMcpClient client) {
+    private void testCompletionFeatures(McpClient client) {
         JsonRpcMessage completionResponse = testProtocolOperationWithTimeout(() -> client.request("completion/complete",
                 Json.createObjectBuilder()
                         .add("ref", Json.createObjectBuilder()
@@ -247,7 +247,7 @@ class McpProtocolIntegrationTest {
 
     }
 
-    private void testProgressTracking(DefaultMcpClient client) throws IOException {
+    private void testProgressTracking(McpClient client) throws IOException {
         JsonObject paramsWithProgress = Json.createObjectBuilder()
                 .add("_meta", Json.createObjectBuilder()
                         .add("progressToken", "test-progress-123")
@@ -258,7 +258,7 @@ class McpProtocolIntegrationTest {
         assertInstanceOf(JsonRpcResponse.class, response);
     }
 
-    private void testCancellation(DefaultMcpClient client) throws IOException, InterruptedException {
+    private void testCancellation(McpClient client) throws IOException, InterruptedException {
         client.notify("notifications/cancelled",
                 Json.createObjectBuilder()
                         .add("requestId", "123")
@@ -267,7 +267,7 @@ class McpProtocolIntegrationTest {
         Thread.sleep(100);
     }
 
-    private void testServerCapabilities(DefaultMcpClient client) {
+    private void testServerCapabilities(McpClient client) {
         var expected = EnumSet.of(
                 ServerCapability.RESOURCES,
                 ServerCapability.TOOLS,
@@ -278,7 +278,7 @@ class McpProtocolIntegrationTest {
         assertEquals(expected, client.serverCapabilities(), "Server capabilities should match");
     }
 
-    private void testErrorHandling(DefaultMcpClient client) {
+    private void testErrorHandling(McpClient client) {
         JsonRpcMessage unknown = testProtocolOperationWithTimeout(
                 () -> client.request("unknown/method", Json.createObjectBuilder().build()),
                 "unknown/method", 3000);

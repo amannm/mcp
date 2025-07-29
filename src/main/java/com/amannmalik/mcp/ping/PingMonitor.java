@@ -1,6 +1,6 @@
 package com.amannmalik.mcp.ping;
 
-import com.amannmalik.mcp.client.DefaultMcpClient;
+import com.amannmalik.mcp.client.McpClient;
 
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -12,7 +12,7 @@ public final class PingMonitor {
     private PingMonitor() {
     }
 
-    public static boolean isAlive(DefaultMcpClient client, long timeoutMillis) {
+    public static boolean isAlive(McpClient client, long timeoutMillis) {
         ExecutorService exec = Executors.newSingleThreadExecutor();
         Future<PingResponse> future = exec.submit(client::ping);
         try {

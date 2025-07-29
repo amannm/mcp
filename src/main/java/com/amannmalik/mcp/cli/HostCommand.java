@@ -1,7 +1,7 @@
 package com.amannmalik.mcp.cli;
 
 import com.amannmalik.mcp.auth.Principal;
-import com.amannmalik.mcp.client.DefaultMcpClient;
+import com.amannmalik.mcp.client.McpClient;
 import com.amannmalik.mcp.lifecycle.ClientCapability;
 import com.amannmalik.mcp.lifecycle.ClientInfo;
 import com.amannmalik.mcp.security.ConsentManager;
@@ -73,7 +73,7 @@ public final class HostCommand implements Callable<Integer> {
                 var pb = new ProcessBuilder(entry.getValue().split(" "));
                 StdioTransport t = new StdioTransport(pb, verbose ? System.err::println : s -> {
                 });
-                DefaultMcpClient client = new DefaultMcpClient(
+                McpClient client = new McpClient(
                         new ClientInfo(entry.getKey(), entry.getKey(), "0"),
                         EnumSet.noneOf(ClientCapability.class),
                         t);

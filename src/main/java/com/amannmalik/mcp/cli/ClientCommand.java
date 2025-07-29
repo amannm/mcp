@@ -1,6 +1,6 @@
 package com.amannmalik.mcp.cli;
 
-import com.amannmalik.mcp.client.DefaultMcpClient;
+import com.amannmalik.mcp.client.McpClient;
 import com.amannmalik.mcp.lifecycle.ClientCapability;
 import com.amannmalik.mcp.lifecycle.ClientInfo;
 import com.amannmalik.mcp.transport.StdioTransport;
@@ -48,7 +48,7 @@ public final class ClientCommand implements Callable<Integer> {
         StdioTransport transport = new StdioTransport(new ProcessBuilder(cfg.command().split(" ")),
                 verbose ? System.err::println : s -> {
                 });
-        DefaultMcpClient client = new DefaultMcpClient(
+        McpClient client = new McpClient(
                 new ClientInfo("cli", "CLI", "0"),
                 EnumSet.noneOf(ClientCapability.class),
                 transport);

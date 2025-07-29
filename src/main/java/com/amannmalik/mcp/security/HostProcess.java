@@ -41,7 +41,7 @@ public final class HostProcess implements AutoCloseable {
             throw new IllegalArgumentException("Client already registered: " + id);
         }
         try {
-            if (client instanceof com.amannmalik.mcp.client.DefaultMcpClient dc) {
+            if (client instanceof com.amannmalik.mcp.client.McpClient dc) {
                 dc.configurePing(30000, 5000);
             }
             client.connect();
