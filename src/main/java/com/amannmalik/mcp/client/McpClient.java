@@ -121,7 +121,30 @@ public final class McpClient implements AutoCloseable {
         RequestId reqId = new RequestId.NumericId(id.getAndIncrement());
         JsonRpcRequest request = new JsonRpcRequest(reqId, "initialize", LifecycleCodec.toJsonObject(init));
         transport.send(JsonRpcCodec.toJsonObject(request));
-        JsonRpcMessage msg = JsonRpcCodec.fromJsonObject(transport.receive());
+        CompletableFuture<JsonRpcMessage> future = CompletableFuture.supplyAsync(() -> {
+            try {
+                return JsonRpcCodec.fromJsonObject(transport.receive());
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        });
+        JsonRpcMessage msg;
+        try {
+            msg = future.get(DEFAULT_TIMEOUT, TimeUnit.MILLISECONDS);
+        } catch (TimeoutException e) {
+            try {
+                transport.close();
+            } catch (IOException ignore) {
+            }
+            throw new IOException("Initialization timed out after " + DEFAULT_TIMEOUT + " ms");
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new IOException(e);
+        } catch (ExecutionException e) {
+            Throwable cause = e.getCause();
+            if (cause instanceof IOException io) throw io;
+            throw new IOException(cause);
+        }
         if (msg instanceof JsonRpcResponse resp) {
             InitializeResponse ir = LifecycleCodec.toInitializeResponse(resp.result());
             if (!ProtocolLifecycle.SUPPORTED_VERSION.equals(ir.protocolVersion())) {
