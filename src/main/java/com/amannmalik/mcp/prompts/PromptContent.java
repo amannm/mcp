@@ -3,6 +3,7 @@ package com.amannmalik.mcp.prompts;
 import com.amannmalik.mcp.server.resources.Resource;
 import com.amannmalik.mcp.server.resources.ResourceAnnotations;
 import com.amannmalik.mcp.server.resources.ResourceBlock;
+import com.amannmalik.mcp.validation.InputSanitizer;
 
 public sealed interface PromptContent
         permits PromptContent.Text,
@@ -17,6 +18,7 @@ public sealed interface PromptContent
     record Text(String text, ResourceAnnotations annotations) implements PromptContent {
         public Text {
             if (text == null) throw new IllegalArgumentException("text is required");
+            text = InputSanitizer.requireClean(text);
         }
 
         @Override
@@ -31,6 +33,7 @@ public sealed interface PromptContent
                 throw new IllegalArgumentException("data and mimeType are required");
             }
             data = data.clone();
+            mimeType = InputSanitizer.requireClean(mimeType);
         }
 
         @Override
@@ -45,6 +48,7 @@ public sealed interface PromptContent
                 throw new IllegalArgumentException("data and mimeType are required");
             }
             data = data.clone();
+            mimeType = InputSanitizer.requireClean(mimeType);
         }
 
         @Override

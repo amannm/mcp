@@ -29,6 +29,7 @@ import java.util.UUID;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 
 public final class StreamableHttpTransport implements Transport {
@@ -36,11 +37,16 @@ public final class StreamableHttpTransport implements Transport {
     private final int port;
     private final OriginValidator originValidator;
     private static final String PROTOCOL_HEADER = "MCP-Protocol-Version";
+    // Default to the previous protocol revision when no version header is
+    // present, as recommended for backwards compatibility.
+    private static final String DEFAULT_VERSION = "2025-03-26";
     private final BlockingQueue<JsonObject> incoming = new LinkedBlockingQueue<>();
     private final Set<SseClient> sseClients = ConcurrentHashMap.newKeySet();
     private final AtomicReference<String> sessionId = new AtomicReference<>();
+    private final AtomicReference<String> lastSessionId = new AtomicReference<>();
     private volatile String protocolVersion;
     private final ConcurrentHashMap<String, BlockingQueue<JsonObject>> responseQueues = new ConcurrentHashMap<>();
+    private final AtomicLong nextEventId = new AtomicLong(1);
 
     public StreamableHttpTransport(int port, OriginValidator validator) throws Exception {
         server = new Server(new InetSocketAddress("127.0.0.1", port));
@@ -50,7 +56,9 @@ public final class StreamableHttpTransport implements Transport {
         server.start();
         this.port = ((ServerConnector) server.getConnectors()[0]).getLocalPort();
         this.originValidator = validator;
-        this.protocolVersion = ProtocolLifecycle.SUPPORTED_VERSION;
+        // Until initialization negotiates a version, assume the prior revision
+        // as the default when no MCP-Protocol-Version header is present.
+        this.protocolVersion = DEFAULT_VERSION;
     }
 
     public StreamableHttpTransport(int port) throws Exception {
@@ -64,6 +72,7 @@ public final class StreamableHttpTransport implements Transport {
     @Override
     public void send(JsonObject message) {
         String id = message.containsKey("id") ? message.get("id").toString() : null;
+        String method = message.getString("method", null);
         if (id != null) {
             var q = responseQueues.remove(id);
             if (q != null) {
@@ -71,8 +80,11 @@ public final class StreamableHttpTransport implements Transport {
                 return;
             }
         }
+        if (id != null && method == null) {
+            return;
+        }
         for (SseClient c : sseClients) {
-            c.send(message);
+            c.send(message, nextEventId.getAndIncrement());
             break;
         }
     }
@@ -119,6 +131,10 @@ public final class StreamableHttpTransport implements Transport {
             responseQueues.clear();
 
             server.stop();
+            sessionId.set(null);
+            lastSessionId.set(null);
+            nextEventId.set(1);
+            protocolVersion = ProtocolLifecycle.SUPPORTED_VERSION;
         } catch (Exception e) {
             throw new IOException(e);
         }
@@ -138,6 +154,7 @@ public final class StreamableHttpTransport implements Transport {
             }
 
             String session = sessionId.get();
+            String last = lastSessionId.get();
             String header = req.getHeader("Mcp-Session-Id");
             String version = req.getHeader(PROTOCOL_HEADER);
             JsonObject obj;
@@ -149,9 +166,15 @@ public final class StreamableHttpTransport implements Transport {
             if (session == null && initializing) {
                 session = UUID.randomUUID().toString();
                 sessionId.set(session);
+                lastSessionId.set(null);
+                nextEventId.set(1);
                 resp.setHeader("Mcp-Session-Id", session);
             } else if (session == null) {
-                resp.sendError(HttpServletResponse.SC_BAD_REQUEST);
+                if (header != null && header.equals(last)) {
+                    resp.sendError(HttpServletResponse.SC_NOT_FOUND);
+                } else {
+                    resp.sendError(HttpServletResponse.SC_BAD_REQUEST);
+                }
                 return;
             } else if (header == null) {
                 resp.sendError(HttpServletResponse.SC_BAD_REQUEST);
@@ -226,10 +249,15 @@ public final class StreamableHttpTransport implements Transport {
                 return;
             }
             String session = sessionId.get();
+            String last = lastSessionId.get();
             String header = req.getHeader("Mcp-Session-Id");
             String version = req.getHeader(PROTOCOL_HEADER);
             if (session == null) {
-                resp.sendError(HttpServletResponse.SC_BAD_REQUEST);
+                if (header != null && header.equals(last)) {
+                    resp.sendError(HttpServletResponse.SC_NOT_FOUND);
+                } else {
+                    resp.sendError(HttpServletResponse.SC_BAD_REQUEST);
+                }
                 return;
             }
             if (header == null) {
@@ -254,15 +282,7 @@ public final class StreamableHttpTransport implements Transport {
 
             ac.setTimeout(0);
 
-            String lastIdHeader = req.getHeader("Last-Event-ID");
-            long lastId = -1;
-            if (lastIdHeader != null) {
-                try {
-                    lastId = Long.parseLong(lastIdHeader);
-                } catch (NumberFormatException ignore) {
-                }
-            }
-            SseClient client = new SseClient(ac, lastId + 1);
+            SseClient client = new SseClient(ac);
             sseClients.add(client);
             ac.addListener(new AsyncListener() {
                 @Override
@@ -326,8 +346,12 @@ public final class StreamableHttpTransport implements Transport {
                 resp.sendError(HttpServletResponse.SC_BAD_REQUEST);
                 return;
             }
+            lastSessionId.set(session);
             sessionId.set(null);
             protocolVersion = ProtocolLifecycle.SUPPORTED_VERSION;
+            nextEventId.set(1);
+            sseClients.forEach(SseClient::close);
+            sseClients.clear();
             resp.setStatus(HttpServletResponse.SC_OK);
         }
     }
@@ -335,18 +359,15 @@ public final class StreamableHttpTransport implements Transport {
     private static class SseClient {
         private final AsyncContext context;
         private final PrintWriter out;
-        private final java.util.concurrent.atomic.AtomicLong nextId;
         private volatile boolean closed = false;
 
-        SseClient(AsyncContext context, long startId) throws IOException {
+        SseClient(AsyncContext context) throws IOException {
             this.context = context;
             this.out = context.getResponse().getWriter();
-            this.nextId = new java.util.concurrent.atomic.AtomicLong(startId);
         }
 
-        void send(JsonObject msg) {
+        void send(JsonObject msg, long id) {
             if (closed) return;
-            long id = nextId.getAndIncrement();
             try {
                 out.write("id: " + id + "\n");
                 out.write("data: " + msg.toString() + "\n\n");
