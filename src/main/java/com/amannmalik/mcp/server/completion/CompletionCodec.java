@@ -36,7 +36,12 @@ public final class CompletionCodec {
             JsonObject argsObj = obj.getJsonObject("context").getJsonObject("arguments");
             Map<String, String> args = new HashMap<>();
             if (argsObj != null) {
-                argsObj.forEach((k, v) -> args.put(k, v.toString().replace("\"", "")));
+                argsObj.forEach((k, v) -> {
+                    if (v.getValueType() != jakarta.json.JsonValue.ValueType.STRING) {
+                        throw new IllegalArgumentException("context arguments must be strings");
+                    }
+                    args.put(k, ((jakarta.json.JsonString) v).getString());
+                });
             }
             ctx = new CompleteRequest.Context(args);
         }
