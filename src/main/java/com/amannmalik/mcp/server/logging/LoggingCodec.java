@@ -3,6 +3,7 @@ package com.amannmalik.mcp.server.logging;
 import jakarta.json.Json;
 import jakarta.json.JsonObject;
 import jakarta.json.JsonObjectBuilder;
+import jakarta.json.JsonValue;
 
 public final class LoggingCodec {
     private LoggingCodec() {
@@ -17,9 +18,29 @@ public final class LoggingCodec {
     }
 
     public static LoggingNotification toLoggingNotification(JsonObject obj) {
-        LoggingLevel level = LoggingLevel.valueOf(obj.getString("level").toUpperCase());
-        String logger = obj.getString("logger", null);
-        return new LoggingNotification(level, logger, obj.get("data"));
+        if (obj == null) throw new IllegalArgumentException("object required");
+
+        String rawLevel;
+        try {
+            rawLevel = obj.getString("level");
+        } catch (Exception e) {
+            throw new IllegalArgumentException("level required", e);
+        }
+        LoggingLevel level = LoggingLevel.fromString(rawLevel);
+
+        JsonValue data = obj.get("data");
+        if (data == null) throw new IllegalArgumentException("data required");
+
+        String logger = null;
+        if (obj.containsKey("logger")) {
+            try {
+                logger = obj.getString("logger");
+            } catch (Exception e) {
+                throw new IllegalArgumentException("logger must be a string", e);
+            }
+        }
+
+        return new LoggingNotification(level, logger, data);
     }
 
     public static JsonObject toJsonObject(SetLevelRequest req) {
@@ -29,16 +50,14 @@ public final class LoggingCodec {
     }
 
     public static SetLevelRequest toSetLevelRequest(JsonObject obj) {
-        if (obj == null || !obj.containsKey("level")) {
-            throw new IllegalArgumentException("level required");
-        }
-        String raw = obj.getString("level", null);
-        if (raw == null) throw new IllegalArgumentException("level required");
+        if (obj == null) throw new IllegalArgumentException("level required");
+        String raw;
         try {
-            LoggingLevel level = LoggingLevel.valueOf(raw.toUpperCase());
-            return new SetLevelRequest(level);
-        } catch (IllegalArgumentException e) {
-            throw new IllegalArgumentException("invalid level", e);
+            raw = obj.getString("level");
+        } catch (Exception e) {
+            throw new IllegalArgumentException("level required", e);
         }
+        LoggingLevel level = LoggingLevel.fromString(raw);
+        return new SetLevelRequest(level);
     }
 }
