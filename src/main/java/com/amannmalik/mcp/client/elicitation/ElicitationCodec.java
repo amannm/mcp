@@ -4,9 +4,7 @@ import jakarta.json.Json;
 import jakarta.json.JsonObject;
 import jakarta.json.JsonObjectBuilder;
 
-/**
- * JSON utilities for elicitation messages.
- */
+
 public final class ElicitationCodec {
     private ElicitationCodec() {}
 

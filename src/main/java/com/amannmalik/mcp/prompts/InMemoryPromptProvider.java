@@ -6,7 +6,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import com.amannmalik.mcp.util.Pagination;
 
-/** Simple PromptProvider backed by in-memory templates. */
+
 public final class InMemoryPromptProvider implements PromptProvider {
     private final Map<String, PromptTemplate> templates = new ConcurrentHashMap<>();
 

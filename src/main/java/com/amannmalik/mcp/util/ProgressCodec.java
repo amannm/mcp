@@ -7,7 +7,7 @@ import jakarta.json.JsonObjectBuilder;
 import jakarta.json.JsonString;
 import jakarta.json.JsonValue;
 
-/** JSON utilities for progress messages. */
+
 public final class ProgressCodec {
     private ProgressCodec() {}
 

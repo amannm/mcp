@@ -7,7 +7,7 @@ import jakarta.json.JsonObjectBuilder;
 import jakarta.json.JsonValue;
 import jakarta.json.JsonString;
 
-/** Utility for serializing and deserializing JSON-RPC messages. */
+
 public final class JsonRpcCodec {
     private JsonRpcCodec() {}
 
@@ -61,11 +61,13 @@ public final class JsonRpcCodec {
         var hasResult = obj.containsKey("result");
 
         if (method != null && idValue != null && idValue.getValueType() != JsonValue.ValueType.NULL) {
-            // Request
+            
+
             return new JsonRpcRequest(toId(idValue), method, obj.getJsonObject("params"));
         }
         if (method != null) {
-            // Notification
+            
+
             return new JsonRpcNotification(method, obj.getJsonObject("params"));
         }
         if (hasResult) {

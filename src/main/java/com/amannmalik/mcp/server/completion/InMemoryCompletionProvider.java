@@ -6,7 +6,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CopyOnWriteArrayList;
 
-/** Simple CompletionProvider backed by in-memory entries. */
+
 public final class InMemoryCompletionProvider implements CompletionProvider {
     private final List<Entry> entries = new CopyOnWriteArrayList<>();
 

@@ -8,7 +8,7 @@ import jakarta.json.JsonObjectBuilder;
 import java.util.ArrayList;
 import java.util.List;
 
-/** JSON helpers for root messages. */
+
 public final class RootsCodec {
     private RootsCodec() {}
 

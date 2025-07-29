@@ -6,7 +6,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
-/** Enforces which tools a principal may invoke. */
+
 public final class ToolAccessController implements ToolAccessPolicy {
     private final Map<String, Set<String>> permissions = new ConcurrentHashMap<>();
 

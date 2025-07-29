@@ -6,7 +6,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
-/** Tracks user consent for data access scopes. */
+
 public final class ConsentManager {
     private final Map<String, Set<String>> consents = new ConcurrentHashMap<>();
 

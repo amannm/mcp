@@ -4,7 +4,7 @@ import jakarta.json.JsonObject;
 
 import java.util.regex.Pattern;
 
-/** Validates _meta key names. */
+
 public final class MetaValidator {
     private MetaValidator() {}
 

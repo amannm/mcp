@@ -4,7 +4,7 @@ import com.amannmalik.mcp.validation.InputSanitizer;
 
 import java.util.List;
 
-/** Metadata for a prompt that can be listed by the server. */
+
 public record Prompt(
         String name,
         String title,

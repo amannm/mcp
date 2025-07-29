@@ -4,7 +4,7 @@ import com.amannmalik.mcp.validation.InputSanitizer;
 
 import jakarta.json.JsonObject;
 
-/** Definition of a server-exposed tool. */
+
 public record Tool(String name,
                     String title,
                     String description,

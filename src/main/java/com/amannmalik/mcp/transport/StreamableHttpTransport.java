@@ -81,19 +81,23 @@ public final class StreamableHttpTransport implements Transport {
     @Override
     public void close() throws IOException {
         try {
-            // Close all SSE clients
+            
+
             sseClients.forEach(client -> {
                 try {
                     client.close();
                 } catch (Exception e) {
-                    // Log but continue cleanup
+                    
+
                 }
             });
             sseClients.clear();
             
-            // Clear response queues and interrupt any waiting threads
+            
+
             responseQueues.values().forEach(queue -> {
-                // Add a poison pill to unblock waiting threads
+                
+
                 queue.offer(Json.createObjectBuilder()
                     .add("error", Json.createObjectBuilder()
                         .add("code", -32603)
@@ -226,7 +230,8 @@ public final class StreamableHttpTransport implements Transport {
             resp.setHeader("Cache-Control", "no-cache");
             resp.flushBuffer();
             AsyncContext ac = req.startAsync();
-            ac.setTimeout(60000); // 60 second timeout to prevent resource leaks
+            ac.setTimeout(60000); 
+
             String lastIdHeader = req.getHeader("Last-Event-ID");
             long lastId = -1;
             if (lastIdHeader != null) {
@@ -244,7 +249,8 @@ public final class StreamableHttpTransport implements Transport {
                     try {
                         client.close();
                     } catch (Exception e) {
-                        // Log but continue
+                        
+
                     }
                 }
 
@@ -254,7 +260,8 @@ public final class StreamableHttpTransport implements Transport {
                     try {
                         client.close();
                     } catch (Exception e) {
-                        // Log but continue
+                        
+
                     }
                 }
 
@@ -264,7 +271,8 @@ public final class StreamableHttpTransport implements Transport {
                     try {
                         client.close();
                     } catch (Exception e) {
-                        // Log but continue
+                        
+
                     }
                 }
 
@@ -324,7 +332,8 @@ public final class StreamableHttpTransport implements Transport {
                 out.write("data: " + msg.toString() + "\n\n");
                 out.flush();
             } catch (Exception e) {
-                // Connection broken, mark as closed
+                
+
                 closed = true;
             }
         }
@@ -337,7 +346,8 @@ public final class StreamableHttpTransport implements Transport {
                     context.complete();
                 }
             } catch (Exception e) {
-                // Already closed or invalid state
+                
+
             }
         }
     }

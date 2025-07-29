@@ -2,7 +2,7 @@ package com.amannmalik.mcp.validation;
 
 import java.net.URI;
 
-/** Utility for validating and normalizing URIs. */
+
 public final class UriValidator {
     private UriValidator() {}
 

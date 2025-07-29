@@ -9,7 +9,7 @@ import jakarta.json.JsonObjectBuilder;
 import java.util.Base64;
 import java.util.List;
 
-/** JSON utilities for sampling messages. */
+
 public final class SamplingCodec {
     private SamplingCodec() {}
 

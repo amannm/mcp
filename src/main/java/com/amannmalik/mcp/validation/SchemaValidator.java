@@ -5,7 +5,7 @@ import jakarta.json.JsonObject;
 import jakarta.json.JsonString;
 import jakarta.json.JsonValue;
 
-/** Very small subset of JSON Schema validation used for incoming JSON values. */
+
 public final class SchemaValidator {
     private SchemaValidator() {}
 

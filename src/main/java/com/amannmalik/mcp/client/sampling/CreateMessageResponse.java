@@ -2,7 +2,7 @@ package com.amannmalik.mcp.client.sampling;
 
 import com.amannmalik.mcp.prompts.Role;
 
-/** Model-generated message. */
+
 public record CreateMessageResponse(
         Role role,
         MessageContent content,

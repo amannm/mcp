@@ -16,9 +16,7 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
-/**
- * Manages a collection of MCP clients within a single host application.
- */
+
 public final class HostProcess implements AutoCloseable {
     private final Map<String, McpClient> clients = new ConcurrentHashMap<>();
     private final SecurityPolicy policy;

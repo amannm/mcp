@@ -2,7 +2,7 @@ package com.amannmalik.mcp.jsonrpc;
 
 import jakarta.json.JsonObject;
 
-/** A JSON-RPC request expecting a response. */
+
 public record JsonRpcRequest(RequestId id, String method, JsonObject params) implements JsonRpcMessage {
     public JsonRpcRequest {
         if (id == null || method == null) {

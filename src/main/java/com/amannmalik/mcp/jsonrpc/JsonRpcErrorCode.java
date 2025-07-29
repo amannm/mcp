@@ -1,6 +1,6 @@
 package com.amannmalik.mcp.jsonrpc;
 
-/** Standard JSON-RPC error codes. */
+
 public enum JsonRpcErrorCode {
     PARSE_ERROR(-32700),
     INVALID_REQUEST(-32600),

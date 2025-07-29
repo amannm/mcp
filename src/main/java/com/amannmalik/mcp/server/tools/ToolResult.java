@@ -7,7 +7,7 @@ import jakarta.json.JsonObject;
 import jakarta.json.JsonValue;
 import com.amannmalik.mcp.validation.InputSanitizer;
 
-/** Result of a tool invocation. */
+
 public record ToolResult(JsonArray content,
                          JsonObject structuredContent,
                          boolean isError) {

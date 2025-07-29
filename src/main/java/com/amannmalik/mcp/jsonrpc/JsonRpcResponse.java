@@ -2,7 +2,7 @@ package com.amannmalik.mcp.jsonrpc;
 
 import jakarta.json.JsonObject;
 
-/** A successful JSON-RPC response. */
+
 public record JsonRpcResponse(RequestId id, JsonObject result) implements JsonRpcMessage {
     public JsonRpcResponse {
         if (id == null) {

@@ -8,7 +8,7 @@ import jakarta.json.JsonObjectBuilder;
 import java.util.HashMap;
 import java.util.Map;
 
-/** JSON utilities for completion messages. */
+
 public final class CompletionCodec {
     private CompletionCodec() {}
 

@@ -2,7 +2,7 @@ package com.amannmalik.mcp.client.sampling;
 
 import java.util.List;
 
-/** Parameters for requesting a new message from a model. */
+
 public record CreateMessageRequest(
         List<SamplingMessage> messages,
         ModelPreferences modelPreferences,

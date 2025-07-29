@@ -4,7 +4,7 @@ import jakarta.json.Json;
 import jakarta.json.JsonObject;
 import jakarta.json.JsonObjectBuilder;
 
-/** JSON helpers for logging messages. */
+
 public final class LoggingCodec {
     private LoggingCodec() {}
 

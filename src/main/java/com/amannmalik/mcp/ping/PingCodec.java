@@ -6,7 +6,7 @@ import com.amannmalik.mcp.jsonrpc.RequestId;
 import jakarta.json.Json;
 import jakarta.json.JsonObject;
 
-/** JSON-RPC helpers for ping messages. */
+
 public final class PingCodec {
     private PingCodec() {}
 

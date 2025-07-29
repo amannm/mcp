@@ -8,7 +8,7 @@ import jakarta.json.JsonObjectBuilder;
 import jakarta.json.JsonString;
 import jakarta.json.JsonValue;
 
-/** JSON utilities for cancellation messages. */
+
 public final class CancellationCodec {
     private CancellationCodec() {}
 

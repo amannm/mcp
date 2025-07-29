@@ -186,7 +186,8 @@ public final class DefaultMcpClient implements McpClient {
                     if (f != null) f.complete(err);
                 }
                 default -> {
-                    // ignore notifications
+                    
+
                 }
             }
         }

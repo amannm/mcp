@@ -2,7 +2,7 @@ package com.amannmalik.mcp.jsonrpc;
 
 import jakarta.json.JsonValue;
 
-/** An error response for a JSON-RPC request. */
+
 public record JsonRpcError(RequestId id, ErrorDetail error) implements JsonRpcMessage {
     public record ErrorDetail(int code, String message, JsonValue data) {}
 

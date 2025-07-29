@@ -3,7 +3,7 @@ package com.amannmalik.mcp.util;
 import java.util.Base64;
 import java.util.List;
 
-/** Basic cursor-based pagination helper. */
+
 public final class Pagination {
     private Pagination() {}
 
@@ -30,7 +30,7 @@ public final class Pagination {
         }
     }
 
-    /** A page of results. */
+    
     public record Page<T>(List<T> items, String nextCursor) {
         public Page {
             items = items == null ? List.of() : List.copyOf(items);

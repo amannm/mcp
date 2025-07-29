@@ -3,7 +3,7 @@ package com.amannmalik.mcp.security;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-/** Simple fixed-window rate limiter. */
+
 public final class RateLimiter {
     private final Map<String, Window> windows = new ConcurrentHashMap<>();
     private final int limit;

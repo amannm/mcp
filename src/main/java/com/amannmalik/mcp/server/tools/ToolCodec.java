@@ -5,7 +5,7 @@ import jakarta.json.JsonArrayBuilder;
 import jakarta.json.JsonObject;
 import jakarta.json.JsonObjectBuilder;
 
-/** JSON utilities for tool messages. */
+
 public final class ToolCodec {
     private ToolCodec() {}
 

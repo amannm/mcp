@@ -7,7 +7,7 @@ import jakarta.json.JsonValue;
 import java.util.EnumSet;
 import java.util.Set;
 
-/** JSON utilities for lifecycle messages. */
+
 public final class LifecycleCodec {
     private LifecycleCodec() {}
 

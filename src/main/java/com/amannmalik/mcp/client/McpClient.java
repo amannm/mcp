@@ -5,7 +5,7 @@ import com.amannmalik.mcp.jsonrpc.JsonRpcMessage;
 import jakarta.json.JsonObject;
 import java.io.IOException;
 
-/** Basic client contract managed by a HostProcess. */
+
 public interface McpClient extends AutoCloseable {
     ClientInfo info();
 
@@ -15,7 +15,7 @@ public interface McpClient extends AutoCloseable {
 
     boolean connected();
 
-    /** Context currently held by the client for aggregation. */
+    
     String context();
 
     JsonRpcMessage request(String method, JsonObject params) throws IOException;

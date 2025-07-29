@@ -234,7 +234,8 @@ public final class McpServer implements AutoCloseable {
         send(new JsonRpcNotification("notifications/progress", ProgressCodec.toJsonObject(note)));
     }
 
-    // ----- Resource operations -----
+    
+
 
     private JsonRpcMessage listResources(JsonRpcRequest req) {
         String cursor = req.params() == null ? null : req.params().getString("cursor", null);
@@ -298,7 +299,8 @@ public final class McpServer implements AutoCloseable {
         return new JsonRpcResponse(req.id(), b.build());
     }
 
-    // ----- Tool operations -----
+    
+
 
     private JsonRpcMessage listTools(JsonRpcRequest req) {
         String cursor = req.params() == null ? null : req.params().getString("cursor", null);
@@ -334,7 +336,8 @@ public final class McpServer implements AutoCloseable {
         }
     }
 
-    // ----- Prompt operations -----
+    
+
 
     private JsonRpcMessage listPrompts(JsonRpcRequest req) {
         String cursor = req.params() == null ? null : req.params().getString("cursor", null);
@@ -371,7 +374,8 @@ public final class McpServer implements AutoCloseable {
         }
     }
 
-    // ----- Logging -----
+    
+
 
     private JsonRpcMessage setLogLevel(JsonRpcRequest req) {
         JsonObject params = req.params();
@@ -394,7 +398,8 @@ public final class McpServer implements AutoCloseable {
         sendLog(new LoggingNotification(level, logger, data));
     }
 
-    // ----- Completion -----
+    
+
 
     private JsonRpcMessage complete(JsonRpcRequest req) {
         JsonObject params = req.params();
@@ -415,7 +420,8 @@ public final class McpServer implements AutoCloseable {
         }
     }
 
-    // ----- Default data -----
+    
+
 
     private static ResourceProvider createDefaultResources() {
         Resource r = new Resource("test://example", "example", null, null, "text/plain", 5L, null);

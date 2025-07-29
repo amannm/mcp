@@ -4,7 +4,7 @@ import jakarta.json.Json;
 import jakarta.json.JsonObject;
 import jakarta.json.JsonObjectBuilder;
 
-/** JSON utilities for paginated request/response payloads. */
+
 public final class PaginationCodec {
     private PaginationCodec() {}
 

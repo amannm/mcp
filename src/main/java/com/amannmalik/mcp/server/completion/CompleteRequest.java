@@ -2,7 +2,7 @@ package com.amannmalik.mcp.server.completion;
 
 import java.util.Map;
 
-/** Request sent by the client to ask for completion options. */
+
 public record CompleteRequest(
         Ref ref,
         Argument argument,
@@ -14,7 +14,7 @@ public record CompleteRequest(
         }
     }
 
-    /** Which argument to complete. */
+    
     public record Argument(String name, String value) {
         public Argument {
             if (name == null || value == null) {
@@ -23,7 +23,7 @@ public record CompleteRequest(
         }
     }
 
-    /** Additional completion context. */
+    
     public record Context(Map<String, String> arguments) {
         public Context {
             arguments = arguments == null ? Map.of() : Map.copyOf(arguments);
@@ -35,11 +35,11 @@ public record CompleteRequest(
         }
     }
 
-    /** Completion reference type. */
+    
     public sealed interface Ref permits Ref.PromptRef, Ref.ResourceRef {
         String type();
 
-        /** References a prompt by name. */
+        
         record PromptRef(String name) implements Ref {
             public PromptRef {
                 if (name == null) throw new IllegalArgumentException("name required");
@@ -49,7 +49,7 @@ public record CompleteRequest(
             public String type() { return "ref/prompt"; }
         }
 
-        /** References a resource URI or template. */
+        
         record ResourceRef(String uri) implements Ref {
             public ResourceRef {
                 if (uri == null) throw new IllegalArgumentException("uri required");

@@ -7,7 +7,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
 
-/** Simple ToolProvider backed by in-memory handlers. */
+
 public final class InMemoryToolProvider implements ToolProvider {
     private final List<Tool> tools;
     private final Map<String, Function<JsonObject, ToolResult>> handlers;

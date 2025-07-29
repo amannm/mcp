@@ -4,10 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-/**
- * A template used to generate prompt instances. Placeholders in messages
- * use curly braces, e.g. {code}.
- */
+
 public record PromptTemplate(Prompt prompt, List<PromptMessageTemplate> messages) {
     public PromptTemplate {
         messages = messages == null || messages.isEmpty() ? List.of() : List.copyOf(messages);

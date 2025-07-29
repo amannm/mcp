@@ -9,7 +9,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
-/** Enforces audience-based privacy boundaries. */
+
 public final class PrivacyBoundaryEnforcer implements ResourceAccessController {
     private final Map<String, Set<Audience>> permissions = new ConcurrentHashMap<>();
 
@@ -26,7 +26,8 @@ public final class PrivacyBoundaryEnforcer implements ResourceAccessController {
     @Override
     public void requireAllowed(Principal principal, ResourceAnnotations ann) {
         if (principal == null) throw new IllegalArgumentException("principal required");
-        if (ann == null || ann.audience().isEmpty()) return; // no restriction
+        if (ann == null || ann.audience().isEmpty()) return; 
+
         var set = permissions.get(principal.id());
         if (set == null || !set.containsAll(ann.audience())) {
             throw new SecurityException("Audience not permitted: " + ann.audience());
