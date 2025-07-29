@@ -108,7 +108,14 @@ public final class ResourcesCodec {
                     .forEach(js -> audience.add(Audience.valueOf(js.getString().toUpperCase())));
         }
         Double priority = obj.containsKey("priority") ? obj.getJsonNumber("priority").doubleValue() : null;
-        Instant lastModified = obj.containsKey("lastModified") ? Instant.parse(obj.getString("lastModified")) : null;
+        Instant lastModified = null;
+        if (obj.containsKey("lastModified")) {
+            try {
+                lastModified = Instant.parse(obj.getString("lastModified"));
+            } catch (java.time.format.DateTimeParseException e) {
+                throw new IllegalArgumentException("Invalid lastModified", e);
+            }
+        }
         return new ResourceAnnotations(audience.isEmpty() ? Set.of() : EnumSet.copyOf(audience), priority, lastModified);
     }
 }
