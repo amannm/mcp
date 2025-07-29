@@ -1,5 +1,6 @@
 package com.amannmalik.mcp.security;
 
+import java.net.URI;
 import java.util.Set;
 
 public final class OriginValidator {
@@ -16,7 +17,14 @@ public final class OriginValidator {
         if (origin == null || origin.isBlank()) {
             return false;
         }
-        return allowedOrigins.contains(origin);
+        URI parsed;
+        try {
+            parsed = URI.create(origin).normalize();
+        } catch (Exception e) {
+            return false;
+        }
+        String norm = parsed.getScheme() + "://" + parsed.getAuthority();
+        return allowedOrigins.contains(norm);
     }
 
     public void requireValid(String origin) {
