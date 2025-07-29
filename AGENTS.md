@@ -23,6 +23,7 @@
 * Prefer impossible-to-misuse APIs over convenient-to-implement ones
 * Avoid `java.lang.reflect` and `javax.annotation`
 * UN-checked casts are UN-acceptable... hahaha... but really
+* Never use cheap tricks to suppress warnings
 * Isolate each dependency's usage to a single spot on the periphery of the codebase
 
 ---
