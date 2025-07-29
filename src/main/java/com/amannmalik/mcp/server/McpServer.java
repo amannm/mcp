@@ -346,9 +346,6 @@ public final class McpServer implements AutoCloseable {
         } catch (IllegalArgumentException e) {
             return new JsonRpcError(req.id(), new JsonRpcError.ErrorDetail(
                     JsonRpcErrorCode.INVALID_PARAMS.code(), e.getMessage(), null));
-        } catch (IOException e) {
-            return new JsonRpcError(req.id(), new JsonRpcError.ErrorDetail(
-                    JsonRpcErrorCode.INTERNAL_ERROR.code(), e.getMessage(), null));
         }
         var arr = Json.createArrayBuilder();
         for (Resource r : list.resources()) {
@@ -366,13 +363,7 @@ public final class McpServer implements AutoCloseable {
                     JsonRpcErrorCode.INVALID_PARAMS.code(), "uri required", null));
         }
         String uri = params.getString("uri");
-        ResourceBlock block;
-        try {
-            block = resources.read(uri);
-        } catch (IOException e) {
-            return new JsonRpcError(req.id(), new JsonRpcError.ErrorDetail(
-                    JsonRpcErrorCode.INTERNAL_ERROR.code(), e.getMessage(), null));
-        }
+        ResourceBlock block = resources.read(uri);
         if (block == null) {
             return new JsonRpcError(req.id(), new JsonRpcError.ErrorDetail(
                     -32002, "Resource not found", Json.createObjectBuilder().add("uri", uri).build()));
@@ -395,9 +386,6 @@ public final class McpServer implements AutoCloseable {
         } catch (IllegalArgumentException e) {
             return new JsonRpcError(req.id(), new JsonRpcError.ErrorDetail(
                     JsonRpcErrorCode.INVALID_PARAMS.code(), e.getMessage(), null));
-        } catch (IOException e) {
-            return new JsonRpcError(req.id(), new JsonRpcError.ErrorDetail(
-                    JsonRpcErrorCode.INTERNAL_ERROR.code(), e.getMessage(), null));
         }
         var arr = Json.createArrayBuilder();
         page.resourceTemplates().forEach(t -> {
@@ -652,18 +640,13 @@ public final class McpServer implements AutoCloseable {
         Tool tool = new Tool("test_tool", "Test Tool", null, schema, null, null);
         return new InMemoryToolProvider(
                 List.of(tool),
-                Map.of(
-                        "test_tool",
-                        a -> new ToolResult(
-                                Json.createArrayBuilder()
-                                        .add(
-                                                Json.createObjectBuilder()
-                                                        .add("type", "text")
-                                                        .add("text", "ok")
-                                                        .build())
-                                        .build(),
-                                null,
-                                false)));
+                Map.of("test_tool", a -> new ToolResult(
+                        Json.createArrayBuilder()
+                                .add(Json.createObjectBuilder()
+                                        .add("type", "text")
+                                        .add("text", "ok")
+                                        .build())
+                                .build(), null, false)));
     }
 
     private static PromptProvider createDefaultPrompts() {

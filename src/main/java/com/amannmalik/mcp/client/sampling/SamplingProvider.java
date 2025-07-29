@@ -1,10 +1,9 @@
 package com.amannmalik.mcp.client.sampling;
 
-import java.io.IOException;
 
 public interface SamplingProvider extends AutoCloseable {
-    CreateMessageResponse createMessage(CreateMessageRequest request) throws IOException;
+    CreateMessageResponse createMessage(CreateMessageRequest request);
 
     @Override
-    default void close() throws IOException {}
+    default void close() {}
 }
