@@ -196,6 +196,10 @@ public final class StreamableHttpTransport implements Transport {
             String session = sessionId.get();
             String last = lastSessionId.get();
             String header = req.getHeader("Mcp-Session-Id");
+            if (header != null && !isVisibleAscii(header)) {
+                resp.sendError(HttpServletResponse.SC_BAD_REQUEST);
+                return;
+            }
             String version = req.getHeader(PROTOCOL_HEADER);
             JsonObject obj;
             try (JsonReader reader = Json.createReader(req.getInputStream())) {
@@ -497,5 +501,13 @@ public final class StreamableHttpTransport implements Transport {
                 System.err.println("SSE close failed: " + e.getMessage());
             }
         }
+    }
+
+    private static boolean isVisibleAscii(String value) {
+        for (int i = 0; i < value.length(); i++) {
+            char c = value.charAt(i);
+            if (c < 0x21 || c > 0x7E) return false;
+        }
+        return true;
     }
 }
