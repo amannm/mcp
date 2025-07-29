@@ -28,9 +28,14 @@ public final class MetaValidator {
         }
 
         if (prefix != null) {
-            for (String label : prefix.split("\\.")) {
+            String[] labels = prefix.split("\\.");
+            for (int i = 0; i < labels.length; i++) {
+                String label = labels[i];
                 if (!LABEL.matcher(label).matches()) {
                     throw new IllegalArgumentException("Invalid _meta prefix: " + key);
+                }
+                if (i < labels.length - 1 && ("mcp".equals(label) || "modelcontextprotocol".equals(label))) {
+                    throw new IllegalArgumentException("Reserved _meta prefix: " + prefix + "/");
                 }
             }
         }
