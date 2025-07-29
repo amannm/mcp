@@ -5,6 +5,13 @@ import com.amannmalik.mcp.lifecycle.ClientCapability;
 import com.amannmalik.mcp.lifecycle.ClientInfo;
 import com.amannmalik.mcp.lifecycle.ServerCapability;
 import com.amannmalik.mcp.transport.StdioTransport;
+import com.amannmalik.mcp.jsonrpc.JsonRpcError;
+import com.amannmalik.mcp.jsonrpc.JsonRpcMessage;
+import com.amannmalik.mcp.jsonrpc.JsonRpcResponse;
+import com.amannmalik.mcp.server.logging.LoggingLevel;
+import com.amannmalik.mcp.util.ProgressNotification;
+import jakarta.json.Json;
+import jakarta.json.JsonObject;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -15,11 +22,14 @@ import java.io.File;
 import java.io.InputStreamReader;
 import java.time.Duration;
 import java.util.EnumSet;
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -116,7 +126,90 @@ class McpConformanceTest {
             assertEquals(expected, client.serverCapabilities(), "Server capabilities should match");
             assertDoesNotThrow(client::ping, "ping should succeed");
 
-            // TODO: Compactly test all features in various realistic MCP usage scenarios...
+            var progressEvents = new CopyOnWriteArrayList<ProgressNotification>();
+            client.setProgressListener(progressEvents::add);
+
+            JsonObject meta = Json.createObjectBuilder()
+                    .add("progressToken", "tok")
+                    .build();
+            JsonObject params = Json.createObjectBuilder()
+                    .add("_meta", meta)
+                    .build();
+            JsonRpcMessage m = client.request("resources/list", params);
+            assertTrue(m instanceof JsonRpcResponse, "resources/list should succeed");
+            var list = ((JsonRpcResponse) m).result().getJsonArray("resources");
+            assertEquals(1, list.size(), "default resources count");
+            assertEquals("test://example", list.getJsonObject(0).getString("uri"));
+            Thread.sleep(100);
+            assertEquals(2, progressEvents.size(), "progress notifications expected");
+
+            m = client.request("resources/read", Json.createObjectBuilder()
+                    .add("uri", "test://example")
+                    .build());
+            assertTrue(m instanceof JsonRpcResponse);
+            var block = ((JsonRpcResponse) m).result()
+                    .getJsonArray("contents").getJsonObject(0);
+            assertEquals("hello", block.getString("text"));
+
+            m = client.request("resources/templates/list", Json.createObjectBuilder().build());
+            assertTrue(m instanceof JsonRpcResponse);
+            var templates = ((JsonRpcResponse) m).result().getJsonArray("resourceTemplates");
+            assertEquals(1, templates.size());
+
+            m = client.request("tools/list", Json.createObjectBuilder().build());
+            assertTrue(m instanceof JsonRpcResponse);
+            var tools = ((JsonRpcResponse) m).result().getJsonArray("tools");
+            assertEquals(1, tools.size());
+            assertEquals("test_tool", tools.getJsonObject(0).getString("name"));
+
+            m = client.request("tools/call", Json.createObjectBuilder()
+                    .add("name", "test_tool")
+                    .add("arguments", Json.createObjectBuilder().build())
+                    .build());
+            assertTrue(m instanceof JsonRpcResponse);
+            var content = ((JsonRpcResponse) m).result()
+                    .getJsonArray("content").getJsonObject(0);
+            assertEquals("ok", content.getString("text"));
+
+            m = client.request("prompts/list", Json.createObjectBuilder().build());
+            assertTrue(m instanceof JsonRpcResponse);
+            var prompts = ((JsonRpcResponse) m).result().getJsonArray("prompts");
+            assertEquals(1, prompts.size());
+
+            m = client.request("prompts/get", Json.createObjectBuilder()
+                    .add("name", "test_prompt")
+                    .add("arguments", Json.createObjectBuilder().add("test_arg", "v").build())
+                    .build());
+            assertTrue(m instanceof JsonRpcResponse);
+            var messages = ((JsonRpcResponse) m).result().getJsonArray("messages");
+            assertEquals("hello", messages.getJsonObject(0).getJsonObject("content").getString("text"));
+
+            m = client.request("completion/complete", Json.createObjectBuilder()
+                    .add("ref", Json.createObjectBuilder()
+                            .add("type", "ref/prompt")
+                            .add("name", "test_prompt")
+                            .build())
+                    .add("argument", Json.createObjectBuilder()
+                            .add("name", "test_arg")
+                            .add("value", "")
+                            .build())
+                    .build());
+            assertTrue(m instanceof JsonRpcResponse);
+            var values = ((JsonRpcResponse) m).result()
+                    .getJsonObject("completion")
+                    .getJsonArray("values");
+            assertEquals(List.of("test_completion"), values.getValuesAs(jakarta.json.JsonString.class).stream().map(jakarta.json.JsonString::getString).toList());
+
+            m = client.request("logging/setLevel", Json.createObjectBuilder().add("level", "debug").build());
+            assertTrue(m instanceof JsonRpcResponse);
+
+            m = client.request("resources/read", Json.createObjectBuilder().add("uri", "bad://uri").build());
+            assertTrue(m instanceof JsonRpcError);
+            assertEquals(-32002, ((JsonRpcError) m).error().code());
+
+            m = client.request("tools/call", Json.createObjectBuilder().add("name", "nope").build());
+            assertTrue(m instanceof JsonRpcError);
+            assertEquals(-32602, ((JsonRpcError) m).error().code());
 
             CompletableFuture<Void> disconnectTask = CompletableFuture.runAsync(() -> {
                 try {
