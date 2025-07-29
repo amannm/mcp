@@ -1,6 +1,7 @@
 package com.amannmalik.mcp.server.tools;
 
 import com.amannmalik.mcp.validation.InputSanitizer;
+import com.amannmalik.mcp.validation.MetaValidator;
 import jakarta.json.JsonObject;
 
 public record Tool(String name,
@@ -8,7 +9,8 @@ public record Tool(String name,
                    String description,
                    JsonObject inputSchema,
                    JsonObject outputSchema,
-                   ToolAnnotations annotations) {
+                   ToolAnnotations annotations,
+                   JsonObject _meta) {
     public Tool {
         name = InputSanitizer.requireClean(name);
         if (inputSchema == null) {
@@ -23,5 +25,6 @@ public record Tool(String name,
                         annotations.idempotentHint() == null &&
                         annotations.openWorldHint() == null
         ) ? null : annotations;
+        MetaValidator.requireValid(_meta);
     }
 }

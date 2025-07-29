@@ -697,7 +697,7 @@ public final class McpServer implements AutoCloseable {
 
     private static ToolProvider createDefaultTools() {
         var schema = Json.createObjectBuilder().add("type", "object").build();
-        Tool tool = new Tool("test_tool", "Test Tool", null, schema, null, null);
+        Tool tool = new Tool("test_tool", "Test Tool", null, schema, null, null, null);
         return new InMemoryToolProvider(
                 List.of(tool),
                 Map.of("test_tool", a -> new ToolResult(
