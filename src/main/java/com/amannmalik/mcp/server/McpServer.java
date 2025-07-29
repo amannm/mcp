@@ -431,6 +431,12 @@ public final class McpServer implements AutoCloseable {
                     JsonRpcErrorCode.INVALID_PARAMS.code(), "uri required", null));
         }
         String uri = params.getString("uri");
+        try {
+            uri = com.amannmalik.mcp.validation.UriValidator.requireAbsolute(uri);
+        } catch (IllegalArgumentException e) {
+            return new JsonRpcError(req.id(), new JsonRpcError.ErrorDetail(
+                    JsonRpcErrorCode.INVALID_PARAMS.code(), e.getMessage(), null));
+        }
         ResourceBlock block = resources.read(uri);
         if (block == null) {
             return new JsonRpcError(req.id(), new JsonRpcError.ErrorDetail(
@@ -472,6 +478,12 @@ public final class McpServer implements AutoCloseable {
         }
         String uri = params.getString("uri");
         try {
+            uri = com.amannmalik.mcp.validation.UriValidator.requireAbsolute(uri);
+        } catch (IllegalArgumentException e) {
+            return new JsonRpcError(req.id(), new JsonRpcError.ErrorDetail(
+                    JsonRpcErrorCode.INVALID_PARAMS.code(), e.getMessage(), null));
+        }
+        try {
             ResourceSubscription sub = resources.subscribe(uri, update -> {
                 try {
                     ResourceUpdatedNotification n = new ResourceUpdatedNotification(
@@ -503,6 +515,12 @@ public final class McpServer implements AutoCloseable {
                     JsonRpcErrorCode.INVALID_PARAMS.code(), "uri required", null));
         }
         String uri = params.getString("uri");
+        try {
+            uri = com.amannmalik.mcp.validation.UriValidator.requireAbsolute(uri);
+        } catch (IllegalArgumentException e) {
+            return new JsonRpcError(req.id(), new JsonRpcError.ErrorDetail(
+                    JsonRpcErrorCode.INVALID_PARAMS.code(), e.getMessage(), null));
+        }
         ResourceSubscription sub = resourceSubscriptions.remove(uri);
         if (sub != null) {
             try {
