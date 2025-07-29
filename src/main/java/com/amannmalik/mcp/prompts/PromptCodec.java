@@ -56,6 +56,14 @@ public final class PromptCodec {
         return builder.build();
     }
 
+    public static JsonObject toJsonObject(PromptsListChangedNotification n) {
+        return Json.createObjectBuilder().build();
+    }
+
+    public static PromptsListChangedNotification toPromptsListChangedNotification(JsonObject obj) {
+        return new PromptsListChangedNotification();
+    }
+
     static JsonObject toJsonObject(PromptContent content) {
         JsonObjectBuilder b = Json.createObjectBuilder().add("type", content.type());
         if (content.annotations() != null) {

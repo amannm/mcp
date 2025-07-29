@@ -8,6 +8,9 @@ public interface ResourceProvider extends AutoCloseable {
     ResourceBlock read(String uri) throws IOException;
     ResourceTemplatePage listTemplates(String cursor) throws IOException;
     ResourceSubscription subscribe(String uri, ResourceListener listener) throws IOException;
+    default ResourceListSubscription subscribeList(ResourceListListener listener) throws IOException {
+        throw new UnsupportedOperationException();
+    }
 
     @Override
     default void close() throws IOException {}

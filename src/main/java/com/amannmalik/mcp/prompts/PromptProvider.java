@@ -7,4 +7,8 @@ public interface PromptProvider {
     PromptPage list(String cursor);
 
     PromptInstance get(String name, Map<String, String> arguments);
+
+    default PromptsSubscription subscribe(PromptsListener listener) {
+        throw new UnsupportedOperationException();
+    }
 }

@@ -40,6 +40,9 @@ public final class McpServer implements AutoCloseable {
     private final PromptProvider prompts;
     private final CompletionProvider completions;
     private final Map<String, ResourceSubscription> resourceSubscriptions = new ConcurrentHashMap<>();
+    private ResourceListSubscription resourceListSubscription;
+    private ToolListSubscription toolListSubscription;
+    private PromptsSubscription promptsSubscription;
     private final ResourceAccessController resourceAccess;
     private final Principal principal;
     private volatile LoggingLevel logLevel = LoggingLevel.INFO;
@@ -87,6 +90,33 @@ public final class McpServer implements AutoCloseable {
         this.completions = completions;
         this.resourceAccess = resourceAccess;
         this.principal = principal;
+
+        try {
+            resourceListSubscription = resources.subscribeList(() -> {
+                try {
+                    send(new JsonRpcNotification("notifications/resources/list_changed", null));
+                } catch (IOException ignore) {
+                }
+            });
+        } catch (Exception ignore) {}
+
+        try {
+            toolListSubscription = tools.subscribeList(() -> {
+                try {
+                    send(new JsonRpcNotification("notifications/tools/list_changed", null));
+                } catch (IOException ignore) {
+                }
+            });
+        } catch (Exception ignore) {}
+
+        try {
+            promptsSubscription = prompts.subscribe(() -> {
+                try {
+                    send(new JsonRpcNotification("notifications/prompts/list_changed", null));
+                } catch (IOException ignore) {
+                }
+            });
+        } catch (Exception ignore) {}
 
         registerRequestHandler("initialize", this::initialize);
         registerNotificationHandler("notifications/initialized", this::initialized);
@@ -577,6 +607,18 @@ public final class McpServer implements AutoCloseable {
             try { sub.close(); } catch (Exception ignore) {}
         }
         resourceSubscriptions.clear();
+        if (resourceListSubscription != null) {
+            try { resourceListSubscription.close(); } catch (Exception ignore) {}
+            resourceListSubscription = null;
+        }
+        if (toolListSubscription != null) {
+            try { toolListSubscription.close(); } catch (Exception ignore) {}
+            toolListSubscription = null;
+        }
+        if (promptsSubscription != null) {
+            try { promptsSubscription.close(); } catch (Exception ignore) {}
+            promptsSubscription = null;
+        }
         resources.close();
         completions.close();
         transport.close();
