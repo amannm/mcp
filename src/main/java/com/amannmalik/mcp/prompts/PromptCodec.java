@@ -60,10 +60,14 @@ public final class PromptCodec {
     }
 
     public static JsonObject toJsonObject(PromptsListChangedNotification n) {
+        if (n == null) throw new IllegalArgumentException("notification required");
         return Json.createObjectBuilder().build();
     }
 
     public static PromptsListChangedNotification toPromptsListChangedNotification(JsonObject obj) {
+        if (obj != null && !obj.isEmpty()) {
+            throw new IllegalArgumentException("unexpected fields");
+        }
         return new PromptsListChangedNotification();
     }
 
