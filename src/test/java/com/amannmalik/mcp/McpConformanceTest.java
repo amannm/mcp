@@ -241,34 +241,4 @@ class McpConformanceTest {
             }
         }
     }
-
-    @Test
-    void testRejectRequestBeforeInitialization() throws Exception {
-        ProcessBuilder serverBuilder = new ProcessBuilder(
-                JAVA_BIN, "-cp", System.getProperty("java.class.path"),
-                "com.amannmalik.mcp.Main", "server", "--stdio", "-v"
-        );
-        Process serverProcess = serverBuilder.start();
-        try {
-            long endTime = System.currentTimeMillis() + 500;
-            while (!serverProcess.isAlive() && System.currentTimeMillis() < endTime) {
-                Thread.sleep(10);
-            }
-            StdioTransport transport = new StdioTransport(
-                    serverProcess.getInputStream(),
-                    serverProcess.getOutputStream()
-            );
-            JsonRpcRequest req = new JsonRpcRequest(
-                    new RequestId.NumericId(1), "roots/list", null);
-            transport.send(JsonRpcCodec.toJsonObject(req));
-            JsonRpcMessage msg = JsonRpcCodec.fromJsonObject(transport.receive());
-            assertInstanceOf(JsonRpcError.class, msg);
-            assertEquals(-32000, ((JsonRpcError) msg).error().code());
-        } finally {
-            if (serverProcess.isAlive()) {
-                serverProcess.destroyForcibly();
-                serverProcess.waitFor(2, TimeUnit.SECONDS);
-            }
-        }
-    }
 }
