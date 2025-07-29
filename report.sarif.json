@@ -22,16 +22,12 @@
               "name": "Unknown HTTP header"
             },
             {
-              "id": "UnnecessarySemicolon",
-              "name": "Unnecessary semicolon"
+              "id": "ConditionalExpressionWithIdenticalBranches",
+              "name": "Conditional expression with identical branches"
             },
             {
               "id": "BooleanMethodIsAlwaysInverted",
               "name": "Boolean method is always inverted"
-            },
-            {
-              "id": "UnnecessaryLocalVariable",
-              "name": "Redundant local variable"
             },
             {
               "id": "SameReturnValue",
@@ -48,10 +44,6 @@
             {
               "id": "unused",
               "name": "Unused declaration"
-            },
-            {
-              "id": "CatchMayIgnoreException",
-              "name": "Catch block may ignore exception"
             },
             {
               "id": "UNUSED_IMPORT",
@@ -105,34 +97,6 @@
           "kind": "fail",
           "level": "note",
           "message": {
-            "text": "Duplicate code: lines 307-325"
-          },
-          "locations": [
-            {
-              "physicalLocation": {
-                "artifactLocation": {
-                  "uri": "src/main/java/com/amannmalik/mcp/transport/StreamableHttpTransport.java"
-                },
-                "region": {
-                  "startLine": 307,
-                  "startColumn": 20,
-                  "endLine": 308,
-                  "endColumn": 7,
-                  "charOffset": 11996,
-                  "charLength": 33,
-                  "snippet": {
-                    "text": "String session = sessionId.get();"
-                  }
-                }
-              }
-            }
-          ]
-        },
-        {
-          "ruleId": "DuplicatedCode",
-          "kind": "fail",
-          "level": "note",
-          "message": {
             "text": "Duplicate code: lines 224-243"
           },
           "locations": [
@@ -147,6 +111,34 @@
                   "endLine": 225,
                   "endColumn": 7,
                   "charOffset": 9124,
+                  "charLength": 33,
+                  "snippet": {
+                    "text": "String session = sessionId.get();"
+                  }
+                }
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "DuplicatedCode",
+          "kind": "fail",
+          "level": "note",
+          "message": {
+            "text": "Duplicate code: lines 304-322"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "src/main/java/com/amannmalik/mcp/transport/StreamableHttpTransport.java"
+                },
+                "region": {
+                  "startLine": 304,
+                  "startColumn": 20,
+                  "endLine": 305,
+                  "endColumn": 7,
+                  "charOffset": 12167,
                   "charLength": 33,
                   "snippet": {
                     "text": "String session = sessionId.get();"
@@ -241,27 +233,27 @@
           ]
         },
         {
-          "ruleId": "UnnecessarySemicolon",
+          "ruleId": "ConditionalExpressionWithIdenticalBranches",
           "kind": "fail",
           "level": "warning",
           "message": {
-            "text": "Unnecessary semicolon ';'"
+            "text": "Conditional expression 'SUPPORTED_VERSION.equals(request.protocolVersion()) ? SUPPORTED_VERSION ...' with identical branches"
           },
           "locations": [
             {
               "physicalLocation": {
                 "artifactLocation": {
-                  "uri": "src/main/java/com/amannmalik/mcp/server/logging/LoggingLevel.java"
+                  "uri": "src/main/java/com/amannmalik/mcp/lifecycle/ProtocolLifecycle.java"
                 },
                 "region": {
-                  "startLine": 12,
-                  "startColumn": 14,
-                  "endLine": 12,
-                  "endColumn": 15,
-                  "charOffset": 167,
-                  "charLength": 1,
+                  "startLine": 24,
+                  "startColumn": 36,
+                  "endLine": 26,
+                  "endColumn": 36,
+                  "charOffset": 893,
+                  "charLength": 123,
                   "snippet": {
-                    "text": ";"
+                    "text": "SUPPORTED_VERSION.equals(request.protocolVersion())\n                ? SUPPORTED_VERSION\n                : SUPPORTED_VERSION"
                   }
                 }
               }
@@ -325,27 +317,27 @@
           ]
         },
         {
-          "ruleId": "UnnecessaryLocalVariable",
+          "ruleId": "SameReturnValue",
           "kind": "fail",
           "level": "warning",
           "message": {
-            "text": "Local variable 'provider' is redundant"
+            "text": "All implementations of method 'allow()' always return 'true'"
           },
           "locations": [
             {
               "physicalLocation": {
                 "artifactLocation": {
-                  "uri": "src/main/java/com/amannmalik/mcp/server/McpServer.java"
+                  "uri": "src/main/java/com/amannmalik/mcp/security/SecurityPolicy.java"
                 },
                 "region": {
-                  "startLine": 656,
-                  "startColumn": 30,
-                  "endLine": 656,
-                  "endColumn": 38,
-                  "charOffset": 28933,
-                  "charLength": 8,
+                  "startLine": 7,
+                  "startColumn": 13,
+                  "endLine": 7,
+                  "endColumn": 18,
+                  "charOffset": 130,
+                  "charLength": 5,
                   "snippet": {
-                    "text": "provider"
+                    "text": "allow"
                   }
                 }
               }
@@ -381,27 +373,27 @@
           ]
         },
         {
-          "ruleId": "SameReturnValue",
+          "ruleId": "SameParameterValue",
           "kind": "fail",
           "level": "warning",
           "message": {
-            "text": "All implementations of method 'allow()' always return 'true'"
+            "text": "Value of parameter 'principalId' is always '\"default\"'"
           },
           "locations": [
             {
               "physicalLocation": {
                 "artifactLocation": {
-                  "uri": "src/main/java/com/amannmalik/mcp/security/SecurityPolicy.java"
+                  "uri": "src/main/java/com/amannmalik/mcp/server/McpServer.java"
                 },
                 "region": {
-                  "startLine": 7,
-                  "startColumn": 13,
-                  "endLine": 7,
-                  "endColumn": 18,
-                  "charOffset": 130,
-                  "charLength": 5,
+                  "startLine": 687,
+                  "startColumn": 81,
+                  "endLine": 687,
+                  "endColumn": 92,
+                  "charOffset": 30484,
+                  "charLength": 11,
                   "snippet": {
-                    "text": "allow"
+                    "text": "principalId"
                   }
                 }
               }
@@ -450,42 +442,14 @@
                   "uri": "src/main/java/com/amannmalik/mcp/lifecycle/ProtocolLifecycle.java"
                 },
                 "region": {
-                  "startLine": 50,
+                  "startLine": 57,
                   "startColumn": 45,
-                  "endLine": 50,
+                  "endLine": 57,
                   "endColumn": 53,
-                  "charOffset": 1602,
+                  "charOffset": 1796,
                   "charLength": 8,
                   "snippet": {
                     "text": "expected"
-                  }
-                }
-              }
-            }
-          ]
-        },
-        {
-          "ruleId": "SameParameterValue",
-          "kind": "fail",
-          "level": "warning",
-          "message": {
-            "text": "Value of parameter 'principalId' is always '\"default\"'"
-          },
-          "locations": [
-            {
-              "physicalLocation": {
-                "artifactLocation": {
-                  "uri": "src/main/java/com/amannmalik/mcp/server/McpServer.java"
-                },
-                "region": {
-                  "startLine": 683,
-                  "startColumn": 81,
-                  "endLine": 683,
-                  "endColumn": 92,
-                  "charOffset": 30297,
-                  "charLength": 11,
-                  "snippet": {
-                    "text": "principalId"
                   }
                 }
               }
@@ -538,10 +502,38 @@
                   "startColumn": 59,
                   "endLine": 282,
                   "endColumn": 62,
-                  "charOffset": 12052,
+                  "charOffset": 12055,
                   "charLength": 3,
                   "snippet": {
                     "text": "cap"
+                  }
+                }
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "RedundantThrows",
+          "kind": "fail",
+          "level": "warning",
+          "message": {
+            "text": "The declared exception 'IOException' is never thrown in this method, nor in its overriding methods"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "src/main/java/com/amannmalik/mcp/server/resources/ResourceProvider.java"
+                },
+                "region": {
+                  "startLine": 11,
+                  "startColumn": 90,
+                  "endLine": 11,
+                  "endColumn": 101,
+                  "charOffset": 525,
+                  "charLength": 11,
+                  "snippet": {
+                    "text": "IOException"
                   }
                 }
               }
@@ -562,39 +554,11 @@
                   "uri": "src/main/java/com/amannmalik/mcp/server/McpServer.java"
                 },
                 "region": {
-                  "startLine": 720,
+                  "startLine": 724,
                   "startColumn": 62,
-                  "endLine": 720,
+                  "endLine": 724,
                   "endColumn": 73,
-                  "charOffset": 31605,
-                  "charLength": 11,
-                  "snippet": {
-                    "text": "IOException"
-                  }
-                }
-              }
-            }
-          ]
-        },
-        {
-          "ruleId": "RedundantThrows",
-          "kind": "fail",
-          "level": "warning",
-          "message": {
-            "text": "The declared exception 'IOException' is never thrown"
-          },
-          "locations": [
-            {
-              "physicalLocation": {
-                "artifactLocation": {
-                  "uri": "src/main/java/com/amannmalik/mcp/server/resources/ResourceProvider.java"
-                },
-                "region": {
-                  "startLine": 16,
-                  "startColumn": 33,
-                  "endLine": 16,
-                  "endColumn": 44,
-                  "charOffset": 643,
+                  "charOffset": 31792,
                   "charLength": 11,
                   "snippet": {
                     "text": "IOException"
@@ -618,14 +582,42 @@
                   "uri": "src/main/java/com/amannmalik/mcp/server/resources/ResourceProvider.java"
                 },
                 "region": {
-                  "startLine": 8,
-                  "startColumn": 43,
-                  "endLine": 8,
-                  "endColumn": 54,
-                  "charOffset": 255,
+                  "startLine": 7,
+                  "startColumn": 45,
+                  "endLine": 7,
+                  "endColumn": 56,
+                  "charOffset": 200,
                   "charLength": 11,
                   "snippet": {
                     "text": "IOException"
+                  }
+                }
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "RedundantThrows",
+          "kind": "fail",
+          "level": "warning",
+          "message": {
+            "text": "The declared exception 'ServletException' is never thrown"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "src/main/java/com/amannmalik/mcp/transport/StreamableHttpTransport.java"
+                },
+                "region": {
+                  "startLine": 129,
+                  "startColumn": 88,
+                  "endLine": 129,
+                  "endColumn": 104,
+                  "charOffset": 4841,
+                  "charLength": 16,
+                  "snippet": {
+                    "text": "ServletException"
                   }
                 }
               }
@@ -665,20 +657,20 @@
           "kind": "fail",
           "level": "warning",
           "message": {
-            "text": "The declared exception 'IOException' is never thrown in any method implementation"
+            "text": "The declared exception 'IOException' is never thrown"
           },
           "locations": [
             {
               "physicalLocation": {
                 "artifactLocation": {
-                  "uri": "src/main/java/com/amannmalik/mcp/client/roots/RootsProvider.java"
+                  "uri": "src/main/java/com/amannmalik/mcp/server/completion/CompletionProvider.java"
                 },
                 "region": {
-                  "startLine": 12,
-                  "startColumn": 64,
-                  "endLine": 12,
-                  "endColumn": 75,
-                  "charOffset": 266,
+                  "startLine": 10,
+                  "startColumn": 33,
+                  "endLine": 10,
+                  "endColumn": 44,
+                  "charOffset": 257,
                   "charLength": 11,
                   "snippet": {
                     "text": "IOException"
@@ -721,20 +713,20 @@
           "kind": "fail",
           "level": "warning",
           "message": {
-            "text": "The declared exception 'IOException' is never thrown"
+            "text": "The declared exception 'IOException' is never thrown in any method implementation"
           },
           "locations": [
             {
               "physicalLocation": {
                 "artifactLocation": {
-                  "uri": "src/main/java/com/amannmalik/mcp/server/completion/InMemoryCompletionProvider.java"
+                  "uri": "src/main/java/com/amannmalik/mcp/client/roots/RootsProvider.java"
                 },
                 "region": {
-                  "startLine": 19,
-                  "startColumn": 68,
-                  "endLine": 19,
-                  "endColumn": 79,
-                  "charOffset": 722,
+                  "startLine": 12,
+                  "startColumn": 64,
+                  "endLine": 12,
+                  "endColumn": 75,
+                  "charOffset": 266,
                   "charLength": 11,
                   "snippet": {
                     "text": "IOException"
@@ -749,20 +741,20 @@
           "kind": "fail",
           "level": "warning",
           "message": {
-            "text": "The declared exception 'IOException' is never thrown"
+            "text": "The declared exception 'IOException' is never thrown in any method implementation"
           },
           "locations": [
             {
               "physicalLocation": {
                 "artifactLocation": {
-                  "uri": "src/main/java/com/amannmalik/mcp/server/completion/CompletionProvider.java"
+                  "uri": "src/main/java/com/amannmalik/mcp/server/resources/ResourceProvider.java"
                 },
                 "region": {
-                  "startLine": 10,
-                  "startColumn": 33,
-                  "endLine": 10,
-                  "endColumn": 44,
-                  "charOffset": 257,
+                  "startLine": 9,
+                  "startColumn": 62,
+                  "endLine": 9,
+                  "endColumn": 73,
+                  "charOffset": 329,
                   "charLength": 11,
                   "snippet": {
                     "text": "IOException"
@@ -870,11 +862,11 @@
                   "uri": "src/main/java/com/amannmalik/mcp/server/resources/ResourceProvider.java"
                 },
                 "region": {
-                  "startLine": 9,
-                  "startColumn": 62,
-                  "endLine": 9,
-                  "endColumn": 73,
-                  "charOffset": 329,
+                  "startLine": 8,
+                  "startColumn": 43,
+                  "endLine": 8,
+                  "endColumn": 54,
+                  "charOffset": 255,
                   "charLength": 11,
                   "snippet": {
                     "text": "IOException"
@@ -889,7 +881,7 @@
           "kind": "fail",
           "level": "warning",
           "message": {
-            "text": "The declared exception 'IOException' is never thrown in this method, nor in its overriding methods"
+            "text": "The declared exception 'IOException' is never thrown"
           },
           "locations": [
             {
@@ -898,11 +890,11 @@
                   "uri": "src/main/java/com/amannmalik/mcp/server/resources/ResourceProvider.java"
                 },
                 "region": {
-                  "startLine": 11,
-                  "startColumn": 90,
-                  "endLine": 11,
-                  "endColumn": 101,
-                  "charOffset": 525,
+                  "startLine": 16,
+                  "startColumn": 33,
+                  "endLine": 16,
+                  "endColumn": 44,
+                  "charOffset": 643,
                   "charLength": 11,
                   "snippet": {
                     "text": "IOException"
@@ -917,23 +909,23 @@
           "kind": "fail",
           "level": "warning",
           "message": {
-            "text": "The declared exception 'ServletException' is never thrown"
+            "text": "The declared exception 'IOException' is never thrown"
           },
           "locations": [
             {
               "physicalLocation": {
                 "artifactLocation": {
-                  "uri": "src/main/java/com/amannmalik/mcp/transport/StreamableHttpTransport.java"
+                  "uri": "src/main/java/com/amannmalik/mcp/server/completion/InMemoryCompletionProvider.java"
                 },
                 "region": {
-                  "startLine": 129,
-                  "startColumn": 88,
-                  "endLine": 129,
-                  "endColumn": 104,
-                  "charOffset": 4841,
-                  "charLength": 16,
+                  "startLine": 19,
+                  "startColumn": 68,
+                  "endLine": 19,
+                  "endColumn": 79,
+                  "charOffset": 722,
+                  "charLength": 11,
                   "snippet": {
-                    "text": "ServletException"
+                    "text": "IOException"
                   }
                 }
               }
@@ -969,27 +961,27 @@
           ]
         },
         {
-          "ruleId": "RedundantThrows",
+          "ruleId": "unused",
           "kind": "fail",
           "level": "warning",
           "message": {
-            "text": "The declared exception 'IOException' is never thrown in any method implementation"
+            "text": "Parameter 'n' is not used"
           },
           "locations": [
             {
               "physicalLocation": {
                 "artifactLocation": {
-                  "uri": "src/main/java/com/amannmalik/mcp/server/resources/ResourceProvider.java"
+                  "uri": "src/main/java/com/amannmalik/mcp/client/roots/RootsCodec.java"
                 },
                 "region": {
-                  "startLine": 7,
-                  "startColumn": 45,
-                  "endLine": 7,
-                  "endColumn": 56,
-                  "charOffset": 200,
-                  "charLength": 11,
+                  "startLine": 31,
+                  "startColumn": 72,
+                  "endLine": 31,
+                  "endColumn": 73,
+                  "charOffset": 856,
+                  "charLength": 1,
                   "snippet": {
-                    "text": "IOException"
+                    "text": "n"
                   }
                 }
               }
@@ -1029,146 +1021,6 @@
           "kind": "fail",
           "level": "warning",
           "message": {
-            "text": "Parameter 'note' is not used"
-          },
-          "locations": [
-            {
-              "physicalLocation": {
-                "artifactLocation": {
-                  "uri": "src/main/java/com/amannmalik/mcp/server/McpServer.java"
-                },
-                "region": {
-                  "startLine": 263,
-                  "startColumn": 50,
-                  "endLine": 263,
-                  "endColumn": 54,
-                  "charOffset": 11404,
-                  "charLength": 4,
-                  "snippet": {
-                    "text": "note"
-                  }
-                }
-              }
-            }
-          ]
-        },
-        {
-          "ruleId": "unused",
-          "kind": "fail",
-          "level": "warning",
-          "message": {
-            "text": "Parameter 'obj' is not used"
-          },
-          "locations": [
-            {
-              "physicalLocation": {
-                "artifactLocation": {
-                  "uri": "src/main/java/com/amannmalik/mcp/prompts/PromptCodec.java"
-                },
-                "region": {
-                  "startLine": 65,
-                  "startColumn": 94,
-                  "endLine": 65,
-                  "endColumn": 97,
-                  "charOffset": 2645,
-                  "charLength": 3,
-                  "snippet": {
-                    "text": "obj"
-                  }
-                }
-              }
-            }
-          ]
-        },
-        {
-          "ruleId": "unused",
-          "kind": "fail",
-          "level": "warning",
-          "message": {
-            "text": "Parameter 'request' is not used in any implementation"
-          },
-          "locations": [
-            {
-              "physicalLocation": {
-                "artifactLocation": {
-                  "uri": "src/main/java/com/amannmalik/mcp/client/sampling/SamplingProvider.java"
-                },
-                "region": {
-                  "startLine": 6,
-                  "startColumn": 62,
-                  "endLine": 6,
-                  "endColumn": 69,
-                  "charOffset": 193,
-                  "charLength": 7,
-                  "snippet": {
-                    "text": "request"
-                  }
-                }
-              }
-            }
-          ]
-        },
-        {
-          "ruleId": "unused",
-          "kind": "fail",
-          "level": "warning",
-          "message": {
-            "text": "Parameter 'obj' is not used"
-          },
-          "locations": [
-            {
-              "physicalLocation": {
-                "artifactLocation": {
-                  "uri": "src/main/java/com/amannmalik/mcp/server/resources/ResourcesCodec.java"
-                },
-                "region": {
-                  "startLine": 132,
-                  "startColumn": 96,
-                  "endLine": 132,
-                  "endColumn": 99,
-                  "charOffset": 6091,
-                  "charLength": 3,
-                  "snippet": {
-                    "text": "obj"
-                  }
-                }
-              }
-            }
-          ]
-        },
-        {
-          "ruleId": "unused",
-          "kind": "fail",
-          "level": "warning",
-          "message": {
-            "text": "Parameter 'request' is not used in any implementation"
-          },
-          "locations": [
-            {
-              "physicalLocation": {
-                "artifactLocation": {
-                  "uri": "src/main/java/com/amannmalik/mcp/client/elicitation/ElicitationProvider.java"
-                },
-                "region": {
-                  "startLine": 6,
-                  "startColumn": 51,
-                  "endLine": 6,
-                  "endColumn": 58,
-                  "charOffset": 143,
-                  "charLength": 7,
-                  "snippet": {
-                    "text": "request"
-                  }
-                }
-              }
-            }
-          ]
-        },
-        {
-          "ruleId": "unused",
-          "kind": "fail",
-          "level": "warning",
-          "message": {
             "text": "Parameter 'n' is not used"
           },
           "locations": [
@@ -1183,118 +1035,6 @@
                   "endLine": 61,
                   "endColumn": 75,
                   "charOffset": 2489,
-                  "charLength": 1,
-                  "snippet": {
-                    "text": "n"
-                  }
-                }
-              }
-            }
-          ]
-        },
-        {
-          "ruleId": "unused",
-          "kind": "fail",
-          "level": "warning",
-          "message": {
-            "text": "Parameter 'obj' is not used"
-          },
-          "locations": [
-            {
-              "physicalLocation": {
-                "artifactLocation": {
-                  "uri": "src/main/java/com/amannmalik/mcp/server/tools/ToolCodec.java"
-                },
-                "region": {
-                  "startLine": 48,
-                  "startColumn": 88,
-                  "endLine": 48,
-                  "endColumn": 91,
-                  "charOffset": 1971,
-                  "charLength": 3,
-                  "snippet": {
-                    "text": "obj"
-                  }
-                }
-              }
-            }
-          ]
-        },
-        {
-          "ruleId": "unused",
-          "kind": "fail",
-          "level": "warning",
-          "message": {
-            "text": "Parameter 'obj' is not used"
-          },
-          "locations": [
-            {
-              "physicalLocation": {
-                "artifactLocation": {
-                  "uri": "src/main/java/com/amannmalik/mcp/client/roots/RootsCodec.java"
-                },
-                "region": {
-                  "startLine": 19,
-                  "startColumn": 66,
-                  "endLine": 19,
-                  "endColumn": 69,
-                  "charOffset": 481,
-                  "charLength": 3,
-                  "snippet": {
-                    "text": "obj"
-                  }
-                }
-              }
-            }
-          ]
-        },
-        {
-          "ruleId": "unused",
-          "kind": "fail",
-          "level": "warning",
-          "message": {
-            "text": "Parameter 'req' is not used"
-          },
-          "locations": [
-            {
-              "physicalLocation": {
-                "artifactLocation": {
-                  "uri": "src/main/java/com/amannmalik/mcp/client/roots/RootsCodec.java"
-                },
-                "region": {
-                  "startLine": 15,
-                  "startColumn": 60,
-                  "endLine": 15,
-                  "endColumn": 63,
-                  "charOffset": 351,
-                  "charLength": 3,
-                  "snippet": {
-                    "text": "req"
-                  }
-                }
-              }
-            }
-          ]
-        },
-        {
-          "ruleId": "unused",
-          "kind": "fail",
-          "level": "warning",
-          "message": {
-            "text": "Parameter 'n' is not used"
-          },
-          "locations": [
-            {
-              "physicalLocation": {
-                "artifactLocation": {
-                  "uri": "src/main/java/com/amannmalik/mcp/client/roots/RootsCodec.java"
-                },
-                "region": {
-                  "startLine": 31,
-                  "startColumn": 72,
-                  "endLine": 31,
-                  "endColumn": 73,
-                  "charOffset": 856,
                   "charLength": 1,
                   "snippet": {
                     "text": "n"
@@ -1337,23 +1077,51 @@
           "kind": "fail",
           "level": "warning",
           "message": {
-            "text": "Parameter 'n' is not used"
+            "text": "Parameter 'obj' is not used"
           },
           "locations": [
             {
               "physicalLocation": {
                 "artifactLocation": {
-                  "uri": "src/main/java/com/amannmalik/mcp/server/tools/ToolCodec.java"
+                  "uri": "src/main/java/com/amannmalik/mcp/client/roots/RootsCodec.java"
                 },
                 "region": {
-                  "startLine": 44,
-                  "startColumn": 71,
-                  "endLine": 44,
-                  "endColumn": 72,
-                  "charOffset": 1821,
-                  "charLength": 1,
+                  "startLine": 35,
+                  "startColumn": 90,
+                  "endLine": 35,
+                  "endColumn": 93,
+                  "charOffset": 1008,
+                  "charLength": 3,
                   "snippet": {
-                    "text": "n"
+                    "text": "obj"
+                  }
+                }
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "unused",
+          "kind": "fail",
+          "level": "warning",
+          "message": {
+            "text": "Parameter 'req' is not used"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "src/main/java/com/amannmalik/mcp/client/roots/RootsCodec.java"
+                },
+                "region": {
+                  "startLine": 15,
+                  "startColumn": 60,
+                  "endLine": 15,
+                  "endColumn": 63,
+                  "charOffset": 351,
+                  "charLength": 3,
+                  "snippet": {
+                    "text": "req"
                   }
                 }
               }
@@ -1371,14 +1139,42 @@
             {
               "physicalLocation": {
                 "artifactLocation": {
-                  "uri": "src/main/java/com/amannmalik/mcp/client/roots/RootsCodec.java"
+                  "uri": "src/main/java/com/amannmalik/mcp/prompts/PromptCodec.java"
                 },
                 "region": {
-                  "startLine": 35,
-                  "startColumn": 90,
-                  "endLine": 35,
-                  "endColumn": 93,
-                  "charOffset": 1008,
+                  "startLine": 65,
+                  "startColumn": 94,
+                  "endLine": 65,
+                  "endColumn": 97,
+                  "charOffset": 2645,
+                  "charLength": 3,
+                  "snippet": {
+                    "text": "obj"
+                  }
+                }
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "unused",
+          "kind": "fail",
+          "level": "warning",
+          "message": {
+            "text": "Parameter 'obj' is not used"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "src/main/java/com/amannmalik/mcp/server/tools/ToolCodec.java"
+                },
+                "region": {
+                  "startLine": 48,
+                  "startColumn": 88,
+                  "endLine": 48,
+                  "endColumn": 91,
+                  "charOffset": 1971,
                   "charLength": 3,
                   "snippet": {
                     "text": "obj"
@@ -1417,27 +1213,27 @@
           ]
         },
         {
-          "ruleId": "CatchMayIgnoreException",
+          "ruleId": "unused",
           "kind": "fail",
           "level": "warning",
           "message": {
-            "text": "Empty 'catch' block"
+            "text": "Parameter 'obj' is not used"
           },
           "locations": [
             {
               "physicalLocation": {
                 "artifactLocation": {
-                  "uri": "src/main/java/com/amannmalik/mcp/transport/StreamableHttpTransport.java"
+                  "uri": "src/main/java/com/amannmalik/mcp/client/roots/RootsCodec.java"
                 },
                 "region": {
-                  "startLine": 278,
-                  "startColumn": 23,
-                  "endLine": 278,
-                  "endColumn": 28,
-                  "charOffset": 11156,
-                  "charLength": 5,
+                  "startLine": 19,
+                  "startColumn": 66,
+                  "endLine": 19,
+                  "endColumn": 69,
+                  "charOffset": 481,
+                  "charLength": 3,
                   "snippet": {
-                    "text": "catch"
+                    "text": "obj"
                   }
                 }
               }
@@ -1445,27 +1241,27 @@
           ]
         },
         {
-          "ruleId": "CatchMayIgnoreException",
+          "ruleId": "unused",
           "kind": "fail",
           "level": "warning",
           "message": {
-            "text": "Empty 'catch' block"
+            "text": "Parameter 'request' is not used in any implementation"
           },
           "locations": [
             {
               "physicalLocation": {
                 "artifactLocation": {
-                  "uri": "src/main/java/com/amannmalik/mcp/transport/StreamableHttpTransport.java"
+                  "uri": "src/main/java/com/amannmalik/mcp/client/sampling/SamplingProvider.java"
                 },
                 "region": {
-                  "startLine": 267,
-                  "startColumn": 23,
-                  "endLine": 267,
-                  "endColumn": 28,
-                  "charOffset": 10848,
-                  "charLength": 5,
+                  "startLine": 6,
+                  "startColumn": 62,
+                  "endLine": 6,
+                  "endColumn": 69,
+                  "charOffset": 193,
+                  "charLength": 7,
                   "snippet": {
-                    "text": "catch"
+                    "text": "request"
                   }
                 }
               }
@@ -1473,27 +1269,27 @@
           ]
         },
         {
-          "ruleId": "CatchMayIgnoreException",
+          "ruleId": "unused",
           "kind": "fail",
           "level": "warning",
           "message": {
-            "text": "Empty 'catch' block"
+            "text": "Parameter 'n' is not used"
           },
           "locations": [
             {
               "physicalLocation": {
                 "artifactLocation": {
-                  "uri": "src/main/java/com/amannmalik/mcp/transport/StreamableHttpTransport.java"
+                  "uri": "src/main/java/com/amannmalik/mcp/server/tools/ToolCodec.java"
                 },
                 "region": {
-                  "startLine": 365,
-                  "startColumn": 15,
-                  "endLine": 365,
-                  "endColumn": 20,
-                  "charOffset": 14066,
-                  "charLength": 5,
+                  "startLine": 44,
+                  "startColumn": 71,
+                  "endLine": 44,
+                  "endColumn": 72,
+                  "charOffset": 1821,
+                  "charLength": 1,
                   "snippet": {
-                    "text": "catch"
+                    "text": "n"
                   }
                 }
               }
@@ -1501,27 +1297,27 @@
           ]
         },
         {
-          "ruleId": "CatchMayIgnoreException",
+          "ruleId": "unused",
           "kind": "fail",
           "level": "warning",
           "message": {
-            "text": "Empty 'catch' block"
+            "text": "Parameter 'request' is not used in any implementation"
           },
           "locations": [
             {
               "physicalLocation": {
                 "artifactLocation": {
-                  "uri": "src/main/java/com/amannmalik/mcp/transport/StreamableHttpTransport.java"
+                  "uri": "src/main/java/com/amannmalik/mcp/client/elicitation/ElicitationProvider.java"
                 },
                 "region": {
-                  "startLine": 289,
-                  "startColumn": 23,
-                  "endLine": 289,
-                  "endColumn": 28,
-                  "charOffset": 11462,
-                  "charLength": 5,
+                  "startLine": 6,
+                  "startColumn": 51,
+                  "endLine": 6,
+                  "endColumn": 58,
+                  "charOffset": 143,
+                  "charLength": 7,
                   "snippet": {
-                    "text": "catch"
+                    "text": "request"
                   }
                 }
               }
@@ -1529,167 +1325,27 @@
           ]
         },
         {
-          "ruleId": "UNUSED_IMPORT",
+          "ruleId": "unused",
           "kind": "fail",
           "level": "warning",
           "message": {
-            "text": "Unused import 'import com.amannmalik.mcp.util.ProgressNotification;'"
+            "text": "Parameter 'obj' is not used"
           },
           "locations": [
             {
               "physicalLocation": {
                 "artifactLocation": {
-                  "uri": "src/main/java/com/amannmalik/mcp/client/DefaultMcpClient.java"
+                  "uri": "src/main/java/com/amannmalik/mcp/server/resources/ResourcesCodec.java"
                 },
                 "region": {
-                  "startLine": 39,
-                  "startColumn": 1,
-                  "endLine": 39,
-                  "endColumn": 53,
-                  "charOffset": 1992,
-                  "charLength": 52,
+                  "startLine": 132,
+                  "startColumn": 96,
+                  "endLine": 132,
+                  "endColumn": 99,
+                  "charOffset": 6091,
+                  "charLength": 3,
                   "snippet": {
-                    "text": "import com.amannmalik.mcp.util.ProgressNotification;"
-                  }
-                }
-              }
-            }
-          ]
-        },
-        {
-          "ruleId": "UNUSED_IMPORT",
-          "kind": "fail",
-          "level": "warning",
-          "message": {
-            "text": "Unused import 'import jakarta.json.JsonObject;'"
-          },
-          "locations": [
-            {
-              "physicalLocation": {
-                "artifactLocation": {
-                  "uri": "src/main/java/com/amannmalik/mcp/ping/PingCodec.java"
-                },
-                "region": {
-                  "startLine": 7,
-                  "startColumn": 1,
-                  "endLine": 7,
-                  "endColumn": 32,
-                  "charOffset": 206,
-                  "charLength": 31,
-                  "snippet": {
-                    "text": "import jakarta.json.JsonObject;"
-                  }
-                }
-              }
-            }
-          ]
-        },
-        {
-          "ruleId": "UNUSED_IMPORT",
-          "kind": "fail",
-          "level": "warning",
-          "message": {
-            "text": "Unused import 'import java.util.List;'"
-          },
-          "locations": [
-            {
-              "physicalLocation": {
-                "artifactLocation": {
-                  "uri": "src/main/java/com/amannmalik/mcp/prompts/PromptCodec.java"
-                },
-                "region": {
-                  "startLine": 14,
-                  "startColumn": 1,
-                  "endLine": 14,
-                  "endColumn": 23,
-                  "charOffset": 355,
-                  "charLength": 22,
-                  "snippet": {
-                    "text": "import java.util.List;"
-                  }
-                }
-              }
-            }
-          ]
-        },
-        {
-          "ruleId": "UNUSED_IMPORT",
-          "kind": "fail",
-          "level": "warning",
-          "message": {
-            "text": "Unused import 'import java.io.IOException;'"
-          },
-          "locations": [
-            {
-              "physicalLocation": {
-                "artifactLocation": {
-                  "uri": "src/main/java/com/amannmalik/mcp/cli/HostCommand.java"
-                },
-                "region": {
-                  "startLine": 11,
-                  "startColumn": 1,
-                  "endLine": 11,
-                  "endColumn": 28,
-                  "charOffset": 347,
-                  "charLength": 27,
-                  "snippet": {
-                    "text": "import java.io.IOException;"
-                  }
-                }
-              }
-            }
-          ]
-        },
-        {
-          "ruleId": "UNUSED_IMPORT",
-          "kind": "fail",
-          "level": "warning",
-          "message": {
-            "text": "Unused import 'import java.util.Locale;'"
-          },
-          "locations": [
-            {
-              "physicalLocation": {
-                "artifactLocation": {
-                  "uri": "src/main/java/com/amannmalik/mcp/auth/BearerTokenAuthorizationStrategy.java"
-                },
-                "region": {
-                  "startLine": 3,
-                  "startColumn": 1,
-                  "endLine": 3,
-                  "endColumn": 25,
-                  "charOffset": 34,
-                  "charLength": 24,
-                  "snippet": {
-                    "text": "import java.util.Locale;"
-                  }
-                }
-              }
-            }
-          ]
-        },
-        {
-          "ruleId": "UNUSED_IMPORT",
-          "kind": "fail",
-          "level": "warning",
-          "message": {
-            "text": "Unused import 'import java.util.List;'"
-          },
-          "locations": [
-            {
-              "physicalLocation": {
-                "artifactLocation": {
-                  "uri": "src/main/java/com/amannmalik/mcp/server/resources/ResourceProvider.java"
-                },
-                "region": {
-                  "startLine": 4,
-                  "startColumn": 1,
-                  "endLine": 4,
-                  "endColumn": 23,
-                  "charOffset": 74,
-                  "charLength": 22,
-                  "snippet": {
-                    "text": "import java.util.List;"
+                    "text": "obj"
                   }
                 }
               }
@@ -1729,23 +1385,163 @@
           "kind": "fail",
           "level": "warning",
           "message": {
-            "text": "Unused import 'import com.amannmalik.mcp.lifecycle.ClientCapability;'"
+            "text": "Unused import 'import java.util.Locale;'"
           },
           "locations": [
             {
               "physicalLocation": {
                 "artifactLocation": {
-                  "uri": "src/main/java/com/amannmalik/mcp/server/McpServer.java"
+                  "uri": "src/main/java/com/amannmalik/mcp/auth/BearerTokenAuthorizationStrategy.java"
+                },
+                "region": {
+                  "startLine": 3,
+                  "startColumn": 1,
+                  "endLine": 3,
+                  "endColumn": 25,
+                  "charOffset": 34,
+                  "charLength": 24,
+                  "snippet": {
+                    "text": "import java.util.Locale;"
+                  }
+                }
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "UNUSED_IMPORT",
+          "kind": "fail",
+          "level": "warning",
+          "message": {
+            "text": "Unused import 'import com.amannmalik.mcp.server.logging.LoggingNotification;'"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "src/main/java/com/amannmalik/mcp/client/DefaultMcpClient.java"
+                },
+                "region": {
+                  "startLine": 42,
+                  "startColumn": 1,
+                  "endLine": 42,
+                  "endColumn": 62,
+                  "charOffset": 2158,
+                  "charLength": 61,
+                  "snippet": {
+                    "text": "import com.amannmalik.mcp.server.logging.LoggingNotification;"
+                  }
+                }
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "UNUSED_IMPORT",
+          "kind": "fail",
+          "level": "warning",
+          "message": {
+            "text": "Unused import 'import jakarta.json.JsonObject;'"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "src/main/java/com/amannmalik/mcp/ping/PingCodec.java"
+                },
+                "region": {
+                  "startLine": 7,
+                  "startColumn": 1,
+                  "endLine": 7,
+                  "endColumn": 32,
+                  "charOffset": 206,
+                  "charLength": 31,
+                  "snippet": {
+                    "text": "import jakarta.json.JsonObject;"
+                  }
+                }
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "UNUSED_IMPORT",
+          "kind": "fail",
+          "level": "warning",
+          "message": {
+            "text": "Unused import 'import com.amannmalik.mcp.util.ProgressNotification;'"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "src/main/java/com/amannmalik/mcp/client/DefaultMcpClient.java"
+                },
+                "region": {
+                  "startLine": 39,
+                  "startColumn": 1,
+                  "endLine": 39,
+                  "endColumn": 53,
+                  "charOffset": 1992,
+                  "charLength": 52,
+                  "snippet": {
+                    "text": "import com.amannmalik.mcp.util.ProgressNotification;"
+                  }
+                }
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "UNUSED_IMPORT",
+          "kind": "fail",
+          "level": "warning",
+          "message": {
+            "text": "Unused import 'import java.util.List;'"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "src/main/java/com/amannmalik/mcp/server/resources/ResourceProvider.java"
                 },
                 "region": {
                   "startLine": 4,
                   "startColumn": 1,
                   "endLine": 4,
-                  "endColumn": 54,
-                  "charOffset": 73,
-                  "charLength": 53,
+                  "endColumn": 23,
+                  "charOffset": 74,
+                  "charLength": 22,
                   "snippet": {
-                    "text": "import com.amannmalik.mcp.lifecycle.ClientCapability;"
+                    "text": "import java.util.List;"
+                  }
+                }
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "UNUSED_IMPORT",
+          "kind": "fail",
+          "level": "warning",
+          "message": {
+            "text": "Unused import 'import java.util.List;'"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "src/main/java/com/amannmalik/mcp/prompts/PromptCodec.java"
+                },
+                "region": {
+                  "startLine": 14,
+                  "startColumn": 1,
+                  "endLine": 14,
+                  "endColumn": 23,
+                  "charOffset": 355,
+                  "charLength": 22,
+                  "snippet": {
+                    "text": "import java.util.List;"
                   }
                 }
               }
@@ -1785,6 +1581,34 @@
           "kind": "fail",
           "level": "warning",
           "message": {
+            "text": "Unused import 'import com.amannmalik.mcp.lifecycle.ClientCapability;'"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "src/main/java/com/amannmalik/mcp/server/McpServer.java"
+                },
+                "region": {
+                  "startLine": 4,
+                  "startColumn": 1,
+                  "endLine": 4,
+                  "endColumn": 54,
+                  "charOffset": 73,
+                  "charLength": 53,
+                  "snippet": {
+                    "text": "import com.amannmalik.mcp.lifecycle.ClientCapability;"
+                  }
+                }
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "UNUSED_IMPORT",
+          "kind": "fail",
+          "level": "warning",
+          "message": {
             "text": "Unused import 'import jakarta.json.JsonString;'"
           },
           "locations": [
@@ -1813,51 +1637,23 @@
           "kind": "fail",
           "level": "warning",
           "message": {
-            "text": "Unused import 'import com.amannmalik.mcp.server.logging.LoggingNotification;'"
+            "text": "Unused import 'import java.io.IOException;'"
           },
           "locations": [
             {
               "physicalLocation": {
                 "artifactLocation": {
-                  "uri": "src/main/java/com/amannmalik/mcp/client/DefaultMcpClient.java"
+                  "uri": "src/main/java/com/amannmalik/mcp/cli/HostCommand.java"
                 },
                 "region": {
-                  "startLine": 42,
+                  "startLine": 11,
                   "startColumn": 1,
-                  "endLine": 42,
-                  "endColumn": 62,
-                  "charOffset": 2158,
-                  "charLength": 61,
+                  "endLine": 11,
+                  "endColumn": 28,
+                  "charOffset": 347,
+                  "charLength": 27,
                   "snippet": {
-                    "text": "import com.amannmalik.mcp.server.logging.LoggingNotification;"
-                  }
-                }
-              }
-            }
-          ]
-        },
-        {
-          "ruleId": "DeconstructionCanBeUsed",
-          "kind": "fail",
-          "level": "warning",
-          "message": {
-            "text": "Can be replaced with record pattern"
-          },
-          "locations": [
-            {
-              "physicalLocation": {
-                "artifactLocation": {
-                  "uri": "src/main/java/com/amannmalik/mcp/server/completion/InMemoryCompletionProvider.java"
-                },
-                "region": {
-                  "startLine": 39,
-                  "startColumn": 75,
-                  "endLine": 39,
-                  "endColumn": 104,
-                  "charOffset": 1740,
-                  "charLength": 29,
-                  "snippet": {
-                    "text": "CompleteRequest.Ref.PromptRef"
+                    "text": "import java.io.IOException;"
                   }
                 }
               }
@@ -1949,6 +1745,34 @@
           ]
         },
         {
+          "ruleId": "DeconstructionCanBeUsed",
+          "kind": "fail",
+          "level": "warning",
+          "message": {
+            "text": "Can be replaced with record pattern"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "src/main/java/com/amannmalik/mcp/server/completion/InMemoryCompletionProvider.java"
+                },
+                "region": {
+                  "startLine": 39,
+                  "startColumn": 75,
+                  "endLine": 39,
+                  "endColumn": 104,
+                  "charOffset": 1740,
+                  "charLength": 29,
+                  "snippet": {
+                    "text": "CompleteRequest.Ref.PromptRef"
+                  }
+                }
+              }
+            }
+          ]
+        },
+        {
           "ruleId": "MismatchedQueryAndUpdateOfCollection",
           "kind": "fail",
           "level": "warning",
@@ -1981,23 +1805,23 @@
           "kind": "fail",
           "level": "warning",
           "message": {
-            "text": "Immutable object is modified"
+            "text": "Method invocation 'uri' may produce 'NullPointerException'"
           },
           "locations": [
             {
               "physicalLocation": {
                 "artifactLocation": {
-                  "uri": "src/main/java/com/amannmalik/mcp/server/tools/InMemoryToolProvider.java"
+                  "uri": "src/main/java/com/amannmalik/mcp/server/resources/InMemoryResourceProvider.java"
                 },
                 "region": {
-                  "startLine": 59,
-                  "startColumn": 15,
-                  "endLine": 59,
-                  "endColumn": 23,
-                  "charOffset": 2250,
-                  "charLength": 8,
+                  "startLine": 58,
+                  "startColumn": 52,
+                  "endLine": 58,
+                  "endColumn": 55,
+                  "charOffset": 2435,
+                  "charLength": 3,
                   "snippet": {
-                    "text": "removeIf"
+                    "text": "uri"
                   }
                 }
               }
@@ -2015,14 +1839,14 @@
             {
               "physicalLocation": {
                 "artifactLocation": {
-                  "uri": "src/main/java/com/amannmalik/mcp/server/tools/InMemoryToolProvider.java"
+                  "uri": "src/main/java/com/amannmalik/mcp/server/resources/InMemoryResourceProvider.java"
                 },
                 "region": {
-                  "startLine": 53,
-                  "startColumn": 15,
-                  "endLine": 53,
-                  "endColumn": 18,
-                  "charOffset": 2084,
+                  "startLine": 57,
+                  "startColumn": 41,
+                  "endLine": 57,
+                  "endColumn": 44,
+                  "charOffset": 2369,
                   "charLength": 3,
                   "snippet": {
                     "text": "add"
@@ -2071,17 +1895,17 @@
             {
               "physicalLocation": {
                 "artifactLocation": {
-                  "uri": "src/main/java/com/amannmalik/mcp/server/resources/InMemoryResourceProvider.java"
+                  "uri": "src/main/java/com/amannmalik/mcp/server/tools/InMemoryToolProvider.java"
                 },
                 "region": {
-                  "startLine": 63,
-                  "startColumn": 19,
-                  "endLine": 63,
-                  "endColumn": 27,
-                  "charOffset": 2553,
-                  "charLength": 8,
+                  "startLine": 54,
+                  "startColumn": 39,
+                  "endLine": 54,
+                  "endColumn": 42,
+                  "charOffset": 2133,
+                  "charLength": 3,
                   "snippet": {
-                    "text": "removeIf"
+                    "text": "put"
                   }
                 }
               }
@@ -2102,14 +1926,14 @@
                   "uri": "src/main/java/com/amannmalik/mcp/server/tools/InMemoryToolProvider.java"
                 },
                 "region": {
-                  "startLine": 54,
-                  "startColumn": 39,
-                  "endLine": 54,
-                  "endColumn": 42,
-                  "charOffset": 2133,
+                  "startLine": 53,
+                  "startColumn": 15,
+                  "endLine": 53,
+                  "endColumn": 18,
+                  "charOffset": 2084,
                   "charLength": 3,
                   "snippet": {
-                    "text": "put"
+                    "text": "add"
                   }
                 }
               }
@@ -2155,17 +1979,17 @@
             {
               "physicalLocation": {
                 "artifactLocation": {
-                  "uri": "src/main/java/com/amannmalik/mcp/server/resources/InMemoryResourceProvider.java"
+                  "uri": "src/main/java/com/amannmalik/mcp/server/tools/InMemoryToolProvider.java"
                 },
                 "region": {
-                  "startLine": 69,
-                  "startColumn": 19,
-                  "endLine": 69,
-                  "endColumn": 22,
-                  "charOffset": 2732,
-                  "charLength": 3,
+                  "startLine": 59,
+                  "startColumn": 15,
+                  "endLine": 59,
+                  "endColumn": 23,
+                  "charOffset": 2250,
+                  "charLength": 8,
                   "snippet": {
-                    "text": "add"
+                    "text": "removeIf"
                   }
                 }
               }
@@ -2186,14 +2010,14 @@
                   "uri": "src/main/java/com/amannmalik/mcp/server/resources/InMemoryResourceProvider.java"
                 },
                 "region": {
-                  "startLine": 57,
-                  "startColumn": 41,
-                  "endLine": 57,
-                  "endColumn": 44,
-                  "charOffset": 2369,
-                  "charLength": 3,
+                  "startLine": 63,
+                  "startColumn": 19,
+                  "endLine": 63,
+                  "endColumn": 27,
+                  "charOffset": 2553,
+                  "charLength": 8,
                   "snippet": {
-                    "text": "add"
+                    "text": "removeIf"
                   }
                 }
               }
@@ -2205,7 +2029,7 @@
           "kind": "fail",
           "level": "warning",
           "message": {
-            "text": "Method invocation 'uri' may produce 'NullPointerException'"
+            "text": "Immutable object is modified"
           },
           "locations": [
             {
@@ -2214,42 +2038,14 @@
                   "uri": "src/main/java/com/amannmalik/mcp/server/resources/InMemoryResourceProvider.java"
                 },
                 "region": {
-                  "startLine": 58,
-                  "startColumn": 52,
-                  "endLine": 58,
-                  "endColumn": 55,
-                  "charOffset": 2435,
+                  "startLine": 69,
+                  "startColumn": 19,
+                  "endLine": 69,
+                  "endColumn": 22,
+                  "charOffset": 2732,
                   "charLength": 3,
                   "snippet": {
-                    "text": "uri"
-                  }
-                }
-              }
-            }
-          ]
-        },
-        {
-          "ruleId": "ResultOfMethodCallIgnored",
-          "kind": "fail",
-          "level": "warning",
-          "message": {
-            "text": "Result of 'BlockingQueue.offer()' is ignored"
-          },
-          "locations": [
-            {
-              "physicalLocation": {
-                "artifactLocation": {
-                  "uri": "src/main/java/com/amannmalik/mcp/client/sampling/BlockingSamplingProvider.java"
-                },
-                "region": {
-                  "startLine": 12,
-                  "startColumn": 19,
-                  "endLine": 12,
-                  "endColumn": 24,
-                  "charOffset": 503,
-                  "charLength": 5,
-                  "snippet": {
-                    "text": "offer"
+                    "text": "add"
                   }
                 }
               }
@@ -2295,14 +2091,14 @@
             {
               "physicalLocation": {
                 "artifactLocation": {
-                  "uri": "src/main/java/com/amannmalik/mcp/transport/StreamableHttpTransport.java"
+                  "uri": "src/main/java/com/amannmalik/mcp/client/sampling/BlockingSamplingProvider.java"
                 },
                 "region": {
-                  "startLine": 117,
-                  "startColumn": 23,
-                  "endLine": 117,
-                  "endColumn": 28,
-                  "charOffset": 4479,
+                  "startLine": 12,
+                  "startColumn": 19,
+                  "endLine": 12,
+                  "endColumn": 24,
+                  "charOffset": 503,
                   "charLength": 5,
                   "snippet": {
                     "text": "offer"
@@ -2341,55 +2137,27 @@
           ]
         },
         {
-          "ruleId": "resource",
+          "ruleId": "ResultOfMethodCallIgnored",
           "kind": "fail",
           "level": "warning",
           "message": {
-            "text": "'McpClient' used without 'try'-with-resources statement"
+            "text": "Result of 'BlockingQueue.offer()' is ignored"
           },
           "locations": [
             {
               "physicalLocation": {
                 "artifactLocation": {
-                  "uri": "src/main/java/com/amannmalik/mcp/security/HostProcess.java"
+                  "uri": "src/main/java/com/amannmalik/mcp/transport/StreamableHttpTransport.java"
                 },
                 "region": {
-                  "startLine": 55,
-                  "startColumn": 36,
-                  "endLine": 55,
-                  "endColumn": 42,
-                  "charOffset": 1923,
-                  "charLength": 6,
+                  "startLine": 117,
+                  "startColumn": 23,
+                  "endLine": 117,
+                  "endColumn": 28,
+                  "charOffset": 4479,
+                  "charLength": 5,
                   "snippet": {
-                    "text": "remove"
-                  }
-                }
-              }
-            }
-          ]
-        },
-        {
-          "ruleId": "resource",
-          "kind": "fail",
-          "level": "warning",
-          "message": {
-            "text": "'StreamableHttpTransport' used without 'try'-with-resources statement"
-          },
-          "locations": [
-            {
-              "physicalLocation": {
-                "artifactLocation": {
-                  "uri": "src/main/java/com/amannmalik/mcp/cli/ServerCommand.java"
-                },
-                "region": {
-                  "startLine": 55,
-                  "startColumn": 50,
-                  "endLine": 55,
-                  "endColumn": 73,
-                  "charOffset": 1993,
-                  "charLength": 23,
-                  "snippet": {
-                    "text": "StreamableHttpTransport"
+                    "text": "offer"
                   }
                 }
               }
@@ -2443,6 +2211,62 @@
                   "endLine": 49,
                   "endColumn": 27,
                   "charOffset": 1779,
+                  "charLength": 6,
+                  "snippet": {
+                    "text": "remove"
+                  }
+                }
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "resource",
+          "kind": "fail",
+          "level": "warning",
+          "message": {
+            "text": "'StreamableHttpTransport' used without 'try'-with-resources statement"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "src/main/java/com/amannmalik/mcp/cli/ServerCommand.java"
+                },
+                "region": {
+                  "startLine": 55,
+                  "startColumn": 50,
+                  "endLine": 55,
+                  "endColumn": 73,
+                  "charOffset": 1993,
+                  "charLength": 23,
+                  "snippet": {
+                    "text": "StreamableHttpTransport"
+                  }
+                }
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "resource",
+          "kind": "fail",
+          "level": "warning",
+          "message": {
+            "text": "'McpClient' used without 'try'-with-resources statement"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "src/main/java/com/amannmalik/mcp/security/HostProcess.java"
+                },
+                "region": {
+                  "startLine": 55,
+                  "startColumn": 36,
+                  "endLine": 55,
+                  "endColumn": 42,
+                  "charOffset": 1923,
                   "charLength": 6,
                   "snippet": {
                     "text": "remove"
