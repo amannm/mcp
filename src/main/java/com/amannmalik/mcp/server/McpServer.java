@@ -509,6 +509,15 @@ public final class McpServer implements AutoCloseable {
             return new JsonRpcError(req.id(), new JsonRpcError.ErrorDetail(
                     JsonRpcErrorCode.INVALID_PARAMS.code(), e.getMessage(), null));
         }
+        ResourceBlock existing = resources.read(uri);
+        if (existing == null) {
+            return new JsonRpcError(req.id(), new JsonRpcError.ErrorDetail(
+                    -32002, "Resource not found", Json.createObjectBuilder().add("uri", uri).build()));
+        }
+        if (!allowed(existing.annotations())) {
+            return new JsonRpcError(req.id(), new JsonRpcError.ErrorDetail(
+                    JsonRpcErrorCode.INTERNAL_ERROR.code(), "Access denied", null));
+        }
         try {
             ResourceSubscription sub = resources.subscribe(uri, update -> {
                 try {
