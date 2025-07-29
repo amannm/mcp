@@ -34,6 +34,12 @@ import com.amannmalik.mcp.ping.PingResponse;
 import com.amannmalik.mcp.ping.PingMonitor;
 import com.amannmalik.mcp.transport.Transport;
 import com.amannmalik.mcp.validation.SchemaValidator;
+import com.amannmalik.mcp.util.ProgressCodec;
+import com.amannmalik.mcp.util.ProgressListener;
+import com.amannmalik.mcp.util.ProgressNotification;
+import com.amannmalik.mcp.server.logging.LoggingCodec;
+import com.amannmalik.mcp.server.logging.LoggingListener;
+import com.amannmalik.mcp.server.logging.LoggingNotification;
 import jakarta.json.JsonObject;
 
 import java.io.IOException;
@@ -64,6 +70,8 @@ public final class DefaultMcpClient implements McpClient {
     private volatile boolean connected;
     private Set<ServerCapability> serverCapabilities = Set.of();
     private String instructions;
+    private ProgressListener progressListener = n -> {};
+    private LoggingListener loggingListener = n -> {};
 
     public void configurePing(long intervalMillis, long timeoutMillis) {
         if (connected) throw new IllegalStateException("already connected");
@@ -281,13 +289,11 @@ public final class DefaultMcpClient implements McpClient {
                 case JsonRpcRequest req -> {
                     try {
                         send(handleRequest(req));
-                    } catch (IOException e) {
-
+                    } catch (IOException ignore) {
                     }
                 }
+                case JsonRpcNotification note -> handleNotification(note);
                 default -> {
-
-
                 }
             }
         }
@@ -377,5 +383,29 @@ public final class DefaultMcpClient implements McpClient {
 
     private void send(JsonRpcMessage msg) throws IOException {
         transport.send(JsonRpcCodec.toJsonObject(msg));
+    }
+
+    public void setProgressListener(ProgressListener listener) {
+        progressListener = listener == null ? n -> {} : listener;
+    }
+
+    public void setLoggingListener(LoggingListener listener) {
+        loggingListener = listener == null ? n -> {} : listener;
+    }
+
+    private void handleNotification(JsonRpcNotification note) {
+        switch (note.method()) {
+            case "notifications/progress" -> {
+                if (note.params() != null) {
+                    progressListener.onProgress(ProgressCodec.toProgressNotification(note.params()));
+                }
+            }
+            case "notifications/message" -> {
+                if (note.params() != null) {
+                    loggingListener.onMessage(LoggingCodec.toLoggingNotification(note.params()));
+                }
+            }
+            default -> { }
+        }
     }
 }
