@@ -312,6 +312,7 @@ public final class McpClient implements AutoCloseable {
             case "sampling/createMessage" -> handleCreateMessage(req);
             case "roots/list" -> handleListRoots(req);
             case "elicitation/create" -> handleElicit(req);
+            case "ping" -> handlePing(req);
             default -> new JsonRpcError(req.id(), new JsonRpcError.ErrorDetail(
                     JsonRpcErrorCode.METHOD_NOT_FOUND.code(),
                     "Unknown method: " + req.method(), null));
@@ -386,6 +387,16 @@ public final class McpClient implements AutoCloseable {
         } catch (Exception e) {
             return new JsonRpcError(req.id(), new JsonRpcError.ErrorDetail(
                     JsonRpcErrorCode.INTERNAL_ERROR.code(), e.getMessage(), null));
+        }
+    }
+
+    private JsonRpcMessage handlePing(JsonRpcRequest req) {
+        try {
+            PingCodec.toPingRequest(req);
+            return PingCodec.toResponse(req.id());
+        } catch (IllegalArgumentException e) {
+            return new JsonRpcError(req.id(), new JsonRpcError.ErrorDetail(
+                    JsonRpcErrorCode.INVALID_PARAMS.code(), e.getMessage(), null));
         }
     }
 
