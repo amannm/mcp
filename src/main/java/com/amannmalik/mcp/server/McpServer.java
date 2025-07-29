@@ -653,16 +653,20 @@ public final class McpServer implements AutoCloseable {
     private static ToolProvider createDefaultTools() {
         var schema = Json.createObjectBuilder().add("type", "object").build();
         Tool tool = new Tool("test_tool", "Test Tool", null, schema, null, null);
-        InMemoryToolProvider provider = new InMemoryToolProvider(
+        return new InMemoryToolProvider(
                 List.of(tool),
-                Map.of("test_tool", a -> new ToolResult(
-                        Json.createArrayBuilder()
-                                .add(Json.createObjectBuilder()
-                                        .add("type", "text")
-                                        .add("text", "ok")
-                                        .build())
-                                .build(), null, false)));
-        return provider;
+                Map.of(
+                        "test_tool",
+                        a -> new ToolResult(
+                                Json.createArrayBuilder()
+                                        .add(
+                                                Json.createObjectBuilder()
+                                                        .add("type", "text")
+                                                        .add("text", "ok")
+                                                        .build())
+                                        .build(),
+                                null,
+                                false)));
     }
 
     private static PromptProvider createDefaultPrompts() {
