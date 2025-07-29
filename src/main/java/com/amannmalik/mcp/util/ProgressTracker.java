@@ -18,4 +18,9 @@ public final class ProgressTracker {
     public void release(ProgressToken token) {
         active.remove(token);
     }
+
+    /** Returns true if the token is currently registered. */
+    public boolean isActive(ProgressToken token) {
+        return active.contains(token);
+    }
 }
