@@ -14,7 +14,7 @@ import java.util.function.Function;
 public final class InMemoryToolProvider implements ToolProvider {
     private final List<Tool> tools;
     private final Map<String, Function<JsonObject, ToolResult>> handlers;
-    private final List<ToolListListener> listeners = new java.util.concurrent.CopyOnWriteArrayList<>();
+    private final List<ToolListListener> listeners = new CopyOnWriteArrayList<>();
 
     public InMemoryToolProvider(List<Tool> tools, Map<String, Function<JsonObject, ToolResult>> handlers) {
         this.tools = tools == null ? new CopyOnWriteArrayList<>() : new CopyOnWriteArrayList<>(tools);
@@ -38,7 +38,10 @@ public final class InMemoryToolProvider implements ToolProvider {
         JsonObject args = arguments == null ? Json.createObjectBuilder().build() : arguments;
         SchemaValidator.validate(tool.inputSchema(), args);
         ToolResult result = f.apply(args);
-        if (tool.outputSchema() != null && result.structuredContent() != null) {
+        if (tool.outputSchema() != null) {
+            if (result.structuredContent() == null) {
+                throw new IllegalStateException("structured result required");
+            }
             SchemaValidator.validate(tool.outputSchema(), result.structuredContent());
         }
         return result;
@@ -48,6 +51,11 @@ public final class InMemoryToolProvider implements ToolProvider {
     public ToolListSubscription subscribeList(ToolListListener listener) {
         listeners.add(listener);
         return () -> listeners.remove(listener);
+    }
+
+    @Override
+    public boolean supportsListChanged() {
+        return true;
     }
 
     public void addTool(Tool tool, Function<JsonObject, ToolResult> handler) {

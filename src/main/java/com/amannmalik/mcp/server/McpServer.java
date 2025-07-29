@@ -1,12 +1,15 @@
 package com.amannmalik.mcp.server;
 
 import com.amannmalik.mcp.auth.Principal;
+import com.amannmalik.mcp.client.elicitation.ElicitationAction;
 import com.amannmalik.mcp.client.elicitation.ElicitationCodec;
 import com.amannmalik.mcp.client.elicitation.ElicitationRequest;
 import com.amannmalik.mcp.client.elicitation.ElicitationResponse;
 import com.amannmalik.mcp.client.roots.ListRootsRequest;
 import com.amannmalik.mcp.client.roots.Root;
 import com.amannmalik.mcp.client.roots.RootsCodec;
+import com.amannmalik.mcp.client.roots.RootsListener;
+import com.amannmalik.mcp.client.roots.RootsSubscription;
 import com.amannmalik.mcp.client.sampling.CreateMessageRequest;
 import com.amannmalik.mcp.client.sampling.CreateMessageResponse;
 import com.amannmalik.mcp.client.sampling.SamplingCodec;
@@ -81,18 +84,26 @@ import com.amannmalik.mcp.util.ProgressCodec;
 import com.amannmalik.mcp.util.ProgressNotification;
 import com.amannmalik.mcp.util.ProgressToken;
 import com.amannmalik.mcp.util.ProgressTracker;
+import com.amannmalik.mcp.validation.MetaValidator;
+import com.amannmalik.mcp.validation.SchemaValidator;
+import com.amannmalik.mcp.validation.UriValidator;
 import jakarta.json.Json;
 import jakarta.json.JsonObject;
+import jakarta.json.JsonValue;
+import jakarta.json.stream.JsonParsingException;
 
 import java.io.EOFException;
 import java.io.IOException;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicLong;
 
 public final class McpServer implements AutoCloseable {
@@ -112,10 +123,13 @@ public final class McpServer implements AutoCloseable {
     private ResourceListSubscription resourceListSubscription;
     private ToolListSubscription toolListSubscription;
     private PromptsSubscription promptsSubscription;
+    private final boolean toolListChangedSupported;
+    private final List<RootsListener> rootsListeners = new CopyOnWriteArrayList<>();
     private final ResourceAccessController resourceAccess;
     private final Principal principal;
     private volatile LoggingLevel logLevel = LoggingLevel.INFO;
     private static final int RATE_LIMIT_CODE = -32001;
+    private static final int NOT_INITIALIZED_CODE = -32000;
     private final RateLimiter toolLimiter = new RateLimiter(5, 1000);
     private final RateLimiter completionLimiter = new RateLimiter(10, 1000);
     private final RateLimiter logLimiter = new RateLimiter(20, 1000);
@@ -126,7 +140,7 @@ public final class McpServer implements AutoCloseable {
     public McpServer(Transport transport) {
         this(createDefaultResources(), createDefaultTools(), createDefaultPrompts(), createDefaultCompletions(),
                 createDefaultPrivacyBoundary("default"),
-                new Principal("default", java.util.Set.of()),
+                new Principal("default", Set.of()),
                 transport);
     }
 
@@ -137,7 +151,7 @@ public final class McpServer implements AutoCloseable {
               Transport transport) {
         this(resources, tools, prompts, completions,
                 createDefaultPrivacyBoundary("default"),
-                new Principal("default", java.util.Set.of()),
+                new Principal("default", Set.of()),
                 transport);
     }
 
@@ -162,6 +176,7 @@ public final class McpServer implements AutoCloseable {
         this.completions = completions;
         this.resourceAccess = resourceAccess;
         this.principal = principal;
+        this.toolListChangedSupported = tools.supportsListChanged();
 
         if (resources != null) {
             try {
@@ -175,7 +190,7 @@ public final class McpServer implements AutoCloseable {
             }
         }
 
-        if (tools != null) {
+        if (tools != null && toolListChangedSupported) {
             try {
                 toolListSubscription = tools.subscribeList(() -> {
                     try {
@@ -203,6 +218,7 @@ public final class McpServer implements AutoCloseable {
         registerNotificationHandler("notifications/initialized", this::initialized);
         registerRequestHandler("ping", this::ping);
         registerNotificationHandler("notifications/cancelled", this::cancelled);
+        registerNotificationHandler("notifications/roots/list_changed", n -> rootsListChanged());
 
         if (resources != null) {
             registerRequestHandler("resources/list", this::listResources);
@@ -249,7 +265,7 @@ public final class McpServer implements AutoCloseable {
             } catch (EOFException e) {
                 lifecycle.shutdown();
                 break;
-            } catch (jakarta.json.stream.JsonParsingException e) {
+            } catch (JsonParsingException e) {
                 System.err.println("Parse error: " + e.getMessage());
                 sendLog(LoggingLevel.ERROR, "parser", Json.createValue(e.getMessage()));
                 continue;
@@ -285,6 +301,13 @@ public final class McpServer implements AutoCloseable {
     }
 
     private void onRequest(JsonRpcRequest req) throws IOException {
+        if (lifecycle.state() == LifecycleState.INIT &&
+                !"initialize".equals(req.method()) &&
+                !"ping".equals(req.method())) {
+            send(new JsonRpcError(req.id(), new JsonRpcError.ErrorDetail(
+                    NOT_INITIALIZED_CODE, "Server not initialized", null)));
+            return;
+        }
         var handler = requestHandlers.get(req.method());
         if (handler == null) {
             send(new JsonRpcError(req.id(), new JsonRpcError.ErrorDetail(
@@ -360,7 +383,23 @@ public final class McpServer implements AutoCloseable {
     private JsonRpcMessage initialize(JsonRpcRequest req) {
         InitializeRequest init = LifecycleCodec.toInitializeRequest(req.params());
         InitializeResponse resp = lifecycle.initialize(init);
-        return new JsonRpcResponse(req.id(), LifecycleCodec.toJsonObject(resp));
+        var json = LifecycleCodec.toJsonObject(resp);
+        if (!toolListChangedSupported) {
+            var caps = json.getJsonObject("capabilities");
+            if (caps != null && caps.containsKey("tools")) {
+                var toolsCaps = caps.getJsonObject("tools");
+                toolsCaps = Json.createObjectBuilder(toolsCaps)
+                        .add("listChanged", false)
+                        .build();
+                caps = Json.createObjectBuilder(caps)
+                        .add("tools", toolsCaps)
+                        .build();
+                json = Json.createObjectBuilder(json)
+                        .add("capabilities", caps)
+                        .build();
+            }
+        }
+        return new JsonRpcResponse(req.id(), json);
     }
 
     private void initialized(JsonRpcNotification ignored) {
@@ -391,13 +430,19 @@ public final class McpServer implements AutoCloseable {
     private ProgressToken parseProgressToken(JsonObject params) {
         if (params == null || !params.containsKey("_meta")) return null;
         JsonObject meta = params.getJsonObject("_meta");
-        com.amannmalik.mcp.validation.MetaValidator.requireValid(meta);
+        MetaValidator.requireValid(meta);
         if (!meta.containsKey("progressToken")) return null;
         var val = meta.get("progressToken");
         return switch (val.getValueType()) {
             case STRING -> new ProgressToken.StringToken(meta.getString("progressToken"));
-            case NUMBER -> new ProgressToken.NumericToken(meta.getJsonNumber("progressToken").doubleValue());
-            default -> null;
+            case NUMBER -> {
+                var num = meta.getJsonNumber("progressToken");
+                if (!num.isIntegral()) {
+                    throw new IllegalArgumentException("progressToken must be an integer");
+                }
+                yield new ProgressToken.NumericToken(num.longValue());
+            }
+            default -> throw new IllegalArgumentException("progressToken must be a string or integer");
         };
     }
 
@@ -416,6 +461,11 @@ public final class McpServer implements AutoCloseable {
         ProgressToken token = progressTokens.get(cn.requestId());
         if (token != null) {
             progressTracker.release(token);
+        }
+        try {
+            sendLog(LoggingLevel.INFO, "cancellation",
+                    cn.reason() == null ? JsonValue.NULL : Json.createValue(cn.reason()));
+        } catch (IOException ignore) {
         }
     }
 
@@ -440,6 +490,7 @@ public final class McpServer implements AutoCloseable {
     }
 
     private JsonRpcMessage listResources(JsonRpcRequest req) {
+        requireServerCapability(ServerCapability.RESOURCES);
         String cursor = PaginationCodec.toPaginatedRequest(req.params()).cursor();
         ResourceList list;
         try {
@@ -458,6 +509,7 @@ public final class McpServer implements AutoCloseable {
     }
 
     private JsonRpcMessage readResource(JsonRpcRequest req) {
+        requireServerCapability(ServerCapability.RESOURCES);
         JsonObject params = req.params();
         if (params == null || !params.containsKey("uri")) {
             return new JsonRpcError(req.id(), new JsonRpcError.ErrorDetail(
@@ -465,7 +517,7 @@ public final class McpServer implements AutoCloseable {
         }
         String uri = params.getString("uri");
         try {
-            uri = com.amannmalik.mcp.validation.UriValidator.requireAbsolute(uri);
+            uri = UriValidator.requireAbsolute(uri);
         } catch (IllegalArgumentException e) {
             return new JsonRpcError(req.id(), new JsonRpcError.ErrorDetail(
                     JsonRpcErrorCode.INVALID_PARAMS.code(), e.getMessage(), null));
@@ -486,6 +538,7 @@ public final class McpServer implements AutoCloseable {
     }
 
     private JsonRpcMessage listTemplates(JsonRpcRequest req) {
+        requireServerCapability(ServerCapability.RESOURCES);
         String cursor = PaginationCodec.toPaginatedRequest(req.params()).cursor();
         ResourceTemplatePage page;
         try {
@@ -504,6 +557,7 @@ public final class McpServer implements AutoCloseable {
     }
 
     private JsonRpcMessage subscribeResource(JsonRpcRequest req) {
+        requireServerCapability(ServerCapability.RESOURCES);
         JsonObject params = req.params();
         if (params == null || !params.containsKey("uri")) {
             return new JsonRpcError(req.id(), new JsonRpcError.ErrorDetail(
@@ -511,10 +565,19 @@ public final class McpServer implements AutoCloseable {
         }
         String uri = params.getString("uri");
         try {
-            uri = com.amannmalik.mcp.validation.UriValidator.requireAbsolute(uri);
+            uri = UriValidator.requireAbsolute(uri);
         } catch (IllegalArgumentException e) {
             return new JsonRpcError(req.id(), new JsonRpcError.ErrorDetail(
                     JsonRpcErrorCode.INVALID_PARAMS.code(), e.getMessage(), null));
+        }
+        ResourceBlock existing = resources.read(uri);
+        if (existing == null) {
+            return new JsonRpcError(req.id(), new JsonRpcError.ErrorDetail(
+                    -32002, "Resource not found", Json.createObjectBuilder().add("uri", uri).build()));
+        }
+        if (!allowed(existing.annotations())) {
+            return new JsonRpcError(req.id(), new JsonRpcError.ErrorDetail(
+                    JsonRpcErrorCode.INTERNAL_ERROR.code(), "Access denied", null));
         }
         try {
             ResourceSubscription sub = resources.subscribe(uri, update -> {
@@ -542,6 +605,7 @@ public final class McpServer implements AutoCloseable {
     }
 
     private JsonRpcMessage unsubscribeResource(JsonRpcRequest req) {
+        requireServerCapability(ServerCapability.RESOURCES);
         JsonObject params = req.params();
         if (params == null || !params.containsKey("uri")) {
             return new JsonRpcError(req.id(), new JsonRpcError.ErrorDetail(
@@ -549,7 +613,7 @@ public final class McpServer implements AutoCloseable {
         }
         String uri = params.getString("uri");
         try {
-            uri = com.amannmalik.mcp.validation.UriValidator.requireAbsolute(uri);
+            uri = UriValidator.requireAbsolute(uri);
         } catch (IllegalArgumentException e) {
             return new JsonRpcError(req.id(), new JsonRpcError.ErrorDetail(
                     JsonRpcErrorCode.INVALID_PARAMS.code(), e.getMessage(), null));
@@ -565,6 +629,7 @@ public final class McpServer implements AutoCloseable {
     }
 
     private JsonRpcMessage listTools(JsonRpcRequest req) {
+        requireServerCapability(ServerCapability.TOOLS);
         String cursor = PaginationCodec.toPaginatedRequest(req.params()).cursor();
         ToolPage page;
         try {
@@ -578,16 +643,26 @@ public final class McpServer implements AutoCloseable {
     }
 
     private JsonRpcMessage callTool(JsonRpcRequest req) {
+        requireServerCapability(ServerCapability.TOOLS);
         JsonObject params = req.params();
         if (params == null) {
             return new JsonRpcError(req.id(), new JsonRpcError.ErrorDetail(
                     JsonRpcErrorCode.INVALID_PARAMS.code(), "Missing params", null));
         }
         String name = params.getString("name", null);
-        JsonObject args = params.getJsonObject("arguments");
-        if (name == null || args == null) {
+        if (name == null) {
             return new JsonRpcError(req.id(), new JsonRpcError.ErrorDetail(
-                    JsonRpcErrorCode.INVALID_PARAMS.code(), "Missing name or arguments", null));
+                    JsonRpcErrorCode.INVALID_PARAMS.code(), "name required", null));
+        }
+
+        JsonValue argsVal = params.get("arguments");
+        JsonObject args = null;
+        if (argsVal != null) {
+            if (argsVal.getValueType() != JsonValue.ValueType.OBJECT) {
+                return new JsonRpcError(req.id(), new JsonRpcError.ErrorDetail(
+                        JsonRpcErrorCode.INVALID_PARAMS.code(), "arguments must be object", null));
+            }
+            args = params.getJsonObject("arguments");
         }
         try {
             toolLimiter.requireAllowance(name);
@@ -605,6 +680,7 @@ public final class McpServer implements AutoCloseable {
     }
 
     private JsonRpcMessage listPrompts(JsonRpcRequest req) {
+        requireServerCapability(ServerCapability.PROMPTS);
         String cursor = PaginationCodec.toPaginatedRequest(req.params()).cursor();
         PromptPage page;
         try {
@@ -621,6 +697,7 @@ public final class McpServer implements AutoCloseable {
     }
 
     private JsonRpcMessage getPrompt(JsonRpcRequest req) {
+        requireServerCapability(ServerCapability.PROMPTS);
         JsonObject params = req.params();
         String name = params.getString("name", null);
         if (name == null) {
@@ -640,6 +717,7 @@ public final class McpServer implements AutoCloseable {
     }
 
     private JsonRpcMessage setLogLevel(JsonRpcRequest req) {
+        requireServerCapability(ServerCapability.LOGGING);
         JsonObject params = req.params();
         if (params == null) {
             return new JsonRpcError(req.id(), new JsonRpcError.ErrorDetail(
@@ -662,11 +740,12 @@ public final class McpServer implements AutoCloseable {
                 LoggingCodec.toJsonObject(note)));
     }
 
-    private void sendLog(LoggingLevel level, String logger, jakarta.json.JsonValue data) throws IOException {
+    private void sendLog(LoggingLevel level, String logger, JsonValue data) throws IOException {
         sendLog(new LoggingNotification(level, logger, data));
     }
 
     private JsonRpcMessage complete(JsonRpcRequest req) {
+        requireServerCapability(ServerCapability.COMPLETIONS);
         JsonObject params = req.params();
         if (params == null) {
             return new JsonRpcError(req.id(), new JsonRpcError.ErrorDetail(
@@ -691,13 +770,19 @@ public final class McpServer implements AutoCloseable {
         }
     }
 
+    private static final long DEFAULT_TIMEOUT = 30_000L;
+
     private JsonRpcMessage sendRequest(String method, JsonObject params) throws IOException {
+        return sendRequest(method, params, DEFAULT_TIMEOUT);
+    }
+
+    private JsonRpcMessage sendRequest(String method, JsonObject params, long timeoutMillis) throws IOException {
         RequestId id = new RequestId.NumericId(requestCounter.getAndIncrement());
         CompletableFuture<JsonRpcMessage> future = new CompletableFuture<>();
         pending.put(id, future);
         send(new JsonRpcRequest(id, method, params));
         try {
-            return future.get(30, TimeUnit.SECONDS);
+            return future.get(timeoutMillis, TimeUnit.MILLISECONDS);
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             throw new IOException(e);
@@ -705,8 +790,14 @@ public final class McpServer implements AutoCloseable {
             Throwable cause = e.getCause();
             if (cause instanceof IOException io) throw io;
             throw new IOException(cause);
-        } catch (java.util.concurrent.TimeoutException e) {
-            throw new IOException("Request timed out after 30 seconds");
+        } catch (TimeoutException e) {
+            try {
+                send(new JsonRpcNotification(
+                        "notifications/cancelled",
+                        CancellationCodec.toJsonObject(new CancelledNotification(id, "timeout"))));
+            } catch (IOException ignore) {
+            }
+            throw new IOException("Request timed out after " + timeoutMillis + " ms");
         } finally {
             pending.remove(id);
         }
@@ -721,11 +812,24 @@ public final class McpServer implements AutoCloseable {
         throw new IOException(((JsonRpcError) msg).error().message());
     }
 
+    public RootsSubscription subscribeRoots(RootsListener listener) {
+        rootsListeners.add(listener);
+        return () -> rootsListeners.remove(listener);
+    }
+
+    private void rootsListChanged() {
+        rootsListeners.forEach(RootsListener::listChanged);
+    }
+
     public ElicitationResponse elicit(ElicitationRequest req) throws IOException {
         requireClientCapability(ClientCapability.ELICITATION);
         JsonRpcMessage msg = sendRequest("elicitation/create", ElicitationCodec.toJsonObject(req));
         if (msg instanceof JsonRpcResponse resp) {
-            return ElicitationCodec.toResponse(resp.result());
+            ElicitationResponse er = ElicitationCodec.toResponse(resp.result());
+            if (er.action() == ElicitationAction.ACCEPT) {
+                SchemaValidator.validate(req.requestedSchema(), er.content());
+            }
+            return er;
         }
         throw new IOException(((JsonRpcError) msg).error().message());
     }

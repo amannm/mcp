@@ -51,6 +51,8 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicLong;
 
 public final class McpClient implements AutoCloseable {
@@ -98,6 +100,9 @@ public final class McpClient implements AutoCloseable {
         this.sampling = sampling;
         this.roots = roots;
         this.elicitation = elicitation;
+        if (this.capabilities.contains(ClientCapability.ELICITATION) && this.elicitation == null) {
+            throw new IllegalArgumentException("elicitation capability requires provider");
+        }
         this.pingInterval = 0;
         this.pingTimeout = 5000;
     }
@@ -157,7 +162,7 @@ public final class McpClient implements AutoCloseable {
                     }
                     if (System.err != null) System.err.println("Ping failed, connection closed");
                 }
-            }, pingInterval, pingInterval, java.util.concurrent.TimeUnit.MILLISECONDS);
+            }, pingInterval, pingInterval, TimeUnit.MILLISECONDS);
         }
     }
 
@@ -191,7 +196,13 @@ public final class McpClient implements AutoCloseable {
         return instructions == null ? "" : instructions;
     }
 
+    private static final long DEFAULT_TIMEOUT = 30_000L;
+
     public PingResponse ping() throws IOException {
+        return ping(DEFAULT_TIMEOUT);
+    }
+
+    public PingResponse ping(long timeoutMillis) throws IOException {
         if (!connected) throw new IllegalStateException("not connected");
         RequestId reqId = new RequestId.NumericId(id.getAndIncrement());
         CompletableFuture<JsonRpcMessage> future = new CompletableFuture<>();
@@ -204,16 +215,16 @@ public final class McpClient implements AutoCloseable {
         }
         JsonRpcMessage msg;
         try {
-            msg = future.get(30, java.util.concurrent.TimeUnit.SECONDS);
+            msg = future.get(timeoutMillis, TimeUnit.MILLISECONDS);
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             throw new IOException(e);
-        } catch (java.util.concurrent.TimeoutException e) {
+        } catch (TimeoutException e) {
             try {
                 notify("notifications/cancelled", CancellationCodec.toJsonObject(new CancelledNotification(reqId, "timeout")));
             } catch (IOException ignore) {
             }
-            throw new IOException("Request timed out after 30 seconds");
+            throw new IOException("Request timed out after " + timeoutMillis + " ms");
         } catch (ExecutionException e) {
             Throwable cause = e.getCause();
             if (cause instanceof IOException io) throw io;
@@ -231,6 +242,10 @@ public final class McpClient implements AutoCloseable {
     }
 
     public JsonRpcMessage request(String method, JsonObject params) throws IOException {
+        return request(method, params, DEFAULT_TIMEOUT);
+    }
+
+    public JsonRpcMessage request(String method, JsonObject params, long timeoutMillis) throws IOException {
         if (!connected) throw new IllegalStateException("not connected");
         RequestId reqId = new RequestId.NumericId(id.getAndIncrement());
         CompletableFuture<JsonRpcMessage> future = new CompletableFuture<>();
@@ -242,16 +257,16 @@ public final class McpClient implements AutoCloseable {
             throw e;
         }
         try {
-            return future.get(30, java.util.concurrent.TimeUnit.SECONDS);
+            return future.get(timeoutMillis, TimeUnit.MILLISECONDS);
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             throw new IOException(e);
-        } catch (java.util.concurrent.TimeoutException e) {
+        } catch (TimeoutException e) {
             try {
                 notify("notifications/cancelled", CancellationCodec.toJsonObject(new CancelledNotification(reqId, "timeout")));
             } catch (IOException ignore) {
             }
-            throw new IOException("Request timed out after 30 seconds");
+            throw new IOException("Request timed out after " + timeoutMillis + " ms");
         } catch (ExecutionException e) {
             Throwable cause = e.getCause();
             if (cause instanceof IOException io) throw io;
@@ -312,6 +327,7 @@ public final class McpClient implements AutoCloseable {
             case "sampling/createMessage" -> handleCreateMessage(req);
             case "roots/list" -> handleListRoots(req);
             case "elicitation/create" -> handleElicit(req);
+            case "ping" -> handlePing(req);
             default -> new JsonRpcError(req.id(), new JsonRpcError.ErrorDetail(
                     JsonRpcErrorCode.METHOD_NOT_FOUND.code(),
                     "Unknown method: " + req.method(), null));
@@ -386,6 +402,16 @@ public final class McpClient implements AutoCloseable {
         } catch (Exception e) {
             return new JsonRpcError(req.id(), new JsonRpcError.ErrorDetail(
                     JsonRpcErrorCode.INTERNAL_ERROR.code(), e.getMessage(), null));
+        }
+    }
+
+    private JsonRpcMessage handlePing(JsonRpcRequest req) {
+        try {
+            PingCodec.toPingRequest(req);
+            return PingCodec.toResponse(req.id());
+        } catch (IllegalArgumentException e) {
+            return new JsonRpcError(req.id(), new JsonRpcError.ErrorDetail(
+                    JsonRpcErrorCode.INVALID_PARAMS.code(), e.getMessage(), null));
         }
     }
 

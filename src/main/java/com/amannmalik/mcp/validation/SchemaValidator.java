@@ -6,6 +6,10 @@ import jakarta.json.JsonObject;
 import jakarta.json.JsonString;
 import jakarta.json.JsonValue;
 
+import java.net.URI;
+import java.time.LocalDate;
+import java.time.OffsetDateTime;
+
 public final class SchemaValidator {
     private SchemaValidator() {
     }
@@ -94,9 +98,9 @@ public final class SchemaValidator {
                         throw new IllegalArgumentException("Invalid email for " + field);
                     }
                 }
-                case "uri" -> java.net.URI.create(value);
-                case "date" -> java.time.LocalDate.parse(value);
-                case "date-time" -> java.time.OffsetDateTime.parse(value);
+                case "uri" -> URI.create(value);
+                case "date" -> LocalDate.parse(value);
+                case "date-time" -> OffsetDateTime.parse(value);
                 default -> {
                 }
             }

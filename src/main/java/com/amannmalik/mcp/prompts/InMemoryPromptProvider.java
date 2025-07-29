@@ -3,13 +3,15 @@ package com.amannmalik.mcp.prompts;
 import com.amannmalik.mcp.util.Pagination;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 public final class InMemoryPromptProvider implements PromptProvider {
     private final Map<String, PromptTemplate> templates = new ConcurrentHashMap<>();
-    private final List<PromptsListener> listeners = new java.util.concurrent.CopyOnWriteArrayList<>();
+    private final List<PromptsListener> listeners = new CopyOnWriteArrayList<>();
 
     public void add(PromptTemplate template) {
         templates.put(template.prompt().name(), template);
@@ -27,6 +29,7 @@ public final class InMemoryPromptProvider implements PromptProvider {
         for (PromptTemplate t : templates.values()) {
             all.add(t.prompt());
         }
+        all.sort(Comparator.comparing(Prompt::name));
         Pagination.Page<Prompt> page = Pagination.page(all, cursor, 100);
         return new PromptPage(page.items(), page.nextCursor());
     }
