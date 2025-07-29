@@ -18,6 +18,12 @@ public record Tool(String name,
         }
         title = title == null ? null : InputSanitizer.requireClean(title);
         description = description == null ? null : InputSanitizer.requireClean(description);
-        annotations = annotations == null || annotations.audience().isEmpty() && annotations.priority() == null && annotations.lastModified() == null ? null : annotations;
+        annotations = annotations == null || (
+                annotations.title() == null &&
+                annotations.readOnlyHint() == null &&
+                annotations.destructiveHint() == null &&
+                annotations.idempotentHint() == null &&
+                annotations.openWorldHint() == null
+        ) ? null : annotations;
     }
 }
