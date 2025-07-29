@@ -1,6 +1,5 @@
 package com.amannmalik.mcp.client.sampling;
 
-import java.io.IOException;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 
@@ -13,12 +12,12 @@ public final class BlockingSamplingProvider implements SamplingProvider {
     }
 
     @Override
-    public CreateMessageResponse createMessage(CreateMessageRequest request) throws IOException {
+    public CreateMessageResponse createMessage(CreateMessageRequest request) {
         try {
             return responses.take();
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
-            throw new IOException(e);
+            throw new RuntimeException(e);
         }
     }
 }

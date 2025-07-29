@@ -1,6 +1,5 @@
 package com.amannmalik.mcp.server.completion;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -16,7 +15,7 @@ public final class InMemoryCompletionProvider implements CompletionProvider {
     }
 
     @Override
-    public CompleteResult complete(CompleteRequest request) throws IOException {
+    public CompleteResult complete(CompleteRequest request) {
         List<String> matches = new ArrayList<>();
         for (Entry e : entries) {
             if (refEquals(e.ref, request.ref()) && e.argumentName.equals(request.argument().name())) {

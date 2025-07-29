@@ -4,8 +4,8 @@ import java.io.IOException;
 
 
 public interface CompletionProvider extends AutoCloseable {
-    CompleteResult complete(CompleteRequest request) throws IOException;
+    CompleteResult complete(CompleteRequest request);
 
     @Override
-    default void close() throws IOException {}
+    default void close() {}
 }
