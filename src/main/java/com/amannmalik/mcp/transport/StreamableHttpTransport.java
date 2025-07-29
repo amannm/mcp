@@ -36,6 +36,9 @@ public final class StreamableHttpTransport implements Transport {
     private final int port;
     private final OriginValidator originValidator;
     private static final String PROTOCOL_HEADER = "MCP-Protocol-Version";
+    // Default to the previous protocol revision when no version header is
+    // present, as recommended for backwards compatibility.
+    private static final String DEFAULT_VERSION = "2025-03-26";
     private final BlockingQueue<JsonObject> incoming = new LinkedBlockingQueue<>();
     private final Set<SseClient> sseClients = ConcurrentHashMap.newKeySet();
     private final AtomicReference<String> sessionId = new AtomicReference<>();
@@ -50,7 +53,9 @@ public final class StreamableHttpTransport implements Transport {
         server.start();
         this.port = ((ServerConnector) server.getConnectors()[0]).getLocalPort();
         this.originValidator = validator;
-        this.protocolVersion = ProtocolLifecycle.SUPPORTED_VERSION;
+        // Until initialization negotiates a version, assume the prior revision
+        // as the default when no MCP-Protocol-Version header is present.
+        this.protocolVersion = DEFAULT_VERSION;
     }
 
     public StreamableHttpTransport(int port) throws Exception {
@@ -327,7 +332,8 @@ public final class StreamableHttpTransport implements Transport {
                 return;
             }
             sessionId.set(null);
-            protocolVersion = ProtocolLifecycle.SUPPORTED_VERSION;
+            // Reset to the default assumption for a new, uninitialized session.
+            protocolVersion = DEFAULT_VERSION;
             resp.setStatus(HttpServletResponse.SC_OK);
         }
     }
