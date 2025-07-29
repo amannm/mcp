@@ -1,6 +1,7 @@
 package com.amannmalik.mcp.validation;
 
 import jakarta.json.JsonArray;
+import jakarta.json.JsonNumber;
 import jakarta.json.JsonObject;
 import jakarta.json.JsonString;
 import jakarta.json.JsonValue;
@@ -30,7 +31,7 @@ public final class SchemaValidator {
                         switch (t) {
                             case "string" -> requireType(v, JsonValue.ValueType.STRING, e.getKey());
                             case "number" -> requireType(v, JsonValue.ValueType.NUMBER, e.getKey());
-                            case "integer" -> requireType(v, JsonValue.ValueType.NUMBER, e.getKey());
+                            case "integer" -> requireInteger(v, e.getKey());
                             case "boolean" -> requireType(v, JsonValue.ValueType.TRUE, JsonValue.ValueType.FALSE, e.getKey());
                             case "array" -> requireType(v, JsonValue.ValueType.ARRAY, e.getKey());
                             case "object" -> validate(e.getValue().asJsonObject(), value.getJsonObject(e.getKey()));
@@ -45,6 +46,13 @@ public final class SchemaValidator {
     private static void requireType(JsonValue value, JsonValue.ValueType expected, String field) {
         if (value.getValueType() != expected) {
             throw new IllegalArgumentException("Expected " + expected + " for " + field);
+        }
+    }
+
+    private static void requireInteger(JsonValue value, String field) {
+        if (value.getValueType() != JsonValue.ValueType.NUMBER
+                || !((JsonNumber) value).isIntegral()) {
+            throw new IllegalArgumentException("Expected integer for " + field);
         }
     }
 
