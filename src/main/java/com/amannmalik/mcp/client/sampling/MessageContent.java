@@ -18,6 +18,7 @@ public sealed interface MessageContent permits MessageContent.Text, MessageConte
             if (data == null || mimeType == null) {
                 throw new IllegalArgumentException("data and mimeType are required");
             }
+            data = data.clone();
         }
         @Override public String type() { return "image"; }
     }
@@ -28,6 +29,7 @@ public sealed interface MessageContent permits MessageContent.Text, MessageConte
             if (data == null || mimeType == null) {
                 throw new IllegalArgumentException("data and mimeType are required");
             }
+            data = data.clone();
         }
         @Override public String type() { return "audio"; }
     }

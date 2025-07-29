@@ -29,6 +29,7 @@ public sealed interface ResourceBlock permits ResourceBlock.Text, ResourceBlock.
             if (blob == null) {
                 throw new IllegalArgumentException("blob is required");
             }
+            blob = blob.clone();
         }
     }
 }
