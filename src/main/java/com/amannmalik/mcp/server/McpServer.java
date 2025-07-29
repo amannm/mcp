@@ -163,12 +163,13 @@ public final class McpServer implements AutoCloseable {
               Principal principal,
               Transport transport) {
         this.transport = transport;
-        this.lifecycle = new ProtocolLifecycle(EnumSet.of(
-                ServerCapability.RESOURCES,
-                ServerCapability.TOOLS,
-                ServerCapability.PROMPTS,
-                ServerCapability.LOGGING,
-                ServerCapability.COMPLETIONS));
+        EnumSet<ServerCapability> caps = EnumSet.noneOf(ServerCapability.class);
+        if (resources != null) caps.add(ServerCapability.RESOURCES);
+        if (tools != null) caps.add(ServerCapability.TOOLS);
+        if (prompts != null) caps.add(ServerCapability.PROMPTS);
+        if (completions != null) caps.add(ServerCapability.COMPLETIONS);
+        caps.add(ServerCapability.LOGGING);
+        this.lifecycle = new ProtocolLifecycle(caps);
         this.resources = resources;
         this.tools = tools;
         this.prompts = prompts;
@@ -177,17 +178,19 @@ public final class McpServer implements AutoCloseable {
         this.principal = principal;
         this.toolListChangedSupported = tools.supportsListChanged();
 
-        try {
-            resourceListSubscription = resources.subscribeList(() -> {
-                try {
-                    send(new JsonRpcNotification("notifications/resources/list_changed", null));
-                } catch (IOException ignore) {
-                }
-            });
-        } catch (Exception ignore) {
+        if (resources != null) {
+            try {
+                resourceListSubscription = resources.subscribeList(() -> {
+                    try {
+                        send(new JsonRpcNotification("notifications/resources/list_changed", null));
+                    } catch (IOException ignore) {
+                    }
+                });
+            } catch (Exception ignore) {
+            }
         }
 
-        if (toolListChangedSupported) {
+        if (tools != null && toolListChangedSupported) {
             try {
                 toolListSubscription = tools.subscribeList(() -> {
                     try {
@@ -199,14 +202,16 @@ public final class McpServer implements AutoCloseable {
             }
         }
 
-        try {
-            promptsSubscription = prompts.subscribe(() -> {
-                try {
-                    send(new JsonRpcNotification("notifications/prompts/list_changed", null));
-                } catch (IOException ignore) {
-                }
-            });
-        } catch (Exception ignore) {
+        if (prompts != null) {
+            try {
+                promptsSubscription = prompts.subscribe(() -> {
+                    try {
+                        send(new JsonRpcNotification("notifications/prompts/list_changed", null));
+                    } catch (IOException ignore) {
+                    }
+                });
+            } catch (Exception ignore) {
+            }
         }
 
         registerRequestHandler("initialize", this::initialize);
@@ -215,21 +220,29 @@ public final class McpServer implements AutoCloseable {
         registerNotificationHandler("notifications/cancelled", this::cancelled);
         registerNotificationHandler("notifications/roots/list_changed", n -> rootsListChanged());
 
-        registerRequestHandler("resources/list", this::listResources);
-        registerRequestHandler("resources/read", this::readResource);
-        registerRequestHandler("resources/templates/list", this::listTemplates);
-        registerRequestHandler("resources/subscribe", this::subscribeResource);
-        registerRequestHandler("resources/unsubscribe", this::unsubscribeResource);
+        if (resources != null) {
+            registerRequestHandler("resources/list", this::listResources);
+            registerRequestHandler("resources/read", this::readResource);
+            registerRequestHandler("resources/templates/list", this::listTemplates);
+            registerRequestHandler("resources/subscribe", this::subscribeResource);
+            registerRequestHandler("resources/unsubscribe", this::unsubscribeResource);
+        }
 
-        registerRequestHandler("tools/list", this::listTools);
-        registerRequestHandler("tools/call", this::callTool);
+        if (tools != null) {
+            registerRequestHandler("tools/list", this::listTools);
+            registerRequestHandler("tools/call", this::callTool);
+        }
 
-        registerRequestHandler("prompts/list", this::listPrompts);
-        registerRequestHandler("prompts/get", this::getPrompt);
+        if (prompts != null) {
+            registerRequestHandler("prompts/list", this::listPrompts);
+            registerRequestHandler("prompts/get", this::getPrompt);
+        }
 
         registerRequestHandler("logging/setLevel", this::setLogLevel);
 
-        registerRequestHandler("completion/complete", this::complete);
+        if (completions != null) {
+            registerRequestHandler("completion/complete", this::complete);
+        }
     }
 
     private ProtocolLifecycle lifecycle() {
@@ -903,8 +916,8 @@ public final class McpServer implements AutoCloseable {
             }
             promptsSubscription = null;
         }
-        resources.close();
-        completions.close();
+        if (resources != null) resources.close();
+        if (completions != null) completions.close();
         transport.close();
     }
 
