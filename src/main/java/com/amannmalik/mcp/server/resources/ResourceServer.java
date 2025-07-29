@@ -34,9 +34,9 @@ public class ResourceServer extends McpServer {
 
     public ResourceServer(ResourceProvider provider, Transport transport, ResourceAccessController access, Principal principal) {
         super(EnumSet.of(ServerCapability.RESOURCES), transport);
-        this.provider = provider;
-        this.access = access;
-        this.principal = principal;
+        this.provider = java.util.Objects.requireNonNull(provider, "provider");
+        this.access = java.util.Objects.requireNonNull(access, "access");
+        this.principal = java.util.Objects.requireNonNull(principal, "principal");
     }
 
     public static ResourceServer create(ResourceProvider provider, Transport transport, ResourceAccessController access, Principal principal) {
@@ -186,6 +186,9 @@ public class ResourceServer extends McpServer {
             try { sub.close(); } catch (Exception ignore) {}
         }
         subscriptions.clear();
+        try {
+            provider.close();
+        } catch (Exception ignore) {}
         super.close();
     }
 }
