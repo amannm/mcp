@@ -27,7 +27,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.atomic.AtomicReference;
 
-/** Jetty-based HTTP transport with basic SSE support. */
 public final class StreamableHttpTransport implements Transport {
     private final Server server;
     private final int port;

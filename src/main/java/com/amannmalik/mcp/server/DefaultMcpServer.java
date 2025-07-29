@@ -18,7 +18,6 @@ import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
 
-/** Reference server wiring together all protocol primitives. */
 public final class DefaultMcpServer extends McpServer {
     private final ResourceProvider resources;
     private final ToolProvider tools;
