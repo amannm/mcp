@@ -86,6 +86,27 @@ public final class StreamableHttpTransport implements Transport {
     @Override
     public void close() throws IOException {
         try {
+            // Close all SSE clients
+            sseClients.forEach(client -> {
+                try {
+                    client.close();
+                } catch (Exception e) {
+                    // Log but continue cleanup
+                }
+            });
+            sseClients.clear();
+            
+            // Clear response queues and interrupt any waiting threads
+            responseQueues.values().forEach(queue -> {
+                // Add a poison pill to unblock waiting threads
+                queue.offer(Json.createObjectBuilder()
+                    .add("error", Json.createObjectBuilder()
+                        .add("code", -32603)
+                        .add("message", "Transport closed"))
+                    .build());
+            });
+            responseQueues.clear();
+            
             server.stop();
         } catch (Exception e) {
             throw new IOException(e);
@@ -131,7 +152,12 @@ public final class StreamableHttpTransport implements Transport {
 
             try {
                 incoming.put(obj);
-                JsonObject response = q.take();
+                JsonObject response = q.poll(30, java.util.concurrent.TimeUnit.SECONDS);
+                if (response == null) {
+                    // Timeout waiting for response
+                    resp.sendError(HttpServletResponse.SC_REQUEST_TIMEOUT);
+                    return;
+                }
                 resp.setContentType("application/json");
                 resp.setCharacterEncoding("UTF-8");
                 resp.getWriter().write(response.toString());
@@ -171,23 +197,38 @@ public final class StreamableHttpTransport implements Transport {
             resp.setHeader("Cache-Control", "no-cache");
             resp.flushBuffer();
             AsyncContext ac = req.startAsync();
-            ac.setTimeout(0);
+            ac.setTimeout(60000); // 60 second timeout to prevent resource leaks
             SseClient client = new SseClient(ac);
             sseClients.add(client);
             ac.addListener(new AsyncListener() {
                 @Override
                 public void onComplete(AsyncEvent event) {
                     sseClients.remove(client);
+                    try {
+                        client.close();
+                    } catch (Exception e) {
+                        // Log but continue
+                    }
                 }
 
                 @Override
                 public void onTimeout(AsyncEvent event) {
                     sseClients.remove(client);
+                    try {
+                        client.close();
+                    } catch (Exception e) {
+                        // Log but continue
+                    }
                 }
 
                 @Override
                 public void onError(AsyncEvent event) {
                     sseClients.remove(client);
+                    try {
+                        client.close();
+                    } catch (Exception e) {
+                        // Log but continue
+                    }
                 }
 
                 @Override
@@ -221,6 +262,7 @@ public final class StreamableHttpTransport implements Transport {
     private static class SseClient {
         private final AsyncContext context;
         private final PrintWriter out;
+        private volatile boolean closed = false;
 
         SseClient(AsyncContext context) throws IOException {
             this.context = context;
@@ -228,8 +270,26 @@ public final class StreamableHttpTransport implements Transport {
         }
 
         void send(JsonObject msg) {
-            out.write("data: " + msg.toString() + "\n\n");
-            out.flush();
+            if (closed) return;
+            try {
+                out.write("data: " + msg.toString() + "\n\n");
+                out.flush();
+            } catch (Exception e) {
+                // Connection broken, mark as closed
+                closed = true;
+            }
+        }
+        
+        void close() {
+            if (closed) return;
+            closed = true;
+            try {
+                if (context != null && !context.hasOriginalRequestAndResponse()) {
+                    context.complete();
+                }
+            } catch (Exception e) {
+                // Already closed or invalid state
+            }
         }
     }
 }

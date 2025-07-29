@@ -67,12 +67,19 @@ public abstract class McpServer implements AutoCloseable {
                 lifecycle.shutdown();
                 break;
             }
-            JsonRpcMessage msg = JsonRpcCodec.fromJsonObject(obj);
-            switch (msg) {
-                case JsonRpcRequest req -> onRequest(req);
-                case JsonRpcNotification note -> onNotification(note);
-                default -> {
+            
+            try {
+                JsonRpcMessage msg = JsonRpcCodec.fromJsonObject(obj);
+                switch (msg) {
+                    case JsonRpcRequest req -> onRequest(req);
+                    case JsonRpcNotification note -> onNotification(note);
+                    default -> {
+                    }
                 }
+            } catch (IOException e) {
+                System.err.println("Error processing message: " + e.getMessage());
+            } catch (Exception e) {
+                System.err.println("Unexpected error processing message: " + e.getMessage());
             }
         }
     }

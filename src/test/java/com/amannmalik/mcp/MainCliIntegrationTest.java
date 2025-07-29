@@ -85,7 +85,6 @@ class MainCliIntegrationTest {
     }
 
     @Test
-    @Disabled("Flaky in CI")
     @DisplayName("Happy path: HTTP transport server with configuration")
     void testHttpTransportServerWithConfig() throws Exception {
         // Create server configuration file

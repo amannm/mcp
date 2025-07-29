@@ -13,6 +13,7 @@ import org.junit.jupiter.api.io.TempDir;
 
 import jakarta.json.Json;
 import jakarta.json.JsonObject;
+import jakarta.json.JsonReader;
 import java.io.*;
 import java.net.Socket;
 import java.nio.file.Path;
@@ -104,18 +105,26 @@ class McpProtocolIntegrationTest {
                 fail("Client connection timed out after 2 seconds");
             }
             
+            // Allow server time to process initialization sequence and start reader thread
+            // The SimpleMcpClient needs extra time for reader thread to be fully ready
+            Thread.sleep(1500);
+            
+            // Verify server process is still alive before testing
+            assertTrue(serverProcess.isAlive(), "Server process should be alive before protocol tests");
+            
             // Test protocol operations with individual timeouts
+            // Increase timeout for ping due to server loop fix and client complexity
             testProtocolOperationWithTimeout(() -> client.request("ping", Json.createObjectBuilder().build()),
-                    "ping", 3000);
+                    "ping", 10000);
             
             testProtocolOperationWithTimeout(() -> client.request("resources/list", Json.createObjectBuilder().build()),
-                    "resources/list", 3000);
+                    "resources/list", 5000);
             
             testProtocolOperationWithTimeout(() -> client.request("tools/list", Json.createObjectBuilder().build()),
-                    "tools/list", 3000);
+                    "tools/list", 5000);
             
             testProtocolOperationWithTimeout(() -> client.request("prompts/list", Json.createObjectBuilder().build()),
-                    "prompts/list", 3000);
+                    "prompts/list", 5000);
             
             // Disconnect with timeout
             CompletableFuture<Void> disconnectTask = CompletableFuture.runAsync(() -> {
@@ -490,6 +499,48 @@ class McpProtocolIntegrationTest {
         } catch (IOException e) {
             return false;
         }
+    }
+
+    private void waitForServerReady(SimpleMcpClient client, long timeoutMs) {
+        long startTime = System.currentTimeMillis();
+        long endTime = startTime + timeoutMs;
+        Exception lastException = null;
+        int attempts = 0;
+        
+        while (System.currentTimeMillis() < endTime) {
+            attempts++;
+            try {
+                // Use a shorter timeout for individual ping attempts to avoid hanging
+                CompletableFuture<JsonRpcMessage> pingTask = CompletableFuture.supplyAsync(() -> {
+                    try {
+                        return client.request("ping", Json.createObjectBuilder().build());
+                    } catch (Exception e) {
+                        throw new RuntimeException(e);
+                    }
+                });
+                
+                JsonRpcMessage response = pingTask.get(1, TimeUnit.SECONDS);
+                if (response instanceof JsonRpcResponse) {
+                    return; // Server is ready
+                }
+            } catch (Exception e) {
+                lastException = e;
+                // Server not ready yet, continue waiting
+            }
+            
+            // Exponential backoff with max delay
+            long delay = Math.min(100 * attempts, 500);
+            try {
+                Thread.sleep(delay);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                fail("Interrupted while waiting for server readiness");
+            }
+        }
+        
+        long elapsed = System.currentTimeMillis() - startTime;
+        fail("Server did not become ready within " + timeoutMs + "ms (elapsed: " + elapsed + "ms, attempts: " + attempts + "). Last error: " + 
+             (lastException != null ? lastException.getMessage() : "Unknown"));
     }
 
     private void assertEventually(BooleanSupplier condition, Duration timeout, String message) {

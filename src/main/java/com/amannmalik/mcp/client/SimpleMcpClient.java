@@ -98,10 +98,12 @@ public final class SimpleMcpClient implements McpClient {
         pending.put(reqId, future);
         transport.send(JsonRpcCodec.toJsonObject(new JsonRpcRequest(reqId, method, params)));
         try {
-            return future.get();
+            return future.get(30, java.util.concurrent.TimeUnit.SECONDS);
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             throw new IOException(e);
+        } catch (java.util.concurrent.TimeoutException e) {
+            throw new IOException("Request timed out after 30 seconds");
         } catch (ExecutionException e) {
             Throwable cause = e.getCause();
             if (cause instanceof IOException io) throw io;
