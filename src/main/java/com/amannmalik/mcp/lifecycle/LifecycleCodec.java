@@ -70,9 +70,9 @@ public final class LifecycleCodec {
         for (var c : resp.capabilities().server()) {
             var b = Json.createObjectBuilder();
             switch (c) {
-                case PROMPTS -> b.add("listChanged", true);
-                case RESOURCES -> b.add("subscribe", true).add("listChanged", true);
-                case TOOLS -> b.add("listChanged", true);
+                case PROMPTS -> b.add("listChanged", false);
+                case RESOURCES -> b.add("subscribe", false).add("listChanged", false);
+                case TOOLS -> b.add("listChanged", false);
                 default -> {
                 }
             }
