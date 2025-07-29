@@ -410,6 +410,11 @@ public final class McpServer implements AutoCloseable {
         if (token != null) {
             progressTracker.release(token);
         }
+        try {
+            sendLog(LoggingLevel.INFO, "cancellation",
+                    cn.reason() == null ? jakarta.json.JsonValue.NULL : Json.createValue(cn.reason()));
+        } catch (IOException ignore) {
+        }
     }
 
     private void cleanup(RequestId id) {
@@ -723,6 +728,12 @@ public final class McpServer implements AutoCloseable {
             if (cause instanceof IOException io) throw io;
             throw new IOException(cause);
         } catch (java.util.concurrent.TimeoutException e) {
+            try {
+                send(new JsonRpcNotification(
+                        "notifications/cancelled",
+                        CancellationCodec.toJsonObject(new CancelledNotification(id, "timeout"))));
+            } catch (IOException ignore) {
+            }
             throw new IOException("Request timed out after " + timeoutMillis + " ms");
         } finally {
             pending.remove(id);
