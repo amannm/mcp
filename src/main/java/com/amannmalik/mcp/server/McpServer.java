@@ -913,9 +913,9 @@ public final class McpServer implements AutoCloseable {
 
     private static PromptProvider createDefaultPrompts() {
         InMemoryPromptProvider p = new InMemoryPromptProvider();
-        PromptArgument arg = new PromptArgument("test_arg", null, null, true);
-        Prompt prompt = new Prompt("test_prompt", "Test Prompt", null, List.of(arg));
-        PromptMessageTemplate msg = new PromptMessageTemplate(Role.USER, new PromptContent.Text("hello", null));
+        PromptArgument arg = new PromptArgument("test_arg", null, null, true, null);
+        Prompt prompt = new Prompt("test_prompt", "Test Prompt", null, List.of(arg), null);
+        PromptMessageTemplate msg = new PromptMessageTemplate(Role.USER, new PromptContent.Text("hello", null, null));
         p.add(new PromptTemplate(prompt, List.of(msg)));
         return p;
     }

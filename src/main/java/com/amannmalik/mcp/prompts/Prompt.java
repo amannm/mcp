@@ -1,6 +1,8 @@
 package com.amannmalik.mcp.prompts;
 
 import com.amannmalik.mcp.validation.InputSanitizer;
+import com.amannmalik.mcp.validation.MetaValidator;
+import jakarta.json.JsonObject;
 
 import java.util.List;
 
@@ -8,12 +10,14 @@ public record Prompt(
         String name,
         String title,
         String description,
-        List<PromptArgument> arguments
+        List<PromptArgument> arguments,
+        JsonObject _meta
 ) {
     public Prompt {
         name = InputSanitizer.requireClean(name);
         arguments = arguments == null || arguments.isEmpty() ? List.of() : List.copyOf(arguments);
         title = title == null ? null : InputSanitizer.requireClean(title);
         description = description == null ? null : InputSanitizer.requireClean(description);
+        MetaValidator.requireValid(_meta);
     }
 }
