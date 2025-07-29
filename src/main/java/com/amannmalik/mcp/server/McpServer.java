@@ -14,6 +14,7 @@ import com.amannmalik.mcp.server.logging.LoggingNotification;
 import com.amannmalik.mcp.server.resources.*;
 import com.amannmalik.mcp.server.tools.*;
 import com.amannmalik.mcp.util.*;
+import com.amannmalik.mcp.security.RateLimiter;
 import jakarta.json.JsonObject;
 import jakarta.json.Json;
 
@@ -36,6 +37,11 @@ public final class McpServer implements AutoCloseable {
     private final PromptProvider prompts;
     private final CompletionProvider completions;
     private volatile LoggingLevel logLevel = LoggingLevel.INFO;
+    private static final int RATE_LIMIT_CODE = -32001;
+    private final RateLimiter toolLimiter = new RateLimiter(5, 1000);
+    private final RateLimiter completionLimiter = new RateLimiter(10, 1000);
+    private final RateLimiter logLimiter = new RateLimiter(20, 1000);
+    private final RateLimiter progressLimiter = new RateLimiter(20, 1000);
 
     public McpServer(Transport transport) {
         this(createDefaultResources(), createDefaultTools(), createDefaultPrompts(), createDefaultCompletions(), transport);
@@ -230,6 +236,7 @@ public final class McpServer implements AutoCloseable {
     }
 
     private void sendProgress(ProgressNotification note) throws IOException {
+        progressLimiter.requireAllowance(note.token().toString());
         progressTracker.update(note);
         send(new JsonRpcNotification("notifications/progress", ProgressCodec.toJsonObject(note)));
     }
@@ -328,6 +335,12 @@ public final class McpServer implements AutoCloseable {
                     JsonRpcErrorCode.INVALID_PARAMS.code(), "Missing name or arguments", null));
         }
         try {
+            toolLimiter.requireAllowance(name);
+        } catch (SecurityException e) {
+            return new JsonRpcError(req.id(), new JsonRpcError.ErrorDetail(
+                    RATE_LIMIT_CODE, e.getMessage(), null));
+        }
+        try {
             ToolResult result = tools.call(name, args);
             return new JsonRpcResponse(req.id(), ToolCodec.toJsonObject(result));
         } catch (IllegalArgumentException e) {
@@ -388,6 +401,7 @@ public final class McpServer implements AutoCloseable {
     }
 
     private void sendLog(LoggingNotification note) throws IOException {
+        logLimiter.requireAllowance(note.logger() == null ? "" : note.logger());
         if (note.level().ordinal() < logLevel.ordinal()) return;
         requireServerCapability(ServerCapability.LOGGING);
         send(new JsonRpcNotification("notifications/message",
@@ -409,6 +423,12 @@ public final class McpServer implements AutoCloseable {
         }
         try {
             CompleteRequest request = CompletionCodec.toCompleteRequest(params);
+            try {
+                completionLimiter.requireAllowance(request.ref().toString());
+            } catch (SecurityException e) {
+                return new JsonRpcError(req.id(), new JsonRpcError.ErrorDetail(
+                        RATE_LIMIT_CODE, e.getMessage(), null));
+            }
             CompleteResult result = completions.complete(request);
             return new JsonRpcResponse(req.id(), CompletionCodec.toJsonObject(result));
         } catch (IllegalArgumentException e) {
