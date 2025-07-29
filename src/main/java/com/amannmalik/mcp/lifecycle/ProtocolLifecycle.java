@@ -17,6 +17,11 @@ public class ProtocolLifecycle {
     public InitializeResponse initialize(InitializeRequest request) {
         ensureState(LifecycleState.INIT);
 
+        if (!SUPPORTED_VERSION.equals(request.protocolVersion())) {
+            throw new UnsupportedProtocolVersionException(
+                request.protocolVersion(), SUPPORTED_VERSION);
+        }
+
         Set<ClientCapability> requested = request.capabilities().client();
         clientCapabilities = requested.isEmpty() ? EnumSet.noneOf(ClientCapability.class) : EnumSet.copyOf(requested);
 
