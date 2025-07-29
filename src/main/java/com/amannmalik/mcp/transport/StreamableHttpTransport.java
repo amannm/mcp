@@ -79,7 +79,7 @@ public final class StreamableHttpTransport implements Transport {
         if (id != null) {
             SseClient stream = requestStreams.get(id);
             if (stream != null) {
-                stream.send(message);
+                stream.send(message, nextEventId.getAndIncrement());
                 if (method == null) {
                     stream.close();
                     requestStreams.remove(id);
