@@ -8,5 +8,14 @@ public enum LoggingLevel {
     ERROR,
     CRITICAL,
     ALERT,
-    EMERGENCY
+    EMERGENCY;
+
+    public static LoggingLevel fromString(String raw) {
+        if (raw == null) throw new IllegalArgumentException("level required");
+        try {
+            return valueOf(raw.toUpperCase());
+        } catch (IllegalArgumentException e) {
+            throw new IllegalArgumentException("invalid level", e);
+        }
+    }
 }
