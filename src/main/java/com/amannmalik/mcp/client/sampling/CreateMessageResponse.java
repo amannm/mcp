@@ -9,8 +9,8 @@ public record CreateMessageResponse(
         String stopReason
 ) {
     public CreateMessageResponse {
-        if (role == null || content == null) {
-            throw new IllegalArgumentException("role and content are required");
+        if (role == null || content == null || model == null) {
+            throw new IllegalArgumentException("role, content, and model are required");
         }
     }
 }
