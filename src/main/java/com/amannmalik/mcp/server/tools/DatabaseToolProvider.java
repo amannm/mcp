@@ -40,6 +40,15 @@ public final class DatabaseToolProvider implements ToolProvider {
         if (rows == null) {
             return new ToolResult(JsonValue.EMPTY_JSON_ARRAY, null, true);
         }
-        return new ToolResult(rows, null, false);
+        JsonObject structured = Json.createObjectBuilder()
+                .add("rows", rows)
+                .build();
+        JsonArray content = Json.createArrayBuilder()
+                .add(Json.createObjectBuilder()
+                        .add("type", "text")
+                        .add("text", rows.toString())
+                        .build())
+                .build();
+        return new ToolResult(content, structured, false);
     }
 }
