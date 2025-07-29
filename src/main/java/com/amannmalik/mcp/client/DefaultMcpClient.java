@@ -249,7 +249,7 @@ public final class DefaultMcpClient implements McpClient {
                     try {
                         send(handleRequest(req));
                     } catch (IOException e) {
-                        // drop on transport failure
+
                     }
                 }
                 default -> {

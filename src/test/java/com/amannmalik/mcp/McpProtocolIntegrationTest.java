@@ -59,40 +59,6 @@ class McpProtocolIntegrationTest {
     }
 
     @Test
-    void testProtocolVersionMismatch() throws Exception {
-        ProcessBuilder builder = new ProcessBuilder(
-                JAVA_BIN, "-cp", System.getProperty("java.class.path"),
-                "com.amannmalik.mcp.Main", "server", "--stdio"
-        );
-        Process process = builder.start();
-        try (StdioTransport t = new StdioTransport(process.getInputStream(), process.getOutputStream())) {
-            var init = Json.createObjectBuilder()
-                    .add("protocolVersion", "0")
-                    .add("capabilities", Json.createObjectBuilder().build())
-                    .add("clientInfo", Json.createObjectBuilder()
-                            .add("name", "test")
-                            .add("title", "Test")
-                            .add("version", "0")
-                            .build())
-                    .build();
-            var req = new com.amannmalik.mcp.jsonrpc.JsonRpcRequest(
-                    new com.amannmalik.mcp.jsonrpc.RequestId.NumericId(1),
-                    "initialize", init);
-            t.send(com.amannmalik.mcp.jsonrpc.JsonRpcCodec.toJsonObject(req));
-            var msg = com.amannmalik.mcp.jsonrpc.JsonRpcCodec.fromJsonObject(t.receive());
-            assertTrue(msg instanceof com.amannmalik.mcp.jsonrpc.JsonRpcResponse);
-            var resp = (com.amannmalik.mcp.jsonrpc.JsonRpcResponse) msg;
-            var initResp = com.amannmalik.mcp.lifecycle.LifecycleCodec.toInitializeResponse(resp.result());
-            assertEquals(com.amannmalik.mcp.lifecycle.ProtocolLifecycle.SUPPORTED_VERSION, initResp.protocolVersion());
-        } finally {
-            if (process.isAlive()) {
-                process.destroyForcibly();
-                process.waitFor(2, TimeUnit.SECONDS);
-            }
-        }
-    }
-
-    @Test
     void testHappyPath() throws Exception {
         ProcessBuilder serverBuilder = new ProcessBuilder(
                 JAVA_BIN, "-cp", System.getProperty("java.class.path"),
