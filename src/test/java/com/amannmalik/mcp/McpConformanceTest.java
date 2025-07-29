@@ -8,6 +8,14 @@ import com.amannmalik.mcp.transport.StdioTransport;
 import com.amannmalik.mcp.jsonrpc.JsonRpcCodec;
 import com.amannmalik.mcp.jsonrpc.JsonRpcError;
 import com.amannmalik.mcp.jsonrpc.JsonRpcMessage;
+import com.amannmalik.mcp.jsonrpc.JsonRpcResponse;
+import com.amannmalik.mcp.server.logging.LoggingLevel;
+import com.amannmalik.mcp.util.ProgressNotification;
+import com.amannmalik.mcp.client.elicitation.BlockingElicitationProvider;
+import com.amannmalik.mcp.client.elicitation.ElicitationAction;
+import com.amannmalik.mcp.client.elicitation.ElicitationResponse;
+import jakarta.json.Json;
+import jakarta.json.JsonObject;
 import com.amannmalik.mcp.jsonrpc.JsonRpcRequest;
 import com.amannmalik.mcp.jsonrpc.RequestId;
 import org.junit.jupiter.api.AfterAll;
@@ -93,10 +101,15 @@ class McpConformanceTest {
                     serverProcess.getOutputStream()
             );
 
+            BlockingElicitationProvider elicitation = new BlockingElicitationProvider();
+            elicitation.respond(new ElicitationResponse(ElicitationAction.CANCEL, null));
             McpClient client = new McpClient(
                     new ClientInfo("test-client", "Test Client", "1.0"),
                     EnumSet.allOf(ClientCapability.class),
-                    clientTransport
+                    clientTransport,
+                    null,
+                    null,
+                    elicitation
             );
             CompletableFuture<Void> connectTask = CompletableFuture.runAsync(() -> {
                 try {
