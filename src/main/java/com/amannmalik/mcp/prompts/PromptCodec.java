@@ -87,10 +87,13 @@ public final class PromptCodec {
 
     public static Map<String, String> toArguments(JsonObject obj) {
         if (obj == null) return Map.of();
-        return obj.entrySet().stream().collect(java.util.stream.Collectors.toMap(
-                Map.Entry::getKey,
-                e -> e.getValue().getValueType() == jakarta.json.JsonValue.ValueType.STRING
-                        ? ((jakarta.json.JsonString) e.getValue()).getString()
-                        : e.getValue().toString()));
+        java.util.Map<String, String> args = new java.util.HashMap<>();
+        obj.forEach((k, v) -> {
+            if (v.getValueType() != jakarta.json.JsonValue.ValueType.STRING) {
+                throw new IllegalArgumentException("argument values must be strings");
+            }
+            args.put(k, ((jakarta.json.JsonString) v).getString());
+        });
+        return args;
     }
 }
