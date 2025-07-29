@@ -38,7 +38,10 @@ public final class InMemoryToolProvider implements ToolProvider {
         JsonObject args = arguments == null ? Json.createObjectBuilder().build() : arguments;
         SchemaValidator.validate(tool.inputSchema(), args);
         ToolResult result = f.apply(args);
-        if (tool.outputSchema() != null && result.structuredContent() != null) {
+        if (tool.outputSchema() != null) {
+            if (result.structuredContent() == null) {
+                throw new IllegalStateException("structured result required");
+            }
             SchemaValidator.validate(tool.outputSchema(), result.structuredContent());
         }
         return result;

@@ -164,7 +164,6 @@ class McpConformanceTest {
 
             m = client.request("tools/call", Json.createObjectBuilder()
                     .add("name", "test_tool")
-                    .add("arguments", Json.createObjectBuilder().build())
                     .build());
             assertTrue(m instanceof JsonRpcResponse);
             var content = ((JsonRpcResponse) m).result()
