@@ -39,6 +39,12 @@ public final class ConfigLoader {
         return switch (mode) {
             case "server" -> new ServerConfig(parseTransport(transport), obj.getInt("port", 0));
             case "client" -> new ClientConfig(parseTransport(transport), obj.getString("command"));
+            case "host" -> {
+                var cObj = obj.getJsonObject("clients");
+                if (cObj == null || cObj.isEmpty()) throw new IllegalArgumentException("clients required");
+                yield new HostConfig(cObj.entrySet().stream()
+                        .collect(java.util.stream.Collectors.toMap(Map.Entry::getKey, e -> e.getValue().toString())));
+            }
             default -> throw new IllegalArgumentException("Invalid mode: " + mode);
         };
     }
@@ -49,9 +55,17 @@ public final class ConfigLoader {
         String transport = tVal == null ? "stdio" : tVal.toString();
         Object portVal = map.get("port");
         Object cmdVal = map.get("command");
+        Object clientsVal = map.get("clients");
         return switch (mode) {
             case "server" -> new ServerConfig(parseTransport(transport), portVal == null ? 0 : ((Number) portVal).intValue());
             case "client" -> new ClientConfig(parseTransport(transport), cmdVal.toString());
+            case "host" -> {
+                if (!(clientsVal instanceof Map<?,?> cMap) || cMap.isEmpty()) {
+                    throw new IllegalArgumentException("clients required");
+                }
+                yield new HostConfig(cMap.entrySet().stream()
+                        .collect(java.util.stream.Collectors.toMap(e -> e.getKey().toString(), e -> e.getValue().toString())));
+            }
             default -> throw new IllegalArgumentException("Invalid mode: " + mode);
         };
     }
