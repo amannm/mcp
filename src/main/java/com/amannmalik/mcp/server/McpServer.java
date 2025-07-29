@@ -381,8 +381,14 @@ public final class McpServer implements AutoCloseable {
         var val = meta.get("progressToken");
         return switch (val.getValueType()) {
             case STRING -> new ProgressToken.StringToken(meta.getString("progressToken"));
-            case NUMBER -> new ProgressToken.NumericToken(meta.getJsonNumber("progressToken").doubleValue());
-            default -> null;
+            case NUMBER -> {
+                var num = meta.getJsonNumber("progressToken");
+                if (!num.isIntegral()) {
+                    throw new IllegalArgumentException("progressToken must be an integer");
+                }
+                yield new ProgressToken.NumericToken(num.longValue());
+            }
+            default -> throw new IllegalArgumentException("progressToken must be a string or integer");
         };
     }
 
