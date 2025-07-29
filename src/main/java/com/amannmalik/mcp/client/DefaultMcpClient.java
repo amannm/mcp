@@ -31,6 +31,7 @@ import com.amannmalik.mcp.lifecycle.ServerCapability;
 import com.amannmalik.mcp.lifecycle.UnsupportedProtocolVersionException;
 import com.amannmalik.mcp.ping.PingCodec;
 import com.amannmalik.mcp.ping.PingResponse;
+import com.amannmalik.mcp.ping.PingMonitor;
 import com.amannmalik.mcp.transport.Transport;
 import com.amannmalik.mcp.validation.SchemaValidator;
 import jakarta.json.JsonObject;
@@ -42,6 +43,8 @@ import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.atomic.AtomicLong;
 
 public final class DefaultMcpClient implements McpClient {
@@ -55,9 +58,19 @@ public final class DefaultMcpClient implements McpClient {
     private final AtomicLong id = new AtomicLong(1);
     private final Map<RequestId, CompletableFuture<JsonRpcMessage>> pending = new ConcurrentHashMap<>();
     private Thread reader;
+    private ScheduledExecutorService pinger;
+    private long pingInterval;
+    private long pingTimeout;
     private volatile boolean connected;
     private Set<ServerCapability> serverCapabilities = Set.of();
     private String instructions;
+
+    public void configurePing(long intervalMillis, long timeoutMillis) {
+        if (connected) throw new IllegalStateException("already connected");
+        if (intervalMillis < 0 || timeoutMillis <= 0) throw new IllegalArgumentException("invalid ping settings");
+        this.pingInterval = intervalMillis;
+        this.pingTimeout = timeoutMillis;
+    }
 
     public DefaultMcpClient(ClientInfo info, Set<ClientCapability> capabilities, Transport transport) {
         this(info, capabilities, transport, null, null, null);
@@ -75,6 +88,8 @@ public final class DefaultMcpClient implements McpClient {
         this.sampling = sampling;
         this.roots = roots;
         this.elicitation = elicitation;
+        this.pingInterval = 0;
+        this.pingTimeout = 5000;
     }
 
     @Override
@@ -124,12 +139,28 @@ public final class DefaultMcpClient implements McpClient {
         reader = new Thread(this::readLoop);
         reader.setDaemon(true);
         reader.start();
+        if (pingInterval > 0) {
+            pinger = Executors.newSingleThreadScheduledExecutor();
+            pinger.scheduleAtFixedRate(() -> {
+                if (!PingMonitor.isAlive(this, pingTimeout)) {
+                    try {
+                        disconnect();
+                    } catch (IOException ignore) {
+                    }
+                    if (System.err != null) System.err.println("Ping failed, connection closed");
+                }
+            }, pingInterval, pingInterval, java.util.concurrent.TimeUnit.MILLISECONDS);
+        }
     }
 
     @Override
     public synchronized void disconnect() throws IOException {
         if (!connected) return;
         connected = false;
+        if (pinger != null) {
+            pinger.shutdownNow();
+            pinger = null;
+        }
         transport.close();
         if (rootsSubscription != null) {
             rootsSubscription.close();
