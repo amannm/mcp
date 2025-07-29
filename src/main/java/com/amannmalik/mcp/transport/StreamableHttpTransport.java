@@ -137,6 +137,9 @@ public final class StreamableHttpTransport implements Transport {
             } else if (session == null) {
                 resp.sendError(HttpServletResponse.SC_BAD_REQUEST);
                 return;
+            } else if (header == null) {
+                resp.sendError(HttpServletResponse.SC_BAD_REQUEST);
+                return;
             } else if (!session.equals(header)) {
                 resp.sendError(HttpServletResponse.SC_NOT_FOUND);
                 return;
@@ -198,6 +201,10 @@ public final class StreamableHttpTransport implements Transport {
             String header = req.getHeader("Mcp-Session-Id");
             String version = req.getHeader(PROTOCOL_HEADER);
             if (session == null) {
+                resp.sendError(HttpServletResponse.SC_BAD_REQUEST);
+                return;
+            }
+            if (header == null) {
                 resp.sendError(HttpServletResponse.SC_BAD_REQUEST);
                 return;
             }
@@ -263,7 +270,15 @@ public final class StreamableHttpTransport implements Transport {
             String session = sessionId.get();
             String header = req.getHeader("Mcp-Session-Id");
             String version = req.getHeader(PROTOCOL_HEADER);
-            if (session == null || !session.equals(header)) {
+            if (session == null) {
+                resp.sendError(HttpServletResponse.SC_BAD_REQUEST);
+                return;
+            }
+            if (header == null) {
+                resp.sendError(HttpServletResponse.SC_BAD_REQUEST);
+                return;
+            }
+            if (!session.equals(header)) {
                 resp.sendError(HttpServletResponse.SC_NOT_FOUND);
                 return;
             }
