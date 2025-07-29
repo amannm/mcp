@@ -221,7 +221,15 @@ public final class StreamableHttpTransport implements Transport {
             resp.flushBuffer();
             AsyncContext ac = req.startAsync();
             ac.setTimeout(60000); // 60 second timeout to prevent resource leaks
-            SseClient client = new SseClient(ac);
+            String lastIdHeader = req.getHeader("Last-Event-ID");
+            long lastId = -1;
+            if (lastIdHeader != null) {
+                try {
+                    lastId = Long.parseLong(lastIdHeader);
+                } catch (NumberFormatException ignore) {
+                }
+            }
+            SseClient client = new SseClient(ac, lastId + 1);
             sseClients.add(client);
             ac.addListener(new AsyncListener() {
                 @Override
@@ -293,16 +301,20 @@ public final class StreamableHttpTransport implements Transport {
     private static class SseClient {
         private final AsyncContext context;
         private final PrintWriter out;
+        private final java.util.concurrent.atomic.AtomicLong nextId;
         private volatile boolean closed = false;
 
-        SseClient(AsyncContext context) throws IOException {
+        SseClient(AsyncContext context, long startId) throws IOException {
             this.context = context;
             this.out = context.getResponse().getWriter();
+            this.nextId = new java.util.concurrent.atomic.AtomicLong(startId);
         }
 
         void send(JsonObject msg) {
             if (closed) return;
+            long id = nextId.getAndIncrement();
             try {
+                out.write("id: " + id + "\n");
                 out.write("data: " + msg.toString() + "\n\n");
                 out.flush();
             } catch (Exception e) {
