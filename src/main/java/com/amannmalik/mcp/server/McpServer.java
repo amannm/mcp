@@ -317,9 +317,15 @@ public final class McpServer implements AutoCloseable {
     }
 
     private void sendProgress(ProgressNotification note) throws IOException {
-        progressLimiter.requireAllowance(note.token().toString());
-        progressTracker.update(note);
-        send(new JsonRpcNotification("notifications/progress", ProgressCodec.toJsonObject(note)));
+        try {
+            progressLimiter.requireAllowance(note.token().toString());
+            progressTracker.update(note);
+        } catch (IllegalArgumentException | IllegalStateException ignore) {
+            return; // ignore stale or invalid notifications
+        }
+        send(new JsonRpcNotification(
+                "notifications/progress",
+                ProgressCodec.toJsonObject(note)));
     }
 
     
