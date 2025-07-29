@@ -55,6 +55,7 @@ tasks.withType<JavaCompile>().configureEach {
 
 tasks.test {
     useJUnitPlatform()
+    javaLauncher.set(javaToolchains.launcherFor(java.toolchain))
     finalizedBy(tasks.jacocoTestReport)
 }
 
