@@ -425,6 +425,7 @@ public final class McpServer implements AutoCloseable {
     }
 
     private JsonRpcMessage listResources(JsonRpcRequest req) {
+        requireServerCapability(ServerCapability.RESOURCES);
         String cursor = PaginationCodec.toPaginatedRequest(req.params()).cursor();
         ResourceList list;
         try {
@@ -443,6 +444,7 @@ public final class McpServer implements AutoCloseable {
     }
 
     private JsonRpcMessage readResource(JsonRpcRequest req) {
+        requireServerCapability(ServerCapability.RESOURCES);
         JsonObject params = req.params();
         if (params == null || !params.containsKey("uri")) {
             return new JsonRpcError(req.id(), new JsonRpcError.ErrorDetail(
@@ -471,6 +473,7 @@ public final class McpServer implements AutoCloseable {
     }
 
     private JsonRpcMessage listTemplates(JsonRpcRequest req) {
+        requireServerCapability(ServerCapability.RESOURCES);
         String cursor = PaginationCodec.toPaginatedRequest(req.params()).cursor();
         ResourceTemplatePage page;
         try {
@@ -489,6 +492,7 @@ public final class McpServer implements AutoCloseable {
     }
 
     private JsonRpcMessage subscribeResource(JsonRpcRequest req) {
+        requireServerCapability(ServerCapability.RESOURCES);
         JsonObject params = req.params();
         if (params == null || !params.containsKey("uri")) {
             return new JsonRpcError(req.id(), new JsonRpcError.ErrorDetail(
@@ -527,6 +531,7 @@ public final class McpServer implements AutoCloseable {
     }
 
     private JsonRpcMessage unsubscribeResource(JsonRpcRequest req) {
+        requireServerCapability(ServerCapability.RESOURCES);
         JsonObject params = req.params();
         if (params == null || !params.containsKey("uri")) {
             return new JsonRpcError(req.id(), new JsonRpcError.ErrorDetail(
@@ -550,6 +555,7 @@ public final class McpServer implements AutoCloseable {
     }
 
     private JsonRpcMessage listTools(JsonRpcRequest req) {
+        requireServerCapability(ServerCapability.TOOLS);
         String cursor = PaginationCodec.toPaginatedRequest(req.params()).cursor();
         ToolPage page;
         try {
@@ -563,6 +569,7 @@ public final class McpServer implements AutoCloseable {
     }
 
     private JsonRpcMessage callTool(JsonRpcRequest req) {
+        requireServerCapability(ServerCapability.TOOLS);
         JsonObject params = req.params();
         if (params == null) {
             return new JsonRpcError(req.id(), new JsonRpcError.ErrorDetail(
@@ -590,6 +597,7 @@ public final class McpServer implements AutoCloseable {
     }
 
     private JsonRpcMessage listPrompts(JsonRpcRequest req) {
+        requireServerCapability(ServerCapability.PROMPTS);
         String cursor = PaginationCodec.toPaginatedRequest(req.params()).cursor();
         PromptPage page;
         try {
@@ -606,6 +614,7 @@ public final class McpServer implements AutoCloseable {
     }
 
     private JsonRpcMessage getPrompt(JsonRpcRequest req) {
+        requireServerCapability(ServerCapability.PROMPTS);
         JsonObject params = req.params();
         String name = params.getString("name", null);
         if (name == null) {
@@ -625,6 +634,7 @@ public final class McpServer implements AutoCloseable {
     }
 
     private JsonRpcMessage setLogLevel(JsonRpcRequest req) {
+        requireServerCapability(ServerCapability.LOGGING);
         JsonObject params = req.params();
         if (params == null) {
             return new JsonRpcError(req.id(), new JsonRpcError.ErrorDetail(
@@ -652,6 +662,7 @@ public final class McpServer implements AutoCloseable {
     }
 
     private JsonRpcMessage complete(JsonRpcRequest req) {
+        requireServerCapability(ServerCapability.COMPLETIONS);
         JsonObject params = req.params();
         if (params == null) {
             return new JsonRpcError(req.id(), new JsonRpcError.ErrorDetail(
