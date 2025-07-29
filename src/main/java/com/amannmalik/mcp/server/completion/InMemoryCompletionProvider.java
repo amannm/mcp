@@ -35,11 +35,13 @@ public final class InMemoryCompletionProvider implements CompletionProvider {
     }
 
     private static boolean refEquals(CompleteRequest.Ref a, CompleteRequest.Ref b) {
-        if (a instanceof CompleteRequest.Ref.PromptRef(String name) && b instanceof CompleteRequest.Ref.PromptRef(String name)) {
-            return name.equals(name);
+        if (a instanceof CompleteRequest.Ref.PromptRef(String aName) &&
+                b instanceof CompleteRequest.Ref.PromptRef(String bName)) {
+            return aName.equals(bName);
         }
-        if (a instanceof CompleteRequest.Ref.ResourceRef(String uri) && b instanceof CompleteRequest.Ref.ResourceRef(String uri)) {
-            return uri.equals(uri);
+        if (a instanceof CompleteRequest.Ref.ResourceRef(String aUri) &&
+                b instanceof CompleteRequest.Ref.ResourceRef(String bUri)) {
+            return aUri.equals(bUri);
         }
         return false;
     }
