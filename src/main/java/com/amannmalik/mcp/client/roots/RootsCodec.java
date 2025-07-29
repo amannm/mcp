@@ -39,11 +39,16 @@ public final class RootsCodec {
     public static JsonObject toJsonObject(Root root) {
         JsonObjectBuilder b = Json.createObjectBuilder().add("uri", root.uri());
         if (root.name() != null) b.add("name", root.name());
+        if (root._meta() != null) b.add("_meta", root._meta());
         return b.build();
     }
 
     public static Root toRoot(JsonObject obj) {
-        return new Root(obj.getString("uri"), obj.getString("name", null));
+        return new Root(
+                obj.getString("uri"),
+                obj.getString("name", null),
+                obj.containsKey("_meta") ? obj.getJsonObject("_meta") : null
+        );
     }
 
     public static JsonObject toJsonObject(List<Root> roots) {

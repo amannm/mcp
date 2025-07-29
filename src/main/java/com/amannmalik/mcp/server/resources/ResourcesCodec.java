@@ -21,6 +21,7 @@ public final class ResourcesCodec {
         if (r.mimeType() != null) b.add("mimeType", r.mimeType());
         if (r.size() != null) b.add("size", r.size());
         if (r.annotations() != null) b.add("annotations", toJsonObject(r.annotations()));
+        if (r._meta() != null) b.add("_meta", r._meta());
         return b.build();
     }
 
@@ -32,7 +33,8 @@ public final class ResourcesCodec {
                 obj.getString("description", null),
                 obj.getString("mimeType", null),
                 obj.containsKey("size") ? obj.getJsonNumber("size").longValue() : null,
-                obj.containsKey("annotations") ? toAnnotations(obj.getJsonObject("annotations")) : null
+                obj.containsKey("annotations") ? toAnnotations(obj.getJsonObject("annotations")) : null,
+                obj.containsKey("_meta") ? obj.getJsonObject("_meta") : null
         );
     }
 
@@ -44,6 +46,7 @@ public final class ResourcesCodec {
         if (t.description() != null) b.add("description", t.description());
         if (t.mimeType() != null) b.add("mimeType", t.mimeType());
         if (t.annotations() != null) b.add("annotations", toJsonObject(t.annotations()));
+        if (t._meta() != null) b.add("_meta", t._meta());
         return b.build();
     }
 
@@ -54,7 +57,8 @@ public final class ResourcesCodec {
                 obj.getString("title", null),
                 obj.getString("description", null),
                 obj.getString("mimeType", null),
-                obj.containsKey("annotations") ? toAnnotations(obj.getJsonObject("annotations")) : null
+                obj.containsKey("annotations") ? toAnnotations(obj.getJsonObject("annotations")) : null,
+                obj.containsKey("_meta") ? obj.getJsonObject("_meta") : null
         );
     }
 
@@ -65,6 +69,7 @@ public final class ResourcesCodec {
         if (block.title() != null) b.add("title", block.title());
         if (block.mimeType() != null) b.add("mimeType", block.mimeType());
         if (block.annotations() != null) b.add("annotations", toJsonObject(block.annotations()));
+        if (block._meta() != null) b.add("_meta", block._meta());
         switch (block) {
             case ResourceBlock.Text t -> b.add("text", t.text());
             case ResourceBlock.Binary b2 -> b.add("blob", Base64.getEncoder().encodeToString(b2.blob()));
@@ -78,12 +83,13 @@ public final class ResourcesCodec {
         String title = obj.getString("title", null);
         String mime = obj.getString("mimeType", null);
         ResourceAnnotations ann = obj.containsKey("annotations") ? toAnnotations(obj.getJsonObject("annotations")) : null;
+        JsonObject meta = obj.containsKey("_meta") ? obj.getJsonObject("_meta") : null;
         if (obj.containsKey("text")) {
-            return new ResourceBlock.Text(uri, name, title, mime, obj.getString("text"), ann);
+            return new ResourceBlock.Text(uri, name, title, mime, obj.getString("text"), ann, meta);
         }
         if (obj.containsKey("blob")) {
             byte[] data = Base64.getDecoder().decode(obj.getString("blob"));
-            return new ResourceBlock.Binary(uri, name, title, mime, data, ann);
+            return new ResourceBlock.Binary(uri, name, title, mime, data, ann, meta);
         }
         throw new IllegalArgumentException("unknown content block");
     }

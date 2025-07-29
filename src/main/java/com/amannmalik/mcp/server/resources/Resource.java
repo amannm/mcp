@@ -1,7 +1,9 @@
 package com.amannmalik.mcp.server.resources;
 
 import com.amannmalik.mcp.validation.InputSanitizer;
+import com.amannmalik.mcp.validation.MetaValidator;
 import com.amannmalik.mcp.validation.UriValidator;
+import jakarta.json.JsonObject;
 
 public record Resource(
         String uri,
@@ -10,7 +12,8 @@ public record Resource(
         String description,
         String mimeType,
         Long size,
-        ResourceAnnotations annotations
+        ResourceAnnotations annotations,
+        JsonObject _meta
 ) {
     public Resource {
         uri = UriValidator.requireAbsolute(uri);
@@ -21,5 +24,6 @@ public record Resource(
         if (size != null && size < 0) {
             throw new IllegalArgumentException("size must be >= 0");
         }
+        MetaValidator.requireValid(_meta);
     }
 }

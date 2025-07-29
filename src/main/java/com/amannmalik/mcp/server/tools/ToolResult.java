@@ -48,9 +48,10 @@ public record ToolResult(JsonArray content,
     private static JsonObject toResourceLink(JsonObject obj) {
         Resource r = ResourcesCodec.toResource(obj);
         JsonObject base = ResourcesCodec.toJsonObject(r);
-        return Json.createObjectBuilder(base)
-                .add("type", "resource_link")
-                .build();
+        JsonObjectBuilder result = Json.createObjectBuilder(base)
+                .add("type", "resource_link");
+        if (obj.containsKey("_meta")) result.add("_meta", obj.getJsonObject("_meta"));
+        return result.build();
     }
 
     private static JsonObject toEmbeddedResource(JsonObject obj) {
@@ -61,6 +62,7 @@ public record ToolResult(JsonArray content,
                 .add("type", "resource")
                 .add("resource", ResourcesCodec.toJsonObject(block));
         if (obj.containsKey("annotations")) result.add("annotations", obj.getJsonObject("annotations"));
+        if (obj.containsKey("_meta")) result.add("_meta", obj.getJsonObject("_meta"));
         return result.build();
     }
 }
