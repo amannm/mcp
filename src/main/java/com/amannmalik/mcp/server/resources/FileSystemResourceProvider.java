@@ -61,8 +61,8 @@ public final class FileSystemResourceProvider implements ResourceProvider {
     }
 
     @Override
-    public List<ResourceTemplate> templates() {
-        return List.of();
+    public ResourceTemplatePage listTemplates(String cursor) {
+        return new ResourceTemplatePage(List.of(), null);
     }
 
     @Override

@@ -30,8 +30,9 @@ public final class InMemoryResourceProvider implements ResourceProvider {
     }
 
     @Override
-    public List<ResourceTemplate> templates() {
-        return templates;
+    public ResourceTemplatePage listTemplates(String cursor) {
+        Pagination.Page<ResourceTemplate> page = Pagination.page(templates, cursor, 100);
+        return new ResourceTemplatePage(page.items(), page.nextCursor());
     }
 
     @Override
