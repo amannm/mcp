@@ -5,6 +5,7 @@ import com.amannmalik.mcp.client.McpClient;
 import com.amannmalik.mcp.jsonrpc.JsonRpcError;
 import com.amannmalik.mcp.jsonrpc.JsonRpcMessage;
 import com.amannmalik.mcp.jsonrpc.JsonRpcResponse;
+import com.amannmalik.mcp.lifecycle.ServerCapability;
 import jakarta.json.Json;
 import jakarta.json.JsonObject;
 
@@ -21,6 +22,21 @@ public final class HostProcess implements AutoCloseable {
     private final ConsentManager consents;
     private final Principal principal;
     private final ToolAccessController toolAccess;
+
+    private static ServerCapability capabilityForMethod(String method) {
+        if (method.startsWith("tools/")) return ServerCapability.TOOLS;
+        if (method.startsWith("resources/")) return ServerCapability.RESOURCES;
+        if (method.startsWith("prompts/")) return ServerCapability.PROMPTS;
+        if (method.startsWith("completion/")) return ServerCapability.COMPLETIONS;
+        if (method.startsWith("logging/")) return ServerCapability.LOGGING;
+        return null;
+    }
+
+    private static void requireCapability(McpClient client, ServerCapability cap) {
+        if (cap != null && !client.serverCapabilities().contains(cap)) {
+            throw new IllegalStateException("Server capability not supported: " + cap);
+        }
+    }
 
     public HostProcess(SecurityPolicy policy,
                        ConsentManager consents,
@@ -87,6 +103,7 @@ public final class HostProcess implements AutoCloseable {
     public JsonObject listTools(String clientId, String cursor) throws IOException {
         McpClient client = clients.get(clientId);
         if (client == null) throw new IllegalArgumentException("Unknown client: " + clientId);
+        requireCapability(client, ServerCapability.TOOLS);
         JsonObject params = cursor == null
                 ? Json.createObjectBuilder().build()
                 : Json.createObjectBuilder().add("cursor", cursor).build();
@@ -99,6 +116,7 @@ public final class HostProcess implements AutoCloseable {
     public JsonObject callTool(String clientId, String name, JsonObject args) throws IOException {
         McpClient client = clients.get(clientId);
         if (client == null) throw new IllegalArgumentException("Unknown client: " + clientId);
+        requireCapability(client, ServerCapability.TOOLS);
         toolAccess.requireAllowed(principal, name);
         JsonObject params = Json.createObjectBuilder()
                 .add("name", name)
@@ -114,6 +132,7 @@ public final class HostProcess implements AutoCloseable {
         McpClient client = clients.get(id);
         if (client == null) throw new IllegalArgumentException("Unknown client: " + id);
         if (!client.connected()) throw new IllegalStateException("Client not connected: " + id);
+        requireCapability(client, capabilityForMethod(method));
         return client.request(method, params);
     }
 
@@ -121,6 +140,7 @@ public final class HostProcess implements AutoCloseable {
         McpClient client = clients.get(id);
         if (client == null) throw new IllegalArgumentException("Unknown client: " + id);
         if (!client.connected()) throw new IllegalStateException("Client not connected: " + id);
+        requireCapability(client, capabilityForMethod(method));
         client.notify(method, params);
     }
 
