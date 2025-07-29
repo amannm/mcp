@@ -35,6 +35,7 @@ public final class StreamableHttpTransport implements Transport {
     private final BlockingQueue<JsonObject> incoming = new LinkedBlockingQueue<>();
     private final Set<SseClient> sseClients = ConcurrentHashMap.newKeySet();
     private final AtomicReference<String> sessionId = new AtomicReference<>();
+    private volatile String protocolVersion;
     private final ConcurrentHashMap<String, BlockingQueue<JsonObject>> responseQueues = new ConcurrentHashMap<>();
 
     public StreamableHttpTransport(int port, OriginValidator validator) throws Exception {
@@ -45,6 +46,7 @@ public final class StreamableHttpTransport implements Transport {
         server.start();
         this.port = ((ServerConnector) server.getConnectors()[0]).getLocalPort();
         this.originValidator = validator;
+        this.protocolVersion = ProtocolLifecycle.SUPPORTED_VERSION;
     }
 
     public StreamableHttpTransport(int port) throws Exception {
@@ -137,6 +139,9 @@ public final class StreamableHttpTransport implements Transport {
             if (session == null && initializing) {
                 session = UUID.randomUUID().toString();
                 sessionId.set(session);
+                JsonObject params = obj.getJsonObject("params");
+                protocolVersion = params == null ? ProtocolLifecycle.SUPPORTED_VERSION :
+                        params.getString("protocolVersion", ProtocolLifecycle.SUPPORTED_VERSION);
                 resp.setHeader("Mcp-Session-Id", session);
             } else if (session == null) {
                 resp.sendError(HttpServletResponse.SC_BAD_REQUEST);
@@ -147,7 +152,7 @@ public final class StreamableHttpTransport implements Transport {
             } else if (!session.equals(header)) {
                 resp.sendError(HttpServletResponse.SC_NOT_FOUND);
                 return;
-            } else if (version == null || !version.equals(ProtocolLifecycle.SUPPORTED_VERSION)) {
+            } else if (version == null || !version.equals(protocolVersion)) {
                 resp.sendError(HttpServletResponse.SC_BAD_REQUEST);
                 return;
             }
@@ -221,7 +226,8 @@ public final class StreamableHttpTransport implements Transport {
                 resp.sendError(HttpServletResponse.SC_NOT_FOUND);
                 return;
             }
-            if (version == null || !version.equals(ProtocolLifecycle.SUPPORTED_VERSION)) {
+
+            if (version == null || !version.equals(protocolVersion)) {
                 resp.sendError(HttpServletResponse.SC_BAD_REQUEST);
                 return;
             }
@@ -303,11 +309,12 @@ public final class StreamableHttpTransport implements Transport {
                 resp.sendError(HttpServletResponse.SC_NOT_FOUND);
                 return;
             }
-            if (version == null || !version.equals(ProtocolLifecycle.SUPPORTED_VERSION)) {
+            if (version == null || !version.equals(protocolVersion)) {
                 resp.sendError(HttpServletResponse.SC_BAD_REQUEST);
                 return;
             }
             sessionId.set(null);
+            protocolVersion = ProtocolLifecycle.SUPPORTED_VERSION;
             resp.setStatus(HttpServletResponse.SC_OK);
         }
     }
