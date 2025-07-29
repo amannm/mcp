@@ -170,4 +170,13 @@ public class ResourceServer extends McpServer {
     public void listChanged() throws IOException {
         send(new JsonRpcNotification("notifications/resources/list_changed", null));
     }
+
+    @Override
+    public void close() throws IOException {
+        for (ResourceSubscription sub : subscriptions.values()) {
+            try { sub.close(); } catch (Exception ignore) {}
+        }
+        subscriptions.clear();
+        super.close();
+    }
 }
