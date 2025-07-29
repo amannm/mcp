@@ -29,7 +29,16 @@ public final class LoggingCodec {
     }
 
     public static SetLevelRequest toSetLevelRequest(JsonObject obj) {
-        LoggingLevel level = LoggingLevel.valueOf(obj.getString("level").toUpperCase());
-        return new SetLevelRequest(level);
+        if (obj == null || !obj.containsKey("level")) {
+            throw new IllegalArgumentException("level required");
+        }
+        String raw = obj.getString("level", null);
+        if (raw == null) throw new IllegalArgumentException("level required");
+        try {
+            LoggingLevel level = LoggingLevel.valueOf(raw.toUpperCase());
+            return new SetLevelRequest(level);
+        } catch (IllegalArgumentException e) {
+            throw new IllegalArgumentException("invalid level", e);
+        }
     }
 }
