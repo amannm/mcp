@@ -6,9 +6,11 @@ import com.amannmalik.mcp.server.McpServer;
 import com.amannmalik.mcp.transport.Transport;
 import com.amannmalik.mcp.security.ResourceAccessController;
 import com.amannmalik.mcp.auth.Principal;
+import com.amannmalik.mcp.server.resources.ResourceTemplatePage;
 import jakarta.json.Json;
 import jakarta.json.JsonArrayBuilder;
 import jakarta.json.JsonObject;
+import jakarta.json.JsonObjectBuilder;
 
 import java.io.IOException;
 import java.util.EnumSet;
@@ -102,20 +104,27 @@ public class ResourceServer extends McpServer {
     }
 
     private JsonRpcMessage listTemplates(JsonRpcRequest req) {
-        JsonArrayBuilder arr = Json.createArrayBuilder();
+        String cursor = req.params() == null ? null : req.params().getString("cursor", null);
+        ResourceTemplatePage page;
         try {
-            for (ResourceTemplate t : provider.templates()) {
-                try {
-                    access.requireAllowed(principal, t.annotations());
-                    arr.add(ResourcesCodec.toJsonObject(t));
-                } catch (SecurityException ignored) {}
-            }
+            page = provider.listTemplates(cursor);
+        } catch (IllegalArgumentException e) {
+            return new JsonRpcError(req.id(), new JsonRpcError.ErrorDetail(
+                    JsonRpcErrorCode.INVALID_PARAMS.code(), e.getMessage(), null));
         } catch (IOException e) {
             return new JsonRpcError(req.id(), new JsonRpcError.ErrorDetail(
                     JsonRpcErrorCode.INTERNAL_ERROR.code(), e.getMessage(), null));
         }
-        JsonObject result = Json.createObjectBuilder().add("resourceTemplates", arr.build()).build();
-        return new JsonRpcResponse(req.id(), result);
+        JsonArrayBuilder arr = Json.createArrayBuilder();
+        for (ResourceTemplate t : page.resourceTemplates()) {
+            try {
+                access.requireAllowed(principal, t.annotations());
+                arr.add(ResourcesCodec.toJsonObject(t));
+            } catch (SecurityException ignored) {}
+        }
+        JsonObjectBuilder b = Json.createObjectBuilder().add("resourceTemplates", arr.build());
+        if (page.nextCursor() != null) b.add("nextCursor", page.nextCursor());
+        return new JsonRpcResponse(req.id(), b.build());
     }
 
     private JsonRpcMessage subscribe(JsonRpcRequest req) {

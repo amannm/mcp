@@ -6,7 +6,7 @@ import java.util.List;
 public interface ResourceProvider extends AutoCloseable {
     ResourceList list(String cursor) throws IOException;
     ResourceBlock read(String uri) throws IOException;
-    List<ResourceTemplate> templates() throws IOException;
+    ResourceTemplatePage listTemplates(String cursor) throws IOException;
     ResourceSubscription subscribe(String uri, ResourceListener listener) throws IOException;
 
     @Override
