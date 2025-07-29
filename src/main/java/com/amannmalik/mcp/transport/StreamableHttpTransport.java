@@ -26,6 +26,7 @@ import java.io.PrintWriter;
 import java.net.InetSocketAddress;
 import java.util.Set;
 import java.util.UUID;
+import java.util.Iterator;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -76,8 +77,11 @@ public final class StreamableHttpTransport implements Transport {
         if (id != null) {
             SseClient stream = requestStreams.get(id);
             if (stream != null) {
-                stream.send(message);
-                if (method == null) {
+                boolean ok = stream.send(message);
+                if (!ok) {
+                    requestStreams.remove(id);
+                    sseClients.remove(stream);
+                } else if (method == null) {
                     stream.close();
                     requestStreams.remove(id);
                     sseClients.remove(stream);
@@ -93,8 +97,12 @@ public final class StreamableHttpTransport implements Transport {
         if (id != null && method == null) {
             return;
         }
-        for (SseClient c : sseClients) {
-            c.send(message);
+        for (Iterator<SseClient> it = sseClients.iterator(); it.hasNext(); ) {
+            SseClient c = it.next();
+            if (!c.send(message)) {
+                it.remove();
+                continue;
+            }
             break;
         }
     }
@@ -461,8 +469,8 @@ public final class StreamableHttpTransport implements Transport {
             this.streamId = UUID.randomUUID().toString();
         }
 
-        void send(JsonObject msg) {
-            if (closed) return;
+        boolean send(JsonObject msg) {
+            if (closed) return false;
             try {
                 String id = streamId + '-' + nextEventId++;
                 out.write("id: " + id + "\n");
@@ -470,8 +478,10 @@ public final class StreamableHttpTransport implements Transport {
                 out.flush();
             } catch (Exception e) {
                 System.err.println("SSE send failed: " + e.getMessage());
-                closed = true;
+                close();
+                return false;
             }
+            return true;
         }
 
         void close() {
