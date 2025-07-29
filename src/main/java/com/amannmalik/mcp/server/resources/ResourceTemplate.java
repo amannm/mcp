@@ -1,7 +1,7 @@
 package com.amannmalik.mcp.server.resources;
 
 import com.amannmalik.mcp.validation.InputSanitizer;
-import com.amannmalik.mcp.validation.UriValidator;
+import com.amannmalik.mcp.validation.UriTemplateValidator;
 
 public record ResourceTemplate(
         String uriTemplate,
@@ -12,7 +12,7 @@ public record ResourceTemplate(
         ResourceAnnotations annotations
 ) {
     public ResourceTemplate {
-        uriTemplate = UriValidator.requireAbsolute(uriTemplate);
+        uriTemplate = UriTemplateValidator.requireAbsoluteTemplate(uriTemplate);
         name = InputSanitizer.requireClean(name);
         title = title == null ? null : InputSanitizer.requireClean(title);
         description = description == null ? null : InputSanitizer.requireClean(description);
