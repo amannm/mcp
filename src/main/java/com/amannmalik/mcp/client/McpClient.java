@@ -438,7 +438,10 @@ public final class McpClient implements AutoCloseable {
             }
             case "notifications/message" -> {
                 if (note.params() != null) {
-                    loggingListener.onMessage(LoggingCodec.toLoggingNotification(note.params()));
+                    try {
+                        loggingListener.onMessage(LoggingCodec.toLoggingNotification(note.params()));
+                    } catch (IllegalArgumentException ignore) {
+                    }
                 }
             }
             default -> {
