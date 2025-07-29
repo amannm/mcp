@@ -8,6 +8,9 @@ import jakarta.json.JsonObjectBuilder;
 
 import java.util.Base64;
 import java.util.List;
+import java.util.Set;
+import java.util.EnumSet;
+import java.time.Instant;
 
 public final class SamplingCodec {
     private SamplingCodec() {
@@ -65,8 +68,8 @@ public final class SamplingCodec {
     public static JsonObject toJsonObject(CreateMessageResponse resp) {
         JsonObjectBuilder obj = Json.createObjectBuilder()
                 .add("role", resp.role().name().toLowerCase())
-                .add("content", toJsonObject(resp.content()));
-        if (resp.model() != null) obj.add("model", resp.model());
+                .add("content", toJsonObject(resp.content()))
+                .add("model", resp.model());
         if (resp.stopReason() != null) obj.add("stopReason", resp.stopReason());
         return obj.build();
     }
@@ -74,7 +77,8 @@ public final class SamplingCodec {
     public static CreateMessageResponse toCreateMessageResponse(JsonObject obj) {
         Role role = Role.valueOf(obj.getString("role").toUpperCase());
         MessageContent content = toContent(obj.getJsonObject("content"));
-        String model = obj.getString("model", null);
+        if (!obj.containsKey("model")) throw new IllegalArgumentException("model required");
+        String model = obj.getString("model");
         String stop = obj.getString("stopReason", null);
         return new CreateMessageResponse(role, content, model, stop);
     }
@@ -94,6 +98,8 @@ public final class SamplingCodec {
 
     static JsonObject toJsonObject(MessageContent content) {
         JsonObjectBuilder b = Json.createObjectBuilder().add("type", content.type());
+        if (content.annotations() != null) b.add("annotations", toJsonObject(content.annotations()));
+        if (content._meta() != null) b.add("_meta", content._meta());
         switch (content) {
             case MessageContent.Text t -> b.add("text", t.text());
             case MessageContent.Image i -> b.add("data", Base64.getEncoder().encodeToString(i.data()))
@@ -105,10 +111,12 @@ public final class SamplingCodec {
     }
 
     static MessageContent toContent(JsonObject obj) {
+        Annotations ann = obj.containsKey("annotations") ? toAnnotations(obj.getJsonObject("annotations")) : null;
+        jakarta.json.JsonObject meta = obj.containsKey("_meta") ? obj.getJsonObject("_meta") : null;
         return switch (obj.getString("type")) {
-            case "text" -> new MessageContent.Text(obj.getString("text"));
-            case "image" -> new MessageContent.Image(Base64.getDecoder().decode(obj.getString("data")), obj.getString("mimeType"));
-            case "audio" -> new MessageContent.Audio(Base64.getDecoder().decode(obj.getString("data")), obj.getString("mimeType"));
+            case "text" -> new MessageContent.Text(obj.getString("text"), ann, meta);
+            case "image" -> new MessageContent.Image(Base64.getDecoder().decode(obj.getString("data")), obj.getString("mimeType"), ann, meta);
+            case "audio" -> new MessageContent.Audio(Base64.getDecoder().decode(obj.getString("data")), obj.getString("mimeType"), ann, meta);
             default -> throw new IllegalArgumentException("Unknown content type");
         };
     }
@@ -136,5 +144,35 @@ public final class SamplingCodec {
         Double speed = obj.containsKey("speedPriority") ? obj.getJsonNumber("speedPriority").doubleValue() : null;
         Double intel = obj.containsKey("intelligencePriority") ? obj.getJsonNumber("intelligencePriority").doubleValue() : null;
         return new ModelPreferences(hints, cost, speed, intel);
+    }
+
+    static JsonObject toJsonObject(Annotations ann) {
+        JsonObjectBuilder b = Json.createObjectBuilder();
+        if (!ann.audience().isEmpty()) {
+            JsonArrayBuilder arr = Json.createArrayBuilder();
+            ann.audience().forEach(r -> arr.add(r.name().toLowerCase()));
+            b.add("audience", arr);
+        }
+        if (ann.priority() != null) b.add("priority", ann.priority());
+        if (ann.lastModified() != null) b.add("lastModified", ann.lastModified().toString());
+        return b.build();
+    }
+
+    static Annotations toAnnotations(JsonObject obj) {
+        Set<Role> audience = EnumSet.noneOf(Role.class);
+        var arr = obj.getJsonArray("audience");
+        if (arr != null) {
+            arr.getValuesAs(jakarta.json.JsonString.class).forEach(js -> audience.add(Role.valueOf(js.getString().toUpperCase())));
+        }
+        Double priority = obj.containsKey("priority") ? obj.getJsonNumber("priority").doubleValue() : null;
+        Instant lastModified = null;
+        if (obj.containsKey("lastModified")) {
+            try {
+                lastModified = Instant.parse(obj.getString("lastModified"));
+            } catch (java.time.format.DateTimeParseException e) {
+                throw new IllegalArgumentException("Invalid lastModified", e);
+            }
+        }
+        return new Annotations(audience.isEmpty() ? Set.of() : EnumSet.copyOf(audience), priority, lastModified);
     }
 }

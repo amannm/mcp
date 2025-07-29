@@ -5,13 +5,19 @@ import com.amannmalik.mcp.lifecycle.ClientCapability;
 import com.amannmalik.mcp.lifecycle.ClientInfo;
 import com.amannmalik.mcp.lifecycle.ServerCapability;
 import com.amannmalik.mcp.transport.StdioTransport;
+import com.amannmalik.mcp.jsonrpc.JsonRpcCodec;
 import com.amannmalik.mcp.jsonrpc.JsonRpcError;
 import com.amannmalik.mcp.jsonrpc.JsonRpcMessage;
 import com.amannmalik.mcp.jsonrpc.JsonRpcResponse;
 import com.amannmalik.mcp.server.logging.LoggingLevel;
 import com.amannmalik.mcp.util.ProgressNotification;
+import com.amannmalik.mcp.client.elicitation.BlockingElicitationProvider;
+import com.amannmalik.mcp.client.elicitation.ElicitationAction;
+import com.amannmalik.mcp.client.elicitation.ElicitationResponse;
 import jakarta.json.Json;
 import jakarta.json.JsonObject;
+import com.amannmalik.mcp.jsonrpc.JsonRpcRequest;
+import com.amannmalik.mcp.jsonrpc.RequestId;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -95,10 +101,15 @@ class McpConformanceTest {
                     serverProcess.getOutputStream()
             );
 
+            BlockingElicitationProvider elicitation = new BlockingElicitationProvider();
+            elicitation.respond(new ElicitationResponse(ElicitationAction.CANCEL, null));
             McpClient client = new McpClient(
                     new ClientInfo("test-client", "Test Client", "1.0"),
                     EnumSet.allOf(ClientCapability.class),
-                    clientTransport
+                    clientTransport,
+                    null,
+                    null,
+                    elicitation
             );
             CompletableFuture<Void> connectTask = CompletableFuture.runAsync(() -> {
                 try {
@@ -124,7 +135,7 @@ class McpConformanceTest {
                     ServerCapability.COMPLETIONS
             );
             assertEquals(expected, client.serverCapabilities(), "Server capabilities should match");
-            assertDoesNotThrow(client::ping, "ping should succeed");
+            assertDoesNotThrow(() -> client.ping(), "ping should succeed");
 
             var progressEvents = new CopyOnWriteArrayList<ProgressNotification>();
             client.setProgressListener(progressEvents::add);
@@ -229,6 +240,36 @@ class McpConformanceTest {
                 if (!terminated) {
                     fail("Server process failed to terminate within 2 seconds");
                 }
+            }
+        }
+    }
+
+    @Test
+    void testRejectRequestBeforeInitialization() throws Exception {
+        ProcessBuilder serverBuilder = new ProcessBuilder(
+                JAVA_BIN, "-cp", System.getProperty("java.class.path"),
+                "com.amannmalik.mcp.Main", "server", "--stdio", "-v"
+        );
+        Process serverProcess = serverBuilder.start();
+        try {
+            long endTime = System.currentTimeMillis() + 500;
+            while (!serverProcess.isAlive() && System.currentTimeMillis() < endTime) {
+                Thread.sleep(10);
+            }
+            StdioTransport transport = new StdioTransport(
+                    serverProcess.getInputStream(),
+                    serverProcess.getOutputStream()
+            );
+            JsonRpcRequest req = new JsonRpcRequest(
+                    new RequestId.NumericId(1), "roots/list", null);
+            transport.send(JsonRpcCodec.toJsonObject(req));
+            JsonRpcMessage msg = JsonRpcCodec.fromJsonObject(transport.receive());
+            assertTrue(msg instanceof JsonRpcError);
+            assertEquals(-32000, ((JsonRpcError) msg).error().code());
+        } finally {
+            if (serverProcess.isAlive()) {
+                serverProcess.destroyForcibly();
+                serverProcess.waitFor(2, TimeUnit.SECONDS);
             }
         }
     }
