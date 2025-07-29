@@ -577,10 +577,19 @@ public final class McpServer implements AutoCloseable {
                     JsonRpcErrorCode.INVALID_PARAMS.code(), "Missing params", null));
         }
         String name = params.getString("name", null);
-        JsonObject args = params.getJsonObject("arguments");
-        if (name == null || args == null) {
+        if (name == null) {
             return new JsonRpcError(req.id(), new JsonRpcError.ErrorDetail(
-                    JsonRpcErrorCode.INVALID_PARAMS.code(), "Missing name or arguments", null));
+                    JsonRpcErrorCode.INVALID_PARAMS.code(), "name required", null));
+        }
+
+        jakarta.json.JsonValue argsVal = params.get("arguments");
+        JsonObject args = null;
+        if (argsVal != null) {
+            if (argsVal.getValueType() != jakarta.json.JsonValue.ValueType.OBJECT) {
+                return new JsonRpcError(req.id(), new JsonRpcError.ErrorDetail(
+                        JsonRpcErrorCode.INVALID_PARAMS.code(), "arguments must be object", null));
+            }
+            args = params.getJsonObject("arguments");
         }
         try {
             toolLimiter.requireAllowance(name);
