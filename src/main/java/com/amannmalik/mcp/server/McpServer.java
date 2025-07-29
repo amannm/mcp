@@ -11,6 +11,8 @@ import com.amannmalik.mcp.server.logging.LoggingLevel;
 import com.amannmalik.mcp.server.logging.LoggingNotification;
 import com.amannmalik.mcp.server.resources.*;
 import com.amannmalik.mcp.server.tools.*;
+import com.amannmalik.mcp.security.ResourceAccessController;
+import com.amannmalik.mcp.auth.Principal;
 import com.amannmalik.mcp.util.*;
 import jakarta.json.JsonObject;
 import jakarta.json.Json;
@@ -33,16 +35,34 @@ public final class McpServer implements AutoCloseable {
     private final ToolProvider tools;
     private final PromptProvider prompts;
     private final CompletionProvider completions;
+    private final ResourceAccessController resourceAccess;
+    private final Principal principal;
     private volatile LoggingLevel logLevel = LoggingLevel.INFO;
 
     public McpServer(Transport transport) {
-        this(createDefaultResources(), createDefaultTools(), createDefaultPrompts(), createDefaultCompletions(), transport);
+        this(createDefaultResources(), createDefaultTools(), createDefaultPrompts(), createDefaultCompletions(),
+                ResourceAccessController.ALLOW_ALL,
+                new Principal("default", java.util.Set.of()),
+                transport);
     }
 
     McpServer(ResourceProvider resources,
               ToolProvider tools,
               PromptProvider prompts,
               CompletionProvider completions,
+              Transport transport) {
+        this(resources, tools, prompts, completions,
+                ResourceAccessController.ALLOW_ALL,
+                new Principal("default", java.util.Set.of()),
+                transport);
+    }
+
+    McpServer(ResourceProvider resources,
+              ToolProvider tools,
+              PromptProvider prompts,
+              CompletionProvider completions,
+              ResourceAccessController resourceAccess,
+              Principal principal,
               Transport transport) {
         this.transport = transport;
         this.lifecycle = new ProtocolLifecycle(EnumSet.of(
@@ -55,6 +75,8 @@ public final class McpServer implements AutoCloseable {
         this.tools = tools;
         this.prompts = prompts;
         this.completions = completions;
+        this.resourceAccess = resourceAccess;
+        this.principal = principal;
 
         registerRequestHandler("initialize", this::initialize);
         registerNotificationHandler("notifications/initialized", this::initialized);
@@ -210,6 +232,15 @@ public final class McpServer implements AutoCloseable {
         };
     }
 
+    private boolean allowed(ResourceAnnotations ann) {
+        try {
+            resourceAccess.requireAllowed(principal, ann);
+            return true;
+        } catch (SecurityException e) {
+            return false;
+        }
+    }
+
     private void cancelled(JsonRpcNotification note) {
         CancelledNotification cn = CancellationCodec.toCancelledNotification(note.params());
         cancellationTracker.cancel(cn.requestId(), cn.reason());
@@ -246,7 +277,9 @@ public final class McpServer implements AutoCloseable {
                     JsonRpcErrorCode.INTERNAL_ERROR.code(), e.getMessage(), null));
         }
         var arr = Json.createArrayBuilder();
-        for (Resource r : list.resources()) arr.add(ResourcesCodec.toJsonObject(r));
+        for (Resource r : list.resources()) {
+            if (allowed(r.annotations())) arr.add(ResourcesCodec.toJsonObject(r));
+        }
         var b = Json.createObjectBuilder().add("resources", arr.build());
         if (list.nextCursor() != null) b.add("nextCursor", list.nextCursor());
         return new JsonRpcResponse(req.id(), b.build());
@@ -270,6 +303,10 @@ public final class McpServer implements AutoCloseable {
             return new JsonRpcError(req.id(), new JsonRpcError.ErrorDetail(
                     -32002, "Resource not found", Json.createObjectBuilder().add("uri", uri).build()));
         }
+        if (!allowed(block.annotations())) {
+            return new JsonRpcError(req.id(), new JsonRpcError.ErrorDetail(
+                    JsonRpcErrorCode.INTERNAL_ERROR.code(), "Access denied", null));
+        }
         JsonObject result = Json.createObjectBuilder()
                 .add("contents", Json.createArrayBuilder().add(ResourcesCodec.toJsonObject(block)).build())
                 .build();
@@ -289,7 +326,9 @@ public final class McpServer implements AutoCloseable {
                     JsonRpcErrorCode.INTERNAL_ERROR.code(), e.getMessage(), null));
         }
         var arr = Json.createArrayBuilder();
-        page.resourceTemplates().forEach(t -> arr.add(ResourcesCodec.toJsonObject(t)));
+        page.resourceTemplates().forEach(t -> {
+            if (allowed(t.annotations())) arr.add(ResourcesCodec.toJsonObject(t));
+        });
         var b = Json.createObjectBuilder().add("resourceTemplates", arr.build());
         if (page.nextCursor() != null) b.add("nextCursor", page.nextCursor());
         return new JsonRpcResponse(req.id(), b.build());
