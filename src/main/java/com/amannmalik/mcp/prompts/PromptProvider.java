@@ -11,4 +11,8 @@ public interface PromptProvider {
         return () -> {
         };
     }
+
+    default boolean supportsListChanged() {
+        return false;
+    }
 }

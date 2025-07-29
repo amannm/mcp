@@ -11,4 +11,8 @@ public interface RootsProvider extends AutoCloseable {
     @Override
     default void close() {
     }
+
+    default boolean supportsListChanged() {
+        return false;
+    }
 }
