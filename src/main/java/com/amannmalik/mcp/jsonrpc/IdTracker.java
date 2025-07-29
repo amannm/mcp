@@ -15,4 +15,11 @@ public final class IdTracker {
             throw new IllegalArgumentException("Duplicate id: " + id);
         }
     }
+
+    /**
+     * Releases the ID once processing is finished.
+     */
+    public void release(RequestId id) {
+        seen.remove(id);
+    }
 }

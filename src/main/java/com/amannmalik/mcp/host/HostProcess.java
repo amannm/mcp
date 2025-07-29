@@ -34,7 +34,12 @@ public final class HostProcess implements AutoCloseable {
         if (clients.putIfAbsent(id, client) != null) {
             throw new IllegalArgumentException("Client already registered: " + id);
         }
-        client.connect();
+        try {
+            client.connect();
+        } catch (IOException e) {
+            clients.remove(id);
+            throw e;
+        }
     }
 
     public void unregister(String id) throws IOException {

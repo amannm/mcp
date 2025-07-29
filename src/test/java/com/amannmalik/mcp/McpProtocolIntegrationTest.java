@@ -80,9 +80,10 @@ class McpProtocolIntegrationTest {
                     "initialize", init);
             t.send(com.amannmalik.mcp.jsonrpc.JsonRpcCodec.toJsonObject(req));
             var msg = com.amannmalik.mcp.jsonrpc.JsonRpcCodec.fromJsonObject(t.receive());
-            assertTrue(msg instanceof com.amannmalik.mcp.jsonrpc.JsonRpcError);
-            var err = (com.amannmalik.mcp.jsonrpc.JsonRpcError) msg;
-            assertEquals(com.amannmalik.mcp.jsonrpc.JsonRpcErrorCode.INVALID_PARAMS.code(), err.error().code());
+            assertTrue(msg instanceof com.amannmalik.mcp.jsonrpc.JsonRpcResponse);
+            var resp = (com.amannmalik.mcp.jsonrpc.JsonRpcResponse) msg;
+            var initResp = com.amannmalik.mcp.lifecycle.LifecycleCodec.toInitializeResponse(resp.result());
+            assertEquals(com.amannmalik.mcp.lifecycle.ProtocolLifecycle.SUPPORTED_VERSION, initResp.protocolVersion());
         } finally {
             if (process.isAlive()) {
                 process.destroyForcibly();
