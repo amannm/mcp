@@ -88,7 +88,7 @@ public final class ResourcesCodec {
         throw new IllegalArgumentException("unknown content block");
     }
 
-    private static JsonObject toJsonObject(ResourceAnnotations ann) {
+    public static JsonObject toJsonObject(ResourceAnnotations ann) {
         JsonObjectBuilder b = Json.createObjectBuilder();
         if (!ann.audience().isEmpty()) {
             var arr = Json.createArrayBuilder();
