@@ -95,7 +95,12 @@ public final class DefaultMcpClient implements McpClient {
         RequestId reqId = new RequestId.NumericId(id.getAndIncrement());
         CompletableFuture<JsonRpcMessage> future = new CompletableFuture<>();
         pending.put(reqId, future);
-        transport.send(JsonRpcCodec.toJsonObject(new JsonRpcRequest(reqId, method, params)));
+        try {
+            transport.send(JsonRpcCodec.toJsonObject(new JsonRpcRequest(reqId, method, params)));
+        } catch (IOException e) {
+            pending.remove(reqId);
+            throw e;
+        }
         try {
             return future.get(30, java.util.concurrent.TimeUnit.SECONDS);
         } catch (InterruptedException e) {
