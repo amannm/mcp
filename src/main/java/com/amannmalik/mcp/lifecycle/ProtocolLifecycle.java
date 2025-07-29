@@ -20,13 +20,13 @@ public class ProtocolLifecycle {
         clientCapabilities = requested.isEmpty()
                 ? EnumSet.noneOf(ClientCapability.class)
                 : EnumSet.copyOf(requested);
-        String negotiatedVersion = request.protocolVersion();
         if (!SUPPORTED_VERSION.equals(request.protocolVersion())) {
-            negotiatedVersion = SUPPORTED_VERSION;
+            throw new UnsupportedProtocolVersionException(
+                    request.protocolVersion(), SUPPORTED_VERSION);
         }
 
         return new InitializeResponse(
-                negotiatedVersion,
+                SUPPORTED_VERSION,
                 new Capabilities(clientCapabilities, serverCapabilities),
                 new ServerInfo("mcp-java", "MCP Java Reference", "0.1.0"),
                 null

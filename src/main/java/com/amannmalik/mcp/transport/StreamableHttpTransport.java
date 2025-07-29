@@ -21,6 +21,8 @@ import org.eclipse.jetty.ee10.servlet.ServletHolder;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.ServerConnector;
 
+import java.util.concurrent.atomic.AtomicLong;
+
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.net.InetSocketAddress;
@@ -51,6 +53,7 @@ public final class StreamableHttpTransport implements Transport {
     private static final SecureRandom RANDOM = new SecureRandom();
     private volatile String protocolVersion;
     private final ConcurrentHashMap<String, BlockingQueue<JsonObject>> responseQueues = new ConcurrentHashMap<>();
+    private final AtomicLong nextEventId = new AtomicLong(1);
 
     public StreamableHttpTransport(int port, OriginValidator validator) throws Exception {
         server = new Server(new InetSocketAddress("127.0.0.1", port));
@@ -80,7 +83,7 @@ public final class StreamableHttpTransport implements Transport {
         if (id != null) {
             SseClient stream = requestStreams.get(id);
             if (stream != null) {
-                stream.send(message);
+                stream.send(message, nextEventId.getAndIncrement());
                 if (method == null) {
                     stream.close();
                     requestStreams.remove(id);
@@ -98,7 +101,7 @@ public final class StreamableHttpTransport implements Transport {
             return;
         }
         for (SseClient c : sseClients) {
-            c.send(message);
+            c.send(message, nextEventId.getAndIncrement());
             break;
         }
     }
@@ -140,7 +143,7 @@ public final class StreamableHttpTransport implements Transport {
                                     JsonRpcErrorCode.INTERNAL_ERROR.code(),
                                     "Transport closed",
                                     null));
-                    client.send(JsonRpcCodec.toJsonObject(err));
+                    client.send(JsonRpcCodec.toJsonObject(err), nextEventId.getAndIncrement());
                     client.close();
                 } catch (Exception ignore) {
                 }
@@ -449,6 +452,7 @@ public final class StreamableHttpTransport implements Transport {
             sessionId.set(null);
             sessionOwner.set(null);
             protocolVersion = ProtocolLifecycle.SUPPORTED_VERSION;
+            nextEventId.set(1);
             sseClients.forEach(SseClient::close);
             sseClients.clear();
             requestStreams.forEach((id, c) -> c.close());
@@ -460,8 +464,6 @@ public final class StreamableHttpTransport implements Transport {
     private static class SseClient {
         private final AsyncContext context;
         private final PrintWriter out;
-        private final String streamId;
-        private long nextEventId = 1;
         private volatile boolean closed = false;
 
         SseClient(AsyncContext context) throws IOException {
@@ -472,10 +474,9 @@ public final class StreamableHttpTransport implements Transport {
             this.streamId = Base64.getUrlEncoder().withoutPadding().encodeToString(bytes);
         }
 
-        void send(JsonObject msg) {
+        void send(JsonObject msg, long id) {
             if (closed) return;
             try {
-                String id = streamId + '-' + nextEventId++;
                 out.write("id: " + id + "\n");
                 out.write("data: " + msg.toString() + "\n\n");
                 out.flush();

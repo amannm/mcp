@@ -37,6 +37,7 @@ import com.amannmalik.mcp.server.logging.LoggingListener;
 import com.amannmalik.mcp.transport.Transport;
 import com.amannmalik.mcp.util.CancellationCodec;
 import com.amannmalik.mcp.util.CancelledNotification;
+import com.amannmalik.mcp.util.CancellationTracker;
 import com.amannmalik.mcp.util.ProgressCodec;
 import com.amannmalik.mcp.util.ProgressListener;
 import com.amannmalik.mcp.validation.SchemaValidator;
@@ -66,6 +67,7 @@ public final class McpClient implements AutoCloseable {
     private final ElicitationProvider elicitation;
     private final AtomicLong id = new AtomicLong(1);
     private final Map<RequestId, CompletableFuture<JsonRpcMessage>> pending = new ConcurrentHashMap<>();
+    private final CancellationTracker cancellationTracker = new CancellationTracker();
     private Thread reader;
     private ScheduledExecutorService pinger;
     private long pingInterval;
@@ -166,6 +168,10 @@ public final class McpClient implements AutoCloseable {
         if (msg instanceof JsonRpcResponse resp) {
             InitializeResponse ir = LifecycleCodec.toInitializeResponse(resp.result());
             if (!ProtocolLifecycle.SUPPORTED_VERSION.equals(ir.protocolVersion())) {
+                try {
+                    transport.close();
+                } catch (IOException ignore) {
+                }
                 throw new UnsupportedProtocolVersionException(ir.protocolVersion(), ProtocolLifecycle.SUPPORTED_VERSION);
             }
             serverCapabilities = ir.capabilities().server();
@@ -351,9 +357,12 @@ public final class McpClient implements AutoCloseable {
                     if (f != null) f.complete(err);
                 }
                 case JsonRpcRequest req -> {
-                    try {
-                        send(handleRequest(req));
-                    } catch (IOException ignore) {
+                    JsonRpcMessage resp = handleRequest(req);
+                    if (resp != null) {
+                        try {
+                            send(resp);
+                        } catch (IOException ignore) {
+                        }
                     }
                 }
                 case JsonRpcNotification note -> handleNotification(note);
@@ -364,15 +373,24 @@ public final class McpClient implements AutoCloseable {
     }
 
     private JsonRpcMessage handleRequest(JsonRpcRequest req) {
-        return switch (req.method()) {
-            case "sampling/createMessage" -> handleCreateMessage(req);
-            case "roots/list" -> handleListRoots(req);
-            case "elicitation/create" -> handleElicit(req);
-            case "ping" -> handlePing(req);
-            default -> new JsonRpcError(req.id(), new JsonRpcError.ErrorDetail(
-                    JsonRpcErrorCode.METHOD_NOT_FOUND.code(),
-                    "Unknown method: " + req.method(), null));
-        };
+        cancellationTracker.register(req.id());
+        boolean cancelled;
+        JsonRpcMessage resp;
+        try {
+            resp = switch (req.method()) {
+                case "sampling/createMessage" -> handleCreateMessage(req);
+                case "roots/list" -> handleListRoots(req);
+                case "elicitation/create" -> handleElicit(req);
+                case "ping" -> handlePing(req);
+                default -> new JsonRpcError(req.id(), new JsonRpcError.ErrorDetail(
+                        JsonRpcErrorCode.METHOD_NOT_FOUND.code(),
+                        "Unknown method: " + req.method(), null));
+            };
+        } finally {
+            cancelled = cancellationTracker.isCancelled(req.id());
+            cancellationTracker.release(req.id());
+        }
+        return cancelled ? null : resp;
     }
 
     private JsonRpcMessage handleCreateMessage(JsonRpcRequest req) {
@@ -485,8 +503,17 @@ public final class McpClient implements AutoCloseable {
                     }
                 }
             }
+            case "notifications/cancelled" -> cancelled(note);
             default -> {
             }
+        }
+    }
+
+    private void cancelled(JsonRpcNotification note) {
+        CancelledNotification cn = CancellationCodec.toCancelledNotification(note.params());
+        cancellationTracker.cancel(cn.requestId(), cn.reason());
+        if (cn.reason() != null && System.err != null) {
+            System.err.println("Request " + cn.requestId() + " cancelled: " + cn.reason());
         }
     }
 }
