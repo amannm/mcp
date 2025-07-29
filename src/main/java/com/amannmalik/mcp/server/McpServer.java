@@ -124,6 +124,7 @@ public final class McpServer implements AutoCloseable {
     private ToolListSubscription toolListSubscription;
     private PromptsSubscription promptsSubscription;
     private final boolean toolListChangedSupported;
+    private final boolean promptsListChangedSupported;
     private final List<RootsListener> rootsListeners = new CopyOnWriteArrayList<>();
     private final ResourceAccessController resourceAccess;
     private final Principal principal;
@@ -177,6 +178,7 @@ public final class McpServer implements AutoCloseable {
         this.resourceAccess = resourceAccess;
         this.principal = principal;
         this.toolListChangedSupported = tools.supportsListChanged();
+        this.promptsListChangedSupported = prompts != null && prompts.supportsListChanged();
 
         if (resources != null) {
             try {
@@ -202,7 +204,7 @@ public final class McpServer implements AutoCloseable {
             }
         }
 
-        if (prompts != null) {
+        if (prompts != null && promptsListChangedSupported) {
             try {
                 promptsSubscription = prompts.subscribe(() -> {
                     try {
@@ -384,16 +386,27 @@ public final class McpServer implements AutoCloseable {
         InitializeRequest init = LifecycleCodec.toInitializeRequest(req.params());
         InitializeResponse resp = lifecycle.initialize(init);
         var json = LifecycleCodec.toJsonObject(resp);
-        if (!toolListChangedSupported) {
+        if (!toolListChangedSupported || !promptsListChangedSupported) {
             var caps = json.getJsonObject("capabilities");
-            if (caps != null && caps.containsKey("tools")) {
-                var toolsCaps = caps.getJsonObject("tools");
-                toolsCaps = Json.createObjectBuilder(toolsCaps)
-                        .add("listChanged", false)
-                        .build();
-                caps = Json.createObjectBuilder(caps)
-                        .add("tools", toolsCaps)
-                        .build();
+            if (caps != null) {
+                if (!toolListChangedSupported && caps.containsKey("tools")) {
+                    var toolsCaps = caps.getJsonObject("tools");
+                    toolsCaps = Json.createObjectBuilder(toolsCaps)
+                            .add("listChanged", false)
+                            .build();
+                    caps = Json.createObjectBuilder(caps)
+                            .add("tools", toolsCaps)
+                            .build();
+                }
+                if (!promptsListChangedSupported && caps.containsKey("prompts")) {
+                    var promptsCaps = caps.getJsonObject("prompts");
+                    promptsCaps = Json.createObjectBuilder(promptsCaps)
+                            .add("listChanged", false)
+                            .build();
+                    caps = Json.createObjectBuilder(caps)
+                            .add("prompts", promptsCaps)
+                            .build();
+                }
                 json = Json.createObjectBuilder(json)
                         .add("capabilities", caps)
                         .build();
