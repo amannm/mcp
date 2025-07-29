@@ -15,7 +15,6 @@ import java.util.EnumSet;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicLong;
 
-/** Minimal implementation of an MCP client. */
 public final class DefaultMcpClient implements McpClient {
     private final ClientInfo info;
     private final Set<ClientCapability> capabilities;
