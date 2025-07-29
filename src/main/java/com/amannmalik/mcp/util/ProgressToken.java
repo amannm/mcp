@@ -4,6 +4,6 @@ public sealed interface ProgressToken permits ProgressToken.StringToken, Progres
     record StringToken(String value) implements ProgressToken {
     }
 
-    record NumericToken(long value) implements ProgressToken {
+    record NumericToken(double value) implements ProgressToken {
     }
 }
