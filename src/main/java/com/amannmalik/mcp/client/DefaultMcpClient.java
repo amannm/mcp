@@ -35,6 +35,8 @@ import com.amannmalik.mcp.ping.PingResponse;
 import com.amannmalik.mcp.server.logging.LoggingCodec;
 import com.amannmalik.mcp.server.logging.LoggingListener;
 import com.amannmalik.mcp.transport.Transport;
+import com.amannmalik.mcp.util.CancelledNotification;
+import com.amannmalik.mcp.util.CancellationCodec;
 import com.amannmalik.mcp.util.ProgressCodec;
 import com.amannmalik.mcp.util.ProgressListener;
 import com.amannmalik.mcp.validation.SchemaValidator;
@@ -212,6 +214,10 @@ public final class DefaultMcpClient implements McpClient {
             Thread.currentThread().interrupt();
             throw new IOException(e);
         } catch (java.util.concurrent.TimeoutException e) {
+            try {
+                notify("notifications/cancelled", CancellationCodec.toJsonObject(new CancelledNotification(reqId, "timeout")));
+            } catch (IOException ignore) {
+            }
             throw new IOException("Request timed out after 30 seconds");
         } catch (ExecutionException e) {
             Throwable cause = e.getCause();
@@ -247,6 +253,10 @@ public final class DefaultMcpClient implements McpClient {
             Thread.currentThread().interrupt();
             throw new IOException(e);
         } catch (java.util.concurrent.TimeoutException e) {
+            try {
+                notify("notifications/cancelled", CancellationCodec.toJsonObject(new CancelledNotification(reqId, "timeout")));
+            } catch (IOException ignore) {
+            }
             throw new IOException("Request timed out after 30 seconds");
         } catch (ExecutionException e) {
             Throwable cause = e.getCause();
