@@ -4,11 +4,15 @@ import com.amannmalik.mcp.client.McpClient;
 import com.amannmalik.mcp.client.elicitation.BlockingElicitationProvider;
 import com.amannmalik.mcp.client.elicitation.ElicitationAction;
 import com.amannmalik.mcp.client.elicitation.ElicitationResponse;
+import com.amannmalik.mcp.client.sampling.CreateMessageResponse;
+import com.amannmalik.mcp.client.sampling.MessageContent;
+import com.amannmalik.mcp.client.sampling.SamplingProvider;
 import com.amannmalik.mcp.jsonrpc.JsonRpcError;
 import com.amannmalik.mcp.jsonrpc.JsonRpcMessage;
 import com.amannmalik.mcp.jsonrpc.JsonRpcResponse;
 import com.amannmalik.mcp.lifecycle.ClientCapability;
 import com.amannmalik.mcp.lifecycle.ClientInfo;
+import com.amannmalik.mcp.prompts.Role;
 import com.amannmalik.mcp.lifecycle.ServerCapability;
 import com.amannmalik.mcp.transport.StdioTransport;
 import com.amannmalik.mcp.util.ProgressNotification;
@@ -98,11 +102,17 @@ class McpConformanceTest {
 
             BlockingElicitationProvider elicitation = new BlockingElicitationProvider();
             elicitation.respond(new ElicitationResponse(ElicitationAction.CANCEL, null));
+            SamplingProvider sampling = r -> new CreateMessageResponse(
+                    Role.ASSISTANT,
+                    new MessageContent.Text("ok", null, null),
+                    "mock-model",
+                    "endTurn"
+            );
             McpClient client = new McpClient(
                     new ClientInfo("test-client", "Test Client", "1.0"),
                     EnumSet.allOf(ClientCapability.class),
                     clientTransport,
-                    null,
+                    sampling,
                     null,
                     elicitation
             );

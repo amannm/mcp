@@ -104,6 +104,9 @@ public final class McpClient implements AutoCloseable {
         this.roots = roots;
         this.rootsListChangedSupported = roots != null && roots.supportsListChanged();
         this.elicitation = elicitation;
+        if (this.capabilities.contains(ClientCapability.SAMPLING) && this.sampling == null) {
+            throw new IllegalArgumentException("sampling capability requires provider");
+        }
         if (this.capabilities.contains(ClientCapability.ELICITATION) && this.elicitation == null) {
             throw new IllegalArgumentException("elicitation capability requires provider");
         }

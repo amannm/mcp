@@ -475,7 +475,6 @@ public final class StreamableHttpTransport implements Transport {
             this.out = context.getResponse().getWriter();
             byte[] bytes = new byte[16];
             RANDOM.nextBytes(bytes);
-            this.streamId = Base64.getUrlEncoder().withoutPadding().encodeToString(bytes);
         }
 
         void send(JsonObject msg, long id) {
