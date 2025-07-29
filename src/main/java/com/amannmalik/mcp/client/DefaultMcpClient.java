@@ -92,7 +92,6 @@ public final class DefaultMcpClient implements McpClient {
         return instructions == null ? "" : instructions;
     }
     
-    @Override
     public PingResponse ping() throws IOException {
         if (!connected) throw new IllegalStateException("not connected");
         RequestId reqId = new RequestId.NumericId(id.getAndIncrement());
