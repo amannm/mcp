@@ -15,14 +15,14 @@ public final class LifecycleCodec {
         var caps = Json.createObjectBuilder();
         req.capabilities().client()
                 .forEach(c -> caps.add(c.name().toLowerCase(), JsonValue.EMPTY_JSON_OBJECT));
+        var info = Json.createObjectBuilder()
+                .add("name", req.clientInfo().name())
+                .add("version", req.clientInfo().version());
+        if (req.clientInfo().title() != null) info.add("title", req.clientInfo().title());
         return Json.createObjectBuilder()
                 .add("protocolVersion", req.protocolVersion())
                 .add("capabilities", caps.build())
-                .add("clientInfo", Json.createObjectBuilder()
-                        .add("name", req.clientInfo().name())
-                        .add("title", req.clientInfo().title())
-                        .add("version", req.clientInfo().version())
-                        .build())
+                .add("clientInfo", info.build())
                 .build();
     }
 
@@ -43,7 +43,11 @@ public final class LifecycleCodec {
                 server.isEmpty() ? Set.of() : EnumSet.copyOf(server)
         );
         JsonObject ci = obj.getJsonObject("clientInfo");
-        ClientInfo info = new ClientInfo(ci.getString("name"), ci.getString("title"), ci.getString("version"));
+        ClientInfo info = new ClientInfo(
+                ci.getString("name"),
+                ci.containsKey("title") ? ci.getString("title") : null,
+                ci.getString("version")
+        );
         return new InitializeRequest(version, caps, info);
     }
 
@@ -51,14 +55,14 @@ public final class LifecycleCodec {
         var server = Json.createObjectBuilder();
         resp.capabilities().server()
                 .forEach(c -> server.add(c.name().toLowerCase(), JsonValue.EMPTY_JSON_OBJECT));
+        var info = Json.createObjectBuilder()
+                .add("name", resp.serverInfo().name())
+                .add("version", resp.serverInfo().version());
+        if (resp.serverInfo().title() != null) info.add("title", resp.serverInfo().title());
         var builder = Json.createObjectBuilder()
                 .add("protocolVersion", resp.protocolVersion())
                 .add("capabilities", server.build())
-                .add("serverInfo", Json.createObjectBuilder()
-                        .add("name", resp.serverInfo().name())
-                        .add("title", resp.serverInfo().title())
-                        .add("version", resp.serverInfo().version())
-                        .build());
+                .add("serverInfo", info.build());
         if (resp.instructions() != null) {
             builder.add("instructions", resp.instructions());
         }
@@ -82,7 +86,11 @@ public final class LifecycleCodec {
                 server.isEmpty() ? Set.of() : EnumSet.copyOf(server)
         );
         JsonObject si = obj.getJsonObject("serverInfo");
-        ServerInfo info = new ServerInfo(si.getString("name"), si.getString("title"), si.getString("version"));
+        ServerInfo info = new ServerInfo(
+                si.getString("name"),
+                si.containsKey("title") ? si.getString("title") : null,
+                si.getString("version")
+        );
         String instructions = obj.containsKey("instructions") ? obj.getString("instructions") : null;
         return new InitializeResponse(version, caps, info, instructions);
     }
