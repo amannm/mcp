@@ -745,6 +745,12 @@ public final class McpServer implements AutoCloseable {
     }
 
     private JsonRpcMessage complete(JsonRpcRequest req) {
+        if (!lifecycle.serverCapabilities().contains(ServerCapability.COMPLETIONS)) {
+            return new JsonRpcError(req.id(), new JsonRpcError.ErrorDetail(
+                    JsonRpcErrorCode.METHOD_NOT_FOUND.code(),
+                    "Capability not supported",
+                    null));
+        }
         requireServerCapability(ServerCapability.COMPLETIONS);
         JsonObject params = req.params();
         if (params == null) {
