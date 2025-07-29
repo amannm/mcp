@@ -24,22 +24,83 @@ public final class SchemaValidator {
             JsonObject props = schema.getJsonObject("properties");
             if (props != null) {
                 for (var e : props.entrySet()) {
-                    if (!value.containsKey(e.getKey())) continue;
-                    String t = e.getValue().asJsonObject().getString("type", null);
+                    String name = e.getKey();
+                    JsonObject prop = e.getValue().asJsonObject();
+                    if (!value.containsKey(name)) continue;
+                    String t = prop.getString("type", null);
                     if (t != null) {
-                        JsonValue v = value.get(e.getKey());
+                        JsonValue v = value.get(name);
                         switch (t) {
-                            case "string" -> requireType(v, JsonValue.ValueType.STRING, e.getKey());
-                            case "number" -> requireType(v, JsonValue.ValueType.NUMBER, e.getKey());
-                            case "integer" -> requireInteger(v, e.getKey());
-                            case "boolean" -> requireType(v, JsonValue.ValueType.TRUE, JsonValue.ValueType.FALSE, e.getKey());
-                            case "array" -> requireType(v, JsonValue.ValueType.ARRAY, e.getKey());
-                            case "object" -> validate(e.getValue().asJsonObject(), value.getJsonObject(e.getKey()));
-                            default -> {}
+                            case "string" -> {
+                                requireType(v, JsonValue.ValueType.STRING, name);
+                                String str = ((JsonString) v).getString();
+                                if (prop.containsKey("minLength") && str.length() < prop.getInt("minLength")) {
+                                    throw new IllegalArgumentException("minLength violated for " + name);
+                                }
+                                if (prop.containsKey("maxLength") && str.length() > prop.getInt("maxLength")) {
+                                    throw new IllegalArgumentException("maxLength violated for " + name);
+                                }
+                                if (prop.containsKey("enum")) {
+                                    boolean match = prop.getJsonArray("enum")
+                                            .getValuesAs(JsonString.class)
+                                            .stream()
+                                            .anyMatch(js -> js.getString().equals(str));
+                                    if (!match) {
+                                        throw new IllegalArgumentException("enum violation for " + name);
+                                    }
+                                }
+                                if (prop.containsKey("format")) {
+                                    String fmt = prop.getString("format");
+                                    validateFormat(str, fmt, name);
+                                }
+                            }
+                            case "number" -> {
+                                requireType(v, JsonValue.ValueType.NUMBER, name);
+                                double num = ((JsonNumber) v).doubleValue();
+                                if (prop.containsKey("minimum") && num < prop.getJsonNumber("minimum").doubleValue()) {
+                                    throw new IllegalArgumentException("minimum violated for " + name);
+                                }
+                                if (prop.containsKey("maximum") && num > prop.getJsonNumber("maximum").doubleValue()) {
+                                    throw new IllegalArgumentException("maximum violated for " + name);
+                                }
+                            }
+                            case "integer" -> {
+                                requireInteger(v, name);
+                                long num = ((JsonNumber) v).longValue();
+                                if (prop.containsKey("minimum") && num < prop.getJsonNumber("minimum").longValue()) {
+                                    throw new IllegalArgumentException("minimum violated for " + name);
+                                }
+                                if (prop.containsKey("maximum") && num > prop.getJsonNumber("maximum").longValue()) {
+                                    throw new IllegalArgumentException("maximum violated for " + name);
+                                }
+                            }
+                            case "boolean" -> requireType(v, JsonValue.ValueType.TRUE, JsonValue.ValueType.FALSE, name);
+                            case "array" -> requireType(v, JsonValue.ValueType.ARRAY, name);
+                            case "object" -> validate(prop, value.getJsonObject(name));
+                            default -> {
+                            }
                         }
                     }
                 }
             }
+        }
+    }
+
+    private static void validateFormat(String value, String format, String field) {
+        try {
+            switch (format) {
+                case "email" -> {
+                    if (!value.matches("^[^@]+@[^@]+\\.[^@]+$")) {
+                        throw new IllegalArgumentException("Invalid email for " + field);
+                    }
+                }
+                case "uri" -> java.net.URI.create(value);
+                case "date" -> java.time.LocalDate.parse(value);
+                case "date-time" -> java.time.OffsetDateTime.parse(value);
+                default -> {}
+            }
+        } catch (Exception e) {
+            throw new IllegalArgumentException("Invalid " + format + " for " + field);
         }
     }
 
