@@ -14,6 +14,7 @@ import com.amannmalik.mcp.server.logging.LoggingNotification;
 import com.amannmalik.mcp.server.resources.*;
 import com.amannmalik.mcp.server.tools.*;
 import com.amannmalik.mcp.security.ResourceAccessController;
+import com.amannmalik.mcp.security.PrivacyBoundaryEnforcer;
 import com.amannmalik.mcp.auth.Principal;
 import com.amannmalik.mcp.util.*;
 import com.amannmalik.mcp.security.RateLimiter;
@@ -49,7 +50,7 @@ public final class McpServer implements AutoCloseable {
 
     public McpServer(Transport transport) {
         this(createDefaultResources(), createDefaultTools(), createDefaultPrompts(), createDefaultCompletions(),
-                ResourceAccessController.ALLOW_ALL,
+                createDefaultPrivacyBoundary("default"),
                 new Principal("default", java.util.Set.of()),
                 transport);
     }
@@ -60,7 +61,7 @@ public final class McpServer implements AutoCloseable {
               CompletionProvider completions,
               Transport transport) {
         this(resources, tools, prompts, completions,
-                ResourceAccessController.ALLOW_ALL,
+                createDefaultPrivacyBoundary("default"),
                 new Principal("default", java.util.Set.of()),
                 transport);
     }
@@ -517,6 +518,12 @@ public final class McpServer implements AutoCloseable {
         InMemoryCompletionProvider provider = new InMemoryCompletionProvider();
         provider.add(new CompleteRequest.Ref.PromptRef("test_prompt"), "test_arg", Map.of(), List.of("test_completion"));
         return provider;
+    }
+
+    private static ResourceAccessController createDefaultPrivacyBoundary(String principalId) {
+        var p = new PrivacyBoundaryEnforcer();
+        for (Audience a : Audience.values()) p.allow(principalId, a);
+        return p;
     }
 
     @Override
