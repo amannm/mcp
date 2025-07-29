@@ -76,7 +76,7 @@ public final class StreamableHttpTransport implements Transport {
         if (id != null) {
             SseClient stream = requestStreams.get(id);
             if (stream != null) {
-                stream.send(message, nextEventId.getAndIncrement());
+                stream.send(message);
                 if (method == null) {
                     stream.close();
                     requestStreams.remove(id);
@@ -136,7 +136,7 @@ public final class StreamableHttpTransport implements Transport {
                                     JsonRpcErrorCode.INTERNAL_ERROR.code(),
                                     "Transport closed",
                                     null));
-                    client.send(JsonRpcCodec.toJsonObject(err), nextEventId.getAndIncrement());
+                    client.send(JsonRpcCodec.toJsonObject(err));
                     client.close();
                 } catch (Exception ignore) {
                 }
