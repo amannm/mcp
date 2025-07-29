@@ -248,6 +248,7 @@ public final class StreamableHttpTransport implements Transport {
             resp.setStatus(HttpServletResponse.SC_OK);
             resp.setContentType("text/event-stream;charset=UTF-8");
             resp.setHeader("Cache-Control", "no-cache");
+            resp.setHeader(PROTOCOL_HEADER, protocolVersion);
             resp.flushBuffer();
             AsyncContext ac = req.startAsync();
             // Keep SSE connections open until explicitly closed
