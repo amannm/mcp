@@ -8,7 +8,6 @@ import jakarta.json.JsonObject;
 
 import java.util.EnumSet;
 
-/** Minimal server supporting ping and basic list operations. */
 public final class DefaultMcpServer extends McpServer {
     public DefaultMcpServer(Transport transport) {
         super(EnumSet.of(ServerCapability.RESOURCES, ServerCapability.TOOLS, ServerCapability.PROMPTS), transport);
