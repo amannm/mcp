@@ -11,6 +11,7 @@ public final class InMemoryResourceProvider implements ResourceProvider {
     private final Map<String, ResourceBlock> contents;
     private final List<ResourceTemplate> templates;
     private final Map<String, List<ResourceListener>> listeners = new ConcurrentHashMap<>();
+    private final List<ResourceListListener> listListeners = new CopyOnWriteArrayList<>();
 
     public InMemoryResourceProvider(List<Resource> resources, Map<String, ResourceBlock> contents, List<ResourceTemplate> templates) {
         this.resources = resources == null ? List.of() : List.copyOf(resources);
@@ -41,8 +42,40 @@ public final class InMemoryResourceProvider implements ResourceProvider {
         return () -> listeners.getOrDefault(uri, List.of()).remove(listener);
     }
 
+    @Override
+    public ResourceListSubscription subscribeList(ResourceListListener listener) {
+        listListeners.add(listener);
+        return () -> listListeners.remove(listener);
+    }
+
     public void notifyUpdate(String uri, String title) {
         ResourceUpdate update = new ResourceUpdate(uri, title);
         listeners.getOrDefault(uri, List.of()).forEach(l -> l.updated(update));
+    }
+
+    public void addResource(Resource resource, ResourceBlock content) {
+        if (resource != null) resources.add(resource);
+        if (content != null) contents.put(resource.uri(), content);
+        notifyListListeners();
+    }
+
+    public void removeResource(String uri) {
+        resources.removeIf(r -> r.uri().equals(uri));
+        contents.remove(uri);
+        notifyListListeners();
+    }
+
+    public void addTemplate(ResourceTemplate template) {
+        templates.add(template);
+        notifyListListeners();
+    }
+
+    public void removeTemplate(String name) {
+        templates.removeIf(t -> t.name().equals(name));
+        notifyListListeners();
+    }
+
+    private void notifyListListeners() {
+        listListeners.forEach(ResourceListListener::listChanged);
     }
 }

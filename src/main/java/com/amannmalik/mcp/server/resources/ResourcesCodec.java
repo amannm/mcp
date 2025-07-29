@@ -118,4 +118,12 @@ public final class ResourcesCodec {
         }
         return new ResourceAnnotations(audience.isEmpty() ? Set.of() : EnumSet.copyOf(audience), priority, lastModified);
     }
+
+    public static JsonObject toJsonObject(ResourceListChangedNotification n) {
+        return Json.createObjectBuilder().build();
+    }
+
+    public static ResourceListChangedNotification toResourceListChangedNotification(JsonObject obj) {
+        return new ResourceListChangedNotification();
+    }
 }

@@ -13,6 +13,7 @@ import java.util.function.Function;
 public final class InMemoryToolProvider implements ToolProvider {
     private final List<Tool> tools;
     private final Map<String, Function<JsonObject, ToolResult>> handlers;
+    private final List<ToolListListener> listeners = new java.util.concurrent.CopyOnWriteArrayList<>();
 
     public InMemoryToolProvider(List<Tool> tools, Map<String, Function<JsonObject, ToolResult>> handlers) {
         this.tools = tools == null ? List.of() : List.copyOf(tools);
@@ -40,5 +41,27 @@ public final class InMemoryToolProvider implements ToolProvider {
             SchemaValidator.validate(tool.outputSchema(), result.structuredContent());
         }
         return result;
+    }
+
+    @Override
+    public ToolListSubscription subscribeList(ToolListListener listener) {
+        listeners.add(listener);
+        return () -> listeners.remove(listener);
+    }
+
+    public void addTool(Tool tool, Function<JsonObject, ToolResult> handler) {
+        tools.add(tool);
+        if (handler != null) handlers.put(tool.name(), handler);
+        notifyListeners();
+    }
+
+    public void removeTool(String name) {
+        tools.removeIf(t -> t.name().equals(name));
+        handlers.remove(name);
+        notifyListeners();
+    }
+
+    private void notifyListeners() {
+        listeners.forEach(ToolListListener::listChanged);
     }
 }

@@ -9,9 +9,16 @@ import com.amannmalik.mcp.util.Pagination;
 
 public final class InMemoryPromptProvider implements PromptProvider {
     private final Map<String, PromptTemplate> templates = new ConcurrentHashMap<>();
+    private final List<PromptsListener> listeners = new java.util.concurrent.CopyOnWriteArrayList<>();
 
     public void add(PromptTemplate template) {
         templates.put(template.prompt().name(), template);
+        notifyListeners();
+    }
+
+    public void remove(String name) {
+        templates.remove(name);
+        notifyListeners();
     }
 
     @Override
@@ -29,5 +36,15 @@ public final class InMemoryPromptProvider implements PromptProvider {
         PromptTemplate tmpl = templates.get(name);
         if (tmpl == null) throw new IllegalArgumentException("unknown prompt: " + name);
         return tmpl.instantiate(arguments);
+    }
+
+    @Override
+    public PromptsSubscription subscribe(PromptsListener listener) {
+        listeners.add(listener);
+        return () -> listeners.remove(listener);
+    }
+
+    private void notifyListeners() {
+        listeners.forEach(PromptsListener::listChanged);
     }
 }

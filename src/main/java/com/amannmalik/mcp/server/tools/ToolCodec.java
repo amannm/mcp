@@ -36,6 +36,14 @@ public final class ToolCodec {
         return builder.build();
     }
 
+    public static JsonObject toJsonObject(ToolListChangedNotification n) {
+        return Json.createObjectBuilder().build();
+    }
+
+    public static ToolListChangedNotification toToolListChangedNotification(JsonObject obj) {
+        return new ToolListChangedNotification();
+    }
+
     private static JsonObject toJsonObject(ToolAnnotations ann) {
         JsonObjectBuilder b = Json.createObjectBuilder();
         if (ann.title() != null) b.add("title", ann.title());
