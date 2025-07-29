@@ -5,6 +5,11 @@ import jakarta.json.JsonObject;
 
 public record ElicitationResponse(ElicitationAction action, JsonObject content) {
     public ElicitationResponse {
-        if (action == null) throw new IllegalArgumentException("action is required");
+        if (action == null) {
+            throw new IllegalArgumentException("action is required");
+        }
+        if (action == ElicitationAction.ACCEPT && content == null) {
+            throw new IllegalArgumentException("content required for ACCEPT action");
+        }
     }
 }

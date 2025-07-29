@@ -1,6 +1,8 @@
 package com.amannmalik.mcp.server.tools;
 
 import com.amannmalik.mcp.util.Pagination;
+import com.amannmalik.mcp.validation.SchemaValidator;
+import jakarta.json.Json;
 import jakarta.json.JsonObject;
 
 import java.util.List;
@@ -27,6 +29,16 @@ public final class InMemoryToolProvider implements ToolProvider {
     public ToolResult call(String name, JsonObject arguments) {
         var f = handlers.get(name);
         if (f == null) throw new IllegalArgumentException("Unknown tool");
-        return f.apply(arguments == null ? jakarta.json.Json.createObjectBuilder().build() : arguments);
+        Tool tool = tools.stream()
+                .filter(t -> t.name().equals(name))
+                .findFirst()
+                .orElseThrow(() -> new IllegalArgumentException("Unknown tool"));
+        JsonObject args = arguments == null ? Json.createObjectBuilder().build() : arguments;
+        SchemaValidator.validate(tool.inputSchema(), args);
+        ToolResult result = f.apply(args);
+        if (tool.outputSchema() != null && result.structuredContent() != null) {
+            SchemaValidator.validate(tool.outputSchema(), result.structuredContent());
+        }
+        return result;
     }
 }
