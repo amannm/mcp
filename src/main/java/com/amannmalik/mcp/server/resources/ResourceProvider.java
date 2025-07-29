@@ -7,8 +7,14 @@ public interface ResourceProvider extends AutoCloseable {
     ResourceBlock read(String uri);
     ResourceTemplatePage listTemplates(String cursor);
     ResourceSubscription subscribe(String uri, ResourceListener listener);
+    /**
+     * Subscribe to changes in the list of resources.
+     *
+     * Implementations may return a no-op subscription when list change
+     * notifications are not supported.
+     */
     default ResourceListSubscription subscribeList(ResourceListListener listener) {
-        throw new UnsupportedOperationException();
+        return () -> { };
     }
 
     @Override
