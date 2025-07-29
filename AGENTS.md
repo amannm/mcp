@@ -31,6 +31,6 @@
 
 * Experiment to establish "ground truth" instead of "bashing your head against the wall"
 * If the requirements seem vague, follow your heart
-* If no time, drop a `KT.md` instead of shoveling out some half-baked slop
+* If not enough time, drop a `KT.md` instead of shoveling out something half-baked
 
 ---
