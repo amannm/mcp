@@ -9,5 +9,5 @@ public enum LoggingLevel {
     ERROR,
     CRITICAL,
     ALERT,
-    EMERGENCY;
+    EMERGENCY
 }
