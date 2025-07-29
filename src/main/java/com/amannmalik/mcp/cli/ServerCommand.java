@@ -1,7 +1,7 @@
 package com.amannmalik.mcp.cli;
 
 import com.amannmalik.mcp.server.McpServer;
-import com.amannmalik.mcp.server.SimpleServer;
+import com.amannmalik.mcp.server.BasicServer;
 import com.amannmalik.mcp.transport.StreamableHttpTransport;
 import com.amannmalik.mcp.transport.StdioTransport;
 import com.amannmalik.mcp.transport.Transport;
@@ -60,7 +60,7 @@ public final class ServerCommand implements Callable<Integer> {
             default -> throw new IllegalStateException();
         }
 
-        try (McpServer server = new SimpleServer(t)) {
+        try (McpServer server = new BasicServer(t)) {
             server.serve();
         }
         return 0;

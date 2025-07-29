@@ -60,7 +60,7 @@ public final class StdioTransport implements Transport {
     }
 
     @Override
-    public synchronized JsonObject receive() throws IOException {
+    public JsonObject receive() throws IOException {
         String line = in.readLine();
         if (line == null) throw new EOFException();
         try (JsonReader reader = Json.createReader(new StringReader(line))) {

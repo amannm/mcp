@@ -64,10 +64,10 @@ public final class SimpleMcpClient implements McpClient {
         }
         JsonRpcNotification note = new JsonRpcNotification("notifications/initialized", null);
         transport.send(JsonRpcCodec.toJsonObject(note));
+        connected = true;
         reader = new Thread(this::readLoop);
         reader.setDaemon(true);
         reader.start();
-        connected = true;
     }
 
     @Override
