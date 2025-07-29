@@ -22,7 +22,12 @@ public class RootsServer extends McpServer {
     public RootsServer(RootsProvider provider, Transport transport) {
         super(EnumSet.noneOf(ServerCapability.class), transport);
         this.provider = provider;
-        registerRequestHandler("roots/list", this::listRoots);
+    }
+
+    public static RootsServer create(RootsProvider provider, Transport transport) {
+        RootsServer server = new RootsServer(provider, transport);
+        server.registerRequestHandler("roots/list", server::listRoots);
+        return server;
     }
 
     @Override
