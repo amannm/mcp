@@ -6,6 +6,7 @@ import com.amannmalik.mcp.ping.PingCodec;
 import com.amannmalik.mcp.ping.PingResponse;
 import com.amannmalik.mcp.transport.Transport;
 import com.amannmalik.mcp.client.sampling.*;
+import com.amannmalik.mcp.client.elicitation.*;
 import jakarta.json.JsonObject;
 
 import java.util.Map;
@@ -23,6 +24,7 @@ public final class DefaultMcpClient implements McpClient {
     private final Set<ClientCapability> capabilities;
     private final Transport transport;
     private final SamplingProvider sampling;
+    private final ElicitationProvider elicitation;
     private final AtomicLong id = new AtomicLong(1);
     private final Map<RequestId, CompletableFuture<JsonRpcMessage>> pending = new ConcurrentHashMap<>();
     private Thread reader;
@@ -31,14 +33,23 @@ public final class DefaultMcpClient implements McpClient {
     private String instructions;
 
     public DefaultMcpClient(ClientInfo info, Set<ClientCapability> capabilities, Transport transport) {
-        this(info, capabilities, transport, null);
+        this(info, capabilities, transport, null, null);
     }
 
     public DefaultMcpClient(ClientInfo info, Set<ClientCapability> capabilities, Transport transport, SamplingProvider sampling) {
+        this(info, capabilities, transport, sampling, null);
+    }
+
+    public DefaultMcpClient(ClientInfo info,
+                            Set<ClientCapability> capabilities,
+                            Transport transport,
+                            SamplingProvider sampling,
+                            ElicitationProvider elicitation) {
         this.info = info;
         this.capabilities = capabilities.isEmpty() ? Set.of() : EnumSet.copyOf(capabilities);
         this.transport = transport;
         this.sampling = sampling;
+        this.elicitation = elicitation;
     }
 
     @Override
@@ -209,6 +220,7 @@ public final class DefaultMcpClient implements McpClient {
     private JsonRpcMessage handleRequest(JsonRpcRequest req) {
         return switch (req.method()) {
             case "sampling/createMessage" -> handleCreateMessage(req);
+            case "elicitation/create" -> handleElicit(req);
             default -> new JsonRpcError(req.id(), new JsonRpcError.ErrorDetail(
                     JsonRpcErrorCode.METHOD_NOT_FOUND.code(),
                     "Unknown method: " + req.method(), null));
@@ -230,6 +242,30 @@ public final class DefaultMcpClient implements McpClient {
             CreateMessageRequest cmr = SamplingCodec.toCreateMessageRequest(params);
             CreateMessageResponse resp = sampling.createMessage(cmr);
             return new JsonRpcResponse(req.id(), SamplingCodec.toJsonObject(resp));
+        } catch (IllegalArgumentException e) {
+            return new JsonRpcError(req.id(), new JsonRpcError.ErrorDetail(
+                    JsonRpcErrorCode.INVALID_PARAMS.code(), e.getMessage(), null));
+        } catch (Exception e) {
+            return new JsonRpcError(req.id(), new JsonRpcError.ErrorDetail(
+                    JsonRpcErrorCode.INTERNAL_ERROR.code(), e.getMessage(), null));
+        }
+    }
+
+    private JsonRpcMessage handleElicit(JsonRpcRequest req) {
+        if (elicitation == null) {
+            return new JsonRpcError(req.id(), new JsonRpcError.ErrorDetail(
+                    JsonRpcErrorCode.METHOD_NOT_FOUND.code(),
+                    "Elicitation not supported", null));
+        }
+        JsonObject params = req.params();
+        if (params == null) {
+            return new JsonRpcError(req.id(), new JsonRpcError.ErrorDetail(
+                    JsonRpcErrorCode.INVALID_PARAMS.code(), "Missing params", null));
+        }
+        try {
+            ElicitationRequest er = ElicitationCodec.toRequest(params);
+            ElicitationResponse resp = elicitation.elicit(er);
+            return new JsonRpcResponse(req.id(), ElicitationCodec.toJsonObject(resp));
         } catch (IllegalArgumentException e) {
             return new JsonRpcError(req.id(), new JsonRpcError.ErrorDetail(
                     JsonRpcErrorCode.INVALID_PARAMS.code(), e.getMessage(), null));
