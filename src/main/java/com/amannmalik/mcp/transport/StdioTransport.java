@@ -14,8 +14,8 @@ import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.StringReader;
 import java.nio.charset.StandardCharsets;
-import java.util.Objects;
 import java.time.Duration;
+import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 
@@ -71,8 +71,16 @@ public final class StdioTransport implements Transport {
     @Override
     public void close() throws IOException {
         IOException ex = null;
-        try { out.close(); } catch (IOException e) { ex = e; }
-        try { in.close(); } catch (IOException e) { if (ex == null) ex = e; }
+        try {
+            out.close();
+        } catch (IOException e) {
+            ex = e;
+        }
+        try {
+            in.close();
+        } catch (IOException e) {
+            if (ex == null) ex = e;
+        }
         if (process != null) {
             process.destroy();
             try {
@@ -85,7 +93,11 @@ public final class StdioTransport implements Transport {
             }
         }
         if (logReader != null) {
-            try { logReader.join(100); } catch (InterruptedException ignore) { Thread.currentThread().interrupt(); }
+            try {
+                logReader.join(100);
+            } catch (InterruptedException ignore) {
+                Thread.currentThread().interrupt();
+            }
         }
         if (ex != null) throw ex;
     }

@@ -7,10 +7,15 @@ import jakarta.json.JsonObject;
 
 public sealed interface ResourceBlock permits ResourceBlock.Text, ResourceBlock.Binary {
     String uri();
+
     String name();
+
     String title();
+
     String mimeType();
+
     ResourceAnnotations annotations();
+
     JsonObject _meta();
 
     record Text(String uri, String name, String title, String mimeType, String text, ResourceAnnotations annotations, JsonObject _meta) implements ResourceBlock {

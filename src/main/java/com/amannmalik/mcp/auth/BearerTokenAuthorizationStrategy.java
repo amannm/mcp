@@ -1,6 +1,5 @@
 package com.amannmalik.mcp.auth;
 
-import java.util.Locale;
 import java.util.Optional;
 
 public final class BearerTokenAuthorizationStrategy implements AuthorizationStrategy {

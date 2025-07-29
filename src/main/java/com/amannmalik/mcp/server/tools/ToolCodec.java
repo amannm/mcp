@@ -1,16 +1,16 @@
 package com.amannmalik.mcp.server.tools;
 
+import com.amannmalik.mcp.util.PaginatedResult;
+import com.amannmalik.mcp.util.PaginationCodec;
 import jakarta.json.Json;
 import jakarta.json.JsonArrayBuilder;
 import jakarta.json.JsonObject;
 import jakarta.json.JsonObjectBuilder;
 
-import com.amannmalik.mcp.util.PaginationCodec;
-import com.amannmalik.mcp.util.PaginatedResult;
-
 
 public final class ToolCodec {
-    private ToolCodec() {}
+    private ToolCodec() {
+    }
 
     public static JsonObject toJsonObject(Tool tool) {
         JsonObjectBuilder builder = Json.createObjectBuilder()

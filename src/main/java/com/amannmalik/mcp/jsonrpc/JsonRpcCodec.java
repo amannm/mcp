@@ -4,12 +4,13 @@ import jakarta.json.Json;
 import jakarta.json.JsonNumber;
 import jakarta.json.JsonObject;
 import jakarta.json.JsonObjectBuilder;
-import jakarta.json.JsonValue;
 import jakarta.json.JsonString;
+import jakarta.json.JsonValue;
 
 
 public final class JsonRpcCodec {
-    private JsonRpcCodec() {}
+    private JsonRpcCodec() {
+    }
 
     public static JsonObject toJsonObject(JsonRpcMessage msg) {
         var builder = Json.createObjectBuilder();
@@ -61,12 +62,12 @@ public final class JsonRpcCodec {
         var hasResult = obj.containsKey("result");
 
         if (method != null && idValue != null && idValue.getValueType() != JsonValue.ValueType.NULL) {
-            
+
 
             return new JsonRpcRequest(toId(idValue), method, obj.getJsonObject("params"));
         }
         if (method != null) {
-            
+
 
             return new JsonRpcNotification(method, obj.getJsonObject("params"));
         }

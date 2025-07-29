@@ -10,7 +10,8 @@ import jakarta.json.JsonValue;
 
 
 public final class CancellationCodec {
-    private CancellationCodec() {}
+    private CancellationCodec() {
+    }
 
     public static JsonObject toJsonObject(CancelledNotification note) {
         JsonObjectBuilder b = Json.createObjectBuilder();

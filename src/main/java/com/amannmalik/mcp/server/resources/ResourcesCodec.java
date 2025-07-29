@@ -10,7 +10,8 @@ import java.util.EnumSet;
 import java.util.Set;
 
 public final class ResourcesCodec {
-    private ResourcesCodec() {}
+    private ResourcesCodec() {
+    }
 
     public static JsonObject toJsonObject(Resource r) {
         JsonObjectBuilder b = Json.createObjectBuilder()

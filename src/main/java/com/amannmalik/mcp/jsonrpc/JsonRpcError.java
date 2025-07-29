@@ -4,7 +4,8 @@ import jakarta.json.JsonValue;
 
 
 public record JsonRpcError(RequestId id, ErrorDetail error) implements JsonRpcMessage {
-    public record ErrorDetail(int code, String message, JsonValue data) {}
+    public record ErrorDetail(int code, String message, JsonValue data) {
+    }
 
     public JsonRpcError {
         if (id == null || error == null) {

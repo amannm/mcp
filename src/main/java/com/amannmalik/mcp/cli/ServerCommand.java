@@ -1,8 +1,8 @@
 package com.amannmalik.mcp.cli;
 
 import com.amannmalik.mcp.server.McpServer;
-import com.amannmalik.mcp.transport.StreamableHttpTransport;
 import com.amannmalik.mcp.transport.StdioTransport;
+import com.amannmalik.mcp.transport.StreamableHttpTransport;
 import com.amannmalik.mcp.transport.Transport;
 import picocli.CommandLine;
 
@@ -25,7 +25,8 @@ public final class ServerCommand implements Callable<Integer> {
     @CommandLine.Option(names = {"-v", "--verbose"}, description = "Verbose logging")
     private boolean verbose;
 
-    public ServerCommand() {}
+    public ServerCommand() {
+    }
 
     public ServerCommand(ServerConfig config, boolean verbose) {
         this.resolved = config;

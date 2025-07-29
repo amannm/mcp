@@ -4,7 +4,8 @@ import java.net.URI;
 
 
 public final class UriValidator {
-    private UriValidator() {}
+    private UriValidator() {
+    }
 
     public static String requireAbsolute(String uri) {
         if (uri == null) throw new IllegalArgumentException("uri is required");

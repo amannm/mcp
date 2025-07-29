@@ -35,14 +35,15 @@ public final class InMemoryCompletionProvider implements CompletionProvider {
     }
 
     private static boolean refEquals(CompleteRequest.Ref a, CompleteRequest.Ref b) {
-        if (a instanceof CompleteRequest.Ref.PromptRef pa && b instanceof CompleteRequest.Ref.PromptRef pb) {
-            return pa.name().equals(pb.name());
+        if (a instanceof CompleteRequest.Ref.PromptRef(String name) && b instanceof CompleteRequest.Ref.PromptRef(String name)) {
+            return name.equals(name);
         }
-        if (a instanceof CompleteRequest.Ref.ResourceRef ra && b instanceof CompleteRequest.Ref.ResourceRef rb) {
-            return ra.uri().equals(rb.uri());
+        if (a instanceof CompleteRequest.Ref.ResourceRef(String uri) && b instanceof CompleteRequest.Ref.ResourceRef(String uri)) {
+            return uri.equals(uri);
         }
         return false;
     }
 
-    private record Entry(CompleteRequest.Ref ref, String argumentName, Map<String, String> context, List<String> values) {}
+    private record Entry(CompleteRequest.Ref ref, String argumentName, Map<String, String> context, List<String> values) {
+    }
 }

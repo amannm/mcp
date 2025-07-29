@@ -1,10 +1,10 @@
 package com.amannmalik.mcp.client;
 
+import com.amannmalik.mcp.client.elicitation.ElicitationAction;
 import com.amannmalik.mcp.client.elicitation.ElicitationCodec;
 import com.amannmalik.mcp.client.elicitation.ElicitationProvider;
 import com.amannmalik.mcp.client.elicitation.ElicitationRequest;
 import com.amannmalik.mcp.client.elicitation.ElicitationResponse;
-import com.amannmalik.mcp.client.elicitation.ElicitationAction;
 import com.amannmalik.mcp.client.roots.RootsCodec;
 import com.amannmalik.mcp.client.roots.RootsProvider;
 import com.amannmalik.mcp.client.roots.RootsSubscription;
@@ -30,16 +30,14 @@ import com.amannmalik.mcp.lifecycle.ProtocolLifecycle;
 import com.amannmalik.mcp.lifecycle.ServerCapability;
 import com.amannmalik.mcp.lifecycle.UnsupportedProtocolVersionException;
 import com.amannmalik.mcp.ping.PingCodec;
-import com.amannmalik.mcp.ping.PingResponse;
 import com.amannmalik.mcp.ping.PingMonitor;
-import com.amannmalik.mcp.transport.Transport;
-import com.amannmalik.mcp.validation.SchemaValidator;
-import com.amannmalik.mcp.util.ProgressCodec;
-import com.amannmalik.mcp.util.ProgressListener;
-import com.amannmalik.mcp.util.ProgressNotification;
+import com.amannmalik.mcp.ping.PingResponse;
 import com.amannmalik.mcp.server.logging.LoggingCodec;
 import com.amannmalik.mcp.server.logging.LoggingListener;
-import com.amannmalik.mcp.server.logging.LoggingNotification;
+import com.amannmalik.mcp.transport.Transport;
+import com.amannmalik.mcp.util.ProgressCodec;
+import com.amannmalik.mcp.util.ProgressListener;
+import com.amannmalik.mcp.validation.SchemaValidator;
 import jakarta.json.JsonObject;
 
 import java.io.IOException;
@@ -70,8 +68,10 @@ public final class DefaultMcpClient implements McpClient {
     private volatile boolean connected;
     private Set<ServerCapability> serverCapabilities = Set.of();
     private String instructions;
-    private ProgressListener progressListener = n -> {};
-    private LoggingListener loggingListener = n -> {};
+    private ProgressListener progressListener = n -> {
+    };
+    private LoggingListener loggingListener = n -> {
+    };
 
     public void configurePing(long intervalMillis, long timeoutMillis) {
         if (connected) throw new IllegalStateException("already connected");
@@ -386,11 +386,13 @@ public final class DefaultMcpClient implements McpClient {
     }
 
     public void setProgressListener(ProgressListener listener) {
-        progressListener = listener == null ? n -> {} : listener;
+        progressListener = listener == null ? n -> {
+        } : listener;
     }
 
     public void setLoggingListener(LoggingListener listener) {
-        loggingListener = listener == null ? n -> {} : listener;
+        loggingListener = listener == null ? n -> {
+        } : listener;
     }
 
     private void handleNotification(JsonRpcNotification note) {
@@ -405,7 +407,8 @@ public final class DefaultMcpClient implements McpClient {
                     loggingListener.onMessage(LoggingCodec.toLoggingNotification(note.params()));
                 }
             }
-            default -> { }
+            default -> {
+            }
         }
     }
 }

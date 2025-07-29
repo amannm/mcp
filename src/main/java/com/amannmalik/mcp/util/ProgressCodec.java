@@ -9,7 +9,8 @@ import jakarta.json.JsonValue;
 
 
 public final class ProgressCodec {
-    private ProgressCodec() {}
+    private ProgressCodec() {
+    }
 
     public static JsonObject toJsonObject(ProgressNotification note) {
         JsonObjectBuilder b = Json.createObjectBuilder();

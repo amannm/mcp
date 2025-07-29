@@ -6,5 +6,6 @@ import com.amannmalik.mcp.auth.Principal;
 public interface ToolAccessPolicy {
     void requireAllowed(Principal principal, String tool);
 
-    ToolAccessPolicy PERMISSIVE = (p, t) -> {};
+    ToolAccessPolicy PERMISSIVE = (p, t) -> {
+    };
 }

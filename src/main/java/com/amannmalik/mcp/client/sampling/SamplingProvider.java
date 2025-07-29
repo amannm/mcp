@@ -5,5 +5,6 @@ public interface SamplingProvider extends AutoCloseable {
     CreateMessageResponse createMessage(CreateMessageRequest request);
 
     @Override
-    default void close() {}
+    default void close() {
+    }
 }

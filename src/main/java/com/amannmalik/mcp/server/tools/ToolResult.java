@@ -1,15 +1,15 @@
 package com.amannmalik.mcp.server.tools;
 
+import com.amannmalik.mcp.server.resources.Resource;
+import com.amannmalik.mcp.server.resources.ResourceBlock;
+import com.amannmalik.mcp.server.resources.ResourcesCodec;
+import com.amannmalik.mcp.validation.InputSanitizer;
 import jakarta.json.Json;
 import jakarta.json.JsonArray;
 import jakarta.json.JsonArrayBuilder;
 import jakarta.json.JsonObject;
 import jakarta.json.JsonObjectBuilder;
 import jakarta.json.JsonValue;
-import com.amannmalik.mcp.validation.InputSanitizer;
-import com.amannmalik.mcp.server.resources.Resource;
-import com.amannmalik.mcp.server.resources.ResourceBlock;
-import com.amannmalik.mcp.server.resources.ResourcesCodec;
 
 
 public record ToolResult(JsonArray content,

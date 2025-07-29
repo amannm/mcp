@@ -10,7 +10,8 @@ import java.util.Map;
 
 
 public final class CompletionCodec {
-    private CompletionCodec() {}
+    private CompletionCodec() {
+    }
 
     public static JsonObject toJsonObject(CompleteRequest req) {
         JsonObjectBuilder obj = Json.createObjectBuilder()

@@ -23,7 +23,8 @@ public final class ClientCommand implements Callable<Integer> {
     @CommandLine.Option(names = {"-v", "--verbose"}, description = "Verbose logging")
     private boolean verbose;
 
-    public ClientCommand() {}
+    public ClientCommand() {
+    }
 
     public ClientCommand(ClientConfig config, boolean verbose) {
         this.resolved = config;
@@ -45,7 +46,8 @@ public final class ClientCommand implements Callable<Integer> {
         }
 
         StdioTransport transport = new StdioTransport(new ProcessBuilder(cfg.command().split(" ")),
-                verbose ? System.err::println : s -> {});
+                verbose ? System.err::println : s -> {
+                });
         DefaultMcpClient client = new DefaultMcpClient(
                 new ClientInfo("cli", "CLI", "0"),
                 EnumSet.noneOf(ClientCapability.class),

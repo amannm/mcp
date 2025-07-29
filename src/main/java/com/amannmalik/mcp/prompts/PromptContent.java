@@ -12,17 +12,22 @@ public sealed interface PromptContent
         PromptContent.EmbeddedResource,
         PromptContent.ResourceLink {
     String type();
+
     ResourceAnnotations annotations();
 
-    
+
     record Text(String text, ResourceAnnotations annotations) implements PromptContent {
         public Text {
             if (text == null) throw new IllegalArgumentException("text is required");
         }
-        @Override public String type() { return "text"; }
+
+        @Override
+        public String type() {
+            return "text";
+        }
     }
 
-    
+
     record Image(byte[] data, String mimeType, ResourceAnnotations annotations) implements PromptContent {
         public Image {
             if (data == null || mimeType == null) {
@@ -30,10 +35,14 @@ public sealed interface PromptContent
             }
             data = data.clone();
         }
-        @Override public String type() { return "image"; }
+
+        @Override
+        public String type() {
+            return "image";
+        }
     }
 
-    
+
     record Audio(byte[] data, String mimeType, ResourceAnnotations annotations) implements PromptContent {
         public Audio {
             if (data == null || mimeType == null) {
@@ -41,27 +50,39 @@ public sealed interface PromptContent
             }
             data = data.clone();
         }
-        @Override public String type() { return "audio"; }
+
+        @Override
+        public String type() {
+            return "audio";
+        }
     }
 
-    
+
     record EmbeddedResource(ResourceBlock resource, ResourceAnnotations annotations) implements PromptContent {
         public EmbeddedResource {
             if (resource == null) throw new IllegalArgumentException("resource is required");
         }
-        @Override public String type() { return "resource"; }
+
+        @Override
+        public String type() {
+            return "resource";
+        }
     }
 
-    
+
     record ResourceLink(Resource resource) implements PromptContent {
         public ResourceLink {
             if (resource == null) throw new IllegalArgumentException("resource is required");
         }
 
-        @Override public ResourceAnnotations annotations() {
+        @Override
+        public ResourceAnnotations annotations() {
             return resource.annotations();
         }
 
-        @Override public String type() { return "resource_link"; }
+        @Override
+        public String type() {
+            return "resource_link";
+        }
     }
 }

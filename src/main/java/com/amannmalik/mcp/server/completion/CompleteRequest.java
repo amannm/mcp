@@ -14,7 +14,7 @@ public record CompleteRequest(
         }
     }
 
-    
+
     public record Argument(String name, String value) {
         public Argument {
             if (name == null || value == null) {
@@ -23,7 +23,7 @@ public record CompleteRequest(
         }
     }
 
-    
+
     public record Context(Map<String, String> arguments) {
         public Context {
             arguments = arguments == null ? Map.of() : Map.copyOf(arguments);
@@ -35,28 +35,32 @@ public record CompleteRequest(
         }
     }
 
-    
+
     public sealed interface Ref permits Ref.PromptRef, Ref.ResourceRef {
         String type();
 
-        
+
         record PromptRef(String name) implements Ref {
             public PromptRef {
                 if (name == null) throw new IllegalArgumentException("name required");
             }
 
             @Override
-            public String type() { return "ref/prompt"; }
+            public String type() {
+                return "ref/prompt";
+            }
         }
 
-        
+
         record ResourceRef(String uri) implements Ref {
             public ResourceRef {
                 if (uri == null) throw new IllegalArgumentException("uri required");
             }
 
             @Override
-            public String type() { return "ref/resource"; }
+            public String type() {
+                return "ref/resource";
+            }
         }
     }
 }

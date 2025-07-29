@@ -10,7 +10,8 @@ import java.util.List;
 
 
 public final class RootsCodec {
-    private RootsCodec() {}
+    private RootsCodec() {
+    }
 
     public static JsonObject toJsonObject(ListRootsRequest req) {
         return Json.createObjectBuilder().build();
