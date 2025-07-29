@@ -104,7 +104,8 @@ public final class ResourcesCodec {
         Set<Audience> audience = EnumSet.noneOf(Audience.class);
         var audienceArr = obj.getJsonArray("audience");
         if (audienceArr != null) {
-            audienceArr.forEach(v -> audience.add(Audience.valueOf(v.toString().replace("\"", "").toUpperCase())));
+            audienceArr.getValuesAs(jakarta.json.JsonString.class)
+                    .forEach(js -> audience.add(Audience.valueOf(js.getString().toUpperCase())));
         }
         Double priority = obj.containsKey("priority") ? obj.getJsonNumber("priority").doubleValue() : null;
         Instant lastModified = obj.containsKey("lastModified") ? Instant.parse(obj.getString("lastModified")) : null;

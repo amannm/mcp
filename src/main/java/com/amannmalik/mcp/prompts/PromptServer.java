@@ -36,7 +36,13 @@ public class PromptServer extends McpServer {
 
     private JsonRpcMessage listPrompts(JsonRpcRequest req) {
         String cursor = req.params() == null ? null : req.params().getString("cursor", null);
-        PromptPage page = provider.list(cursor);
+        PromptPage page;
+        try {
+            page = provider.list(cursor);
+        } catch (IllegalArgumentException e) {
+            return new JsonRpcError(req.id(), new JsonRpcError.ErrorDetail(
+                    JsonRpcErrorCode.INVALID_PARAMS.code(), e.getMessage(), null));
+        }
         var arr = Json.createArrayBuilder();
         for (Prompt p : page.prompts()) arr.add(PromptCodec.toJsonObject(p));
         JsonObjectBuilder builder = Json.createObjectBuilder().add("prompts", arr.build());
