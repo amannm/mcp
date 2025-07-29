@@ -124,6 +124,9 @@ public final class McpServer implements AutoCloseable {
     private ToolListSubscription toolListSubscription;
     private PromptsSubscription promptsSubscription;
     private final boolean toolListChangedSupported;
+    private final boolean resourceSubscribeSupported;
+    private final boolean resourceListChangedSupported;
+    private final boolean promptListChangedSupported;
     private final List<RootsListener> rootsListeners = new CopyOnWriteArrayList<>();
     private final ResourceAccessController resourceAccess;
     private final Principal principal;
@@ -177,8 +180,11 @@ public final class McpServer implements AutoCloseable {
         this.resourceAccess = resourceAccess;
         this.principal = principal;
         this.toolListChangedSupported = tools.supportsListChanged();
+        this.resourceSubscribeSupported = resources != null && resources.supportsSubscribe();
+        this.resourceListChangedSupported = resources != null && resources.supportsListChanged();
+        this.promptListChangedSupported = prompts != null && prompts.supportsListChanged();
 
-        if (resources != null) {
+        if (resources != null && resources.supportsListChanged()) {
             try {
                 resourceListSubscription = resources.subscribeList(() -> {
                     try {
@@ -202,7 +208,7 @@ public final class McpServer implements AutoCloseable {
             }
         }
 
-        if (prompts != null) {
+        if (prompts != null && prompts.supportsListChanged()) {
             try {
                 promptsSubscription = prompts.subscribe(() -> {
                     try {
@@ -384,9 +390,9 @@ public final class McpServer implements AutoCloseable {
         InitializeRequest init = LifecycleCodec.toInitializeRequest(req.params());
         InitializeResponse resp = lifecycle.initialize(init);
         var json = LifecycleCodec.toJsonObject(resp);
-        if (!toolListChangedSupported) {
-            var caps = json.getJsonObject("capabilities");
-            if (caps != null && caps.containsKey("tools")) {
+        var caps = json.getJsonObject("capabilities");
+        if (caps != null) {
+            if (caps.containsKey("tools") && !toolListChangedSupported) {
                 var toolsCaps = caps.getJsonObject("tools");
                 toolsCaps = Json.createObjectBuilder(toolsCaps)
                         .add("listChanged", false)
@@ -394,10 +400,29 @@ public final class McpServer implements AutoCloseable {
                 caps = Json.createObjectBuilder(caps)
                         .add("tools", toolsCaps)
                         .build();
-                json = Json.createObjectBuilder(json)
-                        .add("capabilities", caps)
+            }
+            if (caps.containsKey("resources")) {
+                var resCaps = caps.getJsonObject("resources");
+                resCaps = Json.createObjectBuilder(resCaps)
+                        .add("subscribe", resourceSubscribeSupported)
+                        .add("listChanged", resourceListChangedSupported)
+                        .build();
+                caps = Json.createObjectBuilder(caps)
+                        .add("resources", resCaps)
                         .build();
             }
+            if (caps.containsKey("prompts") && !promptListChangedSupported) {
+                var pCaps = caps.getJsonObject("prompts");
+                pCaps = Json.createObjectBuilder(pCaps)
+                        .add("listChanged", false)
+                        .build();
+                caps = Json.createObjectBuilder(caps)
+                        .add("prompts", pCaps)
+                        .build();
+            }
+            json = Json.createObjectBuilder(json)
+                    .add("capabilities", caps)
+                    .build();
         }
         return new JsonRpcResponse(req.id(), json);
     }

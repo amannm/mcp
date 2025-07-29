@@ -14,6 +14,20 @@ public interface ResourceProvider extends AutoCloseable {
         };
     }
 
+    /**
+     * Whether {@link #subscribe(String, ResourceListener)} delivers notifications.
+     */
+    default boolean supportsSubscribe() {
+        return false;
+    }
+
+    /**
+     * Whether {@link #subscribeList(ResourceListListener)} delivers notifications.
+     */
+    default boolean supportsListChanged() {
+        return false;
+    }
+
     @Override
     default void close() {
     }
