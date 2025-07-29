@@ -46,7 +46,6 @@ public final class JsonRpcCodec {
         switch (id) {
             case RequestId.StringId s -> builder.add("id", s.value());
             case RequestId.NumericId n -> builder.add("id", n.value());
-            case RequestId.NullId __ -> builder.addNull("id");
         }
     }
 
@@ -61,7 +60,7 @@ public final class JsonRpcCodec {
         var hasError = obj.containsKey("error");
         var hasResult = obj.containsKey("result");
 
-        if (method != null && idValue != null) {
+        if (method != null && idValue != null && idValue.getValueType() != JsonValue.ValueType.NULL) {
             // Request
             return new JsonRpcRequest(toId(idValue), method, obj.getJsonObject("params"));
         }
@@ -70,9 +69,15 @@ public final class JsonRpcCodec {
             return new JsonRpcNotification(method, obj.getJsonObject("params"));
         }
         if (hasResult) {
+            if (idValue == null || idValue.getValueType() == JsonValue.ValueType.NULL) {
+                throw new IllegalArgumentException("id is required for response");
+            }
             return new JsonRpcResponse(toId(idValue), obj.getJsonObject("result"));
         }
         if (hasError) {
+            if (idValue == null || idValue.getValueType() == JsonValue.ValueType.NULL) {
+                throw new IllegalArgumentException("id is required for error");
+            }
             var errObj = obj.getJsonObject("error");
             var detail = new JsonRpcError.ErrorDetail(
                     errObj.getInt("code"),
@@ -86,7 +91,7 @@ public final class JsonRpcCodec {
 
     private static RequestId toId(JsonValue value) {
         if (value == null || value.getValueType() == JsonValue.ValueType.NULL) {
-            return RequestId.NullId.INSTANCE;
+            throw new IllegalArgumentException("id is required");
         }
         return switch (value.getValueType()) {
             case NUMBER -> new RequestId.NumericId(((JsonNumber) value).longValue());

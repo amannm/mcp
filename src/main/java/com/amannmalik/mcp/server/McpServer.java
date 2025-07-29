@@ -69,9 +69,7 @@ public abstract class McpServer implements AutoCloseable {
                 lifecycle.shutdown();
                 break;
             } catch (jakarta.json.stream.JsonParsingException e) {
-                send(new JsonRpcError(RequestId.NullId.INSTANCE,
-                        new JsonRpcError.ErrorDetail(
-                                JsonRpcErrorCode.PARSE_ERROR.code(), e.getMessage(), null)));
+                System.err.println("Parse error: " + e.getMessage());
                 continue;
             }
 
@@ -84,9 +82,7 @@ public abstract class McpServer implements AutoCloseable {
                     }
                 }
             } catch (IllegalArgumentException e) {
-                send(new JsonRpcError(RequestId.NullId.INSTANCE,
-                        new JsonRpcError.ErrorDetail(
-                                JsonRpcErrorCode.INVALID_REQUEST.code(), e.getMessage(), null)));
+                System.err.println("Invalid request: " + e.getMessage());
             } catch (IOException e) {
                 System.err.println("Error processing message: " + e.getMessage());
             } catch (Exception e) {
