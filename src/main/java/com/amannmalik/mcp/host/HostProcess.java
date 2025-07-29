@@ -4,7 +4,7 @@ import com.amannmalik.mcp.client.McpClient;
 import com.amannmalik.mcp.auth.Principal;
 import com.amannmalik.mcp.jsonrpc.JsonRpcMessage;
 import com.amannmalik.mcp.security.ConsentManager;
-import com.amannmalik.mcp.security.ToolAccessPolicy;
+import com.amannmalik.mcp.security.ToolAccessController;
 import jakarta.json.Json;
 import jakarta.json.JsonObject;
 import com.amannmalik.mcp.jsonrpc.*;
@@ -24,11 +24,11 @@ public final class HostProcess implements AutoCloseable {
     private final SecurityPolicy policy;
     private final ConsentManager consents;
     private final Principal principal;
-    private final ToolAccessPolicy toolAccess;
+    private final ToolAccessController toolAccess;
 
     public HostProcess(SecurityPolicy policy,
                        ConsentManager consents,
-                       ToolAccessPolicy toolAccess,
+                       ToolAccessController toolAccess,
                        Principal principal) {
         this.policy = policy;
         this.consents = consents;
@@ -65,6 +65,14 @@ public final class HostProcess implements AutoCloseable {
 
     public void revokeConsent(String scope) {
         consents.revoke(principal.id(), scope);
+    }
+
+    public void allowTool(String tool) {
+        toolAccess.allow(principal.id(), tool);
+    }
+
+    public void revokeTool(String tool) {
+        toolAccess.revoke(principal.id(), tool);
     }
 
     public Set<String> clientIds() {
