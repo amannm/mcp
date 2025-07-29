@@ -9,8 +9,8 @@ import jakarta.json.JsonObject;
 import java.util.EnumSet;
 
 /** Minimal server supporting ping and basic list operations. */
-public final class BasicServer extends McpServer {
-    public BasicServer(Transport transport) {
+public final class DefaultMcpServer extends McpServer {
+    public DefaultMcpServer(Transport transport) {
         super(EnumSet.of(ServerCapability.RESOURCES, ServerCapability.TOOLS, ServerCapability.PROMPTS), transport);
         registerRequestHandler("resources/list", this::listResources);
         registerRequestHandler("tools/list", this::listTools);

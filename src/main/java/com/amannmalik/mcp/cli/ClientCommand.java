@@ -1,6 +1,6 @@
 package com.amannmalik.mcp.cli;
 
-import com.amannmalik.mcp.client.SimpleMcpClient;
+import com.amannmalik.mcp.client.DefaultMcpClient;
 import com.amannmalik.mcp.jsonrpc.JsonRpcMessage;
 import com.amannmalik.mcp.jsonrpc.JsonRpcResponse;
 import com.amannmalik.mcp.lifecycle.ClientCapability;
@@ -49,7 +49,7 @@ public final class ClientCommand implements Callable<Integer> {
 
         StdioTransport transport = new StdioTransport(new ProcessBuilder(cfg.command().split(" ")),
                 verbose ? System.err::println : s -> {});
-        SimpleMcpClient client = new SimpleMcpClient(
+        DefaultMcpClient client = new DefaultMcpClient(
                 new ClientInfo("cli", "CLI", "0"),
                 EnumSet.noneOf(ClientCapability.class),
                 transport);

@@ -1,6 +1,6 @@
 package com.amannmalik.mcp;
 
-import com.amannmalik.mcp.client.SimpleMcpClient;
+import com.amannmalik.mcp.client.DefaultMcpClient;
 import com.amannmalik.mcp.jsonrpc.JsonRpcMessage;
 import com.amannmalik.mcp.jsonrpc.JsonRpcResponse;
 import com.amannmalik.mcp.lifecycle.ClientCapability;
@@ -86,7 +86,7 @@ class McpProtocolIntegrationTest {
                     serverProcess.getOutputStream()
             );
 
-            SimpleMcpClient client = new SimpleMcpClient(
+            DefaultMcpClient client = new DefaultMcpClient(
                     new ClientInfo("test-client", "Test Client", "1.0"),
                     EnumSet.allOf(ClientCapability.class),
                     clientTransport
@@ -185,14 +185,14 @@ class McpProtocolIntegrationTest {
         assertInstanceOf(JsonArray.class, result.get(expectedArrayKey), expectedArrayKey + " should be an array");
     }
 
-    private void testResourceFeatures(SimpleMcpClient client) {
+    private void testResourceFeatures(DefaultMcpClient client) {
         JsonRpcMessage templatesResponse = testProtocolOperationWithTimeout(() -> client.request("resources/templates/list", Json.createObjectBuilder().build()), "resources/templates/list", 3000);
         JsonRpcMessage readResponse = testProtocolOperationWithTimeout(() -> client.request("resources/read", Json.createObjectBuilder().add("uri", "test://example").build()), "resources/read", 3000);
         JsonObject result = ((JsonRpcResponse) readResponse).result();
         assertTrue(result.containsKey("contents"), "Resource read should return contents");
     }
 
-    private void testToolFeatures(SimpleMcpClient client) {
+    private void testToolFeatures(DefaultMcpClient client) {
         JsonRpcMessage toolCallResponse = testProtocolOperationWithTimeout(() -> client.request("tools/call",
                 Json.createObjectBuilder()
                         .add("name", "test_tool")
@@ -203,7 +203,7 @@ class McpProtocolIntegrationTest {
         assertTrue(result.containsKey("content"), "Tool call should return content");
     }
 
-    private void testPromptFeatures(SimpleMcpClient client) {
+    private void testPromptFeatures(DefaultMcpClient client) {
         JsonRpcMessage promptGetResponse = testProtocolOperationWithTimeout(() -> client.request("prompts/get",
                 Json.createObjectBuilder()
                         .add("name", "test_prompt")
@@ -213,12 +213,12 @@ class McpProtocolIntegrationTest {
         assertTrue(result.containsKey("messages"), "Prompt get should return messages");
     }
 
-    private void testLoggingFeatures(SimpleMcpClient client) {
+    private void testLoggingFeatures(DefaultMcpClient client) {
         JsonRpcMessage logLevelResponse = testProtocolOperationWithTimeout(() -> client.request("logging/setLevel",
                 Json.createObjectBuilder().add("level", "info").build()), "logging/setLevel", 3000);
     }
 
-    private void testCompletionFeatures(SimpleMcpClient client) {
+    private void testCompletionFeatures(DefaultMcpClient client) {
         JsonRpcMessage completionResponse = testProtocolOperationWithTimeout(() -> client.request("completion/complete",
                 Json.createObjectBuilder()
                         .add("ref", Json.createObjectBuilder()
@@ -235,7 +235,7 @@ class McpProtocolIntegrationTest {
 
     }
 
-    private void testProgressTracking(SimpleMcpClient client) throws IOException {
+    private void testProgressTracking(DefaultMcpClient client) throws IOException {
         JsonObject paramsWithProgress = Json.createObjectBuilder()
                 .add("_meta", Json.createObjectBuilder()
                         .add("progressToken", "test-progress-123")
@@ -246,7 +246,7 @@ class McpProtocolIntegrationTest {
         assertInstanceOf(JsonRpcResponse.class, response);
     }
 
-    private void testCancellation(SimpleMcpClient client) throws IOException, InterruptedException {
+    private void testCancellation(DefaultMcpClient client) throws IOException, InterruptedException {
         client.notify("notifications/cancelled",
                 Json.createObjectBuilder()
                         .add("requestId", "123")

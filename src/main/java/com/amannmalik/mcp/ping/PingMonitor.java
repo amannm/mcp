@@ -1,6 +1,6 @@
 package com.amannmalik.mcp.ping;
 
-import com.amannmalik.mcp.client.SimpleMcpClient;
+import com.amannmalik.mcp.client.DefaultMcpClient;
 import com.amannmalik.mcp.jsonrpc.JsonRpcMessage;
 import com.amannmalik.mcp.jsonrpc.JsonRpcResponse;
 import jakarta.json.Json;
@@ -18,7 +18,7 @@ public final class PingMonitor {
      * @param timeoutMillis maximum time to wait for a response
      * @return {@code true} if a response was received within the timeout
      */
-    public static boolean isAlive(SimpleMcpClient client, long timeoutMillis) {
+    public static boolean isAlive(DefaultMcpClient client, long timeoutMillis) {
         ExecutorService exec = Executors.newSingleThreadExecutor();
         Future<JsonRpcMessage> future = exec.submit(() ->
                 client.request("ping", Json.createObjectBuilder().build())

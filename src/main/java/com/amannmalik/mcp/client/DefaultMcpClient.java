@@ -16,7 +16,7 @@ import java.util.Set;
 import java.util.concurrent.atomic.AtomicLong;
 
 /** Minimal implementation of an MCP client. */
-public final class SimpleMcpClient implements McpClient {
+public final class DefaultMcpClient implements McpClient {
     private final ClientInfo info;
     private final Set<ClientCapability> capabilities;
     private final Transport transport;
@@ -27,7 +27,7 @@ public final class SimpleMcpClient implements McpClient {
     private Set<ServerCapability> serverCapabilities = Set.of();
     private String instructions;
 
-    public SimpleMcpClient(ClientInfo info, Set<ClientCapability> capabilities, Transport transport) {
+    public DefaultMcpClient(ClientInfo info, Set<ClientCapability> capabilities, Transport transport) {
         this.info = info;
         this.capabilities = capabilities.isEmpty() ? Set.of() : EnumSet.copyOf(capabilities);
         this.transport = transport;
