@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.atomic.AtomicLong;
 
 public final class InMemoryResourceProvider implements ResourceProvider {
     private final List<Resource> resources;
@@ -13,6 +14,7 @@ public final class InMemoryResourceProvider implements ResourceProvider {
     private final List<ResourceTemplate> templates;
     private final Map<String, List<ResourceListener>> listeners = new ConcurrentHashMap<>();
     private final List<ResourceListListener> listListeners = new CopyOnWriteArrayList<>();
+    private final AtomicLong version = new AtomicLong();
 
     public InMemoryResourceProvider(List<Resource> resources, Map<String, ResourceBlock> contents, List<ResourceTemplate> templates) {
         this.resources = resources == null ? new CopyOnWriteArrayList<>() : new CopyOnWriteArrayList<>(resources);
@@ -22,7 +24,8 @@ public final class InMemoryResourceProvider implements ResourceProvider {
 
     @Override
     public ResourceList list(String cursor) {
-        Pagination.Page<Resource> page = Pagination.page(resources, cursor, 100);
+        long v = version.get();
+        Pagination.Page<Resource> page = Pagination.page(resources, cursor, 100, v);
         return new ResourceList(page.items(), page.nextCursor());
     }
 
@@ -33,7 +36,8 @@ public final class InMemoryResourceProvider implements ResourceProvider {
 
     @Override
     public ResourceTemplatePage listTemplates(String cursor) {
-        Pagination.Page<ResourceTemplate> page = Pagination.page(templates, cursor, 100);
+        long v = version.get();
+        Pagination.Page<ResourceTemplate> page = Pagination.page(templates, cursor, 100, v);
         return new ResourceTemplatePage(page.items(), page.nextCursor());
     }
 
@@ -60,22 +64,26 @@ public final class InMemoryResourceProvider implements ResourceProvider {
         }
         resources.add(resource);
         if (content != null) contents.put(resource.uri(), content);
+        version.incrementAndGet();
         notifyListListeners();
     }
 
     public void removeResource(String uri) {
         resources.removeIf(r -> r.uri().equals(uri));
         contents.remove(uri);
+        version.incrementAndGet();
         notifyListListeners();
     }
 
     public void addTemplate(ResourceTemplate template) {
         templates.add(template);
+        version.incrementAndGet();
         notifyListListeners();
     }
 
     public void removeTemplate(String name) {
         templates.removeIf(t -> t.name().equals(name));
+        version.incrementAndGet();
         notifyListListeners();
     }
 
