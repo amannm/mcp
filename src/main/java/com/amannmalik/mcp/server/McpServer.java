@@ -170,6 +170,7 @@ public abstract class McpServer implements AutoCloseable {
     private ProgressToken parseProgressToken(JsonObject params) {
         if (params == null || !params.containsKey("_meta")) return null;
         JsonObject meta = params.getJsonObject("_meta");
+        com.amannmalik.mcp.validation.MetaValidator.requireValid(meta);
         if (!meta.containsKey("progressToken")) return null;
         var val = meta.get("progressToken");
         return switch (val.getValueType()) {
