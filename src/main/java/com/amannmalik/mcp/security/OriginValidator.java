@@ -2,7 +2,10 @@ package com.amannmalik.mcp.security;
 
 import java.util.Set;
 
-/** Validates HTTP Origin headers. */
+/**
+ * Validates the HTTP {@code Origin} header according to the allowed origin list.
+ * The header MUST be present and match one of the configured origins.
+ */
 public final class OriginValidator {
     private final Set<String> allowedOrigins;
 
@@ -14,7 +17,9 @@ public final class OriginValidator {
     }
 
     public boolean isValid(String origin) {
-        if (origin == null || origin.isBlank()) return true;
+        if (origin == null || origin.isBlank()) {
+            return false;
+        }
         return allowedOrigins.contains(origin);
     }
 
