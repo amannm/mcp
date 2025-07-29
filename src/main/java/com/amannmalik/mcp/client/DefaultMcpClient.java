@@ -91,13 +91,8 @@ public final class DefaultMcpClient implements McpClient {
     public String context() {
         return instructions == null ? "" : instructions;
     }
-
-    /**
-     * Issues a {@code ping} request.
-     *
-     * @return the ping response
-     * @throws IOException if the ping fails
-     */
+    
+    @Override
     public PingResponse ping() throws IOException {
         if (!connected) throw new IllegalStateException("not connected");
         RequestId reqId = new RequestId.NumericId(id.getAndIncrement());
@@ -133,6 +128,7 @@ public final class DefaultMcpClient implements McpClient {
         throw new IOException("Unexpected message type: " + msg.getClass().getSimpleName());
     }
 
+    @Override
     public JsonRpcMessage request(String method, JsonObject params) throws IOException {
         if (!connected) throw new IllegalStateException("not connected");
         RequestId reqId = new RequestId.NumericId(id.getAndIncrement());
@@ -160,6 +156,7 @@ public final class DefaultMcpClient implements McpClient {
         }
     }
 
+    @Override
     public void notify(String method, JsonObject params) throws IOException {
         if (!connected) throw new IllegalStateException("not connected");
         JsonRpcNotification notification = new JsonRpcNotification(method, params);

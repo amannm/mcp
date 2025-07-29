@@ -8,7 +8,9 @@ import com.amannmalik.mcp.ping.PingRequest;
 import com.amannmalik.mcp.transport.Transport;
 import com.amannmalik.mcp.prompts.*;
 import com.amannmalik.mcp.server.completion.*;
+import com.amannmalik.mcp.server.logging.LoggingCodec;
 import com.amannmalik.mcp.server.logging.LoggingLevel;
+import com.amannmalik.mcp.server.logging.LoggingNotification;
 import com.amannmalik.mcp.server.resources.*;
 import com.amannmalik.mcp.server.tools.*;
 import com.amannmalik.mcp.util.*;
@@ -76,19 +78,19 @@ public final class McpServer implements AutoCloseable {
         registerRequestHandler("completion/complete", this::complete);
     }
 
-    protected final ProtocolLifecycle lifecycle() {
+    private ProtocolLifecycle lifecycle() {
         return lifecycle;
     }
 
-    protected final void registerRequestHandler(String method, RequestHandler handler) {
+    private void registerRequestHandler(String method, RequestHandler handler) {
         requestHandlers.put(method, handler);
     }
 
-    protected final void registerNotificationHandler(String method, NotificationHandler handler) {
+    private void registerNotificationHandler(String method, NotificationHandler handler) {
         notificationHandlers.put(method, handler);
     }
 
-    public final void serve() throws IOException {
+    public void serve() throws IOException {
         while (lifecycle.state() != LifecycleState.SHUTDOWN) {
             JsonObject obj;
             try {
@@ -98,6 +100,7 @@ public final class McpServer implements AutoCloseable {
                 break;
             } catch (jakarta.json.stream.JsonParsingException e) {
                 System.err.println("Parse error: " + e.getMessage());
+                sendLog(LoggingLevel.ERROR, "parser", Json.createValue(e.getMessage()));
                 continue;
             }
 
@@ -111,15 +114,18 @@ public final class McpServer implements AutoCloseable {
                 }
             } catch (IllegalArgumentException e) {
                 System.err.println("Invalid request: " + e.getMessage());
+                sendLog(LoggingLevel.WARNING, "server", Json.createValue(e.getMessage()));
             } catch (IOException e) {
                 System.err.println("Error processing message: " + e.getMessage());
+                sendLog(LoggingLevel.ERROR, "server", Json.createValue(e.getMessage()));
             } catch (Exception e) {
                 System.err.println("Unexpected error processing message: " + e.getMessage());
+                sendLog(LoggingLevel.ERROR, "server", Json.createValue(e.getMessage()));
             }
         }
     }
 
-    protected void onRequest(JsonRpcRequest req) throws IOException {
+    private void onRequest(JsonRpcRequest req) throws IOException {
         var handler = requestHandlers.get(req.method());
         if (handler == null) {
             send(new JsonRpcError(req.id(), new JsonRpcError.ErrorDetail(
@@ -158,7 +164,7 @@ public final class McpServer implements AutoCloseable {
         cleanup(req.id());
     }
 
-    protected void onNotification(JsonRpcNotification note) throws IOException {
+    private void onNotification(JsonRpcNotification note) throws IOException {
         var handler = notificationHandlers.get(note.method());
         if (handler != null) handler.handle(note);
     }
@@ -178,17 +184,17 @@ public final class McpServer implements AutoCloseable {
         return PingCodec.toResponse(req.id());
     }
 
-    protected final void send(JsonRpcMessage msg) throws IOException {
+    private void send(JsonRpcMessage msg) throws IOException {
         transport.send(JsonRpcCodec.toJsonObject(msg));
     }
 
-    protected final void requireClientCapability(ClientCapability cap) {
+    private void requireClientCapability(ClientCapability cap) {
         if (!lifecycle.negotiatedClientCapabilities().contains(cap)) {
             throw new IllegalStateException("Missing client capability: " + cap);
         }
     }
 
-    protected final void requireServerCapability(ServerCapability cap) {
+    private void requireServerCapability(ServerCapability cap) {
         if (!lifecycle.serverCapabilities().contains(cap)) {
             throw new IllegalStateException("Server capability not declared: " + cap);
         }
@@ -223,7 +229,7 @@ public final class McpServer implements AutoCloseable {
         idTracker.release(id);
     }
 
-    protected final void sendProgress(ProgressNotification note) throws IOException {
+    private void sendProgress(ProgressNotification note) throws IOException {
         progressTracker.update(note);
         send(new JsonRpcNotification("notifications/progress", ProgressCodec.toJsonObject(note)));
     }
@@ -373,8 +379,19 @@ public final class McpServer implements AutoCloseable {
             return new JsonRpcError(req.id(), new JsonRpcError.ErrorDetail(
                     JsonRpcErrorCode.INVALID_PARAMS.code(), "Missing params", null));
         }
-        logLevel = LoggingLevel.valueOf(params.getString("level").toUpperCase());
+        logLevel = LoggingCodec.toSetLevelRequest(params).level();
         return new JsonRpcResponse(req.id(), Json.createObjectBuilder().build());
+    }
+
+    private void sendLog(LoggingNotification note) throws IOException {
+        if (note.level().ordinal() < logLevel.ordinal()) return;
+        requireServerCapability(ServerCapability.LOGGING);
+        send(new JsonRpcNotification("notifications/message",
+                LoggingCodec.toJsonObject(note)));
+    }
+
+    private void sendLog(LoggingLevel level, String logger, jakarta.json.JsonValue data) throws IOException {
+        sendLog(new LoggingNotification(level, logger, data));
     }
 
     // ----- Completion -----

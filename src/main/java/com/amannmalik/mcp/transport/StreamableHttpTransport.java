@@ -51,10 +51,6 @@ public final class StreamableHttpTransport implements Transport {
         this(port, new OriginValidator(Set.of("http://localhost", "http://127.0.0.1")));
     }
 
-    public StreamableHttpTransport() throws Exception {
-        this(0);
-    }
-
     public int port() {
         return port;
     }

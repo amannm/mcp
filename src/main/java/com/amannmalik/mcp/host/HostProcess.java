@@ -2,7 +2,12 @@ package com.amannmalik.mcp.host;
 
 import com.amannmalik.mcp.client.McpClient;
 import com.amannmalik.mcp.auth.Principal;
+import com.amannmalik.mcp.jsonrpc.JsonRpcMessage;
 import com.amannmalik.mcp.security.ConsentManager;
+import com.amannmalik.mcp.security.ToolAccessPolicy;
+import jakarta.json.Json;
+import jakarta.json.JsonObject;
+import com.amannmalik.mcp.jsonrpc.*;
 
 import java.io.IOException;
 import java.util.Collections;
@@ -19,10 +24,15 @@ public final class HostProcess implements AutoCloseable {
     private final SecurityPolicy policy;
     private final ConsentManager consents;
     private final Principal principal;
+    private final ToolAccessPolicy toolAccess;
 
-    public HostProcess(SecurityPolicy policy, ConsentManager consents, Principal principal) {
+    public HostProcess(SecurityPolicy policy,
+                       ConsentManager consents,
+                       ToolAccessPolicy toolAccess,
+                       Principal principal) {
         this.policy = policy;
         this.consents = consents;
+        this.toolAccess = toolAccess;
         this.principal = principal;
     }
 
@@ -65,6 +75,46 @@ public final class HostProcess implements AutoCloseable {
         return clients.values().stream()
                 .map(McpClient::context)
                 .collect(Collectors.joining(System.lineSeparator()));
+    }
+  
+    public JsonObject listTools(String clientId, String cursor) throws IOException {
+        McpClient client = clients.get(clientId);
+        if (client == null) throw new IllegalArgumentException("Unknown client: " + clientId);
+        JsonObject params = cursor == null
+                ? Json.createObjectBuilder().build()
+                : Json.createObjectBuilder().add("cursor", cursor).build();
+        JsonRpcMessage resp = client.request("tools/list", params);
+        if (resp instanceof JsonRpcResponse r) return r.result();
+        if (resp instanceof JsonRpcError err) throw new IOException(err.error().message());
+        throw new IOException("Unexpected response");
+    }
+
+    public JsonObject callTool(String clientId, String name, JsonObject args) throws IOException {
+        McpClient client = clients.get(clientId);
+        if (client == null) throw new IllegalArgumentException("Unknown client: " + clientId);
+        toolAccess.requireAllowed(principal, name);
+        JsonObject params = Json.createObjectBuilder()
+                .add("name", name)
+                .add("arguments", args == null ? Json.createObjectBuilder().build() : args)
+                .build();
+        JsonRpcMessage resp = client.request("tools/call", params);
+        if (resp instanceof JsonRpcResponse r) return r.result();
+        if (resp instanceof JsonRpcError err) throw new IOException(err.error().message());
+        throw new IOException("Unexpected response");
+    }
+  
+    public JsonRpcMessage request(String id, String method, JsonObject params) throws IOException {
+        McpClient client = clients.get(id);
+        if (client == null) throw new IllegalArgumentException("Unknown client: " + id);
+        if (!client.connected()) throw new IllegalStateException("Client not connected: " + id);
+        return client.request(method, params);
+    }
+
+    public void notify(String id, String method, JsonObject params) throws IOException {
+        McpClient client = clients.get(id);
+        if (client == null) throw new IllegalArgumentException("Unknown client: " + id);
+        if (!client.connected()) throw new IllegalStateException("Client not connected: " + id);
+        client.notify(method, params);
     }
 
     @Override
