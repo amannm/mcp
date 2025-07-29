@@ -5,6 +5,9 @@ import jakarta.json.JsonArrayBuilder;
 import jakarta.json.JsonObject;
 import jakarta.json.JsonObjectBuilder;
 
+import com.amannmalik.mcp.util.PaginationCodec;
+import com.amannmalik.mcp.util.PaginatedResult;
+
 
 public final class ToolCodec {
     private ToolCodec() {}
@@ -24,7 +27,7 @@ public final class ToolCodec {
         JsonArrayBuilder arr = Json.createArrayBuilder();
         page.tools().forEach(t -> arr.add(toJsonObject(t)));
         JsonObjectBuilder builder = Json.createObjectBuilder().add("tools", arr);
-        if (page.nextCursor() != null) builder.add("nextCursor", page.nextCursor());
+        PaginationCodec.toJsonObject(new PaginatedResult(page.nextCursor())).forEach(builder::add);
         return builder.build();
     }
 
