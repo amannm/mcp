@@ -139,7 +139,7 @@ public final class StreamableHttpTransport implements Transport {
                                     JsonRpcErrorCode.INTERNAL_ERROR.code(),
                                     "Transport closed",
                                     null));
-                    client.send(JsonRpcCodec.toJsonObject(err));
+                    client.send(JsonRpcCodec.toJsonObject(err), nextEventId.getAndIncrement());
                     client.close();
                 } catch (Exception ignore) {
                 }
