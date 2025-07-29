@@ -7,6 +7,8 @@ import jakarta.json.JsonObject;
 
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.function.Function;
 
 
@@ -16,8 +18,8 @@ public final class InMemoryToolProvider implements ToolProvider {
     private final List<ToolListListener> listeners = new java.util.concurrent.CopyOnWriteArrayList<>();
 
     public InMemoryToolProvider(List<Tool> tools, Map<String, Function<JsonObject, ToolResult>> handlers) {
-        this.tools = tools == null ? List.of() : List.copyOf(tools);
-        this.handlers = handlers == null ? Map.of() : Map.copyOf(handlers);
+        this.tools = tools == null ? new CopyOnWriteArrayList<>() : new CopyOnWriteArrayList<>(tools);
+        this.handlers = handlers == null ? new ConcurrentHashMap<>() : new ConcurrentHashMap<>(handlers);
     }
 
     @Override
