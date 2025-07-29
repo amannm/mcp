@@ -97,9 +97,12 @@ public abstract class McpServer implements AutoCloseable {
             progressTracker.register(token);
             progressTokens.put(req.id(), token);
         }
-        cancellationTracker.register(req.id());
+        boolean cancellable = !"initialize".equals(req.method());
+        if (cancellable) {
+            cancellationTracker.register(req.id());
+        }
         JsonRpcMessage resp = handler.handle(req);
-        if (!cancellationTracker.isCancelled(req.id()) && resp != null) {
+        if ((!cancellable || !cancellationTracker.isCancelled(req.id())) && resp != null) {
             send(resp);
         }
         cleanup(req.id());
