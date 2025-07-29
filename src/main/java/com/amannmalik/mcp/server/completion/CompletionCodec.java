@@ -28,9 +28,19 @@ public final class CompletionCodec {
     }
 
     public static CompleteRequest toCompleteRequest(JsonObject obj) {
-        CompleteRequest.Ref ref = toRef(obj.getJsonObject("ref"));
+        if (obj == null) throw new IllegalArgumentException("request required");
+        JsonObject refObj = obj.getJsonObject("ref");
         JsonObject arg = obj.getJsonObject("argument");
-        CompleteRequest.Argument argument = new CompleteRequest.Argument(arg.getString("name"), arg.getString("value"));
+        if (refObj == null || arg == null) {
+            throw new IllegalArgumentException("ref and argument required");
+        }
+        CompleteRequest.Ref ref = toRef(refObj);
+        String name = arg.getString("name", null);
+        String value = arg.getString("value", null);
+        if (name == null || value == null) {
+            throw new IllegalArgumentException("argument name and value required");
+        }
+        CompleteRequest.Argument argument = new CompleteRequest.Argument(name, value);
         CompleteRequest.Context ctx = null;
         if (obj.containsKey("context")) {
             JsonObject argsObj = obj.getJsonObject("context").getJsonObject("arguments");
@@ -81,7 +91,10 @@ public final class CompletionCodec {
     }
 
     static CompleteRequest.Ref toRef(JsonObject obj) {
-        return switch (obj.getString("type")) {
+        if (obj == null) throw new IllegalArgumentException("ref required");
+        String type = obj.getString("type", null);
+        if (type == null) throw new IllegalArgumentException("ref type required");
+        return switch (type) {
             case "ref/prompt" -> new CompleteRequest.Ref.PromptRef(obj.getString("name"));
             case "ref/resource" -> new CompleteRequest.Ref.ResourceRef(obj.getString("uri"));
             default -> throw new IllegalArgumentException("unknown ref type");
