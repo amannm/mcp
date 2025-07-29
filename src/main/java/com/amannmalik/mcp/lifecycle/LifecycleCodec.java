@@ -12,16 +12,12 @@ public final class LifecycleCodec {
     private LifecycleCodec() {}
 
     public static JsonObject toJsonObject(InitializeRequest req) {
-        var client = Json.createObjectBuilder();
-        req.capabilities().client().forEach(c -> client.add(c.name().toLowerCase(), JsonValue.EMPTY_JSON_OBJECT));
-        var server = Json.createObjectBuilder();
-        req.capabilities().server().forEach(c -> server.add(c.name().toLowerCase(), JsonValue.EMPTY_JSON_OBJECT));
+        var caps = Json.createObjectBuilder();
+        req.capabilities().client()
+                .forEach(c -> caps.add(c.name().toLowerCase(), JsonValue.EMPTY_JSON_OBJECT));
         return Json.createObjectBuilder()
                 .add("protocolVersion", req.protocolVersion())
-                .add("capabilities", Json.createObjectBuilder()
-                        .add("client", client)
-                        .add("server", server)
-                        .build())
+                .add("capabilities", caps.build())
                 .add("clientInfo", Json.createObjectBuilder()
                         .add("name", req.clientInfo().name())
                         .add("title", req.clientInfo().title())
@@ -34,17 +30,14 @@ public final class LifecycleCodec {
         String version = obj.getString("protocolVersion");
         JsonObject capsObj = obj.getJsonObject("capabilities");
         Set<ClientCapability> client = EnumSet.noneOf(ClientCapability.class);
-        Set<ServerCapability> server = EnumSet.noneOf(ServerCapability.class);
         if (capsObj != null) {
-            var clientObj = capsObj.getJsonObject("client");
-            if (clientObj != null) {
-                clientObj.forEach((k, v) -> client.add(ClientCapability.valueOf(k.toUpperCase())));
-            }
-            var serverObj = capsObj.getJsonObject("server");
-            if (serverObj != null) {
-                serverObj.forEach((k, v) -> server.add(ServerCapability.valueOf(k.toUpperCase())));
-            }
+            capsObj.forEach((k, v) -> {
+                try {
+                    client.add(ClientCapability.valueOf(k.toUpperCase()));
+                } catch (IllegalArgumentException ignore) {}
+            });
         }
+        Set<ServerCapability> server = EnumSet.noneOf(ServerCapability.class);
         Capabilities caps = new Capabilities(
                 client.isEmpty() ? Set.of() : EnumSet.copyOf(client),
                 server.isEmpty() ? Set.of() : EnumSet.copyOf(server)
@@ -55,16 +48,12 @@ public final class LifecycleCodec {
     }
 
     public static JsonObject toJsonObject(InitializeResponse resp) {
-        var client = Json.createObjectBuilder();
-        resp.capabilities().client().forEach(c -> client.add(c.name().toLowerCase(), JsonValue.EMPTY_JSON_OBJECT));
         var server = Json.createObjectBuilder();
-        resp.capabilities().server().forEach(c -> server.add(c.name().toLowerCase(), JsonValue.EMPTY_JSON_OBJECT));
+        resp.capabilities().server()
+                .forEach(c -> server.add(c.name().toLowerCase(), JsonValue.EMPTY_JSON_OBJECT));
         var builder = Json.createObjectBuilder()
                 .add("protocolVersion", resp.protocolVersion())
-                .add("capabilities", Json.createObjectBuilder()
-                        .add("client", client)
-                        .add("server", server)
-                        .build())
+                .add("capabilities", server.build())
                 .add("serverInfo", Json.createObjectBuilder()
                         .add("name", resp.serverInfo().name())
                         .add("title", resp.serverInfo().title())
@@ -82,10 +71,11 @@ public final class LifecycleCodec {
         Set<ClientCapability> client = EnumSet.noneOf(ClientCapability.class);
         Set<ServerCapability> server = EnumSet.noneOf(ServerCapability.class);
         if (capsObj != null) {
-            var c = capsObj.getJsonObject("client");
-            if (c != null) c.forEach((k, v) -> client.add(ClientCapability.valueOf(k.toUpperCase())));
-            var s = capsObj.getJsonObject("server");
-            if (s != null) s.forEach((k, v) -> server.add(ServerCapability.valueOf(k.toUpperCase())));
+            capsObj.forEach((k, v) -> {
+                try {
+                    server.add(ServerCapability.valueOf(k.toUpperCase()));
+                } catch (IllegalArgumentException ignore) {}
+            });
         }
         Capabilities caps = new Capabilities(
                 client.isEmpty() ? Set.of() : EnumSet.copyOf(client),
