@@ -23,6 +23,7 @@ public final class PromptCodec {
                 .add("name", prompt.name());
         if (prompt.title() != null) builder.add("title", prompt.title());
         if (prompt.description() != null) builder.add("description", prompt.description());
+        if (prompt._meta() != null) builder.add("_meta", prompt._meta());
         if (!prompt.arguments().isEmpty()) {
             JsonArrayBuilder args = Json.createArrayBuilder();
             for (PromptArgument a : prompt.arguments()) {
@@ -30,6 +31,7 @@ public final class PromptCodec {
                 if (a.title() != null) ab.add("title", a.title());
                 if (a.description() != null) ab.add("description", a.description());
                 if (a.required()) ab.add("required", true);
+                if (a._meta() != null) ab.add("_meta", a._meta());
                 args.add(ab.build());
             }
             builder.add("arguments", args.build());
@@ -75,6 +77,7 @@ public final class PromptCodec {
         if (content.annotations() != null) {
             b.add("annotations", ResourcesCodec.toJsonObject(content.annotations()));
         }
+        if (content._meta() != null) b.add("_meta", content._meta());
         switch (content) {
             case PromptContent.Text t -> b.add("text", t.text());
             case PromptContent.Image i -> b.add("data", Base64.getEncoder().encodeToString(i.data()))

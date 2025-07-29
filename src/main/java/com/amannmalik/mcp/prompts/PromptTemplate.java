@@ -24,10 +24,10 @@ public record PromptTemplate(Prompt prompt, List<PromptMessageTemplate> messages
 
     private static PromptContent instantiate(PromptContent tmpl, Map<String, String> args) {
         return switch (tmpl) {
-            case PromptContent.Text t -> new PromptContent.Text(substitute(t.text(), args), t.annotations());
-            case PromptContent.Image i -> new PromptContent.Image(i.data(), i.mimeType(), i.annotations());
-            case PromptContent.Audio a -> new PromptContent.Audio(a.data(), a.mimeType(), a.annotations());
-            case PromptContent.EmbeddedResource r -> new PromptContent.EmbeddedResource(r.resource(), r.annotations());
+            case PromptContent.Text t -> new PromptContent.Text(substitute(t.text(), args), t.annotations(), t._meta());
+            case PromptContent.Image i -> new PromptContent.Image(i.data(), i.mimeType(), i.annotations(), i._meta());
+            case PromptContent.Audio a -> new PromptContent.Audio(a.data(), a.mimeType(), a.annotations(), a._meta());
+            case PromptContent.EmbeddedResource r -> new PromptContent.EmbeddedResource(r.resource(), r.annotations(), r._meta());
             case PromptContent.ResourceLink l -> new PromptContent.ResourceLink(l.resource());
         };
     }
