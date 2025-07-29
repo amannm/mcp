@@ -7,7 +7,7 @@ import java.util.concurrent.Callable;
 import java.nio.file.Path;
 
 @CommandLine.Command(name = "mcp",
-        subcommands = {ServerCommand.class, ClientCommand.class},
+        subcommands = {ServerCommand.class, ClientCommand.class, HostCommand.class},
         mixinStandardHelpOptions = true)
 public final class Main implements Callable<Integer> {
     @CommandLine.Option(names = {"-c", "--config"}, description = "Config file")
@@ -23,6 +23,7 @@ public final class Main implements Callable<Integer> {
             return switch (cfg) {
                 case ServerConfig sc -> new ServerCommand(sc, verbose).call();
                 case ClientConfig cc -> new ClientCommand(cc, verbose).call();
+                case HostConfig hc -> new HostCommand(hc, verbose).call();
             };
         }
         CommandLine.usage(this, System.out);
