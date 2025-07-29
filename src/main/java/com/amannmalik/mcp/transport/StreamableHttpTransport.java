@@ -29,6 +29,7 @@ import java.util.UUID;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -214,7 +215,7 @@ public final class StreamableHttpTransport implements Transport {
 
             try {
                 incoming.put(obj);
-                JsonObject response = q.poll(30, java.util.concurrent.TimeUnit.SECONDS);
+                JsonObject response = q.poll(30, TimeUnit.SECONDS);
                 if (response == null) {
                     resp.sendError(HttpServletResponse.SC_REQUEST_TIMEOUT);
                     return;

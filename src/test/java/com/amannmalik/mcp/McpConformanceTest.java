@@ -1,23 +1,22 @@
 package com.amannmalik.mcp;
 
 import com.amannmalik.mcp.client.McpClient;
+import com.amannmalik.mcp.client.elicitation.BlockingElicitationProvider;
+import com.amannmalik.mcp.client.elicitation.ElicitationAction;
+import com.amannmalik.mcp.client.elicitation.ElicitationResponse;
+import com.amannmalik.mcp.jsonrpc.JsonRpcCodec;
+import com.amannmalik.mcp.jsonrpc.JsonRpcError;
+import com.amannmalik.mcp.jsonrpc.JsonRpcMessage;
+import com.amannmalik.mcp.jsonrpc.JsonRpcRequest;
+import com.amannmalik.mcp.jsonrpc.JsonRpcResponse;
+import com.amannmalik.mcp.jsonrpc.RequestId;
 import com.amannmalik.mcp.lifecycle.ClientCapability;
 import com.amannmalik.mcp.lifecycle.ClientInfo;
 import com.amannmalik.mcp.lifecycle.ServerCapability;
 import com.amannmalik.mcp.transport.StdioTransport;
-import com.amannmalik.mcp.jsonrpc.JsonRpcCodec;
-import com.amannmalik.mcp.jsonrpc.JsonRpcError;
-import com.amannmalik.mcp.jsonrpc.JsonRpcMessage;
-import com.amannmalik.mcp.jsonrpc.JsonRpcResponse;
-import com.amannmalik.mcp.server.logging.LoggingLevel;
 import com.amannmalik.mcp.util.ProgressNotification;
-import com.amannmalik.mcp.client.elicitation.BlockingElicitationProvider;
-import com.amannmalik.mcp.client.elicitation.ElicitationAction;
-import com.amannmalik.mcp.client.elicitation.ElicitationResponse;
 import jakarta.json.Json;
 import jakarta.json.JsonObject;
-import com.amannmalik.mcp.jsonrpc.JsonRpcRequest;
-import com.amannmalik.mcp.jsonrpc.RequestId;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -35,7 +34,6 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
-import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -147,7 +145,7 @@ class McpConformanceTest {
                     .add("_meta", meta)
                     .build();
             JsonRpcMessage m = client.request("resources/list", params);
-            assertTrue(m instanceof JsonRpcResponse, "resources/list should succeed");
+            assertInstanceOf(JsonRpcResponse.class, m, "resources/list should succeed");
             var list = ((JsonRpcResponse) m).result().getJsonArray("resources");
             assertEquals(1, list.size(), "default resources count");
             assertEquals("test://example", list.getJsonObject(0).getString("uri"));
@@ -157,18 +155,18 @@ class McpConformanceTest {
             m = client.request("resources/read", Json.createObjectBuilder()
                     .add("uri", "test://example")
                     .build());
-            assertTrue(m instanceof JsonRpcResponse);
+            assertInstanceOf(JsonRpcResponse.class, m);
             var block = ((JsonRpcResponse) m).result()
                     .getJsonArray("contents").getJsonObject(0);
             assertEquals("hello", block.getString("text"));
 
             m = client.request("resources/templates/list", Json.createObjectBuilder().build());
-            assertTrue(m instanceof JsonRpcResponse);
+            assertInstanceOf(JsonRpcResponse.class, m);
             var templates = ((JsonRpcResponse) m).result().getJsonArray("resourceTemplates");
             assertEquals(1, templates.size());
 
             m = client.request("tools/list", Json.createObjectBuilder().build());
-            assertTrue(m instanceof JsonRpcResponse);
+            assertInstanceOf(JsonRpcResponse.class, m);
             var tools = ((JsonRpcResponse) m).result().getJsonArray("tools");
             assertEquals(1, tools.size());
             assertEquals("test_tool", tools.getJsonObject(0).getString("name"));
@@ -176,13 +174,13 @@ class McpConformanceTest {
             m = client.request("tools/call", Json.createObjectBuilder()
                     .add("name", "test_tool")
                     .build());
-            assertTrue(m instanceof JsonRpcResponse);
+            assertInstanceOf(JsonRpcResponse.class, m);
             var content = ((JsonRpcResponse) m).result()
                     .getJsonArray("content").getJsonObject(0);
             assertEquals("ok", content.getString("text"));
 
             m = client.request("prompts/list", Json.createObjectBuilder().build());
-            assertTrue(m instanceof JsonRpcResponse);
+            assertInstanceOf(JsonRpcResponse.class, m);
             var prompts = ((JsonRpcResponse) m).result().getJsonArray("prompts");
             assertEquals(1, prompts.size());
 
@@ -190,7 +188,7 @@ class McpConformanceTest {
                     .add("name", "test_prompt")
                     .add("arguments", Json.createObjectBuilder().add("test_arg", "v").build())
                     .build());
-            assertTrue(m instanceof JsonRpcResponse);
+            assertInstanceOf(JsonRpcResponse.class, m);
             var messages = ((JsonRpcResponse) m).result().getJsonArray("messages");
             assertEquals("hello", messages.getJsonObject(0).getJsonObject("content").getString("text"));
 
@@ -204,21 +202,21 @@ class McpConformanceTest {
                             .add("value", "")
                             .build())
                     .build());
-            assertTrue(m instanceof JsonRpcResponse);
+            assertInstanceOf(JsonRpcResponse.class, m);
             var values = ((JsonRpcResponse) m).result()
                     .getJsonObject("completion")
                     .getJsonArray("values");
             assertEquals(List.of("test_completion"), values.getValuesAs(jakarta.json.JsonString.class).stream().map(jakarta.json.JsonString::getString).toList());
 
             m = client.request("logging/setLevel", Json.createObjectBuilder().add("level", "debug").build());
-            assertTrue(m instanceof JsonRpcResponse);
+            assertInstanceOf(JsonRpcResponse.class, m);
 
             m = client.request("resources/read", Json.createObjectBuilder().add("uri", "bad://uri").build());
-            assertTrue(m instanceof JsonRpcError);
+            assertInstanceOf(JsonRpcError.class, m);
             assertEquals(-32002, ((JsonRpcError) m).error().code());
 
             m = client.request("tools/call", Json.createObjectBuilder().add("name", "nope").build());
-            assertTrue(m instanceof JsonRpcError);
+            assertInstanceOf(JsonRpcError.class, m);
             assertEquals(-32602, ((JsonRpcError) m).error().code());
 
             CompletableFuture<Void> disconnectTask = CompletableFuture.runAsync(() -> {
@@ -264,7 +262,7 @@ class McpConformanceTest {
                     new RequestId.NumericId(1), "roots/list", null);
             transport.send(JsonRpcCodec.toJsonObject(req));
             JsonRpcMessage msg = JsonRpcCodec.fromJsonObject(transport.receive());
-            assertTrue(msg instanceof JsonRpcError);
+            assertInstanceOf(JsonRpcError.class, msg);
             assertEquals(-32000, ((JsonRpcError) msg).error().code());
         } finally {
             if (serverProcess.isAlive()) {

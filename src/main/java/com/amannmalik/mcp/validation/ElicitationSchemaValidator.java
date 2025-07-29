@@ -7,7 +7,6 @@ import jakarta.json.JsonString;
 import jakarta.json.JsonValue;
 
 import java.util.Set;
-import com.amannmalik.mcp.validation.InputSanitizer;
 
 /**
  * Validates the restricted JSON schema allowed for elicitation requests.

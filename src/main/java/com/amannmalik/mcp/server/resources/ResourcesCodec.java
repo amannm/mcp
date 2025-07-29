@@ -3,8 +3,10 @@ package com.amannmalik.mcp.server.resources;
 import jakarta.json.Json;
 import jakarta.json.JsonObject;
 import jakarta.json.JsonObjectBuilder;
+import jakarta.json.JsonString;
 
 import java.time.Instant;
+import java.time.format.DateTimeParseException;
 import java.util.Base64;
 import java.util.EnumSet;
 import java.util.Set;
@@ -111,7 +113,7 @@ public final class ResourcesCodec {
         Set<Audience> audience = EnumSet.noneOf(Audience.class);
         var audienceArr = obj.getJsonArray("audience");
         if (audienceArr != null) {
-            audienceArr.getValuesAs(jakarta.json.JsonString.class)
+            audienceArr.getValuesAs(JsonString.class)
                     .forEach(js -> audience.add(Audience.valueOf(js.getString().toUpperCase())));
         }
         Double priority = obj.containsKey("priority") ? obj.getJsonNumber("priority").doubleValue() : null;
@@ -119,7 +121,7 @@ public final class ResourcesCodec {
         if (obj.containsKey("lastModified")) {
             try {
                 lastModified = Instant.parse(obj.getString("lastModified"));
-            } catch (java.time.format.DateTimeParseException e) {
+            } catch (DateTimeParseException e) {
                 throw new IllegalArgumentException("Invalid lastModified", e);
             }
         }

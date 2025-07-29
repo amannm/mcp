@@ -11,6 +11,7 @@ import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 public final class ConfigLoader {
     private ConfigLoader() {
@@ -44,7 +45,7 @@ public final class ConfigLoader {
                 var cObj = obj.getJsonObject("clients");
                 if (cObj == null || cObj.isEmpty()) throw new IllegalArgumentException("clients required");
                 yield new HostConfig(cObj.entrySet().stream()
-                        .collect(java.util.stream.Collectors.toMap(Map.Entry::getKey, e -> e.getValue().toString())));
+                        .collect(Collectors.toMap(Map.Entry::getKey, e -> e.getValue().toString())));
             }
             default -> throw new IllegalArgumentException("Invalid mode: " + mode);
         };
@@ -65,7 +66,7 @@ public final class ConfigLoader {
                     throw new IllegalArgumentException("clients required");
                 }
                 yield new HostConfig(cMap.entrySet().stream()
-                        .collect(java.util.stream.Collectors.toMap(e -> e.getKey().toString(), e -> e.getValue().toString())));
+                        .collect(Collectors.toMap(e -> e.getKey().toString(), e -> e.getValue().toString())));
             }
             default -> throw new IllegalArgumentException("Invalid mode: " + mode);
         };

@@ -5,12 +5,14 @@ import jakarta.json.Json;
 import jakarta.json.JsonArrayBuilder;
 import jakarta.json.JsonObject;
 import jakarta.json.JsonObjectBuilder;
+import jakarta.json.JsonString;
 
+import java.time.Instant;
+import java.time.format.DateTimeParseException;
 import java.util.Base64;
+import java.util.EnumSet;
 import java.util.List;
 import java.util.Set;
-import java.util.EnumSet;
-import java.time.Instant;
 
 public final class SamplingCodec {
     private SamplingCodec() {
@@ -58,8 +60,8 @@ public final class SamplingCodec {
         Double temp = obj.containsKey("temperature") ? obj.getJsonNumber("temperature").doubleValue() : null;
         int max = obj.getInt("maxTokens");
         List<String> stops = obj.containsKey("stopSequences")
-                ? obj.getJsonArray("stopSequences").getValuesAs(jakarta.json.JsonString.class)
-                .stream().map(jakarta.json.JsonString::getString).toList()
+                ? obj.getJsonArray("stopSequences").getValuesAs(JsonString.class)
+                .stream().map(JsonString::getString).toList()
                 : List.of();
         JsonObject metadata = obj.getJsonObject("metadata");
         return new CreateMessageRequest(messages, prefs, system, ctx, temp, max, stops, metadata);
@@ -112,7 +114,7 @@ public final class SamplingCodec {
 
     static MessageContent toContent(JsonObject obj) {
         Annotations ann = obj.containsKey("annotations") ? toAnnotations(obj.getJsonObject("annotations")) : null;
-        jakarta.json.JsonObject meta = obj.containsKey("_meta") ? obj.getJsonObject("_meta") : null;
+        JsonObject meta = obj.containsKey("_meta") ? obj.getJsonObject("_meta") : null;
         return switch (obj.getString("type")) {
             case "text" -> new MessageContent.Text(obj.getString("text"), ann, meta);
             case "image" -> new MessageContent.Image(Base64.getDecoder().decode(obj.getString("data")), obj.getString("mimeType"), ann, meta);
@@ -162,14 +164,14 @@ public final class SamplingCodec {
         Set<Role> audience = EnumSet.noneOf(Role.class);
         var arr = obj.getJsonArray("audience");
         if (arr != null) {
-            arr.getValuesAs(jakarta.json.JsonString.class).forEach(js -> audience.add(Role.valueOf(js.getString().toUpperCase())));
+            arr.getValuesAs(JsonString.class).forEach(js -> audience.add(Role.valueOf(js.getString().toUpperCase())));
         }
         Double priority = obj.containsKey("priority") ? obj.getJsonNumber("priority").doubleValue() : null;
         Instant lastModified = null;
         if (obj.containsKey("lastModified")) {
             try {
                 lastModified = Instant.parse(obj.getString("lastModified"));
-            } catch (java.time.format.DateTimeParseException e) {
+            } catch (DateTimeParseException e) {
                 throw new IllegalArgumentException("Invalid lastModified", e);
             }
         }

@@ -51,6 +51,8 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicLong;
 
 public final class McpClient implements AutoCloseable {
@@ -160,7 +162,7 @@ public final class McpClient implements AutoCloseable {
                     }
                     if (System.err != null) System.err.println("Ping failed, connection closed");
                 }
-            }, pingInterval, pingInterval, java.util.concurrent.TimeUnit.MILLISECONDS);
+            }, pingInterval, pingInterval, TimeUnit.MILLISECONDS);
         }
     }
 
@@ -213,11 +215,11 @@ public final class McpClient implements AutoCloseable {
         }
         JsonRpcMessage msg;
         try {
-            msg = future.get(timeoutMillis, java.util.concurrent.TimeUnit.MILLISECONDS);
+            msg = future.get(timeoutMillis, TimeUnit.MILLISECONDS);
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             throw new IOException(e);
-        } catch (java.util.concurrent.TimeoutException e) {
+        } catch (TimeoutException e) {
             try {
                 notify("notifications/cancelled", CancellationCodec.toJsonObject(new CancelledNotification(reqId, "timeout")));
             } catch (IOException ignore) {
@@ -255,11 +257,11 @@ public final class McpClient implements AutoCloseable {
             throw e;
         }
         try {
-            return future.get(timeoutMillis, java.util.concurrent.TimeUnit.MILLISECONDS);
+            return future.get(timeoutMillis, TimeUnit.MILLISECONDS);
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             throw new IOException(e);
-        } catch (java.util.concurrent.TimeoutException e) {
+        } catch (TimeoutException e) {
             try {
                 notify("notifications/cancelled", CancellationCodec.toJsonObject(new CancelledNotification(reqId, "timeout")));
             } catch (IOException ignore) {

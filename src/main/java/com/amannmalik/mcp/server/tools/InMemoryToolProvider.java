@@ -14,7 +14,7 @@ import java.util.function.Function;
 public final class InMemoryToolProvider implements ToolProvider {
     private final List<Tool> tools;
     private final Map<String, Function<JsonObject, ToolResult>> handlers;
-    private final List<ToolListListener> listeners = new java.util.concurrent.CopyOnWriteArrayList<>();
+    private final List<ToolListListener> listeners = new CopyOnWriteArrayList<>();
 
     public InMemoryToolProvider(List<Tool> tools, Map<String, Function<JsonObject, ToolResult>> handlers) {
         this.tools = tools == null ? new CopyOnWriteArrayList<>() : new CopyOnWriteArrayList<>(tools);

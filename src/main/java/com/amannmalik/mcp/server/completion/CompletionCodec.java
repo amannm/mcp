@@ -4,6 +4,8 @@ import jakarta.json.Json;
 import jakarta.json.JsonArrayBuilder;
 import jakarta.json.JsonObject;
 import jakarta.json.JsonObjectBuilder;
+import jakarta.json.JsonString;
+import jakarta.json.JsonValue;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -47,10 +49,10 @@ public final class CompletionCodec {
             Map<String, String> args = new HashMap<>();
             if (argsObj != null) {
                 argsObj.forEach((k, v) -> {
-                    if (v.getValueType() != jakarta.json.JsonValue.ValueType.STRING) {
+                    if (v.getValueType() != JsonValue.ValueType.STRING) {
                         throw new IllegalArgumentException("context arguments must be strings");
                     }
-                    args.put(k, ((jakarta.json.JsonString) v).getString());
+                    args.put(k, ((JsonString) v).getString());
                 });
             }
             ctx = new CompleteRequest.Context(args);
@@ -69,8 +71,8 @@ public final class CompletionCodec {
 
     public static CompleteResult toCompleteResult(JsonObject obj) {
         JsonObject comp = obj.getJsonObject("completion");
-        var values = comp.getJsonArray("values").getValuesAs(jakarta.json.JsonString.class).stream()
-                .map(jakarta.json.JsonString::getString)
+        var values = comp.getJsonArray("values").getValuesAs(JsonString.class).stream()
+                .map(JsonString::getString)
                 .toList();
         Integer total = comp.containsKey("total") ? comp.getInt("total") : null;
         Boolean hasMore = comp.containsKey("hasMore") ? comp.getBoolean("hasMore") : null;

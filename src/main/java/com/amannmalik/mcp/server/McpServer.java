@@ -49,7 +49,6 @@ import com.amannmalik.mcp.security.ResourceAccessController;
 import com.amannmalik.mcp.server.completion.CompleteRequest;
 import com.amannmalik.mcp.server.completion.CompleteResult;
 import com.amannmalik.mcp.server.completion.CompletionCodec;
-import com.amannmalik.mcp.validation.SchemaValidator;
 import com.amannmalik.mcp.server.completion.CompletionProvider;
 import com.amannmalik.mcp.server.completion.InMemoryCompletionProvider;
 import com.amannmalik.mcp.server.logging.LoggingCodec;
@@ -85,19 +84,26 @@ import com.amannmalik.mcp.util.ProgressCodec;
 import com.amannmalik.mcp.util.ProgressNotification;
 import com.amannmalik.mcp.util.ProgressToken;
 import com.amannmalik.mcp.util.ProgressTracker;
+import com.amannmalik.mcp.validation.MetaValidator;
+import com.amannmalik.mcp.validation.SchemaValidator;
+import com.amannmalik.mcp.validation.UriValidator;
 import jakarta.json.Json;
 import jakarta.json.JsonObject;
+import jakarta.json.JsonValue;
+import jakarta.json.stream.JsonParsingException;
 
 import java.io.EOFException;
 import java.io.IOException;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicLong;
 
 public final class McpServer implements AutoCloseable {
@@ -134,7 +140,7 @@ public final class McpServer implements AutoCloseable {
     public McpServer(Transport transport) {
         this(createDefaultResources(), createDefaultTools(), createDefaultPrompts(), createDefaultCompletions(),
                 createDefaultPrivacyBoundary("default"),
-                new Principal("default", java.util.Set.of()),
+                new Principal("default", Set.of()),
                 transport);
     }
 
@@ -145,7 +151,7 @@ public final class McpServer implements AutoCloseable {
               Transport transport) {
         this(resources, tools, prompts, completions,
                 createDefaultPrivacyBoundary("default"),
-                new Principal("default", java.util.Set.of()),
+                new Principal("default", Set.of()),
                 transport);
     }
 
@@ -246,7 +252,7 @@ public final class McpServer implements AutoCloseable {
             } catch (EOFException e) {
                 lifecycle.shutdown();
                 break;
-            } catch (jakarta.json.stream.JsonParsingException e) {
+            } catch (JsonParsingException e) {
                 System.err.println("Parse error: " + e.getMessage());
                 sendLog(LoggingLevel.ERROR, "parser", Json.createValue(e.getMessage()));
                 continue;
@@ -369,13 +375,13 @@ public final class McpServer implements AutoCloseable {
             var caps = json.getJsonObject("capabilities");
             if (caps != null && caps.containsKey("tools")) {
                 var toolsCaps = caps.getJsonObject("tools");
-                toolsCaps = jakarta.json.Json.createObjectBuilder(toolsCaps)
+                toolsCaps = Json.createObjectBuilder(toolsCaps)
                         .add("listChanged", false)
                         .build();
-                caps = jakarta.json.Json.createObjectBuilder(caps)
+                caps = Json.createObjectBuilder(caps)
                         .add("tools", toolsCaps)
                         .build();
-                json = jakarta.json.Json.createObjectBuilder(json)
+                json = Json.createObjectBuilder(json)
                         .add("capabilities", caps)
                         .build();
             }
@@ -411,7 +417,7 @@ public final class McpServer implements AutoCloseable {
     private ProgressToken parseProgressToken(JsonObject params) {
         if (params == null || !params.containsKey("_meta")) return null;
         JsonObject meta = params.getJsonObject("_meta");
-        com.amannmalik.mcp.validation.MetaValidator.requireValid(meta);
+        MetaValidator.requireValid(meta);
         if (!meta.containsKey("progressToken")) return null;
         var val = meta.get("progressToken");
         return switch (val.getValueType()) {
@@ -445,7 +451,7 @@ public final class McpServer implements AutoCloseable {
         }
         try {
             sendLog(LoggingLevel.INFO, "cancellation",
-                    cn.reason() == null ? jakarta.json.JsonValue.NULL : Json.createValue(cn.reason()));
+                    cn.reason() == null ? JsonValue.NULL : Json.createValue(cn.reason()));
         } catch (IOException ignore) {
         }
     }
@@ -498,7 +504,7 @@ public final class McpServer implements AutoCloseable {
         }
         String uri = params.getString("uri");
         try {
-            uri = com.amannmalik.mcp.validation.UriValidator.requireAbsolute(uri);
+            uri = UriValidator.requireAbsolute(uri);
         } catch (IllegalArgumentException e) {
             return new JsonRpcError(req.id(), new JsonRpcError.ErrorDetail(
                     JsonRpcErrorCode.INVALID_PARAMS.code(), e.getMessage(), null));
@@ -546,7 +552,7 @@ public final class McpServer implements AutoCloseable {
         }
         String uri = params.getString("uri");
         try {
-            uri = com.amannmalik.mcp.validation.UriValidator.requireAbsolute(uri);
+            uri = UriValidator.requireAbsolute(uri);
         } catch (IllegalArgumentException e) {
             return new JsonRpcError(req.id(), new JsonRpcError.ErrorDetail(
                     JsonRpcErrorCode.INVALID_PARAMS.code(), e.getMessage(), null));
@@ -594,7 +600,7 @@ public final class McpServer implements AutoCloseable {
         }
         String uri = params.getString("uri");
         try {
-            uri = com.amannmalik.mcp.validation.UriValidator.requireAbsolute(uri);
+            uri = UriValidator.requireAbsolute(uri);
         } catch (IllegalArgumentException e) {
             return new JsonRpcError(req.id(), new JsonRpcError.ErrorDetail(
                     JsonRpcErrorCode.INVALID_PARAMS.code(), e.getMessage(), null));
@@ -636,10 +642,10 @@ public final class McpServer implements AutoCloseable {
                     JsonRpcErrorCode.INVALID_PARAMS.code(), "name required", null));
         }
 
-        jakarta.json.JsonValue argsVal = params.get("arguments");
+        JsonValue argsVal = params.get("arguments");
         JsonObject args = null;
         if (argsVal != null) {
-            if (argsVal.getValueType() != jakarta.json.JsonValue.ValueType.OBJECT) {
+            if (argsVal.getValueType() != JsonValue.ValueType.OBJECT) {
                 return new JsonRpcError(req.id(), new JsonRpcError.ErrorDetail(
                         JsonRpcErrorCode.INVALID_PARAMS.code(), "arguments must be object", null));
             }
@@ -721,7 +727,7 @@ public final class McpServer implements AutoCloseable {
                 LoggingCodec.toJsonObject(note)));
     }
 
-    private void sendLog(LoggingLevel level, String logger, jakarta.json.JsonValue data) throws IOException {
+    private void sendLog(LoggingLevel level, String logger, JsonValue data) throws IOException {
         sendLog(new LoggingNotification(level, logger, data));
     }
 
@@ -771,7 +777,7 @@ public final class McpServer implements AutoCloseable {
             Throwable cause = e.getCause();
             if (cause instanceof IOException io) throw io;
             throw new IOException(cause);
-        } catch (java.util.concurrent.TimeoutException e) {
+        } catch (TimeoutException e) {
             try {
                 send(new JsonRpcNotification(
                         "notifications/cancelled",
