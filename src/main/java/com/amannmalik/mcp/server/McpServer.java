@@ -112,6 +112,7 @@ public final class McpServer implements AutoCloseable {
     private ResourceListSubscription resourceListSubscription;
     private ToolListSubscription toolListSubscription;
     private PromptsSubscription promptsSubscription;
+    private final boolean toolListChangedSupported;
     private final ResourceAccessController resourceAccess;
     private final Principal principal;
     private volatile LoggingLevel logLevel = LoggingLevel.INFO;
@@ -161,6 +162,7 @@ public final class McpServer implements AutoCloseable {
         this.completions = completions;
         this.resourceAccess = resourceAccess;
         this.principal = principal;
+        this.toolListChangedSupported = tools.supportsListChanged();
 
         try {
             resourceListSubscription = resources.subscribeList(() -> {
@@ -172,14 +174,16 @@ public final class McpServer implements AutoCloseable {
         } catch (Exception ignore) {
         }
 
-        try {
-            toolListSubscription = tools.subscribeList(() -> {
-                try {
-                    send(new JsonRpcNotification("notifications/tools/list_changed", null));
-                } catch (IOException ignore) {
-                }
-            });
-        } catch (Exception ignore) {
+        if (toolListChangedSupported) {
+            try {
+                toolListSubscription = tools.subscribeList(() -> {
+                    try {
+                        send(new JsonRpcNotification("notifications/tools/list_changed", null));
+                    } catch (IOException ignore) {
+                    }
+                });
+            } catch (Exception ignore) {
+            }
         }
 
         try {
@@ -345,7 +349,23 @@ public final class McpServer implements AutoCloseable {
     private JsonRpcMessage initialize(JsonRpcRequest req) {
         InitializeRequest init = LifecycleCodec.toInitializeRequest(req.params());
         InitializeResponse resp = lifecycle.initialize(init);
-        return new JsonRpcResponse(req.id(), LifecycleCodec.toJsonObject(resp));
+        var json = LifecycleCodec.toJsonObject(resp);
+        if (!toolListChangedSupported) {
+            var caps = json.getJsonObject("capabilities");
+            if (caps != null && caps.containsKey("tools")) {
+                var toolsCaps = caps.getJsonObject("tools");
+                toolsCaps = jakarta.json.Json.createObjectBuilder(toolsCaps)
+                        .add("listChanged", false)
+                        .build();
+                caps = jakarta.json.Json.createObjectBuilder(caps)
+                        .add("tools", toolsCaps)
+                        .build();
+                json = jakarta.json.Json.createObjectBuilder(json)
+                        .add("capabilities", caps)
+                        .build();
+            }
+        }
+        return new JsonRpcResponse(req.id(), json);
     }
 
     private void initialized(JsonRpcNotification ignored) {
