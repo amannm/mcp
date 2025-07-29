@@ -20,6 +20,7 @@ public class ResourceServer extends McpServer {
     private final ResourceProvider provider;
     private final ResourceAccessController access;
     private final Principal principal;
+    private final java.util.Map<String, ResourceSubscription> subscriptions = new java.util.concurrent.ConcurrentHashMap<>();
 
     public ResourceServer(ResourceProvider provider, Transport transport) {
         this(provider, transport, ResourceAccessController.ALLOW_ALL, DEFAULT_PRINCIPAL);
@@ -34,6 +35,7 @@ public class ResourceServer extends McpServer {
         registerRequestHandler("resources/read", this::readResource);
         registerRequestHandler("resources/templates/list", this::listTemplates);
         registerRequestHandler("resources/subscribe", this::subscribe);
+        registerRequestHandler("resources/unsubscribe", this::unsubscribe);
     }
 
     private JsonRpcMessage listResources(JsonRpcRequest req) {
@@ -119,13 +121,15 @@ public class ResourceServer extends McpServer {
                 return new JsonRpcError(req.id(), new JsonRpcError.ErrorDetail(
                         JsonRpcErrorCode.INVALID_PARAMS.code(), "unknown resource", null));
             }
-            provider.subscribe(uri, update -> {
+            ResourceSubscription sub = provider.subscribe(uri, update -> {
                 try {
                     var b = Json.createObjectBuilder().add("uri", update.uri());
                     if (update.title() != null) b.add("title", update.title());
                     send(new JsonRpcNotification("notifications/resources/updated", b.build()));
                 } catch (IOException ignored) {}
             });
+            ResourceSubscription prev = subscriptions.put(uri, sub);
+            if (prev != null) try { prev.close(); } catch (Exception ignore) {}
             return new JsonRpcResponse(req.id(), Json.createObjectBuilder().build());
         } catch (SecurityException e) {
             return new JsonRpcError(req.id(), new JsonRpcError.ErrorDetail(
@@ -134,6 +138,20 @@ public class ResourceServer extends McpServer {
             return new JsonRpcError(req.id(), new JsonRpcError.ErrorDetail(
                     JsonRpcErrorCode.INTERNAL_ERROR.code(), e.getMessage(), null));
         }
+    }
+
+    private JsonRpcMessage unsubscribe(JsonRpcRequest req) {
+        JsonObject params = req.params();
+        if (params == null || !params.containsKey("uri")) {
+            return new JsonRpcError(req.id(), new JsonRpcError.ErrorDetail(
+                    JsonRpcErrorCode.INVALID_PARAMS.code(), "uri required", null));
+        }
+        String uri = params.getString("uri");
+        ResourceSubscription sub = subscriptions.remove(uri);
+        if (sub != null) {
+            try { sub.close(); } catch (Exception ignore) {}
+        }
+        return new JsonRpcResponse(req.id(), Json.createObjectBuilder().build());
     }
 
     /** Notify clients that the list of resources has changed. */
