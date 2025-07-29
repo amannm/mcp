@@ -116,6 +116,7 @@ public final class McpServer implements AutoCloseable {
     private final Principal principal;
     private volatile LoggingLevel logLevel = LoggingLevel.INFO;
     private static final int RATE_LIMIT_CODE = -32001;
+    private static final int NOT_INITIALIZED_CODE = -32000;
     private final RateLimiter toolLimiter = new RateLimiter(5, 1000);
     private final RateLimiter completionLimiter = new RateLimiter(10, 1000);
     private final RateLimiter logLimiter = new RateLimiter(20, 1000);
@@ -270,6 +271,13 @@ public final class McpServer implements AutoCloseable {
     }
 
     private void onRequest(JsonRpcRequest req) throws IOException {
+        if (lifecycle.state() == LifecycleState.INIT &&
+                !"initialize".equals(req.method()) &&
+                !"ping".equals(req.method())) {
+            send(new JsonRpcError(req.id(), new JsonRpcError.ErrorDetail(
+                    NOT_INITIALIZED_CODE, "Server not initialized", null)));
+            return;
+        }
         var handler = requestHandlers.get(req.method());
         if (handler == null) {
             send(new JsonRpcError(req.id(), new JsonRpcError.ErrorDetail(
@@ -676,13 +684,19 @@ public final class McpServer implements AutoCloseable {
         }
     }
 
+    private static final long DEFAULT_TIMEOUT = 30_000L;
+
     private JsonRpcMessage sendRequest(String method, JsonObject params) throws IOException {
+        return sendRequest(method, params, DEFAULT_TIMEOUT);
+    }
+
+    private JsonRpcMessage sendRequest(String method, JsonObject params, long timeoutMillis) throws IOException {
         RequestId id = new RequestId.NumericId(requestCounter.getAndIncrement());
         CompletableFuture<JsonRpcMessage> future = new CompletableFuture<>();
         pending.put(id, future);
         send(new JsonRpcRequest(id, method, params));
         try {
-            return future.get(30, TimeUnit.SECONDS);
+            return future.get(timeoutMillis, TimeUnit.MILLISECONDS);
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             throw new IOException(e);
@@ -691,7 +705,7 @@ public final class McpServer implements AutoCloseable {
             if (cause instanceof IOException io) throw io;
             throw new IOException(cause);
         } catch (java.util.concurrent.TimeoutException e) {
-            throw new IOException("Request timed out after 30 seconds");
+            throw new IOException("Request timed out after " + timeoutMillis + " ms");
         } finally {
             pending.remove(id);
         }

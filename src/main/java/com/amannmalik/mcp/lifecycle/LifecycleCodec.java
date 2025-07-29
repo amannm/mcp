@@ -31,6 +31,12 @@ public final class LifecycleCodec {
     }
 
     public static InitializeRequest toInitializeRequest(JsonObject obj) {
+        if (!obj.containsKey("protocolVersion")) {
+            throw new IllegalArgumentException("protocolVersion required");
+        }
+        if (!obj.containsKey("protocolVersion")) {
+            throw new IllegalArgumentException("protocolVersion required");
+        }
         String version = obj.getString("protocolVersion");
         JsonObject capsObj = obj.getJsonObject("capabilities");
         Set<ClientCapability> client = EnumSet.noneOf(ClientCapability.class);
@@ -48,6 +54,9 @@ public final class LifecycleCodec {
                 server.isEmpty() ? Set.of() : EnumSet.copyOf(server)
         );
         JsonObject ci = obj.getJsonObject("clientInfo");
+        if (ci == null) {
+            throw new IllegalArgumentException("clientInfo required");
+        }
         ClientInfo info = new ClientInfo(
                 ci.getString("name"),
                 ci.containsKey("title") ? ci.getString("title") : null,
@@ -101,6 +110,9 @@ public final class LifecycleCodec {
                 server.isEmpty() ? Set.of() : EnumSet.copyOf(server)
         );
         JsonObject si = obj.getJsonObject("serverInfo");
+        if (si == null) {
+            throw new IllegalArgumentException("serverInfo required");
+        }
         ServerInfo info = new ServerInfo(
                 si.getString("name"),
                 si.containsKey("title") ? si.getString("title") : null,
