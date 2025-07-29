@@ -51,7 +51,6 @@ class McpProtocolIntegrationTest {
     @Test
     @DisplayName("Complete MCP protocol lifecycle via CLI")
     void testCompleteProtocolLifecycleViaCli() throws Exception {
-        // Start server process via CLI with timeout
         ProcessBuilder serverBuilder = new ProcessBuilder(
                 JAVA_BIN, "-cp", System.getProperty("java.class.path"),
                 "com.amannmalik.mcp.Main", "server", "--stdio", "-v"
@@ -60,11 +59,8 @@ class McpProtocolIntegrationTest {
         Process serverProcess = serverBuilder.start();
         
         try {
-            // Fail fast if server doesn't start within reasonable time
             assertEventually(() -> serverProcess.isAlive(), Duration.ofMillis(500), 
                     "Server should start within 500ms");
-            
-            // Validate server is actually ready for connections
             BufferedReader errorReader = new BufferedReader(new InputStreamReader(serverProcess.getErrorStream()));
             String errorLine = null;
             long startTime = System.currentTimeMillis();
@@ -77,8 +73,6 @@ class McpProtocolIntegrationTest {
                 }
                 Thread.sleep(10);
             }
-            
-            // Create client with strict timeouts
             StdioTransport clientTransport = new StdioTransport(
                     serverProcess.getInputStream(),
                     serverProcess.getOutputStream()
@@ -89,8 +83,6 @@ class McpProtocolIntegrationTest {
                     EnumSet.allOf(ClientCapability.class),
                     clientTransport
             );
-            
-            // Test connection with timeout
             CompletableFuture<Void> connectTask = CompletableFuture.runAsync(() -> {
                 try {
                     client.connect();
@@ -104,29 +96,12 @@ class McpProtocolIntegrationTest {
             } catch (TimeoutException e) {
                 fail("Client connection timed out after 2 seconds");
             }
-            
-            // Allow server time to process initialization sequence and start reader thread
-            // The SimpleMcpClient needs extra time for reader thread to be fully ready
             Thread.sleep(1500);
-            
-            // Verify server process is still alive before testing
             assertTrue(serverProcess.isAlive(), "Server process should be alive before protocol tests");
-            
-            // Test protocol operations with individual timeouts
-            // Increase timeout for ping due to server loop fix and client complexity
-            testProtocolOperationWithTimeout(() -> client.request("ping", Json.createObjectBuilder().build()),
-                    "ping", 10000);
-            
-            testProtocolOperationWithTimeout(() -> client.request("resources/list", Json.createObjectBuilder().build()),
-                    "resources/list", 5000);
-            
-            testProtocolOperationWithTimeout(() -> client.request("tools/list", Json.createObjectBuilder().build()),
-                    "tools/list", 5000);
-            
-            testProtocolOperationWithTimeout(() -> client.request("prompts/list", Json.createObjectBuilder().build()),
-                    "prompts/list", 5000);
-            
-            // Disconnect with timeout
+            testProtocolOperationWithTimeout(() -> client.request("ping", Json.createObjectBuilder().build()), "ping", 10000);
+            testProtocolOperationWithTimeout(() -> client.request("resources/list", Json.createObjectBuilder().build()), "resources/list", 5000);
+            testProtocolOperationWithTimeout(() -> client.request("tools/list", Json.createObjectBuilder().build()), "tools/list", 5000);
+            testProtocolOperationWithTimeout(() -> client.request("prompts/list", Json.createObjectBuilder().build()), "prompts/list", 5000);
             CompletableFuture<Void> disconnectTask = CompletableFuture.runAsync(() -> {
                 try {
                     client.disconnect();
@@ -134,17 +109,14 @@ class McpProtocolIntegrationTest {
                     throw new RuntimeException("Client disconnect failed", e);
                 }
             });
-            
             try {
                 disconnectTask.get(1, TimeUnit.SECONDS);
             } catch (TimeoutException e) {
                 fail("Client disconnect timed out after 1 second");
             }
-            
         } finally {
             if (serverProcess.isAlive()) {
                 serverProcess.destroyForcibly();
-                // Ensure process actually terminates
                 boolean terminated = serverProcess.waitFor(2, TimeUnit.SECONDS);
                 if (!terminated) {
                     fail("Server process failed to terminate within 2 seconds");
@@ -161,11 +133,9 @@ class McpProtocolIntegrationTest {
                 throw new RuntimeException(operationName + " operation failed", e);
             }
         });
-        
         try {
             JsonRpcMessage response = task.get(timeoutMs, TimeUnit.MILLISECONDS);
-            assertInstanceOf(JsonRpcResponse.class, response, 
-                    operationName + " should return JsonRpcResponse");
+            assertInstanceOf(JsonRpcResponse.class, response, operationName + " should return JsonRpcResponse");
         } catch (TimeoutException e) {
             fail(operationName + " operation timed out after " + timeoutMs + "ms");
         } catch (ExecutionException e) {
@@ -180,7 +150,7 @@ class McpProtocolIntegrationTest {
         try (var socket = new java.net.ServerSocket(0)) {
             return socket.getLocalPort();
         } catch (IOException e) {
-            return 8080; // fallback
+            return 8080;
         }
     }
 
