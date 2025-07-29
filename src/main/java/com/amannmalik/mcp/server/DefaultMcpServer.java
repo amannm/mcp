@@ -71,6 +71,9 @@ public final class DefaultMcpServer extends McpServer {
         ResourceList list;
         try {
             list = resources.list(cursor);
+        } catch (IllegalArgumentException e) {
+            return new JsonRpcError(req.id(), new JsonRpcError.ErrorDetail(
+                    JsonRpcErrorCode.INVALID_PARAMS.code(), e.getMessage(), null));
         } catch (IOException e) {
             return new JsonRpcError(req.id(), new JsonRpcError.ErrorDetail(
                     JsonRpcErrorCode.INTERNAL_ERROR.code(), e.getMessage(), null));
@@ -126,7 +129,13 @@ public final class DefaultMcpServer extends McpServer {
 
     private JsonRpcMessage listTools(JsonRpcRequest req) {
         String cursor = req.params() == null ? null : req.params().getString("cursor", null);
-        ToolPage page = tools.list(cursor);
+        ToolPage page;
+        try {
+            page = tools.list(cursor);
+        } catch (IllegalArgumentException e) {
+            return new JsonRpcError(req.id(), new JsonRpcError.ErrorDetail(
+                    JsonRpcErrorCode.INVALID_PARAMS.code(), e.getMessage(), null));
+        }
         JsonObject result = ToolCodec.toJsonObject(page);
         return new JsonRpcResponse(req.id(), result);
     }
@@ -156,7 +165,13 @@ public final class DefaultMcpServer extends McpServer {
 
     private JsonRpcMessage listPrompts(JsonRpcRequest req) {
         String cursor = req.params() == null ? null : req.params().getString("cursor", null);
-        PromptPage page = prompts.list(cursor);
+        PromptPage page;
+        try {
+            page = prompts.list(cursor);
+        } catch (IllegalArgumentException e) {
+            return new JsonRpcError(req.id(), new JsonRpcError.ErrorDetail(
+                    JsonRpcErrorCode.INVALID_PARAMS.code(), e.getMessage(), null));
+        }
         var arr = Json.createArrayBuilder();
         for (Prompt p : page.prompts()) arr.add(PromptCodec.toJsonObject(p));
         JsonObjectBuilder builder = Json.createObjectBuilder().add("prompts", arr.build());

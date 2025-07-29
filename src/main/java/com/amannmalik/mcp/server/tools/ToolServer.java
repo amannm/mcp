@@ -47,7 +47,13 @@ public class ToolServer extends McpServer {
 
     private JsonRpcMessage listTools(JsonRpcRequest req) {
         String cursor = req.params() == null ? null : req.params().getString("cursor", null);
-        ToolPage page = provider.list(cursor);
+        ToolPage page;
+        try {
+            page = provider.list(cursor);
+        } catch (IllegalArgumentException e) {
+            return new JsonRpcError(req.id(), new JsonRpcError.ErrorDetail(
+                    JsonRpcErrorCode.INVALID_PARAMS.code(), e.getMessage(), null));
+        }
         JsonObject result = ToolCodec.toJsonObject(page);
         return new JsonRpcResponse(req.id(), result);
     }
