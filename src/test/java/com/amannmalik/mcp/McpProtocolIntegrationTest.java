@@ -5,17 +5,13 @@ import com.amannmalik.mcp.jsonrpc.JsonRpcMessage;
 import com.amannmalik.mcp.jsonrpc.JsonRpcResponse;
 import com.amannmalik.mcp.lifecycle.ClientCapability;
 import com.amannmalik.mcp.lifecycle.ClientInfo;
-import com.amannmalik.mcp.server.SimpleServer;
 import com.amannmalik.mcp.transport.StdioTransport;
-import com.amannmalik.mcp.transport.StreamableHttpTransport;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.io.TempDir;
 
 import jakarta.json.Json;
-import jakarta.json.JsonObject;
-import jakarta.json.JsonReader;
+
 import java.io.*;
-import java.net.Socket;
 import java.nio.file.Path;
 import java.time.Duration;
 import java.util.EnumSet;
@@ -59,7 +55,7 @@ class McpProtocolIntegrationTest {
         Process serverProcess = serverBuilder.start();
         
         try {
-            assertEventually(() -> serverProcess.isAlive(), Duration.ofMillis(500), 
+            assertEventually(() -> serverProcess.isAlive(), Duration.ofMillis(500),
                     "Server should start within 500ms");
             BufferedReader errorReader = new BufferedReader(new InputStreamReader(serverProcess.getErrorStream()));
             String errorLine = null;
