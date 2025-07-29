@@ -9,9 +9,23 @@ public interface ResourceProvider extends AutoCloseable {
 
     ResourceSubscription subscribe(String uri, ResourceListener listener);
 
+    /**
+     * Whether {@link #subscribe(String, ResourceListener)} is supported.
+     */
+    default boolean supportsSubscribe() {
+        return false;
+    }
+
     default ResourceListSubscription subscribeList(ResourceListListener listener) {
         return () -> {
         };
+    }
+
+    /**
+     * Whether {@link #subscribeList(ResourceListListener)} delivers notifications.
+     */
+    default boolean supportsListChanged() {
+        return false;
     }
 
     @Override

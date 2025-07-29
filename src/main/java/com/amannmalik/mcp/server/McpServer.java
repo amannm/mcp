@@ -124,6 +124,8 @@ public final class McpServer implements AutoCloseable {
     private ToolListSubscription toolListSubscription;
     private PromptsSubscription promptsSubscription;
     private final boolean toolListChangedSupported;
+    private final boolean resourceSubscribeSupported;
+    private final boolean resourceListChangedSupported;
     private final List<RootsListener> rootsListeners = new CopyOnWriteArrayList<>();
     private final ResourceAccessController resourceAccess;
     private final Principal principal;
@@ -177,8 +179,10 @@ public final class McpServer implements AutoCloseable {
         this.resourceAccess = resourceAccess;
         this.principal = principal;
         this.toolListChangedSupported = tools.supportsListChanged();
+        this.resourceSubscribeSupported = resources != null && resources.supportsSubscribe();
+        this.resourceListChangedSupported = resources != null && resources.supportsListChanged();
 
-        if (resources != null) {
+        if (resources != null && resourceListChangedSupported) {
             try {
                 resourceListSubscription = resources.subscribeList(() -> {
                     try {
@@ -224,8 +228,10 @@ public final class McpServer implements AutoCloseable {
             registerRequestHandler("resources/list", this::listResources);
             registerRequestHandler("resources/read", this::readResource);
             registerRequestHandler("resources/templates/list", this::listTemplates);
-            registerRequestHandler("resources/subscribe", this::subscribeResource);
-            registerRequestHandler("resources/unsubscribe", this::unsubscribeResource);
+            if (resourceSubscribeSupported) {
+                registerRequestHandler("resources/subscribe", this::subscribeResource);
+                registerRequestHandler("resources/unsubscribe", this::unsubscribeResource);
+            }
         }
 
         if (tools != null) {
@@ -384,16 +390,28 @@ public final class McpServer implements AutoCloseable {
         InitializeRequest init = LifecycleCodec.toInitializeRequest(req.params());
         InitializeResponse resp = lifecycle.initialize(init);
         var json = LifecycleCodec.toJsonObject(resp);
-        if (!toolListChangedSupported) {
+        if (!toolListChangedSupported || !resourceSubscribeSupported || !resourceListChangedSupported) {
             var caps = json.getJsonObject("capabilities");
-            if (caps != null && caps.containsKey("tools")) {
-                var toolsCaps = caps.getJsonObject("tools");
-                toolsCaps = Json.createObjectBuilder(toolsCaps)
-                        .add("listChanged", false)
-                        .build();
-                caps = Json.createObjectBuilder(caps)
-                        .add("tools", toolsCaps)
-                        .build();
+            if (caps != null) {
+                if (!toolListChangedSupported && caps.containsKey("tools")) {
+                    var toolsCaps = caps.getJsonObject("tools");
+                    toolsCaps = Json.createObjectBuilder(toolsCaps)
+                            .add("listChanged", false)
+                            .build();
+                    caps = Json.createObjectBuilder(caps)
+                            .add("tools", toolsCaps)
+                            .build();
+                }
+                if (caps.containsKey("resources")) {
+                    var resCaps = caps.getJsonObject("resources");
+                    var builder = Json.createObjectBuilder(resCaps);
+                    if (!resourceSubscribeSupported) builder.add("subscribe", false);
+                    if (!resourceListChangedSupported) builder.add("listChanged", false);
+                    resCaps = builder.build();
+                    caps = Json.createObjectBuilder(caps)
+                            .add("resources", resCaps)
+                            .build();
+                }
                 json = Json.createObjectBuilder(json)
                         .add("capabilities", caps)
                         .build();
@@ -558,6 +576,10 @@ public final class McpServer implements AutoCloseable {
 
     private JsonRpcMessage subscribeResource(JsonRpcRequest req) {
         requireServerCapability(ServerCapability.RESOURCES);
+        if (!resourceSubscribeSupported) {
+            return new JsonRpcError(req.id(), new JsonRpcError.ErrorDetail(
+                    JsonRpcErrorCode.METHOD_NOT_FOUND.code(), "subscriptions not supported", null));
+        }
         JsonObject params = req.params();
         if (params == null || !params.containsKey("uri")) {
             return new JsonRpcError(req.id(), new JsonRpcError.ErrorDetail(
@@ -606,6 +628,10 @@ public final class McpServer implements AutoCloseable {
 
     private JsonRpcMessage unsubscribeResource(JsonRpcRequest req) {
         requireServerCapability(ServerCapability.RESOURCES);
+        if (!resourceSubscribeSupported) {
+            return new JsonRpcError(req.id(), new JsonRpcError.ErrorDetail(
+                    JsonRpcErrorCode.METHOD_NOT_FOUND.code(), "subscriptions not supported", null));
+        }
         JsonObject params = req.params();
         if (params == null || !params.containsKey("uri")) {
             return new JsonRpcError(req.id(), new JsonRpcError.ErrorDetail(
