@@ -27,6 +27,7 @@ public final class InMemoryPromptProvider implements PromptProvider {
         for (PromptTemplate t : templates.values()) {
             all.add(t.prompt());
         }
+        all.sort(java.util.Comparator.comparing(Prompt::name));
         Pagination.Page<Prompt> page = Pagination.page(all, cursor, 100);
         return new PromptPage(page.items(), page.nextCursor());
     }
