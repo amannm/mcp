@@ -113,6 +113,12 @@ public final class SimpleMcpClient implements McpClient {
         }
     }
 
+    public void notify(String method, JsonObject params) throws IOException {
+        if (!connected) throw new IllegalStateException("not connected");
+        JsonRpcNotification notification = new JsonRpcNotification(method, params);
+        transport.send(JsonRpcCodec.toJsonObject(notification));
+    }
+
     public Set<ServerCapability> serverCapabilities() {
         return serverCapabilities;
     }

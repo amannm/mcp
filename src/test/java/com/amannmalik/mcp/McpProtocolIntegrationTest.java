@@ -6,16 +6,30 @@ import com.amannmalik.mcp.jsonrpc.JsonRpcResponse;
 import com.amannmalik.mcp.lifecycle.ClientCapability;
 import com.amannmalik.mcp.lifecycle.ClientInfo;
 import com.amannmalik.mcp.transport.StdioTransport;
-import org.junit.jupiter.api.*;
+import jakarta.json.Json;
+import jakarta.json.JsonArray;
+import jakarta.json.JsonObject;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.io.TempDir;
 
-import jakarta.json.Json;
-
-import java.io.*;
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStreamReader;
 import java.nio.file.Path;
 import java.time.Duration;
 import java.util.EnumSet;
-import java.util.concurrent.*;
+import java.util.concurrent.Callable;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
+import java.util.function.Supplier;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -27,7 +41,7 @@ class McpProtocolIntegrationTest {
 
     private static final String JAVA_BIN = System.getProperty("java.home") +
             File.separator + "bin" + File.separator + "java";
-    
+
     private ExecutorService executor;
     private int httpPort;
 
@@ -45,18 +59,16 @@ class McpProtocolIntegrationTest {
     }
 
     @Test
-    @DisplayName("Complete MCP protocol lifecycle via CLI")
-    void testCompleteProtocolLifecycleViaCli() throws Exception {
+    void testHappyPath() throws Exception {
         ProcessBuilder serverBuilder = new ProcessBuilder(
                 JAVA_BIN, "-cp", System.getProperty("java.class.path"),
                 "com.amannmalik.mcp.Main", "server", "--stdio", "-v"
         );
-        
+
         Process serverProcess = serverBuilder.start();
-        
+
         try {
-            assertEventually(() -> serverProcess.isAlive(), Duration.ofMillis(500),
-                    "Server should start within 500ms");
+            assertEventually(() -> serverProcess.isAlive(), Duration.ofMillis(500), "Server should start within 500ms");
             BufferedReader errorReader = new BufferedReader(new InputStreamReader(serverProcess.getErrorStream()));
             String errorLine = null;
             long startTime = System.currentTimeMillis();
@@ -73,7 +85,7 @@ class McpProtocolIntegrationTest {
                     serverProcess.getInputStream(),
                     serverProcess.getOutputStream()
             );
-            
+
             SimpleMcpClient client = new SimpleMcpClient(
                     new ClientInfo("test-client", "Test Client", "1.0"),
                     EnumSet.allOf(ClientCapability.class),
@@ -86,7 +98,7 @@ class McpProtocolIntegrationTest {
                     throw new RuntimeException("Client connection failed", e);
                 }
             });
-            
+
             try {
                 connectTask.get(2, TimeUnit.SECONDS);
             } catch (TimeoutException e) {
@@ -94,10 +106,25 @@ class McpProtocolIntegrationTest {
             }
             Thread.sleep(1500);
             assertTrue(serverProcess.isAlive(), "Server process should be alive before protocol tests");
-            testProtocolOperationWithTimeout(() -> client.request("ping", Json.createObjectBuilder().build()), "ping", 10000);
-            testProtocolOperationWithTimeout(() -> client.request("resources/list", Json.createObjectBuilder().build()), "resources/list", 5000);
-            testProtocolOperationWithTimeout(() -> client.request("tools/list", Json.createObjectBuilder().build()), "tools/list", 5000);
-            testProtocolOperationWithTimeout(() -> client.request("prompts/list", Json.createObjectBuilder().build()), "prompts/list", 5000);
+
+            testProtocolOperationExpectingSuccess(() -> client.request("ping", Json.createObjectBuilder().build()), "ping", 10000);
+
+            JsonRpcMessage resourcesResponse = testProtocolOperationExpectingSuccess(() -> client.request("resources/list", Json.createObjectBuilder().build()), "resources/list", 5000);
+            JsonRpcMessage toolsResponse = testProtocolOperationExpectingSuccess(() -> client.request("tools/list", Json.createObjectBuilder().build()), "tools/list", 5000);
+            JsonRpcMessage promptsResponse = testProtocolOperationExpectingSuccess(() -> client.request("prompts/list", Json.createObjectBuilder().build()), "prompts/list", 5000);
+
+            validateListResponse(resourcesResponse, "resources");
+            validateListResponse(toolsResponse, "tools");
+            validateListResponse(promptsResponse, "prompts");
+
+            testResourceFeatures(client);
+            testToolFeatures(client);
+            testPromptFeatures(client);
+            testLoggingFeatures(client);
+            testCompletionFeatures(client);
+            testProgressTracking(client);
+            testCancellation(client);
+
             CompletableFuture<Void> disconnectTask = CompletableFuture.runAsync(() -> {
                 try {
                     client.disconnect();
@@ -120,8 +147,8 @@ class McpProtocolIntegrationTest {
             }
         }
     }
-    
-    private void testProtocolOperationWithTimeout(Callable<JsonRpcMessage> operation, String operationName, long timeoutMs) {
+
+    private JsonRpcMessage testProtocolOperationWithTimeout(Callable<JsonRpcMessage> operation, String operationName, long timeoutMs) {
         CompletableFuture<JsonRpcMessage> task = CompletableFuture.supplyAsync(() -> {
             try {
                 return operation.call();
@@ -131,7 +158,8 @@ class McpProtocolIntegrationTest {
         });
         try {
             JsonRpcMessage response = task.get(timeoutMs, TimeUnit.MILLISECONDS);
-            assertInstanceOf(JsonRpcResponse.class, response, operationName + " should return JsonRpcResponse");
+            assertTrue(response instanceof JsonRpcResponse);
+            return response;
         } catch (TimeoutException e) {
             fail(operationName + " operation timed out after " + timeoutMs + "ms");
         } catch (ExecutionException e) {
@@ -140,6 +168,91 @@ class McpProtocolIntegrationTest {
             Thread.currentThread().interrupt();
             fail(operationName + " operation was interrupted");
         }
+        throw new IllegalStateException();
+    }
+
+    private JsonRpcMessage testProtocolOperationExpectingSuccess(Callable<JsonRpcMessage> operation, String operationName, long timeoutMs) {
+        JsonRpcMessage response = testProtocolOperationWithTimeout(operation, operationName, timeoutMs);
+        assertInstanceOf(JsonRpcResponse.class, response, operationName + " should return JsonRpcResponse");
+        return response;
+    }
+
+    private void validateListResponse(JsonRpcMessage response, String expectedArrayKey) {
+        assertInstanceOf(JsonRpcResponse.class, response);
+        JsonRpcResponse resp = (JsonRpcResponse) response;
+        JsonObject result = resp.result();
+        assertTrue(result.containsKey(expectedArrayKey), "Response should contain " + expectedArrayKey + " array");
+        assertInstanceOf(JsonArray.class, result.get(expectedArrayKey), expectedArrayKey + " should be an array");
+    }
+
+    private void testResourceFeatures(SimpleMcpClient client) {
+        JsonRpcMessage templatesResponse = testProtocolOperationWithTimeout(() -> client.request("resources/templates/list", Json.createObjectBuilder().build()), "resources/templates/list", 3000);
+        JsonRpcMessage readResponse = testProtocolOperationWithTimeout(() -> client.request("resources/read", Json.createObjectBuilder().add("uri", "test://example").build()), "resources/read", 3000);
+        JsonObject result = ((JsonRpcResponse) readResponse).result();
+        assertTrue(result.containsKey("contents"), "Resource read should return contents");
+    }
+
+    private void testToolFeatures(SimpleMcpClient client) {
+        JsonRpcMessage toolCallResponse = testProtocolOperationWithTimeout(() -> client.request("tools/call",
+                Json.createObjectBuilder()
+                        .add("name", "test_tool")
+                        .add("arguments", Json.createObjectBuilder().build())
+                        .build()), "tools/call", 3000);
+
+        JsonObject result = ((JsonRpcResponse) toolCallResponse).result();
+        assertTrue(result.containsKey("content"), "Tool call should return content");
+    }
+
+    private void testPromptFeatures(SimpleMcpClient client) {
+        JsonRpcMessage promptGetResponse = testProtocolOperationWithTimeout(() -> client.request("prompts/get",
+                Json.createObjectBuilder()
+                        .add("name", "test_prompt")
+                        .add("arguments", Json.createObjectBuilder().build())
+                        .build()), "prompts/get", 3000);
+        JsonObject result = ((JsonRpcResponse) promptGetResponse).result();
+        assertTrue(result.containsKey("messages"), "Prompt get should return messages");
+    }
+
+    private void testLoggingFeatures(SimpleMcpClient client) {
+        JsonRpcMessage logLevelResponse = testProtocolOperationWithTimeout(() -> client.request("logging/setLevel",
+                Json.createObjectBuilder().add("level", "info").build()), "logging/setLevel", 3000);
+    }
+
+    private void testCompletionFeatures(SimpleMcpClient client) {
+        JsonRpcMessage completionResponse = testProtocolOperationWithTimeout(() -> client.request("completion/complete",
+                Json.createObjectBuilder()
+                        .add("ref", Json.createObjectBuilder()
+                                .add("type", "ref/prompt")
+                                .add("name", "test_prompt")
+                                .build())
+                        .add("argument", Json.createObjectBuilder()
+                                .add("name", "test_arg")
+                                .add("value", "test")
+                                .build())
+                        .build()), "completion/complete", 3000);
+        JsonObject result = ((JsonRpcResponse) completionResponse).result();
+        assertTrue(result.containsKey("completion"), "Completion should return completion object");
+
+    }
+
+    private void testProgressTracking(SimpleMcpClient client) throws IOException {
+        JsonObject paramsWithProgress = Json.createObjectBuilder()
+                .add("_meta", Json.createObjectBuilder()
+                        .add("progressToken", "test-progress-123")
+                        .build())
+                .build();
+
+        JsonRpcMessage response = client.request("ping", paramsWithProgress);
+        assertInstanceOf(JsonRpcResponse.class, response);
+    }
+
+    private void testCancellation(SimpleMcpClient client) throws IOException, InterruptedException {
+        client.notify("notifications/cancelled",
+                Json.createObjectBuilder()
+                        .add("requestId", "123")
+                        .add("reason", "Test cancellation")
+                        .build());
+        Thread.sleep(100);
     }
 
     private int findAvailablePort() {
@@ -150,10 +263,10 @@ class McpProtocolIntegrationTest {
         }
     }
 
-    private void assertEventually(BooleanSupplier condition, Duration timeout, String message) {
+    private void assertEventually(Supplier<Boolean> condition, Duration timeout, String message) {
         long endTime = System.currentTimeMillis() + timeout.toMillis();
         while (System.currentTimeMillis() < endTime) {
-            if (condition.getAsBoolean()) {
+            if (condition.get()) {
                 return;
             }
             try {
@@ -164,10 +277,5 @@ class McpProtocolIntegrationTest {
             }
         }
         fail(message);
-    }
-
-    @FunctionalInterface
-    interface BooleanSupplier {
-        boolean getAsBoolean();
     }
 }
