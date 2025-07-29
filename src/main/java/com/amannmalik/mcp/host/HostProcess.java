@@ -2,7 +2,9 @@ package com.amannmalik.mcp.host;
 
 import com.amannmalik.mcp.client.McpClient;
 import com.amannmalik.mcp.auth.Principal;
+import com.amannmalik.mcp.jsonrpc.JsonRpcMessage;
 import com.amannmalik.mcp.security.ConsentManager;
+import jakarta.json.JsonObject;
 
 import java.io.IOException;
 import java.util.Collections;
@@ -65,6 +67,20 @@ public final class HostProcess implements AutoCloseable {
         return clients.values().stream()
                 .map(McpClient::context)
                 .collect(Collectors.joining(System.lineSeparator()));
+    }
+
+    public JsonRpcMessage request(String id, String method, JsonObject params) throws IOException {
+        McpClient client = clients.get(id);
+        if (client == null) throw new IllegalArgumentException("Unknown client: " + id);
+        if (!client.connected()) throw new IllegalStateException("Client not connected: " + id);
+        return client.request(method, params);
+    }
+
+    public void notify(String id, String method, JsonObject params) throws IOException {
+        McpClient client = clients.get(id);
+        if (client == null) throw new IllegalArgumentException("Unknown client: " + id);
+        if (!client.connected()) throw new IllegalStateException("Client not connected: " + id);
+        client.notify(method, params);
     }
 
     @Override
