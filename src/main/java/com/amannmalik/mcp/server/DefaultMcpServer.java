@@ -112,17 +112,22 @@ public final class DefaultMcpServer extends McpServer {
     }
 
     private JsonRpcMessage listTemplates(JsonRpcRequest req) {
-        JsonArrayBuilder arr = Json.createArrayBuilder();
+        String cursor = req.params() == null ? null : req.params().getString("cursor", null);
+        ResourceTemplatePage page;
         try {
-            for (ResourceTemplate t : resources.templates()) {
-                arr.add(ResourcesCodec.toJsonObject(t));
-            }
+            page = resources.listTemplates(cursor);
+        } catch (IllegalArgumentException e) {
+            return new JsonRpcError(req.id(), new JsonRpcError.ErrorDetail(
+                    JsonRpcErrorCode.INVALID_PARAMS.code(), e.getMessage(), null));
         } catch (IOException e) {
             return new JsonRpcError(req.id(), new JsonRpcError.ErrorDetail(
                     JsonRpcErrorCode.INTERNAL_ERROR.code(), e.getMessage(), null));
         }
-        JsonObject result = Json.createObjectBuilder().add("resourceTemplates", arr.build()).build();
-        return new JsonRpcResponse(req.id(), result);
+        JsonArrayBuilder arr = Json.createArrayBuilder();
+        page.resourceTemplates().forEach(t -> arr.add(ResourcesCodec.toJsonObject(t)));
+        JsonObjectBuilder b = Json.createObjectBuilder().add("resourceTemplates", arr.build());
+        if (page.nextCursor() != null) b.add("nextCursor", page.nextCursor());
+        return new JsonRpcResponse(req.id(), b.build());
     }
 
     // ----- Tool operations -----
