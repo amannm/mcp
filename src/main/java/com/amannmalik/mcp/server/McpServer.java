@@ -260,7 +260,7 @@ public final class McpServer implements AutoCloseable {
         return new JsonRpcResponse(req.id(), LifecycleCodec.toJsonObject(resp));
     }
 
-    private void initialized(JsonRpcNotification note) {
+    private void initialized(JsonRpcNotification ignored) {
         lifecycle.initialized();
     }
 
@@ -339,7 +339,7 @@ public final class McpServer implements AutoCloseable {
 
 
     private JsonRpcMessage listResources(JsonRpcRequest req) {
-        String cursor = req.params() == null ? null : req.params().getString("cursor", null);
+        String cursor = PaginationCodec.toPaginatedRequest(req.params()).cursor();
         ResourceList list;
         try {
             list = resources.list(cursor);
@@ -352,7 +352,7 @@ public final class McpServer implements AutoCloseable {
             if (allowed(r.annotations())) arr.add(ResourcesCodec.toJsonObject(r));
         }
         var b = Json.createObjectBuilder().add("resources", arr.build());
-        if (list.nextCursor() != null) b.add("nextCursor", list.nextCursor());
+        PaginationCodec.toJsonObject(new PaginatedResult(list.nextCursor())).forEach(b::add);
         return new JsonRpcResponse(req.id(), b.build());
     }
 
@@ -379,7 +379,7 @@ public final class McpServer implements AutoCloseable {
     }
 
     private JsonRpcMessage listTemplates(JsonRpcRequest req) {
-        String cursor = req.params() == null ? null : req.params().getString("cursor", null);
+        String cursor = PaginationCodec.toPaginatedRequest(req.params()).cursor();
         ResourceTemplatePage page;
         try {
             page = resources.listTemplates(cursor);
@@ -392,7 +392,7 @@ public final class McpServer implements AutoCloseable {
             if (allowed(t.annotations())) arr.add(ResourcesCodec.toJsonObject(t));
         });
         var b = Json.createObjectBuilder().add("resourceTemplates", arr.build());
-        if (page.nextCursor() != null) b.add("nextCursor", page.nextCursor());
+        PaginationCodec.toJsonObject(new PaginatedResult(page.nextCursor())).forEach(b::add);
         return new JsonRpcResponse(req.id(), b.build());
     }
 
@@ -406,13 +406,10 @@ public final class McpServer implements AutoCloseable {
         try {
             ResourceSubscription sub = resources.subscribe(uri, update -> {
                 try {
-                    var builder = Json.createObjectBuilder().add("uri", update.uri());
-                    if (update.title() != null) {
-                        builder.add("title", update.title());
-                    }
+                    ResourceUpdatedNotification n = new ResourceUpdatedNotification(update.uri());
                     send(new JsonRpcNotification(
                             "notifications/resources/updated",
-                            builder.build()));
+                            ResourcesCodec.toJsonObject(n)));
                 } catch (IOException ignore) {
                 }
             });
@@ -445,7 +442,7 @@ public final class McpServer implements AutoCloseable {
 
 
     private JsonRpcMessage listTools(JsonRpcRequest req) {
-        String cursor = req.params() == null ? null : req.params().getString("cursor", null);
+        String cursor = PaginationCodec.toPaginatedRequest(req.params()).cursor();
         ToolPage page;
         try {
             page = tools.list(cursor);
@@ -488,7 +485,7 @@ public final class McpServer implements AutoCloseable {
 
 
     private JsonRpcMessage listPrompts(JsonRpcRequest req) {
-        String cursor = req.params() == null ? null : req.params().getString("cursor", null);
+        String cursor = PaginationCodec.toPaginatedRequest(req.params()).cursor();
         PromptPage page;
         try {
             page = prompts.list(cursor);
@@ -499,7 +496,7 @@ public final class McpServer implements AutoCloseable {
         var arr = Json.createArrayBuilder();
         for (Prompt p : page.prompts()) arr.add(PromptCodec.toJsonObject(p));
         var builder = Json.createObjectBuilder().add("prompts", arr.build());
-        if (page.nextCursor() != null) builder.add("nextCursor", page.nextCursor());
+        PaginationCodec.toJsonObject(new PaginatedResult(page.nextCursor())).forEach(builder::add);
         return new JsonRpcResponse(req.id(), builder.build());
     }
 

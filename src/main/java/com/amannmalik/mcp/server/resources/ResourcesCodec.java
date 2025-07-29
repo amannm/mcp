@@ -132,4 +132,14 @@ public final class ResourcesCodec {
     public static ResourceListChangedNotification toResourceListChangedNotification(JsonObject obj) {
         return new ResourceListChangedNotification();
     }
+
+    public static JsonObject toJsonObject(ResourceUpdatedNotification n) {
+        return Json.createObjectBuilder()
+                .add("uri", n.uri())
+                .build();
+    }
+
+    public static ResourceUpdatedNotification toResourceUpdatedNotification(JsonObject obj) {
+        return new ResourceUpdatedNotification(obj.getString("uri"));
+    }
 }

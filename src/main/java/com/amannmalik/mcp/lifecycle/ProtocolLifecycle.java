@@ -17,9 +17,16 @@ public class ProtocolLifecycle {
     public InitializeResponse initialize(InitializeRequest request) {
         ensureState(LifecycleState.INIT);
         Set<ClientCapability> requested = request.capabilities().client();
-        clientCapabilities = requested.isEmpty() ? EnumSet.noneOf(ClientCapability.class) : EnumSet.copyOf(requested);
+        clientCapabilities = requested.isEmpty()
+                ? EnumSet.noneOf(ClientCapability.class)
+                : EnumSet.copyOf(requested);
+
+        String negotiatedVersion = SUPPORTED_VERSION.equals(request.protocolVersion())
+                ? SUPPORTED_VERSION
+                : SUPPORTED_VERSION;
+
         return new InitializeResponse(
-                SUPPORTED_VERSION,
+                negotiatedVersion,
                 new Capabilities(clientCapabilities, serverCapabilities),
                 new ServerInfo("mcp-java", "MCP Java Reference", "0.1.0"),
                 null
