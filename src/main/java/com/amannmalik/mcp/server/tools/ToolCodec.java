@@ -19,6 +19,7 @@ public final class ToolCodec {
         builder.add("inputSchema", tool.inputSchema());
         if (tool.outputSchema() != null) builder.add("outputSchema", tool.outputSchema());
         if (tool.annotations() != null) builder.add("annotations", toJsonObject(tool.annotations()));
+        if (tool._meta() != null) builder.add("_meta", tool._meta());
         return builder.build();
     }
 
