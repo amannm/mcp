@@ -53,8 +53,16 @@ public final class LifecycleCodec {
 
     public static JsonObject toJsonObject(InitializeResponse resp) {
         var server = Json.createObjectBuilder();
-        resp.capabilities().server()
-                .forEach(c -> server.add(c.name().toLowerCase(), JsonValue.EMPTY_JSON_OBJECT));
+        for (var c : resp.capabilities().server()) {
+            var b = Json.createObjectBuilder();
+            switch (c) {
+                case PROMPTS -> b.add("listChanged", true);
+                case RESOURCES -> b.add("subscribe", true).add("listChanged", true);
+                case TOOLS -> b.add("listChanged", true);
+                default -> {}
+            }
+            server.add(c.name().toLowerCase(), b.build());
+        }
         var info = Json.createObjectBuilder()
                 .add("name", resp.serverInfo().name())
                 .add("version", resp.serverInfo().version());
