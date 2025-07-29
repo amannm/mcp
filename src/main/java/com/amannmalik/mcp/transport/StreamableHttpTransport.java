@@ -265,8 +265,7 @@ public final class StreamableHttpTransport implements Transport {
                     try {
                         client.close();
                     } catch (Exception e) {
-                        
-
+                        System.err.println("SSE close failed: " + e.getMessage());
                     }
                 }
 
@@ -276,8 +275,7 @@ public final class StreamableHttpTransport implements Transport {
                     try {
                         client.close();
                     } catch (Exception e) {
-                        
-
+                        System.err.println("SSE close failed: " + e.getMessage());
                     }
                 }
 
@@ -287,8 +285,7 @@ public final class StreamableHttpTransport implements Transport {
                     try {
                         client.close();
                     } catch (Exception e) {
-                        
-
+                        System.err.println("SSE close failed: " + e.getMessage());
                     }
                 }
 
@@ -349,8 +346,7 @@ public final class StreamableHttpTransport implements Transport {
                 out.write("data: " + msg.toString() + "\n\n");
                 out.flush();
             } catch (Exception e) {
-                
-
+                System.err.println("SSE send failed: " + e.getMessage());
                 closed = true;
             }
         }
@@ -363,8 +359,7 @@ public final class StreamableHttpTransport implements Transport {
                     context.complete();
                 }
             } catch (Exception e) {
-                
-
+                System.err.println("SSE close failed: " + e.getMessage());
             }
         }
     }
