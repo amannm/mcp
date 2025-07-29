@@ -16,14 +16,8 @@ public class ProtocolLifecycle {
 
     public InitializeResponse initialize(InitializeRequest request) {
         ensureState(LifecycleState.INIT);
-
-        // Always respond with the server's supported version. If the client
-        // does not support this version, it should disconnect according to
-        // the specification.
-
         Set<ClientCapability> requested = request.capabilities().client();
         clientCapabilities = requested.isEmpty() ? EnumSet.noneOf(ClientCapability.class) : EnumSet.copyOf(requested);
-
         return new InitializeResponse(
                 SUPPORTED_VERSION,
                 new Capabilities(clientCapabilities, serverCapabilities),
