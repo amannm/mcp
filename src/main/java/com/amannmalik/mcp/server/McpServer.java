@@ -193,6 +193,7 @@ public abstract class McpServer implements AutoCloseable {
         ProgressToken token = progressTokens.remove(id);
         if (token != null) progressTracker.release(token);
         cancellationTracker.release(id);
+        idTracker.release(id);
     }
 
     protected final void sendProgress(ProgressNotification note) throws IOException {
