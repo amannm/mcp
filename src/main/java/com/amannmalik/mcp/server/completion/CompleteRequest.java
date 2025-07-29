@@ -1,5 +1,6 @@
 package com.amannmalik.mcp.server.completion;
 
+import com.amannmalik.mcp.validation.InputSanitizer;
 import java.util.Map;
 
 public record CompleteRequest(
@@ -18,12 +19,22 @@ public record CompleteRequest(
             if (name == null || value == null) {
                 throw new IllegalArgumentException("name and value are required");
             }
+            name = InputSanitizer.requireClean(name);
+            value = InputSanitizer.requireClean(value);
         }
     }
 
     public record Context(Map<String, String> arguments) {
         public Context {
-            arguments = arguments == null ? Map.of() : Map.copyOf(arguments);
+            if (arguments == null || arguments.isEmpty()) {
+                arguments = Map.of();
+            } else {
+                Map<String, String> copy = new java.util.HashMap<>();
+                arguments.forEach((k, v) -> {
+                    copy.put(InputSanitizer.requireClean(k), InputSanitizer.requireClean(v));
+                });
+                arguments = Map.copyOf(copy);
+            }
         }
 
         @Override
@@ -38,6 +49,7 @@ public record CompleteRequest(
         record PromptRef(String name) implements Ref {
             public PromptRef {
                 if (name == null) throw new IllegalArgumentException("name required");
+                name = InputSanitizer.requireClean(name);
             }
 
             @Override
@@ -49,6 +61,7 @@ public record CompleteRequest(
         record ResourceRef(String uri) implements Ref {
             public ResourceRef {
                 if (uri == null) throw new IllegalArgumentException("uri required");
+                uri = InputSanitizer.requireClean(uri);
             }
 
             @Override

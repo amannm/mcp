@@ -15,14 +15,28 @@ public final class InMemoryCompletionProvider implements CompletionProvider {
 
     @Override
     public CompleteResult complete(CompleteRequest request) {
-        List<String> matches = new ArrayList<>();
+        List<Entry> candidates = new ArrayList<>();
         for (Entry e : entries) {
             if (refEquals(e.ref, request.ref()) && e.argumentName.equals(request.argument().name())) {
-                if (request.context() == null || request.context().arguments().entrySet().containsAll(e.context.entrySet())) {
-                    matches.addAll(e.values);
-                }
+                candidates.add(e);
             }
         }
+        if (candidates.isEmpty()) {
+            throw new IllegalArgumentException("unknown ref");
+        }
+
+        List<String> matches = new ArrayList<>();
+        boolean contextSatisfied = false;
+        for (Entry e : candidates) {
+            if (request.context() == null || request.context().arguments().entrySet().containsAll(e.context.entrySet())) {
+                contextSatisfied = true;
+                matches.addAll(e.values);
+            }
+        }
+        if (!contextSatisfied) {
+            throw new IllegalArgumentException("missing arguments");
+        }
+
         String prefix = request.argument().value();
         List<String> filtered = matches.stream()
                 .filter(v -> v.startsWith(prefix))
