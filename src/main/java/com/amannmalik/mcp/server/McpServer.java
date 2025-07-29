@@ -13,6 +13,9 @@ import com.amannmalik.mcp.server.logging.LoggingLevel;
 import com.amannmalik.mcp.server.logging.LoggingNotification;
 import com.amannmalik.mcp.server.resources.*;
 import com.amannmalik.mcp.server.tools.*;
+import com.amannmalik.mcp.client.roots.*;
+import com.amannmalik.mcp.client.elicitation.*;
+import com.amannmalik.mcp.client.sampling.*;
 import com.amannmalik.mcp.security.ResourceAccessController;
 import com.amannmalik.mcp.security.PrivacyBoundaryEnforcer;
 import com.amannmalik.mcp.auth.Principal;
@@ -24,7 +27,11 @@ import jakarta.json.Json;
 import java.io.EOFException;
 import java.io.IOException;
 import java.util.*;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicLong;
 
 public final class McpServer implements AutoCloseable {
     private final Transport transport;
@@ -48,6 +55,8 @@ public final class McpServer implements AutoCloseable {
     private final RateLimiter completionLimiter = new RateLimiter(10, 1000);
     private final RateLimiter logLimiter = new RateLimiter(20, 1000);
     private final RateLimiter progressLimiter = new RateLimiter(20, 1000);
+    private final AtomicLong requestCounter = new AtomicLong(1);
+    private final Map<RequestId, CompletableFuture<JsonRpcMessage>> pending = new ConcurrentHashMap<>();
 
     public McpServer(Transport transport) {
         this(createDefaultResources(), createDefaultTools(), createDefaultPrompts(), createDefaultCompletions(),
@@ -141,8 +150,15 @@ public final class McpServer implements AutoCloseable {
                 switch (msg) {
                     case JsonRpcRequest req -> onRequest(req);
                     case JsonRpcNotification note -> onNotification(note);
-                    default -> {
+                    case JsonRpcResponse resp -> {
+                        CompletableFuture<JsonRpcMessage> f = pending.remove(resp.id());
+                        if (f != null) f.complete(resp);
                     }
+                    case JsonRpcError err -> {
+                        CompletableFuture<JsonRpcMessage> f = pending.remove(err.id());
+                        if (f != null) f.complete(err);
+                    }
+                    default -> {}
                 }
             } catch (IllegalArgumentException e) {
                 System.err.println("Invalid request: " + e.getMessage());
@@ -216,7 +232,7 @@ public final class McpServer implements AutoCloseable {
         return PingCodec.toResponse(req.id());
     }
 
-    private void send(JsonRpcMessage msg) throws IOException {
+    private synchronized void send(JsonRpcMessage msg) throws IOException {
         transport.send(JsonRpcCodec.toJsonObject(msg));
     }
 
@@ -522,6 +538,54 @@ public final class McpServer implements AutoCloseable {
             return new JsonRpcError(req.id(), new JsonRpcError.ErrorDetail(
                     JsonRpcErrorCode.INTERNAL_ERROR.code(), e.getMessage(), null));
         }
+    }
+
+    private JsonRpcMessage sendRequest(String method, JsonObject params) throws IOException {
+        RequestId id = new RequestId.NumericId(requestCounter.getAndIncrement());
+        CompletableFuture<JsonRpcMessage> future = new CompletableFuture<>();
+        pending.put(id, future);
+        send(new JsonRpcRequest(id, method, params));
+        try {
+            return future.get(30, TimeUnit.SECONDS);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new IOException(e);
+        } catch (ExecutionException e) {
+            Throwable cause = e.getCause();
+            if (cause instanceof IOException io) throw io;
+            throw new IOException(cause);
+        } catch (java.util.concurrent.TimeoutException e) {
+            throw new IOException("Request timed out after 30 seconds");
+        } finally {
+            pending.remove(id);
+        }
+    }
+
+    public List<Root> listRoots() throws IOException {
+        requireClientCapability(ClientCapability.ROOTS);
+        JsonRpcMessage msg = sendRequest("roots/list", RootsCodec.toJsonObject(new ListRootsRequest()));
+        if (msg instanceof JsonRpcResponse resp) {
+            return RootsCodec.toRoots(resp.result());
+        }
+        throw new IOException(((JsonRpcError) msg).error().message());
+    }
+
+    public ElicitationResponse elicit(ElicitationRequest req) throws IOException {
+        requireClientCapability(ClientCapability.ELICITATION);
+        JsonRpcMessage msg = sendRequest("elicitation/create", ElicitationCodec.toJsonObject(req));
+        if (msg instanceof JsonRpcResponse resp) {
+            return ElicitationCodec.toResponse(resp.result());
+        }
+        throw new IOException(((JsonRpcError) msg).error().message());
+    }
+
+    public CreateMessageResponse createMessage(CreateMessageRequest req) throws IOException {
+        requireClientCapability(ClientCapability.SAMPLING);
+        JsonRpcMessage msg = sendRequest("sampling/createMessage", SamplingCodec.toJsonObject(req));
+        if (msg instanceof JsonRpcResponse resp) {
+            return SamplingCodec.toCreateMessageResponse(resp.result());
+        }
+        throw new IOException(((JsonRpcError) msg).error().message());
     }
 
     
