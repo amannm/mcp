@@ -49,16 +49,6 @@ public final class InMemoryResourceProvider implements ResourceProvider {
         return () -> listListeners.remove(listener);
     }
 
-    @Override
-    public boolean supportsSubscribe() {
-        return true;
-    }
-
-    @Override
-    public boolean supportsListChanged() {
-        return true;
-    }
-
     public void notifyUpdate(String uri, String title) {
         ResourceUpdate update = new ResourceUpdate(uri, title);
         listeners.getOrDefault(uri, List.of()).forEach(l -> l.updated(update));

@@ -11,11 +11,4 @@ public interface PromptProvider {
         return () -> {
         };
     }
-
-    /**
-     * Whether {@link #subscribe(PromptsListener)} delivers list change notifications.
-     */
-    default boolean supportsListChanged() {
-        return false;
-    }
 }

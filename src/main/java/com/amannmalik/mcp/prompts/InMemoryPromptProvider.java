@@ -47,11 +47,6 @@ public final class InMemoryPromptProvider implements PromptProvider {
         return () -> listeners.remove(listener);
     }
 
-    @Override
-    public boolean supportsListChanged() {
-        return true;
-    }
-
     private void notifyListeners() {
         listeners.forEach(PromptsListener::listChanged);
     }
