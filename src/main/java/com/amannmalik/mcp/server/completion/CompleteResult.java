@@ -1,5 +1,6 @@
 package com.amannmalik.mcp.server.completion;
 
+import com.amannmalik.mcp.validation.InputSanitizer;
 import java.util.List;
 
 public record CompleteResult(Completion completion) {
@@ -10,6 +11,9 @@ public record CompleteResult(Completion completion) {
     public record Completion(List<String> values, Integer total, Boolean hasMore) {
         public Completion {
             values = values == null ? List.of() : List.copyOf(values);
+            values = values.stream()
+                    .map(InputSanitizer::requireClean)
+                    .toList();
             if (values.size() > 100) {
                 throw new IllegalArgumentException("values must not exceed 100 items");
             }

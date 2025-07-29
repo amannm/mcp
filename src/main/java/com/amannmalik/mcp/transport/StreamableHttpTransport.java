@@ -179,7 +179,7 @@ public final class StreamableHttpTransport implements Transport {
             } else if (!session.equals(header)) {
                 resp.sendError(HttpServletResponse.SC_NOT_FOUND);
                 return;
-            } else if (version != null && !version.equals(protocolVersion)) {
+            } else if (version == null || !version.equals(protocolVersion)) {
                 resp.sendError(HttpServletResponse.SC_BAD_REQUEST);
                 return;
             }
@@ -266,7 +266,7 @@ public final class StreamableHttpTransport implements Transport {
                 return;
             }
 
-            if (version != null && !version.equals(protocolVersion)) {
+            if (version == null || !version.equals(protocolVersion)) {
                 resp.sendError(HttpServletResponse.SC_BAD_REQUEST);
                 return;
             }
@@ -339,7 +339,7 @@ public final class StreamableHttpTransport implements Transport {
                 resp.sendError(HttpServletResponse.SC_NOT_FOUND);
                 return;
             }
-            if (version != null && !version.equals(protocolVersion)) {
+            if (version == null || !version.equals(protocolVersion)) {
                 resp.sendError(HttpServletResponse.SC_BAD_REQUEST);
                 return;
             }

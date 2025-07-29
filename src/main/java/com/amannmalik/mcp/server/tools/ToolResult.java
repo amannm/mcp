@@ -1,6 +1,8 @@
 package com.amannmalik.mcp.server.tools;
 
+import com.amannmalik.mcp.server.resources.Audience;
 import com.amannmalik.mcp.server.resources.Resource;
+import com.amannmalik.mcp.server.resources.ResourceAnnotations;
 import com.amannmalik.mcp.server.resources.ResourceBlock;
 import com.amannmalik.mcp.server.resources.ResourcesCodec;
 import com.amannmalik.mcp.validation.InputSanitizer;
@@ -10,6 +12,13 @@ import jakarta.json.JsonArrayBuilder;
 import jakarta.json.JsonObject;
 import jakarta.json.JsonObjectBuilder;
 import jakarta.json.JsonValue;
+import jakarta.json.JsonString;
+
+import java.time.Instant;
+import java.time.format.DateTimeParseException;
+import java.util.Base64;
+import java.util.EnumSet;
+import java.util.Set;
 
 public record ToolResult(JsonArray content,
                          JsonObject structuredContent,
@@ -25,9 +34,15 @@ public record ToolResult(JsonArray content,
                 JsonObject o = v.asJsonObject();
                 String type = o.getString("type", null);
                 if ("text".equals(type) && o.containsKey("text")) {
-                    b.add(Json.createObjectBuilder(o)
-                            .add("text", InputSanitizer.requireClean(o.getString("text")))
-                            .build());
+                    b.add(toText(o));
+                    continue;
+                }
+                if ("image".equals(type) && o.containsKey("data") && o.containsKey("mimeType")) {
+                    b.add(toImage(o));
+                    continue;
+                }
+                if ("audio".equals(type) && o.containsKey("data") && o.containsKey("mimeType")) {
+                    b.add(toAudio(o));
                     continue;
                 }
                 if ("resource_link".equals(type)) {
@@ -42,6 +57,43 @@ public record ToolResult(JsonArray content,
             b.add(v);
         }
         return b.build();
+    }
+
+    private static JsonObject toText(JsonObject obj) {
+        JsonObjectBuilder result = Json.createObjectBuilder()
+                .add("type", "text")
+                .add("text", InputSanitizer.requireClean(obj.getString("text")));
+        if (obj.containsKey("annotations")) {
+            result.add("annotations", ResourcesCodec.toJsonObject(toAnnotations(obj.getJsonObject("annotations"))));
+        }
+        if (obj.containsKey("_meta")) result.add("_meta", obj.getJsonObject("_meta"));
+        return result.build();
+    }
+
+    private static JsonObject toImage(JsonObject obj) {
+        byte[] data = decodeBase64(obj.getString("data"));
+        JsonObjectBuilder result = Json.createObjectBuilder()
+                .add("type", "image")
+                .add("data", Base64.getEncoder().encodeToString(data))
+                .add("mimeType", InputSanitizer.requireClean(obj.getString("mimeType")));
+        if (obj.containsKey("annotations")) {
+            result.add("annotations", ResourcesCodec.toJsonObject(toAnnotations(obj.getJsonObject("annotations"))));
+        }
+        if (obj.containsKey("_meta")) result.add("_meta", obj.getJsonObject("_meta"));
+        return result.build();
+    }
+
+    private static JsonObject toAudio(JsonObject obj) {
+        byte[] data = decodeBase64(obj.getString("data"));
+        JsonObjectBuilder result = Json.createObjectBuilder()
+                .add("type", "audio")
+                .add("data", Base64.getEncoder().encodeToString(data))
+                .add("mimeType", InputSanitizer.requireClean(obj.getString("mimeType")));
+        if (obj.containsKey("annotations")) {
+            result.add("annotations", ResourcesCodec.toJsonObject(toAnnotations(obj.getJsonObject("annotations"))));
+        }
+        if (obj.containsKey("_meta")) result.add("_meta", obj.getJsonObject("_meta"));
+        return result.build();
     }
 
     private static JsonObject toResourceLink(JsonObject obj) {
@@ -63,5 +115,33 @@ public record ToolResult(JsonArray content,
         if (obj.containsKey("annotations")) result.add("annotations", obj.getJsonObject("annotations"));
         if (obj.containsKey("_meta")) result.add("_meta", obj.getJsonObject("_meta"));
         return result.build();
+    }
+
+    private static byte[] decodeBase64(String value) {
+        try {
+            return Base64.getDecoder().decode(value);
+        } catch (IllegalArgumentException e) {
+            throw new IllegalArgumentException("Invalid base64 data", e);
+        }
+    }
+
+    private static ResourceAnnotations toAnnotations(JsonObject obj) {
+        if (obj == null) return null;
+        Set<Audience> audience = EnumSet.noneOf(Audience.class);
+        JsonArray arr = obj.getJsonArray("audience");
+        if (arr != null) {
+            arr.getValuesAs(JsonString.class)
+                    .forEach(js -> audience.add(Audience.valueOf(js.getString().toUpperCase())));
+        }
+        Double priority = obj.containsKey("priority") ? obj.getJsonNumber("priority").doubleValue() : null;
+        Instant lastModified = null;
+        if (obj.containsKey("lastModified")) {
+            try {
+                lastModified = Instant.parse(obj.getString("lastModified"));
+            } catch (DateTimeParseException e) {
+                throw new IllegalArgumentException("Invalid lastModified", e);
+            }
+        }
+        return new ResourceAnnotations(audience.isEmpty() ? Set.of() : EnumSet.copyOf(audience), priority, lastModified);
     }
 }

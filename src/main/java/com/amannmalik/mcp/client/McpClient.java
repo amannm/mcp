@@ -62,6 +62,7 @@ public final class McpClient implements AutoCloseable {
     private final SamplingProvider sampling;
     private final RootsProvider roots;
     private RootsSubscription rootsSubscription;
+    private final boolean rootsListChangedSupported;
     private final ElicitationProvider elicitation;
     private final AtomicLong id = new AtomicLong(1);
     private final Map<RequestId, CompletableFuture<JsonRpcMessage>> pending = new ConcurrentHashMap<>();
@@ -91,14 +92,15 @@ public final class McpClient implements AutoCloseable {
     public McpClient(ClientInfo info,
                      Set<ClientCapability> capabilities,
                      Transport transport,
-                     SamplingProvider sampling,
-                     RootsProvider roots,
-                     ElicitationProvider elicitation) {
+                    SamplingProvider sampling,
+                    RootsProvider roots,
+                    ElicitationProvider elicitation) {
         this.info = info;
         this.capabilities = capabilities.isEmpty() ? Set.of() : EnumSet.copyOf(capabilities);
         this.transport = transport;
         this.sampling = sampling;
         this.roots = roots;
+        this.rootsListChangedSupported = roots != null && roots.supportsListChanged();
         this.elicitation = elicitation;
         if (this.capabilities.contains(ClientCapability.ELICITATION) && this.elicitation == null) {
             throw new IllegalArgumentException("elicitation capability requires provider");
@@ -118,10 +120,49 @@ public final class McpClient implements AutoCloseable {
                 new Capabilities(capabilities, Set.of()),
                 info
         );
+        var initJson = LifecycleCodec.toJsonObject(init);
+        if (capabilities.contains(ClientCapability.ROOTS) && !rootsListChangedSupported) {
+            var caps = initJson.getJsonObject("capabilities");
+            if (caps != null && caps.containsKey("roots")) {
+                var rootsCaps = caps.getJsonObject("roots");
+                rootsCaps = jakarta.json.Json.createObjectBuilder(rootsCaps)
+                        .add("listChanged", false)
+                        .build();
+                caps = jakarta.json.Json.createObjectBuilder(caps)
+                        .add("roots", rootsCaps)
+                        .build();
+                initJson = jakarta.json.Json.createObjectBuilder(initJson)
+                        .add("capabilities", caps)
+                        .build();
+            }
+        }
         RequestId reqId = new RequestId.NumericId(id.getAndIncrement());
-        JsonRpcRequest request = new JsonRpcRequest(reqId, "initialize", LifecycleCodec.toJsonObject(init));
+        JsonRpcRequest request = new JsonRpcRequest(reqId, "initialize", initJson);
         transport.send(JsonRpcCodec.toJsonObject(request));
-        JsonRpcMessage msg = JsonRpcCodec.fromJsonObject(transport.receive());
+        CompletableFuture<JsonRpcMessage> future = CompletableFuture.supplyAsync(() -> {
+            try {
+                return JsonRpcCodec.fromJsonObject(transport.receive());
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        });
+        JsonRpcMessage msg;
+        try {
+            msg = future.get(DEFAULT_TIMEOUT, TimeUnit.MILLISECONDS);
+        } catch (TimeoutException e) {
+            try {
+                transport.close();
+            } catch (IOException ignore) {
+            }
+            throw new IOException("Initialization timed out after " + DEFAULT_TIMEOUT + " ms");
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new IOException(e);
+        } catch (ExecutionException e) {
+            Throwable cause = e.getCause();
+            if (cause instanceof IOException io) throw io;
+            throw new IOException(cause);
+        }
         if (msg instanceof JsonRpcResponse resp) {
             InitializeResponse ir = LifecycleCodec.toInitializeResponse(resp.result());
             if (!ProtocolLifecycle.SUPPORTED_VERSION.equals(ir.protocolVersion())) {
@@ -137,7 +178,7 @@ public final class McpClient implements AutoCloseable {
         JsonRpcNotification note = new JsonRpcNotification("notifications/initialized", null);
         transport.send(JsonRpcCodec.toJsonObject(note));
         connected = true;
-        if (roots != null && capabilities.contains(ClientCapability.ROOTS)) {
+        if (roots != null && capabilities.contains(ClientCapability.ROOTS) && rootsListChangedSupported) {
             try {
                 rootsSubscription = roots.subscribe(() -> {
                     try {
@@ -438,7 +479,10 @@ public final class McpClient implements AutoCloseable {
             }
             case "notifications/message" -> {
                 if (note.params() != null) {
-                    loggingListener.onMessage(LoggingCodec.toLoggingNotification(note.params()));
+                    try {
+                        loggingListener.onMessage(LoggingCodec.toLoggingNotification(note.params()));
+                    } catch (IllegalArgumentException ignore) {
+                    }
                 }
             }
             default -> {

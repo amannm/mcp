@@ -34,9 +34,6 @@ public final class LifecycleCodec {
         if (!obj.containsKey("protocolVersion")) {
             throw new IllegalArgumentException("protocolVersion required");
         }
-        if (!obj.containsKey("protocolVersion")) {
-            throw new IllegalArgumentException("protocolVersion required");
-        }
         String version = obj.getString("protocolVersion");
         JsonObject capsObj = obj.getJsonObject("capabilities");
         Set<ClientCapability> client = EnumSet.noneOf(ClientCapability.class);

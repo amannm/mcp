@@ -22,6 +22,11 @@ public final class InMemoryRootsProvider implements RootsProvider {
         return () -> listeners.remove(listener);
     }
 
+    @Override
+    public boolean supportsListChanged() {
+        return true;
+    }
+
     public void add(Root root) {
         roots.add(root);
         notifyListeners();
