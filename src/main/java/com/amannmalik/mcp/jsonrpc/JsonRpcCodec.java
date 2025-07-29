@@ -46,6 +46,7 @@ public final class JsonRpcCodec {
         switch (id) {
             case RequestId.StringId s -> builder.add("id", s.value());
             case RequestId.NumericId n -> builder.add("id", n.value());
+            case RequestId.NullId __ -> builder.addNull("id");
         }
     }
 
@@ -84,6 +85,9 @@ public final class JsonRpcCodec {
     }
 
     private static RequestId toId(JsonValue value) {
+        if (value == null || value.getValueType() == JsonValue.ValueType.NULL) {
+            return RequestId.NullId.INSTANCE;
+        }
         return switch (value.getValueType()) {
             case NUMBER -> new RequestId.NumericId(((JsonNumber) value).longValue());
             case STRING -> new RequestId.StringId(((JsonString) value).getString());
