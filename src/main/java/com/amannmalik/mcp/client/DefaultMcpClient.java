@@ -3,6 +3,8 @@ package com.amannmalik.mcp.client;
 import com.amannmalik.mcp.jsonrpc.*;
 import com.amannmalik.mcp.lifecycle.*;
 import com.amannmalik.mcp.transport.Transport;
+import com.amannmalik.mcp.client.elicitation.*;
+import com.amannmalik.mcp.ping.PingCodec;
 import jakarta.json.JsonObject;
 
 import java.util.Map;
@@ -19,6 +21,7 @@ public final class DefaultMcpClient implements McpClient {
     private final ClientInfo info;
     private final Set<ClientCapability> capabilities;
     private final Transport transport;
+    private final ElicitationProvider elicitation;
     private final AtomicLong id = new AtomicLong(1);
     private final Map<RequestId, CompletableFuture<JsonRpcMessage>> pending = new ConcurrentHashMap<>();
     private Thread reader;
@@ -26,10 +29,22 @@ public final class DefaultMcpClient implements McpClient {
     private Set<ServerCapability> serverCapabilities = Set.of();
     private String instructions;
 
-    public DefaultMcpClient(ClientInfo info, Set<ClientCapability> capabilities, Transport transport) {
+    public DefaultMcpClient(ClientInfo info,
+                            Set<ClientCapability> capabilities,
+                            Transport transport) {
+        this(info, capabilities, transport,
+                (r, t) -> new ElicitationResponse(ElicitationAction.CANCEL, null));
+    }
+
+    public DefaultMcpClient(ClientInfo info,
+                            Set<ClientCapability> capabilities,
+                            Transport transport,
+                            ElicitationProvider elicitationProvider) {
         this.info = info;
         this.capabilities = capabilities.isEmpty() ? Set.of() : EnumSet.copyOf(capabilities);
         this.transport = transport;
+        if (elicitationProvider == null) throw new IllegalArgumentException("elicitationProvider required");
+        this.elicitation = elicitationProvider;
     }
 
     @Override
@@ -147,10 +162,51 @@ public final class DefaultMcpClient implements McpClient {
                     CompletableFuture<JsonRpcMessage> f = pending.remove(err.id());
                     if (f != null) f.complete(err);
                 }
+                case JsonRpcRequest req -> handleServerRequest(req);
                 default -> {
                     // ignore notifications
                 }
             }
+        }
+    }
+
+    private void handleServerRequest(JsonRpcRequest req) {
+        JsonRpcMessage resp;
+        if ("elicitation/create".equals(req.method())) {
+            resp = handleElicitationCreate(req);
+        } else if ("ping".equals(req.method())) {
+            resp = PingCodec.toResponse(req.id());
+        } else {
+            resp = new JsonRpcError(req.id(), new JsonRpcError.ErrorDetail(
+                    JsonRpcErrorCode.METHOD_NOT_FOUND.code(),
+                    "Unknown method: " + req.method(), null));
+        }
+        try {
+            transport.send(JsonRpcCodec.toJsonObject(resp));
+        } catch (IOException ignore) {
+        }
+    }
+
+    private JsonRpcMessage handleElicitationCreate(JsonRpcRequest req) {
+        JsonObject params = req.params();
+        if (params == null) {
+            return new JsonRpcError(req.id(), new JsonRpcError.ErrorDetail(
+                    JsonRpcErrorCode.INVALID_PARAMS.code(), "Missing params", null));
+        }
+        ElicitationRequest er;
+        try {
+            er = ElicitationCodec.toRequest(params);
+        } catch (IllegalArgumentException e) {
+            return new JsonRpcError(req.id(), new JsonRpcError.ErrorDetail(
+                    JsonRpcErrorCode.INVALID_PARAMS.code(), e.getMessage(), null));
+        }
+        try {
+            ElicitationResponse r = elicitation.elicit(er);
+            return new JsonRpcResponse(req.id(), ElicitationCodec.toJsonObject(r));
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            return new JsonRpcError(req.id(), new JsonRpcError.ErrorDetail(
+                    JsonRpcErrorCode.INTERNAL_ERROR.code(), e.getMessage(), null));
         }
     }
 }
