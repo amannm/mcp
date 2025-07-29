@@ -27,6 +27,8 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.net.InetSocketAddress;
 import java.util.Set;
+import java.security.SecureRandom;
+import java.util.Base64;
 import java.util.UUID;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
@@ -47,6 +49,8 @@ public final class StreamableHttpTransport implements Transport {
     private final ConcurrentHashMap<String, SseClient> requestStreams = new ConcurrentHashMap<>();
     private final AtomicReference<String> sessionId = new AtomicReference<>();
     private final AtomicReference<String> lastSessionId = new AtomicReference<>();
+    private final AtomicReference<String> sessionOwner = new AtomicReference<>();
+    private static final SecureRandom RANDOM = new SecureRandom();
     private volatile String protocolVersion;
     private final ConcurrentHashMap<String, BlockingQueue<JsonObject>> responseQueues = new ConcurrentHashMap<>();
     private final AtomicLong nextEventId = new AtomicLong(1);
@@ -169,6 +173,7 @@ public final class StreamableHttpTransport implements Transport {
             server.stop();
             sessionId.set(null);
             lastSessionId.set(null);
+            sessionOwner.set(null);
             protocolVersion = ProtocolLifecycle.SUPPORTED_VERSION;
         } catch (Exception e) {
             throw new IOException(e);
@@ -199,8 +204,11 @@ public final class StreamableHttpTransport implements Transport {
             boolean initializing = "initialize".equals(obj.getString("method", null));
 
             if (session == null && initializing) {
-                session = UUID.randomUUID().toString();
+                byte[] bytes = new byte[32];
+                RANDOM.nextBytes(bytes);
+                session = Base64.getUrlEncoder().withoutPadding().encodeToString(bytes);
                 sessionId.set(session);
+                sessionOwner.set(req.getRemoteAddr());
                 lastSessionId.set(null);
                 resp.setHeader("Mcp-Session-Id", session);
             } else if (session == null) {
@@ -213,7 +221,7 @@ public final class StreamableHttpTransport implements Transport {
             } else if (header == null) {
                 resp.sendError(HttpServletResponse.SC_BAD_REQUEST);
                 return;
-            } else if (!session.equals(header)) {
+            } else if (!session.equals(header) || !req.getRemoteAddr().equals(sessionOwner.get())) {
                 resp.sendError(HttpServletResponse.SC_NOT_FOUND);
                 return;
             } else if (version == null || !version.equals(protocolVersion)) {
@@ -358,7 +366,7 @@ public final class StreamableHttpTransport implements Transport {
                 resp.sendError(HttpServletResponse.SC_BAD_REQUEST);
                 return;
             }
-            if (!session.equals(header)) {
+            if (!session.equals(header) || !req.getRemoteAddr().equals(sessionOwner.get())) {
                 resp.sendError(HttpServletResponse.SC_NOT_FOUND);
                 return;
             }
@@ -432,7 +440,7 @@ public final class StreamableHttpTransport implements Transport {
                 resp.sendError(HttpServletResponse.SC_BAD_REQUEST);
                 return;
             }
-            if (!session.equals(header)) {
+            if (!session.equals(header) || !req.getRemoteAddr().equals(sessionOwner.get())) {
                 resp.sendError(HttpServletResponse.SC_NOT_FOUND);
                 return;
             }
@@ -442,6 +450,7 @@ public final class StreamableHttpTransport implements Transport {
             }
             lastSessionId.set(session);
             sessionId.set(null);
+            sessionOwner.set(null);
             protocolVersion = ProtocolLifecycle.SUPPORTED_VERSION;
             nextEventId.set(1);
             sseClients.forEach(SseClient::close);
@@ -460,6 +469,9 @@ public final class StreamableHttpTransport implements Transport {
         SseClient(AsyncContext context) throws IOException {
             this.context = context;
             this.out = context.getResponse().getWriter();
+            byte[] bytes = new byte[16];
+            RANDOM.nextBytes(bytes);
+            this.streamId = Base64.getUrlEncoder().withoutPadding().encodeToString(bytes);
         }
 
         void send(JsonObject msg, long id) {
