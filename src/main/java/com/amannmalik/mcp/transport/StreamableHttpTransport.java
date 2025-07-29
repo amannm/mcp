@@ -1,5 +1,11 @@
 package com.amannmalik.mcp.transport;
 
+import com.amannmalik.mcp.security.OriginValidator;
+import com.amannmalik.mcp.lifecycle.ProtocolLifecycle;
+import com.amannmalik.mcp.jsonrpc.JsonRpcCodec;
+import com.amannmalik.mcp.jsonrpc.JsonRpcError;
+import com.amannmalik.mcp.jsonrpc.JsonRpcErrorCode;
+import com.amannmalik.mcp.jsonrpc.RequestId;
 import jakarta.json.Json;
 import jakarta.json.JsonObject;
 import jakarta.json.JsonReader;
@@ -10,8 +16,6 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import com.amannmalik.mcp.security.OriginValidator;
-import com.amannmalik.mcp.lifecycle.ProtocolLifecycle;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.ServerConnector;
 import org.eclipse.jetty.ee10.servlet.ServletContextHandler;
@@ -86,31 +90,34 @@ public final class StreamableHttpTransport implements Transport {
     @Override
     public void close() throws IOException {
         try {
-            
-
             sseClients.forEach(client -> {
                 try {
                     client.close();
-                } catch (Exception e) {
-                    
-
+                } catch (Exception ignore) {
                 }
             });
             sseClients.clear();
-            
-            
 
-            responseQueues.values().forEach(queue -> {
-                
-
-                queue.offer(Json.createObjectBuilder()
-                    .add("error", Json.createObjectBuilder()
-                        .add("code", -32603)
-                        .add("message", "Transport closed"))
-                    .build());
+            responseQueues.forEach((id, queue) -> {
+                RequestId reqId;
+                if (id.startsWith("\"") && id.endsWith("\"") && id.length() > 1) {
+                    reqId = new RequestId.StringId(id.substring(1, id.length() - 1));
+                } else {
+                    try {
+                        reqId = new RequestId.NumericId(Long.parseLong(id));
+                    } catch (NumberFormatException e) {
+                        reqId = new RequestId.StringId(id);
+                    }
+                }
+                JsonRpcError err = new JsonRpcError(reqId,
+                        new JsonRpcError.ErrorDetail(
+                                JsonRpcErrorCode.INTERNAL_ERROR.code(),
+                                "Transport closed",
+                                null));
+                queue.offer(JsonRpcCodec.toJsonObject(err));
             });
             responseQueues.clear();
-            
+
             server.stop();
         } catch (Exception e) {
             throw new IOException(e);
