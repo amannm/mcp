@@ -65,7 +65,10 @@ public final class StreamableHttpTransport implements Transport {
                 return;
             }
         }
-        sseClients.forEach(c -> c.send(message));
+        for (SseClient c : sseClients) {
+            c.send(message);
+            break;
+        }
     }
 
     @Override
