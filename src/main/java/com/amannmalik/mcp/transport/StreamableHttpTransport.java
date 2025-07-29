@@ -145,16 +145,35 @@ public final class StreamableHttpTransport implements Transport {
                 return;
             }
 
-            BlockingQueue<JsonObject> q = new LinkedBlockingQueue<>(1);
-            if (obj.containsKey("id")) {
-                responseQueues.put(obj.get("id").toString(), q);
+            boolean hasMethod = obj.containsKey("method");
+            boolean hasId = obj.containsKey("id");
+            boolean isRequest = hasMethod && hasId;
+            boolean isNotification = hasMethod && !hasId;
+            boolean isResponse = !hasMethod && (obj.containsKey("result") || obj.containsKey("error"));
+
+            if (isNotification || isResponse) {
+                try {
+                    incoming.put(obj);
+                    resp.setStatus(HttpServletResponse.SC_ACCEPTED);
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                    resp.sendError(HttpServletResponse.SC_SERVICE_UNAVAILABLE);
+                }
+                return;
             }
+
+            if (!isRequest) {
+                resp.sendError(HttpServletResponse.SC_BAD_REQUEST);
+                return;
+            }
+
+            BlockingQueue<JsonObject> q = new LinkedBlockingQueue<>(1);
+            responseQueues.put(obj.get("id").toString(), q);
 
             try {
                 incoming.put(obj);
                 JsonObject response = q.poll(30, java.util.concurrent.TimeUnit.SECONDS);
                 if (response == null) {
-                    // Timeout waiting for response
                     resp.sendError(HttpServletResponse.SC_REQUEST_TIMEOUT);
                     return;
                 }
@@ -165,9 +184,7 @@ public final class StreamableHttpTransport implements Transport {
                 Thread.currentThread().interrupt();
                 resp.sendError(HttpServletResponse.SC_SERVICE_UNAVAILABLE);
             } finally {
-                if (obj.containsKey("id")) {
-                    responseQueues.remove(obj.get("id").toString());
-                }
+                responseQueues.remove(obj.get("id").toString());
             }
         }
 

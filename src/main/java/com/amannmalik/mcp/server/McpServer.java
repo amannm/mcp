@@ -168,6 +168,9 @@ public abstract class McpServer implements AutoCloseable {
     }
 
     protected final void sendProgress(ProgressNotification note) throws IOException {
+        if (!progressTracker.isActive(note.token())) {
+            throw new IllegalStateException("Unknown progress token: " + note.token());
+        }
         send(new JsonRpcNotification("notifications/progress", ProgressCodec.toJsonObject(note)));
     }
 
