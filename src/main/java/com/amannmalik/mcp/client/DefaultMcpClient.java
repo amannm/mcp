@@ -6,6 +6,7 @@ import com.amannmalik.mcp.ping.PingCodec;
 import com.amannmalik.mcp.ping.PingResponse;
 import com.amannmalik.mcp.transport.Transport;
 import com.amannmalik.mcp.client.sampling.*;
+import com.amannmalik.mcp.client.roots.*;
 import jakarta.json.JsonObject;
 
 import java.util.Map;
@@ -23,6 +24,8 @@ public final class DefaultMcpClient implements McpClient {
     private final Set<ClientCapability> capabilities;
     private final Transport transport;
     private final SamplingProvider sampling;
+    private final RootsProvider roots;
+    private RootsSubscription rootsSubscription;
     private final AtomicLong id = new AtomicLong(1);
     private final Map<RequestId, CompletableFuture<JsonRpcMessage>> pending = new ConcurrentHashMap<>();
     private Thread reader;
@@ -31,14 +34,19 @@ public final class DefaultMcpClient implements McpClient {
     private String instructions;
 
     public DefaultMcpClient(ClientInfo info, Set<ClientCapability> capabilities, Transport transport) {
-        this(info, capabilities, transport, null);
+        this(info, capabilities, transport, null, null);
     }
 
     public DefaultMcpClient(ClientInfo info, Set<ClientCapability> capabilities, Transport transport, SamplingProvider sampling) {
+        this(info, capabilities, transport, sampling, null);
+    }
+
+    public DefaultMcpClient(ClientInfo info, Set<ClientCapability> capabilities, Transport transport, SamplingProvider sampling, RootsProvider roots) {
         this.info = info;
         this.capabilities = capabilities.isEmpty() ? Set.of() : EnumSet.copyOf(capabilities);
         this.transport = transport;
         this.sampling = sampling;
+        this.roots = roots;
     }
 
     @Override
@@ -73,6 +81,17 @@ public final class DefaultMcpClient implements McpClient {
         JsonRpcNotification note = new JsonRpcNotification("notifications/initialized", null);
         transport.send(JsonRpcCodec.toJsonObject(note));
         connected = true;
+        if (roots != null && capabilities.contains(ClientCapability.ROOTS)) {
+            try {
+                rootsSubscription = roots.subscribe(() -> {
+                    try {
+                        notify("notifications/roots/list_changed", null);
+                    } catch (IOException ignore) {}
+                });
+            } catch (Exception e) {
+                throw new IOException(e);
+            }
+        }
         reader = new Thread(this::readLoop);
         reader.setDaemon(true);
         reader.start();
@@ -83,6 +102,10 @@ public final class DefaultMcpClient implements McpClient {
         if (!connected) return;
         connected = false;
         transport.close();
+        if (rootsSubscription != null) {
+            rootsSubscription.close();
+            rootsSubscription = null;
+        }
         if (reader != null) {
             try { reader.join(100); } catch (InterruptedException ignore) { Thread.currentThread().interrupt(); }
             reader = null;
@@ -209,6 +232,7 @@ public final class DefaultMcpClient implements McpClient {
     private JsonRpcMessage handleRequest(JsonRpcRequest req) {
         return switch (req.method()) {
             case "sampling/createMessage" -> handleCreateMessage(req);
+            case "roots/list" -> handleListRoots(req);
             default -> new JsonRpcError(req.id(), new JsonRpcError.ErrorDetail(
                     JsonRpcErrorCode.METHOD_NOT_FOUND.code(),
                     "Unknown method: " + req.method(), null));
@@ -233,6 +257,21 @@ public final class DefaultMcpClient implements McpClient {
         } catch (IllegalArgumentException e) {
             return new JsonRpcError(req.id(), new JsonRpcError.ErrorDetail(
                     JsonRpcErrorCode.INVALID_PARAMS.code(), e.getMessage(), null));
+        } catch (Exception e) {
+            return new JsonRpcError(req.id(), new JsonRpcError.ErrorDetail(
+                    JsonRpcErrorCode.INTERNAL_ERROR.code(), e.getMessage(), null));
+        }
+    }
+
+    private JsonRpcMessage handleListRoots(JsonRpcRequest req) {
+        if (roots == null) {
+            return new JsonRpcError(req.id(), new JsonRpcError.ErrorDetail(
+                    JsonRpcErrorCode.METHOD_NOT_FOUND.code(),
+                    "Roots not supported", null));
+        }
+        try {
+            var list = roots.list();
+            return new JsonRpcResponse(req.id(), RootsCodec.toJsonObject(list));
         } catch (Exception e) {
             return new JsonRpcError(req.id(), new JsonRpcError.ErrorDetail(
                     JsonRpcErrorCode.INTERNAL_ERROR.code(), e.getMessage(), null));

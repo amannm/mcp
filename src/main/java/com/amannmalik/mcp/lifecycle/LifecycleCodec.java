@@ -13,8 +13,13 @@ public final class LifecycleCodec {
 
     public static JsonObject toJsonObject(InitializeRequest req) {
         var caps = Json.createObjectBuilder();
-        req.capabilities().client()
-                .forEach(c -> caps.add(c.name().toLowerCase(), JsonValue.EMPTY_JSON_OBJECT));
+        for (var c : req.capabilities().client()) {
+            var b = Json.createObjectBuilder();
+            if (c == ClientCapability.ROOTS) {
+                b.add("listChanged", true);
+            }
+            caps.add(c.name().toLowerCase(), b.build());
+        }
         var info = Json.createObjectBuilder()
                 .add("name", req.clientInfo().name())
                 .add("version", req.clientInfo().version());
