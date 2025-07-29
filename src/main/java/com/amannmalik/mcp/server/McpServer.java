@@ -405,9 +405,13 @@ public final class McpServer implements AutoCloseable {
         try {
             ResourceSubscription sub = resources.subscribe(uri, update -> {
                 try {
+                    var builder = Json.createObjectBuilder().add("uri", update.uri());
+                    if (update.title() != null) {
+                        builder.add("title", update.title());
+                    }
                     send(new JsonRpcNotification(
                             "notifications/resources/updated",
-                            Json.createObjectBuilder().add("uri", update.uri()).build()));
+                            builder.build()));
                 } catch (IOException ignore) {
                 }
             });
@@ -526,8 +530,13 @@ public final class McpServer implements AutoCloseable {
             return new JsonRpcError(req.id(), new JsonRpcError.ErrorDetail(
                     JsonRpcErrorCode.INVALID_PARAMS.code(), "Missing params", null));
         }
-        logLevel = LoggingCodec.toSetLevelRequest(params).level();
-        return new JsonRpcResponse(req.id(), Json.createObjectBuilder().build());
+        try {
+            logLevel = LoggingCodec.toSetLevelRequest(params).level();
+            return new JsonRpcResponse(req.id(), Json.createObjectBuilder().build());
+        } catch (IllegalArgumentException e) {
+            return new JsonRpcError(req.id(), new JsonRpcError.ErrorDetail(
+                    JsonRpcErrorCode.INVALID_PARAMS.code(), e.getMessage(), null));
+        }
     }
 
     private void sendLog(LoggingNotification note) throws IOException {
