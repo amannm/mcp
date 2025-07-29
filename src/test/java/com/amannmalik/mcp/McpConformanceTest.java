@@ -44,7 +44,7 @@ class McpConformanceTest {
     }
 
     @Test
-    void testHappyPath() throws Exception {
+    void testRealisticUsage() throws Exception {
         ProcessBuilder serverBuilder = new ProcessBuilder(
                 JAVA_BIN, "-cp", System.getProperty("java.class.path"),
                 "com.amannmalik.mcp.Main", "server", "--stdio", "-v"
