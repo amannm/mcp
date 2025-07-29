@@ -106,10 +106,18 @@ public abstract class McpServer implements AutoCloseable {
                     JsonRpcErrorCode.INVALID_REQUEST.code(), e.getMessage(), null)));
             return;
         }
-        ProgressToken token = parseProgressToken(req.params());
-        if (token != null) {
-            progressTracker.register(token);
-            progressTokens.put(req.id(), token);
+        ProgressToken token;
+        try {
+            token = parseProgressToken(req.params());
+            if (token != null) {
+                progressTracker.register(token);
+                progressTokens.put(req.id(), token);
+            }
+        } catch (IllegalArgumentException e) {
+            send(new JsonRpcError(req.id(), new JsonRpcError.ErrorDetail(
+                    JsonRpcErrorCode.INVALID_PARAMS.code(), e.getMessage(), null)));
+            cleanup(req.id());
+            return;
         }
         boolean cancellable = !"initialize".equals(req.method());
         if (cancellable) {
