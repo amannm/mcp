@@ -21,10 +21,6 @@ public class ProtocolLifecycle {
                 ? EnumSet.noneOf(ClientCapability.class)
                 : EnumSet.copyOf(requested);
 
-        if (!SUPPORTED_VERSION.equals(request.protocolVersion())) {
-            throw new UnsupportedProtocolVersionException(
-                    request.protocolVersion(), SUPPORTED_VERSION);
-        }
         String negotiatedVersion = SUPPORTED_VERSION;
 
         return new InitializeResponse(
