@@ -3,6 +3,7 @@ package com.amannmalik.mcp.client;
 import com.amannmalik.mcp.jsonrpc.*;
 import com.amannmalik.mcp.lifecycle.*;
 import com.amannmalik.mcp.transport.Transport;
+import com.amannmalik.mcp.client.sampling.*;
 import jakarta.json.JsonObject;
 
 import java.util.Map;
@@ -19,6 +20,7 @@ public final class DefaultMcpClient implements McpClient {
     private final ClientInfo info;
     private final Set<ClientCapability> capabilities;
     private final Transport transport;
+    private final SamplingProvider sampling;
     private final AtomicLong id = new AtomicLong(1);
     private final Map<RequestId, CompletableFuture<JsonRpcMessage>> pending = new ConcurrentHashMap<>();
     private Thread reader;
@@ -27,9 +29,14 @@ public final class DefaultMcpClient implements McpClient {
     private String instructions;
 
     public DefaultMcpClient(ClientInfo info, Set<ClientCapability> capabilities, Transport transport) {
+        this(info, capabilities, transport, null);
+    }
+
+    public DefaultMcpClient(ClientInfo info, Set<ClientCapability> capabilities, Transport transport, SamplingProvider sampling) {
         this.info = info;
         this.capabilities = capabilities.isEmpty() ? Set.of() : EnumSet.copyOf(capabilities);
         this.transport = transport;
+        this.sampling = sampling;
     }
 
     @Override
@@ -147,10 +154,54 @@ public final class DefaultMcpClient implements McpClient {
                     CompletableFuture<JsonRpcMessage> f = pending.remove(err.id());
                     if (f != null) f.complete(err);
                 }
+                case JsonRpcRequest req -> {
+                    try {
+                        send(handleRequest(req));
+                    } catch (IOException e) {
+                        // drop on transport failure
+                    }
+                }
                 default -> {
                     // ignore notifications
                 }
             }
         }
+    }
+
+    private JsonRpcMessage handleRequest(JsonRpcRequest req) {
+        return switch (req.method()) {
+            case "sampling/createMessage" -> handleCreateMessage(req);
+            default -> new JsonRpcError(req.id(), new JsonRpcError.ErrorDetail(
+                    JsonRpcErrorCode.METHOD_NOT_FOUND.code(),
+                    "Unknown method: " + req.method(), null));
+        };
+    }
+
+    private JsonRpcMessage handleCreateMessage(JsonRpcRequest req) {
+        if (sampling == null) {
+            return new JsonRpcError(req.id(), new JsonRpcError.ErrorDetail(
+                    JsonRpcErrorCode.METHOD_NOT_FOUND.code(),
+                    "Sampling not supported", null));
+        }
+        JsonObject params = req.params();
+        if (params == null) {
+            return new JsonRpcError(req.id(), new JsonRpcError.ErrorDetail(
+                    JsonRpcErrorCode.INVALID_PARAMS.code(), "Missing params", null));
+        }
+        try {
+            CreateMessageRequest cmr = SamplingCodec.toCreateMessageRequest(params);
+            CreateMessageResponse resp = sampling.createMessage(cmr);
+            return new JsonRpcResponse(req.id(), SamplingCodec.toJsonObject(resp));
+        } catch (IllegalArgumentException e) {
+            return new JsonRpcError(req.id(), new JsonRpcError.ErrorDetail(
+                    JsonRpcErrorCode.INVALID_PARAMS.code(), e.getMessage(), null));
+        } catch (Exception e) {
+            return new JsonRpcError(req.id(), new JsonRpcError.ErrorDetail(
+                    JsonRpcErrorCode.INTERNAL_ERROR.code(), e.getMessage(), null));
+        }
+    }
+
+    private void send(JsonRpcMessage msg) throws IOException {
+        transport.send(JsonRpcCodec.toJsonObject(msg));
     }
 }
