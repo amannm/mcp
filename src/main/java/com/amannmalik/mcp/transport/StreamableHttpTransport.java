@@ -30,7 +30,6 @@ import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 
 public final class StreamableHttpTransport implements Transport {
@@ -47,7 +46,6 @@ public final class StreamableHttpTransport implements Transport {
     private final AtomicReference<String> lastSessionId = new AtomicReference<>();
     private volatile String protocolVersion;
     private final ConcurrentHashMap<String, BlockingQueue<JsonObject>> responseQueues = new ConcurrentHashMap<>();
-    private final AtomicLong nextEventId = new AtomicLong(1);
 
     public StreamableHttpTransport(int port, OriginValidator validator) throws Exception {
         server = new Server(new InetSocketAddress("127.0.0.1", port));
@@ -85,7 +83,7 @@ public final class StreamableHttpTransport implements Transport {
             return;
         }
         for (SseClient c : sseClients) {
-            c.send(message, nextEventId.getAndIncrement());
+            c.send(message);
             break;
         }
     }
@@ -134,7 +132,6 @@ public final class StreamableHttpTransport implements Transport {
             server.stop();
             sessionId.set(null);
             lastSessionId.set(null);
-            nextEventId.set(1);
             protocolVersion = ProtocolLifecycle.SUPPORTED_VERSION;
         } catch (Exception e) {
             throw new IOException(e);
@@ -168,7 +165,6 @@ public final class StreamableHttpTransport implements Transport {
                 session = UUID.randomUUID().toString();
                 sessionId.set(session);
                 lastSessionId.set(null);
-                nextEventId.set(1);
                 resp.setHeader("Mcp-Session-Id", session);
             } else if (session == null) {
                 if (header != null && header.equals(last)) {
@@ -350,7 +346,6 @@ public final class StreamableHttpTransport implements Transport {
             lastSessionId.set(session);
             sessionId.set(null);
             protocolVersion = ProtocolLifecycle.SUPPORTED_VERSION;
-            nextEventId.set(1);
             sseClients.forEach(SseClient::close);
             sseClients.clear();
             resp.setStatus(HttpServletResponse.SC_OK);
@@ -360,16 +355,20 @@ public final class StreamableHttpTransport implements Transport {
     private static class SseClient {
         private final AsyncContext context;
         private final PrintWriter out;
+        private final String streamId;
+        private long nextEventId = 1;
         private volatile boolean closed = false;
 
         SseClient(AsyncContext context) throws IOException {
             this.context = context;
             this.out = context.getResponse().getWriter();
+            this.streamId = UUID.randomUUID().toString();
         }
 
-        void send(JsonObject msg, long id) {
+        void send(JsonObject msg) {
             if (closed) return;
             try {
+                String id = streamId + '-' + nextEventId++;
                 out.write("id: " + id + "\n");
                 out.write("data: " + msg.toString() + "\n\n");
                 out.flush();
