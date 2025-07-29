@@ -6,7 +6,9 @@ import com.amannmalik.mcp.lifecycle.*;
 import com.amannmalik.mcp.transport.Transport;
 import com.amannmalik.mcp.prompts.*;
 import com.amannmalik.mcp.server.completion.*;
+import com.amannmalik.mcp.server.logging.LoggingCodec;
 import com.amannmalik.mcp.server.logging.LoggingLevel;
+import com.amannmalik.mcp.server.logging.LoggingNotification;
 import com.amannmalik.mcp.server.resources.*;
 import com.amannmalik.mcp.server.tools.*;
 import com.amannmalik.mcp.util.*;
@@ -96,6 +98,7 @@ public final class McpServer implements AutoCloseable {
                 break;
             } catch (jakarta.json.stream.JsonParsingException e) {
                 System.err.println("Parse error: " + e.getMessage());
+                sendLog(LoggingLevel.ERROR, "parser", Json.createValue(e.getMessage()));
                 continue;
             }
 
@@ -109,10 +112,13 @@ public final class McpServer implements AutoCloseable {
                 }
             } catch (IllegalArgumentException e) {
                 System.err.println("Invalid request: " + e.getMessage());
+                sendLog(LoggingLevel.WARNING, "server", Json.createValue(e.getMessage()));
             } catch (IOException e) {
                 System.err.println("Error processing message: " + e.getMessage());
+                sendLog(LoggingLevel.ERROR, "server", Json.createValue(e.getMessage()));
             } catch (Exception e) {
                 System.err.println("Unexpected error processing message: " + e.getMessage());
+                sendLog(LoggingLevel.ERROR, "server", Json.createValue(e.getMessage()));
             }
         }
     }
@@ -370,8 +376,19 @@ public final class McpServer implements AutoCloseable {
             return new JsonRpcError(req.id(), new JsonRpcError.ErrorDetail(
                     JsonRpcErrorCode.INVALID_PARAMS.code(), "Missing params", null));
         }
-        logLevel = LoggingLevel.valueOf(params.getString("level").toUpperCase());
+        logLevel = LoggingCodec.toSetLevelRequest(params).level();
         return new JsonRpcResponse(req.id(), Json.createObjectBuilder().build());
+    }
+
+    protected final void sendLog(LoggingNotification note) throws IOException {
+        if (note.level().ordinal() < logLevel.ordinal()) return;
+        requireServerCapability(ServerCapability.LOGGING);
+        send(new JsonRpcNotification("notifications/message",
+                LoggingCodec.toJsonObject(note)));
+    }
+
+    protected final void sendLog(LoggingLevel level, String logger, jakarta.json.JsonValue data) throws IOException {
+        sendLog(new LoggingNotification(level, logger, data));
     }
 
     // ----- Completion -----
