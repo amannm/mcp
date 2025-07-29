@@ -16,6 +16,9 @@ public final class PingCodec {
 
     public static PingRequest toPingRequest(JsonRpcRequest req) {
         if (req == null) throw new IllegalArgumentException("request required");
+        if (req.params() != null && !req.params().isEmpty()) {
+            throw new IllegalArgumentException("no params expected");
+        }
         return new PingRequest();
     }
 
@@ -26,6 +29,9 @@ public final class PingCodec {
 
     public static PingResponse toPingResponse(JsonRpcResponse resp) {
         if (resp == null) throw new IllegalArgumentException("response required");
+        if (resp.result() == null || !resp.result().isEmpty()) {
+            throw new IllegalArgumentException("expected empty result");
+        }
         return new PingResponse();
     }
 }
