@@ -1,5 +1,8 @@
 package com.amannmalik.mcp.transport;
 
+import com.amannmalik.mcp.auth.AuthorizationException;
+import com.amannmalik.mcp.auth.AuthorizationManager;
+import com.amannmalik.mcp.auth.Principal;
 import com.amannmalik.mcp.jsonrpc.JsonRpcCodec;
 import com.amannmalik.mcp.jsonrpc.JsonRpcError;
 import com.amannmalik.mcp.jsonrpc.JsonRpcErrorCode;
@@ -36,6 +39,8 @@ public final class StreamableHttpTransport implements Transport {
     private final Server server;
     private final int port;
     private final OriginValidator originValidator;
+    private final AuthorizationManager auth;
+    private final AtomicReference<Principal> sessionPrincipal = new AtomicReference<>();
     private static final String PROTOCOL_HEADER = "MCP-Protocol-Version";
     // Default to the previous protocol revision when no version header is
     // present, as recommended for backwards compatibility.
@@ -48,7 +53,7 @@ public final class StreamableHttpTransport implements Transport {
     private volatile String protocolVersion;
     private final ConcurrentHashMap<String, BlockingQueue<JsonObject>> responseQueues = new ConcurrentHashMap<>();
 
-    public StreamableHttpTransport(int port, OriginValidator validator) throws Exception {
+    public StreamableHttpTransport(int port, OriginValidator validator, AuthorizationManager auth) throws Exception {
         server = new Server(new InetSocketAddress("127.0.0.1", port));
         ServletContextHandler ctx = new ServletContextHandler();
         ctx.addServlet(new ServletHolder(new McpServlet()), "/");
@@ -56,13 +61,18 @@ public final class StreamableHttpTransport implements Transport {
         server.start();
         this.port = ((ServerConnector) server.getConnectors()[0]).getLocalPort();
         this.originValidator = validator;
+        this.auth = auth;
         // Until initialization negotiates a version, assume the prior revision
         // as the default when no MCP-Protocol-Version header is present.
         this.protocolVersion = DEFAULT_VERSION;
     }
 
+    public StreamableHttpTransport(int port, AuthorizationManager auth) throws Exception {
+        this(port, new OriginValidator(Set.of("http://localhost", "http://127.0.0.1")), auth);
+    }
+
     public StreamableHttpTransport(int port) throws Exception {
-        this(port, new OriginValidator(Set.of("http://localhost", "http://127.0.0.1")));
+        this(port, null);
     }
 
     public int port() {
@@ -165,6 +175,7 @@ public final class StreamableHttpTransport implements Transport {
 
             server.stop();
             sessionId.set(null);
+            sessionPrincipal.set(null);
             lastSessionId.set(null);
             protocolVersion = ProtocolLifecycle.SUPPORTED_VERSION;
         } catch (Exception e) {
@@ -178,6 +189,15 @@ public final class StreamableHttpTransport implements Transport {
             if (!originValidator.isValid(req.getHeader("Origin"))) {
                 resp.sendError(HttpServletResponse.SC_FORBIDDEN);
                 return;
+            }
+            Principal principal = null;
+            if (auth != null) {
+                try {
+                    principal = auth.authorize(req.getHeader("Authorization"));
+                } catch (AuthorizationException e) {
+                    resp.sendError(HttpServletResponse.SC_UNAUTHORIZED);
+                    return;
+                }
             }
             String accept = req.getHeader("Accept");
             if (accept == null || !(accept.contains("application/json") && accept.contains("text/event-stream"))) {
@@ -196,8 +216,10 @@ public final class StreamableHttpTransport implements Transport {
             boolean initializing = "initialize".equals(obj.getString("method", null));
 
             if (session == null && initializing) {
-                session = UUID.randomUUID().toString();
+                String prefix = principal == null ? "default" : principal.id();
+                session = prefix + ':' + UUID.randomUUID();
                 sessionId.set(session);
+                sessionPrincipal.set(principal);
                 lastSessionId.set(null);
                 resp.setHeader("Mcp-Session-Id", session);
             } else if (session == null) {
@@ -212,6 +234,9 @@ public final class StreamableHttpTransport implements Transport {
                 return;
             } else if (!session.equals(header)) {
                 resp.sendError(HttpServletResponse.SC_NOT_FOUND);
+                return;
+            } else if (auth != null && sessionPrincipal.get() != null && principal != null && !sessionPrincipal.get().id().equals(principal.id())) {
+                resp.sendError(HttpServletResponse.SC_UNAUTHORIZED);
                 return;
             } else if (version == null || !version.equals(protocolVersion)) {
                 resp.sendError(HttpServletResponse.SC_BAD_REQUEST);
@@ -334,6 +359,15 @@ public final class StreamableHttpTransport implements Transport {
                 resp.sendError(HttpServletResponse.SC_FORBIDDEN);
                 return;
             }
+            Principal principal = null;
+            if (auth != null) {
+                try {
+                    principal = auth.authorize(req.getHeader("Authorization"));
+                } catch (AuthorizationException e) {
+                    resp.sendError(HttpServletResponse.SC_UNAUTHORIZED);
+                    return;
+                }
+            }
             String accept = req.getHeader("Accept");
             if (accept == null || !accept.contains("text/event-stream")) {
                 resp.sendError(HttpServletResponse.SC_NOT_ACCEPTABLE);
@@ -357,6 +391,9 @@ public final class StreamableHttpTransport implements Transport {
             }
             if (!session.equals(header)) {
                 resp.sendError(HttpServletResponse.SC_NOT_FOUND);
+                return;
+            } else if (auth != null && sessionPrincipal.get() != null && principal != null && !sessionPrincipal.get().id().equals(principal.id())) {
+                resp.sendError(HttpServletResponse.SC_UNAUTHORIZED);
                 return;
             }
 
@@ -418,6 +455,15 @@ public final class StreamableHttpTransport implements Transport {
                 resp.sendError(HttpServletResponse.SC_FORBIDDEN);
                 return;
             }
+            Principal principal = null;
+            if (auth != null) {
+                try {
+                    principal = auth.authorize(req.getHeader("Authorization"));
+                } catch (AuthorizationException e) {
+                    resp.sendError(HttpServletResponse.SC_UNAUTHORIZED);
+                    return;
+                }
+            }
             String session = sessionId.get();
             String header = req.getHeader("Mcp-Session-Id");
             String version = req.getHeader(PROTOCOL_HEADER);
@@ -432,6 +478,9 @@ public final class StreamableHttpTransport implements Transport {
             if (!session.equals(header)) {
                 resp.sendError(HttpServletResponse.SC_NOT_FOUND);
                 return;
+            } else if (auth != null && sessionPrincipal.get() != null && principal != null && !sessionPrincipal.get().id().equals(principal.id())) {
+                resp.sendError(HttpServletResponse.SC_UNAUTHORIZED);
+                return;
             }
             if (version == null || !version.equals(protocolVersion)) {
                 resp.sendError(HttpServletResponse.SC_BAD_REQUEST);
@@ -439,6 +488,7 @@ public final class StreamableHttpTransport implements Transport {
             }
             lastSessionId.set(session);
             sessionId.set(null);
+            sessionPrincipal.set(null);
             protocolVersion = ProtocolLifecycle.SUPPORTED_VERSION;
             sseClients.forEach(SseClient::close);
             sseClients.clear();
