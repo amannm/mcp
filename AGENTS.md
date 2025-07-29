@@ -16,7 +16,7 @@
 * Leverage types to make illegal states unrepresentable and valid operations obvious
 * Write simple/typed/strict/idiomatic/standard/modern Java, up to and including `24`
 * When a nullable/optional field represents distinct business states, create explicit types
-* Avoid `null` or `Object`
+* Avoid using `null` or `Object` or `.orElse(null)`
 * Use `Optional` for nullable return values
 * Use polymorphism/default/sentinels to avoid null in data models
 * Use `instanceof` to test type and exclude `null` in a single statement
