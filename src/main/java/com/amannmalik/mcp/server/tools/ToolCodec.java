@@ -42,10 +42,14 @@ public final class ToolCodec {
     }
 
     public static JsonObject toJsonObject(ToolListChangedNotification n) {
+        if (n == null) throw new IllegalArgumentException("notification required");
         return Json.createObjectBuilder().build();
     }
 
     public static ToolListChangedNotification toToolListChangedNotification(JsonObject obj) {
+        if (obj != null && !obj.isEmpty()) {
+            throw new IllegalArgumentException("unexpected fields");
+        }
         return new ToolListChangedNotification();
     }
 

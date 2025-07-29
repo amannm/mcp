@@ -127,10 +127,14 @@ public final class ResourcesCodec {
     }
 
     public static JsonObject toJsonObject(ResourceListChangedNotification n) {
+        if (n == null) throw new IllegalArgumentException("notification required");
         return Json.createObjectBuilder().build();
     }
 
     public static ResourceListChangedNotification toResourceListChangedNotification(JsonObject obj) {
+        if (obj != null && !obj.isEmpty()) {
+            throw new IllegalArgumentException("unexpected fields");
+        }
         return new ResourceListChangedNotification();
     }
 

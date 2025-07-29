@@ -14,10 +14,14 @@ public final class RootsCodec {
     }
 
     public static JsonObject toJsonObject(ListRootsRequest req) {
+        if (req == null) throw new IllegalArgumentException("request required");
         return Json.createObjectBuilder().build();
     }
 
     public static ListRootsRequest toListRootsRequest(JsonObject obj) {
+        if (obj != null && !obj.isEmpty()) {
+            throw new IllegalArgumentException("unexpected fields");
+        }
         return new ListRootsRequest();
     }
 
@@ -30,10 +34,14 @@ public final class RootsCodec {
     }
 
     public static JsonObject toJsonObject(RootsListChangedNotification n) {
+        if (n == null) throw new IllegalArgumentException("notification required");
         return Json.createObjectBuilder().build();
     }
 
     public static RootsListChangedNotification toRootsListChangedNotification(JsonObject obj) {
+        if (obj != null && !obj.isEmpty()) {
+            throw new IllegalArgumentException("unexpected fields");
+        }
         return new RootsListChangedNotification();
     }
 
