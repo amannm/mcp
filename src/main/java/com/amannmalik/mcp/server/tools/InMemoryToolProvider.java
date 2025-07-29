@@ -53,6 +53,11 @@ public final class InMemoryToolProvider implements ToolProvider {
         return () -> listeners.remove(listener);
     }
 
+    @Override
+    public boolean supportsListChanged() {
+        return true;
+    }
+
     public void addTool(Tool tool, Function<JsonObject, ToolResult> handler) {
         tools.add(tool);
         if (handler != null) handlers.put(tool.name(), handler);
