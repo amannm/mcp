@@ -1,10 +1,8 @@
-package com.amannmalik.mcp.host;
+package com.amannmalik.mcp.security;
 
 import com.amannmalik.mcp.client.McpClient;
 import com.amannmalik.mcp.auth.Principal;
 import com.amannmalik.mcp.jsonrpc.JsonRpcMessage;
-import com.amannmalik.mcp.security.ConsentManager;
-import com.amannmalik.mcp.security.ToolAccessController;
 import jakarta.json.Json;
 import jakarta.json.JsonObject;
 import com.amannmalik.mcp.jsonrpc.*;
