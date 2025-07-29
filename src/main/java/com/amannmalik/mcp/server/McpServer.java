@@ -8,6 +8,7 @@ import com.amannmalik.mcp.jsonrpc.JsonRpcNotification;
 import com.amannmalik.mcp.jsonrpc.JsonRpcRequest;
 import com.amannmalik.mcp.jsonrpc.JsonRpcResponse;
 import com.amannmalik.mcp.jsonrpc.RequestId;
+import com.amannmalik.mcp.jsonrpc.IdTracker;
 import com.amannmalik.mcp.lifecycle.ClientCapability;
 import com.amannmalik.mcp.lifecycle.InitializeRequest;
 import com.amannmalik.mcp.lifecycle.InitializeResponse;
@@ -35,6 +36,7 @@ public abstract class McpServer implements AutoCloseable {
     private final ProgressTracker progressTracker = new ProgressTracker();
     private final Map<RequestId, ProgressToken> progressTokens = new ConcurrentHashMap<>();
     private final CancellationTracker cancellationTracker = new CancellationTracker();
+    private final IdTracker idTracker = new IdTracker();
 
     protected McpServer(Set<ServerCapability> capabilities, Transport transport) {
         this.transport = transport;
@@ -66,8 +68,13 @@ public abstract class McpServer implements AutoCloseable {
             } catch (EOFException e) {
                 lifecycle.shutdown();
                 break;
+            } catch (jakarta.json.stream.JsonParsingException e) {
+                send(new JsonRpcError(RequestId.NullId.INSTANCE,
+                        new JsonRpcError.ErrorDetail(
+                                JsonRpcErrorCode.PARSE_ERROR.code(), e.getMessage(), null)));
+                continue;
             }
-            
+
             try {
                 JsonRpcMessage msg = JsonRpcCodec.fromJsonObject(obj);
                 switch (msg) {
@@ -76,6 +83,10 @@ public abstract class McpServer implements AutoCloseable {
                     default -> {
                     }
                 }
+            } catch (IllegalArgumentException e) {
+                send(new JsonRpcError(RequestId.NullId.INSTANCE,
+                        new JsonRpcError.ErrorDetail(
+                                JsonRpcErrorCode.INVALID_REQUEST.code(), e.getMessage(), null)));
             } catch (IOException e) {
                 System.err.println("Error processing message: " + e.getMessage());
             } catch (Exception e) {
@@ -90,6 +101,13 @@ public abstract class McpServer implements AutoCloseable {
             send(new JsonRpcError(req.id(), new JsonRpcError.ErrorDetail(
                     JsonRpcErrorCode.METHOD_NOT_FOUND.code(),
                     "Unknown method: " + req.method(), null)));
+            return;
+        }
+        try {
+            idTracker.register(req.id());
+        } catch (IllegalArgumentException e) {
+            send(new JsonRpcError(req.id(), new JsonRpcError.ErrorDetail(
+                    JsonRpcErrorCode.INVALID_REQUEST.code(), e.getMessage(), null)));
             return;
         }
         ProgressToken token = parseProgressToken(req.params());

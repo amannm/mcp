@@ -17,6 +17,7 @@ public final class CancellationCodec {
         switch (note.requestId()) {
             case RequestId.StringId s -> b.add("requestId", s.value());
             case RequestId.NumericId n -> b.add("requestId", n.value());
+            default -> throw new IllegalArgumentException("Invalid requestId type");
         }
         if (note.reason() != null) b.add("reason", note.reason());
         return b.build();
@@ -29,6 +30,9 @@ public final class CancellationCodec {
     }
 
     private static RequestId toId(JsonValue v) {
+        if (v == null || v.getValueType() == JsonValue.ValueType.NULL) {
+            throw new IllegalArgumentException("requestId is required");
+        }
         return switch (v.getValueType()) {
             case STRING -> new RequestId.StringId(((JsonString) v).getString());
             case NUMBER -> new RequestId.NumericId(((JsonNumber) v).longValue());
