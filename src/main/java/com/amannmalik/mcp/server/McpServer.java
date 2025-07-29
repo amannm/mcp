@@ -1,6 +1,7 @@
 package com.amannmalik.mcp.server;
 
 import com.amannmalik.mcp.auth.Principal;
+import com.amannmalik.mcp.client.elicitation.ElicitationAction;
 import com.amannmalik.mcp.client.elicitation.ElicitationCodec;
 import com.amannmalik.mcp.client.elicitation.ElicitationRequest;
 import com.amannmalik.mcp.client.elicitation.ElicitationResponse;
@@ -46,6 +47,7 @@ import com.amannmalik.mcp.security.ResourceAccessController;
 import com.amannmalik.mcp.server.completion.CompleteRequest;
 import com.amannmalik.mcp.server.completion.CompleteResult;
 import com.amannmalik.mcp.server.completion.CompletionCodec;
+import com.amannmalik.mcp.validation.SchemaValidator;
 import com.amannmalik.mcp.server.completion.CompletionProvider;
 import com.amannmalik.mcp.server.completion.InMemoryCompletionProvider;
 import com.amannmalik.mcp.server.logging.LoggingCodec;
@@ -710,7 +712,11 @@ public final class McpServer implements AutoCloseable {
         requireClientCapability(ClientCapability.ELICITATION);
         JsonRpcMessage msg = sendRequest("elicitation/create", ElicitationCodec.toJsonObject(req));
         if (msg instanceof JsonRpcResponse resp) {
-            return ElicitationCodec.toResponse(resp.result());
+            ElicitationResponse er = ElicitationCodec.toResponse(resp.result());
+            if (er.action() == ElicitationAction.ACCEPT) {
+                SchemaValidator.validate(req.requestedSchema(), er.content());
+            }
+            return er;
         }
         throw new IOException(((JsonRpcError) msg).error().message());
     }

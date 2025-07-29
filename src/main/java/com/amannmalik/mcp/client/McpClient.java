@@ -98,6 +98,9 @@ public final class McpClient implements AutoCloseable {
         this.sampling = sampling;
         this.roots = roots;
         this.elicitation = elicitation;
+        if (this.capabilities.contains(ClientCapability.ELICITATION) && this.elicitation == null) {
+            throw new IllegalArgumentException("elicitation capability requires provider");
+        }
         this.pingInterval = 0;
         this.pingTimeout = 5000;
     }
