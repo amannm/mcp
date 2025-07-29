@@ -1,14 +1,11 @@
 package com.amannmalik.mcp.cli;
 
 import com.amannmalik.mcp.client.DefaultMcpClient;
-import com.amannmalik.mcp.jsonrpc.JsonRpcMessage;
-import com.amannmalik.mcp.jsonrpc.JsonRpcResponse;
 import com.amannmalik.mcp.lifecycle.ClientCapability;
 import com.amannmalik.mcp.lifecycle.ClientInfo;
 import com.amannmalik.mcp.transport.StdioTransport;
 import picocli.CommandLine;
 
-import jakarta.json.Json;
 import java.nio.file.Path;
 import java.util.EnumSet;
 import java.util.concurrent.Callable;
@@ -54,8 +51,8 @@ public final class ClientCommand implements Callable<Integer> {
                 EnumSet.noneOf(ClientCapability.class),
                 transport);
         client.connect();
-        JsonRpcMessage msg = client.request("ping", Json.createObjectBuilder().build());
-        if (verbose && msg instanceof JsonRpcResponse) {
+        client.ping();
+        if (verbose) {
             System.err.println("Ping OK");
         }
         client.disconnect();

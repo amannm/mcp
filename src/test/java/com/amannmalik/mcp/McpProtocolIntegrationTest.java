@@ -142,7 +142,7 @@ class McpProtocolIntegrationTest {
             assertTrue(serverProcess.isAlive(), "Server process should be alive before protocol tests");
 
             testServerCapabilities(client);
-            testProtocolOperationExpectingSuccess(() -> client.request("ping", Json.createObjectBuilder().build()), "ping", 10000);
+            assertDoesNotThrow(client::ping, "ping should succeed");
 
             JsonRpcMessage resourcesResponse = testProtocolOperationExpectingSuccess(() -> client.request("resources/list", Json.createObjectBuilder().build()), "resources/list", 5000);
             JsonRpcMessage toolsResponse = testProtocolOperationExpectingSuccess(() -> client.request("tools/list", Json.createObjectBuilder().build()), "tools/list", 5000);

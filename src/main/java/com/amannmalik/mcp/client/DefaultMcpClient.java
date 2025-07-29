@@ -2,6 +2,8 @@ package com.amannmalik.mcp.client;
 
 import com.amannmalik.mcp.jsonrpc.*;
 import com.amannmalik.mcp.lifecycle.*;
+import com.amannmalik.mcp.ping.PingCodec;
+import com.amannmalik.mcp.ping.PingResponse;
 import com.amannmalik.mcp.transport.Transport;
 import jakarta.json.JsonObject;
 
@@ -88,6 +90,42 @@ public final class DefaultMcpClient implements McpClient {
     @Override
     public String context() {
         return instructions == null ? "" : instructions;
+    }
+    
+    @Override
+    public PingResponse ping() throws IOException {
+        if (!connected) throw new IllegalStateException("not connected");
+        RequestId reqId = new RequestId.NumericId(id.getAndIncrement());
+        CompletableFuture<JsonRpcMessage> future = new CompletableFuture<>();
+        pending.put(reqId, future);
+        try {
+            transport.send(JsonRpcCodec.toJsonObject(PingCodec.toRequest(reqId)));
+        } catch (IOException e) {
+            pending.remove(reqId);
+            throw e;
+        }
+        JsonRpcMessage msg;
+        try {
+            msg = future.get(30, java.util.concurrent.TimeUnit.SECONDS);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new IOException(e);
+        } catch (java.util.concurrent.TimeoutException e) {
+            throw new IOException("Request timed out after 30 seconds");
+        } catch (ExecutionException e) {
+            Throwable cause = e.getCause();
+            if (cause instanceof IOException io) throw io;
+            throw new IOException(cause);
+        } finally {
+            pending.remove(reqId);
+        }
+        if (msg instanceof JsonRpcResponse resp) {
+            return PingCodec.toPingResponse(resp);
+        }
+        if (msg instanceof JsonRpcError err) {
+            throw new IOException(err.error().message());
+        }
+        throw new IOException("Unexpected message type: " + msg.getClass().getSimpleName());
     }
 
     @Override
