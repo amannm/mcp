@@ -30,9 +30,11 @@ public final class ToolCodec {
 
     public static JsonObject toJsonObject(ToolResult result) {
         JsonObjectBuilder builder = Json.createObjectBuilder()
-                .add("content", result.content())
-                .add("isError", result.isError());
-        if (result.structuredContent() != null) builder.add("structuredContent", result.structuredContent());
+                .add("content", result.content());
+        if (result.isError()) builder.add("isError", true);
+        if (result.structuredContent() != null) {
+            builder.add("structuredContent", result.structuredContent());
+        }
         return builder.build();
     }
 
