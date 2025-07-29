@@ -39,6 +39,7 @@ public final class McpServer implements AutoCloseable {
     private final ToolProvider tools;
     private final PromptProvider prompts;
     private final CompletionProvider completions;
+    private final Map<String, ResourceSubscription> resourceSubscriptions = new ConcurrentHashMap<>();
     private final ResourceAccessController resourceAccess;
     private final Principal principal;
     private volatile LoggingLevel logLevel = LoggingLevel.INFO;
@@ -95,6 +96,8 @@ public final class McpServer implements AutoCloseable {
         registerRequestHandler("resources/list", this::listResources);
         registerRequestHandler("resources/read", this::readResource);
         registerRequestHandler("resources/templates/list", this::listTemplates);
+        registerRequestHandler("resources/subscribe", this::subscribeResource);
+        registerRequestHandler("resources/unsubscribe", this::unsubscribeResource);
 
         registerRequestHandler("tools/list", this::listTools);
         registerRequestHandler("tools/call", this::callTool);
@@ -346,6 +349,47 @@ public final class McpServer implements AutoCloseable {
         return new JsonRpcResponse(req.id(), b.build());
     }
 
+    private JsonRpcMessage subscribeResource(JsonRpcRequest req) {
+        JsonObject params = req.params();
+        if (params == null || !params.containsKey("uri")) {
+            return new JsonRpcError(req.id(), new JsonRpcError.ErrorDetail(
+                    JsonRpcErrorCode.INVALID_PARAMS.code(), "uri required", null));
+        }
+        String uri = params.getString("uri");
+        try {
+            ResourceSubscription sub = resources.subscribe(uri, update -> {
+                try {
+                    send(new JsonRpcNotification(
+                            "notifications/resources/updated",
+                            Json.createObjectBuilder().add("uri", update.uri()).build()));
+                } catch (IOException ignore) {
+                }
+            });
+            ResourceSubscription prev = resourceSubscriptions.put(uri, sub);
+            if (prev != null) {
+                try { prev.close(); } catch (Exception ignore) {}
+            }
+        } catch (Exception e) {
+            return new JsonRpcError(req.id(), new JsonRpcError.ErrorDetail(
+                    JsonRpcErrorCode.INTERNAL_ERROR.code(), e.getMessage(), null));
+        }
+        return new JsonRpcResponse(req.id(), Json.createObjectBuilder().build());
+    }
+
+    private JsonRpcMessage unsubscribeResource(JsonRpcRequest req) {
+        JsonObject params = req.params();
+        if (params == null || !params.containsKey("uri")) {
+            return new JsonRpcError(req.id(), new JsonRpcError.ErrorDetail(
+                    JsonRpcErrorCode.INVALID_PARAMS.code(), "uri required", null));
+        }
+        String uri = params.getString("uri");
+        ResourceSubscription sub = resourceSubscriptions.remove(uri);
+        if (sub != null) {
+            try { sub.close(); } catch (Exception ignore) {}
+        }
+        return new JsonRpcResponse(req.id(), Json.createObjectBuilder().build());
+    }
+
     
 
 
@@ -529,6 +573,12 @@ public final class McpServer implements AutoCloseable {
     @Override
     public void close() throws IOException {
         lifecycle.shutdown();
+        for (ResourceSubscription sub : resourceSubscriptions.values()) {
+            try { sub.close(); } catch (Exception ignore) {}
+        }
+        resourceSubscriptions.clear();
+        resources.close();
+        completions.close();
         transport.close();
     }
 
