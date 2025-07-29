@@ -76,19 +76,19 @@ public final class McpServer implements AutoCloseable {
         registerRequestHandler("completion/complete", this::complete);
     }
 
-    protected final ProtocolLifecycle lifecycle() {
+    private ProtocolLifecycle lifecycle() {
         return lifecycle;
     }
 
-    protected final void registerRequestHandler(String method, RequestHandler handler) {
+    private void registerRequestHandler(String method, RequestHandler handler) {
         requestHandlers.put(method, handler);
     }
 
-    protected final void registerNotificationHandler(String method, NotificationHandler handler) {
+    private void registerNotificationHandler(String method, NotificationHandler handler) {
         notificationHandlers.put(method, handler);
     }
 
-    public final void serve() throws IOException {
+    public void serve() throws IOException {
         while (lifecycle.state() != LifecycleState.SHUTDOWN) {
             JsonObject obj;
             try {
@@ -123,7 +123,7 @@ public final class McpServer implements AutoCloseable {
         }
     }
 
-    protected void onRequest(JsonRpcRequest req) throws IOException {
+    private void onRequest(JsonRpcRequest req) throws IOException {
         var handler = requestHandlers.get(req.method());
         if (handler == null) {
             send(new JsonRpcError(req.id(), new JsonRpcError.ErrorDetail(
@@ -162,7 +162,7 @@ public final class McpServer implements AutoCloseable {
         cleanup(req.id());
     }
 
-    protected void onNotification(JsonRpcNotification note) throws IOException {
+    private void onNotification(JsonRpcNotification note) throws IOException {
         var handler = notificationHandlers.get(note.method());
         if (handler != null) handler.handle(note);
     }
@@ -181,17 +181,17 @@ public final class McpServer implements AutoCloseable {
         return new JsonRpcResponse(req.id(), jakarta.json.Json.createObjectBuilder().build());
     }
 
-    protected final void send(JsonRpcMessage msg) throws IOException {
+    private void send(JsonRpcMessage msg) throws IOException {
         transport.send(JsonRpcCodec.toJsonObject(msg));
     }
 
-    protected final void requireClientCapability(ClientCapability cap) {
+    private void requireClientCapability(ClientCapability cap) {
         if (!lifecycle.negotiatedClientCapabilities().contains(cap)) {
             throw new IllegalStateException("Missing client capability: " + cap);
         }
     }
 
-    protected final void requireServerCapability(ServerCapability cap) {
+    private void requireServerCapability(ServerCapability cap) {
         if (!lifecycle.serverCapabilities().contains(cap)) {
             throw new IllegalStateException("Server capability not declared: " + cap);
         }
@@ -226,7 +226,7 @@ public final class McpServer implements AutoCloseable {
         idTracker.release(id);
     }
 
-    protected final void sendProgress(ProgressNotification note) throws IOException {
+    private void sendProgress(ProgressNotification note) throws IOException {
         progressTracker.update(note);
         send(new JsonRpcNotification("notifications/progress", ProgressCodec.toJsonObject(note)));
     }
@@ -380,14 +380,14 @@ public final class McpServer implements AutoCloseable {
         return new JsonRpcResponse(req.id(), Json.createObjectBuilder().build());
     }
 
-    protected final void sendLog(LoggingNotification note) throws IOException {
+    private void sendLog(LoggingNotification note) throws IOException {
         if (note.level().ordinal() < logLevel.ordinal()) return;
         requireServerCapability(ServerCapability.LOGGING);
         send(new JsonRpcNotification("notifications/message",
                 LoggingCodec.toJsonObject(note)));
     }
 
-    protected final void sendLog(LoggingLevel level, String logger, jakarta.json.JsonValue data) throws IOException {
+    private void sendLog(LoggingLevel level, String logger, jakarta.json.JsonValue data) throws IOException {
         sendLog(new LoggingNotification(level, logger, data));
     }
 
