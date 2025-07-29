@@ -260,7 +260,7 @@ public final class McpServer implements AutoCloseable {
         return new JsonRpcResponse(req.id(), LifecycleCodec.toJsonObject(resp));
     }
 
-    private void initialized(JsonRpcNotification note) {
+    private void initialized(JsonRpcNotification ignored) {
         lifecycle.initialized();
     }
 
@@ -653,7 +653,7 @@ public final class McpServer implements AutoCloseable {
     private static ToolProvider createDefaultTools() {
         var schema = Json.createObjectBuilder().add("type", "object").build();
         Tool tool = new Tool("test_tool", "Test Tool", null, schema, null, null);
-        InMemoryToolProvider provider = new InMemoryToolProvider(
+        return new InMemoryToolProvider(
                 List.of(tool),
                 Map.of("test_tool", a -> new ToolResult(
                         Json.createArrayBuilder()
@@ -662,7 +662,6 @@ public final class McpServer implements AutoCloseable {
                                         .add("text", "ok")
                                         .build())
                                 .build(), null, false)));
-        return provider;
     }
 
     private static PromptProvider createDefaultPrompts() {
