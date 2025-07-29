@@ -8,7 +8,13 @@ public interface ToolProvider {
 
     ToolResult call(String name, JsonObject arguments);
 
+    /**
+     * Subscribe to changes in the list of tools.
+     *
+     * Implementations that do not support list change notifications may
+     * return a no-op subscription.
+     */
     default ToolListSubscription subscribeList(ToolListListener listener) {
-        throw new UnsupportedOperationException();
+        return () -> { };
     }
 }
