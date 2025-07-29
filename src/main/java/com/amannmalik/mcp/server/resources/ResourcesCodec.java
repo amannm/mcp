@@ -87,14 +87,16 @@ public final class ResourcesCodec {
         String mime = obj.getString("mimeType", null);
         ResourceAnnotations ann = obj.containsKey("annotations") ? toAnnotations(obj.getJsonObject("annotations")) : null;
         JsonObject meta = obj.containsKey("_meta") ? obj.getJsonObject("_meta") : null;
-        if (obj.containsKey("text")) {
+        boolean hasText = obj.containsKey("text");
+        boolean hasBlob = obj.containsKey("blob");
+        if (hasText == hasBlob) {
+            throw new IllegalArgumentException("exactly one of text or blob must be present");
+        }
+        if (hasText) {
             return new ResourceBlock.Text(uri, name, title, mime, obj.getString("text"), ann, meta);
         }
-        if (obj.containsKey("blob")) {
-            byte[] data = Base64.getDecoder().decode(obj.getString("blob"));
-            return new ResourceBlock.Binary(uri, name, title, mime, data, ann, meta);
-        }
-        throw new IllegalArgumentException("unknown content block");
+        byte[] data = Base64.getDecoder().decode(obj.getString("blob"));
+        return new ResourceBlock.Binary(uri, name, title, mime, data, ann, meta);
     }
 
     public static JsonObject toJsonObject(ResourceAnnotations ann) {
