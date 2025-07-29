@@ -73,7 +73,7 @@ public class ResourceServer extends McpServer {
         }
         if (block == null) {
             return new JsonRpcError(req.id(), new JsonRpcError.ErrorDetail(
-                    JsonRpcErrorCode.INVALID_PARAMS.code(), "unknown resource", null));
+                    -32002, "Resource not found", Json.createObjectBuilder().add("uri", uri).build()));
         }
         try {
             access.requireAllowed(principal, block.annotations());
@@ -117,7 +117,7 @@ public class ResourceServer extends McpServer {
                 access.requireAllowed(principal, block.annotations());
             } else {
                 return new JsonRpcError(req.id(), new JsonRpcError.ErrorDetail(
-                        JsonRpcErrorCode.INVALID_PARAMS.code(), "unknown resource", null));
+                        -32002, "Resource not found", Json.createObjectBuilder().add("uri", uri).build()));
             }
             provider.subscribe(uri, update -> {
                 try {
