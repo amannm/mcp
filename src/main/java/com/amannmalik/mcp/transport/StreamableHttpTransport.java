@@ -10,6 +10,7 @@ import com.amannmalik.mcp.jsonrpc.RequestId;
 import com.amannmalik.mcp.lifecycle.Protocol;
 import com.amannmalik.mcp.security.OriginValidator;
 import com.amannmalik.mcp.util.Base64Util;
+import com.amannmalik.mcp.validation.InputSanitizer;
 import com.amannmalik.mcp.wire.RequestMethod;
 import jakarta.json.Json;
 import jakarta.json.JsonObject;
@@ -244,12 +245,12 @@ public final class StreamableHttpTransport implements Transport {
             String session = sessionId.get();
             String last = lastSessionId.get();
             String header = req.getHeader(TransportHeaders.SESSION_ID);
-            if (header != null && !isVisibleAscii(header)) {
+            if (header != null && !InputSanitizer.isVisibleAscii(header)) {
                 resp.sendError(HttpServletResponse.SC_BAD_REQUEST);
                 return;
             }
             String version = req.getHeader(PROTOCOL_HEADER);
-            if (version != null && !isVisibleAscii(version)) {
+            if (version != null && !InputSanitizer.isVisibleAscii(version)) {
                 resp.sendError(HttpServletResponse.SC_BAD_REQUEST);
                 return;
             }
@@ -433,12 +434,12 @@ public final class StreamableHttpTransport implements Transport {
             String session = sessionId.get();
             String last = lastSessionId.get();
             String header = req.getHeader(TransportHeaders.SESSION_ID);
-            if (header != null && !isVisibleAscii(header)) {
+            if (header != null && !InputSanitizer.isVisibleAscii(header)) {
                 resp.sendError(HttpServletResponse.SC_BAD_REQUEST);
                 return;
             }
             String version = req.getHeader(PROTOCOL_HEADER);
-            if (version != null && !isVisibleAscii(version)) {
+            if (version != null && !InputSanitizer.isVisibleAscii(version)) {
                 resp.sendError(HttpServletResponse.SC_BAD_REQUEST);
                 return;
             }
@@ -560,12 +561,12 @@ public final class StreamableHttpTransport implements Transport {
             }
             String session = sessionId.get();
             String header = req.getHeader(TransportHeaders.SESSION_ID);
-            if (header != null && !isVisibleAscii(header)) {
+            if (header != null && !InputSanitizer.isVisibleAscii(header)) {
                 resp.sendError(HttpServletResponse.SC_BAD_REQUEST);
                 return;
             }
             String version = req.getHeader(PROTOCOL_HEADER);
-            if (version != null && !isVisibleAscii(version)) {
+            if (version != null && !InputSanitizer.isVisibleAscii(version)) {
                 resp.sendError(HttpServletResponse.SC_BAD_REQUEST);
                 return;
             }
@@ -697,11 +698,4 @@ public final class StreamableHttpTransport implements Transport {
     private record SseEvent(long id, JsonObject msg) {
     }
 
-    private static boolean isVisibleAscii(String value) {
-        for (int i = 0; i < value.length(); i++) {
-            char c = value.charAt(i);
-            if (c < 0x21 || c > 0x7E) return false;
-        }
-        return true;
-    }
 }
