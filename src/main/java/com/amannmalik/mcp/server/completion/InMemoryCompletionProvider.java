@@ -1,11 +1,9 @@
 package com.amannmalik.mcp.server.completion;
 
 import com.amannmalik.mcp.validation.InputSanitizer;
-import com.amannmalik.mcp.server.completion.CompleteResult;
 
 import java.util.ArrayList;
 import java.util.Comparator;
-import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -20,14 +18,7 @@ public final class InMemoryCompletionProvider implements CompletionProvider {
                     Map<String, String> context,
                     List<String> values) {
         argumentName = InputSanitizer.requireClean(argumentName);
-        Map<String, String> ctx;
-        if (context == null || context.isEmpty()) {
-            ctx = Map.of();
-        } else {
-            Map<String, String> copy = new HashMap<>();
-            context.forEach((k, v) -> copy.put(InputSanitizer.requireClean(k), InputSanitizer.requireClean(v)));
-            ctx = Map.copyOf(copy);
-        }
+        Map<String, String> ctx = InputSanitizer.requireCleanMap(context);
         List<String> vals = values == null ? List.of() : values.stream()
                 .map(InputSanitizer::requireClean)
                 .toList();

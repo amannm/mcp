@@ -5,7 +5,6 @@ import com.amannmalik.mcp.validation.MetaValidator;
 import com.amannmalik.mcp.validation.UriTemplateValidator;
 import jakarta.json.JsonObject;
 
-import java.util.HashMap;
 import java.util.Map;
 
 public record CompleteRequest(
@@ -31,15 +30,7 @@ public record CompleteRequest(
 
     public record Context(Map<String, String> arguments) {
         public Context(Map<String, String> arguments) {
-            if (arguments == null || arguments.isEmpty()) {
-                this.arguments = Map.of();
-            } else {
-                Map<String, String> copy = new HashMap<>();
-                arguments.forEach((k, v) -> {
-                    copy.put(InputSanitizer.requireClean(k), InputSanitizer.requireClean(v));
-                });
-                this.arguments = Map.copyOf(copy);
-            }
+            this.arguments = InputSanitizer.requireCleanMap(arguments);
         }
 
         @Override

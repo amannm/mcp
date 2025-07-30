@@ -1,5 +1,6 @@
 package com.amannmalik.mcp.server.completion;
 
+import com.amannmalik.mcp.validation.InputSanitizer;
 import jakarta.json.Json;
 import jakarta.json.JsonArrayBuilder;
 import jakarta.json.JsonObject;
@@ -55,7 +56,7 @@ public final class CompletionCodec {
                     args.put(k, ((JsonString) v).getString());
                 });
             }
-            ctx = new CompleteRequest.Context(args);
+            ctx = new CompleteRequest.Context(InputSanitizer.requireCleanMap(args));
         }
         return new CompleteRequest(ref, argument, ctx);
     }
