@@ -132,6 +132,9 @@ public final class StreamableHttpClientTransport implements Transport {
                     }
                 }
             } catch (IOException ignore) {
+            } finally {
+                streams.remove(this);
+                close();
             }
         }
 
