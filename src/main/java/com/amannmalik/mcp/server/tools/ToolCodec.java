@@ -36,6 +36,10 @@ public final class ToolCodec {
         return builder.build();
     }
 
+    public static JsonObject toJsonObject(ListToolsResult page) {
+        return toJsonObject(new ToolPage(page.tools(), page.nextCursor()));
+    }
+
     public static JsonObject toJsonObject(ToolResult result) {
         JsonObjectBuilder builder = Json.createObjectBuilder()
                 .add("content", result.content());
@@ -96,6 +100,11 @@ public final class ToolCodec {
         }
         String cursor = PaginationCodec.toPaginatedResult(obj).nextCursor();
         return new ToolPage(tools, cursor);
+    }
+
+    public static ListToolsResult toListToolsResult(JsonObject obj) {
+        ToolPage page = toToolPage(obj);
+        return new ListToolsResult(page.tools(), page.nextCursor());
     }
 
     public static ToolResult toToolResult(JsonObject obj) {
