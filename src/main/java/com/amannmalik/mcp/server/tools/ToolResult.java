@@ -1,7 +1,7 @@
 package com.amannmalik.mcp.server.tools;
 
 import com.amannmalik.mcp.annotations.Annotations;
-import com.amannmalik.mcp.prompts.Role;
+import com.amannmalik.mcp.annotations.AnnotationsCodec;
 import com.amannmalik.mcp.server.resources.Resource;
 import com.amannmalik.mcp.server.resources.ResourceBlock;
 import com.amannmalik.mcp.server.resources.ResourcesCodec;
@@ -12,14 +12,8 @@ import jakarta.json.JsonArray;
 import jakarta.json.JsonArrayBuilder;
 import jakarta.json.JsonObject;
 import jakarta.json.JsonObjectBuilder;
-import jakarta.json.JsonString;
 import jakarta.json.JsonValue;
-
-import java.time.Instant;
-import java.time.format.DateTimeParseException;
 import java.util.Base64;
-import java.util.EnumSet;
-import java.util.Set;
 
 public record ToolResult(JsonArray content,
                          JsonObject structuredContent,
@@ -67,7 +61,8 @@ public record ToolResult(JsonArray content,
                 .add("type", "text")
                 .add("text", InputSanitizer.requireClean(obj.getString("text")));
         if (obj.containsKey("annotations")) {
-            result.add("annotations", ResourcesCodec.toJsonObject(toAnnotations(obj.getJsonObject("annotations"))));
+            var ann = AnnotationsCodec.toAnnotations(obj.getJsonObject("annotations"));
+            result.add("annotations", AnnotationsCodec.toJsonObject(ann));
         }
         if (obj.containsKey("_meta")) {
             MetaValidator.requireValid(obj.getJsonObject("_meta"));
@@ -83,7 +78,8 @@ public record ToolResult(JsonArray content,
                 .add("data", Base64.getEncoder().encodeToString(data))
                 .add("mimeType", InputSanitizer.requireClean(obj.getString("mimeType")));
         if (obj.containsKey("annotations")) {
-            result.add("annotations", ResourcesCodec.toJsonObject(toAnnotations(obj.getJsonObject("annotations"))));
+            var ann = AnnotationsCodec.toAnnotations(obj.getJsonObject("annotations"));
+            result.add("annotations", AnnotationsCodec.toJsonObject(ann));
         }
         if (obj.containsKey("_meta")) {
             MetaValidator.requireValid(obj.getJsonObject("_meta"));
@@ -99,7 +95,8 @@ public record ToolResult(JsonArray content,
                 .add("data", Base64.getEncoder().encodeToString(data))
                 .add("mimeType", InputSanitizer.requireClean(obj.getString("mimeType")));
         if (obj.containsKey("annotations")) {
-            result.add("annotations", ResourcesCodec.toJsonObject(toAnnotations(obj.getJsonObject("annotations"))));
+            var ann = AnnotationsCodec.toAnnotations(obj.getJsonObject("annotations"));
+            result.add("annotations", AnnotationsCodec.toJsonObject(ann));
         }
         if (obj.containsKey("_meta")) {
             MetaValidator.requireValid(obj.getJsonObject("_meta"));
@@ -127,7 +124,10 @@ public record ToolResult(JsonArray content,
         JsonObjectBuilder result = Json.createObjectBuilder()
                 .add("type", "resource")
                 .add("resource", ResourcesCodec.toJsonObject(block));
-        if (obj.containsKey("annotations")) result.add("annotations", obj.getJsonObject("annotations"));
+        if (obj.containsKey("annotations")) {
+            var ann = AnnotationsCodec.toAnnotations(obj.getJsonObject("annotations"));
+            result.add("annotations", AnnotationsCodec.toJsonObject(ann));
+        }
         if (obj.containsKey("_meta")) {
             MetaValidator.requireValid(obj.getJsonObject("_meta"));
             result.add("_meta", obj.getJsonObject("_meta"));
@@ -143,23 +143,4 @@ public record ToolResult(JsonArray content,
         }
     }
 
-    private static Annotations toAnnotations(JsonObject obj) {
-        if (obj == null) return null;
-        Set<Role> audience = EnumSet.noneOf(Role.class);
-        JsonArray arr = obj.getJsonArray("audience");
-        if (arr != null) {
-            arr.getValuesAs(JsonString.class)
-                    .forEach(js -> audience.add(Role.valueOf(js.getString().toUpperCase())));
-        }
-        Double priority = obj.containsKey("priority") ? obj.getJsonNumber("priority").doubleValue() : null;
-        Instant lastModified = null;
-        if (obj.containsKey("lastModified")) {
-            try {
-                lastModified = Instant.parse(obj.getString("lastModified"));
-            } catch (DateTimeParseException e) {
-                throw new IllegalArgumentException("Invalid lastModified", e);
-            }
-        }
-        return new Annotations(audience.isEmpty() ? Set.of() : EnumSet.copyOf(audience), priority, lastModified);
-    }
 }

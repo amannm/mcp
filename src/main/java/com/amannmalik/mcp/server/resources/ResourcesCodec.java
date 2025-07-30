@@ -1,7 +1,7 @@
 package com.amannmalik.mcp.server.resources;
 
 import com.amannmalik.mcp.annotations.Annotations;
-import com.amannmalik.mcp.prompts.Role;
+import com.amannmalik.mcp.annotations.AnnotationsCodec;
 import com.amannmalik.mcp.util.PaginatedRequest;
 import com.amannmalik.mcp.util.PaginatedResult;
 import com.amannmalik.mcp.util.PaginationCodec;
@@ -12,12 +12,10 @@ import jakarta.json.JsonObjectBuilder;
 import jakarta.json.JsonString;
 import jakarta.json.JsonValue;
 
-import java.time.Instant;
-import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.Base64;
-import java.util.EnumSet;
 import java.util.List;
+import java.util.Set;
 import java.util.Set;
 
 public final class ResourcesCodec {
@@ -32,7 +30,7 @@ public final class ResourcesCodec {
         if (r.description() != null) b.add("description", r.description());
         if (r.mimeType() != null) b.add("mimeType", r.mimeType());
         if (r.size() != null) b.add("size", r.size());
-        if (r.annotations() != null) b.add("annotations", toJsonObject(r.annotations()));
+        if (r.annotations() != null) b.add("annotations", AnnotationsCodec.toJsonObject(r.annotations()));
         if (r._meta() != null) b.add("_meta", r._meta());
         return b.build();
     }
@@ -45,7 +43,7 @@ public final class ResourcesCodec {
                 obj.getString("description", null),
                 obj.getString("mimeType", null),
                 obj.containsKey("size") ? obj.getJsonNumber("size").longValue() : null,
-                obj.containsKey("annotations") ? toAnnotations(obj.getJsonObject("annotations")) : null,
+                obj.containsKey("annotations") ? AnnotationsCodec.toAnnotations(obj.getJsonObject("annotations")) : null,
                 obj.containsKey("_meta") ? obj.getJsonObject("_meta") : null
         );
     }
@@ -57,7 +55,7 @@ public final class ResourcesCodec {
         if (t.title() != null) b.add("title", t.title());
         if (t.description() != null) b.add("description", t.description());
         if (t.mimeType() != null) b.add("mimeType", t.mimeType());
-        if (t.annotations() != null) b.add("annotations", toJsonObject(t.annotations()));
+        if (t.annotations() != null) b.add("annotations", AnnotationsCodec.toJsonObject(t.annotations()));
         if (t._meta() != null) b.add("_meta", t._meta());
         return b.build();
     }
@@ -69,7 +67,7 @@ public final class ResourcesCodec {
                 obj.getString("title", null),
                 obj.getString("description", null),
                 obj.getString("mimeType", null),
-                obj.containsKey("annotations") ? toAnnotations(obj.getJsonObject("annotations")) : null,
+                obj.containsKey("annotations") ? AnnotationsCodec.toAnnotations(obj.getJsonObject("annotations")) : null,
                 obj.containsKey("_meta") ? obj.getJsonObject("_meta") : null
         );
     }
@@ -78,7 +76,7 @@ public final class ResourcesCodec {
         JsonObjectBuilder b = Json.createObjectBuilder()
                 .add("uri", block.uri());
         if (block.mimeType() != null) b.add("mimeType", block.mimeType());
-        if (block.annotations() != null) b.add("annotations", toJsonObject(block.annotations()));
+        if (block.annotations() != null) b.add("annotations", AnnotationsCodec.toJsonObject(block.annotations()));
         if (block._meta() != null) b.add("_meta", block._meta());
         switch (block) {
             case ResourceBlock.Text t -> b.add("text", t.text());
@@ -93,7 +91,7 @@ public final class ResourcesCodec {
         if (uri == null) throw new IllegalArgumentException("uri required");
         String mime = obj.getString("mimeType", null);
         JsonObject meta = obj.containsKey("_meta") ? obj.getJsonObject("_meta") : null;
-        Annotations ann = obj.containsKey("annotations") ? toAnnotations(obj.getJsonObject("annotations")) : null;
+        Annotations ann = obj.containsKey("annotations") ? AnnotationsCodec.toAnnotations(obj.getJsonObject("annotations")) : null;
 
         boolean hasText = obj.containsKey("text");
         boolean hasBlob = obj.containsKey("blob");
@@ -115,36 +113,7 @@ public final class ResourcesCodec {
         return new ResourceBlock.Binary(uri, mime, data, ann, meta);
     }
 
-    public static JsonObject toJsonObject(Annotations ann) {
-        JsonObjectBuilder b = Json.createObjectBuilder();
-        if (!ann.audience().isEmpty()) {
-            var arr = Json.createArrayBuilder();
-            ann.audience().forEach(a -> arr.add(a.name().toLowerCase()));
-            b.add("audience", arr);
-        }
-        if (ann.priority() != null) b.add("priority", ann.priority());
-        if (ann.lastModified() != null) b.add("lastModified", ann.lastModified().toString());
-        return b.build();
-    }
 
-    public static Annotations toAnnotations(JsonObject obj) {
-        Set<Role> audience = EnumSet.noneOf(Role.class);
-        var audienceArr = obj.getJsonArray("audience");
-        if (audienceArr != null) {
-            audienceArr.getValuesAs(JsonString.class)
-                    .forEach(js -> audience.add(Role.valueOf(js.getString().toUpperCase())));
-        }
-        Double priority = obj.containsKey("priority") ? obj.getJsonNumber("priority").doubleValue() : null;
-        Instant lastModified = null;
-        if (obj.containsKey("lastModified")) {
-            try {
-                lastModified = Instant.parse(obj.getString("lastModified"));
-            } catch (DateTimeParseException e) {
-                throw new IllegalArgumentException("Invalid lastModified", e);
-            }
-        }
-        return new Annotations(audience.isEmpty() ? Set.of() : EnumSet.copyOf(audience), priority, lastModified);
-    }
 
 
     public static JsonObject toJsonObject(ResourceListChangedNotification n) {
