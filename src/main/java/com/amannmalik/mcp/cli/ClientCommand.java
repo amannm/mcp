@@ -3,10 +3,12 @@ package com.amannmalik.mcp.cli;
 import com.amannmalik.mcp.client.McpClient;
 import com.amannmalik.mcp.lifecycle.ClientCapability;
 import com.amannmalik.mcp.lifecycle.ClientInfo;
+import com.amannmalik.mcp.server.logging.LoggingLevel;
 import com.amannmalik.mcp.transport.StdioTransport;
 import picocli.CommandLine;
 
 import java.nio.file.Path;
+import java.io.IOException;
 import java.util.EnumSet;
 import java.util.concurrent.Callable;
 
@@ -45,7 +47,7 @@ public final class ClientCommand implements Callable<Integer> {
             cfg = new ClientConfig(TransportType.STDIO, command);
         }
 
-        StdioTransport transport = new StdioTransport(new ProcessBuilder(cfg.command().split(" ")),
+        StdioTransport transport = new StdioTransport(new ProcessBuilder(cfg.command().split(" ")), 
                 verbose ? System.err::println : s -> {
                 });
         McpClient client = new McpClient(
@@ -53,6 +55,17 @@ public final class ClientCommand implements Callable<Integer> {
                 EnumSet.noneOf(ClientCapability.class),
                 transport);
         client.connect();
+        if (verbose) {
+            client.setLoggingListener(n -> {
+                String logger = n.logger() == null ? "" : ":" + n.logger();
+                System.err.println(n.level().name().toLowerCase() + logger + " " + n.data());
+            });
+            try {
+                client.setLogLevel(LoggingLevel.DEBUG);
+            } catch (IOException e) {
+                System.err.println("Failed to set log level: " + e.getMessage());
+            }
+        }
         client.ping();
         if (verbose) {
             System.err.println("Ping OK");

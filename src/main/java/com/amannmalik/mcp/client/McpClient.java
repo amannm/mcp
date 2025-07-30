@@ -33,7 +33,9 @@ import com.amannmalik.mcp.ping.PingCodec;
 import com.amannmalik.mcp.ping.PingMonitor;
 import com.amannmalik.mcp.ping.PingResponse;
 import com.amannmalik.mcp.server.logging.LoggingCodec;
+import com.amannmalik.mcp.server.logging.LoggingLevel;
 import com.amannmalik.mcp.server.logging.LoggingListener;
+import com.amannmalik.mcp.server.logging.SetLevelRequest;
 import com.amannmalik.mcp.transport.Transport;
 import com.amannmalik.mcp.util.CancellationCodec;
 import com.amannmalik.mcp.util.CancelledNotification;
@@ -292,6 +294,19 @@ public final class McpClient implements AutoCloseable {
         }
         if (msg instanceof JsonRpcResponse resp) {
             return PingCodec.toPingResponse(resp);
+        }
+        if (msg instanceof JsonRpcError err) {
+            throw new IOException(err.error().message());
+        }
+        throw new IOException("Unexpected message type: " + msg.getClass().getSimpleName());
+    }
+
+    public void setLogLevel(LoggingLevel level) throws IOException {
+        if (level == null) throw new IllegalArgumentException("level required");
+        JsonRpcMessage msg = request("logging/setLevel",
+                LoggingCodec.toJsonObject(new SetLevelRequest(level)));
+        if (msg instanceof JsonRpcResponse) {
+            return;
         }
         if (msg instanceof JsonRpcError err) {
             throw new IOException(err.error().message());
