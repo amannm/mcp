@@ -475,8 +475,9 @@ public final class McpServer implements AutoCloseable {
             progressTracker.release(token);
         }
         try {
+            String reason = cancellationTracker.reason(cn.requestId());
             sendLog(LoggingLevel.INFO, "cancellation",
-                    cn.reason() == null ? JsonValue.NULL : Json.createValue(cn.reason()));
+                    reason == null ? JsonValue.NULL : Json.createValue(reason));
         } catch (IOException ignore) {
         }
     }

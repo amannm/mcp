@@ -630,8 +630,9 @@ public final class McpClient implements AutoCloseable {
         if (token != null) {
             progressTracker.release(token);
         }
-        if (cn.reason() != null && System.err != null) {
-            System.err.println("Request " + cn.requestId() + " cancelled: " + cn.reason());
+        String reason = cancellationTracker.reason(cn.requestId());
+        if (reason != null && System.err != null) {
+            System.err.println("Request " + cn.requestId() + " cancelled: " + reason);
         }
     }
 }
