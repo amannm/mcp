@@ -1,3 +1,4 @@
+@http
 Feature: MCP protocol conformance
 
   Scenario: Basic server interaction

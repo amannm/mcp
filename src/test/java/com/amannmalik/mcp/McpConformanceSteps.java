@@ -70,7 +70,17 @@ public final class McpConformanceSteps {
     private final List<ProgressNotification> progressEvents = new CopyOnWriteArrayList<>();
     private final List<LoggingMessageNotification> logEvents = new CopyOnWriteArrayList<>();
 
-    @Before
+    @Before("@http")
+    public void useHttpTransport() {
+        System.setProperty("mcp.test.transport", "http");
+    }
+
+    @Before("@stdio")
+    public void useStdioTransport() {
+        System.setProperty("mcp.test.transport", "stdio");
+    }
+
+    @Before(order = 1)
     public void startServer() throws Exception {
         String type = System.getProperty("mcp.test.transport", "stdio");
         Transport transport;
