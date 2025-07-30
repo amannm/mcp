@@ -165,7 +165,8 @@ public final class HostCommand implements Callable<Integer> {
                             System.out.println("Usage: list-tools <client-id> [cursor]");
                         } else {
                             String cursor = parts.length > 2 ? parts[2] : null;
-                            System.out.println(host.listTools(parts[1], cursor));
+                            var page = host.listTools(parts[1], cursor);
+                            System.out.println(com.amannmalik.mcp.server.tools.ToolCodec.toJsonObject(page));
                         }
                     }
                     case "call-tool" -> {
@@ -175,7 +176,8 @@ public final class HostCommand implements Callable<Integer> {
                             var args = parts.length > 3 ?
                                     jakarta.json.Json.createReader(new java.io.StringReader(parts[3])).readObject() :
                                     null;
-                            System.out.println(host.callTool(parts[1], parts[2], args));
+                            var result = host.callTool(parts[1], parts[2], args);
+                            System.out.println(com.amannmalik.mcp.server.tools.ToolCodec.toJsonObject(result));
                         }
                     }
                     case "create-message" -> {
