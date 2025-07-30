@@ -1,6 +1,9 @@
 package com.amannmalik.mcp.transport;
 
 import java.io.IOException;
+import java.util.Optional;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * Thrown when the server responds with HTTP 401 Unauthorized.
@@ -8,7 +11,11 @@ import java.io.IOException;
  * The {@code wwwAuthenticate} header may be used by callers to
  * initiate an authorization flow.
  */
+
 public final class UnauthorizedException extends IOException {
+    private static final Pattern RESOURCE_METADATA =
+            Pattern.compile("resource_metadata=\"([^\"]+)\"");
+
     private final String wwwAuthenticate;
 
     public UnauthorizedException(String wwwAuthenticate) {
@@ -18,6 +25,13 @@ public final class UnauthorizedException extends IOException {
 
     public String wwwAuthenticate() {
         return wwwAuthenticate;
+    }
+
+    public Optional<String> resourceMetadata() {
+        if (wwwAuthenticate == null) return Optional.empty();
+        Matcher m = RESOURCE_METADATA.matcher(wwwAuthenticate);
+        if (m.find()) return Optional.of(m.group(1));
+        return Optional.empty();
     }
 }
 

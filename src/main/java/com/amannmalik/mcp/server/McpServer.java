@@ -72,6 +72,7 @@ import com.amannmalik.mcp.server.resources.ResourceBlock;
 import com.amannmalik.mcp.server.resources.ResourceListSubscription;
 import com.amannmalik.mcp.server.resources.ResourceProvider;
 import com.amannmalik.mcp.server.resources.ResourceSubscription;
+import com.amannmalik.mcp.server.resources.ResourceListChangedNotification;
 import com.amannmalik.mcp.server.resources.ResourceTemplate;
 import com.amannmalik.mcp.server.resources.ResourceUpdatedNotification;
 import com.amannmalik.mcp.server.resources.ResourcesCodec;
@@ -86,6 +87,7 @@ import com.amannmalik.mcp.server.tools.ToolListChangedNotification;
 import com.amannmalik.mcp.server.tools.ToolListSubscription;
 import com.amannmalik.mcp.server.tools.ToolProvider;
 import com.amannmalik.mcp.server.tools.ToolResult;
+import com.amannmalik.mcp.prompts.PromptListChangedNotification;
 import com.amannmalik.mcp.transport.Transport;
 import com.amannmalik.mcp.util.CancellationCodec;
 import com.amannmalik.mcp.util.CancellationTracker;
@@ -208,7 +210,9 @@ public final class McpServer implements AutoCloseable {
                 resourceListSubscription = resources.subscribeList(() -> {
                     if (lifecycle.state() != LifecycleState.OPERATION) return;
                     try {
-                        send(new JsonRpcNotification(NotificationMethod.RESOURCES_LIST_CHANGED.method(), null));
+                        send(new JsonRpcNotification(
+                                NotificationMethod.RESOURCES_LIST_CHANGED.method(),
+                                ResourcesCodec.toJsonObject(new ResourceListChangedNotification())));
                     } catch (IOException ignore) {
                     }
                 });
@@ -236,7 +240,9 @@ public final class McpServer implements AutoCloseable {
                 promptsSubscription = prompts.subscribe(() -> {
                     if (lifecycle.state() != LifecycleState.OPERATION) return;
                     try {
-                        send(new JsonRpcNotification(NotificationMethod.PROMPTS_LIST_CHANGED.method(), null));
+                        send(new JsonRpcNotification(
+                                NotificationMethod.PROMPTS_LIST_CHANGED.method(),
+                                PromptCodec.toJsonObject(new PromptListChangedNotification())));
                     } catch (IOException ignore) {
                     }
                 });
@@ -531,6 +537,12 @@ public final class McpServer implements AutoCloseable {
         return false;
     }
 
+    private boolean canAccessResource(String uri) {
+        if (!withinRoots(uri)) return false;
+        Resource meta = resources.get(uri);
+        return allowed(meta == null ? null : meta.annotations());
+    }
+
     private JsonRpcError invalidParams(JsonRpcRequest req, String message) {
         return JsonRpcError.of(req.id(), JsonRpcErrorCode.INVALID_PARAMS, message);
     }
@@ -610,17 +622,13 @@ public final class McpServer implements AutoCloseable {
             return invalidParams(req, e);
         }
         String uri = rrr.uri();
-        if (!withinRoots(uri)) {
+        if (!canAccessResource(uri)) {
             return JsonRpcError.of(req.id(), JsonRpcErrorCode.INTERNAL_ERROR, "Access denied");
         }
         ResourceBlock block = resources.read(uri);
         if (block == null) {
             return JsonRpcError.of(req.id(), -32002, "Resource not found",
                     Json.createObjectBuilder().add("uri", uri).build());
-        }
-        Resource resMeta = resources.get(uri);
-        if (!allowed(resMeta != null ? resMeta.annotations() : null)) {
-            return JsonRpcError.of(req.id(), JsonRpcErrorCode.INTERNAL_ERROR, "Access denied");
         }
         ReadResourceResult result = new ReadResourceResult(List.of(block));
         return new JsonRpcResponse(req.id(), ResourcesCodec.toJsonObject(result));
@@ -672,17 +680,13 @@ public final class McpServer implements AutoCloseable {
             return invalidParams(req, e);
         }
         String uri = sr.uri();
-        if (!withinRoots(uri)) {
+        if (!canAccessResource(uri)) {
             return JsonRpcError.of(req.id(), JsonRpcErrorCode.INTERNAL_ERROR, "Access denied");
         }
         ResourceBlock existing = resources.read(uri);
         if (existing == null) {
             return JsonRpcError.of(req.id(), -32002, "Resource not found",
                     Json.createObjectBuilder().add("uri", uri).build());
-        }
-        Resource resMeta = resources.get(uri);
-        if (!allowed(resMeta != null ? resMeta.annotations() : null)) {
-            return JsonRpcError.of(req.id(), JsonRpcErrorCode.INTERNAL_ERROR, "Access denied");
         }
         try {
             ResourceSubscription sub = resources.subscribe(uri, update -> {
@@ -716,7 +720,7 @@ public final class McpServer implements AutoCloseable {
             return invalidParams(req, e);
         }
         String uri = ur.uri();
-        if (!withinRoots(uri)) {
+        if (!canAccessResource(uri)) {
             return JsonRpcError.of(req.id(), JsonRpcErrorCode.INTERNAL_ERROR, "Access denied");
         }
         ResourceSubscription sub = resourceSubscriptions.remove(uri);

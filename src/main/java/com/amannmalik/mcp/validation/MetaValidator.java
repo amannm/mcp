@@ -34,6 +34,9 @@ public final class MetaValidator {
                 if (!LABEL.matcher(label).matches()) {
                     throw new IllegalArgumentException("Invalid _meta prefix: " + key);
                 }
+                if (i < labels.length - 1 && (label.equals("modelcontextprotocol") || label.equals("mcp"))) {
+                    throw new IllegalArgumentException("Reserved _meta prefix: " + key);
+                }
             }
         }
 
