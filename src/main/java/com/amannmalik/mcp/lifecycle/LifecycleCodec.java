@@ -18,7 +18,7 @@ public final class LifecycleCodec {
             caps.add(c.name().toLowerCase(), b.build());
         }
         req.capabilities().clientExperimental()
-                .forEach((k, v) -> caps.add(k, v));
+                .forEach(caps::add);
         var info = Json.createObjectBuilder()
                 .add("name", req.clientInfo().name())
                 .add("version", req.clientInfo().version());
