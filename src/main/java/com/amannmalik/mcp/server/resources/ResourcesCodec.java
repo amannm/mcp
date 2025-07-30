@@ -74,6 +74,7 @@ public final class ResourcesCodec {
         JsonObjectBuilder b = Json.createObjectBuilder()
                 .add("uri", block.uri());
         if (block.mimeType() != null) b.add("mimeType", block.mimeType());
+        if (block.annotations() != null) b.add("annotations", toJsonObject(block.annotations()));
         if (block._meta() != null) b.add("_meta", block._meta());
         switch (block) {
             case ResourceBlock.Text t -> b.add("text", t.text());
@@ -88,10 +89,7 @@ public final class ResourcesCodec {
         if (uri == null) throw new IllegalArgumentException("uri required");
         String mime = obj.getString("mimeType", null);
         JsonObject meta = obj.containsKey("_meta") ? obj.getJsonObject("_meta") : null;
-
-        if (obj.containsKey("annotations")) {
-            throw new IllegalArgumentException("annotations not allowed");
-        }
+        Annotations ann = obj.containsKey("annotations") ? toAnnotations(obj.getJsonObject("annotations")) : null;
 
         boolean hasText = obj.containsKey("text");
         boolean hasBlob = obj.containsKey("blob");
@@ -100,17 +98,17 @@ public final class ResourcesCodec {
         }
 
         for (String key : obj.keySet()) {
-            if (!Set.of("uri", "mimeType", "_meta", "text", "blob").contains(key)) {
+            if (!Set.of("uri", "mimeType", "_meta", "annotations", "text", "blob").contains(key)) {
                 throw new IllegalArgumentException("unexpected field: " + key);
             }
         }
 
         if (hasText) {
-            return new ResourceBlock.Text(uri, mime, obj.getString("text"), null, meta);
+            return new ResourceBlock.Text(uri, mime, obj.getString("text"), ann, meta);
         }
 
         byte[] data = Base64.getDecoder().decode(obj.getString("blob"));
-        return new ResourceBlock.Binary(uri, mime, data, null, meta);
+        return new ResourceBlock.Binary(uri, mime, data, ann, meta);
     }
 
     public static JsonObject toJsonObject(Annotations ann) {
