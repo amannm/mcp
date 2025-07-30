@@ -8,6 +8,7 @@ import jakarta.json.JsonObject;
 import jakarta.json.JsonObjectBuilder;
 import jakarta.json.JsonString;
 import jakarta.json.JsonValue;
+import java.util.Optional;
 
 public final class ProgressCodec {
     private ProgressCodec() {
@@ -41,18 +42,19 @@ public final class ProgressCodec {
         };
     }
 
-    public static ProgressToken fromMeta(JsonObject params) {
-        if (params == null || !params.containsKey("_meta")) return null;
+    public static Optional<ProgressToken> fromMeta(JsonObject params) {
+        if (params == null || !params.containsKey("_meta")) return Optional.empty();
         JsonObject meta = params.getJsonObject("_meta");
         MetaValidator.requireValid(meta);
-        if (!meta.containsKey("progressToken")) return null;
+        if (!meta.containsKey("progressToken")) return Optional.empty();
         var val = meta.get("progressToken");
-        return switch (val.getValueType()) {
+        ProgressToken token = switch (val.getValueType()) {
             case STRING -> new ProgressToken.StringToken(
                     InputSanitizer.requireClean(meta.getString("progressToken"))
             );
             case NUMBER -> new ProgressToken.NumericToken(meta.getJsonNumber("progressToken").longValue());
             default -> throw new IllegalArgumentException("progressToken must be a string or number");
         };
+        return Optional.of(token);
     }
 }
