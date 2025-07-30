@@ -9,7 +9,7 @@ public final class LoggingCodec {
     private LoggingCodec() {
     }
 
-    public static JsonObject toJsonObject(LoggingNotification n) {
+    public static JsonObject toJsonObject(LoggingMessageNotification n) {
         JsonObjectBuilder b = Json.createObjectBuilder()
                 .add("level", n.level().name().toLowerCase())
                 .add("data", n.data());
@@ -17,7 +17,7 @@ public final class LoggingCodec {
         return b.build();
     }
 
-    public static LoggingNotification toLoggingNotification(JsonObject obj) {
+    public static LoggingMessageNotification toLoggingMessageNotification(JsonObject obj) {
         if (obj == null) throw new IllegalArgumentException("object required");
 
         String rawLevel;
@@ -40,7 +40,7 @@ public final class LoggingCodec {
             }
         }
 
-        return new LoggingNotification(level, logger, data);
+        return new LoggingMessageNotification(level, logger, data);
     }
 
     public static JsonObject toJsonObject(SetLevelRequest req) {
