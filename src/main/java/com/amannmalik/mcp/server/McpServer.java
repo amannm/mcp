@@ -56,7 +56,7 @@ import com.amannmalik.mcp.server.completion.CompletionProvider;
 import com.amannmalik.mcp.server.completion.InMemoryCompletionProvider;
 import com.amannmalik.mcp.server.logging.LoggingCodec;
 import com.amannmalik.mcp.server.logging.LoggingLevel;
-import com.amannmalik.mcp.server.logging.LoggingNotification;
+import com.amannmalik.mcp.server.logging.LoggingMessageNotification;
 import com.amannmalik.mcp.server.resources.Audience;
 import com.amannmalik.mcp.server.resources.InMemoryResourceProvider;
 import com.amannmalik.mcp.server.resources.Resource;
@@ -636,8 +636,7 @@ public final class McpServer implements AutoCloseable {
         try {
             ResourceSubscription sub = resources.subscribe(uri, update -> {
                 try {
-                    ResourceUpdatedNotification n = new ResourceUpdatedNotification(
-                            update.uri(), update.title());
+                    ResourceUpdatedNotification n = new ResourceUpdatedNotification(update.uri());
                     send(new JsonRpcNotification(
                             "notifications/resources/updated",
                             ResourcesCodec.toJsonObject(n)));
@@ -805,7 +804,7 @@ public final class McpServer implements AutoCloseable {
         }
     }
 
-    private void sendLog(LoggingNotification note) throws IOException {
+    private void sendLog(LoggingMessageNotification note) throws IOException {
         logLimiter.requireAllowance(note.logger() == null ? "" : note.logger());
         if (note.level().ordinal() < logLevel.ordinal()) return;
         requireServerCapability(ServerCapability.LOGGING);
@@ -814,7 +813,7 @@ public final class McpServer implements AutoCloseable {
     }
 
     private void sendLog(LoggingLevel level, String logger, JsonValue data) throws IOException {
-        sendLog(new LoggingNotification(level, logger, data));
+        sendLog(new LoggingMessageNotification(level, logger, data));
     }
 
     private JsonRpcMessage complete(JsonRpcRequest req) {
