@@ -5,7 +5,6 @@ import com.amannmalik.mcp.validation.InputSanitizer;
 import java.util.HashMap;
 import java.util.Map;
 
-/** Request for a {@code prompts/get} call. */
 public record GetPromptRequest(String name, Map<String, String> arguments) {
     public GetPromptRequest {
         if (name == null) throw new IllegalArgumentException("name required");
