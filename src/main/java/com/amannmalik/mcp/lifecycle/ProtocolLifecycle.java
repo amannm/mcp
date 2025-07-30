@@ -1,6 +1,7 @@
 package com.amannmalik.mcp.lifecycle;
 
 import java.util.EnumSet;
+import java.util.Map;
 import java.util.Set;
 
 
@@ -32,7 +33,7 @@ public class ProtocolLifecycle {
 
         return new InitializeResponse(
                 SUPPORTED_VERSION,
-                new Capabilities(clientCapabilities, serverCapabilities),
+                new Capabilities(clientCapabilities, serverCapabilities, Map.of(), Map.of()),
                 serverInfo,
                 instructions
         );
