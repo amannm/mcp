@@ -3,6 +3,7 @@ package com.amannmalik.mcp.prompts;
 import com.amannmalik.mcp.server.resources.ResourcesCodec;
 import com.amannmalik.mcp.util.PaginatedResult;
 import com.amannmalik.mcp.util.PaginationCodec;
+import com.amannmalik.mcp.validation.InputSanitizer;
 import jakarta.json.Json;
 import jakarta.json.JsonArrayBuilder;
 import jakarta.json.JsonObject;
@@ -101,8 +102,10 @@ public final class PromptCodec {
             if (v.getValueType() != JsonValue.ValueType.STRING) {
                 throw new IllegalArgumentException("argument values must be strings");
             }
-            args.put(k, ((JsonString) v).getString());
+            String key = InputSanitizer.requireClean(k);
+            String value = InputSanitizer.requireClean(((JsonString) v).getString());
+            args.put(key, value);
         });
-        return args;
+        return Map.copyOf(args);
     }
 }
