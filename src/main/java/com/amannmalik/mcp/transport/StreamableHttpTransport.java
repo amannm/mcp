@@ -12,6 +12,8 @@ import com.amannmalik.mcp.security.OriginValidator;
 import com.amannmalik.mcp.util.Base64Util;
 import com.amannmalik.mcp.validation.InputSanitizer;
 import com.amannmalik.mcp.wire.RequestMethod;
+import com.amannmalik.mcp.transport.ResourceMetadata;
+import com.amannmalik.mcp.transport.ResourceMetadataCodec;
 import jakarta.json.Json;
 import jakarta.json.JsonObject;
 import jakarta.json.JsonReader;
@@ -612,12 +614,8 @@ public final class StreamableHttpTransport implements Transport {
     private class MetadataServlet extends HttpServlet {
         @Override
         protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws IOException {
-            var arr = jakarta.json.Json.createArrayBuilder();
-            for (String s : authorizationServers) arr.add(s);
-            var body = jakarta.json.Json.createObjectBuilder()
-                    .add("resource", canonicalResource)
-                    .add("authorization_servers", arr.build())
-                    .build();
+            ResourceMetadata meta = new ResourceMetadata(canonicalResource, authorizationServers);
+            JsonObject body = ResourceMetadataCodec.toJsonObject(meta);
             resp.setStatus(HttpServletResponse.SC_OK);
             resp.setContentType("application/json");
             resp.setCharacterEncoding("UTF-8");
