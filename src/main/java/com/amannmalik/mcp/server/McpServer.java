@@ -535,7 +535,7 @@ public final class McpServer implements AutoCloseable {
     private void sendProgress(ProgressNotification note) throws IOException {
         if (!progressTracker.isActive(note.token())) return;
         try {
-            progressLimiter.requireAllowance(note.token().toString());
+            progressLimiter.requireAllowance(note.token().asString());
             progressTracker.update(note);
         } catch (IllegalArgumentException | IllegalStateException ignore) {
             return;
