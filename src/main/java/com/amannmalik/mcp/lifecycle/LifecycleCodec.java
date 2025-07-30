@@ -3,6 +3,8 @@ package com.amannmalik.mcp.lifecycle;
 import jakarta.json.Json;
 import jakarta.json.JsonObject;
 
+import com.amannmalik.mcp.lifecycle.ServerFeatures;
+
 import java.util.EnumSet;
 import java.util.Map;
 import java.util.Set;
@@ -73,10 +75,18 @@ public final class LifecycleCodec {
         var server = Json.createObjectBuilder();
         for (var c : resp.capabilities().server()) {
             var b = Json.createObjectBuilder();
+            ServerFeatures f = resp.features();
             switch (c) {
-                case PROMPTS -> b.add("listChanged", true);
-                case RESOURCES -> b.add("subscribe", true).add("listChanged", true);
-                case TOOLS -> b.add("listChanged", true);
+                case PROMPTS -> {
+                    if (f != null && f.promptsListChanged()) b.add("listChanged", true);
+                }
+                case RESOURCES -> {
+                    if (f != null && f.resourcesSubscribe()) b.add("subscribe", true);
+                    if (f != null && f.resourcesListChanged()) b.add("listChanged", true);
+                }
+                case TOOLS -> {
+                    if (f != null && f.toolsListChanged()) b.add("listChanged", true);
+                }
                 default -> {
                 }
             }
@@ -113,6 +123,25 @@ public final class LifecycleCodec {
                 }
             });
         }
+        boolean resSub = false;
+        boolean resList = false;
+        boolean toolList = false;
+        boolean promptList = false;
+        if (capsObj != null) {
+            JsonObject res = capsObj.getJsonObject("resources");
+            if (res != null) {
+                resSub = res.getBoolean("subscribe", false);
+                resList = res.getBoolean("listChanged", false);
+            }
+            JsonObject tools = capsObj.getJsonObject("tools");
+            if (tools != null) {
+                toolList = tools.getBoolean("listChanged", false);
+            }
+            JsonObject prompts = capsObj.getJsonObject("prompts");
+            if (prompts != null) {
+                promptList = prompts.getBoolean("listChanged", false);
+            }
+        }
         Capabilities caps = new Capabilities(
                 client.isEmpty() ? Set.of() : EnumSet.copyOf(client),
                 server.isEmpty() ? Set.of() : EnumSet.copyOf(server),
@@ -129,6 +158,7 @@ public final class LifecycleCodec {
                 si.getString("version")
         );
         String instructions = obj.containsKey("instructions") ? obj.getString("instructions") : null;
-        return new InitializeResponse(version, caps, info, instructions);
+        ServerFeatures features = new ServerFeatures(resSub, resList, toolList, promptList);
+        return new InitializeResponse(version, caps, info, instructions, features);
     }
 }

@@ -4,6 +4,7 @@ public record InitializeResponse(
         String protocolVersion,
         Capabilities capabilities,
         ServerInfo serverInfo,
-        String instructions
+        String instructions,
+        ServerFeatures features
 ) {
 }

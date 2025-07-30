@@ -35,7 +35,8 @@ public class ProtocolLifecycle {
                 SUPPORTED_VERSION,
                 new Capabilities(clientCapabilities, serverCapabilities, Map.of(), Map.of()),
                 serverInfo,
-                instructions
+                instructions,
+                null
         );
     }
 
