@@ -26,8 +26,23 @@ public record ServerConfig(
             }
         }
 
-        authorizationServers = authorizationServers == null || authorizationServers.isEmpty()
-                ? List.of()
-                : List.copyOf(authorizationServers);
+        if (authorizationServers == null || authorizationServers.isEmpty()) {
+            authorizationServers = List.of();
+        } else {
+            var validated = new java.util.ArrayList<String>(authorizationServers.size());
+            for (String as : authorizationServers) {
+                try {
+                    var uri = java.net.URI.create(as);
+                    if (!uri.isAbsolute() || uri.getFragment() != null
+                            || !"https".equalsIgnoreCase(uri.getScheme())) {
+                        throw new IllegalArgumentException();
+                    }
+                    validated.add(as);
+                } catch (Exception e) {
+                    throw new IllegalArgumentException("invalid authorizationServer: " + as, e);
+                }
+            }
+            authorizationServers = List.copyOf(validated);
+        }
     }
 }
