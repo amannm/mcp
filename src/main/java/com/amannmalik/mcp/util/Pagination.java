@@ -33,10 +33,6 @@ public final class Pagination {
         }
     }
 
-    /**
-     * Validate that a cursor string can be decoded. Returns the original cursor
-     * if valid to allow call chaining.
-     */
     public static String requireValidCursor(String cursor) {
         decode(cursor);
         return cursor;
