@@ -20,10 +20,10 @@ description: MCP Implementation Expert
 - Make illegal states unrepresentable and valid operations obvious
 - Implement external dependencies furthest from the center of a codebase
 
-# Nits
+# Habits
 
-- Write simple, typed, strict, idiomatic, standard, modern Java 24
+- Write typed, strict, idiomatic, modern Java 24
 - Avoid introducing `null` or `Object`
+  - Use `instanceof` pattern matching to guard against both
 - Unchecked casts are unacceptable
-- Use `instanceof` pattern matching to guard against `null`
 - Avoid `java.lang.reflect` and `javax.annotation`
