@@ -35,6 +35,7 @@ public final class SamplingCodec {
             obj.add("stopSequences", arr.build());
         }
         if (req.metadata() != null) obj.add("metadata", req.metadata());
+        if (req._meta() != null) obj.add("_meta", req._meta());
         return obj.build();
     }
 
@@ -62,7 +63,8 @@ public final class SamplingCodec {
                 .stream().map(JsonString::getString).toList()
                 : List.of();
         JsonObject metadata = obj.getJsonObject("metadata");
-        return new CreateMessageRequest(messages, prefs, system, ctx, temp, max, stops, metadata);
+        JsonObject meta = obj.containsKey("_meta") ? obj.getJsonObject("_meta") : null;
+        return new CreateMessageRequest(messages, prefs, system, ctx, temp, max, stops, metadata, meta);
     }
 
     public static JsonObject toJsonObject(CreateMessageResponse resp) {
