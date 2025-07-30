@@ -6,9 +6,4 @@ public record ReadResourceResult(List<ResourceBlock> contents) {
     public ReadResourceResult {
         contents = contents == null ? List.of() : List.copyOf(contents);
     }
-
-    @Override
-    public List<ResourceBlock> contents() {
-        return List.copyOf(contents);
-    }
 }

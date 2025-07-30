@@ -1,7 +1,6 @@
 package com.amannmalik.mcp.server.tools;
 
 import com.amannmalik.mcp.validation.InputSanitizer;
-import jakarta.json.Json;
 import jakarta.json.JsonObject;
 import jakarta.json.JsonValue;
 

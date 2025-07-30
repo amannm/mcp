@@ -13,16 +13,18 @@ import com.amannmalik.mcp.client.sampling.SamplingProviderFactory;
 import com.amannmalik.mcp.jsonrpc.JsonRpcError;
 import com.amannmalik.mcp.jsonrpc.JsonRpcMessage;
 import com.amannmalik.mcp.jsonrpc.JsonRpcResponse;
+import com.amannmalik.mcp.jsonrpc.RequestId;
 import com.amannmalik.mcp.lifecycle.ClientCapability;
 import com.amannmalik.mcp.lifecycle.ClientInfo;
 import com.amannmalik.mcp.lifecycle.ServerCapability;
 import com.amannmalik.mcp.prompts.Role;
-import com.amannmalik.mcp.transport.StdioTransport;
-import com.amannmalik.mcp.util.ProgressNotification;
 import com.amannmalik.mcp.server.logging.LoggingMessageNotification;
-import com.amannmalik.mcp.util.CancelledNotification;
+import com.amannmalik.mcp.transport.StdioTransport;
+import com.amannmalik.mcp.transport.StreamableHttpClientTransport;
+import com.amannmalik.mcp.transport.Transport;
 import com.amannmalik.mcp.util.CancellationCodec;
-import com.amannmalik.mcp.jsonrpc.RequestId;
+import com.amannmalik.mcp.util.CancelledNotification;
+import com.amannmalik.mcp.util.ProgressNotification;
 import io.cucumber.java.After;
 import io.cucumber.java.Before;
 import io.cucumber.java.en.Given;
@@ -31,7 +33,12 @@ import io.cucumber.java.en.When;
 import jakarta.json.Json;
 import jakarta.json.JsonObject;
 
+import java.io.BufferedReader;
 import java.io.File;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.net.URI;
+import java.nio.charset.StandardCharsets;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -51,26 +58,58 @@ public final class McpConformanceSteps {
 
     @Before
     public void startServer() throws Exception {
-        ProcessBuilder pb = new ProcessBuilder(
-                JAVA_BIN, "-cp", System.getProperty("java.class.path"),
-                "com.amannmalik.mcp.Main", "server", "--stdio", "-v"
-        );
-        serverProcess = pb.start();
-        long end = System.currentTimeMillis() + 500;
-        boolean started = false;
-        while (System.currentTimeMillis() < end) {
-            if (serverProcess.isAlive()) {
-                started = true;
-                break;
+        String type = System.getProperty("mcp.test.transport", "stdio");
+        Transport transport;
+        if ("http".equals(type)) {
+            ProcessBuilder pb = new ProcessBuilder(
+                    JAVA_BIN, "-cp", System.getProperty("java.class.path"),
+                    "com.amannmalik.mcp.Main", "server", "--http", "0", "-v"
+            );
+            serverProcess = pb.start();
+            var err = new BufferedReader(new InputStreamReader(
+                    serverProcess.getErrorStream(), StandardCharsets.UTF_8));
+            String line;
+            int port = -1;
+            long end = System.currentTimeMillis() + 2000;
+            while (System.currentTimeMillis() < end && (line = err.readLine()) != null) {
+                if (line.startsWith("Listening on http://127.0.0.1:")) {
+                    port = Integer.parseInt(line.substring(line.lastIndexOf(':') + 1));
+                    break;
+                }
             }
-            Thread.sleep(50);
-        }
-        assertTrue(started, "server failed to start");
+            assertTrue(port > 0, "server failed to start");
+            Thread logThread = new Thread(() -> {
+                try {
+                    while (err.readLine() != null) {
+                    }
+                } catch (IOException ignore) {
+                }
+            });
+            logThread.setDaemon(true);
+            logThread.start();
+            transport = new StreamableHttpClientTransport(URI.create("http://127.0.0.1:" + port + "/"));
+        } else {
+            ProcessBuilder pb = new ProcessBuilder(
+                    JAVA_BIN, "-cp", System.getProperty("java.class.path"),
+                    "com.amannmalik.mcp.Main", "server", "--stdio", "-v"
+            );
+            serverProcess = pb.start();
+            long end = System.currentTimeMillis() + 500;
+            boolean started = false;
+            while (System.currentTimeMillis() < end) {
+                if (serverProcess.isAlive()) {
+                    started = true;
+                    break;
+                }
+                Thread.sleep(50);
+            }
+            assertTrue(started, "server failed to start");
 
-        StdioTransport transport = new StdioTransport(
-                serverProcess.getInputStream(),
-                serverProcess.getOutputStream()
-        );
+            transport = new StdioTransport(
+                    serverProcess.getInputStream(),
+                    serverProcess.getOutputStream()
+            );
+        }
         BlockingElicitationProvider elicitation = new BlockingElicitationProvider();
         elicitation.respond(new ElicitResult(ElicitationAction.CANCEL, null, null));
         SamplingProvider sampling = SamplingProviderFactory.createMock(new CreateMessageResponse(

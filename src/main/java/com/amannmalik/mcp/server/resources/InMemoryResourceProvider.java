@@ -1,7 +1,7 @@
 package com.amannmalik.mcp.server.resources;
 
-import com.amannmalik.mcp.util.Pagination;
 import com.amannmalik.mcp.util.ListChangeSupport;
+import com.amannmalik.mcp.util.Pagination;
 
 import java.util.List;
 import java.util.Map;

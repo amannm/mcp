@@ -1,8 +1,9 @@
 package com.amannmalik.mcp.client.roots;
 
+import com.amannmalik.mcp.util.ListChangeSupport;
+
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
-import com.amannmalik.mcp.util.ListChangeSupport;
 
 public final class InMemoryRootsProvider implements RootsProvider {
     private final List<Root> roots = new CopyOnWriteArrayList<>();
