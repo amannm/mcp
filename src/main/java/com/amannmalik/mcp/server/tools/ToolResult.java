@@ -16,10 +16,11 @@ import jakarta.json.JsonValue;
 
 public record ToolResult(JsonArray content,
                          JsonObject structuredContent,
-                         boolean isError,
+                         Boolean isError,
                          JsonObject _meta) {
     public ToolResult {
         content = sanitize(content == null ? JsonValue.EMPTY_JSON_ARRAY : content);
+        if (isError == null) isError = Boolean.FALSE;
         MetaValidator.requireValid(_meta);
     }
 
