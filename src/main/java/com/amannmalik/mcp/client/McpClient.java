@@ -35,6 +35,7 @@ import com.amannmalik.mcp.lifecycle.UnsupportedProtocolVersionException;
 import com.amannmalik.mcp.ping.PingCodec;
 import com.amannmalik.mcp.ping.PingMonitor;
 import com.amannmalik.mcp.ping.PingResponse;
+import com.amannmalik.mcp.ping.PingScheduler;
 import com.amannmalik.mcp.prompts.PromptsListener;
 import com.amannmalik.mcp.security.RateLimiter;
 import com.amannmalik.mcp.security.SamplingAccessPolicy;
@@ -72,8 +73,6 @@ import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicLong;
@@ -96,7 +95,7 @@ public final class McpClient implements AutoCloseable {
     private final Map<RequestId, ProgressToken> progressTokens = new ConcurrentHashMap<>();
     private final RateLimiter progressLimiter = new RateLimiter(20, 1000);
     private Thread reader;
-    private ScheduledExecutorService pinger;
+    private PingScheduler pinger;
     private long pingInterval;
     private long pingTimeout;
     private volatile boolean connected;
@@ -270,16 +269,13 @@ public final class McpClient implements AutoCloseable {
         reader.setDaemon(true);
         reader.start();
         if (pingInterval > 0) {
-            pinger = Executors.newSingleThreadScheduledExecutor();
-            pinger.scheduleAtFixedRate(() -> {
-                if (!PingMonitor.isAlive(this, pingTimeout)) {
-                    try {
-                        disconnect();
-                    } catch (IOException ignore) {
-                    }
-                    if (System.err != null) System.err.println("Ping failed, connection closed");
+            pinger = new PingScheduler(this, pingInterval, pingTimeout, () -> {
+                try {
+                    disconnect();
+                } catch (IOException ignore) {
                 }
-            }, pingInterval, pingInterval, TimeUnit.MILLISECONDS);
+            });
+            pinger.start();
         }
     }
 
@@ -287,7 +283,7 @@ public final class McpClient implements AutoCloseable {
         if (!connected) return;
         connected = false;
         if (pinger != null) {
-            pinger.shutdownNow();
+            pinger.close();
             pinger = null;
         }
         transport.close();
