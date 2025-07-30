@@ -2,6 +2,7 @@ package com.amannmalik.mcp.util;
 
 import java.util.Base64;
 import java.util.List;
+import java.nio.charset.StandardCharsets;
 
 public final class Pagination {
     private Pagination() {
@@ -26,13 +27,16 @@ public final class Pagination {
 
     private static String encode(long version, int index) {
         String raw = version >= 0 ? version + ":" + index : Integer.toString(index);
-        return Base64.getUrlEncoder().withoutPadding().encodeToString(raw.getBytes());
+        return Base64.getUrlEncoder()
+                .withoutPadding()
+                .encodeToString(raw.getBytes(StandardCharsets.UTF_8));
     }
 
     private static Token decode(String cursor) {
         if (cursor == null) return new Token(-1L, 0);
         try {
-            String s = new String(Base64.getUrlDecoder().decode(cursor));
+            String s = new String(Base64.getUrlDecoder().decode(cursor),
+                    StandardCharsets.UTF_8);
             int colon = s.indexOf(':');
             if (colon < 0) return new Token(-1L, Integer.parseInt(s));
             long v = Long.parseLong(s.substring(0, colon));
