@@ -10,12 +10,14 @@ import java.util.Map;
 public record CompleteRequest(
         Ref ref,
         Argument argument,
-        Context context
+        Context context,
+        JsonObject _meta
 ) {
     public CompleteRequest {
         if (ref == null || argument == null) {
             throw new IllegalArgumentException("ref and argument are required");
         }
+        MetaValidator.requireValid(_meta);
     }
 
     public record Argument(String name, String value) {

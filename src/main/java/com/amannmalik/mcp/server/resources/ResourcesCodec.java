@@ -179,7 +179,10 @@ public final class ResourcesCodec {
     public static JsonObject toJsonObject(ReadResourceResult result) {
         var arr = Json.createArrayBuilder();
         result.contents().forEach(c -> arr.add(toJsonObject(c)));
-        return Json.createObjectBuilder().add("contents", arr.build()).build();
+        JsonObjectBuilder b = Json.createObjectBuilder()
+                .add("contents", arr.build());
+        if (result._meta() != null) b.add("_meta", result._meta());
+        return b.build();
     }
 
     public static JsonObject toJsonObject(ListResourcesResult result) {
@@ -187,27 +190,28 @@ public final class ResourcesCodec {
         return PaginationJson.toJson(
                 "resources",
                 new Pagination.Page<>(result.resources(), result.nextCursor()),
-                ResourcesCodec::toJsonObject);
+                ResourcesCodec::toJsonObject,
+                result._meta());
     }
 
     public static JsonObject toJsonObject(ListResourcesRequest req) {
         if (req == null) throw new IllegalArgumentException("request required");
-        return PaginationCodec.toJsonObject(new PaginatedRequest(req.cursor()));
+        return PaginationCodec.toJsonObject(new PaginatedRequest(req.cursor(), req._meta()));
     }
 
     public static ListResourcesRequest toListResourcesRequest(JsonObject obj) {
-        String cursor = PaginationCodec.toPaginatedRequest(obj).cursor();
-        return new ListResourcesRequest(cursor);
+        PaginatedRequest page = PaginationCodec.toPaginatedRequest(obj);
+        return new ListResourcesRequest(page.cursor(), page._meta());
     }
 
     public static JsonObject toJsonObject(ListResourceTemplatesRequest req) {
         if (req == null) throw new IllegalArgumentException("request required");
-        return PaginationCodec.toJsonObject(new PaginatedRequest(req.cursor()));
+        return PaginationCodec.toJsonObject(new PaginatedRequest(req.cursor(), req._meta()));
     }
 
     public static ListResourceTemplatesRequest toListResourceTemplatesRequest(JsonObject obj) {
-        String cursor = PaginationCodec.toPaginatedRequest(obj).cursor();
-        return new ListResourceTemplatesRequest(cursor);
+        PaginatedRequest page = PaginationCodec.toPaginatedRequest(obj);
+        return new ListResourceTemplatesRequest(page.cursor(), page._meta());
     }
 
     public static JsonObject toJsonObject(ListResourceTemplatesResult result) {
@@ -215,7 +219,8 @@ public final class ResourcesCodec {
         return PaginationJson.toJson(
                 "resourceTemplates",
                 new Pagination.Page<>(result.resourceTemplates(), result.nextCursor()),
-                ResourcesCodec::toJsonObject);
+                ResourcesCodec::toJsonObject,
+                result._meta());
     }
 
 }

@@ -2,9 +2,11 @@ package com.amannmalik.mcp.server.tools;
 
 import com.amannmalik.mcp.util.EmptyJsonObjectCodec;
 import com.amannmalik.mcp.util.PaginatedRequest;
+import com.amannmalik.mcp.util.PaginatedResult;
 import com.amannmalik.mcp.util.Pagination;
 import com.amannmalik.mcp.util.PaginationCodec;
 import com.amannmalik.mcp.util.PaginationJson;
+import com.amannmalik.mcp.util.JsonUtil;
 import jakarta.json.Json;
 import jakarta.json.JsonArray;
 import jakarta.json.JsonObject;
@@ -13,6 +15,7 @@ import jakarta.json.JsonValue;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 
 public final class ToolCodec {
     private ToolCodec() {
@@ -30,17 +33,17 @@ public final class ToolCodec {
         return builder.build();
     }
 
-    public static JsonObject toJsonObject(Pagination.Page<Tool> page) {
-        return PaginationJson.toJson("tools", page, ToolCodec::toJsonObject);
+    public static JsonObject toJsonObject(Pagination.Page<Tool> page, JsonObject meta) {
+        return PaginationJson.toJson("tools", page, ToolCodec::toJsonObject, meta);
     }
 
     public static JsonObject toJsonObject(ListToolsRequest req) {
         if (req == null) throw new IllegalArgumentException("request required");
-        return PaginationCodec.toJsonObject(new PaginatedRequest(req.cursor()));
+        return PaginationCodec.toJsonObject(new PaginatedRequest(req.cursor(), req._meta()));
     }
 
     public static JsonObject toJsonObject(ListToolsResult page) {
-        return toJsonObject(new Pagination.Page<>(page.tools(), page.nextCursor()));
+        return toJsonObject(new Pagination.Page<>(page.tools(), page.nextCursor()), page._meta());
     }
 
     public static JsonObject toJsonObject(ToolResult result) {
@@ -105,12 +108,13 @@ public final class ToolCodec {
 
     public static ListToolsResult toListToolsResult(JsonObject obj) {
         Pagination.Page<Tool> page = toToolPage(obj);
-        return new ListToolsResult(page.items(), page.nextCursor());
+        PaginatedResult pr = PaginationCodec.toPaginatedResult(obj);
+        return new ListToolsResult(page.items(), page.nextCursor(), pr._meta());
     }
 
     public static ListToolsRequest toListToolsRequest(JsonObject obj) {
-        String cursor = PaginationCodec.toPaginatedRequest(obj).cursor();
-        return new ListToolsRequest(cursor);
+        PaginatedRequest pr = PaginationCodec.toPaginatedRequest(obj);
+        return new ListToolsRequest(pr.cursor(), pr._meta());
     }
 
     public static ToolResult toToolResult(JsonObject obj) {
@@ -125,10 +129,12 @@ public final class ToolCodec {
 
     public static CallToolRequest toCallToolRequest(JsonObject obj) {
         if (obj == null) throw new IllegalArgumentException("object required");
+        JsonUtil.requireOnlyKeys(obj, Set.of("name", "arguments", "_meta"));
         String name = obj.getString("name", null);
         if (name == null) throw new IllegalArgumentException("name required");
         JsonObject arguments = obj.getJsonObject("arguments");
-        return new CallToolRequest(name, arguments);
+        JsonObject meta = obj.getJsonObject("_meta");
+        return new CallToolRequest(name, arguments, meta);
     }
 
     private static ToolAnnotations toToolAnnotations(JsonObject obj) {

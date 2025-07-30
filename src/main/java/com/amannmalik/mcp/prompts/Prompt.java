@@ -6,13 +6,15 @@ import jakarta.json.JsonObject;
 
 import java.util.List;
 
+import com.amannmalik.mcp.util.DisplayNameProvider;
+
 public record Prompt(
         String name,
         String title,
         String description,
         List<PromptArgument> arguments,
         JsonObject _meta
-) {
+) implements DisplayNameProvider {
     public Prompt {
         name = InputSanitizer.requireClean(name);
         arguments = arguments == null || arguments.isEmpty() ? List.of() : List.copyOf(arguments);
@@ -21,7 +23,4 @@ public record Prompt(
         MetaValidator.requireValid(_meta);
     }
 
-    public String displayName() {
-        return title != null ? title : name;
-    }
 }

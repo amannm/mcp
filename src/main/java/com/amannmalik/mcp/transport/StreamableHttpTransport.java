@@ -12,6 +12,8 @@ import com.amannmalik.mcp.security.OriginValidator;
 import com.amannmalik.mcp.util.Base64Util;
 import com.amannmalik.mcp.validation.InputSanitizer;
 import com.amannmalik.mcp.wire.RequestMethod;
+import com.amannmalik.mcp.transport.ResourceMetadata;
+import com.amannmalik.mcp.transport.ResourceMetadataCodec;
 import jakarta.json.Json;
 import jakarta.json.JsonObject;
 import jakarta.json.JsonReader;
@@ -103,9 +105,10 @@ public final class StreamableHttpTransport implements Transport {
         } else {
             this.canonicalResource = "http://127.0.0.1:" + this.port;
         }
-        this.authorizationServers = authorizationServers == null || authorizationServers.isEmpty()
-                ? java.util.List.of()
-                : java.util.List.copyOf(authorizationServers);
+        if (authorizationServers == null || authorizationServers.isEmpty()) {
+            throw new IllegalArgumentException("authorizationServers required");
+        }
+        this.authorizationServers = java.util.List.copyOf(authorizationServers);
         // Until initialization negotiates a version, assume the prior revision
         // as the default when no MCP-Protocol-Version header is present.
         this.protocolVersion = COMPATIBILITY_VERSION;
@@ -612,12 +615,8 @@ public final class StreamableHttpTransport implements Transport {
     private class MetadataServlet extends HttpServlet {
         @Override
         protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws IOException {
-            var arr = jakarta.json.Json.createArrayBuilder();
-            for (String s : authorizationServers) arr.add(s);
-            var body = jakarta.json.Json.createObjectBuilder()
-                    .add("resource", canonicalResource)
-                    .add("authorization_servers", arr.build())
-                    .build();
+            ResourceMetadata meta = new ResourceMetadata(canonicalResource, authorizationServers);
+            JsonObject body = ResourceMetadataCodec.toJsonObject(meta);
             resp.setStatus(HttpServletResponse.SC_OK);
             resp.setContentType("application/json");
             resp.setCharacterEncoding("UTF-8");
