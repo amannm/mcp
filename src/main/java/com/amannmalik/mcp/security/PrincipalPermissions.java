@@ -4,9 +4,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
-/**
- * Thread-safe registry of permissions granted to principals.
- */
 final class PrincipalPermissions<T> {
     private final Map<String, Set<T>> map = new ConcurrentHashMap<>();
 
