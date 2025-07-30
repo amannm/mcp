@@ -4,6 +4,6 @@ public sealed interface RequestId permits RequestId.StringId, RequestId.NumericI
     record StringId(String value) implements RequestId {
     }
 
-    record NumericId(long value) implements RequestId {
+    record NumericId(double value) implements RequestId {
     }
 }
