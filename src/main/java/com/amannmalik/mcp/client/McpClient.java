@@ -360,6 +360,7 @@ public final class McpClient implements AutoCloseable {
     }
 
     public JsonRpcMessage request(RequestMethod method, JsonObject params, long timeoutMillis) throws IOException {
+        requireCapability(method);
         return request(method.method(), params, timeoutMillis);
     }
 
@@ -602,6 +603,26 @@ public final class McpClient implements AutoCloseable {
     private void sendProgress(ProgressNotification note) throws IOException {
         ProgressUtil.sendProgress(note, progressTracker, progressLimiter,
                 n -> notify(n.method(), n.params()));
+    }
+
+    private void requireCapability(RequestMethod method) {
+        ServerCapability cap = switch (method) {
+            case RESOURCES_LIST,
+                    RESOURCES_TEMPLATES_LIST,
+                    RESOURCES_READ,
+                    RESOURCES_SUBSCRIBE,
+                    RESOURCES_UNSUBSCRIBE -> ServerCapability.RESOURCES;
+            case TOOLS_LIST,
+                    TOOLS_CALL -> ServerCapability.TOOLS;
+            case PROMPTS_LIST,
+                    PROMPTS_GET -> ServerCapability.PROMPTS;
+            case LOGGING_SET_LEVEL -> ServerCapability.LOGGING;
+            case COMPLETION_COMPLETE -> ServerCapability.COMPLETIONS;
+            default -> null;
+        };
+        if (cap != null && !serverCapabilities.contains(cap)) {
+            throw new IllegalStateException("Server capability not negotiated: " + cap);
+        }
     }
 
     public void setProgressListener(ProgressListener listener) {
