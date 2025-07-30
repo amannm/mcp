@@ -2,6 +2,7 @@ package com.amannmalik.mcp.server.completion;
 
 import com.amannmalik.mcp.validation.InputSanitizer;
 import com.amannmalik.mcp.validation.MetaValidator;
+import com.amannmalik.mcp.validation.UriTemplateValidator;
 import jakarta.json.JsonObject;
 import java.util.Map;
 
@@ -66,7 +67,7 @@ public record CompleteRequest(
         record ResourceRef(String uri) implements Ref {
             public ResourceRef(String uri) {
                 if (uri == null) throw new IllegalArgumentException("uri required");
-                this.uri = InputSanitizer.requireClean(uri);
+                this.uri = UriTemplateValidator.requireAbsoluteTemplate(uri);
             }
 
             @Override
