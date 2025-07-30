@@ -44,6 +44,10 @@ public final class StreamableHttpTransport implements Transport {
     private final OriginValidator originValidator;
     private final AuthorizationManager authManager;
     private final String resourceMetadataUrl;
+    private static final JsonObject DEFAULT_RESOURCE_METADATA = Json.createObjectBuilder()
+            .add("authorization_servers", Json.createArrayBuilder()
+                    .add("urn:example:authorization-server"))
+            .build();
     private static final String PROTOCOL_HEADER = "MCP-Protocol-Version";
     // Default to the previous protocol revision when no version header is
     // present, as recommended for backwards compatibility.
@@ -72,12 +76,17 @@ public final class StreamableHttpTransport implements Transport {
         server = new Server(new InetSocketAddress("127.0.0.1", port));
         ServletContextHandler ctx = new ServletContextHandler();
         ctx.addServlet(new ServletHolder(new McpServlet()), "/");
+        ctx.addServlet(new ServletHolder(new MetadataServlet()), "/.well-known/oauth-protected-resource");
         server.setHandler(ctx);
         server.start();
         this.port = ((ServerConnector) server.getConnectors()[0]).getLocalPort();
         this.originValidator = validator;
         this.authManager = auth;
-        this.resourceMetadataUrl = resourceMetadataUrl;
+        if (resourceMetadataUrl == null || resourceMetadataUrl.isBlank()) {
+            this.resourceMetadataUrl = "http://127.0.0.1:" + this.port + "/.well-known/oauth-protected-resource";
+        } else {
+            this.resourceMetadataUrl = resourceMetadataUrl;
+        }
         // Until initialization negotiates a version, assume the prior revision
         // as the default when no MCP-Protocol-Version header is present.
         this.protocolVersion = COMPATIBILITY_VERSION;
@@ -572,6 +581,15 @@ public final class StreamableHttpTransport implements Transport {
             requestStreams.clear();
             clientsByPrefix.clear();
             resp.setStatus(HttpServletResponse.SC_OK);
+        }
+    }
+
+    private class MetadataServlet extends HttpServlet {
+        @Override
+        protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws IOException {
+            resp.setStatus(HttpServletResponse.SC_OK);
+            resp.setContentType("application/json");
+            resp.getWriter().write(DEFAULT_RESOURCE_METADATA.toString());
         }
     }
 
