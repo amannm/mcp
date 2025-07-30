@@ -3,7 +3,11 @@ package com.amannmalik.mcp.ping;
 import com.amannmalik.mcp.jsonrpc.JsonRpcRequest;
 import com.amannmalik.mcp.jsonrpc.JsonRpcResponse;
 import com.amannmalik.mcp.jsonrpc.RequestId;
+import com.amannmalik.mcp.util.JsonUtil;
+import com.amannmalik.mcp.validation.MetaValidator;
+import jakarta.json.JsonObject;
 import jakarta.json.JsonValue;
+import java.util.Set;
 
 public final class PingCodec {
     private PingCodec() {
@@ -11,10 +15,11 @@ public final class PingCodec {
 
     public static PingRequest toPingRequest(JsonRpcRequest req) {
         if (req == null) throw new IllegalArgumentException("request required");
-        if (req.params() != null && !req.params().isEmpty()) {
-            throw new IllegalArgumentException("no params expected");
-        }
-        return new PingRequest();
+        JsonObject params = req.params();
+        if (params != null) JsonUtil.requireOnlyKeys(params, Set.of("_meta"));
+        JsonObject meta = params == null ? null : params.getJsonObject("_meta");
+        MetaValidator.requireValid(meta);
+        return new PingRequest(meta);
     }
 
     public static JsonRpcResponse toResponse(RequestId id) {

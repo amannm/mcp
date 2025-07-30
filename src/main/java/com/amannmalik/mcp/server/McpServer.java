@@ -587,7 +587,7 @@ public final class McpServer implements AutoCloseable {
             }
         }
 
-        ListResourcesResult result = new ListResourcesResult(filteredResources, list.nextCursor());
+        ListResourcesResult result = new ListResourcesResult(filteredResources, list.nextCursor(), null);
         JsonObject resultJson = ResourcesCodec.toJsonObject(result);
         return new JsonRpcResponse(req.id(), resultJson);
     }
@@ -645,7 +645,7 @@ public final class McpServer implements AutoCloseable {
             }
         }
 
-        ListResourceTemplatesResult result = new ListResourceTemplatesResult(filteredTemplates, page.nextCursor());
+        ListResourceTemplatesResult result = new ListResourceTemplatesResult(filteredTemplates, page.nextCursor(), null);
         JsonObject resultJson = ResourcesCodec.toJsonObject(result);
         return new JsonRpcResponse(req.id(), resultJson);
     }
@@ -729,7 +729,7 @@ public final class McpServer implements AutoCloseable {
         } catch (IllegalArgumentException e) {
             return invalidParams(req, e);
         }
-        JsonObject result = ToolCodec.toJsonObject(page);
+        JsonObject result = ToolCodec.toJsonObject(page, null);
         return new JsonRpcResponse(req.id(), result);
     }
 
@@ -793,7 +793,7 @@ public final class McpServer implements AutoCloseable {
         } catch (IllegalArgumentException e) {
             return invalidParams(req, e);
         }
-        JsonObject result = PromptCodec.toJsonObject(page);
+        JsonObject result = PromptCodec.toJsonObject(page, null);
         return new JsonRpcResponse(req.id(), result);
     }
 

@@ -6,9 +6,11 @@ import com.amannmalik.mcp.server.resources.ResourcesCodec;
 import com.amannmalik.mcp.util.Base64Util;
 import com.amannmalik.mcp.util.EmptyJsonObjectCodec;
 import com.amannmalik.mcp.util.PaginatedRequest;
+import com.amannmalik.mcp.util.PaginatedResult;
 import com.amannmalik.mcp.util.Pagination;
 import com.amannmalik.mcp.util.PaginationCodec;
 import com.amannmalik.mcp.util.PaginationJson;
+import com.amannmalik.mcp.util.JsonUtil;
 import com.amannmalik.mcp.validation.InputSanitizer;
 import jakarta.json.Json;
 import jakarta.json.JsonArray;
@@ -22,6 +24,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 public final class PromptCodec {
     private PromptCodec() {
@@ -61,17 +64,17 @@ public final class PromptCodec {
         return obj.build();
     }
 
-    public static JsonObject toJsonObject(Pagination.Page<Prompt> page) {
-        return PaginationJson.toJson("prompts", page, PromptCodec::toJsonObject);
+    public static JsonObject toJsonObject(Pagination.Page<Prompt> page, JsonObject meta) {
+        return PaginationJson.toJson("prompts", page, PromptCodec::toJsonObject, meta);
     }
 
     public static JsonObject toJsonObject(ListPromptsRequest req) {
         if (req == null) throw new IllegalArgumentException("request required");
-        return PaginationCodec.toJsonObject(new PaginatedRequest(req.cursor()));
+        return PaginationCodec.toJsonObject(new PaginatedRequest(req.cursor(), req._meta()));
     }
 
     public static JsonObject toJsonObject(ListPromptsResult page) {
-        return toJsonObject(new Pagination.Page<>(page.prompts(), page.nextCursor()));
+        return toJsonObject(new Pagination.Page<>(page.prompts(), page.nextCursor()), page._meta());
     }
 
     public static JsonObject toJsonObject(PromptListChangedNotification n) {
@@ -120,11 +123,13 @@ public final class PromptCodec {
 
     public static GetPromptRequest toGetPromptRequest(JsonObject obj) {
         if (obj == null) throw new IllegalArgumentException("params required");
+        JsonUtil.requireOnlyKeys(obj, Set.of("name", "arguments", "_meta"));
         String name = obj.getString("name", null);
         if (name == null) throw new IllegalArgumentException("name required");
         JsonObject argsObj = obj.getJsonObject("arguments");
         Map<String, String> args = toArguments(argsObj);
-        return new GetPromptRequest(name, args);
+        JsonObject meta = obj.getJsonObject("_meta");
+        return new GetPromptRequest(name, args, meta);
     }
 
     public static Map<String, String> toArguments(JsonObject obj) {
@@ -195,12 +200,13 @@ public final class PromptCodec {
 
     public static ListPromptsResult toListPromptsResult(JsonObject obj) {
         Pagination.Page<Prompt> page = toPromptPage(obj);
-        return new ListPromptsResult(page.items(), page.nextCursor());
+        PaginatedResult pr = PaginationCodec.toPaginatedResult(obj);
+        return new ListPromptsResult(page.items(), page.nextCursor(), pr._meta());
     }
 
     public static ListPromptsRequest toListPromptsRequest(JsonObject obj) {
-        String cursor = PaginationCodec.toPaginatedRequest(obj).cursor();
-        return new ListPromptsRequest(cursor);
+        PaginatedRequest pr = PaginationCodec.toPaginatedRequest(obj);
+        return new ListPromptsRequest(pr.cursor(), pr._meta());
     }
 
     private static PromptArgument toPromptArgument(JsonObject obj) {
