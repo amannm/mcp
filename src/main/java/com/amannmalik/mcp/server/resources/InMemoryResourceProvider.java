@@ -74,6 +74,11 @@ public final class InMemoryResourceProvider implements ResourceProvider {
         if (resource == null) {
             throw new IllegalArgumentException("resource required");
         }
+        for (Resource r : resources) {
+            if (r.uri().equals(resource.uri())) {
+                throw new IllegalArgumentException("duplicate resource uri: " + resource.uri());
+            }
+        }
         resources.add(resource);
         if (content != null) contents.put(resource.uri(), content);
         notifyListListeners();
@@ -86,6 +91,14 @@ public final class InMemoryResourceProvider implements ResourceProvider {
     }
 
     public void addTemplate(ResourceTemplate template) {
+        if (template == null) {
+            throw new IllegalArgumentException("template required");
+        }
+        for (ResourceTemplate t : templates) {
+            if (t.name().equals(template.name())) {
+                throw new IllegalArgumentException("duplicate template name: " + template.name());
+            }
+        }
         templates.add(template);
         notifyListListeners();
     }

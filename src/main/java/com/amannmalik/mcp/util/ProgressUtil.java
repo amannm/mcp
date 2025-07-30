@@ -6,12 +6,13 @@ import com.amannmalik.mcp.security.RateLimiter;
 import jakarta.json.JsonObject;
 
 import java.io.IOException;
+import java.util.Optional;
 
 public final class ProgressUtil {
     private ProgressUtil() {
     }
 
-    public static ProgressToken tokenFromMeta(JsonObject params) {
+    public static Optional<ProgressToken> tokenFromMeta(JsonObject params) {
         return ProgressCodec.fromMeta(params);
     }
 

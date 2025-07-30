@@ -57,6 +57,7 @@ import com.amannmalik.mcp.util.ProgressNotification;
 import com.amannmalik.mcp.util.ProgressToken;
 import com.amannmalik.mcp.util.ProgressTracker;
 import com.amannmalik.mcp.util.ProgressUtil;
+import java.util.Optional;
 import com.amannmalik.mcp.util.Timeouts;
 import com.amannmalik.mcp.validation.SchemaValidator;
 import jakarta.json.Json;
@@ -387,21 +388,21 @@ public final class McpClient implements AutoCloseable {
     public JsonRpcMessage request(String method, JsonObject params, long timeoutMillis) throws IOException {
         if (!connected) throw new IllegalStateException("not connected");
         RequestId reqId = new RequestId.NumericId(id.getAndIncrement());
-        ProgressToken token = ProgressUtil.tokenFromMeta(params);
-        if (token != null) {
-            progressTracker.register(token);
-            progressTokens.put(reqId, token);
-        }
+        Optional<ProgressToken> token = ProgressUtil.tokenFromMeta(params);
+        token.ifPresent(t -> {
+            progressTracker.register(t);
+            progressTokens.put(reqId, t);
+        });
         CompletableFuture<JsonRpcMessage> future = new CompletableFuture<>();
         pending.put(reqId, future);
         try {
             transport.send(JsonRpcCodec.toJsonObject(new JsonRpcRequest(reqId, method, params)));
         } catch (IOException e) {
             pending.remove(reqId);
-            if (token != null) {
+            token.ifPresent(t -> {
                 progressTokens.remove(reqId);
-                progressTracker.release(token);
-            }
+                progressTracker.release(t);
+            });
             throw e;
         }
         try {
@@ -414,18 +415,18 @@ public final class McpClient implements AutoCloseable {
                 notify(NotificationMethod.CANCELLED.method(), CancellationCodec.toJsonObject(new CancelledNotification(reqId, "timeout")));
             } catch (IOException ignore) {
             }
-            if (token != null) {
+            token.ifPresent(t -> {
                 progressTokens.remove(reqId);
-                progressTracker.release(token);
-            }
+                progressTracker.release(t);
+            });
             throw new IOException("Request timed out after " + timeoutMillis + " ms");
         } catch (ExecutionException e) {
             Throwable cause = e.getCause();
             if (cause instanceof IOException io) throw io;
-            if (token != null) {
+            token.ifPresent(t -> {
                 progressTokens.remove(reqId);
-                progressTracker.release(token);
-            }
+                progressTracker.release(t);
+            });
             throw new IOException(cause);
         } finally {
             pending.remove(reqId);
@@ -499,17 +500,17 @@ public final class McpClient implements AutoCloseable {
 
     private JsonRpcMessage handleRequest(JsonRpcRequest req) {
         cancellationTracker.register(req.id());
-        ProgressToken token;
+        Optional<ProgressToken> token;
         try {
             token = ProgressUtil.tokenFromMeta(req.params());
-            if (token != null) {
-                progressTracker.register(token);
-                progressTokens.put(req.id(), token);
+            token.ifPresent(t -> {
+                progressTracker.register(t);
+                progressTokens.put(req.id(), t);
                 try {
-                    sendProgress(new ProgressNotification(token, 0.0, 1.0, null));
+                    sendProgress(new ProgressNotification(t, 0.0, 1.0, null));
                 } catch (IOException ignore) {
                 }
-            }
+            });
         } catch (IllegalArgumentException e) {
             cancellationTracker.release(req.id());
             return new JsonRpcError(req.id(), new JsonRpcError.ErrorDetail(

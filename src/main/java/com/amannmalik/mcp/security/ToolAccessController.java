@@ -18,8 +18,6 @@ public final class ToolAccessController implements ToolAccessPolicy {
     public void requireAllowed(Principal principal, String tool) {
         if (principal == null) throw new IllegalArgumentException("principal required");
         if (tool == null || tool.isBlank()) throw new IllegalArgumentException("tool required");
-        if (!permissions.contains(principal.id(), tool)) {
-            throw new SecurityException("Tool not authorized: " + tool);
-        }
+        permissions.requirePermission(principal.id(), tool, "Tool not authorized: " + tool);
     }
 }
