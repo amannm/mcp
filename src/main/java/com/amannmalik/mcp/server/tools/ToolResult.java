@@ -13,7 +13,7 @@ import jakarta.json.JsonObject;
 import jakarta.json.JsonObjectBuilder;
 import jakarta.json.JsonValue;
 
-import java.util.Base64;
+import com.amannmalik.mcp.util.Base64Util;
 
 public record ToolResult(JsonArray content,
                          JsonObject structuredContent,
@@ -72,10 +72,10 @@ public record ToolResult(JsonArray content,
     }
 
     private static JsonObject toImage(JsonObject obj) {
-        byte[] data = decodeBase64(obj.getString("data"));
+        byte[] data = Base64Util.decode(obj.getString("data"));
         JsonObjectBuilder result = Json.createObjectBuilder()
                 .add("type", "image")
-                .add("data", Base64.getEncoder().encodeToString(data))
+                .add("data", Base64Util.encode(data))
                 .add("mimeType", InputSanitizer.requireClean(obj.getString("mimeType")));
         if (obj.containsKey("annotations")) {
             var ann = AnnotationsCodec.toAnnotations(obj.getJsonObject("annotations"));
@@ -89,10 +89,10 @@ public record ToolResult(JsonArray content,
     }
 
     private static JsonObject toAudio(JsonObject obj) {
-        byte[] data = decodeBase64(obj.getString("data"));
+        byte[] data = Base64Util.decode(obj.getString("data"));
         JsonObjectBuilder result = Json.createObjectBuilder()
                 .add("type", "audio")
-                .add("data", Base64.getEncoder().encodeToString(data))
+                .add("data", Base64Util.encode(data))
                 .add("mimeType", InputSanitizer.requireClean(obj.getString("mimeType")));
         if (obj.containsKey("annotations")) {
             var ann = AnnotationsCodec.toAnnotations(obj.getJsonObject("annotations"));
@@ -133,14 +133,6 @@ public record ToolResult(JsonArray content,
             result.add("_meta", obj.getJsonObject("_meta"));
         }
         return result.build();
-    }
-
-    private static byte[] decodeBase64(String value) {
-        try {
-            return Base64.getDecoder().decode(value);
-        } catch (IllegalArgumentException e) {
-            throw new IllegalArgumentException("Invalid base64 data", e);
-        }
     }
 
 }
