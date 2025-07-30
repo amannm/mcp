@@ -27,7 +27,7 @@ public final class JsonRpcCodec {
             }
             case JsonRpcResponse r -> {
                 addId(builder, r.id());
-                builder.add("result", r.result() != null ? r.result() : JsonValue.NULL);
+                builder.add("result", r.result());
             }
             case JsonRpcError e -> {
                 addId(builder, e.id());
@@ -74,7 +74,11 @@ public final class JsonRpcCodec {
             if (idValue == null || idValue.getValueType() == JsonValue.ValueType.NULL) {
                 throw new IllegalArgumentException("id is required for response");
             }
-            return new JsonRpcResponse(toId(idValue), obj.getJsonObject("result"));
+            var resultVal = obj.get("result");
+            if (resultVal == null || resultVal.getValueType() != JsonValue.ValueType.OBJECT) {
+                throw new IllegalArgumentException("result must be an object");
+            }
+            return new JsonRpcResponse(toId(idValue), resultVal.asJsonObject());
         }
         if (hasError) {
             RequestId id;
