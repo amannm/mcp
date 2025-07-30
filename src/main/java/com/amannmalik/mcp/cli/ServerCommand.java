@@ -1,5 +1,8 @@
 package com.amannmalik.mcp.cli;
 
+import com.amannmalik.mcp.auth.AuthorizationManager;
+import com.amannmalik.mcp.auth.BearerTokenAuthorizationStrategy;
+import com.amannmalik.mcp.auth.JwtTokenValidator;
 import com.amannmalik.mcp.server.McpServer;
 import com.amannmalik.mcp.transport.StdioTransport;
 import com.amannmalik.mcp.transport.StreamableHttpTransport;
@@ -21,6 +24,9 @@ public final class ServerCommand implements Callable<Integer> {
 
     @CommandLine.Option(names = "--stdio", description = "Use stdio transport")
     private boolean stdio;
+
+    @CommandLine.Option(names = "--expected-audience", description = "Token audience")
+    private String audience;
 
     @CommandLine.Option(names = {"-v", "--verbose"}, description = "Verbose logging")
     private boolean verbose;
@@ -54,6 +60,11 @@ public final class ServerCommand implements Callable<Integer> {
             case STDIO -> t = new StdioTransport(System.in, System.out);
             case HTTP -> {
                 StreamableHttpTransport ht = new StreamableHttpTransport(cfg.port());
+                if (audience != null) {
+                    var manager = new AuthorizationManager(
+                            java.util.List.of(new BearerTokenAuthorizationStrategy(new JwtTokenValidator(audience))));
+                    ht.setAuthorizationManager(manager);
+                }
                 if (verbose) System.err.println("Listening on http://127.0.0.1:" + ht.port());
                 t = ht;
             }

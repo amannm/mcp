@@ -1,5 +1,7 @@
 package com.amannmalik.mcp.transport;
 
+import com.amannmalik.mcp.auth.AuthorizationException;
+import com.amannmalik.mcp.auth.AuthorizationManager;
 import com.amannmalik.mcp.jsonrpc.JsonRpcCodec;
 import com.amannmalik.mcp.jsonrpc.JsonRpcError;
 import com.amannmalik.mcp.jsonrpc.JsonRpcErrorCode;
@@ -40,6 +42,7 @@ public final class StreamableHttpTransport implements Transport {
     private final Server server;
     private final int port;
     private final OriginValidator originValidator;
+    private AuthorizationManager authorization;
     private static final String PROTOCOL_HEADER = "MCP-Protocol-Version";
     // Default to the previous protocol revision when no version header is
     // present, as recommended for backwards compatibility.
@@ -74,6 +77,10 @@ public final class StreamableHttpTransport implements Transport {
 
     public int port() {
         return port;
+    }
+
+    public void setAuthorizationManager(AuthorizationManager manager) {
+        this.authorization = manager;
     }
 
     @Override
@@ -187,6 +194,7 @@ public final class StreamableHttpTransport implements Transport {
                 resp.sendError(HttpServletResponse.SC_FORBIDDEN);
                 return;
             }
+            if (!authorize(req, resp)) return;
             String accept = req.getHeader("Accept");
             if (accept == null || !(accept.contains("application/json") && accept.contains("text/event-stream"))) {
                 resp.sendError(HttpServletResponse.SC_NOT_ACCEPTABLE);
@@ -349,6 +357,7 @@ public final class StreamableHttpTransport implements Transport {
                 resp.sendError(HttpServletResponse.SC_FORBIDDEN);
                 return;
             }
+            if (!authorize(req, resp)) return;
             String accept = req.getHeader("Accept");
             if (accept == null || !accept.contains("text/event-stream")) {
                 resp.sendError(HttpServletResponse.SC_NOT_ACCEPTABLE);
@@ -433,6 +442,7 @@ public final class StreamableHttpTransport implements Transport {
                 resp.sendError(HttpServletResponse.SC_FORBIDDEN);
                 return;
             }
+            if (!authorize(req, resp)) return;
             String session = sessionId.get();
             String header = req.getHeader("Mcp-Session-Id");
             String version = req.getHeader(PROTOCOL_HEADER);
@@ -462,6 +472,18 @@ public final class StreamableHttpTransport implements Transport {
             requestStreams.forEach((id, c) -> c.close());
             requestStreams.clear();
             resp.setStatus(HttpServletResponse.SC_OK);
+        }
+    }
+
+    private boolean authorize(HttpServletRequest req, HttpServletResponse resp) throws IOException {
+        if (authorization == null) return true;
+        try {
+            authorization.authorize(req.getHeader("Authorization"));
+            return true;
+        } catch (AuthorizationException e) {
+            resp.setHeader("WWW-Authenticate", "Bearer");
+            resp.sendError(HttpServletResponse.SC_UNAUTHORIZED);
+            return false;
         }
     }
 
