@@ -117,6 +117,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.EnumMap;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -128,8 +129,8 @@ import java.util.concurrent.atomic.AtomicLong;
 public final class McpServer implements AutoCloseable {
     private final Transport transport;
     private final ProtocolLifecycle lifecycle;
-    private final Map<String, RequestHandler> requestHandlers = new ConcurrentHashMap<>();
-    private final Map<String, NotificationHandler> notificationHandlers = new ConcurrentHashMap<>();
+    private final Map<RequestMethod, RequestHandler> requestHandlers = new EnumMap<>(RequestMethod.class);
+    private final Map<NotificationMethod, NotificationHandler> notificationHandlers = new EnumMap<>(NotificationMethod.class);
     private final ProgressTracker progressTracker = new ProgressTracker();
     private final Map<RequestId, ProgressToken> progressTokens = new ConcurrentHashMap<>();
     private final CancellationTracker cancellationTracker = new CancellationTracker();
@@ -243,46 +244,46 @@ public final class McpServer implements AutoCloseable {
             }
         }
 
-        registerRequestHandler(RequestMethod.INITIALIZE.method(), this::initialize);
-        registerNotificationHandler(NotificationMethod.INITIALIZED.method(), this::initialized);
-        registerRequestHandler(RequestMethod.PING.method(), this::ping);
-        registerNotificationHandler(NotificationMethod.CANCELLED.method(), this::cancelled);
-        registerNotificationHandler(NotificationMethod.ROOTS_LIST_CHANGED.method(), n -> rootsListChanged());
+        registerRequestHandler(RequestMethod.INITIALIZE, this::initialize);
+        registerNotificationHandler(NotificationMethod.INITIALIZED, this::initialized);
+        registerRequestHandler(RequestMethod.PING, this::ping);
+        registerNotificationHandler(NotificationMethod.CANCELLED, this::cancelled);
+        registerNotificationHandler(NotificationMethod.ROOTS_LIST_CHANGED, n -> rootsListChanged());
 
         if (resources != null) {
-            registerRequestHandler(RequestMethod.RESOURCES_LIST.method(), this::listResources);
-            registerRequestHandler(RequestMethod.RESOURCES_READ.method(), this::readResource);
-            registerRequestHandler(RequestMethod.RESOURCES_TEMPLATES_LIST.method(), this::listTemplates);
+            registerRequestHandler(RequestMethod.RESOURCES_LIST, this::listResources);
+            registerRequestHandler(RequestMethod.RESOURCES_READ, this::readResource);
+            registerRequestHandler(RequestMethod.RESOURCES_TEMPLATES_LIST, this::listTemplates);
             if (resourcesSubscribeSupported) {
-                registerRequestHandler(RequestMethod.RESOURCES_SUBSCRIBE.method(), this::subscribeResource);
-                registerRequestHandler(RequestMethod.RESOURCES_UNSUBSCRIBE.method(), this::unsubscribeResource);
+                registerRequestHandler(RequestMethod.RESOURCES_SUBSCRIBE, this::subscribeResource);
+                registerRequestHandler(RequestMethod.RESOURCES_UNSUBSCRIBE, this::unsubscribeResource);
             }
         }
 
         if (tools != null) {
-            registerRequestHandler(RequestMethod.TOOLS_LIST.method(), this::listTools);
-            registerRequestHandler(RequestMethod.TOOLS_CALL.method(), this::callTool);
+            registerRequestHandler(RequestMethod.TOOLS_LIST, this::listTools);
+            registerRequestHandler(RequestMethod.TOOLS_CALL, this::callTool);
         }
 
         if (prompts != null) {
-            registerRequestHandler(RequestMethod.PROMPTS_LIST.method(), this::listPrompts);
-            registerRequestHandler(RequestMethod.PROMPTS_GET.method(), this::getPrompt);
+            registerRequestHandler(RequestMethod.PROMPTS_LIST, this::listPrompts);
+            registerRequestHandler(RequestMethod.PROMPTS_GET, this::getPrompt);
         }
 
-        registerRequestHandler(RequestMethod.LOGGING_SET_LEVEL.method(), this::setLogLevel);
+        registerRequestHandler(RequestMethod.LOGGING_SET_LEVEL, this::setLogLevel);
 
         if (completions != null) {
-            registerRequestHandler(RequestMethod.COMPLETION_COMPLETE.method(), this::complete);
+            registerRequestHandler(RequestMethod.COMPLETION_COMPLETE, this::complete);
         }
 
-        registerRequestHandler(RequestMethod.SAMPLING_CREATE_MESSAGE.method(), this::handleCreateMessage);
+        registerRequestHandler(RequestMethod.SAMPLING_CREATE_MESSAGE, this::handleCreateMessage);
     }
 
-    private void registerRequestHandler(String method, RequestHandler handler) {
+    private void registerRequestHandler(RequestMethod method, RequestHandler handler) {
         requestHandlers.put(method, handler);
     }
 
-    private void registerNotificationHandler(String method, NotificationHandler handler) {
+    private void registerNotificationHandler(NotificationMethod method, NotificationHandler handler) {
         notificationHandlers.put(method, handler);
     }
 
@@ -331,15 +332,18 @@ public final class McpServer implements AutoCloseable {
 
     private void onRequest(JsonRpcRequest req) throws IOException {
         if (lifecycle.state() == LifecycleState.INIT &&
-                !"initialize".equals(req.method()) &&
-                !"ping".equals(req.method())) {
+                RequestMethod.from(req.method())
+                        .filter(m -> m != RequestMethod.INITIALIZE && m != RequestMethod.PING)
+                        .isPresent()) {
             send(JsonRpcError.of(req.id(),
                     JsonRpcErrorCode.INTERNAL_ERROR,
                     "Server not initialized",
                     null));
             return;
         }
-        var handler = requestHandlers.get(req.method());
+        var handler = RequestMethod.from(req.method())
+                .map(requestHandlers::get)
+                .orElse(null);
         if (handler == null) {
             send(JsonRpcError.of(req.id(),
                     JsonRpcErrorCode.METHOD_NOT_FOUND,
@@ -374,7 +378,9 @@ public final class McpServer implements AutoCloseable {
                 return;
             }
 
-            cancellable = !"initialize".equals(req.method());
+            cancellable = RequestMethod.from(req.method())
+                    .map(m -> m != RequestMethod.INITIALIZE)
+                    .orElse(true);
             if (cancellable) {
                 cancellationTracker.register(req.id());
             }
@@ -411,8 +417,14 @@ public final class McpServer implements AutoCloseable {
     }
 
     private void onNotification(JsonRpcNotification note) throws IOException {
-        var handler = notificationHandlers.get(note.method());
-        if (handler != null) handler.handle(note);
+        NotificationMethod.from(note.method())
+                .map(notificationHandlers::get)
+                .ifPresent(h -> {
+                    try {
+                        h.handle(note);
+                    } catch (IOException ignore) {
+                    }
+                });
     }
 
     private JsonRpcMessage initialize(JsonRpcRequest req) {
