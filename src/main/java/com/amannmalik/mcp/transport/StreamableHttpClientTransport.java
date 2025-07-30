@@ -5,6 +5,8 @@ import jakarta.json.Json;
 import jakarta.json.JsonObject;
 import jakarta.json.JsonReader;
 
+import com.amannmalik.mcp.transport.UnauthorizedException;
+
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
@@ -64,6 +66,11 @@ public final class StreamableHttpClientTransport implements Transport {
 
         int status = response.statusCode();
         String ct = response.headers().firstValue("Content-Type").orElse("");
+        if (status == 401) {
+            String header = response.headers().firstValue("WWW-Authenticate").orElse(null);
+            response.body().close();
+            throw new UnauthorizedException(header);
+        }
         if (status == 202) {
             response.body().close();
             return;
