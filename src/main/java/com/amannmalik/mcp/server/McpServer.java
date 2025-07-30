@@ -66,7 +66,7 @@ import com.amannmalik.mcp.server.resources.ListResourceTemplatesResult;
 import com.amannmalik.mcp.server.resources.ListResourcesRequest;
 import com.amannmalik.mcp.server.resources.ListResourcesResult;
 import com.amannmalik.mcp.server.resources.Resource;
-import com.amannmalik.mcp.server.resources.ResourceAnnotations;
+import com.amannmalik.mcp.annotations.Annotations;
 import com.amannmalik.mcp.server.resources.ResourceBlock;
 import com.amannmalik.mcp.server.resources.ResourceList;
 import com.amannmalik.mcp.server.resources.ResourceListSubscription;
@@ -464,7 +464,7 @@ public final class McpServer implements AutoCloseable {
         };
     }
 
-    private boolean allowed(ResourceAnnotations ann) {
+    private boolean allowed(Annotations ann) {
         try {
             resourceAccess.requireAllowed(principal, ann);
             return true;

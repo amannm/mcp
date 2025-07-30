@@ -1,7 +1,7 @@
 package com.amannmalik.mcp.prompts;
 
 import com.amannmalik.mcp.server.resources.Resource;
-import com.amannmalik.mcp.server.resources.ResourceAnnotations;
+import com.amannmalik.mcp.annotations.Annotations;
 import com.amannmalik.mcp.server.resources.ResourceBlock;
 import com.amannmalik.mcp.validation.InputSanitizer;
 import com.amannmalik.mcp.validation.MetaValidator;
@@ -15,11 +15,11 @@ public sealed interface PromptContent
         PromptContent.ResourceLink {
     String type();
 
-    ResourceAnnotations annotations();
+    Annotations annotations();
 
     JsonObject _meta();
 
-    record Text(String text, ResourceAnnotations annotations, JsonObject _meta) implements PromptContent {
+    record Text(String text, Annotations annotations, JsonObject _meta) implements PromptContent {
         public Text {
             if (text == null) throw new IllegalArgumentException("text is required");
             text = InputSanitizer.requireClean(text);
@@ -32,7 +32,7 @@ public sealed interface PromptContent
         }
     }
 
-    record Image(byte[] data, String mimeType, ResourceAnnotations annotations, JsonObject _meta) implements PromptContent {
+    record Image(byte[] data, String mimeType, Annotations annotations, JsonObject _meta) implements PromptContent {
         public Image {
             if (data == null || mimeType == null) {
                 throw new IllegalArgumentException("data and mimeType are required");
@@ -48,7 +48,7 @@ public sealed interface PromptContent
         }
     }
 
-    record Audio(byte[] data, String mimeType, ResourceAnnotations annotations, JsonObject _meta) implements PromptContent {
+    record Audio(byte[] data, String mimeType, Annotations annotations, JsonObject _meta) implements PromptContent {
         public Audio {
             if (data == null || mimeType == null) {
                 throw new IllegalArgumentException("data and mimeType are required");
@@ -64,7 +64,7 @@ public sealed interface PromptContent
         }
     }
 
-    record EmbeddedResource(ResourceBlock resource, ResourceAnnotations annotations, JsonObject _meta) implements PromptContent {
+    record EmbeddedResource(ResourceBlock resource, Annotations annotations, JsonObject _meta) implements PromptContent {
         public EmbeddedResource {
             if (resource == null) throw new IllegalArgumentException("resource is required");
             MetaValidator.requireValid(_meta);
@@ -82,7 +82,7 @@ public sealed interface PromptContent
         }
 
         @Override
-        public ResourceAnnotations annotations() {
+        public Annotations annotations() {
             return resource.annotations();
         }
 

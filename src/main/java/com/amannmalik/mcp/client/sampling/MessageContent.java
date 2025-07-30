@@ -1,5 +1,6 @@
 package com.amannmalik.mcp.client.sampling;
 
+import com.amannmalik.mcp.annotations.Annotations;
 import com.amannmalik.mcp.validation.MetaValidator;
 import jakarta.json.JsonObject;
 
