@@ -10,6 +10,7 @@ import com.amannmalik.mcp.security.HostProcess;
 import com.amannmalik.mcp.security.PrivacyBoundaryEnforcer;
 import com.amannmalik.mcp.security.SecurityPolicy;
 import com.amannmalik.mcp.security.ToolAccessController;
+import com.amannmalik.mcp.security.SamplingAccessController;
 import com.amannmalik.mcp.transport.StdioTransport;
 import picocli.CommandLine;
 
@@ -70,10 +71,11 @@ public final class HostCommand implements Callable<Integer> {
         ConsentManager consents = new ConsentManager();
         ToolAccessController tools = new ToolAccessController();
         PrivacyBoundaryEnforcer privacyBoundary = new PrivacyBoundaryEnforcer();
+        SamplingAccessController sampling = new SamplingAccessController();
         SecurityPolicy policy = c -> true;
         Principal principal = new Principal("user", Set.of());
 
-        try (HostProcess host = new HostProcess(policy, consents, tools, privacyBoundary, principal)) {
+        try (HostProcess host = new HostProcess(policy, consents, tools, privacyBoundary, sampling, principal)) {
             for (var entry : cfg.clients().entrySet()) {
                 host.grantConsent(entry.getKey());
                 var pb = new ProcessBuilder(entry.getValue().split(" "));
@@ -146,6 +148,14 @@ public final class HostCommand implements Callable<Integer> {
                             host.revokeTool(parts[1]);
                             System.out.println("Revoked tool: " + parts[1]);
                         }
+                    }
+                    case "allow-sampling" -> {
+                        host.allowSampling();
+                        System.out.println("Sampling allowed");
+                    }
+                    case "revoke-sampling" -> {
+                        host.revokeSampling();
+                        System.out.println("Sampling revoked");
                     }
                     case "list-tools" -> {
                         if (parts.length < 2) {
@@ -230,6 +240,8 @@ public final class HostCommand implements Callable<Integer> {
                   revoke-consent <scope>            - Revoke consent for scope
                   allow-tool <tool>                 - Allow tool access
                   revoke-tool <tool>                - Revoke tool access
+                  allow-sampling                   - Allow sampling requests
+                  revoke-sampling                  - Revoke sampling requests
                   allow-audience <audience>         - Allow audience access
                   revoke-audience <audience>        - Revoke audience access
                   list-tools <client-id> [cursor]  - List tools from client
