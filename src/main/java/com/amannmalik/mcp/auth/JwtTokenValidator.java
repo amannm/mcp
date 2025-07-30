@@ -57,6 +57,27 @@ public final class JwtTokenValidator implements TokenValidator {
         if (!audOk) {
             throw new AuthorizationException("audience mismatch");
         }
+
+        if (payload.containsKey("resource")) {
+            boolean resourceOk = false;
+            switch (payload.get("resource").getValueType()) {
+                case STRING -> resourceOk = expectedAudience.equals(payload.getString("resource"));
+                case ARRAY -> {
+                    JsonArray arr = payload.getJsonArray("resource");
+                    for (var js : arr.getValuesAs(jakarta.json.JsonString.class)) {
+                        if (expectedAudience.equals(js.getString())) {
+                            resourceOk = true;
+                            break;
+                        }
+                    }
+                }
+                default -> {
+                }
+            }
+            if (!resourceOk) {
+                throw new AuthorizationException("resource mismatch");
+            }
+        }
         String sub = payload.getString("sub", null);
         if (sub == null || sub.isBlank()) {
             throw new AuthorizationException("subject required");
