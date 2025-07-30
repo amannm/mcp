@@ -1,5 +1,6 @@
 package com.amannmalik.mcp.client.sampling;
 
+import com.amannmalik.mcp.annotations.Annotations;
 import com.amannmalik.mcp.prompts.Role;
 import jakarta.json.Json;
 import jakarta.json.JsonArrayBuilder;

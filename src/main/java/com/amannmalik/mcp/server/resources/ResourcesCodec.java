@@ -1,5 +1,6 @@
 package com.amannmalik.mcp.server.resources;
 
+import com.amannmalik.mcp.annotations.Annotations;
 import com.amannmalik.mcp.prompts.Role;
 import jakarta.json.Json;
 import jakarta.json.JsonObject;
@@ -109,7 +110,7 @@ public final class ResourcesCodec {
         return new ResourceBlock.Binary(uri, mime, data, null, meta);
     }
 
-    public static JsonObject toJsonObject(ResourceAnnotations ann) {
+    public static JsonObject toJsonObject(Annotations ann) {
         JsonObjectBuilder b = Json.createObjectBuilder();
         if (!ann.audience().isEmpty()) {
             var arr = Json.createArrayBuilder();
@@ -121,7 +122,7 @@ public final class ResourcesCodec {
         return b.build();
     }
 
-    public static ResourceAnnotations toAnnotations(JsonObject obj) {
+    public static Annotations toAnnotations(JsonObject obj) {
         Set<Role> audience = EnumSet.noneOf(Role.class);
         var audienceArr = obj.getJsonArray("audience");
         if (audienceArr != null) {
@@ -137,7 +138,7 @@ public final class ResourcesCodec {
                 throw new IllegalArgumentException("Invalid lastModified", e);
             }
         }
-        return new ResourceAnnotations(audience.isEmpty() ? Set.of() : EnumSet.copyOf(audience), priority, lastModified);
+        return new Annotations(audience.isEmpty() ? Set.of() : EnumSet.copyOf(audience), priority, lastModified);
     }
 
 

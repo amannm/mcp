@@ -2,7 +2,7 @@ package com.amannmalik.mcp.security;
 
 import com.amannmalik.mcp.auth.Principal;
 import com.amannmalik.mcp.prompts.Role;
-import com.amannmalik.mcp.server.resources.ResourceAnnotations;
+import com.amannmalik.mcp.annotations.Annotations;
 
 import java.util.EnumSet;
 import java.util.Map;
@@ -23,7 +23,7 @@ public final class PrivacyBoundaryEnforcer implements ResourceAccessController {
     }
 
     @Override
-    public void requireAllowed(Principal principal, ResourceAnnotations ann) {
+    public void requireAllowed(Principal principal, Annotations ann) {
         if (principal == null) throw new IllegalArgumentException("principal required");
         if (ann == null || ann.audience().isEmpty()) return;
 

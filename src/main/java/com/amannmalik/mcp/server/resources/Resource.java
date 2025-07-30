@@ -1,5 +1,6 @@
 package com.amannmalik.mcp.server.resources;
 
+import com.amannmalik.mcp.annotations.Annotations;
 import com.amannmalik.mcp.validation.InputSanitizer;
 import com.amannmalik.mcp.validation.MetaValidator;
 import com.amannmalik.mcp.validation.UriValidator;
@@ -12,7 +13,7 @@ public record Resource(
         String description,
         String mimeType,
         Long size,
-        ResourceAnnotations annotations,
+        Annotations annotations,
         JsonObject _meta
 ) {
     public Resource {

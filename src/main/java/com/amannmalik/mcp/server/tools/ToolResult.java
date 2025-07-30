@@ -2,7 +2,7 @@ package com.amannmalik.mcp.server.tools;
 
 import com.amannmalik.mcp.prompts.Role;
 import com.amannmalik.mcp.server.resources.Resource;
-import com.amannmalik.mcp.server.resources.ResourceAnnotations;
+import com.amannmalik.mcp.annotations.Annotations;
 import com.amannmalik.mcp.server.resources.ResourceBlock;
 import com.amannmalik.mcp.server.resources.ResourcesCodec;
 import com.amannmalik.mcp.validation.InputSanitizer;
@@ -143,7 +143,7 @@ public record ToolResult(JsonArray content,
         }
     }
 
-    private static ResourceAnnotations toAnnotations(JsonObject obj) {
+    private static Annotations toAnnotations(JsonObject obj) {
         if (obj == null) return null;
         Set<Role> audience = EnumSet.noneOf(Role.class);
         JsonArray arr = obj.getJsonArray("audience");
@@ -160,6 +160,6 @@ public record ToolResult(JsonArray content,
                 throw new IllegalArgumentException("Invalid lastModified", e);
             }
         }
-        return new ResourceAnnotations(audience.isEmpty() ? Set.of() : EnumSet.copyOf(audience), priority, lastModified);
+        return new Annotations(audience.isEmpty() ? Set.of() : EnumSet.copyOf(audience), priority, lastModified);
     }
 }

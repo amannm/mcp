@@ -1,4 +1,4 @@
-package com.amannmalik.mcp.client.sampling;
+package com.amannmalik.mcp.annotations;
 
 import com.amannmalik.mcp.prompts.Role;
 
