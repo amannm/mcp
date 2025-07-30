@@ -6,17 +6,30 @@ import jakarta.json.JsonArray;
 import jakarta.json.JsonObject;
 import jakarta.json.JsonReader;
 
+import javax.crypto.Mac;
+import javax.crypto.spec.SecretKeySpec;
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.security.InvalidKeyException;
+
 import java.io.StringReader;
 import java.util.Set;
 
 public final class JwtTokenValidator implements TokenValidator {
     private final String expectedAudience;
+    private final byte[] secret;
 
     public JwtTokenValidator(String expectedAudience) {
+        this(expectedAudience, null);
+    }
+
+    public JwtTokenValidator(String expectedAudience, byte[] secret) {
         if (expectedAudience == null || expectedAudience.isBlank()) {
             throw new IllegalArgumentException("expectedAudience required");
         }
         this.expectedAudience = expectedAudience;
+        this.secret = secret == null || secret.length == 0 ? null : secret.clone();
     }
 
     @Override
@@ -25,14 +38,38 @@ public final class JwtTokenValidator implements TokenValidator {
             throw new AuthorizationException("token required");
         }
         String[] parts = token.split("\\.");
-        if (parts.length < 2) {
+        if (parts.length != 3) {
             throw new AuthorizationException("invalid token format");
         }
+        String headerJson;
         String payloadJson;
         try {
+            headerJson = new String(Base64Util.decodeUrl(parts[0]));
             payloadJson = new String(Base64Util.decodeUrl(parts[1]));
         } catch (IllegalArgumentException e) {
             throw new AuthorizationException("invalid token encoding");
+        }
+        if (secret != null) {
+            try (JsonReader hr = Json.createReader(new StringReader(headerJson))) {
+                JsonObject header = hr.readObject();
+                String alg = header.getString("alg", null);
+                if (!"HS256".equals(alg)) {
+                    throw new AuthorizationException("unsupported alg");
+                }
+            } catch (Exception e) {
+                throw new AuthorizationException("invalid token header");
+            }
+            try {
+                Mac mac = Mac.getInstance("HmacSHA256");
+                mac.init(new SecretKeySpec(secret, "HmacSHA256"));
+                byte[] expected = mac.doFinal((parts[0] + "." + parts[1]).getBytes(StandardCharsets.US_ASCII));
+                byte[] actual = Base64Util.decodeUrl(parts[2]);
+                if (!MessageDigest.isEqual(expected, actual)) {
+                    throw new AuthorizationException("invalid signature");
+                }
+            } catch (NoSuchAlgorithmException | InvalidKeyException e) {
+                throw new AuthorizationException("signature verification failed");
+            }
         }
         JsonObject payload;
         try (JsonReader reader = Json.createReader(new StringReader(payloadJson))) {

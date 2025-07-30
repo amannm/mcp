@@ -12,6 +12,7 @@ import picocli.CommandLine;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.Callable;
@@ -75,7 +76,10 @@ public final class ServerCommand implements Callable<Integer> {
                 OriginValidator originValidator = new OriginValidator(Set.of("http://localhost", "http://127.0.0.1"));
                 AuthorizationManager authManager = null;
                 if (cfg.expectedAudience() != null && !cfg.expectedAudience().isBlank()) {
-                    JwtTokenValidator tokenValidator = new JwtTokenValidator(cfg.expectedAudience());
+                    String secretEnv = System.getenv("MCP_JWT_SECRET");
+                    JwtTokenValidator tokenValidator = secretEnv == null || secretEnv.isBlank()
+                            ? new JwtTokenValidator(cfg.expectedAudience())
+                            : new JwtTokenValidator(cfg.expectedAudience(), secretEnv.getBytes(StandardCharsets.UTF_8));
                     BearerTokenAuthorizationStrategy authStrategy = new BearerTokenAuthorizationStrategy(tokenValidator);
                     authManager = new AuthorizationManager(List.of(authStrategy));
                 }
