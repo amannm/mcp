@@ -265,10 +265,6 @@ public final class McpServer implements AutoCloseable {
         }
     }
 
-    private ProtocolLifecycle lifecycle() {
-        return lifecycle;
-    }
-
     private void registerRequestHandler(String method, RequestHandler handler) {
         requestHandlers.put(method, handler);
     }
