@@ -1,8 +1,5 @@
 package com.amannmalik.mcp.lifecycle;
 
-/**
- * Optional feature flags for client capabilities.
- */
 public record ClientFeatures(
         boolean rootsListChanged
 ) {
