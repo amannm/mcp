@@ -360,10 +360,18 @@ public final class McpClient implements AutoCloseable {
                 notify("notifications/cancelled", CancellationCodec.toJsonObject(new CancelledNotification(reqId, "timeout")));
             } catch (IOException ignore) {
             }
+            if (token != null) {
+                progressTokens.remove(reqId);
+                progressTracker.release(token);
+            }
             throw new IOException("Request timed out after " + timeoutMillis + " ms");
         } catch (ExecutionException e) {
             Throwable cause = e.getCause();
             if (cause instanceof IOException io) throw io;
+            if (token != null) {
+                progressTokens.remove(reqId);
+                progressTracker.release(token);
+            }
             throw new IOException(cause);
         } finally {
             pending.remove(reqId);
