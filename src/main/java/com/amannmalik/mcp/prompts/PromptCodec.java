@@ -1,7 +1,11 @@
 package com.amannmalik.mcp.prompts;
 
 import com.amannmalik.mcp.server.resources.ResourcesCodec;
+
+import com.amannmalik.mcp.annotations.AnnotationsCodec;
+
 import com.amannmalik.mcp.util.EmptyJsonObjectCodec;
+
 import com.amannmalik.mcp.util.PaginatedRequest;
 import com.amannmalik.mcp.util.PaginatedResult;
 import com.amannmalik.mcp.util.Pagination;
@@ -89,7 +93,7 @@ public final class PromptCodec {
     static JsonObject toJsonObject(PromptContent content) {
         JsonObjectBuilder b = Json.createObjectBuilder().add("type", content.type());
         if (content.annotations() != null) {
-            b.add("annotations", ResourcesCodec.toJsonObject(content.annotations()));
+            b.add("annotations", AnnotationsCodec.toJsonObject(content.annotations()));
         }
         switch (content) {
             case PromptContent.Text t -> {
@@ -110,7 +114,7 @@ public final class PromptCodec {
                 if (content._meta() != null) b.add("_meta", content._meta());
                 b.add("resource", ResourcesCodec.toJsonObject(r.resource()));
                 if (r.annotations() != null) {
-                    b.add("annotations", ResourcesCodec.toJsonObject(r.annotations()));
+                    b.add("annotations", AnnotationsCodec.toJsonObject(r.annotations()));
                 }
             }
             case PromptContent.ResourceLink l -> {
@@ -231,7 +235,7 @@ public final class PromptCodec {
     private static PromptContent toPromptContent(JsonObject obj) {
         String type = obj.getString("type", null);
         if (type == null) throw new IllegalArgumentException("type required");
-        var ann = obj.containsKey("annotations") ? ResourcesCodec.toAnnotations(obj.getJsonObject("annotations")) : null;
+        var ann = obj.containsKey("annotations") ? AnnotationsCodec.toAnnotations(obj.getJsonObject("annotations")) : null;
         JsonObject meta = obj.containsKey("_meta") ? obj.getJsonObject("_meta") : null;
         return switch (type) {
             case "text" -> new PromptContent.Text(obj.getString("text"), ann, meta);

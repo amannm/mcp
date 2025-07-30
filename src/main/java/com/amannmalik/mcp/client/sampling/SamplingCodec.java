@@ -1,6 +1,7 @@
 package com.amannmalik.mcp.client.sampling;
 
 import com.amannmalik.mcp.annotations.Annotations;
+import com.amannmalik.mcp.annotations.AnnotationsCodec;
 import com.amannmalik.mcp.prompts.Role;
 import jakarta.json.Json;
 import jakarta.json.JsonArrayBuilder;
@@ -8,12 +9,8 @@ import jakarta.json.JsonObject;
 import jakarta.json.JsonObjectBuilder;
 import jakarta.json.JsonString;
 
-import java.time.Instant;
-import java.time.format.DateTimeParseException;
 import java.util.Base64;
-import java.util.EnumSet;
 import java.util.List;
-import java.util.Set;
 
 public final class SamplingCodec {
     private SamplingCodec() {
@@ -103,7 +100,7 @@ public final class SamplingCodec {
 
     static JsonObject toJsonObject(MessageContent content) {
         JsonObjectBuilder b = Json.createObjectBuilder().add("type", content.type());
-        if (content.annotations() != null) b.add("annotations", toJsonObject(content.annotations()));
+        if (content.annotations() != null) b.add("annotations", AnnotationsCodec.toJsonObject(content.annotations()));
         if (content._meta() != null) b.add("_meta", content._meta());
         switch (content) {
             case MessageContent.Text t -> b.add("text", t.text());
@@ -116,7 +113,9 @@ public final class SamplingCodec {
     }
 
     static MessageContent toContent(JsonObject obj) {
-        Annotations ann = obj.containsKey("annotations") ? toAnnotations(obj.getJsonObject("annotations")) : null;
+        Annotations ann = obj.containsKey("annotations")
+                ? AnnotationsCodec.toAnnotations(obj.getJsonObject("annotations"))
+                : null;
         JsonObject meta = obj.containsKey("_meta") ? obj.getJsonObject("_meta") : null;
         return switch (obj.getString("type")) {
             case "text" -> new MessageContent.Text(obj.getString("text"), ann, meta);
@@ -159,33 +158,4 @@ public final class SamplingCodec {
         return new ModelPreferences(hints, cost, speed, intel);
     }
 
-    static JsonObject toJsonObject(Annotations ann) {
-        JsonObjectBuilder b = Json.createObjectBuilder();
-        if (!ann.audience().isEmpty()) {
-            JsonArrayBuilder arr = Json.createArrayBuilder();
-            ann.audience().forEach(r -> arr.add(r.name().toLowerCase()));
-            b.add("audience", arr);
-        }
-        if (ann.priority() != null) b.add("priority", ann.priority());
-        if (ann.lastModified() != null) b.add("lastModified", ann.lastModified().toString());
-        return b.build();
-    }
-
-    static Annotations toAnnotations(JsonObject obj) {
-        Set<Role> audience = EnumSet.noneOf(Role.class);
-        var arr = obj.getJsonArray("audience");
-        if (arr != null) {
-            arr.getValuesAs(JsonString.class).forEach(js -> audience.add(Role.valueOf(js.getString().toUpperCase())));
-        }
-        Double priority = obj.containsKey("priority") ? obj.getJsonNumber("priority").doubleValue() : null;
-        Instant lastModified = null;
-        if (obj.containsKey("lastModified")) {
-            try {
-                lastModified = Instant.parse(obj.getString("lastModified"));
-            } catch (DateTimeParseException e) {
-                throw new IllegalArgumentException("Invalid lastModified", e);
-            }
-        }
-        return new Annotations(audience.isEmpty() ? Set.of() : EnumSet.copyOf(audience), priority, lastModified);
-    }
 }
