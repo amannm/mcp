@@ -16,6 +16,20 @@ public final class ToolCodec {
     private ToolCodec() {
     }
 
+    public static JsonObject toJsonObject(CallToolRequest req) {
+        JsonObjectBuilder b = Json.createObjectBuilder().add("name", req.name());
+        if (req.arguments() != null) b.add("arguments", req.arguments());
+        return b.build();
+    }
+
+    public static CallToolRequest toCallToolRequest(JsonObject obj) {
+        if (obj == null) throw new IllegalArgumentException("object required");
+        String name = obj.getString("name", null);
+        if (name == null) throw new IllegalArgumentException("name required");
+        JsonObject args = obj.getJsonObject("arguments");
+        return new CallToolRequest(name, args);
+    }
+
     public static JsonObject toJsonObject(Tool tool) {
         JsonObjectBuilder builder = Json.createObjectBuilder()
                 .add("name", tool.name());
@@ -36,7 +50,7 @@ public final class ToolCodec {
         return builder.build();
     }
 
-    public static JsonObject toJsonObject(ToolResult result) {
+    public static JsonObject toJsonObject(CallToolResult result) {
         JsonObjectBuilder builder = Json.createObjectBuilder()
                 .add("content", result.content());
         if (result.isError()) builder.add("isError", true);
@@ -98,14 +112,14 @@ public final class ToolCodec {
         return new ToolPage(tools, cursor);
     }
 
-    public static ToolResult toToolResult(JsonObject obj) {
+    public static CallToolResult toCallToolResult(JsonObject obj) {
         if (obj == null) throw new IllegalArgumentException("object required");
         JsonArray content = obj.getJsonArray("content");
         if (content == null) throw new IllegalArgumentException("content required");
         JsonObject structured = obj.getJsonObject("structuredContent");
         boolean isError = obj.getBoolean("isError", false);
         JsonObject meta = obj.containsKey("_meta") ? obj.getJsonObject("_meta") : null;
-        return new ToolResult(content, structured, isError, meta);
+        return new CallToolResult(content, structured, isError, meta);
     }
 
     private static ToolAnnotations toToolAnnotations(JsonObject obj) {

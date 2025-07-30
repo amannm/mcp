@@ -5,7 +5,7 @@ import jakarta.json.JsonObject;
 public interface ToolProvider {
     ToolPage list(String cursor);
 
-    ToolResult call(String name, JsonObject arguments);
+    CallToolResult call(String name, JsonObject arguments);
 
     default ToolListSubscription subscribeList(ToolListListener listener) {
         return () -> {

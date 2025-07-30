@@ -13,10 +13,10 @@ import java.util.function.Function;
 
 public final class InMemoryToolProvider implements ToolProvider {
     private final List<Tool> tools;
-    private final Map<String, Function<JsonObject, ToolResult>> handlers;
+    private final Map<String, Function<JsonObject, CallToolResult>> handlers;
     private final List<ToolListListener> listeners = new CopyOnWriteArrayList<>();
 
-    public InMemoryToolProvider(List<Tool> tools, Map<String, Function<JsonObject, ToolResult>> handlers) {
+    public InMemoryToolProvider(List<Tool> tools, Map<String, Function<JsonObject, CallToolResult>> handlers) {
         this.tools = tools == null ? new CopyOnWriteArrayList<>() : new CopyOnWriteArrayList<>(tools);
         this.handlers = handlers == null ? new ConcurrentHashMap<>() : new ConcurrentHashMap<>(handlers);
     }
@@ -28,7 +28,7 @@ public final class InMemoryToolProvider implements ToolProvider {
     }
 
     @Override
-    public ToolResult call(String name, JsonObject arguments) {
+    public CallToolResult call(String name, JsonObject arguments) {
         var f = handlers.get(name);
         if (f == null) throw new IllegalArgumentException("Unknown tool");
         Tool tool = tools.stream()
@@ -37,7 +37,7 @@ public final class InMemoryToolProvider implements ToolProvider {
                 .orElseThrow(() -> new IllegalArgumentException("Unknown tool"));
         JsonObject args = arguments == null ? Json.createObjectBuilder().build() : arguments;
         SchemaValidator.validate(tool.inputSchema(), args);
-        ToolResult result = f.apply(args);
+        CallToolResult result = f.apply(args);
         if (tool.outputSchema() != null) {
             if (result.structuredContent() == null) {
                 throw new IllegalStateException("structured result required");
@@ -58,7 +58,7 @@ public final class InMemoryToolProvider implements ToolProvider {
         return true;
     }
 
-    public void addTool(Tool tool, Function<JsonObject, ToolResult> handler) {
+    public void addTool(Tool tool, Function<JsonObject, CallToolResult> handler) {
         if (tool == null) throw new IllegalArgumentException("tool required");
         // ensure each tool name is unique
         if (tools.stream().anyMatch(t -> t.name().equals(tool.name()))) {

@@ -79,7 +79,8 @@ import com.amannmalik.mcp.server.tools.ToolCodec;
 import com.amannmalik.mcp.server.tools.ToolListSubscription;
 import com.amannmalik.mcp.server.tools.ToolPage;
 import com.amannmalik.mcp.server.tools.ToolProvider;
-import com.amannmalik.mcp.server.tools.ToolResult;
+import com.amannmalik.mcp.server.tools.CallToolResult;
+import com.amannmalik.mcp.server.tools.CallToolRequest;
 import com.amannmalik.mcp.transport.Transport;
 import com.amannmalik.mcp.util.CancellationCodec;
 import com.amannmalik.mcp.util.CancellationTracker;
@@ -657,31 +658,15 @@ public final class McpServer implements AutoCloseable {
     private JsonRpcMessage callTool(JsonRpcRequest req) {
         requireServerCapability(ServerCapability.TOOLS);
         JsonObject params = req.params();
-        if (params == null) {
-            return new JsonRpcError(req.id(), new JsonRpcError.ErrorDetail(
-                    JsonRpcErrorCode.INVALID_PARAMS.code(), "Missing params", null));
-        }
-        String name = params.getString("name", null);
-        if (name == null) {
-            return new JsonRpcError(req.id(), new JsonRpcError.ErrorDetail(
-                    JsonRpcErrorCode.INVALID_PARAMS.code(), "name required", null));
-        }
+        CallToolRequest ctr;
         try {
-            name = InputSanitizer.requireClean(name);
+            ctr = ToolCodec.toCallToolRequest(params);
         } catch (IllegalArgumentException e) {
             return new JsonRpcError(req.id(), new JsonRpcError.ErrorDetail(
                     JsonRpcErrorCode.INVALID_PARAMS.code(), e.getMessage(), null));
         }
-
-        JsonValue argsVal = params.get("arguments");
-        JsonObject args = null;
-        if (argsVal != null) {
-            if (argsVal.getValueType() != JsonValue.ValueType.OBJECT) {
-                return new JsonRpcError(req.id(), new JsonRpcError.ErrorDetail(
-                        JsonRpcErrorCode.INVALID_PARAMS.code(), "arguments must be object", null));
-            }
-            args = params.getJsonObject("arguments");
-        }
+        String name = ctr.name();
+        JsonObject args = ctr.arguments();
         try {
             toolLimiter.requireAllowance(name);
         } catch (SecurityException e) {
@@ -695,7 +680,7 @@ public final class McpServer implements AutoCloseable {
                     JsonRpcErrorCode.INTERNAL_ERROR.code(), "Access denied", null));
         }
         try {
-            ToolResult result = tools.call(name, args);
+            CallToolResult result = tools.call(name, args);
             return new JsonRpcResponse(req.id(), ToolCodec.toJsonObject(result));
         } catch (IllegalArgumentException e) {
             return new JsonRpcError(req.id(), new JsonRpcError.ErrorDetail(
@@ -895,7 +880,7 @@ public final class McpServer implements AutoCloseable {
         Tool tool = new Tool("test_tool", "Test Tool", null, schema, null, null, null);
         return new InMemoryToolProvider(
                 List.of(tool),
-                Map.of("test_tool", a -> new ToolResult(
+                Map.of("test_tool", a -> new CallToolResult(
                         Json.createArrayBuilder()
                                 .add(Json.createObjectBuilder()
                                         .add("type", "text")

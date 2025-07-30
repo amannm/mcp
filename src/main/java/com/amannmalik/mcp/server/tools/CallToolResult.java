@@ -21,11 +21,11 @@ import java.util.Base64;
 import java.util.EnumSet;
 import java.util.Set;
 
-public record ToolResult(JsonArray content,
-                         JsonObject structuredContent,
-                         boolean isError,
-                         JsonObject _meta) {
-    public ToolResult {
+public record CallToolResult(JsonArray content,
+                             JsonObject structuredContent,
+                             boolean isError,
+                             JsonObject _meta) {
+    public CallToolResult {
         content = sanitize(content == null ? JsonValue.EMPTY_JSON_ARRAY : content);
         MetaValidator.requireValid(_meta);
     }
