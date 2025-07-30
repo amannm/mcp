@@ -24,6 +24,7 @@ public final class HostProcess implements AutoCloseable {
     private final Principal principal;
     private final ToolAccessController toolAccess;
     private final PrivacyBoundaryEnforcer privacyBoundary;
+    private final SamplingAccessController samplingAccess;
 
     private static ServerCapability capabilityForMethod(String method) {
         if (method.startsWith("tools/")) return ServerCapability.TOOLS;
@@ -44,11 +45,13 @@ public final class HostProcess implements AutoCloseable {
                        ConsentManager consents,
                        ToolAccessController toolAccess,
                        PrivacyBoundaryEnforcer privacyBoundary,
+                       SamplingAccessController samplingAccess,
                        Principal principal) {
         this.policy = policy;
         this.consents = consents;
         this.toolAccess = toolAccess;
         this.privacyBoundary = privacyBoundary;
+        this.samplingAccess = samplingAccess;
         this.principal = principal;
     }
 
@@ -90,6 +93,14 @@ public final class HostProcess implements AutoCloseable {
 
     public void revokeTool(String tool) {
         toolAccess.revoke(principal.id(), tool);
+    }
+
+    public void allowSampling() {
+        samplingAccess.allow(principal.id());
+    }
+
+    public void revokeSampling() {
+        samplingAccess.revoke(principal.id());
     }
 
     public void allowAudience(Role audience) {

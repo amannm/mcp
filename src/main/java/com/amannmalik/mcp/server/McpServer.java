@@ -50,6 +50,7 @@ import com.amannmalik.mcp.security.PrivacyBoundaryEnforcer;
 import com.amannmalik.mcp.security.RateLimiter;
 import com.amannmalik.mcp.security.ResourceAccessController;
 import com.amannmalik.mcp.security.ToolAccessPolicy;
+import com.amannmalik.mcp.security.SamplingAccessPolicy;
 import com.amannmalik.mcp.server.completion.CompleteRequest;
 import com.amannmalik.mcp.server.completion.CompleteResult;
 import com.amannmalik.mcp.server.completion.CompletionCodec;
@@ -139,6 +140,7 @@ public final class McpServer implements AutoCloseable {
     private final List<RootsListener> rootsListeners = new CopyOnWriteArrayList<>();
     private final ResourceAccessController resourceAccess;
     private final ToolAccessPolicy toolAccess;
+    private final SamplingAccessPolicy samplingAccess;
     private final Principal principal;
     private volatile LoggingLevel logLevel = LoggingLevel.INFO;
     private static final int RATE_LIMIT_CODE = -32001;
@@ -154,6 +156,7 @@ public final class McpServer implements AutoCloseable {
         this(createDefaultResources(), createDefaultTools(), createDefaultPrompts(), createDefaultCompletions(),
                 createDefaultPrivacyBoundary("default"),
                 createDefaultToolAccess(),
+                createDefaultSamplingAccess(),
                 new Principal("default", Set.of()),
                 instructions,
                 transport);
@@ -165,6 +168,7 @@ public final class McpServer implements AutoCloseable {
               CompletionProvider completions,
               ResourceAccessController resourceAccess,
               ToolAccessPolicy toolAccess,
+              SamplingAccessPolicy samplingAccess,
               Principal principal,
               String instructions,
               Transport transport) {
@@ -182,6 +186,7 @@ public final class McpServer implements AutoCloseable {
         this.completions = completions;
         this.resourceAccess = resourceAccess;
         this.toolAccess = toolAccess == null ? ToolAccessPolicy.PERMISSIVE : toolAccess;
+        this.samplingAccess = samplingAccess == null ? SamplingAccessPolicy.PERMISSIVE : samplingAccess;
         this.principal = principal;
         this.toolListChangedSupported = tools != null && tools.supportsListChanged();
         this.resourcesSubscribeSupported = resources != null && resources.supportsSubscribe();
@@ -902,6 +907,7 @@ public final class McpServer implements AutoCloseable {
 
     public CreateMessageResponse createMessage(CreateMessageRequest req) throws IOException {
         requireClientCapability(ClientCapability.SAMPLING);
+        samplingAccess.requireAllowed(principal);
         JsonRpcMessage msg = sendRequest("sampling/createMessage", SamplingCodec.toJsonObject(req));
         if (msg instanceof JsonRpcResponse resp) {
             return SamplingCodec.toCreateMessageResponse(resp.result());
@@ -947,6 +953,10 @@ public final class McpServer implements AutoCloseable {
 
     private static ToolAccessPolicy createDefaultToolAccess() {
         return ToolAccessPolicy.PERMISSIVE;
+    }
+
+    private static SamplingAccessPolicy createDefaultSamplingAccess() {
+        return SamplingAccessPolicy.PERMISSIVE;
     }
 
     private static ResourceAccessController createDefaultPrivacyBoundary(String principalId) {
