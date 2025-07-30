@@ -99,8 +99,14 @@ public final class ElicitationSchemaValidator {
     private static void validateNumber(JsonObject prop, String name, String type) {
         requireAllowedKeys(prop, NUMBER_KEYS, name);
         validateCommonFields(prop, name);
-        if (prop.containsKey("minimum")) ensureNumber(prop.get("minimum"), name + ".minimum", type);
-        if (prop.containsKey("maximum")) ensureNumber(prop.get("maximum"), name + ".maximum", type);
+        JsonValue min = prop.get("minimum");
+        JsonValue max = prop.get("maximum");
+        if (min != null) ensureNumber(min, name + ".minimum", type);
+        if (max != null) ensureNumber(max, name + ".maximum", type);
+        if (min != null && max != null
+                && ((JsonNumber) max).doubleValue() < ((JsonNumber) min).doubleValue()) {
+            throw new IllegalArgumentException("maximum must be >= minimum for " + name);
+        }
     }
 
     private static void validateBoolean(JsonObject prop, String name) {
