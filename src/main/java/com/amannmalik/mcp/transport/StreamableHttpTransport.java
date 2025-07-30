@@ -278,7 +278,7 @@ public final class StreamableHttpTransport implements Transport {
                 resp.sendError(HttpServletResponse.SC_FORBIDDEN);
                 return;
             } else if (session != null) {
-                if (version == null || !version.equals(protocolVersion)) {
+                if (!initializing && (version == null || !version.equals(protocolVersion))) {
                     resp.sendError(HttpServletResponse.SC_BAD_REQUEST);
                     return;
                 }
