@@ -17,4 +17,16 @@ public final class Base64Util {
     public static String encode(byte[] data) {
         return Base64.getEncoder().encodeToString(data);
     }
+
+    public static byte[] decodeUrl(String value) {
+        try {
+            return Base64.getUrlDecoder().decode(value);
+        } catch (IllegalArgumentException e) {
+            throw new IllegalArgumentException("Invalid base64url data", e);
+        }
+    }
+
+    public static String encodeUrl(byte[] data) {
+        return Base64.getUrlEncoder().withoutPadding().encodeToString(data);
+    }
 }

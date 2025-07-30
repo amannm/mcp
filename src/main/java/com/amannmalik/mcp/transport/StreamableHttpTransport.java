@@ -27,8 +27,8 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.net.InetSocketAddress;
 import java.security.SecureRandom;
+import com.amannmalik.mcp.util.Base64Util;
 import java.util.ArrayDeque;
-import java.util.Base64;
 import java.util.Deque;
 import java.util.Set;
 import java.util.concurrent.BlockingQueue;
@@ -259,7 +259,7 @@ public final class StreamableHttpTransport implements Transport {
             if (session == null && initializing) {
                 byte[] bytes = new byte[32];
                 RANDOM.nextBytes(bytes);
-                session = Base64.getUrlEncoder().withoutPadding().encodeToString(bytes);
+                session = Base64Util.encodeUrl(bytes);
                 sessionId.set(session);
                 sessionOwner.set(req.getRemoteAddr());
                 sessionPrincipal.set(principal);
@@ -630,7 +630,7 @@ public final class StreamableHttpTransport implements Transport {
         SseClient(AsyncContext context) throws IOException {
             byte[] bytes = new byte[8];
             RANDOM.nextBytes(bytes);
-            this.prefix = Base64.getUrlEncoder().withoutPadding().encodeToString(bytes);
+            this.prefix = Base64Util.encodeUrl(bytes);
             attach(context, 0);
         }
 
