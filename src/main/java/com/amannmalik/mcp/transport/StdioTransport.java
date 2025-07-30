@@ -44,10 +44,6 @@ public final class StdioTransport implements Transport {
         this.logReader.start();
     }
 
-    public StdioTransport(ProcessBuilder builder) throws IOException {
-        this(builder, System.err::println);
-    }
-
     @Override
     public synchronized void send(JsonObject message) throws IOException {
         String s = message.toString();

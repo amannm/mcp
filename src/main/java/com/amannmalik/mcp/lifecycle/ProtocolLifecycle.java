@@ -13,10 +13,6 @@ public class ProtocolLifecycle {
     private LifecycleState state = LifecycleState.INIT;
     private Set<ClientCapability> clientCapabilities = Set.of();
 
-    public ProtocolLifecycle(Set<ServerCapability> serverCapabilities) {
-        this(serverCapabilities, new ServerInfo("mcp-java", "MCP Java Reference", "0.1.0"), null);
-    }
-
     public ProtocolLifecycle(Set<ServerCapability> serverCapabilities, ServerInfo serverInfo, String instructions) {
         this.serverCapabilities = EnumSet.copyOf(serverCapabilities);
         this.serverInfo = serverInfo;
