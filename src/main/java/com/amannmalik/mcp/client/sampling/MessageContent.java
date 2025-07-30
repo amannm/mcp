@@ -14,6 +14,7 @@ public sealed interface MessageContent permits MessageContent.Text, MessageConte
     record Text(String text, Annotations annotations, JsonObject _meta) implements MessageContent {
         public Text {
             if (text == null) throw new IllegalArgumentException("text is required");
+            text = com.amannmalik.mcp.validation.InputSanitizer.requireClean(text);
             MetaValidator.requireValid(_meta);
         }
 
