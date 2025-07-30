@@ -1,6 +1,8 @@
 package com.amannmalik.mcp.cli;
 
 import com.amannmalik.mcp.client.McpClient;
+import com.amannmalik.mcp.client.roots.InMemoryRootsProvider;
+import com.amannmalik.mcp.client.roots.Root;
 import com.amannmalik.mcp.client.sampling.SamplingProvider;
 import com.amannmalik.mcp.client.sampling.SamplingProviderFactory;
 import com.amannmalik.mcp.lifecycle.ClientCapability;
@@ -12,6 +14,7 @@ import picocli.CommandLine;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.EnumSet;
+import java.util.List;
 import java.util.concurrent.Callable;
 
 @CommandLine.Command(name = "client", description = "Run MCP client", mixinStandardHelpOptions = true)
@@ -53,12 +56,18 @@ public final class ClientCommand implements Callable<Integer> {
                 verbose ? System.err::println : s -> {
                 });
         SamplingProvider samplingProvider = SamplingProviderFactory.createBlocking();
+        
+        // Create roots provider with current working directory as default root
+        String currentDir = System.getProperty("user.dir");
+        InMemoryRootsProvider rootsProvider = new InMemoryRootsProvider(
+                List.of(new Root("file://" + currentDir, "Current Directory", null)));
+        
         McpClient client = new McpClient(
                 new ClientInfo("cli", "CLI", "0"),
-                EnumSet.of(ClientCapability.SAMPLING),
+                EnumSet.of(ClientCapability.SAMPLING, ClientCapability.ROOTS),
                 transport,
                 samplingProvider,
-                null,
+                rootsProvider,
                 null);
         client.connect();
         if (verbose) {

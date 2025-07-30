@@ -4,6 +4,8 @@ import com.amannmalik.mcp.client.McpClient;
 import com.amannmalik.mcp.client.elicitation.BlockingElicitationProvider;
 import com.amannmalik.mcp.client.elicitation.ElicitationAction;
 import com.amannmalik.mcp.client.elicitation.ElicitationResponse;
+import com.amannmalik.mcp.client.roots.InMemoryRootsProvider;
+import com.amannmalik.mcp.client.roots.Root;
 import com.amannmalik.mcp.client.sampling.CreateMessageResponse;
 import com.amannmalik.mcp.client.sampling.MessageContent;
 import com.amannmalik.mcp.client.sampling.SamplingProvider;
@@ -110,12 +112,17 @@ class McpConformanceTest {
                     "endTurn",
                     null
             ));
+            
+            // Create test roots provider with a test directory
+            InMemoryRootsProvider rootsProvider = new InMemoryRootsProvider(
+                    List.of(new Root("file:///tmp", "Test Root", null)));
+            
             McpClient client = new McpClient(
                     new ClientInfo("test-client", "Test Client", "1.0"),
                     EnumSet.allOf(ClientCapability.class),
                     clientTransport,
                     sampling,
-                    null,
+                    rootsProvider,
                     elicitation
             );
             CompletableFuture<Void> connectTask = CompletableFuture.runAsync(() -> {
