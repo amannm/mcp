@@ -599,23 +599,11 @@ public final class McpClient implements AutoCloseable {
     }
 
     private void requireCapability(RequestMethod method) {
-        ServerCapability cap = switch (method) {
-            case RESOURCES_LIST,
-                 RESOURCES_TEMPLATES_LIST,
-                 RESOURCES_READ,
-                 RESOURCES_SUBSCRIBE,
-                 RESOURCES_UNSUBSCRIBE -> ServerCapability.RESOURCES;
-            case TOOLS_LIST,
-                 TOOLS_CALL -> ServerCapability.TOOLS;
-            case PROMPTS_LIST,
-                 PROMPTS_GET -> ServerCapability.PROMPTS;
-            case LOGGING_SET_LEVEL -> ServerCapability.LOGGING;
-            case COMPLETION_COMPLETE -> ServerCapability.COMPLETIONS;
-            default -> null;
-        };
-        if (cap != null && !serverCapabilities.contains(cap)) {
-            throw new IllegalStateException("Server capability not negotiated: " + cap);
-        }
+        method.requiredCapability()
+                .filter(c -> !serverCapabilities.contains(c))
+                .ifPresent(c -> {
+                    throw new IllegalStateException("Server capability not negotiated: " + c);
+                });
     }
 
     public void setProgressListener(ProgressListener listener) {
