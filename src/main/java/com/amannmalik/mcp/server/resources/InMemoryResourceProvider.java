@@ -23,7 +23,7 @@ public final class InMemoryResourceProvider implements ResourceProvider {
 
     @Override
     public Pagination.Page<Resource> list(String cursor) {
-        return Pagination.page(resources, cursor, 100);
+        return Pagination.page(resources, cursor, Pagination.DEFAULT_PAGE_SIZE);
     }
 
     @Override
@@ -33,7 +33,7 @@ public final class InMemoryResourceProvider implements ResourceProvider {
 
     @Override
     public Pagination.Page<ResourceTemplate> listTemplates(String cursor) {
-        return Pagination.page(templates, cursor, 100);
+        return Pagination.page(templates, cursor, Pagination.DEFAULT_PAGE_SIZE);
     }
 
     @Override

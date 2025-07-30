@@ -1,6 +1,7 @@
 package com.amannmalik.mcp.server.completion;
 
 import com.amannmalik.mcp.validation.InputSanitizer;
+import com.amannmalik.mcp.server.completion.CompleteResult;
 
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -63,7 +64,7 @@ public final class InMemoryCompletionProvider implements CompletionProvider {
                 .thenComparing(String::compareTo);
         List<String> sorted = unique.stream()
                 .sorted(cmp)
-                .limit(100)
+                .limit(CompleteResult.MAX_VALUES)
                 .toList();
         int total = unique.size();
         boolean hasMore = total > sorted.size();

@@ -7,6 +7,8 @@ import jakarta.json.JsonObject;
 import java.util.List;
 
 public record CompleteResult(Completion completion, JsonObject _meta) {
+    public static final int MAX_VALUES = 100;
+
     public CompleteResult {
         if (completion == null) throw new IllegalArgumentException("completion required");
         MetaValidator.requireValid(_meta);
@@ -21,8 +23,8 @@ public record CompleteResult(Completion completion, JsonObject _meta) {
             this.values = copy;
             this.total = total;
             this.hasMore = hasMore;
-            if (this.values.size() > 100) {
-                throw new IllegalArgumentException("values must not exceed 100 items");
+            if (this.values.size() > MAX_VALUES) {
+                throw new IllegalArgumentException("values must not exceed " + MAX_VALUES + " items");
             }
             if (this.total != null) {
                 if (this.total < 0) throw new IllegalArgumentException("total must be non-negative");

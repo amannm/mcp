@@ -15,7 +15,7 @@ public final class Pagination {
         int end = Math.min(items.size(), start + size);
         List<T> slice = items.subList(start, end);
         String next = end < items.size() ? encode(end) : null;
-        return new Page<>(List.copyOf(slice), next);
+        return new Page<>(slice, next);
     }
 
     private static String encode(int index) {
