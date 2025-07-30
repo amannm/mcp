@@ -1,6 +1,7 @@
 package com.amannmalik.mcp.server;
 
 import com.amannmalik.mcp.NotificationMethod;
+import com.amannmalik.mcp.RequestMethod;
 import com.amannmalik.mcp.annotations.Annotations;
 import com.amannmalik.mcp.auth.Principal;
 import com.amannmalik.mcp.client.elicitation.ElicitCodec;
@@ -243,39 +244,39 @@ public final class McpServer implements AutoCloseable {
             }
         }
 
-        registerRequestHandler("initialize", this::initialize);
+        registerRequestHandler(RequestMethod.INITIALIZE.method(), this::initialize);
         registerNotificationHandler(NotificationMethod.INITIALIZED.method(), this::initialized);
-        registerRequestHandler("ping", this::ping);
+        registerRequestHandler(RequestMethod.PING.method(), this::ping);
         registerNotificationHandler(NotificationMethod.CANCELLED.method(), this::cancelled);
         registerNotificationHandler(NotificationMethod.ROOTS_LIST_CHANGED.method(), n -> rootsListChanged());
 
         if (resources != null) {
-            registerRequestHandler("resources/list", this::listResources);
-            registerRequestHandler("resources/read", this::readResource);
-            registerRequestHandler("resources/templates/list", this::listTemplates);
+            registerRequestHandler(RequestMethod.RESOURCES_LIST.method(), this::listResources);
+            registerRequestHandler(RequestMethod.RESOURCES_READ.method(), this::readResource);
+            registerRequestHandler(RequestMethod.RESOURCES_TEMPLATES_LIST.method(), this::listTemplates);
             if (resourcesSubscribeSupported) {
-                registerRequestHandler("resources/subscribe", this::subscribeResource);
-                registerRequestHandler("resources/unsubscribe", this::unsubscribeResource);
+                registerRequestHandler(RequestMethod.RESOURCES_SUBSCRIBE.method(), this::subscribeResource);
+                registerRequestHandler(RequestMethod.RESOURCES_UNSUBSCRIBE.method(), this::unsubscribeResource);
             }
         }
 
         if (tools != null) {
-            registerRequestHandler("tools/list", this::listTools);
-            registerRequestHandler("tools/call", this::callTool);
+            registerRequestHandler(RequestMethod.TOOLS_LIST.method(), this::listTools);
+            registerRequestHandler(RequestMethod.TOOLS_CALL.method(), this::callTool);
         }
 
         if (prompts != null) {
-            registerRequestHandler("prompts/list", this::listPrompts);
-            registerRequestHandler("prompts/get", this::getPrompt);
+            registerRequestHandler(RequestMethod.PROMPTS_LIST.method(), this::listPrompts);
+            registerRequestHandler(RequestMethod.PROMPTS_GET.method(), this::getPrompt);
         }
 
-        registerRequestHandler("logging/setLevel", this::setLogLevel);
+        registerRequestHandler(RequestMethod.LOGGING_SET_LEVEL.method(), this::setLogLevel);
 
         if (completions != null) {
-            registerRequestHandler("completion/complete", this::complete);
+            registerRequestHandler(RequestMethod.COMPLETION_COMPLETE.method(), this::complete);
         }
 
-        registerRequestHandler("sampling/createMessage", this::handleCreateMessage);
+        registerRequestHandler(RequestMethod.SAMPLING_CREATE_MESSAGE.method(), this::handleCreateMessage);
     }
 
     private void registerRequestHandler(String method, RequestHandler handler) {
@@ -857,6 +858,14 @@ public final class McpServer implements AutoCloseable {
         return sendRequest(method, params, Timeouts.DEFAULT_TIMEOUT_MS);
     }
 
+    private JsonRpcMessage sendRequest(RequestMethod method, JsonObject params) throws IOException {
+        return sendRequest(method.method(), params, Timeouts.DEFAULT_TIMEOUT_MS);
+    }
+
+    private JsonRpcMessage sendRequest(RequestMethod method, JsonObject params, long timeoutMillis) throws IOException {
+        return sendRequest(method.method(), params, timeoutMillis);
+    }
+
     private JsonRpcMessage sendRequest(String method, JsonObject params, long timeoutMillis) throws IOException {
         RequestId id = new RequestId.NumericId(requestCounter.getAndIncrement());
         CompletableFuture<JsonRpcMessage> future = new CompletableFuture<>();
@@ -897,7 +906,7 @@ public final class McpServer implements AutoCloseable {
 
     private List<Root> fetchRoots() throws IOException {
         requireClientCapability(ClientCapability.ROOTS);
-        JsonRpcMessage msg = sendRequest("roots/list", RootsCodec.toJsonObject(new ListRootsRequest()));
+        JsonRpcMessage msg = sendRequest(RequestMethod.ROOTS_LIST, RootsCodec.toJsonObject(new ListRootsRequest()));
         if (msg instanceof JsonRpcResponse resp) {
             return RootsCodec.toRoots(resp.result());
         }
@@ -933,7 +942,7 @@ public final class McpServer implements AutoCloseable {
 
     public ElicitResult elicit(ElicitRequest req) throws IOException {
         requireClientCapability(ClientCapability.ELICITATION);
-        JsonRpcMessage msg = sendRequest("elicitation/create", ElicitCodec.toJsonObject(req));
+        JsonRpcMessage msg = sendRequest(RequestMethod.ELICITATION_CREATE, ElicitCodec.toJsonObject(req));
         if (msg instanceof JsonRpcResponse resp) {
             ElicitResult er = ElicitCodec.toResult(resp.result());
             if (er.action() == ElicitationAction.ACCEPT) {
@@ -948,7 +957,7 @@ public final class McpServer implements AutoCloseable {
     public CreateMessageResponse createMessage(CreateMessageRequest req) throws IOException {
         requireClientCapability(ClientCapability.SAMPLING);
         samplingAccess.requireAllowed(principal);
-        JsonRpcMessage msg = sendRequest("sampling/createMessage", SamplingCodec.toJsonObject(req));
+        JsonRpcMessage msg = sendRequest(RequestMethod.SAMPLING_CREATE_MESSAGE, SamplingCodec.toJsonObject(req));
         if (msg instanceof JsonRpcResponse resp) {
             return SamplingCodec.toCreateMessageResponse(resp.result());
         }
