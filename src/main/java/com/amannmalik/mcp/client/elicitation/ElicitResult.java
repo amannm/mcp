@@ -4,10 +4,10 @@ import com.amannmalik.mcp.validation.InputSanitizer;
 import com.amannmalik.mcp.validation.MetaValidator;
 import jakarta.json.JsonObject;
 
-public record ElicitationResponse(ElicitationAction action,
-                                  JsonObject content,
-                                  JsonObject _meta) {
-    public ElicitationResponse {
+public record ElicitResult(ElicitationAction action,
+                           JsonObject content,
+                           JsonObject _meta) {
+    public ElicitResult {
         if (action == null) {
             throw new IllegalArgumentException("action is required");
         }

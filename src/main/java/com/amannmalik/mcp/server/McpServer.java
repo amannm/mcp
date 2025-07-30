@@ -2,9 +2,9 @@ package com.amannmalik.mcp.server;
 
 import com.amannmalik.mcp.auth.Principal;
 import com.amannmalik.mcp.client.elicitation.ElicitationAction;
-import com.amannmalik.mcp.client.elicitation.ElicitationCodec;
-import com.amannmalik.mcp.client.elicitation.ElicitationRequest;
-import com.amannmalik.mcp.client.elicitation.ElicitationResponse;
+import com.amannmalik.mcp.client.elicitation.ElicitCodec;
+import com.amannmalik.mcp.client.elicitation.ElicitRequest;
+import com.amannmalik.mcp.client.elicitation.ElicitResult;
 import com.amannmalik.mcp.client.roots.ListRootsRequest;
 import com.amannmalik.mcp.client.roots.Root;
 import com.amannmalik.mcp.client.roots.RootsCodec;
@@ -879,11 +879,11 @@ public final class McpServer implements AutoCloseable {
         rootsListeners.forEach(RootsListener::listChanged);
     }
 
-    public ElicitationResponse elicit(ElicitationRequest req) throws IOException {
+    public ElicitResult elicit(ElicitRequest req) throws IOException {
         requireClientCapability(ClientCapability.ELICITATION);
-        JsonRpcMessage msg = sendRequest("elicitation/create", ElicitationCodec.toJsonObject(req));
+        JsonRpcMessage msg = sendRequest("elicitation/create", ElicitCodec.toJsonObject(req));
         if (msg instanceof JsonRpcResponse resp) {
-            ElicitationResponse er = ElicitationCodec.toResponse(resp.result());
+            ElicitResult er = ElicitCodec.toResult(resp.result());
             if (er.action() == ElicitationAction.ACCEPT) {
                 SchemaValidator.validate(req.requestedSchema(), er.content());
             }
