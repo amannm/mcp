@@ -1,11 +1,14 @@
+
 package com.amannmalik.mcp.server.resources;
 
+import com.amannmalik.mcp.util.Pagination;
+
 public interface ResourceProvider extends AutoCloseable {
-    ResourceList list(String cursor);
+    Pagination.Page<Resource> list(String cursor);
 
     ResourceBlock read(String uri);
 
-    ResourceTemplatePage listTemplates(String cursor);
+    Pagination.Page<ResourceTemplate> listTemplates(String cursor);
 
     ResourceSubscription subscribe(String uri, ResourceListener listener);
 

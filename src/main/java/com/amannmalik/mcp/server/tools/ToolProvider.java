@@ -1,9 +1,10 @@
 package com.amannmalik.mcp.server.tools;
 
+import com.amannmalik.mcp.util.Pagination;
 import jakarta.json.JsonObject;
 
 public interface ToolProvider {
-    ToolPage list(String cursor);
+    Pagination.Page<Tool> list(String cursor);
 
     ToolResult call(String name, JsonObject arguments);
 

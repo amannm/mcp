@@ -44,7 +44,6 @@ import com.amannmalik.mcp.prompts.PromptCodec;
 import com.amannmalik.mcp.prompts.PromptContent;
 import com.amannmalik.mcp.prompts.PromptInstance;
 import com.amannmalik.mcp.prompts.PromptMessageTemplate;
-import com.amannmalik.mcp.prompts.PromptPage;
 import com.amannmalik.mcp.prompts.PromptProvider;
 import com.amannmalik.mcp.prompts.PromptTemplate;
 import com.amannmalik.mcp.prompts.PromptsSubscription;
@@ -71,16 +70,15 @@ import com.amannmalik.mcp.server.resources.ReadResourceRequest;
 import com.amannmalik.mcp.server.resources.ReadResourceResult;
 import com.amannmalik.mcp.server.resources.Resource;
 import com.amannmalik.mcp.server.resources.ResourceBlock;
-import com.amannmalik.mcp.server.resources.ResourceList;
 import com.amannmalik.mcp.server.resources.ResourceListSubscription;
 import com.amannmalik.mcp.server.resources.ResourceProvider;
 import com.amannmalik.mcp.server.resources.ResourceSubscription;
 import com.amannmalik.mcp.server.resources.ResourceTemplate;
-import com.amannmalik.mcp.server.resources.ResourceTemplatePage;
 import com.amannmalik.mcp.server.resources.ResourceUpdatedNotification;
 import com.amannmalik.mcp.server.resources.ResourcesCodec;
 import com.amannmalik.mcp.server.resources.SubscribeRequest;
 import com.amannmalik.mcp.server.resources.UnsubscribeRequest;
+import com.amannmalik.mcp.util.Pagination;
 import com.amannmalik.mcp.server.tools.CallToolRequest;
 import com.amannmalik.mcp.server.tools.InMemoryToolProvider;
 import com.amannmalik.mcp.server.tools.ListToolsRequest;
@@ -88,7 +86,6 @@ import com.amannmalik.mcp.server.tools.Tool;
 import com.amannmalik.mcp.server.tools.ToolCodec;
 import com.amannmalik.mcp.server.tools.ToolListChangedNotification;
 import com.amannmalik.mcp.server.tools.ToolListSubscription;
-import com.amannmalik.mcp.server.tools.ToolPage;
 import com.amannmalik.mcp.server.tools.ToolProvider;
 import com.amannmalik.mcp.server.tools.ToolResult;
 import com.amannmalik.mcp.transport.Transport;
@@ -559,7 +556,7 @@ public final class McpServer implements AutoCloseable {
             }
         }
 
-        ResourceList list;
+        Pagination.Page<Resource> list;
         try {
             list = resources.list(cursor);
         } catch (IllegalArgumentException e) {
@@ -568,7 +565,7 @@ public final class McpServer implements AutoCloseable {
         }
 
         List<Resource> filteredResources = new ArrayList<>();
-        for (Resource r : list.resources()) {
+        for (Resource r : list.items()) {
             if (allowed(r.annotations()) && withinRoots(r.uri())) {
                 filteredResources.add(r);
             }
@@ -626,7 +623,7 @@ public final class McpServer implements AutoCloseable {
             }
         }
 
-        ResourceTemplatePage page;
+        Pagination.Page<ResourceTemplate> page;
         try {
             page = resources.listTemplates(cursor);
         } catch (IllegalArgumentException e) {
@@ -635,7 +632,7 @@ public final class McpServer implements AutoCloseable {
         }
 
         List<ResourceTemplate> filteredTemplates = new ArrayList<>();
-        for (ResourceTemplate t : page.resourceTemplates()) {
+        for (ResourceTemplate t : page.items()) {
             if (allowed(t.annotations())) {
                 filteredTemplates.add(t);
             }
@@ -729,7 +726,7 @@ public final class McpServer implements AutoCloseable {
                         JsonRpcErrorCode.INVALID_PARAMS.code(), e.getMessage(), null));
             }
         }
-        ToolPage page;
+        Pagination.Page<Tool> page;
         try {
             page = tools.list(cursor);
         } catch (IllegalArgumentException e) {
@@ -801,7 +798,7 @@ public final class McpServer implements AutoCloseable {
                         JsonRpcErrorCode.INVALID_PARAMS.code(), e.getMessage(), null));
             }
         }
-        PromptPage page;
+        Pagination.Page<Prompt> page;
         try {
             page = prompts.list(cursor);
         } catch (IllegalArgumentException e) {
@@ -986,8 +983,8 @@ public final class McpServer implements AutoCloseable {
 
     private Tool findTool(String name) {
         if (tools == null) return null;
-        ToolPage page = tools.list(null);
-        for (Tool t : page.tools()) {
+        Pagination.Page<Tool> page = tools.list(null);
+        for (Tool t : page.items()) {
             if (t.name().equals(name)) return t;
         }
         return null;
