@@ -31,6 +31,7 @@ public sealed interface MessageContent permits MessageContent.Text, MessageConte
                 throw new IllegalArgumentException("data and mimeType are required");
             }
             data = data.clone();
+            mimeType = InputSanitizer.requireClean(mimeType);
             MetaValidator.requireValid(_meta);
         }
 
@@ -46,6 +47,7 @@ public sealed interface MessageContent permits MessageContent.Text, MessageConte
                 throw new IllegalArgumentException("data and mimeType are required");
             }
             data = data.clone();
+            mimeType = InputSanitizer.requireClean(mimeType);
             MetaValidator.requireValid(_meta);
         }
 
