@@ -132,7 +132,7 @@ public final class McpClient implements AutoCloseable {
         if (connected) return;
         InitializeRequest init = new InitializeRequest(
                 ProtocolLifecycle.SUPPORTED_VERSION,
-                new Capabilities(capabilities, Set.of()),
+                new Capabilities(capabilities, Set.of(), Map.of(), Map.of()),
                 info
         );
         var initJson = LifecycleCodec.toJsonObject(init);

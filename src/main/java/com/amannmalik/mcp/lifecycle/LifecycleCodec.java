@@ -4,6 +4,7 @@ import jakarta.json.Json;
 import jakarta.json.JsonObject;
 
 import java.util.EnumSet;
+import java.util.Map;
 import java.util.Set;
 
 public final class LifecycleCodec {
@@ -19,6 +20,8 @@ public final class LifecycleCodec {
             }
             caps.add(c.name().toLowerCase(), b.build());
         }
+        req.capabilities().clientExperimental()
+                .forEach((k, v) -> caps.add(k, v));
         var info = Json.createObjectBuilder()
                 .add("name", req.clientInfo().name())
                 .add("version", req.clientInfo().version());
@@ -37,18 +40,22 @@ public final class LifecycleCodec {
         String version = obj.getString("protocolVersion");
         JsonObject capsObj = obj.getJsonObject("capabilities");
         Set<ClientCapability> client = EnumSet.noneOf(ClientCapability.class);
+        Map<String, JsonObject> experimental = new java.util.HashMap<>();
         if (capsObj != null) {
             capsObj.forEach((k, v) -> {
                 try {
                     client.add(ClientCapability.valueOf(k.toUpperCase()));
                 } catch (IllegalArgumentException ignore) {
+                    experimental.put(k, v.asJsonObject());
                 }
             });
         }
         Set<ServerCapability> server = EnumSet.noneOf(ServerCapability.class);
         Capabilities caps = new Capabilities(
                 client.isEmpty() ? Set.of() : EnumSet.copyOf(client),
-                server.isEmpty() ? Set.of() : EnumSet.copyOf(server)
+                server.isEmpty() ? Set.of() : EnumSet.copyOf(server),
+                experimental.isEmpty() ? Map.of() : Map.copyOf(experimental),
+                Map.of()
         );
         JsonObject ci = obj.getJsonObject("clientInfo");
         if (ci == null) {
@@ -75,6 +82,8 @@ public final class LifecycleCodec {
             }
             server.add(c.name().toLowerCase(), b.build());
         }
+        resp.capabilities().serverExperimental()
+                .forEach((k, v) -> server.add(k, v));
         var info = Json.createObjectBuilder()
                 .add("name", resp.serverInfo().name())
                 .add("version", resp.serverInfo().version());
@@ -94,17 +103,21 @@ public final class LifecycleCodec {
         JsonObject capsObj = obj.getJsonObject("capabilities");
         Set<ClientCapability> client = EnumSet.noneOf(ClientCapability.class);
         Set<ServerCapability> server = EnumSet.noneOf(ServerCapability.class);
+        Map<String, JsonObject> experimental = new java.util.HashMap<>();
         if (capsObj != null) {
             capsObj.forEach((k, v) -> {
                 try {
                     server.add(ServerCapability.valueOf(k.toUpperCase()));
                 } catch (IllegalArgumentException ignore) {
+                    experimental.put(k, v.asJsonObject());
                 }
             });
         }
         Capabilities caps = new Capabilities(
                 client.isEmpty() ? Set.of() : EnumSet.copyOf(client),
-                server.isEmpty() ? Set.of() : EnumSet.copyOf(server)
+                server.isEmpty() ? Set.of() : EnumSet.copyOf(server),
+                Map.of(),
+                experimental.isEmpty() ? Map.of() : Map.copyOf(experimental)
         );
         JsonObject si = obj.getJsonObject("serverInfo");
         if (si == null) {
