@@ -26,8 +26,8 @@ public final class RootsCodec {
         return new ListRootsRequest();
     }
 
-    public static JsonObject toJsonObject(ListRootsResponse resp) {
-        return toJsonObject(resp.roots());
+    public static JsonObject toJsonObject(ListRootsResult result) {
+        return toJsonObject(result.roots());
     }
 
     public static JsonObject toJsonObject(RootsListChangedNotification n) {
