@@ -22,9 +22,7 @@ public final class PrivacyBoundaryEnforcer implements ResourceAccessController {
         if (ann == null || ann.audience().isEmpty()) return;
 
         for (Role r : ann.audience()) {
-            if (!permissions.contains(principal.id(), r)) {
-                throw new SecurityException("Audience not permitted: " + ann.audience());
-            }
+            permissions.requirePermission(principal.id(), r, "Audience not permitted: " + ann.audience());
         }
     }
 }

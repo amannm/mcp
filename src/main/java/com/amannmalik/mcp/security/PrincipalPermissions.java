@@ -28,6 +28,12 @@ final class PrincipalPermissions<T> {
         return set != null && set.contains(permission);
     }
 
+    void requirePermission(String principalId, T permission, String message) {
+        if (!contains(principalId, permission)) {
+            throw new SecurityException(message);
+        }
+    }
+
     private static void requirePrincipal(String id) {
         if (id == null || id.isBlank()) throw new IllegalArgumentException("principalId required");
     }

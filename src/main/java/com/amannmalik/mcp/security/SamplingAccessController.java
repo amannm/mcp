@@ -19,9 +19,7 @@ public final class SamplingAccessController implements SamplingAccessPolicy {
     @Override
     public void requireAllowed(Principal principal) {
         if (principal == null) throw new IllegalArgumentException("principal required");
-        if (!permissions.contains(principal.id(), PERMISSION)) {
-            throw new SecurityException("Sampling not authorized");
-        }
+        permissions.requirePermission(principal.id(), PERMISSION, "Sampling not authorized");
     }
 }
 
