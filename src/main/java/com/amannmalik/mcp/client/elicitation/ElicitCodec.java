@@ -5,6 +5,8 @@ import jakarta.json.JsonObject;
 import jakarta.json.JsonObjectBuilder;
 import jakarta.json.JsonValue;
 
+import java.util.Set;
+
 public final class ElicitCodec {
     private ElicitCodec() {
     }
@@ -19,6 +21,11 @@ public final class ElicitCodec {
 
     public static ElicitRequest toRequest(JsonObject obj) {
         if (obj == null) throw new IllegalArgumentException("object required");
+        for (String key : obj.keySet()) {
+            if (!Set.of("message", "requestedSchema", "_meta").contains(key)) {
+                throw new IllegalArgumentException("unexpected field: " + key);
+            }
+        }
         if (!obj.containsKey("message")) throw new IllegalArgumentException("message required");
         if (!obj.containsKey("requestedSchema")) throw new IllegalArgumentException("requestedSchema required");
         var schemaVal = obj.get("requestedSchema");
@@ -44,6 +51,11 @@ public final class ElicitCodec {
     public static ElicitResult toResult(JsonObject obj) {
         if (obj == null || !obj.containsKey("action")) {
             throw new IllegalArgumentException("action required");
+        }
+        for (String key : obj.keySet()) {
+            if (!Set.of("action", "content", "_meta").contains(key)) {
+                throw new IllegalArgumentException("unexpected field: " + key);
+            }
         }
         String raw = obj.getString("action", null);
         if (raw == null) throw new IllegalArgumentException("action required");
