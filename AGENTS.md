@@ -25,6 +25,5 @@ description: MCP Implementation Expert
 - Write simple, typed, strict, idiomatic, standard, modern Java 24
 - Avoid introducing `null` or `Object`
 - Unchecked casts are unacceptable
-- Use `instanceof` to simultaneously select types and reject `null`
-- Use polymorphism/default/sentinels instead of `null`
+- Use `instanceof` pattern matching to guard against `null`
 - Avoid `java.lang.reflect` and `javax.annotation`
