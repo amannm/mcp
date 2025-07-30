@@ -43,6 +43,7 @@ public final class StreamableHttpTransport implements Transport {
     private final int port;
     private final OriginValidator originValidator;
     private final AuthorizationManager authManager;
+    private final String resourceMetadataUrl;
     private static final String PROTOCOL_HEADER = "MCP-Protocol-Version";
     // Default to the previous protocol revision when no version header is
     // present, as recommended for backwards compatibility.
@@ -60,7 +61,14 @@ public final class StreamableHttpTransport implements Transport {
     private volatile String protocolVersion;
     private final ConcurrentHashMap<String, BlockingQueue<JsonObject>> responseQueues = new ConcurrentHashMap<>();
 
-    public StreamableHttpTransport(int port, OriginValidator validator, AuthorizationManager auth) throws Exception {
+    private void unauthorized(HttpServletResponse resp) throws IOException {
+        if (resourceMetadataUrl != null) {
+            resp.setHeader("WWW-Authenticate", "Bearer resource_metadata=\"" + resourceMetadataUrl + "\"");
+        }
+        resp.sendError(HttpServletResponse.SC_UNAUTHORIZED);
+    }
+
+    public StreamableHttpTransport(int port, OriginValidator validator, AuthorizationManager auth, String resourceMetadataUrl) throws Exception {
         server = new Server(new InetSocketAddress("127.0.0.1", port));
         ServletContextHandler ctx = new ServletContextHandler();
         ctx.addServlet(new ServletHolder(new McpServlet()), "/");
@@ -69,13 +77,18 @@ public final class StreamableHttpTransport implements Transport {
         this.port = ((ServerConnector) server.getConnectors()[0]).getLocalPort();
         this.originValidator = validator;
         this.authManager = auth;
+        this.resourceMetadataUrl = resourceMetadataUrl;
         // Until initialization negotiates a version, assume the prior revision
         // as the default when no MCP-Protocol-Version header is present.
         this.protocolVersion = DEFAULT_VERSION;
     }
 
+    public StreamableHttpTransport(int port, OriginValidator validator, AuthorizationManager auth) throws Exception {
+        this(port, validator, auth, null);
+    }
+
     public StreamableHttpTransport(int port) throws Exception {
-        this(port, new OriginValidator(Set.of("http://localhost", "http://127.0.0.1")), null);
+        this(port, new OriginValidator(Set.of("http://localhost", "http://127.0.0.1")), null, null);
     }
 
     public int port() {
@@ -206,7 +219,7 @@ public final class StreamableHttpTransport implements Transport {
                 try {
                     principal = authManager.authorize(req.getHeader("Authorization"));
                 } catch (AuthorizationException e) {
-                    resp.sendError(HttpServletResponse.SC_UNAUTHORIZED);
+                    unauthorized(resp);
                     return;
                 }
             }
@@ -381,7 +394,7 @@ public final class StreamableHttpTransport implements Transport {
                 try {
                     principal = authManager.authorize(req.getHeader("Authorization"));
                 } catch (AuthorizationException e) {
-                    resp.sendError(HttpServletResponse.SC_UNAUTHORIZED);
+                    unauthorized(resp);
                     return;
                 }
             }
@@ -510,7 +523,7 @@ public final class StreamableHttpTransport implements Transport {
                 try {
                     principal = authManager.authorize(req.getHeader("Authorization"));
                 } catch (AuthorizationException e) {
-                    resp.sendError(HttpServletResponse.SC_UNAUTHORIZED);
+                    unauthorized(resp);
                     return;
                 }
             }
