@@ -59,7 +59,7 @@ public final class ToolCodec {
 
     public static JsonObject toJsonObject(ToolListChangedNotification n) {
         if (n == null) throw new IllegalArgumentException("notification required");
-        return null;
+        return Json.createObjectBuilder().build();
     }
 
     public static ToolListChangedNotification toToolListChangedNotification(JsonObject obj) {
