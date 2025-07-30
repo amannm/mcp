@@ -2,6 +2,7 @@ package com.amannmalik.mcp.auth;
 
 import jakarta.json.Json;
 import jakarta.json.JsonObject;
+import jakarta.json.JsonArray;
 import jakarta.json.JsonReader;
 
 import java.io.StringReader;
@@ -39,13 +40,39 @@ public final class JwtTokenValidator implements TokenValidator {
         } catch (Exception e) {
             throw new AuthorizationException("invalid token payload");
         }
+        boolean audOk = false;
         String aud = payload.getString("aud", null);
-        if (!expectedAudience.equals(aud)) {
+        if (aud != null) audOk = expectedAudience.equals(aud);
+        if (!audOk) {
+            JsonArray arr = payload.getJsonArray("aud");
+            if (arr != null) {
+                for (var js : arr.getValuesAs(jakarta.json.JsonString.class)) {
+                    if (expectedAudience.equals(js.getString())) {
+                        audOk = true;
+                        break;
+                    }
+                }
+            }
+        }
+        if (!audOk) {
             throw new AuthorizationException("audience mismatch");
         }
         String sub = payload.getString("sub", null);
         if (sub == null || sub.isBlank()) {
             throw new AuthorizationException("subject required");
+        }
+        long now = System.currentTimeMillis() / 1000;
+        if (payload.containsKey("exp") && payload.get("exp").getValueType() == jakarta.json.JsonValue.ValueType.NUMBER) {
+            long exp = payload.getJsonNumber("exp").longValue();
+            if (now >= exp) {
+                throw new AuthorizationException("token expired");
+            }
+        }
+        if (payload.containsKey("nbf") && payload.get("nbf").getValueType() == jakarta.json.JsonValue.ValueType.NUMBER) {
+            long nbf = payload.getJsonNumber("nbf").longValue();
+            if (now < nbf) {
+                throw new AuthorizationException("token not active");
+            }
         }
         Set<String> scopes = Set.of();
         var scopeStr = payload.getString("scope", null);
