@@ -130,6 +130,7 @@ public final class StreamableHttpClientTransport implements Transport {
     private final class SseReader implements Runnable {
         private final InputStream input;
         private volatile boolean closed;
+        private String lastEventId;
 
         SseReader(InputStream input) {
             this.input = input;
@@ -140,8 +141,11 @@ public final class StreamableHttpClientTransport implements Transport {
             try (BufferedReader br = new BufferedReader(new InputStreamReader(input, StandardCharsets.UTF_8))) {
                 String line;
                 StringBuilder data = new StringBuilder();
+                String eventId = null;
                 while (!closed && (line = br.readLine()) != null) {
-                    if (line.startsWith("data: ")) {
+                    if (line.startsWith("id: ")) {
+                        eventId = line.substring(4);
+                    } else if (line.startsWith("data: ")) {
                         data.append(line.substring(6));
                     } else if (line.isEmpty()) {
                         if (!data.isEmpty()) {
@@ -150,6 +154,10 @@ public final class StreamableHttpClientTransport implements Transport {
                             } catch (Exception ignore) {
                             }
                             data.setLength(0);
+                            if (eventId != null) {
+                                lastEventId = eventId;
+                                eventId = null;
+                            }
                         }
                     }
                 }
@@ -166,6 +174,10 @@ public final class StreamableHttpClientTransport implements Transport {
                 input.close();
             } catch (IOException ignore) {
             }
+        }
+
+        String lastEventId() {
+            return lastEventId;
         }
     }
 }
