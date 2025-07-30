@@ -136,7 +136,7 @@ public final class HostProcess implements AutoCloseable {
     public ListToolsResult listTools(String clientId, String cursor) throws IOException {
         McpClient client = clients.get(clientId);
         if (client == null) throw new IllegalArgumentException("Unknown client: " + clientId);
-        requireCapability(client, Optional.of(ServerCapability.TOOLS));
+        requireCapability(client, ServerCapability.TOOLS);
         JsonObject params = PaginationCodec.toJsonObject(new PaginatedRequest(cursor));
         JsonRpcMessage resp = client.request(RequestMethod.TOOLS_LIST, params);
         if (resp instanceof JsonRpcResponse r) return ToolCodec.toListToolsResult(r.result());
@@ -147,7 +147,7 @@ public final class HostProcess implements AutoCloseable {
     public ToolResult callTool(String clientId, String name, JsonObject args) throws IOException {
         McpClient client = clients.get(clientId);
         if (client == null) throw new IllegalArgumentException("Unknown client: " + clientId);
-        requireCapability(client, Optional.of(ServerCapability.TOOLS));
+        requireCapability(client, ServerCapability.TOOLS);
         consents.requireConsent(principal, "tool:" + name);
         toolAccess.requireAllowed(principal, name);
         JsonObject params = Json.createObjectBuilder()
@@ -176,7 +176,7 @@ public final class HostProcess implements AutoCloseable {
         McpClient client = clients.get(id);
         if (client == null) throw new IllegalArgumentException("Unknown client: " + id);
         if (!client.connected()) throw new IllegalStateException("Client not connected: " + id);
-        requireCapability(client, capabilityForMethod(method));
+        requireCapabilityIfPresent(client, capabilityForMethod(method));
         return client.request(method, params);
     }
 
@@ -184,7 +184,7 @@ public final class HostProcess implements AutoCloseable {
         McpClient client = clients.get(id);
         if (client == null) throw new IllegalArgumentException("Unknown client: " + id);
         if (!client.connected()) throw new IllegalStateException("Client not connected: " + id);
-        requireCapability(client, capabilityForMethod(method));
+        requireCapabilityIfPresent(client, capabilityForMethod(method));
         client.notify(method, params);
     }
 

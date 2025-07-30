@@ -23,10 +23,9 @@ description: MCP Implementation Expert
 # Nits
 
 - Write simple, typed, strict, idiomatic, standard, modern Java 24
-- Avoid `null` and `Object` and `.orElse(null)`
+- Avoid introducing `null` or `Object`
 - Use `instanceof` to simultaneously select types and reject `null`
-- Use polymorphism/default/sentinels instead of `null` in data models
-- Use `Optional<T>` only for nullable returns
+- Use polymorphism/default/sentinels instead of `null`
 - Unchecked casts are unacceptable
 - Avoid `java.lang.reflect` and `javax.annotation`
 - Never get lazy and suppress warnings
