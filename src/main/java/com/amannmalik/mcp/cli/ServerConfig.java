@@ -14,7 +14,7 @@ public record ServerConfig(
         if (transport == TransportType.HTTP && port <= 0) {
             throw new IllegalArgumentException("port required for HTTP");
         }
-      
+
         if (resourceMetadataUrl != null && !resourceMetadataUrl.isBlank()) {
             try {
                 var uri = java.net.URI.create(resourceMetadataUrl);

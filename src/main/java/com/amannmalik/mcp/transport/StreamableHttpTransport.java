@@ -7,7 +7,6 @@ import com.amannmalik.mcp.jsonrpc.JsonRpcCodec;
 import com.amannmalik.mcp.jsonrpc.JsonRpcError;
 import com.amannmalik.mcp.jsonrpc.JsonRpcErrorCode;
 import com.amannmalik.mcp.jsonrpc.RequestId;
-import com.amannmalik.mcp.transport.TransportHeaders;
 import com.amannmalik.mcp.security.OriginValidator;
 import jakarta.json.Json;
 import jakarta.json.JsonObject;

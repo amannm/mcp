@@ -1,7 +1,6 @@
 package com.amannmalik.mcp.transport;
 
 import com.amannmalik.mcp.lifecycle.ProtocolLifecycle;
-import com.amannmalik.mcp.transport.TransportHeaders;
 import jakarta.json.Json;
 import jakarta.json.JsonObject;
 import jakarta.json.JsonReader;
