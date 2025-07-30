@@ -29,16 +29,19 @@ public final class HostCommand implements Callable<Integer> {
     @CommandLine.Option(names = {"-c", "--config"}, description = "Config file")
     private Path config;
 
-    private final HostConfig resolved;
+    private HostConfig resolved;
 
     @CommandLine.Option(names = {"-v", "--verbose"}, description = "Verbose logging")
-    private final boolean verbose;
+    private boolean verbose;
 
     @CommandLine.Option(names = "--client", description = "Client as id:command", split = ",")
     private List<String> clientSpecs;
 
     @CommandLine.Option(names = "--interactive", description = "Interactive mode for client management")
     private boolean interactive;
+
+    public HostCommand() {
+    }
 
     public HostCommand(HostConfig config, boolean verbose) {
         this.resolved = config;
