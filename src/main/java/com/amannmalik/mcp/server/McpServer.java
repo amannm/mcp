@@ -641,6 +641,14 @@ public final class McpServer implements AutoCloseable {
     private JsonRpcMessage listTools(JsonRpcRequest req) {
         requireServerCapability(ServerCapability.TOOLS);
         String cursor = PaginationCodec.toPaginatedRequest(req.params()).cursor();
+        if (cursor != null) {
+            try {
+                cursor = InputSanitizer.requireClean(cursor);
+            } catch (IllegalArgumentException e) {
+                return new JsonRpcError(req.id(), new JsonRpcError.ErrorDetail(
+                        JsonRpcErrorCode.INVALID_PARAMS.code(), e.getMessage(), null));
+            }
+        }
         ToolPage page;
         try {
             page = tools.list(cursor);
