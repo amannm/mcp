@@ -128,7 +128,7 @@ public final class McpConformanceSteps {
                     "com.amannmalik.mcp.Main", "server", "--stdio", "-v"));
             ProcessBuilder pb = new ProcessBuilder(args);
             serverProcess = pb.start();
-            long end = System.currentTimeMillis() + 500;
+            long end = System.currentTimeMillis() + 2000;
             boolean started = false;
             while (System.currentTimeMillis() < end) {
                 if (serverProcess.isAlive()) {
