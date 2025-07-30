@@ -1,5 +1,6 @@
 package com.amannmalik.mcp.server.tools;
 
+import com.amannmalik.mcp.util.PaginatedRequest;
 import com.amannmalik.mcp.util.PaginatedResult;
 import com.amannmalik.mcp.util.PaginationCodec;
 import jakarta.json.Json;
@@ -35,9 +36,7 @@ public final class ToolCodec {
 
     public static JsonObject toJsonObject(ListToolsRequest req) {
         if (req == null) throw new IllegalArgumentException("request required");
-        JsonObjectBuilder b = Json.createObjectBuilder();
-        if (req.cursor() != null) b.add("cursor", req.cursor());
-        return b.build();
+        return PaginationCodec.toJsonObject(new PaginatedRequest(req.cursor()));
     }
 
     public static JsonObject toJsonObject(ListToolsResult page) {
@@ -112,7 +111,7 @@ public final class ToolCodec {
     }
 
     public static ListToolsRequest toListToolsRequest(JsonObject obj) {
-        String cursor = obj == null ? null : obj.getString("cursor", null);
+        String cursor = PaginationCodec.toPaginatedRequest(obj).cursor();
         return new ListToolsRequest(cursor);
     }
 

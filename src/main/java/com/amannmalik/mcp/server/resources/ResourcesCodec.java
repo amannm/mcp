@@ -2,6 +2,9 @@ package com.amannmalik.mcp.server.resources;
 
 import com.amannmalik.mcp.annotations.Annotations;
 import com.amannmalik.mcp.prompts.Role;
+import com.amannmalik.mcp.util.PaginatedRequest;
+import com.amannmalik.mcp.util.PaginatedResult;
+import com.amannmalik.mcp.util.PaginationCodec;
 import jakarta.json.Json;
 import jakarta.json.JsonObject;
 import jakarta.json.JsonObjectBuilder;
@@ -232,7 +235,8 @@ public final class ResourcesCodec {
         var arr = Json.createArrayBuilder();
         result.resources().forEach(r -> arr.add(toJsonObject(r)));
         JsonObjectBuilder b = Json.createObjectBuilder().add("resources", arr.build());
-        if (result.nextCursor() != null) b.add("nextCursor", result.nextCursor());
+        PaginationCodec.toJsonObject(new PaginatedResult(result.nextCursor()))
+                .forEach(b::add);
         return b.build();
     }
 
@@ -242,30 +246,28 @@ public final class ResourcesCodec {
         if (arr == null) throw new IllegalArgumentException("resources required");
         java.util.List<Resource> resources = new java.util.ArrayList<>();
         arr.forEach(v -> resources.add(toResource(v.asJsonObject())));
-        return new ListResourcesResult(resources, obj.getString("nextCursor", null));
+        String cursor = PaginationCodec.toPaginatedResult(obj).nextCursor();
+        return new ListResourcesResult(resources, cursor);
     }
 
     public static JsonObject toJsonObject(ListResourcesRequest req) {
         if (req == null) throw new IllegalArgumentException("request required");
-        JsonObjectBuilder b = Json.createObjectBuilder();
-        if (req.cursor() != null) b.add("cursor", req.cursor());
-        return b.build();
+        return PaginationCodec.toJsonObject(new PaginatedRequest(req.cursor()));
     }
 
     public static ListResourcesRequest toListResourcesRequest(JsonObject obj) {
-        String cursor = obj == null ? null : obj.getString("cursor", null);
+        String cursor = PaginationCodec.toPaginatedRequest(obj).cursor();
         return new ListResourcesRequest(cursor);
     }
 
     public static JsonObject toJsonObject(ListResourceTemplatesRequest req) {
         if (req == null) throw new IllegalArgumentException("request required");
-        JsonObjectBuilder b = Json.createObjectBuilder();
-        if (req.cursor() != null) b.add("cursor", req.cursor());
-        return b.build();
+        return PaginationCodec.toJsonObject(new PaginatedRequest(req.cursor()));
     }
 
     public static ListResourceTemplatesRequest toListResourceTemplatesRequest(JsonObject obj) {
-        return new ListResourceTemplatesRequest(obj.getString("cursor", null));
+        String cursor = PaginationCodec.toPaginatedRequest(obj).cursor();
+        return new ListResourceTemplatesRequest(cursor);
     }
 
     public static JsonObject toJsonObject(ListResourceTemplatesResult result) {
@@ -273,7 +275,8 @@ public final class ResourcesCodec {
         var arr = Json.createArrayBuilder();
         result.resourceTemplates().forEach(t -> arr.add(toJsonObject(t)));
         JsonObjectBuilder b = Json.createObjectBuilder().add("resourceTemplates", arr.build());
-        if (result.nextCursor() != null) b.add("nextCursor", result.nextCursor());
+        PaginationCodec.toJsonObject(new PaginatedResult(result.nextCursor()))
+                .forEach(b::add);
         return b.build();
     }
 
@@ -283,6 +286,7 @@ public final class ResourcesCodec {
         if (arr == null) throw new IllegalArgumentException("resourceTemplates required");
         java.util.List<ResourceTemplate> templates = new java.util.ArrayList<>();
         arr.forEach(v -> templates.add(toResourceTemplate(v.asJsonObject())));
-        return new ListResourceTemplatesResult(templates, obj.getString("nextCursor", null));
+        String cursor = PaginationCodec.toPaginatedResult(obj).nextCursor();
+        return new ListResourceTemplatesResult(templates, cursor);
     }
 }
