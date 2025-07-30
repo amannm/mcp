@@ -116,9 +116,10 @@ public final class ResourcesCodec {
 
     public static JsonObject toJsonObject(ResourceUpdatedNotification n) {
         if (n == null) throw new IllegalArgumentException("notification required");
-        return Json.createObjectBuilder()
-                .add("uri", n.uri())
-                .build();
+        JsonObjectBuilder b = Json.createObjectBuilder()
+                .add("uri", n.uri());
+        if (n.title() != null) b.add("title", n.title());
+        return b.build();
     }
 
     public static JsonObject toJsonObject(SubscribeRequest req) {
