@@ -66,6 +66,9 @@ public final class ServerCommand implements Callable<Integer> {
             TransportType type = httpPort == null ? TransportType.STDIO : TransportType.HTTP;
             int port = httpPort == null ? 0 : httpPort;
             if (stdio) type = TransportType.STDIO;
+            if (authServers == null || authServers.isEmpty()) {
+                throw new IllegalArgumentException("--auth-server is required");
+            }
             cfg = new ServerConfig(type, port, null, expectedAudience, resourceMetadataUrl, authServers);
         }
 

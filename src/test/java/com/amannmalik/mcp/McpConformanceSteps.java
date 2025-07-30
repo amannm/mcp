@@ -92,7 +92,8 @@ public final class McpConformanceSteps {
                 args.add(jacocoAgent);
             }
             args.addAll(List.of("-cp", System.getProperty("java.class.path"),
-                    "com.amannmalik.mcp.Main", "server", "--http", "0", "-v"));
+                    "com.amannmalik.mcp.Main", "server", "--http", "0",
+                    "--auth-server", "http://127.0.0.1/auth", "-v"));
             ProcessBuilder pb = new ProcessBuilder(args);
             serverProcess = pb.start();
             var err = new BufferedReader(new InputStreamReader(
@@ -125,7 +126,8 @@ public final class McpConformanceSteps {
                 args.add(jacocoAgent);
             }
             args.addAll(List.of("-cp", System.getProperty("java.class.path"),
-                    "com.amannmalik.mcp.Main", "server", "--stdio", "-v"));
+                    "com.amannmalik.mcp.Main", "server", "--stdio",
+                    "--auth-server", "http://127.0.0.1/auth", "-v"));
             ProcessBuilder pb = new ProcessBuilder(args);
             serverProcess = pb.start();
             long end = System.currentTimeMillis() + 500;
