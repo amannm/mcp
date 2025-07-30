@@ -9,10 +9,11 @@ public final class ElicitationCodec {
     }
 
     public static JsonObject toJsonObject(ElicitationRequest req) {
-        return Json.createObjectBuilder()
+        JsonObjectBuilder b = Json.createObjectBuilder()
                 .add("message", req.message())
-                .add("requestedSchema", req.requestedSchema())
-                .build();
+                .add("requestedSchema", req.requestedSchema());
+        if (req._meta() != null) b.add("_meta", req._meta());
+        return b.build();
     }
 
     public static ElicitationRequest toRequest(JsonObject obj) {
@@ -23,9 +24,11 @@ public final class ElicitationCodec {
         if (schemaVal == null || schemaVal.getValueType() != jakarta.json.JsonValue.ValueType.OBJECT) {
             throw new IllegalArgumentException("requestedSchema must be object");
         }
+        JsonObject meta = obj.containsKey("_meta") ? obj.getJsonObject("_meta") : null;
         return new ElicitationRequest(
                 obj.getString("message"),
-                schemaVal.asJsonObject()
+                schemaVal.asJsonObject(),
+                meta
         );
     }
 
