@@ -32,6 +32,8 @@ import java.net.InetSocketAddress;
 import java.util.Set;
 import java.security.SecureRandom;
 import java.util.Base64;
+import java.util.Deque;
+import java.util.ArrayDeque;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -48,8 +50,10 @@ public final class StreamableHttpTransport implements Transport {
     // present, as recommended for backwards compatibility.
     private static final String DEFAULT_VERSION = "2025-03-26";
     private final BlockingQueue<JsonObject> incoming = new LinkedBlockingQueue<>();
-    private final Set<SseClient> sseClients = ConcurrentHashMap.newKeySet();
+    private final Set<SseClient> generalClients = ConcurrentHashMap.newKeySet();
     private final ConcurrentHashMap<String, SseClient> requestStreams = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<String, SseClient> clientsByPrefix = new ConcurrentHashMap<>();
+    private final AtomicReference<SseClient> lastGeneral = new AtomicReference<>();
     private final AtomicReference<String> sessionId = new AtomicReference<>();
     private final AtomicReference<String> lastSessionId = new AtomicReference<>();
     private final AtomicReference<String> sessionOwner = new AtomicReference<>();
@@ -91,7 +95,7 @@ public final class StreamableHttpTransport implements Transport {
                 if (method == null) {
                     stream.close();
                     requestStreams.remove(id);
-                    sseClients.remove(stream);
+                    clientsByPrefix.remove(stream.prefix);
                 }
                 return;
             }
@@ -104,9 +108,15 @@ public final class StreamableHttpTransport implements Transport {
         if (id != null && method == null) {
             return;
         }
-        for (SseClient c : sseClients) {
-            c.send(message);
-            break;
+        for (SseClient c : generalClients) {
+            if (c.isActive()) {
+                c.send(message);
+                return;
+            }
+        }
+        SseClient pending = lastGeneral.get();
+        if (pending != null) {
+            pending.send(message);
         }
     }
 
@@ -123,13 +133,14 @@ public final class StreamableHttpTransport implements Transport {
     @Override
     public void close() throws IOException {
         try {
-            sseClients.forEach(client -> {
+            generalClients.forEach(client -> {
                 try {
                     client.close();
                 } catch (Exception ignore) {
                 }
             });
-            sseClients.clear();
+            generalClients.clear();
+            lastGeneral.set(null);
             requestStreams.forEach((id, client) -> {
                 try {
                     RequestId reqId;
@@ -153,6 +164,7 @@ public final class StreamableHttpTransport implements Transport {
                 }
             });
             requestStreams.clear();
+            clientsByPrefix.clear();
 
             responseQueues.forEach((id, queue) -> {
                 RequestId reqId;
@@ -310,12 +322,12 @@ public final class StreamableHttpTransport implements Transport {
                 SseClient client = new SseClient(ac);
                 String key = obj.get("id").toString();
                 requestStreams.put(key, client);
-                sseClients.add(client);
+                clientsByPrefix.put(client.prefix, client);
                 ac.addListener(new AsyncListener() {
                     @Override
                     public void onComplete(AsyncEvent event) {
                         requestStreams.remove(key);
-                        sseClients.remove(client);
+                        clientsByPrefix.remove(client.prefix);
                         try {
                             client.close();
                         } catch (Exception e) {
@@ -326,7 +338,7 @@ public final class StreamableHttpTransport implements Transport {
                     @Override
                     public void onTimeout(AsyncEvent event) {
                         requestStreams.remove(key);
-                        sseClients.remove(client);
+                        clientsByPrefix.remove(client.prefix);
                         try {
                             client.close();
                         } catch (Exception e) {
@@ -337,7 +349,7 @@ public final class StreamableHttpTransport implements Transport {
                     @Override
                     public void onError(AsyncEvent event) {
                         requestStreams.remove(key);
-                        sseClients.remove(client);
+                        clientsByPrefix.remove(client.prefix);
                         try {
                             client.close();
                         } catch (Exception e) {
@@ -354,7 +366,7 @@ public final class StreamableHttpTransport implements Transport {
                 } catch (InterruptedException e) {
                     Thread.currentThread().interrupt();
                     requestStreams.remove(key);
-                    sseClients.remove(client);
+                    clientsByPrefix.remove(client.prefix);
                     client.close();
                     resp.sendError(HttpServletResponse.SC_SERVICE_UNAVAILABLE);
                 }
@@ -421,17 +433,39 @@ public final class StreamableHttpTransport implements Transport {
             resp.setHeader(PROTOCOL_HEADER, protocolVersion);
             resp.flushBuffer();
             AsyncContext ac = req.startAsync();
-
             ac.setTimeout(0);
 
-            SseClient client = new SseClient(ac);
-            sseClients.add(client);
+            String lastEvent = req.getHeader("Last-Event-ID");
+            SseClient found = null;
+            long lastId = 0;
+            if (lastEvent != null) {
+                int idx = lastEvent.lastIndexOf('-');
+                if (idx > 0) {
+                    String prefix = lastEvent.substring(0, idx);
+                    try { lastId = Long.parseLong(lastEvent.substring(idx + 1)); } catch (NumberFormatException ignore) {}
+                    found = clientsByPrefix.get(prefix);
+                    if (found != null) {
+                        found.attach(ac, lastId);
+                    }
+                }
+            }
+            SseClient client;
+            if (found == null) {
+                client = new SseClient(ac);
+                clientsByPrefix.put(client.prefix, client);
+            } else {
+                client = found;
+                lastGeneral.set(null);
+            }
+            generalClients.add(client);
+            final SseClient c = client;
             ac.addListener(new AsyncListener() {
                 @Override
                 public void onComplete(AsyncEvent event) {
-                    sseClients.remove(client);
+                    generalClients.remove(c);
+                    lastGeneral.set(c);
                     try {
-                        client.close();
+                        c.close();
                     } catch (Exception e) {
                         System.err.println("SSE close failed: " + e.getMessage());
                     }
@@ -439,9 +473,10 @@ public final class StreamableHttpTransport implements Transport {
 
                 @Override
                 public void onTimeout(AsyncEvent event) {
-                    sseClients.remove(client);
+                    generalClients.remove(c);
+                    lastGeneral.set(c);
                     try {
-                        client.close();
+                        c.close();
                     } catch (Exception e) {
                         System.err.println("SSE close failed: " + e.getMessage());
                     }
@@ -449,9 +484,10 @@ public final class StreamableHttpTransport implements Transport {
 
                 @Override
                 public void onError(AsyncEvent event) {
-                    sseClients.remove(client);
+                    generalClients.remove(c);
+                    lastGeneral.set(c);
                     try {
-                        client.close();
+                        c.close();
                     } catch (Exception e) {
                         System.err.println("SSE close failed: " + e.getMessage());
                     }
@@ -510,40 +546,68 @@ public final class StreamableHttpTransport implements Transport {
             sessionOwner.set(null);
             sessionPrincipal.set(null);
             protocolVersion = ProtocolLifecycle.SUPPORTED_VERSION;
-            sseClients.forEach(SseClient::close);
-            sseClients.clear();
+            generalClients.forEach(SseClient::close);
+            generalClients.clear();
+            lastGeneral.set(null);
             requestStreams.forEach((id, c) -> c.close());
             requestStreams.clear();
+            clientsByPrefix.clear();
             resp.setStatus(HttpServletResponse.SC_OK);
         }
     }
 
     private static class SseClient {
-        private final AsyncContext context;
-        private final PrintWriter out;
+        private static final int HISTORY_LIMIT = 100;
+
+        private AsyncContext context;
+        private PrintWriter out;
         private final String prefix;
+        private final Deque<SseEvent> history = new ArrayDeque<>();
         private final AtomicLong nextId = new AtomicLong(1);
         private volatile boolean closed = false;
 
         SseClient(AsyncContext context) throws IOException {
-            this.context = context;
-            this.out = context.getResponse().getWriter();
             byte[] bytes = new byte[8];
             RANDOM.nextBytes(bytes);
             this.prefix = Base64.getUrlEncoder().withoutPadding().encodeToString(bytes);
+            attach(context, 0);
+        }
+
+        void attach(AsyncContext ctx, long lastId) throws IOException {
+            this.context = ctx;
+            this.out = ctx.getResponse().getWriter();
+            this.closed = false;
+            sendHistory(lastId);
+        }
+
+        boolean isActive() {
+            return !closed && context != null;
         }
 
         void send(JsonObject msg) {
-            if (closed) return;
-            long n = nextId.getAndIncrement();
+            long id = nextId.getAndIncrement();
+            history.addLast(new SseEvent(id, msg));
+            while (history.size() > HISTORY_LIMIT) history.removeFirst();
+            if (closed || context == null) return;
             try {
-                out.write("id: " + prefix + '-' + n + "\n");
+                out.write("id: " + prefix + '-' + id + "\n");
                 out.write("data: " + msg.toString() + "\n\n");
                 out.flush();
             } catch (Exception e) {
                 System.err.println("SSE send failed: " + e.getMessage());
                 closed = true;
             }
+        }
+
+        private void sendHistory(long lastId) throws IOException {
+            if (context == null) return;
+            for (SseEvent ev : history) {
+                if (ev.id > lastId) {
+                    out.write("id: " + prefix + '-' + ev.id + "\n");
+                    out.write("data: " + ev.msg.toString() + "\n\n");
+                }
+            }
+            out.flush();
         }
 
         void close() {
@@ -555,9 +619,14 @@ public final class StreamableHttpTransport implements Transport {
                 }
             } catch (Exception e) {
                 System.err.println("SSE close failed: " + e.getMessage());
+            } finally {
+                context = null;
+                out = null;
             }
         }
     }
+
+    private record SseEvent(long id, JsonObject msg) {}
 
     private static boolean isVisibleAscii(String value) {
         for (int i = 0; i < value.length(); i++) {
