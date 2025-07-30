@@ -31,7 +31,6 @@ import com.amannmalik.mcp.lifecycle.ProtocolLifecycle;
 import com.amannmalik.mcp.lifecycle.ServerCapability;
 import com.amannmalik.mcp.lifecycle.ServerFeatures;
 import com.amannmalik.mcp.lifecycle.ServerInfo;
-import com.amannmalik.mcp.lifecycle.UnsupportedProtocolVersionException;
 import com.amannmalik.mcp.ping.PingCodec;
 import com.amannmalik.mcp.ping.PingRequest;
 import com.amannmalik.mcp.prompts.GetPromptRequest;
@@ -402,19 +401,7 @@ public final class McpServer implements AutoCloseable {
 
     private JsonRpcMessage initialize(JsonRpcRequest req) {
         InitializeRequest init = LifecycleCodec.toInitializeRequest(req.params());
-        InitializeResponse baseResp;
-        try {
-            baseResp = lifecycle.initialize(init);
-        } catch (UnsupportedProtocolVersionException e) {
-            var data = Json.createObjectBuilder()
-                    .add("supported", Json.createArrayBuilder().add(e.supported()))
-                    .add("requested", e.requested())
-                    .build();
-            return new JsonRpcError(req.id(), new JsonRpcError.ErrorDetail(
-                    JsonRpcErrorCode.INVALID_PARAMS.code(),
-                    "Unsupported protocol version",
-                    data));
-        }
+        InitializeResponse baseResp = lifecycle.initialize(init);
         InitializeResponse resp = new InitializeResponse(
                 baseResp.protocolVersion(),
                 baseResp.capabilities(),

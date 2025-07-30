@@ -26,11 +26,6 @@ public class ProtocolLifecycle {
         clientCapabilities = requested.isEmpty()
                 ? EnumSet.noneOf(ClientCapability.class)
                 : EnumSet.copyOf(requested);
-        if (!SUPPORTED_VERSION.equals(request.protocolVersion())) {
-            throw new UnsupportedProtocolVersionException(
-                    request.protocolVersion(), SUPPORTED_VERSION);
-        }
-
         return new InitializeResponse(
                 SUPPORTED_VERSION,
                 new Capabilities(clientCapabilities, serverCapabilities, Map.of(), Map.of()),
