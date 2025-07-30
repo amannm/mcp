@@ -1,17 +1,17 @@
 package com.amannmalik.mcp.prompts;
 
 import com.amannmalik.mcp.util.Pagination;
+import com.amannmalik.mcp.util.ListChangeSupport;
 
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.CopyOnWriteArrayList;
 
 public final class InMemoryPromptProvider implements PromptProvider {
     private final Map<String, PromptTemplate> templates = new ConcurrentHashMap<>();
-    private final List<PromptsListener> listeners = new CopyOnWriteArrayList<>();
+    private final ListChangeSupport<PromptsListener> listChangeSupport = new ListChangeSupport<>();
 
     public void add(PromptTemplate template) {
         templates.put(template.prompt().name(), template);
@@ -43,8 +43,8 @@ public final class InMemoryPromptProvider implements PromptProvider {
 
     @Override
     public PromptsSubscription subscribe(PromptsListener listener) {
-        listeners.add(listener);
-        return () -> listeners.remove(listener);
+        var sub = listChangeSupport.subscribe(listener);
+        return sub::close;
     }
 
     @Override
@@ -53,6 +53,6 @@ public final class InMemoryPromptProvider implements PromptProvider {
     }
 
     private void notifyListeners() {
-        listeners.forEach(PromptsListener::listChanged);
+        listChangeSupport.notifyListeners();
     }
 }

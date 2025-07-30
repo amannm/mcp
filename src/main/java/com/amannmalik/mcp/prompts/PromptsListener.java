@@ -1,6 +1,7 @@
 package com.amannmalik.mcp.prompts;
 
+import com.amannmalik.mcp.util.ListChangeListener;
+
 @FunctionalInterface
-public interface PromptsListener {
-    void listChanged();
+public interface PromptsListener extends ListChangeListener {
 }

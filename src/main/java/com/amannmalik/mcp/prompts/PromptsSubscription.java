@@ -1,6 +1,6 @@
 package com.amannmalik.mcp.prompts;
 
-public interface PromptsSubscription extends AutoCloseable {
-    @Override
-    void close();
+import com.amannmalik.mcp.util.ListChangeSubscription;
+
+public interface PromptsSubscription extends ListChangeSubscription {
 }
