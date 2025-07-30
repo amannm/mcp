@@ -9,17 +9,20 @@ public record CompleteResult(Completion completion) {
     }
 
     public record Completion(List<String> values, Integer total, Boolean hasMore) {
-        public Completion {
-            values = values == null ? List.of() : List.copyOf(values);
-            values = values.stream()
+        public Completion(List<String> values, Integer total, Boolean hasMore) {
+            List<String> copy = values == null ? List.of() : List.copyOf(values);
+            copy = copy.stream()
                     .map(InputSanitizer::requireClean)
                     .toList();
-            if (values.size() > 100) {
+            this.values = copy;
+            this.total = total;
+            this.hasMore = hasMore;
+            if (this.values.size() > 100) {
                 throw new IllegalArgumentException("values must not exceed 100 items");
             }
-            if (total != null) {
-                if (total < 0) throw new IllegalArgumentException("total must be non-negative");
-                if (total < values.size()) {
+            if (this.total != null) {
+                if (this.total < 0) throw new IllegalArgumentException("total must be non-negative");
+                if (this.total < this.values.size()) {
                     throw new IllegalArgumentException("total must be >= values length");
                 }
             }
