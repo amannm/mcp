@@ -6,6 +6,7 @@ import jakarta.json.JsonObject;
 import jakarta.json.JsonObjectBuilder;
 import jakarta.json.JsonString;
 import jakarta.json.JsonValue;
+import com.amannmalik.mcp.validation.InputSanitizer;
 
 public final class ProgressCodec {
     private ProgressCodec() {
@@ -33,7 +34,7 @@ public final class ProgressCodec {
 
     private static ProgressToken toToken(JsonValue value) {
         return switch (value.getValueType()) {
-            case STRING -> new ProgressToken.StringToken(((JsonString) value).getString());
+            case STRING -> new ProgressToken.StringToken(InputSanitizer.requireClean(((JsonString) value).getString()));
             case NUMBER -> {
                 JsonNumber n = (JsonNumber) value;
                 if (!n.isIntegral()) {
