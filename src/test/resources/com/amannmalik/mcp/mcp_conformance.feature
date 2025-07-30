@@ -29,3 +29,32 @@ Feature: MCP protocol conformance
     Then an error with code -32602 is returned
     When the client disconnects
     Then the server process terminates
+
+  Scenario: Invalid log level
+    Given a running MCP server and connected client
+    When the client sets the log level to "invalid"
+    Then an error with code -32602 is returned
+
+  Scenario: Unknown prompt
+    Given a running MCP server and connected client
+    When the client gets prompt "nope"
+    Then an error with code -32602 is returned
+
+  Scenario: Logging on invalid request
+    Given a running MCP server and connected client
+    When the client sets the log level to "debug"
+    Then the call succeeds
+    When the client sends a cancellation notification
+    Then a log message with level "info" is received
+
+  Scenario: Resource subscription lifecycle
+    Given a running MCP server and connected client
+    When the client subscribes to "test://example"
+    Then the call succeeds
+    When the client unsubscribes from "test://example"
+    Then the call succeeds
+
+  Scenario: Invalid completion request
+    Given a running MCP server and connected client
+    When the client requests an invalid completion
+    Then an error with code -32602 is returned
