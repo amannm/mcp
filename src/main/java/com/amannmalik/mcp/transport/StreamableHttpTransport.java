@@ -12,6 +12,7 @@ import com.amannmalik.mcp.security.OriginValidator;
 import jakarta.json.Json;
 import jakarta.json.JsonObject;
 import jakarta.json.JsonReader;
+import jakarta.json.stream.JsonParsingException;
 import jakarta.servlet.AsyncContext;
 import jakarta.servlet.AsyncEvent;
 import jakarta.servlet.AsyncListener;
@@ -254,6 +255,9 @@ public final class StreamableHttpTransport implements Transport {
             JsonObject obj;
             try (JsonReader reader = Json.createReader(req.getInputStream())) {
                 obj = reader.readObject();
+            } catch (JsonParsingException e) {
+                resp.sendError(HttpServletResponse.SC_BAD_REQUEST);
+                return;
             }
             boolean initializing = RequestMethod.INITIALIZE.method()
                     .equals(obj.getString("method", null));
