@@ -664,6 +664,12 @@ public final class McpServer implements AutoCloseable {
             return new JsonRpcError(req.id(), new JsonRpcError.ErrorDetail(
                     JsonRpcErrorCode.INVALID_PARAMS.code(), "name required", null));
         }
+        try {
+            name = InputSanitizer.requireClean(name);
+        } catch (IllegalArgumentException e) {
+            return new JsonRpcError(req.id(), new JsonRpcError.ErrorDetail(
+                    JsonRpcErrorCode.INVALID_PARAMS.code(), e.getMessage(), null));
+        }
 
         JsonValue argsVal = params.get("arguments");
         JsonObject args = null;
