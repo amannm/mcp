@@ -1,5 +1,6 @@
 package com.amannmalik.mcp.server.resources;
 
+import com.amannmalik.mcp.prompts.Role;
 import jakarta.json.Json;
 import jakarta.json.JsonObject;
 import jakarta.json.JsonObjectBuilder;
@@ -122,11 +123,11 @@ public final class ResourcesCodec {
     }
 
     public static ResourceAnnotations toAnnotations(JsonObject obj) {
-        Set<Audience> audience = EnumSet.noneOf(Audience.class);
+        Set<Role> audience = EnumSet.noneOf(Role.class);
         var audienceArr = obj.getJsonArray("audience");
         if (audienceArr != null) {
             audienceArr.getValuesAs(JsonString.class)
-                    .forEach(js -> audience.add(Audience.valueOf(js.getString().toUpperCase())));
+                    .forEach(js -> audience.add(Role.valueOf(js.getString().toUpperCase())));
         }
         Double priority = obj.containsKey("priority") ? obj.getJsonNumber("priority").doubleValue() : null;
         Instant lastModified = null;

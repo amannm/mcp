@@ -58,7 +58,7 @@ import com.amannmalik.mcp.server.completion.InMemoryCompletionProvider;
 import com.amannmalik.mcp.server.logging.LoggingCodec;
 import com.amannmalik.mcp.server.logging.LoggingLevel;
 import com.amannmalik.mcp.server.logging.LoggingMessageNotification;
-import com.amannmalik.mcp.server.resources.Audience;
+import com.amannmalik.mcp.prompts.Role;
 import com.amannmalik.mcp.server.resources.InMemoryResourceProvider;
 import com.amannmalik.mcp.server.resources.Resource;
 import com.amannmalik.mcp.server.resources.ResourceAnnotations;
@@ -920,7 +920,7 @@ public final class McpServer implements AutoCloseable {
 
     private static ResourceAccessController createDefaultPrivacyBoundary(String principalId) {
         var p = new PrivacyBoundaryEnforcer();
-        for (Audience a : Audience.values()) p.allow(principalId, a);
+        for (Role a : Role.values()) p.allow(principalId, a);
         return p;
     }
 

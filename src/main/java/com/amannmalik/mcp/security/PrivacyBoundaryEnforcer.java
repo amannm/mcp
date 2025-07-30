@@ -1,7 +1,7 @@
 package com.amannmalik.mcp.security;
 
 import com.amannmalik.mcp.auth.Principal;
-import com.amannmalik.mcp.server.resources.Audience;
+import com.amannmalik.mcp.prompts.Role;
 import com.amannmalik.mcp.server.resources.ResourceAnnotations;
 
 import java.util.EnumSet;
@@ -10,14 +10,14 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 public final class PrivacyBoundaryEnforcer implements ResourceAccessController {
-    private final Map<String, Set<Audience>> permissions = new ConcurrentHashMap<>();
+    private final Map<String, Set<Role>> permissions = new ConcurrentHashMap<>();
 
-    public void allow(String principalId, Audience audience) {
-        permissions.computeIfAbsent(principalId, k -> EnumSet.noneOf(Audience.class))
+    public void allow(String principalId, Role audience) {
+        permissions.computeIfAbsent(principalId, k -> EnumSet.noneOf(Role.class))
                 .add(audience);
     }
 
-    public void revoke(String principalId, Audience audience) {
+    public void revoke(String principalId, Role audience) {
         var set = permissions.get(principalId);
         if (set != null) set.remove(audience);
     }
