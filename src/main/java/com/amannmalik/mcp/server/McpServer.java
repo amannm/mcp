@@ -721,6 +721,25 @@ public final class McpServer implements AutoCloseable {
             ToolResult result = tools.call(callRequest.name(), callRequest.arguments());
             return new JsonRpcResponse(req.id(), ToolCodec.toJsonObject(result));
         } catch (IllegalArgumentException e) {
+            Tool tool = findTool(callRequest.name());
+            if (tool != null && lifecycle.negotiatedClientCapabilities().contains(ClientCapability.ELICITATION)) {
+                try {
+                    ElicitRequest er = new ElicitRequest(
+                            "Provide arguments for tool '" + tool.name() + "'",
+                            tool.inputSchema(),
+                            null);
+                    ElicitResult res = elicit(er);
+                    if (res.action() == ElicitationAction.ACCEPT) {
+                        ToolResult result = tools.call(callRequest.name(), res.content());
+                        return new JsonRpcResponse(req.id(), ToolCodec.toJsonObject(result));
+                    }
+                    return new JsonRpcError(req.id(), new JsonRpcError.ErrorDetail(
+                            JsonRpcErrorCode.INVALID_PARAMS.code(), "Tool invocation cancelled", null));
+                } catch (Exception ex) {
+                    return new JsonRpcError(req.id(), new JsonRpcError.ErrorDetail(
+                            JsonRpcErrorCode.INTERNAL_ERROR.code(), ex.getMessage(), null));
+                }
+            }
             return new JsonRpcError(req.id(), new JsonRpcError.ErrorDetail(
                     JsonRpcErrorCode.INVALID_PARAMS.code(), e.getMessage(), null));
         }
@@ -916,6 +935,15 @@ public final class McpServer implements AutoCloseable {
             return er;
         }
         throw new IOException(((JsonRpcError) msg).error().message());
+    }
+
+    private Tool findTool(String name) {
+        if (tools == null) return null;
+        ToolPage page = tools.list(null);
+        for (Tool t : page.tools()) {
+            if (t.name().equals(name)) return t;
+        }
+        return null;
     }
 
     public CreateMessageResponse createMessage(CreateMessageRequest req) throws IOException {
