@@ -15,6 +15,9 @@ public final class LifecycleCodec {
         var caps = Json.createObjectBuilder();
         for (var c : req.capabilities().client()) {
             var b = Json.createObjectBuilder();
+            if (c == ClientCapability.ROOTS && req.features().rootsListChanged()) {
+                b.add("listChanged", true);
+            }
             caps.add(c.name().toLowerCase(), b.build());
         }
         req.capabilities().clientExperimental()
@@ -38,14 +41,21 @@ public final class LifecycleCodec {
         JsonObject capsObj = obj.getJsonObject("capabilities");
         Set<ClientCapability> client = EnumSet.noneOf(ClientCapability.class);
         Map<String, JsonObject> experimental = new java.util.HashMap<>();
+        boolean rootsList = false;
         if (capsObj != null) {
-            capsObj.forEach((k, v) -> {
-                try {
-                    client.add(ClientCapability.valueOf(k.toUpperCase()));
-                } catch (IllegalArgumentException ignore) {
-                    experimental.put(k, v.asJsonObject());
+            for (var entry : capsObj.entrySet()) {
+                String k = entry.getKey();
+                JsonObject v = entry.getValue().asJsonObject();
+                switch (k) {
+                    case "roots" -> {
+                        client.add(ClientCapability.ROOTS);
+                        rootsList = v.getBoolean("listChanged", false);
+                    }
+                    case "sampling" -> client.add(ClientCapability.SAMPLING);
+                    case "elicitation" -> client.add(ClientCapability.ELICITATION);
+                    default -> experimental.put(k, v);
                 }
-            });
+            }
         }
         Set<ServerCapability> server = EnumSet.noneOf(ServerCapability.class);
         Capabilities caps = new Capabilities(
@@ -63,7 +73,8 @@ public final class LifecycleCodec {
                 ci.containsKey("title") ? ci.getString("title") : null,
                 ci.getString("version")
         );
-        return new InitializeRequest(version, caps, info);
+        ClientFeatures features = new ClientFeatures(rootsList);
+        return new InitializeRequest(version, caps, info, features);
     }
 
     public static JsonObject toJsonObject(InitializeResponse resp) {

@@ -27,6 +27,7 @@ import com.amannmalik.mcp.lifecycle.ClientInfo;
 import com.amannmalik.mcp.lifecycle.InitializeRequest;
 import com.amannmalik.mcp.lifecycle.InitializeResponse;
 import com.amannmalik.mcp.lifecycle.LifecycleCodec;
+import com.amannmalik.mcp.lifecycle.ClientFeatures;
 import com.amannmalik.mcp.lifecycle.ProtocolLifecycle;
 import com.amannmalik.mcp.lifecycle.ServerCapability;
 import com.amannmalik.mcp.lifecycle.ServerFeatures;
@@ -161,24 +162,10 @@ public final class McpClient implements AutoCloseable {
         InitializeRequest init = new InitializeRequest(
                 ProtocolLifecycle.SUPPORTED_VERSION,
                 new Capabilities(capabilities, Set.of(), Map.of(), Map.of()),
-                info
+                info,
+                new ClientFeatures(rootsListChangedSupported)
         );
         var initJson = LifecycleCodec.toJsonObject(init);
-        if (capabilities.contains(ClientCapability.ROOTS) && rootsListChangedSupported) {
-            var caps = initJson.getJsonObject("capabilities");
-            if (caps != null && caps.containsKey("roots")) {
-                var rootsCaps = caps.getJsonObject("roots");
-                rootsCaps = jakarta.json.Json.createObjectBuilder(rootsCaps)
-                        .add("listChanged", true)
-                        .build();
-                caps = jakarta.json.Json.createObjectBuilder(caps)
-                        .add("roots", rootsCaps)
-                        .build();
-                initJson = jakarta.json.Json.createObjectBuilder(initJson)
-                        .add("capabilities", caps)
-                        .build();
-            }
-        }
         RequestId reqId = new RequestId.NumericId(id.getAndIncrement());
         JsonRpcRequest request = new JsonRpcRequest(reqId, "initialize", initJson);
         transport.send(JsonRpcCodec.toJsonObject(request));
