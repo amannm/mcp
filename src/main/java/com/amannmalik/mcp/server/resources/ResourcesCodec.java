@@ -1,6 +1,9 @@
 package com.amannmalik.mcp.server.resources;
 
 import com.amannmalik.mcp.prompts.Role;
+import com.amannmalik.mcp.util.PaginatedRequest;
+import com.amannmalik.mcp.util.PaginatedResult;
+import com.amannmalik.mcp.util.PaginationCodec;
 import jakarta.json.Json;
 import jakarta.json.JsonObject;
 import jakarta.json.JsonObjectBuilder;
@@ -186,6 +189,84 @@ public final class ResourcesCodec {
             throw new IllegalArgumentException("uri required");
         }
         return new UnsubscribeRequest(obj.getString("uri"));
+    }
+
+    public static JsonObject toJsonObject(ListResourcesRequest req) {
+        if (req == null) throw new IllegalArgumentException("request required");
+        return PaginationCodec.toJsonObject(new PaginatedRequest(req.cursor()));
+    }
+
+    public static ListResourcesRequest toListResourcesRequest(JsonObject obj) {
+        return new ListResourcesRequest(PaginationCodec.toPaginatedRequest(obj).cursor());
+    }
+
+    public static JsonObject toJsonObject(ListResourcesResult result) {
+        var arr = Json.createArrayBuilder();
+        result.resources().forEach(r -> arr.add(toJsonObject(r)));
+        JsonObjectBuilder b = Json.createObjectBuilder().add("resources", arr.build());
+        PaginationCodec.toJsonObject(new PaginatedResult(result.nextCursor())).forEach(b::add);
+        return b.build();
+    }
+
+    public static ListResourcesResult toListResourcesResult(JsonObject obj) {
+        var arr = obj.getJsonArray("resources");
+        if (arr == null) throw new IllegalArgumentException("resources required");
+        java.util.List<Resource> list = new java.util.ArrayList<>();
+        arr.forEach(v -> list.add(toResource(v.asJsonObject())));
+        String cursor = PaginationCodec.toPaginatedResult(obj).nextCursor();
+        return new ListResourcesResult(list, cursor);
+    }
+
+    public static JsonObject toJsonObject(ListResourceTemplatesRequest req) {
+        if (req == null) throw new IllegalArgumentException("request required");
+        return PaginationCodec.toJsonObject(new PaginatedRequest(req.cursor()));
+    }
+
+    public static ListResourceTemplatesRequest toListResourceTemplatesRequest(JsonObject obj) {
+        return new ListResourceTemplatesRequest(PaginationCodec.toPaginatedRequest(obj).cursor());
+    }
+
+    public static JsonObject toJsonObject(ListResourceTemplatesResult result) {
+        var arr = Json.createArrayBuilder();
+        result.resourceTemplates().forEach(t -> arr.add(toJsonObject(t)));
+        JsonObjectBuilder b = Json.createObjectBuilder().add("resourceTemplates", arr.build());
+        PaginationCodec.toJsonObject(new PaginatedResult(result.nextCursor())).forEach(b::add);
+        return b.build();
+    }
+
+    public static ListResourceTemplatesResult toListResourceTemplatesResult(JsonObject obj) {
+        var arr = obj.getJsonArray("resourceTemplates");
+        if (arr == null) throw new IllegalArgumentException("resourceTemplates required");
+        java.util.List<ResourceTemplate> list = new java.util.ArrayList<>();
+        arr.forEach(v -> list.add(toResourceTemplate(v.asJsonObject())));
+        String cursor = PaginationCodec.toPaginatedResult(obj).nextCursor();
+        return new ListResourceTemplatesResult(list, cursor);
+    }
+
+    public static JsonObject toJsonObject(ReadResourceRequest req) {
+        if (req == null) throw new IllegalArgumentException("request required");
+        return Json.createObjectBuilder().add("uri", req.uri()).build();
+    }
+
+    public static ReadResourceRequest toReadResourceRequest(JsonObject obj) {
+        if (obj == null || !obj.containsKey("uri")) {
+            throw new IllegalArgumentException("uri required");
+        }
+        return new ReadResourceRequest(obj.getString("uri"));
+    }
+
+    public static JsonObject toJsonObject(ReadResourceResult result) {
+        var arr = Json.createArrayBuilder();
+        result.contents().forEach(c -> arr.add(toJsonObject(c)));
+        return Json.createObjectBuilder().add("contents", arr.build()).build();
+    }
+
+    public static ReadResourceResult toReadResourceResult(JsonObject obj) {
+        var arr = obj.getJsonArray("contents");
+        if (arr == null) throw new IllegalArgumentException("contents required");
+        java.util.List<ResourceBlock> list = new java.util.ArrayList<>();
+        arr.forEach(v -> list.add(toResourceBlock(v.asJsonObject())));
+        return new ReadResourceResult(list);
     }
 
     public static ResourceUpdatedNotification toResourceUpdatedNotification(JsonObject obj) {
