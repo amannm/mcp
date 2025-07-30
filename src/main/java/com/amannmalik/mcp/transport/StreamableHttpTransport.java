@@ -150,16 +150,7 @@ public final class StreamableHttpTransport implements Transport {
             lastGeneral.set(null);
             requestStreams.forEach((id, client) -> {
                 try {
-                    RequestId reqId;
-                    if (id.startsWith("\"") && id.endsWith("\"") && id.length() > 1) {
-                        reqId = new RequestId.StringId(id.substring(1, id.length() - 1));
-                    } else {
-                        try {
-                            reqId = new RequestId.NumericId(Long.parseLong(id));
-                        } catch (NumberFormatException e) {
-                            reqId = new RequestId.StringId(id);
-                        }
-                    }
+                    RequestId reqId = RequestId.parse(id);
                     JsonRpcError err = new JsonRpcError(reqId,
                             new JsonRpcError.ErrorDetail(
                                     JsonRpcErrorCode.INTERNAL_ERROR.code(),
@@ -174,16 +165,7 @@ public final class StreamableHttpTransport implements Transport {
             clientsByPrefix.clear();
 
             responseQueues.forEach((id, queue) -> {
-                RequestId reqId;
-                if (id.startsWith("\"") && id.endsWith("\"") && id.length() > 1) {
-                    reqId = new RequestId.StringId(id.substring(1, id.length() - 1));
-                } else {
-                    try {
-                        reqId = new RequestId.NumericId(Long.parseLong(id));
-                    } catch (NumberFormatException e) {
-                        reqId = new RequestId.StringId(id);
-                    }
-                }
+                RequestId reqId = RequestId.parse(id);
                 JsonRpcError err = new JsonRpcError(reqId,
                         new JsonRpcError.ErrorDetail(
                                 JsonRpcErrorCode.INTERNAL_ERROR.code(),
