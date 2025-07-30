@@ -65,7 +65,7 @@ public final class StreamableHttpClientTransport implements Transport {
         int status = response.statusCode();
         String ct = response.headers().firstValue("Content-Type").orElse("");
         if (status == 401) {
-            String header = response.headers().firstValue("WWW-Authenticate").orElse(null);
+            String header = response.headers().firstValue("WWW-Authenticate").orElse("");
             response.body().close();
             throw new UnauthorizedException(header);
         }
