@@ -12,7 +12,7 @@ import jakarta.json.Json;
 import jakarta.json.JsonObject;
 import jakarta.json.JsonObjectBuilder;
 
-import java.util.Base64;
+import com.amannmalik.mcp.util.Base64Util;
 import java.util.Set;
 
 public final class ResourcesCodec {
@@ -77,7 +77,7 @@ public final class ResourcesCodec {
         if (block._meta() != null) b.add("_meta", block._meta());
         switch (block) {
             case ResourceBlock.Text t -> b.add("text", t.text());
-            case ResourceBlock.Binary b2 -> b.add("blob", Base64.getEncoder().encodeToString(b2.blob()));
+            case ResourceBlock.Binary b2 -> b.add("blob", Base64Util.encode(b2.blob()));
         }
         return b.build();
     }
@@ -106,7 +106,7 @@ public final class ResourcesCodec {
             return new ResourceBlock.Text(uri, mime, obj.getString("text"), ann, meta);
         }
 
-        byte[] data = Base64.getDecoder().decode(obj.getString("blob"));
+        byte[] data = Base64Util.decode(obj.getString("blob"));
         return new ResourceBlock.Binary(uri, mime, data, ann, meta);
     }
 

@@ -9,7 +9,7 @@ import jakarta.json.JsonObject;
 import jakarta.json.JsonObjectBuilder;
 import jakarta.json.JsonString;
 
-import java.util.Base64;
+import com.amannmalik.mcp.util.Base64Util;
 import java.util.List;
 
 public final class SamplingCodec {
@@ -106,9 +106,9 @@ public final class SamplingCodec {
         if (content._meta() != null) b.add("_meta", content._meta());
         switch (content) {
             case MessageContent.Text t -> b.add("text", t.text());
-            case MessageContent.Image i -> b.add("data", Base64.getEncoder().encodeToString(i.data()))
+            case MessageContent.Image i -> b.add("data", Base64Util.encode(i.data()))
                     .add("mimeType", i.mimeType());
-            case MessageContent.Audio a -> b.add("data", Base64.getEncoder().encodeToString(a.data()))
+            case MessageContent.Audio a -> b.add("data", Base64Util.encode(a.data()))
                     .add("mimeType", a.mimeType());
         }
         return b.build();
@@ -121,8 +121,8 @@ public final class SamplingCodec {
         JsonObject meta = obj.containsKey("_meta") ? obj.getJsonObject("_meta") : null;
         return switch (obj.getString("type")) {
             case "text" -> new MessageContent.Text(obj.getString("text"), ann, meta);
-            case "image" -> new MessageContent.Image(Base64.getDecoder().decode(obj.getString("data")), obj.getString("mimeType"), ann, meta);
-            case "audio" -> new MessageContent.Audio(Base64.getDecoder().decode(obj.getString("data")), obj.getString("mimeType"), ann, meta);
+            case "image" -> new MessageContent.Image(Base64Util.decode(obj.getString("data")), obj.getString("mimeType"), ann, meta);
+            case "audio" -> new MessageContent.Audio(Base64Util.decode(obj.getString("data")), obj.getString("mimeType"), ann, meta);
             default -> throw new IllegalArgumentException("Unknown content type");
         };
     }

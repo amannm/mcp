@@ -18,7 +18,7 @@ import jakarta.json.JsonString;
 import jakarta.json.JsonValue;
 
 import java.util.ArrayList;
-import java.util.Base64;
+import com.amannmalik.mcp.util.Base64Util;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -91,12 +91,12 @@ public final class PromptCodec {
             }
             case PromptContent.Image i -> {
                 if (content._meta() != null) b.add("_meta", content._meta());
-                b.add("data", Base64.getEncoder().encodeToString(i.data()))
+                b.add("data", Base64Util.encode(i.data()))
                         .add("mimeType", i.mimeType());
             }
             case PromptContent.Audio a -> {
                 if (content._meta() != null) b.add("_meta", content._meta());
-                b.add("data", Base64.getEncoder().encodeToString(a.data()))
+                b.add("data", Base64Util.encode(a.data()))
                         .add("mimeType", a.mimeType());
             }
             case PromptContent.EmbeddedResource r -> {
@@ -228,8 +228,8 @@ public final class PromptCodec {
         JsonObject meta = obj.containsKey("_meta") ? obj.getJsonObject("_meta") : null;
         return switch (type) {
             case "text" -> new PromptContent.Text(obj.getString("text"), ann, meta);
-            case "image" -> new PromptContent.Image(Base64.getDecoder().decode(obj.getString("data")), obj.getString("mimeType"), ann, meta);
-            case "audio" -> new PromptContent.Audio(Base64.getDecoder().decode(obj.getString("data")), obj.getString("mimeType"), ann, meta);
+            case "image" -> new PromptContent.Image(Base64Util.decode(obj.getString("data")), obj.getString("mimeType"), ann, meta);
+            case "audio" -> new PromptContent.Audio(Base64Util.decode(obj.getString("data")), obj.getString("mimeType"), ann, meta);
             case "resource" -> new PromptContent.EmbeddedResource(ResourcesCodec.toResourceBlock(obj.getJsonObject("resource")), ann, meta);
             case "resource_link" -> new PromptContent.ResourceLink(ResourcesCodec.toResource(obj));
             default -> throw new IllegalArgumentException("unknown content type: " + type);
