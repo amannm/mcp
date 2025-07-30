@@ -902,7 +902,7 @@ public final class McpServer implements AutoCloseable {
                                         .add("type", "text")
                                         .add("text", "ok")
                                         .build())
-                                .build(), null, false)));
+                                .build(), null, false, null)));
     }
 
     private static PromptProvider createDefaultPrompts() {

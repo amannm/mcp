@@ -23,9 +23,11 @@ import java.util.Set;
 
 public record ToolResult(JsonArray content,
                          JsonObject structuredContent,
-                         boolean isError) {
+                         boolean isError,
+                         JsonObject _meta) {
     public ToolResult {
         content = sanitize(content == null ? JsonValue.EMPTY_JSON_ARRAY : content);
+        MetaValidator.requireValid(_meta);
     }
 
     private static JsonArray sanitize(JsonArray arr) {
