@@ -1,11 +1,16 @@
 package com.amannmalik.mcp.server.tools;
 
+import com.amannmalik.mcp.server.resources.Resource;
+import com.amannmalik.mcp.server.resources.ResourceBlock;
+import com.amannmalik.mcp.server.resources.ResourcesCodec;
 import com.amannmalik.mcp.util.PaginatedResult;
 import com.amannmalik.mcp.util.PaginationCodec;
 import jakarta.json.Json;
+import jakarta.json.JsonArray;
 import jakarta.json.JsonArrayBuilder;
 import jakarta.json.JsonObject;
 import jakarta.json.JsonObjectBuilder;
+import jakarta.json.JsonValue;
 
 public final class ToolCodec {
     private ToolCodec() {
@@ -61,5 +66,52 @@ public final class ToolCodec {
         if (ann.idempotentHint() != null) b.add("idempotentHint", ann.idempotentHint());
         if (ann.openWorldHint() != null) b.add("openWorldHint", ann.openWorldHint());
         return b.build();
+    }
+
+    public static Tool toTool(JsonObject obj) {
+        if (obj == null) throw new IllegalArgumentException("object required");
+        String name = obj.getString("name", null);
+        if (name == null) throw new IllegalArgumentException("name required");
+        String title = obj.getString("title", null);
+        String description = obj.getString("description", null);
+        JsonObject inputSchema = obj.getJsonObject("inputSchema");
+        if (inputSchema == null) throw new IllegalArgumentException("inputSchema required");
+        JsonObject outputSchema = obj.getJsonObject("outputSchema");
+        ToolAnnotations ann = obj.containsKey("annotations") ? toToolAnnotations(obj.getJsonObject("annotations")) : null;
+        JsonObject meta = obj.containsKey("_meta") ? obj.getJsonObject("_meta") : null;
+        return new Tool(name, title, description, inputSchema, outputSchema, ann, meta);
+    }
+
+    public static ToolPage toToolPage(JsonObject obj) {
+        if (obj == null) throw new IllegalArgumentException("object required");
+        JsonArray arr = obj.getJsonArray("tools");
+        if (arr == null) throw new IllegalArgumentException("tools required");
+        java.util.List<Tool> tools = new java.util.ArrayList<>();
+        for (JsonValue v : arr) {
+            if (v.getValueType() != JsonValue.ValueType.OBJECT) {
+                throw new IllegalArgumentException("tool must be object");
+            }
+            tools.add(toTool(v.asJsonObject()));
+        }
+        String cursor = PaginationCodec.toPaginatedResult(obj).nextCursor();
+        return new ToolPage(tools, cursor);
+    }
+
+    public static ToolResult toToolResult(JsonObject obj) {
+        if (obj == null) throw new IllegalArgumentException("object required");
+        JsonArray content = obj.getJsonArray("content");
+        if (content == null) throw new IllegalArgumentException("content required");
+        JsonObject structured = obj.getJsonObject("structuredContent");
+        boolean isError = obj.getBoolean("isError", false);
+        return new ToolResult(content, structured, isError);
+    }
+
+    private static ToolAnnotations toToolAnnotations(JsonObject obj) {
+        String title = obj.getString("title", null);
+        Boolean readOnly = obj.containsKey("readOnlyHint") ? obj.getBoolean("readOnlyHint") : null;
+        Boolean destructive = obj.containsKey("destructiveHint") ? obj.getBoolean("destructiveHint") : null;
+        Boolean idempotent = obj.containsKey("idempotentHint") ? obj.getBoolean("idempotentHint") : null;
+        Boolean openWorld = obj.containsKey("openWorldHint") ? obj.getBoolean("openWorldHint") : null;
+        return new ToolAnnotations(title, readOnly, destructive, idempotent, openWorld);
     }
 }

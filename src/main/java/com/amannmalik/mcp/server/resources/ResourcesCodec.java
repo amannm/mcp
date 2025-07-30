@@ -111,7 +111,7 @@ public final class ResourcesCodec {
         return b.build();
     }
 
-    private static ResourceAnnotations toAnnotations(JsonObject obj) {
+    public static ResourceAnnotations toAnnotations(JsonObject obj) {
         Set<Audience> audience = EnumSet.noneOf(Audience.class);
         var audienceArr = obj.getJsonArray("audience");
         if (audienceArr != null) {

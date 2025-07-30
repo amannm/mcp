@@ -1,10 +1,13 @@
 package com.amannmalik.mcp.prompts;
 
+import com.amannmalik.mcp.server.resources.Resource;
+import com.amannmalik.mcp.server.resources.ResourceBlock;
 import com.amannmalik.mcp.server.resources.ResourcesCodec;
 import com.amannmalik.mcp.util.PaginatedResult;
 import com.amannmalik.mcp.util.PaginationCodec;
 import com.amannmalik.mcp.validation.InputSanitizer;
 import jakarta.json.Json;
+import jakarta.json.JsonArray;
 import jakarta.json.JsonArrayBuilder;
 import jakarta.json.JsonObject;
 import jakarta.json.JsonObjectBuilder;
@@ -107,5 +110,91 @@ public final class PromptCodec {
             args.put(key, value);
         });
         return Map.copyOf(args);
+    }
+
+    public static Prompt toPrompt(JsonObject obj) {
+        if (obj == null) throw new IllegalArgumentException("object required");
+        String name = obj.getString("name", null);
+        if (name == null) throw new IllegalArgumentException("name required");
+        String title = obj.getString("title", null);
+        String description = obj.getString("description", null);
+        JsonObject meta = obj.containsKey("_meta") ? obj.getJsonObject("_meta") : null;
+        var argsArr = obj.getJsonArray("arguments");
+        java.util.List<PromptArgument> args = java.util.List.of();
+        if (argsArr != null && !argsArr.isEmpty()) {
+            java.util.List<PromptArgument> tmp = new java.util.ArrayList<>();
+            for (JsonValue v : argsArr) {
+                if (v.getValueType() != JsonValue.ValueType.OBJECT) {
+                    throw new IllegalArgumentException("argument must be object");
+                }
+                tmp.add(toPromptArgument(v.asJsonObject()));
+            }
+            args = java.util.List.copyOf(tmp);
+        }
+        return new Prompt(name, title, description, args, meta);
+    }
+
+    public static PromptInstance toPromptInstance(JsonObject obj) {
+        if (obj == null) throw new IllegalArgumentException("object required");
+        String description = obj.getString("description", null);
+        JsonArray arr = obj.getJsonArray("messages");
+        if (arr == null) throw new IllegalArgumentException("messages required");
+        java.util.List<PromptMessage> msgs = new java.util.ArrayList<>();
+        for (JsonValue v : arr) {
+            if (v.getValueType() != JsonValue.ValueType.OBJECT) {
+                throw new IllegalArgumentException("message must be object");
+            }
+            msgs.add(toPromptMessage(v.asJsonObject()));
+        }
+        return new PromptInstance(description, msgs);
+    }
+
+    public static PromptPage toPromptPage(JsonObject obj) {
+        if (obj == null) throw new IllegalArgumentException("object required");
+        JsonArray arr = obj.getJsonArray("prompts");
+        if (arr == null) throw new IllegalArgumentException("prompts required");
+        java.util.List<Prompt> prompts = new java.util.ArrayList<>();
+        for (JsonValue v : arr) {
+            if (v.getValueType() != JsonValue.ValueType.OBJECT) {
+                throw new IllegalArgumentException("prompt must be object");
+            }
+            prompts.add(toPrompt(v.asJsonObject()));
+        }
+        String cursor = PaginationCodec.toPaginatedResult(obj).nextCursor();
+        return new PromptPage(prompts, cursor);
+    }
+
+    private static PromptArgument toPromptArgument(JsonObject obj) {
+        String name = obj.getString("name", null);
+        if (name == null) throw new IllegalArgumentException("name required");
+        String title = obj.getString("title", null);
+        String description = obj.getString("description", null);
+        boolean required = obj.getBoolean("required", false);
+        JsonObject meta = obj.containsKey("_meta") ? obj.getJsonObject("_meta") : null;
+        return new PromptArgument(name, title, description, required, meta);
+    }
+
+    private static PromptMessage toPromptMessage(JsonObject obj) {
+        String roleStr = obj.getString("role", null);
+        if (roleStr == null) throw new IllegalArgumentException("role required");
+        Role role = Role.valueOf(roleStr.toUpperCase());
+        JsonObject contentObj = obj.getJsonObject("content");
+        if (contentObj == null) throw new IllegalArgumentException("content required");
+        return new PromptMessage(role, toPromptContent(contentObj));
+    }
+
+    private static PromptContent toPromptContent(JsonObject obj) {
+        String type = obj.getString("type", null);
+        if (type == null) throw new IllegalArgumentException("type required");
+        var ann = obj.containsKey("annotations") ? ResourcesCodec.toAnnotations(obj.getJsonObject("annotations")) : null;
+        JsonObject meta = obj.containsKey("_meta") ? obj.getJsonObject("_meta") : null;
+        return switch (type) {
+            case "text" -> new PromptContent.Text(obj.getString("text"), ann, meta);
+            case "image" -> new PromptContent.Image(Base64.getDecoder().decode(obj.getString("data")), obj.getString("mimeType"), ann, meta);
+            case "audio" -> new PromptContent.Audio(Base64.getDecoder().decode(obj.getString("data")), obj.getString("mimeType"), ann, meta);
+            case "resource" -> new PromptContent.EmbeddedResource(ResourcesCodec.toResourceBlock(obj.getJsonObject("resource")), ann, meta);
+            case "resource_link" -> new PromptContent.ResourceLink(ResourcesCodec.toResource(obj));
+            default -> throw new IllegalArgumentException("unknown content type: " + type);
+        };
     }
 }
