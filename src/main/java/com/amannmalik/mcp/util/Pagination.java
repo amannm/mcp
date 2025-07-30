@@ -33,6 +33,15 @@ public final class Pagination {
         }
     }
 
+    /**
+     * Validate that a cursor string can be decoded. Returns the original cursor
+     * if valid to allow call chaining.
+     */
+    public static String requireValidCursor(String cursor) {
+        decode(cursor);
+        return cursor;
+    }
+
     public record Page<T>(List<T> items, String nextCursor) {
         public Page {
             items = items == null ? List.of() : List.copyOf(items);

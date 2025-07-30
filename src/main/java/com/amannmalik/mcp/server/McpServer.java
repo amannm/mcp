@@ -98,7 +98,6 @@ import com.amannmalik.mcp.util.ProgressToken;
 import com.amannmalik.mcp.util.ProgressTracker;
 import com.amannmalik.mcp.util.ProgressUtil;
 import com.amannmalik.mcp.util.Timeouts;
-import com.amannmalik.mcp.validation.InputSanitizer;
 import com.amannmalik.mcp.validation.SchemaValidator;
 import jakarta.json.Json;
 import jakarta.json.JsonObject;
@@ -510,6 +509,10 @@ public final class McpServer implements AutoCloseable {
 
     private JsonRpcError invalidParams(JsonRpcRequest req, IllegalArgumentException e) {
         return invalidParams(req, e.getMessage());
+    }
+
+    private static String sanitizeCursor(String cursor) {
+        return cursor == null ? null : Pagination.requireValidCursor(cursor);
     }
 
 
