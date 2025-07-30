@@ -15,9 +15,6 @@ public final class LifecycleCodec {
         var caps = Json.createObjectBuilder();
         for (var c : req.capabilities().client()) {
             var b = Json.createObjectBuilder();
-            if (c == ClientCapability.ROOTS) {
-                b.add("listChanged", true);
-            }
             caps.add(c.name().toLowerCase(), b.build());
         }
         req.capabilities().clientExperimental()

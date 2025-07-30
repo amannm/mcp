@@ -141,12 +141,12 @@ public final class McpClient implements AutoCloseable {
                 info
         );
         var initJson = LifecycleCodec.toJsonObject(init);
-        if (capabilities.contains(ClientCapability.ROOTS) && !rootsListChangedSupported) {
+        if (capabilities.contains(ClientCapability.ROOTS) && rootsListChangedSupported) {
             var caps = initJson.getJsonObject("capabilities");
             if (caps != null && caps.containsKey("roots")) {
                 var rootsCaps = caps.getJsonObject("roots");
                 rootsCaps = jakarta.json.Json.createObjectBuilder(rootsCaps)
-                        .add("listChanged", false)
+                        .add("listChanged", true)
                         .build();
                 caps = jakarta.json.Json.createObjectBuilder(caps)
                         .add("roots", rootsCaps)
