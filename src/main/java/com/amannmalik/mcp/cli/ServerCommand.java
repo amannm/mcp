@@ -10,6 +10,7 @@ import com.amannmalik.mcp.transport.StreamableHttpTransport;
 import com.amannmalik.mcp.transport.Transport;
 import picocli.CommandLine;
 
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Set;
@@ -81,7 +82,7 @@ public final class ServerCommand implements Callable<Integer> {
 
         String instructions = cfg.instructions();
         if (instructionsFile != null) {
-            instructions = java.nio.file.Files.readString(instructionsFile);
+            instructions = Files.readString(instructionsFile);
         }
 
         try (McpServer server = new McpServer(t, instructions)) {

@@ -13,8 +13,10 @@ import jakarta.json.JsonObjectBuilder;
 import jakarta.json.JsonString;
 import jakarta.json.JsonValue;
 
+import java.util.ArrayList;
 import java.util.Base64;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 public final class PromptCodec {
@@ -153,16 +155,16 @@ public final class PromptCodec {
         String description = obj.getString("description", null);
         JsonObject meta = obj.containsKey("_meta") ? obj.getJsonObject("_meta") : null;
         var argsArr = obj.getJsonArray("arguments");
-        java.util.List<PromptArgument> args = java.util.List.of();
+        List<PromptArgument> args = List.of();
         if (argsArr != null && !argsArr.isEmpty()) {
-            java.util.List<PromptArgument> tmp = new java.util.ArrayList<>();
+            List<PromptArgument> tmp = new ArrayList<>();
             for (JsonValue v : argsArr) {
                 if (v.getValueType() != JsonValue.ValueType.OBJECT) {
                     throw new IllegalArgumentException("argument must be object");
                 }
                 tmp.add(toPromptArgument(v.asJsonObject()));
             }
-            args = java.util.List.copyOf(tmp);
+            args = List.copyOf(tmp);
         }
         return new Prompt(name, title, description, args, meta);
     }
@@ -172,7 +174,7 @@ public final class PromptCodec {
         String description = obj.getString("description", null);
         JsonArray arr = obj.getJsonArray("messages");
         if (arr == null) throw new IllegalArgumentException("messages required");
-        java.util.List<PromptMessage> msgs = new java.util.ArrayList<>();
+        List<PromptMessage> msgs = new ArrayList<>();
         for (JsonValue v : arr) {
             if (v.getValueType() != JsonValue.ValueType.OBJECT) {
                 throw new IllegalArgumentException("message must be object");
@@ -186,7 +188,7 @@ public final class PromptCodec {
         if (obj == null) throw new IllegalArgumentException("object required");
         JsonArray arr = obj.getJsonArray("prompts");
         if (arr == null) throw new IllegalArgumentException("prompts required");
-        java.util.List<Prompt> prompts = new java.util.ArrayList<>();
+        List<Prompt> prompts = new ArrayList<>();
         for (JsonValue v : arr) {
             if (v.getValueType() != JsonValue.ValueType.OBJECT) {
                 throw new IllegalArgumentException("prompt must be object");

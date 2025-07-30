@@ -42,8 +42,8 @@ import com.amannmalik.mcp.server.logging.LoggingLevel;
 import com.amannmalik.mcp.server.logging.LoggingListener;
 import com.amannmalik.mcp.server.logging.SetLevelRequest;
 import com.amannmalik.mcp.server.resources.ResourceListListener;
-import com.amannmalik.mcp.server.tools.ToolListListener;
 import com.amannmalik.mcp.server.tools.ToolCodec;
+import com.amannmalik.mcp.server.tools.ToolListListener;
 import com.amannmalik.mcp.transport.Transport;
 import com.amannmalik.mcp.util.CancellationCodec;
 import com.amannmalik.mcp.util.CancellationTracker;
@@ -56,6 +56,7 @@ import com.amannmalik.mcp.util.ProgressTracker;
 import com.amannmalik.mcp.validation.InputSanitizer;
 import com.amannmalik.mcp.validation.MetaValidator;
 import com.amannmalik.mcp.validation.SchemaValidator;
+import jakarta.json.Json;
 import jakarta.json.JsonObject;
 
 import java.io.IOException;
@@ -168,13 +169,13 @@ public final class McpClient implements AutoCloseable {
             var caps = initJson.getJsonObject("capabilities");
             if (caps != null && caps.containsKey("roots")) {
                 var rootsCaps = caps.getJsonObject("roots");
-                rootsCaps = jakarta.json.Json.createObjectBuilder(rootsCaps)
+                rootsCaps = Json.createObjectBuilder(rootsCaps)
                         .add("listChanged", true)
                         .build();
-                caps = jakarta.json.Json.createObjectBuilder(caps)
+                caps = Json.createObjectBuilder(caps)
                         .add("roots", rootsCaps)
                         .build();
-                initJson = jakarta.json.Json.createObjectBuilder(initJson)
+                initJson = Json.createObjectBuilder(initJson)
                         .add("capabilities", caps)
                         .build();
             }

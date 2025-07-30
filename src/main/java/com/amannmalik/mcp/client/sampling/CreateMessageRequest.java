@@ -1,5 +1,6 @@
 package com.amannmalik.mcp.client.sampling;
 
+import com.amannmalik.mcp.validation.InputSanitizer;
 import jakarta.json.JsonObject;
 
 import java.util.List;
@@ -18,12 +19,12 @@ public record CreateMessageRequest(
 
     public CreateMessageRequest {
         messages = messages == null || messages.isEmpty() ? List.of() : List.copyOf(messages);
-        systemPrompt = systemPrompt == null ? null : com.amannmalik.mcp.validation.InputSanitizer.requireClean(systemPrompt);
+        systemPrompt = systemPrompt == null ? null : InputSanitizer.requireClean(systemPrompt);
         if (stopSequences == null || stopSequences.isEmpty()) {
             stopSequences = List.of();
         } else {
             stopSequences = stopSequences.stream()
-                    .map(com.amannmalik.mcp.validation.InputSanitizer::requireClean)
+                    .map(InputSanitizer::requireClean)
                     .toList();
         }
         if (maxTokens <= 0) {

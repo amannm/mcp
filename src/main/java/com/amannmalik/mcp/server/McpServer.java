@@ -67,6 +67,8 @@ import com.amannmalik.mcp.server.resources.ListResourceTemplatesRequest;
 import com.amannmalik.mcp.server.resources.ListResourceTemplatesResult;
 import com.amannmalik.mcp.server.resources.ListResourcesRequest;
 import com.amannmalik.mcp.server.resources.ListResourcesResult;
+import com.amannmalik.mcp.server.resources.ReadResourceRequest;
+import com.amannmalik.mcp.server.resources.ReadResourceResult;
 import com.amannmalik.mcp.server.resources.Resource;
 import com.amannmalik.mcp.server.resources.ResourceBlock;
 import com.amannmalik.mcp.server.resources.ResourceList;
@@ -79,8 +81,6 @@ import com.amannmalik.mcp.server.resources.ResourceUpdatedNotification;
 import com.amannmalik.mcp.server.resources.ResourcesCodec;
 import com.amannmalik.mcp.server.resources.SubscribeRequest;
 import com.amannmalik.mcp.server.resources.UnsubscribeRequest;
-import com.amannmalik.mcp.server.resources.ReadResourceRequest;
-import com.amannmalik.mcp.server.resources.ReadResourceResult;
 import com.amannmalik.mcp.server.tools.CallToolRequest;
 import com.amannmalik.mcp.server.tools.InMemoryToolProvider;
 import com.amannmalik.mcp.server.tools.ListToolsRequest;
@@ -109,8 +109,9 @@ import jakarta.json.stream.JsonParsingException;
 
 import java.io.EOFException;
 import java.io.IOException;
-import java.util.EnumSet;
 import java.net.URI;
+import java.util.ArrayList;
+import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -567,7 +568,7 @@ public final class McpServer implements AutoCloseable {
                     JsonRpcErrorCode.INVALID_PARAMS.code(), e.getMessage(), null));
         }
 
-        List<Resource> filteredResources = new java.util.ArrayList<>();
+        List<Resource> filteredResources = new ArrayList<>();
         for (Resource r : list.resources()) {
             if (allowed(r.annotations()) && withinRoots(r.uri())) {
                 filteredResources.add(r);
@@ -602,7 +603,7 @@ public final class McpServer implements AutoCloseable {
             return new JsonRpcError(req.id(), new JsonRpcError.ErrorDetail(
                     JsonRpcErrorCode.INTERNAL_ERROR.code(), "Access denied", null));
         }
-        ReadResourceResult result = new ReadResourceResult(java.util.List.of(block));
+        ReadResourceResult result = new ReadResourceResult(List.of(block));
         return new JsonRpcResponse(req.id(), ResourcesCodec.toJsonObject(result));
     }
 
@@ -634,7 +635,7 @@ public final class McpServer implements AutoCloseable {
                     JsonRpcErrorCode.INVALID_PARAMS.code(), e.getMessage(), null));
         }
 
-        List<ResourceTemplate> filteredTemplates = new java.util.ArrayList<>();
+        List<ResourceTemplate> filteredTemplates = new ArrayList<>();
         for (ResourceTemplate t : page.resourceTemplates()) {
             if (allowed(t.annotations())) {
                 filteredTemplates.add(t);

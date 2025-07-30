@@ -4,6 +4,7 @@ import jakarta.json.Json;
 import jakarta.json.JsonObject;
 
 import java.util.EnumSet;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
@@ -37,7 +38,7 @@ public final class LifecycleCodec {
         String version = obj.getString("protocolVersion");
         JsonObject capsObj = obj.getJsonObject("capabilities");
         Set<ClientCapability> client = EnumSet.noneOf(ClientCapability.class);
-        Map<String, JsonObject> experimental = new java.util.HashMap<>();
+        Map<String, JsonObject> experimental = new HashMap<>();
         if (capsObj != null) {
             capsObj.forEach((k, v) -> {
                 try {
@@ -108,7 +109,7 @@ public final class LifecycleCodec {
         JsonObject capsObj = obj.getJsonObject("capabilities");
         Set<ClientCapability> client = EnumSet.noneOf(ClientCapability.class);
         Set<ServerCapability> server = EnumSet.noneOf(ServerCapability.class);
-        Map<String, JsonObject> experimental = new java.util.HashMap<>();
+        Map<String, JsonObject> experimental = new HashMap<>();
         if (capsObj != null) {
             capsObj.forEach((k, v) -> {
                 try {
