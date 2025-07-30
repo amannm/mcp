@@ -15,25 +15,25 @@ public record CompleteRequest(
     }
 
     public record Argument(String name, String value) {
-        public Argument {
+        public Argument(String name, String value) {
             if (name == null || value == null) {
                 throw new IllegalArgumentException("name and value are required");
             }
-            name = InputSanitizer.requireClean(name);
-            value = InputSanitizer.requireClean(value);
+            this.name = InputSanitizer.requireClean(name);
+            this.value = InputSanitizer.requireClean(value);
         }
     }
 
     public record Context(Map<String, String> arguments) {
-        public Context {
+        public Context(Map<String, String> arguments) {
             if (arguments == null || arguments.isEmpty()) {
-                arguments = Map.of();
+                this.arguments = Map.of();
             } else {
                 Map<String, String> copy = new java.util.HashMap<>();
                 arguments.forEach((k, v) -> {
                     copy.put(InputSanitizer.requireClean(k), InputSanitizer.requireClean(v));
                 });
-                arguments = Map.copyOf(copy);
+                this.arguments = Map.copyOf(copy);
             }
         }
 
@@ -47,9 +47,9 @@ public record CompleteRequest(
         String type();
 
         record PromptRef(String name) implements Ref {
-            public PromptRef {
+            public PromptRef(String name) {
                 if (name == null) throw new IllegalArgumentException("name required");
-                name = InputSanitizer.requireClean(name);
+                this.name = InputSanitizer.requireClean(name);
             }
 
             @Override
@@ -59,9 +59,9 @@ public record CompleteRequest(
         }
 
         record ResourceRef(String uri) implements Ref {
-            public ResourceRef {
+            public ResourceRef(String uri) {
                 if (uri == null) throw new IllegalArgumentException("uri required");
-                uri = InputSanitizer.requireClean(uri);
+                this.uri = InputSanitizer.requireClean(uri);
             }
 
             @Override
