@@ -146,6 +146,7 @@ public final class HostProcess implements AutoCloseable {
         McpClient client = clients.get(clientId);
         if (client == null) throw new IllegalArgumentException("Unknown client: " + clientId);
         requireCapability(client, Optional.of(ServerCapability.TOOLS));
+        consents.requireConsent(principal, "tool:" + name);
         toolAccess.requireAllowed(principal, name);
         JsonObject params = Json.createObjectBuilder()
                 .add("name", name)
@@ -161,6 +162,7 @@ public final class HostProcess implements AutoCloseable {
         McpClient client = clients.get(clientId);
         if (client == null) throw new IllegalArgumentException("Unknown client: " + clientId);
         if (!client.connected()) throw new IllegalStateException("Client not connected: " + clientId);
+        consents.requireConsent(principal, "sampling");
         samplingAccess.requireAllowed(principal);
         JsonRpcMessage resp = client.request("sampling/createMessage", params);
         if (resp instanceof JsonRpcResponse r) return r.result();
