@@ -274,7 +274,7 @@ public final class McpClient implements AutoCloseable {
                     disconnect();
                 } catch (IOException ignore) {
                 }
-            });
+            }, 3);
             pinger.start();
         }
     }
