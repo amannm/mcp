@@ -146,7 +146,7 @@ public final class StreamableHttpTransport implements Transport {
                         reqId = new RequestId.StringId(id.substring(1, id.length() - 1));
                     } else {
                         try {
-                            reqId = new RequestId.NumericId(Long.parseLong(id));
+                            reqId = new RequestId.NumericId(Double.parseDouble(id));
                         } catch (NumberFormatException e) {
                             reqId = new RequestId.StringId(id);
                         }
@@ -170,7 +170,7 @@ public final class StreamableHttpTransport implements Transport {
                     reqId = new RequestId.StringId(id.substring(1, id.length() - 1));
                 } else {
                     try {
-                        reqId = new RequestId.NumericId(Long.parseLong(id));
+                        reqId = new RequestId.NumericId(Double.parseDouble(id));
                     } catch (NumberFormatException e) {
                         reqId = new RequestId.StringId(id);
                     }

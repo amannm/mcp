@@ -92,7 +92,7 @@ public final class JsonRpcCodec {
             throw new IllegalArgumentException("id is required");
         }
         return switch (value.getValueType()) {
-            case NUMBER -> new RequestId.NumericId(((JsonNumber) value).longValue());
+            case NUMBER -> new RequestId.NumericId(((JsonNumber) value).doubleValue());
             case STRING -> new RequestId.StringId(((JsonString) value).getString());
             default -> throw new IllegalArgumentException("Invalid id type");
         };
