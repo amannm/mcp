@@ -55,7 +55,7 @@ public final class ClientCommand implements Callable<Integer> {
         StdioTransport transport = new StdioTransport(new ProcessBuilder(cfg.command().split(" ")),
                 verbose ? System.err::println : s -> {
                 });
-        SamplingProvider samplingProvider = SamplingProviderFactory.createBlocking();
+        SamplingProvider samplingProvider = SamplingProviderFactory.createInteractive();
         
         // Create roots provider with current working directory as default root
         String currentDir = System.getProperty("user.dir");

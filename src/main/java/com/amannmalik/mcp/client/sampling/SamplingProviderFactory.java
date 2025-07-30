@@ -5,9 +5,14 @@ public final class SamplingProviderFactory {
     private SamplingProviderFactory() {
         // Utility class
     }
+
     
-    public static BlockingSamplingProvider createBlocking() {
-        return new BlockingSamplingProvider();
+    public static InteractiveSamplingProvider createInteractive() {
+        return new InteractiveSamplingProvider();
+    }
+    
+    public static InteractiveSamplingProvider createInteractive(boolean autoApprove) {
+        return new InteractiveSamplingProvider(autoApprove);
     }
     
     public static SamplingProvider createMock(CreateMessageResponse response) {
