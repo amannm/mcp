@@ -513,7 +513,8 @@ public final class McpServer implements AutoCloseable {
     }
 
     private static String sanitizeCursor(String cursor) {
-        return cursor == null ? null : Pagination.requireValidCursor(cursor);
+        if (cursor == null) return null;
+        return Pagination.requireValidCursor(InputSanitizer.cleanNullable(cursor));
     }
 
 
@@ -547,12 +548,10 @@ public final class McpServer implements AutoCloseable {
         requireServerCapability(ServerCapability.RESOURCES);
         ListResourcesRequest lr = ResourcesCodec.toListResourcesRequest(req.params());
         String cursor = lr.cursor();
-        if (cursor != null) {
-            try {
-                cursor = InputSanitizer.cleanNullable(cursor);
-            } catch (IllegalArgumentException e) {
-                return invalidParams(req, e);
-            }
+        try {
+            cursor = sanitizeCursor(cursor);
+        } catch (IllegalArgumentException e) {
+            return invalidParams(req, e);
         }
 
         Pagination.Page<Resource> list;
@@ -562,12 +561,9 @@ public final class McpServer implements AutoCloseable {
             return invalidParams(req, e);
         }
 
-        List<Resource> filteredResources = new ArrayList<>();
-        for (Resource r : list.items()) {
-            if (allowed(r.annotations()) && withinRoots(r.uri())) {
-                filteredResources.add(r);
-            }
-        }
+        List<Resource> filteredResources = list.items().stream()
+                .filter(r -> allowed(r.annotations()) && withinRoots(r.uri()))
+                .toList();
 
         ListResourcesResult result = new ListResourcesResult(filteredResources, list.nextCursor());
         JsonObject resultJson = ResourcesCodec.toJsonObject(result);
@@ -608,12 +604,10 @@ public final class McpServer implements AutoCloseable {
         }
 
         String cursor = request.cursor();
-        if (cursor != null) {
-            try {
-                cursor = InputSanitizer.cleanNullable(cursor);
-            } catch (IllegalArgumentException e) {
-                return invalidParams(req, e);
-            }
+        try {
+            cursor = sanitizeCursor(cursor);
+        } catch (IllegalArgumentException e) {
+            return invalidParams(req, e);
         }
 
         Pagination.Page<ResourceTemplate> page;
@@ -623,12 +617,9 @@ public final class McpServer implements AutoCloseable {
             return invalidParams(req, e);
         }
 
-        List<ResourceTemplate> filteredTemplates = new ArrayList<>();
-        for (ResourceTemplate t : page.items()) {
-            if (allowed(t.annotations())) {
-                filteredTemplates.add(t);
-            }
-        }
+        List<ResourceTemplate> filteredTemplates = page.items().stream()
+                .filter(t -> allowed(t.annotations()))
+                .toList();
 
         ListResourceTemplatesResult result = new ListResourceTemplatesResult(filteredTemplates, page.nextCursor());
         JsonObject resultJson = ResourcesCodec.toJsonObject(result);
@@ -704,12 +695,10 @@ public final class McpServer implements AutoCloseable {
         requireServerCapability(ServerCapability.TOOLS);
         ListToolsRequest ltr = ToolCodec.toListToolsRequest(req.params());
         String cursor = ltr.cursor();
-        if (cursor != null) {
-            try {
-                cursor = InputSanitizer.cleanNullable(cursor);
-            } catch (IllegalArgumentException e) {
-                return invalidParams(req, e);
-            }
+        try {
+            cursor = sanitizeCursor(cursor);
+        } catch (IllegalArgumentException e) {
+            return invalidParams(req, e);
         }
         Pagination.Page<Tool> page;
         try {
@@ -768,12 +757,10 @@ public final class McpServer implements AutoCloseable {
         requireServerCapability(ServerCapability.PROMPTS);
         ListPromptsRequest lpr = PromptCodec.toListPromptsRequest(req.params());
         String cursor = lpr.cursor();
-        if (cursor != null) {
-            try {
-                cursor = InputSanitizer.cleanNullable(cursor);
-            } catch (IllegalArgumentException e) {
-                return invalidParams(req, e);
-            }
+        try {
+            cursor = sanitizeCursor(cursor);
+        } catch (IllegalArgumentException e) {
+            return invalidParams(req, e);
         }
         Pagination.Page<Prompt> page;
         try {
