@@ -244,6 +244,18 @@ public final class ResourcesCodec {
         return new ListResourcesResult(resources, obj.getString("nextCursor", null));
     }
 
+    public static JsonObject toJsonObject(ListResourcesRequest req) {
+        if (req == null) throw new IllegalArgumentException("request required");
+        JsonObjectBuilder b = Json.createObjectBuilder();
+        if (req.cursor() != null) b.add("cursor", req.cursor());
+        return b.build();
+    }
+
+    public static ListResourcesRequest toListResourcesRequest(JsonObject obj) {
+        String cursor = obj == null ? null : obj.getString("cursor", null);
+        return new ListResourcesRequest(cursor);
+    }
+
     public static JsonObject toJsonObject(ListResourceTemplatesRequest req) {
         if (req == null) throw new IllegalArgumentException("request required");
         JsonObjectBuilder b = Json.createObjectBuilder();

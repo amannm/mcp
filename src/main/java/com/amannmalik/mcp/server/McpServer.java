@@ -46,6 +46,7 @@ import com.amannmalik.mcp.prompts.PromptProvider;
 import com.amannmalik.mcp.prompts.PromptTemplate;
 import com.amannmalik.mcp.prompts.PromptsSubscription;
 import com.amannmalik.mcp.prompts.Role;
+import com.amannmalik.mcp.prompts.ListPromptsRequest;
 import com.amannmalik.mcp.security.PrivacyBoundaryEnforcer;
 import com.amannmalik.mcp.security.RateLimiter;
 import com.amannmalik.mcp.security.ResourceAccessController;
@@ -65,6 +66,7 @@ import com.amannmalik.mcp.server.resources.ResourceBlock;
 import com.amannmalik.mcp.server.resources.ResourceList;
 import com.amannmalik.mcp.server.resources.ResourceListSubscription;
 import com.amannmalik.mcp.server.resources.ListResourcesResult;
+import com.amannmalik.mcp.server.resources.ListResourcesRequest;
 import com.amannmalik.mcp.server.resources.ListResourceTemplatesRequest;
 import com.amannmalik.mcp.server.resources.ListResourceTemplatesResult;
 import com.amannmalik.mcp.server.resources.ResourceProvider;
@@ -83,6 +85,7 @@ import com.amannmalik.mcp.server.tools.ToolListSubscription;
 import com.amannmalik.mcp.server.tools.ToolPage;
 import com.amannmalik.mcp.server.tools.ToolProvider;
 import com.amannmalik.mcp.server.tools.ToolResult;
+import com.amannmalik.mcp.server.tools.ListToolsRequest;
 import com.amannmalik.mcp.transport.Transport;
 import com.amannmalik.mcp.util.CancellationCodec;
 import com.amannmalik.mcp.util.CancellationTracker;
@@ -507,7 +510,8 @@ public final class McpServer implements AutoCloseable {
 
     private JsonRpcMessage listResources(JsonRpcRequest req) {
         requireServerCapability(ServerCapability.RESOURCES);
-        String cursor = PaginationCodec.toPaginatedRequest(req.params()).cursor();
+        ListResourcesRequest lr = ResourcesCodec.toListResourcesRequest(req.params());
+        String cursor = lr.cursor();
         if (cursor != null) {
             try {
                 cursor = InputSanitizer.requireClean(cursor);
@@ -671,7 +675,8 @@ public final class McpServer implements AutoCloseable {
 
     private JsonRpcMessage listTools(JsonRpcRequest req) {
         requireServerCapability(ServerCapability.TOOLS);
-        String cursor = PaginationCodec.toPaginatedRequest(req.params()).cursor();
+        ListToolsRequest ltr = ToolCodec.toListToolsRequest(req.params());
+        String cursor = ltr.cursor();
         if (cursor != null) {
             try {
                 cursor = InputSanitizer.requireClean(cursor);
@@ -723,7 +728,8 @@ public final class McpServer implements AutoCloseable {
 
     private JsonRpcMessage listPrompts(JsonRpcRequest req) {
         requireServerCapability(ServerCapability.PROMPTS);
-        String cursor = PaginationCodec.toPaginatedRequest(req.params()).cursor();
+        ListPromptsRequest lpr = PromptCodec.toListPromptsRequest(req.params());
+        String cursor = lpr.cursor();
         if (cursor != null) {
             try {
                 cursor = InputSanitizer.requireClean(cursor);
