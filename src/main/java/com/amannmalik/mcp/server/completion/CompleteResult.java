@@ -1,10 +1,10 @@
 package com.amannmalik.mcp.server.completion;
 
 import com.amannmalik.mcp.validation.InputSanitizer;
-import java.util.List;
-
-import jakarta.json.JsonObject;
 import com.amannmalik.mcp.validation.MetaValidator;
+import jakarta.json.JsonObject;
+
+import java.util.List;
 
 public record CompleteResult(Completion completion, JsonObject _meta) {
     public CompleteResult {

@@ -3,7 +3,7 @@ package com.amannmalik.mcp.server.completion;
 import com.amannmalik.mcp.validation.InputSanitizer;
 import com.amannmalik.mcp.validation.MetaValidator;
 import com.amannmalik.mcp.validation.UriTemplateValidator;
-import jakarta.json.JsonObject;
+
 import java.util.Map;
 
 public record CompleteRequest(

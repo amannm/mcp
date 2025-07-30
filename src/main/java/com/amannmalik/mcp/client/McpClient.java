@@ -33,20 +33,20 @@ import com.amannmalik.mcp.lifecycle.UnsupportedProtocolVersionException;
 import com.amannmalik.mcp.ping.PingCodec;
 import com.amannmalik.mcp.ping.PingMonitor;
 import com.amannmalik.mcp.ping.PingResponse;
+import com.amannmalik.mcp.security.RateLimiter;
 import com.amannmalik.mcp.server.logging.LoggingCodec;
 import com.amannmalik.mcp.server.logging.LoggingLevel;
 import com.amannmalik.mcp.server.logging.LoggingListener;
 import com.amannmalik.mcp.server.logging.SetLevelRequest;
 import com.amannmalik.mcp.transport.Transport;
 import com.amannmalik.mcp.util.CancellationCodec;
-import com.amannmalik.mcp.util.CancelledNotification;
 import com.amannmalik.mcp.util.CancellationTracker;
+import com.amannmalik.mcp.util.CancelledNotification;
+import com.amannmalik.mcp.util.ProgressCodec;
+import com.amannmalik.mcp.util.ProgressListener;
 import com.amannmalik.mcp.util.ProgressNotification;
 import com.amannmalik.mcp.util.ProgressToken;
 import com.amannmalik.mcp.util.ProgressTracker;
-import com.amannmalik.mcp.security.RateLimiter;
-import com.amannmalik.mcp.util.ProgressCodec;
-import com.amannmalik.mcp.util.ProgressListener;
 import com.amannmalik.mcp.validation.MetaValidator;
 import com.amannmalik.mcp.validation.SchemaValidator;
 import jakarta.json.JsonObject;
@@ -109,9 +109,9 @@ public final class McpClient implements AutoCloseable {
     public McpClient(ClientInfo info,
                      Set<ClientCapability> capabilities,
                      Transport transport,
-                    SamplingProvider sampling,
-                    RootsProvider roots,
-                    ElicitationProvider elicitation) {
+                     SamplingProvider sampling,
+                     RootsProvider roots,
+                     ElicitationProvider elicitation) {
         this.info = info;
         this.capabilities = capabilities.isEmpty() ? Set.of() : EnumSet.copyOf(capabilities);
         this.transport = transport;

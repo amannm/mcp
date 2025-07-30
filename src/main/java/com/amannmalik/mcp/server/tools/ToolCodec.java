@@ -1,8 +1,5 @@
 package com.amannmalik.mcp.server.tools;
 
-import com.amannmalik.mcp.server.resources.Resource;
-import com.amannmalik.mcp.server.resources.ResourceBlock;
-import com.amannmalik.mcp.server.resources.ResourcesCodec;
 import com.amannmalik.mcp.util.PaginatedResult;
 import com.amannmalik.mcp.util.PaginationCodec;
 import jakarta.json.Json;
