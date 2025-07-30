@@ -1,6 +1,7 @@
 package com.amannmalik.mcp.client;
 
 import com.amannmalik.mcp.NotificationMethod;
+import com.amannmalik.mcp.RequestMethod;
 import com.amannmalik.mcp.auth.Principal;
 import com.amannmalik.mcp.client.elicitation.ElicitCodec;
 import com.amannmalik.mcp.client.elicitation.ElicitRequest;
@@ -169,10 +170,10 @@ public final class McpClient implements AutoCloseable {
         this.pingInterval = 0;
         this.pingTimeout = 5000;
 
-        registerRequestHandler("sampling/createMessage", this::handleCreateMessage);
-        registerRequestHandler("roots/list", this::handleListRoots);
-        registerRequestHandler("elicitation/create", this::handleElicit);
-        registerRequestHandler("ping", this::handlePing);
+        registerRequestHandler(RequestMethod.SAMPLING_CREATE_MESSAGE.method(), this::handleCreateMessage);
+        registerRequestHandler(RequestMethod.ROOTS_LIST.method(), this::handleListRoots);
+        registerRequestHandler(RequestMethod.ELICITATION_CREATE.method(), this::handleElicit);
+        registerRequestHandler(RequestMethod.PING.method(), this::handlePing);
 
         registerNotificationHandler(NotificationMethod.PROGRESS, this::handleProgress);
         registerNotificationHandler(NotificationMethod.MESSAGE, this::handleMessage);
@@ -331,7 +332,7 @@ public final class McpClient implements AutoCloseable {
     }
 
     public PingResponse ping(long timeoutMillis) throws IOException {
-        JsonRpcMessage msg = request("ping", null, timeoutMillis);
+        JsonRpcMessage msg = request(RequestMethod.PING.method(), null, timeoutMillis);
         if (msg instanceof JsonRpcResponse resp) return PingCodec.toPingResponse(resp);
         if (msg instanceof JsonRpcError err) throw new IOException(err.error().message());
         throw new IOException("Unexpected message type: " + msg.getClass().getSimpleName());
@@ -339,7 +340,7 @@ public final class McpClient implements AutoCloseable {
 
     public void setLogLevel(LoggingLevel level) throws IOException {
         if (level == null) throw new IllegalArgumentException("level required");
-        JsonRpcMessage msg = request("logging/setLevel",
+        JsonRpcMessage msg = request(RequestMethod.LOGGING_SET_LEVEL.method(),
                 LoggingCodec.toJsonObject(new SetLevelRequest(level)));
         if (msg instanceof JsonRpcResponse) {
             return;
@@ -352,6 +353,14 @@ public final class McpClient implements AutoCloseable {
 
     public JsonRpcMessage request(String method, JsonObject params) throws IOException {
         return request(method, params, Timeouts.DEFAULT_TIMEOUT_MS);
+    }
+
+    public JsonRpcMessage request(RequestMethod method, JsonObject params) throws IOException {
+        return request(method.method(), params, Timeouts.DEFAULT_TIMEOUT_MS);
+    }
+
+    public JsonRpcMessage request(RequestMethod method, JsonObject params, long timeoutMillis) throws IOException {
+        return request(method.method(), params, timeoutMillis);
     }
 
     public JsonRpcMessage request(String method, JsonObject params, long timeoutMillis) throws IOException {

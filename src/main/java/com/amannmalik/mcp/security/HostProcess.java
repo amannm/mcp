@@ -10,6 +10,7 @@ import com.amannmalik.mcp.prompts.Role;
 import com.amannmalik.mcp.server.tools.ListToolsResult;
 import com.amannmalik.mcp.server.tools.ToolCodec;
 import com.amannmalik.mcp.server.tools.ToolResult;
+import com.amannmalik.mcp.RequestMethod;
 import com.amannmalik.mcp.util.PaginatedRequest;
 import com.amannmalik.mcp.util.PaginationCodec;
 import jakarta.json.Json;
@@ -137,7 +138,7 @@ public final class HostProcess implements AutoCloseable {
         if (client == null) throw new IllegalArgumentException("Unknown client: " + clientId);
         requireCapability(client, Optional.of(ServerCapability.TOOLS));
         JsonObject params = PaginationCodec.toJsonObject(new PaginatedRequest(cursor));
-        JsonRpcMessage resp = client.request("tools/list", params);
+        JsonRpcMessage resp = client.request(RequestMethod.TOOLS_LIST.method(), params);
         if (resp instanceof JsonRpcResponse r) return ToolCodec.toListToolsResult(r.result());
         if (resp instanceof JsonRpcError err) throw new IOException(err.error().message());
         throw new IOException("Unexpected response");
@@ -153,7 +154,7 @@ public final class HostProcess implements AutoCloseable {
                 .add("name", name)
                 .add("arguments", args == null ? JsonValue.EMPTY_JSON_OBJECT : args)
                 .build();
-        JsonRpcMessage resp = client.request("tools/call", params);
+        JsonRpcMessage resp = client.request(RequestMethod.TOOLS_CALL.method(), params);
         if (resp instanceof JsonRpcResponse r) return ToolCodec.toToolResult(r.result());
         if (resp instanceof JsonRpcError err) throw new IOException(err.error().message());
         throw new IOException("Unexpected response");
@@ -165,7 +166,7 @@ public final class HostProcess implements AutoCloseable {
         if (!client.connected()) throw new IllegalStateException("Client not connected: " + clientId);
         consents.requireConsent(principal, "sampling");
         samplingAccess.requireAllowed(principal);
-        JsonRpcMessage resp = client.request("sampling/createMessage", params);
+        JsonRpcMessage resp = client.request(RequestMethod.SAMPLING_CREATE_MESSAGE.method(), params);
         if (resp instanceof JsonRpcResponse r) return r.result();
         if (resp instanceof JsonRpcError err) throw new IOException(err.error().message());
         throw new IOException("Unexpected response");
