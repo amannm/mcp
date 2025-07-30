@@ -108,6 +108,9 @@ public final class PromptCodec {
             case PromptContent.EmbeddedResource r -> {
                 if (content._meta() != null) b.add("_meta", content._meta());
                 b.add("resource", ResourcesCodec.toJsonObject(r.resource()));
+                if (r.annotations() != null) {
+                    b.add("annotations", ResourcesCodec.toJsonObject(r.annotations()));
+                }
             }
             case PromptContent.ResourceLink l -> {
                 JsonObject obj = ResourcesCodec.toJsonObject(l.resource());
