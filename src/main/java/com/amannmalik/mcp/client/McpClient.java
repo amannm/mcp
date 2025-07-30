@@ -118,10 +118,10 @@ public final class McpClient implements AutoCloseable {
     private PromptsListener promptsListener = () -> {
     };
 
-    private final Map<String, RequestHandler> requestHandlers = new ConcurrentHashMap<>();
+    private final Map<RequestMethod, RequestHandler> requestHandlers = new EnumMap<>(RequestMethod.class);
     private final Map<NotificationMethod, NotificationHandler> notificationHandlers = new EnumMap<>(NotificationMethod.class);
 
-    private void registerRequestHandler(String method, RequestHandler handler) {
+    private void registerRequestHandler(RequestMethod method, RequestHandler handler) {
         requestHandlers.put(method, handler);
     }
 
@@ -170,10 +170,10 @@ public final class McpClient implements AutoCloseable {
         this.pingInterval = 0;
         this.pingTimeout = 5000;
 
-        registerRequestHandler(RequestMethod.SAMPLING_CREATE_MESSAGE.method(), this::handleCreateMessage);
-        registerRequestHandler(RequestMethod.ROOTS_LIST.method(), this::handleListRoots);
-        registerRequestHandler(RequestMethod.ELICITATION_CREATE.method(), this::handleElicit);
-        registerRequestHandler(RequestMethod.PING.method(), this::handlePing);
+        registerRequestHandler(RequestMethod.SAMPLING_CREATE_MESSAGE, this::handleCreateMessage);
+        registerRequestHandler(RequestMethod.ROOTS_LIST, this::handleListRoots);
+        registerRequestHandler(RequestMethod.ELICITATION_CREATE, this::handleElicit);
+        registerRequestHandler(RequestMethod.PING, this::handlePing);
 
         registerNotificationHandler(NotificationMethod.PROGRESS, this::handleProgress);
         registerNotificationHandler(NotificationMethod.MESSAGE, this::handleMessage);
@@ -497,7 +497,9 @@ public final class McpClient implements AutoCloseable {
         boolean cancelled;
         JsonRpcMessage resp;
         try {
-            RequestHandler handler = requestHandlers.get(req.method());
+            RequestHandler handler = RequestMethod.from(req.method())
+                    .map(requestHandlers::get)
+                    .orElse(null);
             if (handler == null) {
                 resp = JsonRpcError.of(req.id(), JsonRpcErrorCode.METHOD_NOT_FOUND,
                         "Unknown method: " + req.method());
