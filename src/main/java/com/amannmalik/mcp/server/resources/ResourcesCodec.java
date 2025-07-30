@@ -139,10 +139,10 @@ public final class ResourcesCodec {
     }
 
     public static JsonObject toJsonObject(ResourceUpdatedNotification n) {
-        JsonObjectBuilder b = Json.createObjectBuilder()
-                .add("uri", n.uri());
-        if (n.title() != null) b.add("title", n.title());
-        return b.build();
+        if (n == null) throw new IllegalArgumentException("notification required");
+        return Json.createObjectBuilder()
+                .add("uri", n.uri())
+                .build();
     }
 
     public static JsonObject toJsonObject(SubscribeRequest req) {
@@ -174,9 +174,12 @@ public final class ResourcesCodec {
     }
 
     public static ResourceUpdatedNotification toResourceUpdatedNotification(JsonObject obj) {
-        return new ResourceUpdatedNotification(
-                obj.getString("uri"),
-                obj.getString("title", null)
-        );
+        if (obj == null || !obj.containsKey("uri")) {
+            throw new IllegalArgumentException("uri required");
+        }
+        if (obj.size() != 1) {
+            throw new IllegalArgumentException("unexpected fields");
+        }
+        return new ResourceUpdatedNotification(obj.getString("uri"));
     }
 }

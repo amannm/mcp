@@ -59,8 +59,8 @@ public final class InMemoryResourceProvider implements ResourceProvider {
         return true;
     }
 
-    public void notifyUpdate(String uri, String title) {
-        ResourceUpdate update = new ResourceUpdate(uri, title);
+    public void notifyUpdate(String uri) {
+        ResourceUpdate update = new ResourceUpdate(uri);
         listeners.getOrDefault(uri, List.of()).forEach(l -> l.updated(update));
     }
 
