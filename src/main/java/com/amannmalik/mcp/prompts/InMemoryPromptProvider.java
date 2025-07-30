@@ -14,7 +14,10 @@ public final class InMemoryPromptProvider implements PromptProvider {
     private final ListChangeSupport<PromptsListener> listChangeSupport = new ListChangeSupport<>();
 
     public void add(PromptTemplate template) {
-        templates.put(template.prompt().name(), template);
+        String name = template.prompt().name();
+        if (templates.putIfAbsent(name, template) != null) {
+            throw new IllegalArgumentException("duplicate prompt name: " + name);
+        }
         notifyListeners();
     }
 
