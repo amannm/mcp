@@ -11,6 +11,7 @@ public class ProtocolLifecycle {
     private final Set<ServerCapability> serverCapabilities;
     private final ServerInfo serverInfo;
     private final String instructions;
+    private String protocolVersion = SUPPORTED_VERSION;
     private LifecycleState state = LifecycleState.INIT;
     private Set<ClientCapability> clientCapabilities = Set.of();
     private ClientFeatures clientFeatures = ClientFeatures.EMPTY;
@@ -29,13 +30,14 @@ public class ProtocolLifecycle {
                 : EnumSet.copyOf(requested);
         clientFeatures = request.features() == null ? ClientFeatures.EMPTY : request.features();
 
-        String negotiated = SUPPORTED_VERSION;
         if (request.protocolVersion() != null && request.protocolVersion().equals(SUPPORTED_VERSION)) {
-            negotiated = request.protocolVersion();
+            protocolVersion = request.protocolVersion();
+        } else {
+            protocolVersion = SUPPORTED_VERSION;
         }
 
         return new InitializeResponse(
-                negotiated,
+                protocolVersion,
                 new Capabilities(clientCapabilities, serverCapabilities, Map.of(), Map.of()),
                 serverInfo,
                 instructions,
@@ -66,6 +68,10 @@ public class ProtocolLifecycle {
 
     public Set<ServerCapability> serverCapabilities() {
         return serverCapabilities;
+    }
+
+    public String protocolVersion() {
+        return protocolVersion;
     }
 
     private void ensureState(LifecycleState expected) {

@@ -26,7 +26,7 @@ public final class ProgressUtil {
         try {
             limiter.requireAllowance(note.token().asString());
             tracker.update(note);
-        } catch (IllegalArgumentException | IllegalStateException ignore) {
+        } catch (IllegalArgumentException | IllegalStateException | SecurityException ignore) {
             return;
         }
         sender.send(new JsonRpcNotification(
