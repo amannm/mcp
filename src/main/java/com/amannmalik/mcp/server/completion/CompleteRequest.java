@@ -1,6 +1,8 @@
 package com.amannmalik.mcp.server.completion;
 
 import com.amannmalik.mcp.validation.InputSanitizer;
+import com.amannmalik.mcp.validation.MetaValidator;
+import jakarta.json.JsonObject;
 import java.util.Map;
 
 public record CompleteRequest(
@@ -46,10 +48,13 @@ public record CompleteRequest(
     public sealed interface Ref permits Ref.PromptRef, Ref.ResourceRef {
         String type();
 
-        record PromptRef(String name) implements Ref {
-            public PromptRef(String name) {
+        record PromptRef(String name, String title, jakarta.json.JsonObject _meta) implements Ref {
+            public PromptRef(String name, String title, jakarta.json.JsonObject _meta) {
                 if (name == null) throw new IllegalArgumentException("name required");
                 this.name = InputSanitizer.requireClean(name);
+                this.title = title == null ? null : InputSanitizer.requireClean(title);
+                MetaValidator.requireValid(_meta);
+                this._meta = _meta;
             }
 
             @Override
