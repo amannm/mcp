@@ -74,6 +74,7 @@ import com.amannmalik.mcp.server.resources.ResourceBlock;
 import com.amannmalik.mcp.server.resources.ResourceListSubscription;
 import com.amannmalik.mcp.server.resources.ResourceProvider;
 import com.amannmalik.mcp.server.resources.ResourceSubscription;
+import com.amannmalik.mcp.server.resources.ResourceListChangedNotification;
 import com.amannmalik.mcp.server.resources.ResourceTemplate;
 import com.amannmalik.mcp.server.resources.ResourceUpdatedNotification;
 import com.amannmalik.mcp.server.resources.ResourcesCodec;
@@ -88,6 +89,7 @@ import com.amannmalik.mcp.server.tools.ToolListChangedNotification;
 import com.amannmalik.mcp.server.tools.ToolListSubscription;
 import com.amannmalik.mcp.server.tools.ToolProvider;
 import com.amannmalik.mcp.server.tools.ToolResult;
+import com.amannmalik.mcp.prompts.PromptListChangedNotification;
 import com.amannmalik.mcp.transport.Transport;
 import com.amannmalik.mcp.util.CancellationCodec;
 import com.amannmalik.mcp.util.CancellationTracker;
@@ -208,7 +210,9 @@ public final class McpServer implements AutoCloseable {
                 resourceListSubscription = resources.subscribeList(() -> {
                     if (lifecycle.state() != LifecycleState.OPERATION) return;
                     try {
-                        send(new JsonRpcNotification(NotificationMethod.RESOURCES_LIST_CHANGED.method(), null));
+                        send(new JsonRpcNotification(
+                                NotificationMethod.RESOURCES_LIST_CHANGED.method(),
+                                ResourcesCodec.toJsonObject(new ResourceListChangedNotification())));
                     } catch (IOException ignore) {
                     }
                 });
@@ -236,7 +240,9 @@ public final class McpServer implements AutoCloseable {
                 promptsSubscription = prompts.subscribe(() -> {
                     if (lifecycle.state() != LifecycleState.OPERATION) return;
                     try {
-                        send(new JsonRpcNotification(NotificationMethod.PROMPTS_LIST_CHANGED.method(), null));
+                        send(new JsonRpcNotification(
+                                NotificationMethod.PROMPTS_LIST_CHANGED.method(),
+                                PromptCodec.toJsonObject(new PromptListChangedNotification())));
                     } catch (IOException ignore) {
                     }
                 });
