@@ -8,10 +8,6 @@ import jakarta.json.JsonValue;
 
 import java.util.Set;
 
-/**
- * Validates the restricted JSON schema allowed for elicitation requests.
- */
-
 public final class ElicitationSchemaValidator {
     private ElicitationSchemaValidator() {
     }

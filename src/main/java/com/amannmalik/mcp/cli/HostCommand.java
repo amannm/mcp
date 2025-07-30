@@ -40,9 +40,6 @@ public final class HostCommand implements Callable<Integer> {
     @CommandLine.Option(names = "--interactive", description = "Interactive mode for client management")
     private boolean interactive;
 
-    public HostCommand() {
-    }
-
     public HostCommand(HostConfig config, boolean verbose) {
         this.resolved = config;
         this.verbose = verbose;

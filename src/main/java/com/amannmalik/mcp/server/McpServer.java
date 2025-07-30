@@ -72,6 +72,7 @@ import com.amannmalik.mcp.server.resources.ResourceUpdatedNotification;
 import com.amannmalik.mcp.server.resources.ResourcesCodec;
 import com.amannmalik.mcp.server.resources.SubscribeRequest;
 import com.amannmalik.mcp.server.resources.UnsubscribeRequest;
+import com.amannmalik.mcp.server.tools.CallToolRequest;
 import com.amannmalik.mcp.server.tools.InMemoryToolProvider;
 import com.amannmalik.mcp.server.tools.Tool;
 import com.amannmalik.mcp.server.tools.ToolCodec;
@@ -672,46 +673,27 @@ public final class McpServer implements AutoCloseable {
 
     private JsonRpcMessage callTool(JsonRpcRequest req) {
         requireServerCapability(ServerCapability.TOOLS);
-        JsonObject params = req.params();
-        if (params == null) {
-            return new JsonRpcError(req.id(), new JsonRpcError.ErrorDetail(
-                    JsonRpcErrorCode.INVALID_PARAMS.code(), "Missing params", null));
-        }
-        String name = params.getString("name", null);
-        if (name == null) {
-            return new JsonRpcError(req.id(), new JsonRpcError.ErrorDetail(
-                    JsonRpcErrorCode.INVALID_PARAMS.code(), "name required", null));
-        }
+        CallToolRequest callRequest;
         try {
-            name = InputSanitizer.requireClean(name);
+            callRequest = ToolCodec.toCallToolRequest(req.params());
         } catch (IllegalArgumentException e) {
             return new JsonRpcError(req.id(), new JsonRpcError.ErrorDetail(
                     JsonRpcErrorCode.INVALID_PARAMS.code(), e.getMessage(), null));
         }
-
-        JsonValue argsVal = params.get("arguments");
-        JsonObject args = null;
-        if (argsVal != null) {
-            if (argsVal.getValueType() != JsonValue.ValueType.OBJECT) {
-                return new JsonRpcError(req.id(), new JsonRpcError.ErrorDetail(
-                        JsonRpcErrorCode.INVALID_PARAMS.code(), "arguments must be object", null));
-            }
-            args = params.getJsonObject("arguments");
-        }
         try {
-            toolLimiter.requireAllowance(name);
+            toolLimiter.requireAllowance(callRequest.name());
         } catch (SecurityException e) {
             return new JsonRpcError(req.id(), new JsonRpcError.ErrorDetail(
                     RATE_LIMIT_CODE, e.getMessage(), null));
         }
         try {
-            toolAccess.requireAllowed(principal, name);
+            toolAccess.requireAllowed(principal, callRequest.name());
         } catch (SecurityException e) {
             return new JsonRpcError(req.id(), new JsonRpcError.ErrorDetail(
                     JsonRpcErrorCode.INTERNAL_ERROR.code(), "Access denied", null));
         }
         try {
-            ToolResult result = tools.call(name, args);
+            ToolResult result = tools.call(callRequest.name(), callRequest.arguments());
             return new JsonRpcResponse(req.id(), ToolCodec.toJsonObject(result));
         } catch (IllegalArgumentException e) {
             return new JsonRpcError(req.id(), new JsonRpcError.ErrorDetail(

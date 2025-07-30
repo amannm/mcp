@@ -114,6 +114,14 @@ public final class ToolCodec {
         return new ToolResult(content, structured, isError, meta);
     }
 
+    public static CallToolRequest toCallToolRequest(JsonObject obj) {
+        if (obj == null) throw new IllegalArgumentException("object required");
+        String name = obj.getString("name", null);
+        if (name == null) throw new IllegalArgumentException("name required");
+        JsonObject arguments = obj.getJsonObject("arguments");
+        return new CallToolRequest(name, arguments);
+    }
+
     private static ToolAnnotations toToolAnnotations(JsonObject obj) {
         String title = obj.getString("title", null);
         Boolean readOnly = obj.containsKey("readOnlyHint") ? obj.getBoolean("readOnlyHint") : null;
