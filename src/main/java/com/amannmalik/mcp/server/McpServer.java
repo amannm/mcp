@@ -603,7 +603,8 @@ public final class McpServer implements AutoCloseable {
             return JsonRpcError.of(req.id(), -32002, "Resource not found",
                     Json.createObjectBuilder().add("uri", uri).build());
         }
-        if (!allowed(block.annotations())) {
+        Resource resMeta = resources.get(uri);
+        if (!allowed(resMeta != null ? resMeta.annotations() : null)) {
             return JsonRpcError.of(req.id(), JsonRpcErrorCode.INTERNAL_ERROR, "Access denied");
         }
         ReadResourceResult result = new ReadResourceResult(List.of(block));
@@ -664,7 +665,8 @@ public final class McpServer implements AutoCloseable {
             return JsonRpcError.of(req.id(), -32002, "Resource not found",
                     Json.createObjectBuilder().add("uri", uri).build());
         }
-        if (!allowed(existing.annotations())) {
+        Resource resMeta = resources.get(uri);
+        if (!allowed(resMeta != null ? resMeta.annotations() : null)) {
             return JsonRpcError.of(req.id(), JsonRpcErrorCode.INTERNAL_ERROR, "Access denied");
         }
         try {
@@ -993,7 +995,7 @@ public final class McpServer implements AutoCloseable {
 
     private static ResourceProvider createDefaultResources() {
         Resource r = new Resource("test://example", "example", null, null, "text/plain", 5L, null, null);
-        ResourceBlock.Text block = new ResourceBlock.Text("test://example", "text/plain", "hello", null, null);
+        ResourceBlock.Text block = new ResourceBlock.Text("test://example", "text/plain", "hello", null);
         ResourceTemplate t = new ResourceTemplate("test://template", "example_template", null, null, "text/plain", null, null);
         return new InMemoryResourceProvider(List.of(r), Map.of(r.uri(), block), List.of(t));
     }
