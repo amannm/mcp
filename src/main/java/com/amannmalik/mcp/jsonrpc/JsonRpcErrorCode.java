@@ -26,10 +26,4 @@ public enum JsonRpcErrorCode {
     public int code() {
         return code;
     }
-
-    public static JsonRpcErrorCode fromCode(int code) {
-        JsonRpcErrorCode e = BY_CODE.get(code);
-        if (e == null) throw new IllegalArgumentException("Unknown error code: " + code);
-        return e;
-    }
 }
