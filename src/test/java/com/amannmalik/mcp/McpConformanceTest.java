@@ -106,7 +106,8 @@ class McpConformanceTest {
                     Role.ASSISTANT,
                     new MessageContent.Text("ok", null, null),
                     "mock-model",
-                    "endTurn"
+                    "endTurn",
+                    null
             );
             McpClient client = new McpClient(
                     new ClientInfo("test-client", "Test Client", "1.0"),

@@ -3,9 +3,13 @@ package com.amannmalik.mcp.server.completion;
 import com.amannmalik.mcp.validation.InputSanitizer;
 import java.util.List;
 
-public record CompleteResult(Completion completion) {
+import jakarta.json.JsonObject;
+import com.amannmalik.mcp.validation.MetaValidator;
+
+public record CompleteResult(Completion completion, JsonObject _meta) {
     public CompleteResult {
         if (completion == null) throw new IllegalArgumentException("completion required");
+        MetaValidator.requireValid(_meta);
     }
 
     public record Completion(List<String> values, Integer total, Boolean hasMore) {

@@ -67,7 +67,7 @@ public final class InMemoryCompletionProvider implements CompletionProvider {
                 .toList();
         int total = unique.size();
         boolean hasMore = total > sorted.size();
-        return new CompleteResult(new CompleteResult.Completion(sorted, total, hasMore));
+        return new CompleteResult(new CompleteResult.Completion(sorted, total, hasMore), null);
     }
 
     private static int similarity(String a, String b) {

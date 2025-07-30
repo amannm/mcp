@@ -73,6 +73,7 @@ public final class SamplingCodec {
                 .add("content", toJsonObject(resp.content()))
                 .add("model", resp.model());
         if (resp.stopReason() != null) obj.add("stopReason", resp.stopReason());
+        if (resp._meta() != null) obj.add("_meta", resp._meta());
         return obj.build();
     }
 
@@ -82,7 +83,8 @@ public final class SamplingCodec {
         if (!obj.containsKey("model")) throw new IllegalArgumentException("model required");
         String model = obj.getString("model");
         String stop = obj.getString("stopReason", null);
-        return new CreateMessageResponse(role, content, model, stop);
+        JsonObject meta = obj.containsKey("_meta") ? obj.getJsonObject("_meta") : null;
+        return new CreateMessageResponse(role, content, model, stop, meta);
     }
 
     static JsonObject toJsonObject(SamplingMessage msg) {
