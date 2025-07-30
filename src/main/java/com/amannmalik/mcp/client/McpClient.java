@@ -196,21 +196,6 @@ public final class McpClient implements AutoCloseable {
                 new ClientFeatures(rootsListChangedSupported)
         );
         var initJson = LifecycleCodec.toJsonObject(init);
-        if (capabilities.contains(ClientCapability.ROOTS) && rootsListChangedSupported) {
-            var caps = initJson.getJsonObject("capabilities");
-            if (caps != null && caps.containsKey("roots")) {
-                var rootsCaps = caps.getJsonObject("roots");
-                rootsCaps = Json.createObjectBuilder(rootsCaps)
-                        .add("listChanged", true)
-                        .build();
-                caps = Json.createObjectBuilder(caps)
-                        .add("roots", rootsCaps)
-                        .build();
-                initJson = Json.createObjectBuilder(initJson)
-                        .add("capabilities", caps)
-                        .build();
-            }
-        }
         RequestId reqId = new RequestId.NumericId(id.getAndIncrement());
         JsonRpcRequest request = new JsonRpcRequest(reqId, RequestMethod.INITIALIZE.method(), initJson);
         transport.send(JsonRpcCodec.toJsonObject(request));
