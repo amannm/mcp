@@ -537,6 +537,12 @@ public final class McpServer implements AutoCloseable {
         return false;
     }
 
+    private boolean canAccessResource(String uri) {
+        if (!withinRoots(uri)) return false;
+        Resource meta = resources.get(uri);
+        return allowed(meta == null ? null : meta.annotations());
+    }
+
     private JsonRpcError invalidParams(JsonRpcRequest req, String message) {
         return JsonRpcError.of(req.id(), JsonRpcErrorCode.INVALID_PARAMS, message);
     }
@@ -616,17 +622,13 @@ public final class McpServer implements AutoCloseable {
             return invalidParams(req, e);
         }
         String uri = rrr.uri();
-        if (!withinRoots(uri)) {
+        if (!canAccessResource(uri)) {
             return JsonRpcError.of(req.id(), JsonRpcErrorCode.INTERNAL_ERROR, "Access denied");
         }
         ResourceBlock block = resources.read(uri);
         if (block == null) {
             return JsonRpcError.of(req.id(), -32002, "Resource not found",
                     Json.createObjectBuilder().add("uri", uri).build());
-        }
-        Resource resMeta = resources.get(uri);
-        if (!allowed(resMeta != null ? resMeta.annotations() : null)) {
-            return JsonRpcError.of(req.id(), JsonRpcErrorCode.INTERNAL_ERROR, "Access denied");
         }
         ReadResourceResult result = new ReadResourceResult(List.of(block));
         return new JsonRpcResponse(req.id(), ResourcesCodec.toJsonObject(result));
@@ -678,17 +680,13 @@ public final class McpServer implements AutoCloseable {
             return invalidParams(req, e);
         }
         String uri = sr.uri();
-        if (!withinRoots(uri)) {
+        if (!canAccessResource(uri)) {
             return JsonRpcError.of(req.id(), JsonRpcErrorCode.INTERNAL_ERROR, "Access denied");
         }
         ResourceBlock existing = resources.read(uri);
         if (existing == null) {
             return JsonRpcError.of(req.id(), -32002, "Resource not found",
                     Json.createObjectBuilder().add("uri", uri).build());
-        }
-        Resource resMeta = resources.get(uri);
-        if (!allowed(resMeta != null ? resMeta.annotations() : null)) {
-            return JsonRpcError.of(req.id(), JsonRpcErrorCode.INTERNAL_ERROR, "Access denied");
         }
         try {
             ResourceSubscription sub = resources.subscribe(uri, update -> {
@@ -722,7 +720,7 @@ public final class McpServer implements AutoCloseable {
             return invalidParams(req, e);
         }
         String uri = ur.uri();
-        if (!withinRoots(uri)) {
+        if (!canAccessResource(uri)) {
             return JsonRpcError.of(req.id(), JsonRpcErrorCode.INTERNAL_ERROR, "Access denied");
         }
         ResourceSubscription sub = resourceSubscriptions.remove(uri);
