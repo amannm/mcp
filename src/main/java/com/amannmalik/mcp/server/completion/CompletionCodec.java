@@ -66,7 +66,9 @@ public final class CompletionCodec {
         JsonObjectBuilder comp = Json.createObjectBuilder().add("values", arr.build());
         if (result.completion().total() != null) comp.add("total", result.completion().total());
         if (result.completion().hasMore() != null) comp.add("hasMore", result.completion().hasMore());
-        return Json.createObjectBuilder().add("completion", comp.build()).build();
+        JsonObjectBuilder obj = Json.createObjectBuilder().add("completion", comp.build());
+        if (result._meta() != null) obj.add("_meta", result._meta());
+        return obj.build();
     }
 
     public static CompleteResult toCompleteResult(JsonObject obj) {
@@ -76,7 +78,8 @@ public final class CompletionCodec {
                 .toList();
         Integer total = comp.containsKey("total") ? comp.getInt("total") : null;
         Boolean hasMore = comp.containsKey("hasMore") ? comp.getBoolean("hasMore") : null;
-        return new CompleteResult(new CompleteResult.Completion(values, total, hasMore));
+        JsonObject meta = obj.containsKey("_meta") ? obj.getJsonObject("_meta") : null;
+        return new CompleteResult(new CompleteResult.Completion(values, total, hasMore), meta);
     }
 
     static JsonObject toJsonObject(CompleteRequest.Ref ref) {
