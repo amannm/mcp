@@ -4,6 +4,10 @@ public sealed interface ProgressToken permits ProgressToken.StringToken, Progres
     String asString();
 
     record StringToken(String value) implements ProgressToken {
+        public StringToken {
+            value = com.amannmalik.mcp.validation.InputSanitizer.requireClean(value);
+        }
+
         @Override
         public String asString() {
             return value;

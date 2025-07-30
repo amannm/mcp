@@ -85,7 +85,12 @@ public final class StreamableHttpTransport implements Transport {
         this.port = ((ServerConnector) server.getConnectors()[0]).getLocalPort();
         this.originValidator = validator;
         this.authManager = auth;
-        this.resourceMetadataUrl = resourceMetadataUrl;
+        if (resourceMetadataUrl == null || resourceMetadataUrl.isBlank()) {
+            this.resourceMetadataUrl = "http://127.0.0.1:" + this.port +
+                    "/.well-known/oauth-protected-resource";
+        } else {
+            this.resourceMetadataUrl = resourceMetadataUrl;
+        }
         this.authorizationServers = authorizationServers == null || authorizationServers.isEmpty()
                 ? java.util.List.of()
                 : java.util.List.copyOf(authorizationServers);

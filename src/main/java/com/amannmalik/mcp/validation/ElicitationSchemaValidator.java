@@ -61,6 +61,10 @@ public final class ElicitationSchemaValidator {
         if (prop.containsKey("maxLength") && prop.getInt("maxLength") < 0) {
             throw new IllegalArgumentException("maxLength must be >= 0 for " + name);
         }
+        if (prop.containsKey("minLength") && prop.containsKey("maxLength") &&
+                prop.getInt("maxLength") < prop.getInt("minLength")) {
+            throw new IllegalArgumentException("maxLength must be >= minLength for " + name);
+        }
         if (hasEnum) {
             JsonArray vals = prop.getJsonArray("enum");
             if (vals.isEmpty()) {
