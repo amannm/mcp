@@ -18,6 +18,13 @@ public final class RootsCodec {
         return JsonValue.EMPTY_JSON_OBJECT;
     }
 
+    public static ListRootsRequest toListRootsRequest(JsonObject obj) {
+        if (obj != null && !obj.isEmpty()) {
+            throw new IllegalArgumentException("unexpected fields");
+        }
+        return new ListRootsRequest();
+    }
+
     public static JsonObject toJsonObject(ListRootsResponse resp) {
         return toJsonObject(resp.roots());
     }
@@ -25,6 +32,13 @@ public final class RootsCodec {
     public static JsonObject toJsonObject(RootsListChangedNotification n) {
         if (n == null) throw new IllegalArgumentException("notification required");
         return JsonValue.EMPTY_JSON_OBJECT;
+    }
+
+    public static RootsListChangedNotification toRootsListChangedNotification(JsonObject obj) {
+        if (obj != null && !obj.isEmpty()) {
+            throw new IllegalArgumentException("unexpected fields");
+        }
+        return new RootsListChangedNotification();
     }
 
     public static JsonObject toJsonObject(Root root) {
