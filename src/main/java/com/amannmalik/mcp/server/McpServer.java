@@ -512,9 +512,6 @@ public final class McpServer implements AutoCloseable {
         return invalidParams(req, e.getMessage());
     }
 
-    private static String sanitizeCursor(String cursor) {
-        return cursor == null ? null : InputSanitizer.requireClean(cursor);
-    }
 
     private void cancelled(JsonRpcNotification note) {
         CancelledNotification cn = CancellationCodec.toCancelledNotification(note.params());
@@ -548,7 +545,7 @@ public final class McpServer implements AutoCloseable {
         String cursor = lr.cursor();
         if (cursor != null) {
             try {
-                cursor = sanitizeCursor(cursor);
+                cursor = InputSanitizer.cleanNullable(cursor);
             } catch (IllegalArgumentException e) {
                 return invalidParams(req, e);
             }
@@ -609,7 +606,7 @@ public final class McpServer implements AutoCloseable {
         String cursor = request.cursor();
         if (cursor != null) {
             try {
-                cursor = sanitizeCursor(cursor);
+                cursor = InputSanitizer.cleanNullable(cursor);
             } catch (IllegalArgumentException e) {
                 return invalidParams(req, e);
             }
@@ -705,7 +702,7 @@ public final class McpServer implements AutoCloseable {
         String cursor = ltr.cursor();
         if (cursor != null) {
             try {
-                cursor = sanitizeCursor(cursor);
+                cursor = InputSanitizer.cleanNullable(cursor);
             } catch (IllegalArgumentException e) {
                 return invalidParams(req, e);
             }
@@ -769,7 +766,7 @@ public final class McpServer implements AutoCloseable {
         String cursor = lpr.cursor();
         if (cursor != null) {
             try {
-                cursor = sanitizeCursor(cursor);
+                cursor = InputSanitizer.cleanNullable(cursor);
             } catch (IllegalArgumentException e) {
                 return invalidParams(req, e);
             }
