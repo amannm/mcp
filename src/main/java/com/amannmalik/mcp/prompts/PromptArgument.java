@@ -13,8 +13,8 @@ public record PromptArgument(
 ) {
     public PromptArgument {
         name = InputSanitizer.requireClean(name);
-        title = title == null ? null : InputSanitizer.requireClean(title);
-        description = description == null ? null : InputSanitizer.requireClean(description);
+        title = InputSanitizer.cleanNullable(title);
+        description = InputSanitizer.cleanNullable(description);
         MetaValidator.requireValid(_meta);
     }
 }

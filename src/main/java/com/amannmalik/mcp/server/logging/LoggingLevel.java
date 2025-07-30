@@ -1,5 +1,9 @@
 package com.amannmalik.mcp.server.logging;
 
+import java.util.Arrays;
+import java.util.Map;
+import java.util.stream.Collectors;
+
 public enum LoggingLevel {
     DEBUG,
     INFO,
@@ -10,12 +14,17 @@ public enum LoggingLevel {
     ALERT,
     EMERGENCY;
 
+    private static final Map<String, LoggingLevel> BY_NAME;
+
+    static {
+        BY_NAME = Arrays.stream(values())
+                .collect(Collectors.toUnmodifiableMap(l -> l.name().toLowerCase(), l -> l));
+    }
+
     public static LoggingLevel fromString(String raw) {
         if (raw == null) throw new IllegalArgumentException("level required");
-        try {
-            return valueOf(raw.toUpperCase());
-        } catch (IllegalArgumentException e) {
-            throw new IllegalArgumentException("invalid level", e);
-        }
+        LoggingLevel level = BY_NAME.get(raw.toLowerCase());
+        if (level == null) throw new IllegalArgumentException("invalid level");
+        return level;
     }
 }

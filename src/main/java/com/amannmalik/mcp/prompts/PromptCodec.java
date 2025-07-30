@@ -5,6 +5,7 @@ import com.amannmalik.mcp.util.PaginatedRequest;
 import com.amannmalik.mcp.util.PaginatedResult;
 import com.amannmalik.mcp.util.Pagination;
 import com.amannmalik.mcp.util.PaginationCodec;
+import com.amannmalik.mcp.util.EmptyJsonObjectCodec;
 import com.amannmalik.mcp.validation.InputSanitizer;
 import jakarta.json.Json;
 import jakarta.json.JsonArray;
@@ -77,13 +78,11 @@ public final class PromptCodec {
 
     public static JsonObject toJsonObject(PromptListChangedNotification n) {
         if (n == null) throw new IllegalArgumentException("notification required");
-        return JsonValue.EMPTY_JSON_OBJECT;
+        return EmptyJsonObjectCodec.toJsonObject();
     }
 
     public static PromptListChangedNotification toPromptListChangedNotification(JsonObject obj) {
-        if (obj != null && !obj.isEmpty()) {
-            throw new IllegalArgumentException("unexpected fields");
-        }
+        EmptyJsonObjectCodec.requireEmpty(obj);
         return new PromptListChangedNotification();
     }
 

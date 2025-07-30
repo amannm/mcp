@@ -11,6 +11,7 @@ import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Map;
+import java.util.List;
 import java.util.stream.Collectors;
 
 public final class ConfigLoader {
@@ -44,7 +45,12 @@ public final class ConfigLoader {
                     obj.getInt("port", 0),
                     obj.containsKey("instructions") ? obj.getString("instructions") : null,
                     obj.containsKey("expectedAudience") ? obj.getString("expectedAudience") : null,
-                    obj.containsKey("resourceMetadataUrl") ? obj.getString("resourceMetadataUrl") : null);
+                    obj.containsKey("resourceMetadataUrl") ? obj.getString("resourceMetadataUrl") : null,
+                    obj.containsKey("authorizationServers")
+                            ? obj.getJsonArray("authorizationServers")
+                            .getValuesAs(jakarta.json.JsonString.class)
+                            .stream().map(jakarta.json.JsonString::getString).toList()
+                            : List.of());
             case "client" -> new ClientConfig(parseTransport(transport), obj.getString("command"));
             case "host" -> {
                 var cObj = obj.getJsonObject("clients");
@@ -69,7 +75,8 @@ public final class ConfigLoader {
                     portVal == null ? 0 : ((Number) portVal).intValue(),
                     map.get("instructions") == null ? null : map.get("instructions").toString(),
                     map.get("expectedAudience") == null ? null : map.get("expectedAudience").toString(),
-                    map.get("resourceMetadataUrl") == null ? null : map.get("resourceMetadataUrl").toString());
+                    map.get("resourceMetadataUrl") == null ? null : map.get("resourceMetadataUrl").toString(),
+                    parseAuthServers(map.get("authorizationServers")));
             case "client" -> new ClientConfig(parseTransport(transport), cmdVal.toString());
             case "host" -> {
                 if (!(clientsVal instanceof Map<?, ?> cMap) || cMap.isEmpty()) {
@@ -88,5 +95,15 @@ public final class ConfigLoader {
             case "http" -> TransportType.HTTP;
             default -> throw new IllegalArgumentException("Unknown transport: " + name);
         };
+    }
+
+    private static List<String> parseAuthServers(Object val) {
+        if (val == null) return List.of();
+        if (val instanceof Iterable<?> it) {
+            List<String> list = new java.util.ArrayList<>();
+            for (Object o : it) list.add(o.toString());
+            return List.copyOf(list);
+        }
+        return List.of(val.toString());
     }
 }

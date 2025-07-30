@@ -5,6 +5,7 @@ import jakarta.json.JsonArrayBuilder;
 import jakarta.json.JsonObject;
 import jakarta.json.JsonObjectBuilder;
 import jakarta.json.JsonValue;
+import com.amannmalik.mcp.util.EmptyJsonObjectCodec;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -31,13 +32,11 @@ public final class RootsCodec {
 
     public static JsonObject toJsonObject(RootsListChangedNotification n) {
         if (n == null) throw new IllegalArgumentException("notification required");
-        return JsonValue.EMPTY_JSON_OBJECT;
+        return EmptyJsonObjectCodec.toJsonObject();
     }
 
     public static RootsListChangedNotification toRootsListChangedNotification(JsonObject obj) {
-        if (obj != null && !obj.isEmpty()) {
-            throw new IllegalArgumentException("unexpected fields");
-        }
+        EmptyJsonObjectCodec.requireEmpty(obj);
         return new RootsListChangedNotification();
     }
 
