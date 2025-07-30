@@ -97,6 +97,8 @@ import com.amannmalik.mcp.util.ProgressCodec;
 import com.amannmalik.mcp.util.ProgressNotification;
 import com.amannmalik.mcp.util.ProgressToken;
 import com.amannmalik.mcp.util.ProgressTracker;
+import com.amannmalik.mcp.util.ProgressUtil;
+import com.amannmalik.mcp.util.Timeouts;
 import com.amannmalik.mcp.validation.InputSanitizer;
 import com.amannmalik.mcp.validation.SchemaValidator;
 import jakarta.json.Json;
@@ -354,7 +356,7 @@ public final class McpServer implements AutoCloseable {
             }
 
             try {
-                token = parseProgressToken(req.params());
+                token = ProgressUtil.tokenFromMeta(req.params());
                 if (token != null) {
                     progressTracker.register(token);
                     progressTokens.put(req.id(), token);
@@ -464,9 +466,6 @@ public final class McpServer implements AutoCloseable {
         }
     }
 
-    private ProgressToken parseProgressToken(JsonObject params) {
-        return ProgressCodec.fromMeta(params);
-    }
 
     private boolean allowed(Annotations ann) {
         try {
@@ -534,17 +533,8 @@ public final class McpServer implements AutoCloseable {
     }
 
     private void sendProgress(ProgressNotification note) throws IOException {
-        if (!progressTracker.isActive(note.token())) return;
-        try {
-            progressLimiter.requireAllowance(note.token().asString());
-            progressTracker.update(note);
-        } catch (IllegalArgumentException | IllegalStateException ignore) {
-            return;
-
-        }
-        send(new JsonRpcNotification(
-                NotificationMethod.PROGRESS.method(),
-                ProgressCodec.toJsonObject(note)));
+        ProgressUtil.sendProgress(note, progressTracker, progressLimiter,
+                n -> send(n));
     }
 
     private JsonRpcMessage listResources(JsonRpcRequest req) {
@@ -892,10 +882,8 @@ public final class McpServer implements AutoCloseable {
         }
     }
 
-    private static final long DEFAULT_TIMEOUT = 30_000L;
-
     private JsonRpcMessage sendRequest(String method, JsonObject params) throws IOException {
-        return sendRequest(method, params, DEFAULT_TIMEOUT);
+        return sendRequest(method, params, Timeouts.DEFAULT_TIMEOUT_MS);
     }
 
     private JsonRpcMessage sendRequest(String method, JsonObject params, long timeoutMillis) throws IOException {

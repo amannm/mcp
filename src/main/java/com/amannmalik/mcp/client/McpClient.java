@@ -55,6 +55,8 @@ import com.amannmalik.mcp.util.ProgressListener;
 import com.amannmalik.mcp.util.ProgressNotification;
 import com.amannmalik.mcp.util.ProgressToken;
 import com.amannmalik.mcp.util.ProgressTracker;
+import com.amannmalik.mcp.util.ProgressUtil;
+import com.amannmalik.mcp.util.Timeouts;
 import com.amannmalik.mcp.validation.SchemaValidator;
 import jakarta.json.Json;
 import jakarta.json.JsonObject;
@@ -217,13 +219,13 @@ public final class McpClient implements AutoCloseable {
         });
         JsonRpcMessage msg;
         try {
-            msg = future.get(DEFAULT_TIMEOUT, TimeUnit.MILLISECONDS);
+            msg = future.get(Timeouts.DEFAULT_TIMEOUT_MS, TimeUnit.MILLISECONDS);
         } catch (TimeoutException e) {
             try {
                 transport.close();
             } catch (IOException ignore) {
             }
-            throw new IOException("Initialization timed out after " + DEFAULT_TIMEOUT + " ms");
+            throw new IOException("Initialization timed out after " + Timeouts.DEFAULT_TIMEOUT_MS + " ms");
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             throw new IOException(e);
@@ -317,10 +319,9 @@ public final class McpClient implements AutoCloseable {
         return instructions == null ? "" : instructions;
     }
 
-    private static final long DEFAULT_TIMEOUT = 30_000L;
 
     public PingResponse ping() throws IOException {
-        return ping(DEFAULT_TIMEOUT);
+        return ping(Timeouts.DEFAULT_TIMEOUT_MS);
     }
 
     public PingResponse ping(long timeoutMillis) throws IOException {
@@ -376,13 +377,13 @@ public final class McpClient implements AutoCloseable {
     }
 
     public JsonRpcMessage request(String method, JsonObject params) throws IOException {
-        return request(method, params, DEFAULT_TIMEOUT);
+        return request(method, params, Timeouts.DEFAULT_TIMEOUT_MS);
     }
 
     public JsonRpcMessage request(String method, JsonObject params, long timeoutMillis) throws IOException {
         if (!connected) throw new IllegalStateException("not connected");
         RequestId reqId = new RequestId.NumericId(id.getAndIncrement());
-        ProgressToken token = parseProgressToken(params);
+        ProgressToken token = ProgressUtil.tokenFromMeta(params);
         if (token != null) {
             progressTracker.register(token);
             progressTokens.put(reqId, token);
@@ -496,7 +497,7 @@ public final class McpClient implements AutoCloseable {
         cancellationTracker.register(req.id());
         ProgressToken token;
         try {
-            token = parseProgressToken(req.params());
+            token = ProgressUtil.tokenFromMeta(req.params());
             if (token != null) {
                 progressTracker.register(token);
                 progressTokens.put(req.id(), token);
@@ -635,18 +636,8 @@ public final class McpClient implements AutoCloseable {
     }
 
     private void sendProgress(ProgressNotification note) throws IOException {
-        if (!progressTracker.isActive(note.token())) return;
-        try {
-            progressLimiter.requireAllowance(note.token().asString());
-            progressTracker.update(note);
-        } catch (IllegalArgumentException | IllegalStateException ignore) {
-            return;
-        }
-        notify(NotificationMethod.PROGRESS.method(), ProgressCodec.toJsonObject(note));
-    }
-
-    private ProgressToken parseProgressToken(JsonObject params) {
-        return ProgressCodec.fromMeta(params);
+        ProgressUtil.sendProgress(note, progressTracker, progressLimiter,
+                n -> notify(n.method(), n.params()));
     }
 
     public void setProgressListener(ProgressListener listener) {
