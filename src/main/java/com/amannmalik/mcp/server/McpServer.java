@@ -867,16 +867,8 @@ public final class McpServer implements AutoCloseable {
         }
     }
 
-    private JsonRpcMessage sendRequest(String method, JsonObject params) throws IOException {
-        return sendRequest(method, params, Timeouts.DEFAULT_TIMEOUT_MS);
-    }
-
     private JsonRpcMessage sendRequest(RequestMethod method, JsonObject params) throws IOException {
         return sendRequest(method.method(), params, Timeouts.DEFAULT_TIMEOUT_MS);
-    }
-
-    private JsonRpcMessage sendRequest(RequestMethod method, JsonObject params, long timeoutMillis) throws IOException {
-        return sendRequest(method.method(), params, timeoutMillis);
     }
 
     private JsonRpcMessage sendRequest(String method, JsonObject params, long timeoutMillis) throws IOException {
