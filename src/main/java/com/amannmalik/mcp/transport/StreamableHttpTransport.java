@@ -3,6 +3,7 @@ package com.amannmalik.mcp.transport;
 import com.amannmalik.mcp.auth.AuthorizationException;
 import com.amannmalik.mcp.auth.AuthorizationManager;
 import com.amannmalik.mcp.auth.Principal;
+import com.amannmalik.mcp.RequestMethod;
 import com.amannmalik.mcp.jsonrpc.JsonRpcCodec;
 import com.amannmalik.mcp.jsonrpc.JsonRpcError;
 import com.amannmalik.mcp.jsonrpc.JsonRpcErrorCode;
@@ -254,7 +255,8 @@ public final class StreamableHttpTransport implements Transport {
             try (JsonReader reader = Json.createReader(req.getInputStream())) {
                 obj = reader.readObject();
             }
-            boolean initializing = "initialize".equals(obj.getString("method", null));
+            boolean initializing = RequestMethod.INITIALIZE.method()
+                    .equals(obj.getString("method", null));
 
             if (session == null && initializing) {
                 byte[] bytes = new byte[32];

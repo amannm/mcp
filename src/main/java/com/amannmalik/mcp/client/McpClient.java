@@ -212,7 +212,7 @@ public final class McpClient implements AutoCloseable {
             }
         }
         RequestId reqId = new RequestId.NumericId(id.getAndIncrement());
-        JsonRpcRequest request = new JsonRpcRequest(reqId, "initialize", initJson);
+        JsonRpcRequest request = new JsonRpcRequest(reqId, RequestMethod.INITIALIZE.method(), initJson);
         transport.send(JsonRpcCodec.toJsonObject(request));
         CompletableFuture<JsonRpcMessage> future = CompletableFuture.supplyAsync(() -> {
             try {
@@ -271,7 +271,7 @@ public final class McpClient implements AutoCloseable {
             try {
                 rootsSubscription = roots.subscribe(() -> {
                     try {
-                        notify(NotificationMethod.ROOTS_LIST_CHANGED.method(), null);
+                        notify(NotificationMethod.ROOTS_LIST_CHANGED, null);
                     } catch (IOException ignore) {
                     }
                 });
@@ -332,7 +332,7 @@ public final class McpClient implements AutoCloseable {
     }
 
     public PingResponse ping(long timeoutMillis) throws IOException {
-        JsonRpcMessage msg = request(RequestMethod.PING.method(), null, timeoutMillis);
+        JsonRpcMessage msg = request(RequestMethod.PING, null, timeoutMillis);
         if (msg instanceof JsonRpcResponse resp) return PingCodec.toPingResponse(resp);
         if (msg instanceof JsonRpcError err) throw new IOException(err.error().message());
         throw new IOException("Unexpected message type: " + msg.getClass().getSimpleName());
@@ -340,8 +340,8 @@ public final class McpClient implements AutoCloseable {
 
     public void setLogLevel(LoggingLevel level) throws IOException {
         if (level == null) throw new IllegalArgumentException("level required");
-        JsonRpcMessage msg = request(RequestMethod.LOGGING_SET_LEVEL.method(),
-                LoggingCodec.toJsonObject(new SetLevelRequest(level)));
+        JsonRpcMessage msg = request(RequestMethod.LOGGING_SET_LEVEL,
+                LoggingCodec.toJsonObject(new SetLevelRequest(level))); 
         if (msg instanceof JsonRpcResponse) {
             return;
         }
@@ -390,7 +390,7 @@ public final class McpClient implements AutoCloseable {
             throw new IOException(e);
         } catch (TimeoutException e) {
             try {
-                notify(NotificationMethod.CANCELLED.method(), CancellationCodec.toJsonObject(new CancelledNotification(reqId, "timeout")));
+                notify(NotificationMethod.CANCELLED, CancellationCodec.toJsonObject(new CancelledNotification(reqId, "timeout")));
             } catch (IOException ignore) {
             }
             token.ifPresent(t -> {
@@ -415,6 +415,10 @@ public final class McpClient implements AutoCloseable {
         if (!connected) throw new IllegalStateException("not connected");
         JsonRpcNotification notification = new JsonRpcNotification(method, params);
         transport.send(JsonRpcCodec.toJsonObject(notification));
+    }
+
+    public void notify(NotificationMethod method, JsonObject params) throws IOException {
+        notify(method.method(), params);
     }
 
     @Override
