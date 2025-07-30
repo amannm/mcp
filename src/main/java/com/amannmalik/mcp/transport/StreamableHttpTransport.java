@@ -235,6 +235,10 @@ public final class StreamableHttpTransport implements Transport {
                 return;
             }
             String version = req.getHeader(PROTOCOL_HEADER);
+            if (version != null && !isVisibleAscii(version)) {
+                resp.sendError(HttpServletResponse.SC_BAD_REQUEST);
+                return;
+            }
             JsonObject obj;
             try (JsonReader reader = Json.createReader(req.getInputStream())) {
                 obj = reader.readObject();
@@ -419,6 +423,10 @@ public final class StreamableHttpTransport implements Transport {
                 return;
             }
             String version = req.getHeader(PROTOCOL_HEADER);
+            if (version != null && !isVisibleAscii(version)) {
+                resp.sendError(HttpServletResponse.SC_BAD_REQUEST);
+                return;
+            }
             if (session == null) {
                 if (header != null && header.equals(last)) {
                     resp.sendError(HttpServletResponse.SC_NOT_FOUND);
@@ -547,6 +555,10 @@ public final class StreamableHttpTransport implements Transport {
                 return;
             }
             String version = req.getHeader(PROTOCOL_HEADER);
+            if (version != null && !isVisibleAscii(version)) {
+                resp.sendError(HttpServletResponse.SC_BAD_REQUEST);
+                return;
+            }
             if (session == null) {
                 resp.sendError(HttpServletResponse.SC_BAD_REQUEST);
                 return;
