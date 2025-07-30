@@ -1,6 +1,7 @@
 package com.amannmalik.mcp.transport;
 
 import com.amannmalik.mcp.lifecycle.Protocol;
+import com.amannmalik.mcp.validation.InputSanitizer;
 import jakarta.json.Json;
 import jakarta.json.JsonObject;
 import jakarta.json.JsonReader;
@@ -35,17 +36,11 @@ public final class StreamableHttpClientTransport implements Transport {
     }
 
     public void setProtocolVersion(String version) {
-        if (version == null || version.isBlank()) {
-            throw new IllegalArgumentException("version required");
-        }
-        this.protocolVersion = version;
+        this.protocolVersion = InputSanitizer.requireNonBlank(version);
     }
 
     public void setAuthorization(String token) {
-        if (token == null || token.isBlank()) {
-            throw new IllegalArgumentException("token required");
-        }
-        this.authorization = token;
+        this.authorization = InputSanitizer.requireNonBlank(token);
     }
 
     public void clearAuthorization() {
