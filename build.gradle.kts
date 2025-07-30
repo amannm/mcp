@@ -60,6 +60,9 @@ tasks.test {
     useJUnitPlatform()
     javaLauncher.set(javaToolchains.launcherFor(java.toolchain))
     finalizedBy(tasks.jacocoTestReport)
+    val agentFile = configurations.jacocoAgent.get().singleFile.absolutePath.replace(".jar", "-runtime.jar")
+    systemProperty("jacoco.agent.jar", agentFile)
+    systemProperty("jacoco.exec.file", tasks.jacocoTestReport.get().executionData.singleFile.absolutePath)
 }
 
 graalvmNative {
@@ -97,9 +100,13 @@ tasks.withType<Jar>().configureEach {
 
 tasks.jacocoTestReport {
     dependsOn(tasks.test)
+    executionData(fileTree("${layout.buildDirectory.get()}/jacoco").include("**/*.exec"))
     reports {
         xml.required.set(true)
         csv.required.set(false)
+    }
+    doFirst {
+        mkdir("${layout.buildDirectory.get()}/jacoco")
     }
 }
 

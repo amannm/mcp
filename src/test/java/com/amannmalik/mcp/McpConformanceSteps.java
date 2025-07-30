@@ -50,6 +50,19 @@ import static org.junit.jupiter.api.Assertions.*;
 public final class McpConformanceSteps {
     private static final String JAVA_BIN = System.getProperty("java.home") +
             File.separator + "bin" + File.separator + "java";
+    
+    private static String getJacocoAgent() {
+        String agentJar = System.getProperty("jacoco.agent.jar");
+        String execFile = System.getProperty("jacoco.exec.file");
+        if (agentJar != null && execFile != null) {
+            File execFileObj = new File(execFile);
+            File jacocoDir = execFileObj.getParentFile();
+            jacocoDir.mkdirs();
+            String serverExecFile = new File(jacocoDir, "server-" + System.currentTimeMillis() + ".exec").getAbsolutePath();
+            return "-javaagent:" + agentJar + "=destfile=" + serverExecFile + ",append=true";
+        }
+        return null;
+    }
 
     private Process serverProcess;
     private McpClient client;
@@ -62,10 +75,15 @@ public final class McpConformanceSteps {
         String type = System.getProperty("mcp.test.transport", "stdio");
         Transport transport;
         if ("http".equals(type)) {
-            ProcessBuilder pb = new ProcessBuilder(
-                    JAVA_BIN, "-cp", System.getProperty("java.class.path"),
-                    "com.amannmalik.mcp.Main", "server", "--http", "0", "-v"
-            );
+            var args = new java.util.ArrayList<String>();
+            args.add(JAVA_BIN);
+            String jacocoAgent = getJacocoAgent();
+            if (jacocoAgent != null) {
+                args.add(jacocoAgent);
+            }
+            args.addAll(List.of("-cp", System.getProperty("java.class.path"),
+                    "com.amannmalik.mcp.Main", "server", "--http", "0", "-v"));
+            ProcessBuilder pb = new ProcessBuilder(args);
             serverProcess = pb.start();
             var err = new BufferedReader(new InputStreamReader(
                     serverProcess.getErrorStream(), StandardCharsets.UTF_8));
@@ -90,10 +108,15 @@ public final class McpConformanceSteps {
             logThread.start();
             transport = new StreamableHttpClientTransport(URI.create("http://127.0.0.1:" + port + "/"));
         } else {
-            ProcessBuilder pb = new ProcessBuilder(
-                    JAVA_BIN, "-cp", System.getProperty("java.class.path"),
-                    "com.amannmalik.mcp.Main", "server", "--stdio", "-v"
-            );
+            var args = new java.util.ArrayList<String>();
+            args.add(JAVA_BIN);
+            String jacocoAgent = getJacocoAgent();
+            if (jacocoAgent != null) {
+                args.add(jacocoAgent);
+            }
+            args.addAll(List.of("-cp", System.getProperty("java.class.path"),
+                    "com.amannmalik.mcp.Main", "server", "--stdio", "-v"));
+            ProcessBuilder pb = new ProcessBuilder(args);
             serverProcess = pb.start();
             long end = System.currentTimeMillis() + 500;
             boolean started = false;
