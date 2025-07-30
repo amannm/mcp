@@ -41,5 +41,10 @@ public sealed interface ResourceBlock permits ResourceBlock.Text, ResourceBlock.
             blob = blob.clone();
             MetaValidator.requireValid(_meta);
         }
+
+        @Override
+        public byte[] blob() {
+            return blob.clone();
+        }
     }
 }
