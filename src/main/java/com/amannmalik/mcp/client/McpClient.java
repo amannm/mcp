@@ -1,10 +1,11 @@
 package com.amannmalik.mcp.client;
 
-import com.amannmalik.mcp.client.elicitation.ElicitationAction;
+import com.amannmalik.mcp.auth.Principal;
 import com.amannmalik.mcp.client.elicitation.ElicitCodec;
-import com.amannmalik.mcp.client.elicitation.ElicitationProvider;
 import com.amannmalik.mcp.client.elicitation.ElicitRequest;
 import com.amannmalik.mcp.client.elicitation.ElicitResult;
+import com.amannmalik.mcp.client.elicitation.ElicitationAction;
+import com.amannmalik.mcp.client.elicitation.ElicitationProvider;
 import com.amannmalik.mcp.client.roots.RootsCodec;
 import com.amannmalik.mcp.client.roots.RootsProvider;
 import com.amannmalik.mcp.client.roots.RootsSubscription;
@@ -35,12 +36,11 @@ import com.amannmalik.mcp.ping.PingMonitor;
 import com.amannmalik.mcp.ping.PingResponse;
 import com.amannmalik.mcp.prompts.PromptsListener;
 import com.amannmalik.mcp.security.RateLimiter;
+import com.amannmalik.mcp.security.SamplingAccessPolicy;
 import com.amannmalik.mcp.server.logging.LoggingCodec;
 import com.amannmalik.mcp.server.logging.LoggingLevel;
 import com.amannmalik.mcp.server.logging.LoggingListener;
 import com.amannmalik.mcp.server.logging.SetLevelRequest;
-import com.amannmalik.mcp.auth.Principal;
-import com.amannmalik.mcp.security.SamplingAccessPolicy;
 import com.amannmalik.mcp.server.resources.ResourceListListener;
 import com.amannmalik.mcp.server.tools.ToolListListener;
 import com.amannmalik.mcp.transport.Transport;

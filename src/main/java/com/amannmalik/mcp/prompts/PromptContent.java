@@ -1,7 +1,7 @@
 package com.amannmalik.mcp.prompts;
 
-import com.amannmalik.mcp.server.resources.Resource;
 import com.amannmalik.mcp.annotations.Annotations;
+import com.amannmalik.mcp.server.resources.Resource;
 import com.amannmalik.mcp.server.resources.ResourceBlock;
 import com.amannmalik.mcp.validation.InputSanitizer;
 import com.amannmalik.mcp.validation.MetaValidator;

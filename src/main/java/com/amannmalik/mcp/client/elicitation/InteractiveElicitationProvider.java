@@ -113,12 +113,16 @@ public final class InteractiveElicitationProvider implements ElicitationProvider
         return switch (type) {
             case "string" -> Json.createValue(input);
             case "integer" -> {
-                try { yield Json.createValue(Long.parseLong(input)); } catch (NumberFormatException e) {
+                try {
+                    yield Json.createValue(Long.parseLong(input));
+                } catch (NumberFormatException e) {
                     throw new IllegalArgumentException("integer required");
                 }
             }
             case "number" -> {
-                try { yield Json.createValue(Double.parseDouble(input)); } catch (NumberFormatException e) {
+                try {
+                    yield Json.createValue(Double.parseDouble(input));
+                } catch (NumberFormatException e) {
                     throw new IllegalArgumentException("number required");
                 }
             }

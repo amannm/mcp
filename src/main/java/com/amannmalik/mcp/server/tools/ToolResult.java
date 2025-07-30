@@ -1,8 +1,8 @@
 package com.amannmalik.mcp.server.tools;
 
+import com.amannmalik.mcp.annotations.Annotations;
 import com.amannmalik.mcp.prompts.Role;
 import com.amannmalik.mcp.server.resources.Resource;
-import com.amannmalik.mcp.annotations.Annotations;
 import com.amannmalik.mcp.server.resources.ResourceBlock;
 import com.amannmalik.mcp.server.resources.ResourcesCodec;
 import com.amannmalik.mcp.validation.InputSanitizer;

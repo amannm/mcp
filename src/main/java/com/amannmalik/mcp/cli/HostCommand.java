@@ -8,9 +8,9 @@ import com.amannmalik.mcp.prompts.Role;
 import com.amannmalik.mcp.security.ConsentManager;
 import com.amannmalik.mcp.security.HostProcess;
 import com.amannmalik.mcp.security.PrivacyBoundaryEnforcer;
+import com.amannmalik.mcp.security.SamplingAccessController;
 import com.amannmalik.mcp.security.SecurityPolicy;
 import com.amannmalik.mcp.security.ToolAccessController;
-import com.amannmalik.mcp.security.SamplingAccessController;
 import com.amannmalik.mcp.transport.StdioTransport;
 import picocli.CommandLine;
 

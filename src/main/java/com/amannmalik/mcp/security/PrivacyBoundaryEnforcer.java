@@ -1,8 +1,8 @@
 package com.amannmalik.mcp.security;
 
+import com.amannmalik.mcp.annotations.Annotations;
 import com.amannmalik.mcp.auth.Principal;
 import com.amannmalik.mcp.prompts.Role;
-import com.amannmalik.mcp.annotations.Annotations;
 
 import java.util.EnumSet;
 import java.util.Map;
