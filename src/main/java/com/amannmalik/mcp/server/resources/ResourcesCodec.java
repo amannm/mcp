@@ -13,6 +13,7 @@ import jakarta.json.JsonObject;
 import jakarta.json.JsonObjectBuilder;
 
 import java.util.Set;
+import com.amannmalik.mcp.util.JsonUtil;
 
 public final class ResourcesCodec {
     private ResourcesCodec() {
@@ -93,11 +94,7 @@ public final class ResourcesCodec {
             throw new IllegalArgumentException("exactly one of text or blob must be present");
         }
 
-        for (String key : obj.keySet()) {
-            if (!Set.of("uri", "mimeType", "_meta", "text", "blob").contains(key)) {
-                throw new IllegalArgumentException("unexpected field: " + key);
-            }
-        }
+        JsonUtil.requireOnlyKeys(obj, Set.of("uri", "mimeType", "_meta", "text", "blob"));
 
         if (hasText) {
             return new ResourceBlock.Text(uri, mime, obj.getString("text"), meta);
