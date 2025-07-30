@@ -64,6 +64,10 @@ public final class PromptCodec {
         return builder.build();
     }
 
+    public static JsonObject toJsonObject(ListPromptsResult page) {
+        return toJsonObject(new PromptPage(page.prompts(), page.nextCursor()));
+    }
+
     public static JsonObject toJsonObject(PromptListChangedNotification n) {
         if (n == null) throw new IllegalArgumentException("notification required");
         return Json.createObjectBuilder().build();
@@ -175,6 +179,11 @@ public final class PromptCodec {
         }
         String cursor = PaginationCodec.toPaginatedResult(obj).nextCursor();
         return new PromptPage(prompts, cursor);
+    }
+
+    public static ListPromptsResult toListPromptsResult(JsonObject obj) {
+        PromptPage page = toPromptPage(obj);
+        return new ListPromptsResult(page.prompts(), page.nextCursor());
     }
 
     private static PromptArgument toPromptArgument(JsonObject obj) {
