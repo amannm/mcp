@@ -2,6 +2,7 @@ package com.amannmalik.mcp.client.sampling;
 
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.TimeUnit;
 
 public final class BlockingSamplingProvider implements SamplingProvider {
     private final BlockingQueue<CreateMessageResponse> responses = new LinkedBlockingQueue<>();
@@ -12,12 +13,9 @@ public final class BlockingSamplingProvider implements SamplingProvider {
     }
 
     @Override
-    public CreateMessageResponse createMessage(CreateMessageRequest request) {
-        try {
-            return responses.take();
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            throw new RuntimeException(e);
-        }
+    public CreateMessageResponse createMessage(CreateMessageRequest request, long timeoutMillis) throws InterruptedException {
+        return timeoutMillis <= 0
+                ? responses.take()
+                : responses.poll(timeoutMillis, TimeUnit.MILLISECONDS);
     }
 }

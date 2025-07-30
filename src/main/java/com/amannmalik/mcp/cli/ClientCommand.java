@@ -1,6 +1,8 @@
 package com.amannmalik.mcp.cli;
 
 import com.amannmalik.mcp.client.McpClient;
+import com.amannmalik.mcp.client.sampling.SamplingProvider;
+import com.amannmalik.mcp.client.sampling.SamplingProviderFactory;
 import com.amannmalik.mcp.lifecycle.ClientCapability;
 import com.amannmalik.mcp.lifecycle.ClientInfo;
 import com.amannmalik.mcp.server.logging.LoggingLevel;
@@ -50,10 +52,14 @@ public final class ClientCommand implements Callable<Integer> {
         StdioTransport transport = new StdioTransport(new ProcessBuilder(cfg.command().split(" ")),
                 verbose ? System.err::println : s -> {
                 });
+        SamplingProvider samplingProvider = SamplingProviderFactory.createBlocking();
         McpClient client = new McpClient(
                 new ClientInfo("cli", "CLI", "0"),
-                EnumSet.noneOf(ClientCapability.class),
-                transport);
+                EnumSet.of(ClientCapability.SAMPLING),
+                transport,
+                samplingProvider,
+                null,
+                null);
         client.connect();
         if (verbose) {
             client.setLoggingListener(n -> {
