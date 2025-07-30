@@ -29,7 +29,7 @@ public final class AnnotationsCodec {
     }
 
     public static Annotations toAnnotations(JsonObject obj) {
-        if (obj == null) return null;
+        if (obj == null) return Annotations.EMPTY;
         Set<Role> audience = EnumSet.noneOf(Role.class);
         var arr = obj.getJsonArray("audience");
         if (arr != null) {
@@ -45,6 +45,10 @@ public final class AnnotationsCodec {
                 throw new IllegalArgumentException("Invalid lastModified", e);
             }
         }
-        return new Annotations(audience.isEmpty() ? Set.of() : EnumSet.copyOf(audience), priority, lastModified);
+        Annotations ann = new Annotations(audience.isEmpty() ? Set.of() : EnumSet.copyOf(audience), priority, lastModified);
+        if (ann.audience().isEmpty() && ann.priority() == null && ann.lastModified() == null) {
+            return Annotations.EMPTY;
+        }
+        return ann;
     }
 }

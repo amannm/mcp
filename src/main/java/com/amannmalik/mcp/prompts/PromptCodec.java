@@ -1,5 +1,6 @@
 package com.amannmalik.mcp.prompts;
 
+import com.amannmalik.mcp.annotations.Annotations;
 import com.amannmalik.mcp.annotations.AnnotationsCodec;
 import com.amannmalik.mcp.server.resources.ResourcesCodec;
 import com.amannmalik.mcp.util.Base64Util;
@@ -80,7 +81,7 @@ public final class PromptCodec {
 
     static JsonObject toJsonObject(PromptContent content) {
         JsonObjectBuilder b = Json.createObjectBuilder().add("type", content.type());
-        if (content.annotations() != null) {
+        if (content.annotations() != Annotations.EMPTY) {
             b.add("annotations", AnnotationsCodec.toJsonObject(content.annotations()));
         }
         switch (content) {
@@ -101,7 +102,7 @@ public final class PromptCodec {
             case PromptContent.EmbeddedResource r -> {
                 if (content._meta() != null) b.add("_meta", content._meta());
                 b.add("resource", ResourcesCodec.toJsonObject(r.resource()));
-                if (r.annotations() != null) {
+                if (r.annotations() != Annotations.EMPTY) {
                     b.add("annotations", AnnotationsCodec.toJsonObject(r.annotations()));
                 }
             }
