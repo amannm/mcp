@@ -2,8 +2,8 @@ package com.amannmalik.mcp.client.roots;
 
 import java.util.List;
 
-public record ListRootsResponse(List<Root> roots) {
-    public ListRootsResponse {
+public record ListRootsResult(List<Root> roots) {
+    public ListRootsResult {
         roots = roots == null || roots.isEmpty() ? List.of() : List.copyOf(roots);
     }
 }
