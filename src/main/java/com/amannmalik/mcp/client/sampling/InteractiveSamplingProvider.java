@@ -101,21 +101,82 @@ public final class InteractiveSamplingProvider implements SamplingProvider {
         };
     }
 
-    private CreateMessageResponse generateResponse(CreateMessageRequest request) {
-        // TODO: this
-        // Simple response generation - in a real implementation, this would:
-        // 1. Use the model preferences to select an appropriate LLM
-        // 2. Send the request to the selected LLM
-        // 3. Return the actual LLM response
+    private CreateMessageResponse generateResponse(CreateMessageRequest request) throws InterruptedException {
+        try {
+            var ai = openAiResponse(request);
+            if (ai.isPresent()) {
+                return new CreateMessageResponse(
+                        Role.ASSISTANT,
+                        new MessageContent.Text(ai.get().content(), null, null),
+                        ai.get().model(),
+                        "endTurn",
+                        null
+                );
+            }
+        } catch (IOException ignore) {
+        }
+
         String responseText = generateSimpleResponse(request);
 
         return new CreateMessageResponse(
                 Role.ASSISTANT,
                 new MessageContent.Text(responseText, null, null),
-                "claude-3-sonnet-simulation", // Simulated model name
+                "claude-3-sonnet-simulation",
                 "endTurn",
-                null // _meta
+                null
         );
+    }
+
+    private record AiResult(String content, String model) {
+    }
+
+    private java.util.Optional<AiResult> openAiResponse(CreateMessageRequest request) throws IOException, InterruptedException {
+        String apiKey = System.getenv("OPENAI_API_KEY");
+        if (apiKey == null || apiKey.isBlank()) return java.util.Optional.empty();
+
+        java.net.http.HttpClient client = java.net.http.HttpClient.newHttpClient();
+
+        jakarta.json.JsonArrayBuilder msgs = jakarta.json.Json.createArrayBuilder();
+        if (request.systemPrompt() != null) {
+            msgs.add(jakarta.json.Json.createObjectBuilder()
+                    .add("role", "system")
+                    .add("content", request.systemPrompt())
+                    .build());
+        }
+        for (SamplingMessage m : request.messages()) {
+            if (m.content() instanceof MessageContent.Text t) {
+                msgs.add(jakarta.json.Json.createObjectBuilder()
+                        .add("role", m.role().name().toLowerCase())
+                        .add("content", t.text())
+                        .build());
+            }
+        }
+
+        jakarta.json.JsonObject body = jakarta.json.Json.createObjectBuilder()
+                .add("model", "gpt-3.5-turbo")
+                .add("messages", msgs)
+                .add("max_tokens", request.maxTokens())
+                .build();
+
+        java.net.http.HttpRequest httpRequest = java.net.http.HttpRequest.newBuilder()
+                .uri(java.net.URI.create("https://api.openai.com/v1/chat/completions"))
+                .header("Authorization", "Bearer " + apiKey)
+                .header("Content-Type", "application/json")
+                .POST(java.net.http.HttpRequest.BodyPublishers.ofString(body.toString()))
+                .build();
+
+        java.net.http.HttpResponse<String> response = client.send(httpRequest, java.net.http.HttpResponse.BodyHandlers.ofString());
+        if (response.statusCode() / 100 != 2) return java.util.Optional.empty();
+
+        jakarta.json.JsonObject obj = jakarta.json.Json.createReader(new java.io.StringReader(response.body())).readObject();
+        var choices = obj.getJsonArray("choices");
+        if (choices == null || choices.isEmpty()) return java.util.Optional.empty();
+        var msg = choices.getJsonObject(0).getJsonObject("message");
+        if (msg == null) return java.util.Optional.empty();
+        String content = msg.getString("content", null);
+        if (content == null) return java.util.Optional.empty();
+        String model = obj.getString("model", "openai");
+        return java.util.Optional.of(new AiResult(content.trim(), model));
     }
 
     private String generateSimpleResponse(CreateMessageRequest request) {
