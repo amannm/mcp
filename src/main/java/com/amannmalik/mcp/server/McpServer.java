@@ -539,8 +539,7 @@ public final class McpServer implements AutoCloseable {
     }
 
     private void sendProgress(ProgressNotification note) throws IOException {
-        ProgressUtil.sendProgress(note, progressTracker, progressLimiter,
-                n -> send(n));
+        ProgressUtil.sendProgress(note, progressTracker, progressLimiter, this::send);
     }
 
     private JsonRpcMessage listResources(JsonRpcRequest req) {
