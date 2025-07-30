@@ -82,11 +82,6 @@ public final class PromptCodec {
         return EmptyJsonObjectCodec.toJsonObject();
     }
 
-    public static PromptListChangedNotification toPromptListChangedNotification(JsonObject obj) {
-        EmptyJsonObjectCodec.requireEmpty(obj);
-        return new PromptListChangedNotification();
-    }
-
     static JsonObject toJsonObject(PromptContent content) {
         JsonObjectBuilder b = Json.createObjectBuilder().add("type", content.type());
         if (content.annotations() != null) {

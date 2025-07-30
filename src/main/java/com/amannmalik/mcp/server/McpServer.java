@@ -515,6 +515,7 @@ public final class McpServer implements AutoCloseable {
         return cursor == null ? null : Pagination.requireValidCursor(cursor);
     }
 
+
     private void cancelled(JsonRpcNotification note) {
         CancelledNotification cn = CancellationCodec.toCancelledNotification(note.params());
         cancellationTracker.cancel(cn.requestId(), cn.reason());
@@ -538,8 +539,7 @@ public final class McpServer implements AutoCloseable {
     }
 
     private void sendProgress(ProgressNotification note) throws IOException {
-        ProgressUtil.sendProgress(note, progressTracker, progressLimiter,
-                n -> send(n));
+        ProgressUtil.sendProgress(note, progressTracker, progressLimiter, this::send);
     }
 
     private JsonRpcMessage listResources(JsonRpcRequest req) {
@@ -548,7 +548,7 @@ public final class McpServer implements AutoCloseable {
         String cursor = lr.cursor();
         if (cursor != null) {
             try {
-                cursor = sanitizeCursor(cursor);
+                cursor = InputSanitizer.cleanNullable(cursor);
             } catch (IllegalArgumentException e) {
                 return invalidParams(req, e);
             }
@@ -609,7 +609,7 @@ public final class McpServer implements AutoCloseable {
         String cursor = request.cursor();
         if (cursor != null) {
             try {
-                cursor = sanitizeCursor(cursor);
+                cursor = InputSanitizer.cleanNullable(cursor);
             } catch (IllegalArgumentException e) {
                 return invalidParams(req, e);
             }
@@ -705,7 +705,7 @@ public final class McpServer implements AutoCloseable {
         String cursor = ltr.cursor();
         if (cursor != null) {
             try {
-                cursor = sanitizeCursor(cursor);
+                cursor = InputSanitizer.cleanNullable(cursor);
             } catch (IllegalArgumentException e) {
                 return invalidParams(req, e);
             }
@@ -742,7 +742,7 @@ public final class McpServer implements AutoCloseable {
             ToolResult result = tools.call(callRequest.name(), callRequest.arguments());
             return new JsonRpcResponse(req.id(), ToolCodec.toJsonObject(result));
         } catch (IllegalArgumentException e) {
-            Optional<Tool> tool = tools == null ? Optional.empty() : tools.find(callRequest.name());
+            Optional<Tool> tool = tools.find(callRequest.name());
             if (tool.isPresent() && lifecycle.negotiatedClientCapabilities().contains(ClientCapability.ELICITATION)) {
                 try {
                     ElicitRequest er = new ElicitRequest(
@@ -769,7 +769,7 @@ public final class McpServer implements AutoCloseable {
         String cursor = lpr.cursor();
         if (cursor != null) {
             try {
-                cursor = sanitizeCursor(cursor);
+                cursor = InputSanitizer.cleanNullable(cursor);
             } catch (IllegalArgumentException e) {
                 return invalidParams(req, e);
             }
