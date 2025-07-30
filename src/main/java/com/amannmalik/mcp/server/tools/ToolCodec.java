@@ -4,6 +4,7 @@ import com.amannmalik.mcp.util.PaginatedRequest;
 import com.amannmalik.mcp.util.PaginatedResult;
 import com.amannmalik.mcp.util.Pagination;
 import com.amannmalik.mcp.util.PaginationCodec;
+import com.amannmalik.mcp.util.EmptyJsonObjectCodec;
 import jakarta.json.Json;
 import jakarta.json.JsonArray;
 import jakarta.json.JsonArrayBuilder;
@@ -60,13 +61,11 @@ public final class ToolCodec {
 
     public static JsonObject toJsonObject(ToolListChangedNotification n) {
         if (n == null) throw new IllegalArgumentException("notification required");
-        return JsonValue.EMPTY_JSON_OBJECT;
+        return EmptyJsonObjectCodec.toJsonObject();
     }
 
     public static ToolListChangedNotification toToolListChangedNotification(JsonObject obj) {
-        if (obj != null && !obj.isEmpty()) {
-            throw new IllegalArgumentException("unexpected fields");
-        }
+        EmptyJsonObjectCodec.requireEmpty(obj);
         return new ToolListChangedNotification();
     }
 
