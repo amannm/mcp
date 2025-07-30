@@ -64,7 +64,6 @@ import com.amannmalik.mcp.server.resources.ResourceAnnotations;
 import com.amannmalik.mcp.server.resources.ResourceBlock;
 import com.amannmalik.mcp.server.resources.ResourceList;
 import com.amannmalik.mcp.server.resources.ResourceListSubscription;
-import com.amannmalik.mcp.server.resources.ListResourcesRequest;
 import com.amannmalik.mcp.server.resources.ListResourcesResult;
 import com.amannmalik.mcp.server.resources.ListResourceTemplatesRequest;
 import com.amannmalik.mcp.server.resources.ListResourceTemplatesResult;
@@ -508,15 +507,7 @@ public final class McpServer implements AutoCloseable {
 
     private JsonRpcMessage listResources(JsonRpcRequest req) {
         requireServerCapability(ServerCapability.RESOURCES);
-        ListResourcesRequest request;
-        try {
-            request = ResourcesCodec.toListResourcesRequest(req.params());
-        } catch (IllegalArgumentException e) {
-            return new JsonRpcError(req.id(), new JsonRpcError.ErrorDetail(
-                    JsonRpcErrorCode.INVALID_PARAMS.code(), e.getMessage(), null));
-        }
-        
-        String cursor = request.cursor();
+        String cursor = PaginationCodec.toPaginatedRequest(req.params()).cursor();
         if (cursor != null) {
             try {
                 cursor = InputSanitizer.requireClean(cursor);

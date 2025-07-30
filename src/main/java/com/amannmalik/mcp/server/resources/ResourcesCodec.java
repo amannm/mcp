@@ -225,16 +225,6 @@ public final class ResourcesCodec {
         return new ResourceUpdatedNotification(obj.getString("uri"));
     }
 
-    public static JsonObject toJsonObject(ListResourcesRequest req) {
-        if (req == null) throw new IllegalArgumentException("request required");
-        JsonObjectBuilder b = Json.createObjectBuilder();
-        if (req.cursor() != null) b.add("cursor", req.cursor());
-        return b.build();
-    }
-
-    public static ListResourcesRequest toListResourcesRequest(JsonObject obj) {
-        return new ListResourcesRequest(obj.getString("cursor", null));
-    }
 
     public static JsonObject toJsonObject(ListResourcesResult result) {
         if (result == null) throw new IllegalArgumentException("result required");
