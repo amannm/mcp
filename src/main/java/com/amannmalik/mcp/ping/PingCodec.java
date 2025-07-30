@@ -3,7 +3,6 @@ package com.amannmalik.mcp.ping;
 import com.amannmalik.mcp.jsonrpc.JsonRpcRequest;
 import com.amannmalik.mcp.jsonrpc.JsonRpcResponse;
 import com.amannmalik.mcp.jsonrpc.RequestId;
-import jakarta.json.Json;
 import jakarta.json.JsonValue;
 
 public final class PingCodec {

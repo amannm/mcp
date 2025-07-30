@@ -1,7 +1,7 @@
 package com.amannmalik.mcp.prompts;
 
-import com.amannmalik.mcp.util.Pagination;
 import com.amannmalik.mcp.util.ListChangeSupport;
+import com.amannmalik.mcp.util.Pagination;
 
 import java.util.ArrayList;
 import java.util.Comparator;
