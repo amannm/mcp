@@ -22,7 +22,6 @@ import com.amannmalik.mcp.server.logging.LoggingMessageNotification;
 import com.amannmalik.mcp.transport.StdioTransport;
 import com.amannmalik.mcp.transport.StreamableHttpClientTransport;
 import com.amannmalik.mcp.transport.Transport;
-import com.amannmalik.mcp.NotificationMethod;
 import com.amannmalik.mcp.util.CancellationCodec;
 import com.amannmalik.mcp.util.CancelledNotification;
 import com.amannmalik.mcp.util.ProgressNotification;

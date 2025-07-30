@@ -3,7 +3,6 @@ package com.amannmalik.mcp.security;
 import com.amannmalik.mcp.auth.Principal;
 
 
-
 public final class ConsentManager {
     private final PrincipalPermissions<String> consents = new PrincipalPermissions<>();
 
