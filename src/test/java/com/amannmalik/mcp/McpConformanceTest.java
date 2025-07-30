@@ -102,7 +102,7 @@ class McpConformanceTest {
             );
 
             BlockingElicitationProvider elicitation = new BlockingElicitationProvider();
-            elicitation.respond(new ElicitationResponse(ElicitationAction.CANCEL, null));
+            elicitation.respond(new ElicitationResponse(ElicitationAction.CANCEL, null, null));
             SamplingProvider sampling = SamplingProviderFactory.createMock(new CreateMessageResponse(
                     Role.ASSISTANT,
                     new MessageContent.Text("ok", null, null),

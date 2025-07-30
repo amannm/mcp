@@ -1,9 +1,12 @@
 package com.amannmalik.mcp.client.elicitation;
 
 import com.amannmalik.mcp.validation.InputSanitizer;
+import com.amannmalik.mcp.validation.MetaValidator;
 import jakarta.json.JsonObject;
 
-public record ElicitationResponse(ElicitationAction action, JsonObject content) {
+public record ElicitationResponse(ElicitationAction action,
+                                  JsonObject content,
+                                  JsonObject _meta) {
     public ElicitationResponse {
         if (action == null) {
             throw new IllegalArgumentException("action is required");
@@ -23,5 +26,6 @@ public record ElicitationResponse(ElicitationAction action, JsonObject content) 
                 }
             }
         }
+        MetaValidator.requireValid(_meta);
     }
 }
