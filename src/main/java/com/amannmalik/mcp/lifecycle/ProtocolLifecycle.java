@@ -28,13 +28,13 @@ public class ProtocolLifecycle {
                 ? EnumSet.noneOf(ClientCapability.class)
                 : EnumSet.copyOf(requested);
         clientFeatures = request.features() == null ? ClientFeatures.EMPTY : request.features();
-        if (!SUPPORTED_VERSION.equals(request.protocolVersion())) {
-            throw new UnsupportedProtocolVersionException(
-                    request.protocolVersion(), SUPPORTED_VERSION);
+        String version = SUPPORTED_VERSION;
+        if (SUPPORTED_VERSION.equals(request.protocolVersion())) {
+            version = request.protocolVersion();
         }
 
         return new InitializeResponse(
-                SUPPORTED_VERSION,
+                version,
                 new Capabilities(clientCapabilities, serverCapabilities, Map.of(), Map.of()),
                 serverInfo,
                 instructions,
