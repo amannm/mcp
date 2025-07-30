@@ -14,6 +14,7 @@ import com.amannmalik.mcp.util.PaginatedRequest;
 import com.amannmalik.mcp.util.PaginationCodec;
 import jakarta.json.Json;
 import jakarta.json.JsonObject;
+import jakarta.json.JsonValue;
 
 import java.io.IOException;
 import java.util.Collections;
@@ -146,10 +147,11 @@ public final class HostProcess implements AutoCloseable {
         McpClient client = clients.get(clientId);
         if (client == null) throw new IllegalArgumentException("Unknown client: " + clientId);
         requireCapability(client, Optional.of(ServerCapability.TOOLS));
+        consents.requireConsent(principal, "tool:" + name);
         toolAccess.requireAllowed(principal, name);
         JsonObject params = Json.createObjectBuilder()
                 .add("name", name)
-                .add("arguments", args == null ? Json.createObjectBuilder().build() : args)
+                .add("arguments", args == null ? JsonValue.EMPTY_JSON_OBJECT : args)
                 .build();
         JsonRpcMessage resp = client.request("tools/call", params);
         if (resp instanceof JsonRpcResponse r) return ToolCodec.toToolResult(r.result());
@@ -161,6 +163,7 @@ public final class HostProcess implements AutoCloseable {
         McpClient client = clients.get(clientId);
         if (client == null) throw new IllegalArgumentException("Unknown client: " + clientId);
         if (!client.connected()) throw new IllegalStateException("Client not connected: " + clientId);
+        consents.requireConsent(principal, "sampling");
         samplingAccess.requireAllowed(principal);
         JsonRpcMessage resp = client.request("sampling/createMessage", params);
         if (resp instanceof JsonRpcResponse r) return r.result();

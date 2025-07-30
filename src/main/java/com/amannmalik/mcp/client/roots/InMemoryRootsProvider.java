@@ -2,10 +2,11 @@ package com.amannmalik.mcp.client.roots;
 
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
+import com.amannmalik.mcp.util.ListChangeSupport;
 
 public final class InMemoryRootsProvider implements RootsProvider {
     private final List<Root> roots = new CopyOnWriteArrayList<>();
-    private final List<RootsListener> listeners = new CopyOnWriteArrayList<>();
+    private final ListChangeSupport<RootsListener> listChangeSupport = new ListChangeSupport<>();
 
     public InMemoryRootsProvider(List<Root> initial) {
         if (initial != null) roots.addAll(initial);
@@ -18,8 +19,8 @@ public final class InMemoryRootsProvider implements RootsProvider {
 
     @Override
     public RootsSubscription subscribe(RootsListener listener) {
-        listeners.add(listener);
-        return () -> listeners.remove(listener);
+        var sub = listChangeSupport.subscribe(listener);
+        return sub::close;
     }
 
     @Override
@@ -38,6 +39,6 @@ public final class InMemoryRootsProvider implements RootsProvider {
     }
 
     private void notifyListeners() {
-        listeners.forEach(RootsListener::listChanged);
+        listChangeSupport.notifyListeners();
     }
 }

@@ -4,6 +4,7 @@ import com.amannmalik.mcp.jsonrpc.JsonRpcRequest;
 import com.amannmalik.mcp.jsonrpc.JsonRpcResponse;
 import com.amannmalik.mcp.jsonrpc.RequestId;
 import jakarta.json.Json;
+import jakarta.json.JsonValue;
 
 public final class PingCodec {
     private PingCodec() {
@@ -24,7 +25,7 @@ public final class PingCodec {
 
     public static JsonRpcResponse toResponse(RequestId id) {
         if (id == null) throw new IllegalArgumentException("id required");
-        return new JsonRpcResponse(id, Json.createObjectBuilder().build());
+        return new JsonRpcResponse(id, JsonValue.EMPTY_JSON_OBJECT);
     }
 
     public static PingResponse toPingResponse(JsonRpcResponse resp) {

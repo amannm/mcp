@@ -1,6 +1,6 @@
 package com.amannmalik.mcp.server.tools;
 
-public interface ToolListSubscription extends AutoCloseable {
-    @Override
-    void close();
+import com.amannmalik.mcp.util.ListChangeSubscription;
+
+public interface ToolListSubscription extends ListChangeSubscription {
 }

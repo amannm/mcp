@@ -100,7 +100,6 @@ import com.amannmalik.mcp.util.ProgressNotification;
 import com.amannmalik.mcp.util.ProgressToken;
 import com.amannmalik.mcp.util.ProgressTracker;
 import com.amannmalik.mcp.validation.InputSanitizer;
-import com.amannmalik.mcp.validation.MetaValidator;
 import com.amannmalik.mcp.validation.SchemaValidator;
 import jakarta.json.Json;
 import jakarta.json.JsonObject;
@@ -463,16 +462,7 @@ public final class McpServer implements AutoCloseable {
     }
 
     private ProgressToken parseProgressToken(JsonObject params) {
-        if (params == null || !params.containsKey("_meta")) return null;
-        JsonObject meta = params.getJsonObject("_meta");
-        MetaValidator.requireValid(meta);
-        if (!meta.containsKey("progressToken")) return null;
-        var val = meta.get("progressToken");
-        return switch (val.getValueType()) {
-            case STRING -> new ProgressToken.StringToken(InputSanitizer.requireClean(meta.getString("progressToken")));
-            case NUMBER -> new ProgressToken.NumericToken(meta.getJsonNumber("progressToken").longValue());
-            default -> throw new IllegalArgumentException("progressToken must be a string or number");
-        };
+        return ProgressCodec.fromMeta(params);
     }
 
     private boolean allowed(Annotations ann) {
@@ -691,7 +681,7 @@ public final class McpServer implements AutoCloseable {
             return new JsonRpcError(req.id(), new JsonRpcError.ErrorDetail(
                     JsonRpcErrorCode.INTERNAL_ERROR.code(), e.getMessage(), null));
         }
-        return new JsonRpcResponse(req.id(), Json.createObjectBuilder().build());
+        return new JsonRpcResponse(req.id(), JsonValue.EMPTY_JSON_OBJECT);
     }
 
     private JsonRpcMessage unsubscribeResource(JsonRpcRequest req) {
@@ -715,7 +705,7 @@ public final class McpServer implements AutoCloseable {
             } catch (Exception ignore) {
             }
         }
-        return new JsonRpcResponse(req.id(), Json.createObjectBuilder().build());
+        return new JsonRpcResponse(req.id(), JsonValue.EMPTY_JSON_OBJECT);
     }
 
     private JsonRpcMessage listTools(JsonRpcRequest req) {
@@ -841,7 +831,7 @@ public final class McpServer implements AutoCloseable {
         }
         try {
             logLevel = LoggingCodec.toSetLevelRequest(params).level();
-            return new JsonRpcResponse(req.id(), Json.createObjectBuilder().build());
+            return new JsonRpcResponse(req.id(), JsonValue.EMPTY_JSON_OBJECT);
         } catch (IllegalArgumentException e) {
             return new JsonRpcError(req.id(), new JsonRpcError.ErrorDetail(
                     JsonRpcErrorCode.INVALID_PARAMS.code(), e.getMessage(), null));

@@ -1,6 +1,6 @@
 package com.amannmalik.mcp.client.roots;
 
-public interface RootsSubscription extends AutoCloseable {
-    @Override
-    void close();
+import com.amannmalik.mcp.util.ListChangeSubscription;
+
+public interface RootsSubscription extends ListChangeSubscription {
 }
