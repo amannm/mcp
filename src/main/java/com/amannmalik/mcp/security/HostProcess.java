@@ -6,6 +6,7 @@ import com.amannmalik.mcp.jsonrpc.JsonRpcError;
 import com.amannmalik.mcp.jsonrpc.JsonRpcMessage;
 import com.amannmalik.mcp.jsonrpc.JsonRpcResponse;
 import com.amannmalik.mcp.lifecycle.ServerCapability;
+import com.amannmalik.mcp.prompts.Role;
 import jakarta.json.Json;
 import jakarta.json.JsonObject;
 
@@ -22,6 +23,7 @@ public final class HostProcess implements AutoCloseable {
     private final ConsentManager consents;
     private final Principal principal;
     private final ToolAccessController toolAccess;
+    private final PrivacyBoundaryEnforcer privacyBoundary;
 
     private static ServerCapability capabilityForMethod(String method) {
         if (method.startsWith("tools/")) return ServerCapability.TOOLS;
@@ -41,10 +43,12 @@ public final class HostProcess implements AutoCloseable {
     public HostProcess(SecurityPolicy policy,
                        ConsentManager consents,
                        ToolAccessController toolAccess,
+                       PrivacyBoundaryEnforcer privacyBoundary,
                        Principal principal) {
         this.policy = policy;
         this.consents = consents;
         this.toolAccess = toolAccess;
+        this.privacyBoundary = privacyBoundary;
         this.principal = principal;
     }
 
@@ -86,6 +90,14 @@ public final class HostProcess implements AutoCloseable {
 
     public void revokeTool(String tool) {
         toolAccess.revoke(principal.id(), tool);
+    }
+
+    public void allowAudience(Role audience) {
+        privacyBoundary.allow(principal.id(), audience);
+    }
+
+    public void revokeAudience(Role audience) {
+        privacyBoundary.revoke(principal.id(), audience);
     }
 
     public Set<String> clientIds() {
