@@ -96,6 +96,11 @@ tasks.withType<Jar>().configureEach {
     manifest {
         attributes["Main-Class"] = "com.amannmalik.mcp.Main"
     }
+    from({
+        configurations.runtimeClasspath.get()
+            .filter { it.extension == "jar" }
+            .map { zipTree(it) }
+    })
 }
 
 tasks.jacocoTestReport {
