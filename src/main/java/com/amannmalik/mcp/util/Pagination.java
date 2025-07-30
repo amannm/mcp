@@ -35,10 +35,5 @@ public final class Pagination {
         public Page {
             items = items == null ? List.of() : List.copyOf(items);
         }
-
-        @Override
-        public List<T> items() {
-            return List.copyOf(items);
-        }
     }
 }
