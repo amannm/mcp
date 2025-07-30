@@ -3,6 +3,7 @@ package com.amannmalik.mcp.server.tools;
 import com.amannmalik.mcp.validation.InputSanitizer;
 import com.amannmalik.mcp.validation.MetaValidator;
 import jakarta.json.JsonObject;
+import com.amannmalik.mcp.util.DisplayNameProvider;
 
 public record Tool(String name,
                    String title,
@@ -10,7 +11,7 @@ public record Tool(String name,
                    JsonObject inputSchema,
                    JsonObject outputSchema,
                    ToolAnnotations annotations,
-                   JsonObject _meta) {
+                   JsonObject _meta) implements DisplayNameProvider {
     public Tool {
         name = InputSanitizer.requireClean(name);
         if (inputSchema == null) {
@@ -28,6 +29,7 @@ public record Tool(String name,
         MetaValidator.requireValid(_meta);
     }
 
+    @Override
     public String displayName() {
         if (title != null) return title;
         if (annotations != null && annotations.title() != null) return annotations.title();
