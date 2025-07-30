@@ -38,6 +38,9 @@ public final class ServerCommand implements Callable<Integer> {
     @CommandLine.Option(names = {"--audience"}, description = "Expected JWT audience for authorization")
     private String expectedAudience;
 
+    @CommandLine.Option(names = {"--resource-metadata"}, description = "Protected resource metadata URL")
+    private String resourceMetadataUrl;
+
     public ServerCommand() {
     }
 
@@ -59,7 +62,7 @@ public final class ServerCommand implements Callable<Integer> {
             TransportType type = httpPort == null ? TransportType.STDIO : TransportType.HTTP;
             int port = httpPort == null ? 0 : httpPort;
             if (stdio) type = TransportType.STDIO;
-            cfg = new ServerConfig(type, port, null, expectedAudience);
+            cfg = new ServerConfig(type, port, null, expectedAudience, resourceMetadataUrl);
         }
 
         Transport t;
@@ -73,7 +76,8 @@ public final class ServerCommand implements Callable<Integer> {
                     BearerTokenAuthorizationStrategy authStrategy = new BearerTokenAuthorizationStrategy(tokenValidator);
                     authManager = new AuthorizationManager(List.of(authStrategy));
                 }
-                StreamableHttpTransport ht = new StreamableHttpTransport(cfg.port(), originValidator, authManager);
+                StreamableHttpTransport ht = new StreamableHttpTransport(
+                        cfg.port(), originValidator, authManager, cfg.resourceMetadataUrl());
                 if (verbose) System.err.println("Listening on http://127.0.0.1:" + ht.port());
                 t = ht;
             }
