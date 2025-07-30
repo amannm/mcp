@@ -39,7 +39,6 @@ import com.amannmalik.mcp.ping.PingResponse;
 import com.amannmalik.mcp.prompts.PromptsListener;
 import com.amannmalik.mcp.security.RateLimiter;
 import com.amannmalik.mcp.security.SamplingAccessPolicy;
-import com.amannmalik.mcp.transport.StreamableHttpClientTransport;
 import com.amannmalik.mcp.server.logging.LoggingCodec;
 import com.amannmalik.mcp.server.logging.LoggingLevel;
 import com.amannmalik.mcp.server.logging.LoggingListener;
@@ -47,10 +46,12 @@ import com.amannmalik.mcp.server.logging.SetLevelRequest;
 import com.amannmalik.mcp.server.resources.ResourceListListener;
 import com.amannmalik.mcp.server.tools.ToolCodec;
 import com.amannmalik.mcp.server.tools.ToolListListener;
+import com.amannmalik.mcp.transport.StreamableHttpClientTransport;
 import com.amannmalik.mcp.transport.Transport;
 import com.amannmalik.mcp.util.CancellationCodec;
 import com.amannmalik.mcp.util.CancellationTracker;
 import com.amannmalik.mcp.util.CancelledNotification;
+import com.amannmalik.mcp.util.CloseUtil;
 import com.amannmalik.mcp.util.ProgressCodec;
 import com.amannmalik.mcp.util.ProgressListener;
 import com.amannmalik.mcp.util.ProgressNotification;
@@ -64,10 +65,10 @@ import jakarta.json.Json;
 import jakarta.json.JsonObject;
 
 import java.io.IOException;
+import java.util.EnumMap;
 import java.util.EnumSet;
 import java.util.Map;
 import java.util.Set;
-import java.util.EnumMap;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
@@ -303,7 +304,7 @@ public final class McpClient implements AutoCloseable {
         }
         transport.close();
         if (rootsSubscription != null) {
-            rootsSubscription.close();
+            CloseUtil.closeQuietly(rootsSubscription);
             rootsSubscription = null;
         }
         if (reader != null) {

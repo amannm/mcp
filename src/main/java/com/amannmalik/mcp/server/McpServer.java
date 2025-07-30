@@ -92,6 +92,7 @@ import com.amannmalik.mcp.util.CancellationCodec;
 import com.amannmalik.mcp.util.CancellationTracker;
 import com.amannmalik.mcp.util.CancelledNotification;
 import com.amannmalik.mcp.util.Pagination;
+import com.amannmalik.mcp.util.CloseUtil;
 import com.amannmalik.mcp.util.ProgressCodec;
 import com.amannmalik.mcp.util.ProgressNotification;
 import com.amannmalik.mcp.util.ProgressToken;
@@ -112,9 +113,9 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.EnumSet;
-import java.util.Optional;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
@@ -366,8 +367,7 @@ public final class McpServer implements AutoCloseable {
                     }
                 });
             } catch (IllegalArgumentException e) {
-                send(new JsonRpcError(req.id(), new JsonRpcError.ErrorDetail(
-                        JsonRpcErrorCode.INVALID_PARAMS.code(), e.getMessage(), null)));
+                send(invalidParams(req, e));
                 return;
             }
 
@@ -380,8 +380,7 @@ public final class McpServer implements AutoCloseable {
             try {
                 resp = handler.handle(req);
             } catch (IllegalArgumentException e) {
-                send(new JsonRpcError(req.id(), new JsonRpcError.ErrorDetail(
-                        JsonRpcErrorCode.INVALID_PARAMS.code(), e.getMessage(), null)));
+                send(invalidParams(req, e));
                 return;
             } catch (Exception e) {
                 send(new JsonRpcError(req.id(), new JsonRpcError.ErrorDetail(
@@ -500,6 +499,19 @@ public final class McpServer implements AutoCloseable {
         return false;
     }
 
+    private JsonRpcError invalidParams(JsonRpcRequest req, String message) {
+        return new JsonRpcError(req.id(), new JsonRpcError.ErrorDetail(
+                JsonRpcErrorCode.INVALID_PARAMS.code(), message, null));
+    }
+
+    private JsonRpcError invalidParams(JsonRpcRequest req, IllegalArgumentException e) {
+        return invalidParams(req, e.getMessage());
+    }
+
+    private static String sanitizeCursor(String cursor) {
+        return cursor == null ? null : InputSanitizer.requireClean(cursor);
+    }
+
     private void cancelled(JsonRpcNotification note) {
         CancelledNotification cn = CancellationCodec.toCancelledNotification(note.params());
         cancellationTracker.cancel(cn.requestId(), cn.reason());
@@ -533,10 +545,9 @@ public final class McpServer implements AutoCloseable {
         String cursor = lr.cursor();
         if (cursor != null) {
             try {
-                cursor = InputSanitizer.requireClean(cursor);
+                cursor = sanitizeCursor(cursor);
             } catch (IllegalArgumentException e) {
-                return new JsonRpcError(req.id(), new JsonRpcError.ErrorDetail(
-                        JsonRpcErrorCode.INVALID_PARAMS.code(), e.getMessage(), null));
+                return invalidParams(req, e);
             }
         }
 
@@ -544,8 +555,7 @@ public final class McpServer implements AutoCloseable {
         try {
             list = resources.list(cursor);
         } catch (IllegalArgumentException e) {
-            return new JsonRpcError(req.id(), new JsonRpcError.ErrorDetail(
-                    JsonRpcErrorCode.INVALID_PARAMS.code(), e.getMessage(), null));
+            return invalidParams(req, e);
         }
 
         List<Resource> filteredResources = new ArrayList<>();
@@ -566,8 +576,7 @@ public final class McpServer implements AutoCloseable {
         try {
             rrr = ResourcesCodec.toReadResourceRequest(req.params());
         } catch (IllegalArgumentException e) {
-            return new JsonRpcError(req.id(), new JsonRpcError.ErrorDetail(
-                    JsonRpcErrorCode.INVALID_PARAMS.code(), e.getMessage(), null));
+            return invalidParams(req, e);
         }
         String uri = rrr.uri();
         if (!withinRoots(uri)) {
@@ -593,17 +602,15 @@ public final class McpServer implements AutoCloseable {
         try {
             request = ResourcesCodec.toListResourceTemplatesRequest(req.params());
         } catch (IllegalArgumentException e) {
-            return new JsonRpcError(req.id(), new JsonRpcError.ErrorDetail(
-                    JsonRpcErrorCode.INVALID_PARAMS.code(), e.getMessage(), null));
+            return invalidParams(req, e);
         }
 
         String cursor = request.cursor();
         if (cursor != null) {
             try {
-                cursor = InputSanitizer.requireClean(cursor);
+                cursor = sanitizeCursor(cursor);
             } catch (IllegalArgumentException e) {
-                return new JsonRpcError(req.id(), new JsonRpcError.ErrorDetail(
-                        JsonRpcErrorCode.INVALID_PARAMS.code(), e.getMessage(), null));
+                return invalidParams(req, e);
             }
         }
 
@@ -611,8 +618,7 @@ public final class McpServer implements AutoCloseable {
         try {
             page = resources.listTemplates(cursor);
         } catch (IllegalArgumentException e) {
-            return new JsonRpcError(req.id(), new JsonRpcError.ErrorDetail(
-                    JsonRpcErrorCode.INVALID_PARAMS.code(), e.getMessage(), null));
+            return invalidParams(req, e);
         }
 
         List<ResourceTemplate> filteredTemplates = new ArrayList<>();
@@ -633,8 +639,7 @@ public final class McpServer implements AutoCloseable {
         try {
             sr = ResourcesCodec.toSubscribeRequest(req.params());
         } catch (IllegalArgumentException e) {
-            return new JsonRpcError(req.id(), new JsonRpcError.ErrorDetail(
-                    JsonRpcErrorCode.INVALID_PARAMS.code(), e.getMessage(), null));
+            return invalidParams(req, e);
         }
         String uri = sr.uri();
         if (!withinRoots(uri)) {
@@ -680,8 +685,7 @@ public final class McpServer implements AutoCloseable {
         try {
             ur = ResourcesCodec.toUnsubscribeRequest(req.params());
         } catch (IllegalArgumentException e) {
-            return new JsonRpcError(req.id(), new JsonRpcError.ErrorDetail(
-                    JsonRpcErrorCode.INVALID_PARAMS.code(), e.getMessage(), null));
+            return invalidParams(req, e);
         }
         String uri = ur.uri();
         if (!withinRoots(uri)) {
@@ -704,18 +708,16 @@ public final class McpServer implements AutoCloseable {
         String cursor = ltr.cursor();
         if (cursor != null) {
             try {
-                cursor = InputSanitizer.requireClean(cursor);
+                cursor = sanitizeCursor(cursor);
             } catch (IllegalArgumentException e) {
-                return new JsonRpcError(req.id(), new JsonRpcError.ErrorDetail(
-                        JsonRpcErrorCode.INVALID_PARAMS.code(), e.getMessage(), null));
+                return invalidParams(req, e);
             }
         }
         Pagination.Page<Tool> page;
         try {
             page = tools.list(cursor);
         } catch (IllegalArgumentException e) {
-            return new JsonRpcError(req.id(), new JsonRpcError.ErrorDetail(
-                    JsonRpcErrorCode.INVALID_PARAMS.code(), e.getMessage(), null));
+            return invalidParams(req, e);
         }
         JsonObject result = ToolCodec.toJsonObject(page);
         return new JsonRpcResponse(req.id(), result);
@@ -727,8 +729,7 @@ public final class McpServer implements AutoCloseable {
         try {
             callRequest = ToolCodec.toCallToolRequest(req.params());
         } catch (IllegalArgumentException e) {
-            return new JsonRpcError(req.id(), new JsonRpcError.ErrorDetail(
-                    JsonRpcErrorCode.INVALID_PARAMS.code(), e.getMessage(), null));
+            return invalidParams(req, e);
         }
         try {
             toolLimiter.requireAllowance(callRequest.name());
@@ -746,7 +747,7 @@ public final class McpServer implements AutoCloseable {
             ToolResult result = tools.call(callRequest.name(), callRequest.arguments());
             return new JsonRpcResponse(req.id(), ToolCodec.toJsonObject(result));
         } catch (IllegalArgumentException e) {
-            Optional<Tool> tool = findTool(callRequest.name());
+            Optional<Tool> tool = tools == null ? Optional.empty() : tools.find(callRequest.name());
             if (tool.isPresent() && lifecycle.negotiatedClientCapabilities().contains(ClientCapability.ELICITATION)) {
                 try {
                     ElicitRequest er = new ElicitRequest(
@@ -758,15 +759,13 @@ public final class McpServer implements AutoCloseable {
                         ToolResult result = tools.call(callRequest.name(), res.content());
                         return new JsonRpcResponse(req.id(), ToolCodec.toJsonObject(result));
                     }
-                    return new JsonRpcError(req.id(), new JsonRpcError.ErrorDetail(
-                            JsonRpcErrorCode.INVALID_PARAMS.code(), "Tool invocation cancelled", null));
+                    return invalidParams(req, "Tool invocation cancelled");
                 } catch (Exception ex) {
                     return new JsonRpcError(req.id(), new JsonRpcError.ErrorDetail(
                             JsonRpcErrorCode.INTERNAL_ERROR.code(), ex.getMessage(), null));
                 }
             }
-            return new JsonRpcError(req.id(), new JsonRpcError.ErrorDetail(
-                    JsonRpcErrorCode.INVALID_PARAMS.code(), e.getMessage(), null));
+            return invalidParams(req, e);
         }
     }
 
@@ -776,18 +775,16 @@ public final class McpServer implements AutoCloseable {
         String cursor = lpr.cursor();
         if (cursor != null) {
             try {
-                cursor = InputSanitizer.requireClean(cursor);
+                cursor = sanitizeCursor(cursor);
             } catch (IllegalArgumentException e) {
-                return new JsonRpcError(req.id(), new JsonRpcError.ErrorDetail(
-                        JsonRpcErrorCode.INVALID_PARAMS.code(), e.getMessage(), null));
+                return invalidParams(req, e);
             }
         }
         Pagination.Page<Prompt> page;
         try {
             page = prompts.list(cursor);
         } catch (IllegalArgumentException e) {
-            return new JsonRpcError(req.id(), new JsonRpcError.ErrorDetail(
-                    JsonRpcErrorCode.INVALID_PARAMS.code(), e.getMessage(), null));
+            return invalidParams(req, e);
         }
         JsonObject result = PromptCodec.toJsonObject(page);
         return new JsonRpcResponse(req.id(), result);
@@ -799,16 +796,14 @@ public final class McpServer implements AutoCloseable {
         try {
             getRequest = PromptCodec.toGetPromptRequest(req.params());
         } catch (IllegalArgumentException e) {
-            return new JsonRpcError(req.id(), new JsonRpcError.ErrorDetail(
-                    JsonRpcErrorCode.INVALID_PARAMS.code(), e.getMessage(), null));
+            return invalidParams(req, e);
         }
         try {
             PromptInstance inst = prompts.get(getRequest.name(), getRequest.arguments());
             JsonObject result = PromptCodec.toJsonObject(inst);
             return new JsonRpcResponse(req.id(), result);
         } catch (IllegalArgumentException e) {
-            return new JsonRpcError(req.id(), new JsonRpcError.ErrorDetail(
-                    JsonRpcErrorCode.INVALID_PARAMS.code(), e.getMessage(), null));
+            return invalidParams(req, e);
         }
     }
 
@@ -816,15 +811,13 @@ public final class McpServer implements AutoCloseable {
         requireServerCapability(ServerCapability.LOGGING);
         JsonObject params = req.params();
         if (params == null) {
-            return new JsonRpcError(req.id(), new JsonRpcError.ErrorDetail(
-                    JsonRpcErrorCode.INVALID_PARAMS.code(), "Missing params", null));
+            return invalidParams(req, "Missing params");
         }
         try {
             logLevel = LoggingCodec.toSetLevelRequest(params).level();
             return new JsonRpcResponse(req.id(), JsonValue.EMPTY_JSON_OBJECT);
         } catch (IllegalArgumentException e) {
-            return new JsonRpcError(req.id(), new JsonRpcError.ErrorDetail(
-                    JsonRpcErrorCode.INVALID_PARAMS.code(), e.getMessage(), null));
+            return invalidParams(req, e);
         }
     }
 
@@ -850,8 +843,7 @@ public final class McpServer implements AutoCloseable {
         requireServerCapability(ServerCapability.COMPLETIONS);
         JsonObject params = req.params();
         if (params == null) {
-            return new JsonRpcError(req.id(), new JsonRpcError.ErrorDetail(
-                    JsonRpcErrorCode.INVALID_PARAMS.code(), "Missing params", null));
+            return invalidParams(req, "Missing params");
         }
         try {
             CompleteRequest request = CompletionCodec.toCompleteRequest(params);
@@ -864,8 +856,7 @@ public final class McpServer implements AutoCloseable {
             CompleteResult result = completions.complete(request);
             return new JsonRpcResponse(req.id(), CompletionCodec.toJsonObject(result));
         } catch (IllegalArgumentException e) {
-            return new JsonRpcError(req.id(), new JsonRpcError.ErrorDetail(
-                    JsonRpcErrorCode.INVALID_PARAMS.code(), e.getMessage(), null));
+            return invalidParams(req, e);
         } catch (Exception e) {
             return new JsonRpcError(req.id(), new JsonRpcError.ErrorDetail(
                     JsonRpcErrorCode.INTERNAL_ERROR.code(), e.getMessage(), null));
@@ -963,14 +954,6 @@ public final class McpServer implements AutoCloseable {
         throw new IOException(((JsonRpcError) msg).error().message());
     }
 
-    private Optional<Tool> findTool(String name) {
-        if (tools == null) return Optional.empty();
-        Pagination.Page<Tool> page = tools.list(null);
-        for (Tool t : page.items()) {
-            if (t.name().equals(name)) return Optional.of(t);
-        }
-        return Optional.empty();
-    }
 
     public CreateMessageResponse createMessage(CreateMessageRequest req) throws IOException {
         requireClientCapability(ClientCapability.SAMPLING);
@@ -985,16 +968,14 @@ public final class McpServer implements AutoCloseable {
     private JsonRpcMessage handleCreateMessage(JsonRpcRequest req) {
         JsonObject params = req.params();
         if (params == null) {
-            return new JsonRpcError(req.id(), new JsonRpcError.ErrorDetail(
-                    JsonRpcErrorCode.INVALID_PARAMS.code(), "Missing params", null));
+            return invalidParams(req, "Missing params");
         }
         try {
             CreateMessageRequest cmr = SamplingCodec.toCreateMessageRequest(params);
             CreateMessageResponse resp = createMessage(cmr);
             return new JsonRpcResponse(req.id(), SamplingCodec.toJsonObject(resp));
         } catch (IllegalArgumentException e) {
-            return new JsonRpcError(req.id(), new JsonRpcError.ErrorDetail(
-                    JsonRpcErrorCode.INVALID_PARAMS.code(), e.getMessage(), null));
+            return invalidParams(req, e);
         } catch (Exception e) {
             return new JsonRpcError(req.id(), new JsonRpcError.ErrorDetail(
                     JsonRpcErrorCode.INTERNAL_ERROR.code(), e.getMessage(), null));
@@ -1055,31 +1036,19 @@ public final class McpServer implements AutoCloseable {
     public void close() throws IOException {
         lifecycle.shutdown();
         for (ResourceSubscription sub : resourceSubscriptions.values()) {
-            try {
-                sub.close();
-            } catch (Exception ignore) {
-            }
+            CloseUtil.closeQuietly(sub);
         }
         resourceSubscriptions.clear();
         if (resourceListSubscription != null) {
-            try {
-                resourceListSubscription.close();
-            } catch (Exception ignore) {
-            }
+            CloseUtil.closeQuietly(resourceListSubscription);
             resourceListSubscription = null;
         }
         if (toolListSubscription != null) {
-            try {
-                toolListSubscription.close();
-            } catch (Exception ignore) {
-            }
+            CloseUtil.closeQuietly(toolListSubscription);
             toolListSubscription = null;
         }
         if (promptsSubscription != null) {
-            try {
-                promptsSubscription.close();
-            } catch (Exception ignore) {
-            }
+            CloseUtil.closeQuietly(promptsSubscription);
             promptsSubscription = null;
         }
         if (resources != null) resources.close();

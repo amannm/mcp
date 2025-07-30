@@ -14,7 +14,10 @@ public final class InMemoryPromptProvider implements PromptProvider {
     private final ListChangeSupport<PromptsListener> listChangeSupport = new ListChangeSupport<>();
 
     public void add(PromptTemplate template) {
-        templates.put(template.prompt().name(), template);
+        String name = template.prompt().name();
+        if (templates.putIfAbsent(name, template) != null) {
+            throw new IllegalArgumentException("duplicate prompt name: " + name);
+        }
         notifyListeners();
     }
 
@@ -30,7 +33,7 @@ public final class InMemoryPromptProvider implements PromptProvider {
             all.add(t.prompt());
         }
         all.sort(Comparator.comparing(Prompt::name));
-        return Pagination.page(all, cursor, 100);
+        return Pagination.page(all, cursor, Pagination.DEFAULT_PAGE_SIZE);
     }
 
     @Override

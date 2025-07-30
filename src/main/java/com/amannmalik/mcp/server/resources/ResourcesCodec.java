@@ -1,20 +1,28 @@
 package com.amannmalik.mcp.server.resources;
 
 import com.amannmalik.mcp.annotations.Annotations;
+
 import com.amannmalik.mcp.annotations.AnnotationsCodec;
+
+import com.amannmalik.mcp.prompts.Role;
+import com.amannmalik.mcp.util.EmptyJsonObjectCodec;
+
 import com.amannmalik.mcp.util.PaginatedRequest;
 import com.amannmalik.mcp.util.PaginatedResult;
 import com.amannmalik.mcp.util.PaginationCodec;
-import com.amannmalik.mcp.util.EmptyJsonObjectCodec;
 import jakarta.json.Json;
 import jakarta.json.JsonObject;
 import jakarta.json.JsonObjectBuilder;
 import jakarta.json.JsonString;
-import jakarta.json.JsonValue;
 
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.List;
+
+import java.time.Instant;
+import java.time.format.DateTimeParseException;
+import java.util.Base64;
+import java.util.EnumSet;
 import java.util.Set;
 import java.util.Set;
 
@@ -121,11 +129,6 @@ public final class ResourcesCodec {
         return EmptyJsonObjectCodec.toJsonObject();
     }
 
-    public static ResourceListChangedNotification toResourceListChangedNotification(JsonObject obj) {
-        EmptyJsonObjectCodec.requireEmpty(obj);
-        return new ResourceListChangedNotification();
-    }
-
     public static JsonObject toJsonObject(ResourceUpdatedNotification n) {
         if (n == null) throw new IllegalArgumentException("notification required");
         JsonObjectBuilder b = Json.createObjectBuilder()
@@ -181,27 +184,6 @@ public final class ResourcesCodec {
         return Json.createObjectBuilder().add("contents", arr.build()).build();
     }
 
-    public static ReadResourceResult toReadResourceResult(JsonObject obj) {
-        var arr = obj.getJsonArray("contents");
-        if (arr == null) throw new IllegalArgumentException("contents required");
-        List<ResourceBlock> list = new ArrayList<>();
-        arr.forEach(v -> list.add(toResourceBlock(v.asJsonObject())));
-        return new ReadResourceResult(list);
-    }
-
-    public static ResourceUpdatedNotification toResourceUpdatedNotification(JsonObject obj) {
-        if (obj == null || !obj.containsKey("uri")) {
-            throw new IllegalArgumentException("uri required");
-        }
-        for (String key : obj.keySet()) {
-            if (!Set.of("uri", "title").contains(key)) {
-                throw new IllegalArgumentException("unexpected field: " + key);
-            }
-        }
-        return new ResourceUpdatedNotification(obj.getString("uri"), obj.getString("title", null));
-    }
-
-
     public static JsonObject toJsonObject(ListResourcesResult result) {
         if (result == null) throw new IllegalArgumentException("result required");
         var arr = Json.createArrayBuilder();
@@ -210,16 +192,6 @@ public final class ResourcesCodec {
         PaginationCodec.toJsonObject(new PaginatedResult(result.nextCursor()))
                 .forEach(b::add);
         return b.build();
-    }
-
-    public static ListResourcesResult toListResourcesResult(JsonObject obj) {
-        if (obj == null) throw new IllegalArgumentException("object required");
-        var arr = obj.getJsonArray("resources");
-        if (arr == null) throw new IllegalArgumentException("resources required");
-        List<Resource> resources = new ArrayList<>();
-        arr.forEach(v -> resources.add(toResource(v.asJsonObject())));
-        String cursor = PaginationCodec.toPaginatedResult(obj).nextCursor();
-        return new ListResourcesResult(resources, cursor);
     }
 
     public static JsonObject toJsonObject(ListResourcesRequest req) {
@@ -252,13 +224,4 @@ public final class ResourcesCodec {
         return b.build();
     }
 
-    public static ListResourceTemplatesResult toListResourceTemplatesResult(JsonObject obj) {
-        if (obj == null) throw new IllegalArgumentException("object required");
-        var arr = obj.getJsonArray("resourceTemplates");
-        if (arr == null) throw new IllegalArgumentException("resourceTemplates required");
-        List<ResourceTemplate> templates = new ArrayList<>();
-        arr.forEach(v -> templates.add(toResourceTemplate(v.asJsonObject())));
-        String cursor = PaginationCodec.toPaginatedResult(obj).nextCursor();
-        return new ListResourceTemplatesResult(templates, cursor);
-    }
 }

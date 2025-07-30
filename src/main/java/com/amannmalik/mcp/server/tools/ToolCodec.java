@@ -1,10 +1,10 @@
 package com.amannmalik.mcp.server.tools;
 
+import com.amannmalik.mcp.util.EmptyJsonObjectCodec;
 import com.amannmalik.mcp.util.PaginatedRequest;
 import com.amannmalik.mcp.util.PaginatedResult;
 import com.amannmalik.mcp.util.Pagination;
 import com.amannmalik.mcp.util.PaginationCodec;
-import com.amannmalik.mcp.util.EmptyJsonObjectCodec;
 import jakarta.json.Json;
 import jakarta.json.JsonArray;
 import jakarta.json.JsonArrayBuilder;
