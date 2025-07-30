@@ -27,9 +27,17 @@ public final class StreamableHttpClientTransport implements Transport {
     private final BlockingQueue<JsonObject> incoming = new LinkedBlockingQueue<>();
     private final Set<SseReader> streams = ConcurrentHashMap.newKeySet();
     private volatile String sessionId;
+    private volatile String protocolVersion = ProtocolLifecycle.SUPPORTED_VERSION;
 
     public StreamableHttpClientTransport(URI endpoint) {
         this.endpoint = endpoint;
+    }
+
+    public void setProtocolVersion(String version) {
+        if (version == null || version.isBlank()) {
+            throw new IllegalArgumentException("version required");
+        }
+        this.protocolVersion = version;
     }
 
     @Override
@@ -37,7 +45,7 @@ public final class StreamableHttpClientTransport implements Transport {
         HttpRequest.Builder builder = HttpRequest.newBuilder(endpoint)
                 .header("Accept", "application/json, text/event-stream")
                 .header("Content-Type", "application/json")
-                .header("MCP-Protocol-Version", ProtocolLifecycle.SUPPORTED_VERSION);
+                .header("MCP-Protocol-Version", protocolVersion);
         Optional.ofNullable(sessionId).ifPresent(id -> builder.header("Mcp-Session-Id", id));
         HttpRequest request = builder.POST(HttpRequest.BodyPublishers.ofString(message.toString())).build();
         HttpResponse<InputStream> response;
@@ -87,7 +95,7 @@ public final class StreamableHttpClientTransport implements Transport {
         if (sessionId != null) {
             HttpRequest.Builder builder = HttpRequest.newBuilder(endpoint)
                     .header("Mcp-Session-Id", sessionId)
-                    .header("MCP-Protocol-Version", ProtocolLifecycle.SUPPORTED_VERSION)
+                    .header("MCP-Protocol-Version", protocolVersion)
                     .DELETE();
             try {
                 client.send(builder.build(), HttpResponse.BodyHandlers.discarding());
