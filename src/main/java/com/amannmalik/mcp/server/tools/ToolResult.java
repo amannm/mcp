@@ -6,6 +6,7 @@ import com.amannmalik.mcp.server.resources.ResourceAnnotations;
 import com.amannmalik.mcp.server.resources.ResourceBlock;
 import com.amannmalik.mcp.server.resources.ResourcesCodec;
 import com.amannmalik.mcp.validation.InputSanitizer;
+import com.amannmalik.mcp.validation.MetaValidator;
 import jakarta.json.Json;
 import jakarta.json.JsonArray;
 import jakarta.json.JsonArrayBuilder;
@@ -66,7 +67,10 @@ public record ToolResult(JsonArray content,
         if (obj.containsKey("annotations")) {
             result.add("annotations", ResourcesCodec.toJsonObject(toAnnotations(obj.getJsonObject("annotations"))));
         }
-        if (obj.containsKey("_meta")) result.add("_meta", obj.getJsonObject("_meta"));
+        if (obj.containsKey("_meta")) {
+            MetaValidator.requireValid(obj.getJsonObject("_meta"));
+            result.add("_meta", obj.getJsonObject("_meta"));
+        }
         return result.build();
     }
 
@@ -79,7 +83,10 @@ public record ToolResult(JsonArray content,
         if (obj.containsKey("annotations")) {
             result.add("annotations", ResourcesCodec.toJsonObject(toAnnotations(obj.getJsonObject("annotations"))));
         }
-        if (obj.containsKey("_meta")) result.add("_meta", obj.getJsonObject("_meta"));
+        if (obj.containsKey("_meta")) {
+            MetaValidator.requireValid(obj.getJsonObject("_meta"));
+            result.add("_meta", obj.getJsonObject("_meta"));
+        }
         return result.build();
     }
 
@@ -92,7 +99,10 @@ public record ToolResult(JsonArray content,
         if (obj.containsKey("annotations")) {
             result.add("annotations", ResourcesCodec.toJsonObject(toAnnotations(obj.getJsonObject("annotations"))));
         }
-        if (obj.containsKey("_meta")) result.add("_meta", obj.getJsonObject("_meta"));
+        if (obj.containsKey("_meta")) {
+            MetaValidator.requireValid(obj.getJsonObject("_meta"));
+            result.add("_meta", obj.getJsonObject("_meta"));
+        }
         return result.build();
     }
 
@@ -101,7 +111,10 @@ public record ToolResult(JsonArray content,
         JsonObject base = ResourcesCodec.toJsonObject(r);
         JsonObjectBuilder result = Json.createObjectBuilder(base)
                 .add("type", "resource_link");
-        if (obj.containsKey("_meta")) result.add("_meta", obj.getJsonObject("_meta"));
+        if (obj.containsKey("_meta")) {
+            MetaValidator.requireValid(obj.getJsonObject("_meta"));
+            result.add("_meta", obj.getJsonObject("_meta"));
+        }
         return result.build();
     }
 
@@ -113,7 +126,10 @@ public record ToolResult(JsonArray content,
                 .add("type", "resource")
                 .add("resource", ResourcesCodec.toJsonObject(block));
         if (obj.containsKey("annotations")) result.add("annotations", obj.getJsonObject("annotations"));
-        if (obj.containsKey("_meta")) result.add("_meta", obj.getJsonObject("_meta"));
+        if (obj.containsKey("_meta")) {
+            MetaValidator.requireValid(obj.getJsonObject("_meta"));
+            result.add("_meta", obj.getJsonObject("_meta"));
+        }
         return result.build();
     }
 
