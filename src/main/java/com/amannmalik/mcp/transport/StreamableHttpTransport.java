@@ -7,6 +7,7 @@ import com.amannmalik.mcp.jsonrpc.JsonRpcCodec;
 import com.amannmalik.mcp.jsonrpc.JsonRpcError;
 import com.amannmalik.mcp.jsonrpc.JsonRpcErrorCode;
 import com.amannmalik.mcp.jsonrpc.RequestId;
+import com.amannmalik.mcp.transport.TransportHeaders;
 import com.amannmalik.mcp.security.OriginValidator;
 import jakarta.json.Json;
 import jakarta.json.JsonObject;
@@ -52,7 +53,7 @@ public final class StreamableHttpTransport implements Transport {
                     .add("urn:example:authorization-server"))
             .build();
 
-    private static final String PROTOCOL_HEADER = "MCP-Protocol-Version";
+    private static final String PROTOCOL_HEADER = TransportHeaders.PROTOCOL_VERSION;
     // Default to the previous protocol revision when no version header is
     // present, as recommended for backwards compatibility.
     private static final String COMPATIBILITY_VERSION = "2025-03-26";
@@ -240,7 +241,7 @@ public final class StreamableHttpTransport implements Transport {
 
             String session = sessionId.get();
             String last = lastSessionId.get();
-            String header = req.getHeader("Mcp-Session-Id");
+            String header = req.getHeader(TransportHeaders.SESSION_ID);
             if (header != null && !isVisibleAscii(header)) {
                 resp.sendError(HttpServletResponse.SC_BAD_REQUEST);
                 return;
@@ -260,7 +261,7 @@ public final class StreamableHttpTransport implements Transport {
                 sessionOwner.set(req.getRemoteAddr());
                 sessionPrincipal.set(principal);
                 lastSessionId.set(null);
-                resp.setHeader("Mcp-Session-Id", session);
+                resp.setHeader(TransportHeaders.SESSION_ID, session);
             } else if (session == null) {
                 if (header != null && header.equals(last)) {
                     resp.sendError(HttpServletResponse.SC_NOT_FOUND);
@@ -436,7 +437,7 @@ public final class StreamableHttpTransport implements Transport {
             }
             String session = sessionId.get();
             String last = lastSessionId.get();
-            String header = req.getHeader("Mcp-Session-Id");
+            String header = req.getHeader(TransportHeaders.SESSION_ID);
             if (header != null && !isVisibleAscii(header)) {
                 resp.sendError(HttpServletResponse.SC_BAD_REQUEST);
                 return;
@@ -564,7 +565,7 @@ public final class StreamableHttpTransport implements Transport {
                 return;
             }
             String session = sessionId.get();
-            String header = req.getHeader("Mcp-Session-Id");
+            String header = req.getHeader(TransportHeaders.SESSION_ID);
             if (header != null && !isVisibleAscii(header)) {
                 resp.sendError(HttpServletResponse.SC_BAD_REQUEST);
                 return;

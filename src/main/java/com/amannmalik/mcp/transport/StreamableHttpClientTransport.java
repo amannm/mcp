@@ -1,6 +1,7 @@
 package com.amannmalik.mcp.transport;
 
 import com.amannmalik.mcp.lifecycle.ProtocolLifecycle;
+import com.amannmalik.mcp.transport.TransportHeaders;
 import jakarta.json.Json;
 import jakarta.json.JsonObject;
 import jakarta.json.JsonReader;
@@ -38,8 +39,8 @@ public final class StreamableHttpClientTransport implements Transport {
         HttpRequest.Builder builder = HttpRequest.newBuilder(endpoint)
                 .header("Accept", "application/json, text/event-stream")
                 .header("Content-Type", "application/json")
-                .header("MCP-Protocol-Version", protocolVersion);
-        Optional.ofNullable(sessionId).ifPresent(id -> builder.header("Mcp-Session-Id", id));
+                .header(TransportHeaders.PROTOCOL_VERSION, protocolVersion);
+        Optional.ofNullable(sessionId).ifPresent(id -> builder.header(TransportHeaders.SESSION_ID, id));
         HttpRequest request = builder.POST(HttpRequest.BodyPublishers.ofString(message.toString())).build();
         HttpResponse<InputStream> response;
         try {
@@ -48,9 +49,9 @@ public final class StreamableHttpClientTransport implements Transport {
             Thread.currentThread().interrupt();
             throw new IOException(e);
         }
-        sessionId = response.headers().firstValue("Mcp-Session-Id").orElse(sessionId);
+        sessionId = response.headers().firstValue(TransportHeaders.SESSION_ID).orElse(sessionId);
         protocolVersion = response.headers()
-                .firstValue("MCP-Protocol-Version")
+                .firstValue(TransportHeaders.PROTOCOL_VERSION)
                 .orElse(protocolVersion);
         int status = response.statusCode();
         String ct = response.headers().firstValue("Content-Type").orElse("");
@@ -90,8 +91,8 @@ public final class StreamableHttpClientTransport implements Transport {
     public void close() throws IOException {
         if (sessionId != null) {
             HttpRequest.Builder builder = HttpRequest.newBuilder(endpoint)
-                    .header("Mcp-Session-Id", sessionId)
-                    .header("MCP-Protocol-Version", protocolVersion)
+                    .header(TransportHeaders.SESSION_ID, sessionId)
+                    .header(TransportHeaders.PROTOCOL_VERSION, protocolVersion)
                     .DELETE();
             try {
                 client.send(builder.build(), HttpResponse.BodyHandlers.discarding());
