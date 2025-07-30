@@ -5,7 +5,9 @@ import com.amannmalik.mcp.annotations.AnnotationsCodec;
 import com.amannmalik.mcp.util.EmptyJsonObjectCodec;
 import com.amannmalik.mcp.util.PaginatedRequest;
 import com.amannmalik.mcp.util.PaginatedResult;
+import com.amannmalik.mcp.util.Pagination;
 import com.amannmalik.mcp.util.PaginationCodec;
+import com.amannmalik.mcp.util.PaginationJson;
 import jakarta.json.Json;
 import jakarta.json.JsonObject;
 import jakarta.json.JsonObjectBuilder;
@@ -171,12 +173,10 @@ public final class ResourcesCodec {
 
     public static JsonObject toJsonObject(ListResourcesResult result) {
         if (result == null) throw new IllegalArgumentException("result required");
-        var arr = Json.createArrayBuilder();
-        result.resources().forEach(r -> arr.add(toJsonObject(r)));
-        JsonObjectBuilder b = Json.createObjectBuilder().add("resources", arr.build());
-        PaginationCodec.toJsonObject(new PaginatedResult(result.nextCursor()))
-                .forEach(b::add);
-        return b.build();
+        return PaginationJson.toJson(
+                "resources",
+                new Pagination.Page<>(result.resources(), result.nextCursor()),
+                ResourcesCodec::toJsonObject);
     }
 
     public static JsonObject toJsonObject(ListResourcesRequest req) {
@@ -201,12 +201,10 @@ public final class ResourcesCodec {
 
     public static JsonObject toJsonObject(ListResourceTemplatesResult result) {
         if (result == null) throw new IllegalArgumentException("result required");
-        var arr = Json.createArrayBuilder();
-        result.resourceTemplates().forEach(t -> arr.add(toJsonObject(t)));
-        JsonObjectBuilder b = Json.createObjectBuilder().add("resourceTemplates", arr.build());
-        PaginationCodec.toJsonObject(new PaginatedResult(result.nextCursor()))
-                .forEach(b::add);
-        return b.build();
+        return PaginationJson.toJson(
+                "resourceTemplates",
+                new Pagination.Page<>(result.resourceTemplates(), result.nextCursor()),
+                ResourcesCodec::toJsonObject);
     }
 
 }

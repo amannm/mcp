@@ -5,9 +5,9 @@ import com.amannmalik.mcp.util.PaginatedRequest;
 import com.amannmalik.mcp.util.PaginatedResult;
 import com.amannmalik.mcp.util.Pagination;
 import com.amannmalik.mcp.util.PaginationCodec;
+import com.amannmalik.mcp.util.PaginationJson;
 import jakarta.json.Json;
 import jakarta.json.JsonArray;
-import jakarta.json.JsonArrayBuilder;
 import jakarta.json.JsonObject;
 import jakarta.json.JsonObjectBuilder;
 import jakarta.json.JsonValue;
@@ -32,11 +32,7 @@ public final class ToolCodec {
     }
 
     public static JsonObject toJsonObject(Pagination.Page<Tool> page) {
-        JsonArrayBuilder arr = Json.createArrayBuilder();
-        page.items().forEach(t -> arr.add(toJsonObject(t)));
-        JsonObjectBuilder builder = Json.createObjectBuilder().add("tools", arr);
-        PaginationCodec.toJsonObject(new PaginatedResult(page.nextCursor())).forEach(builder::add);
-        return builder.build();
+        return PaginationJson.toJson("tools", page, ToolCodec::toJsonObject);
     }
 
     public static JsonObject toJsonObject(ListToolsRequest req) {
