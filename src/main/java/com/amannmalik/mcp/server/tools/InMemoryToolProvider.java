@@ -3,6 +3,8 @@ package com.amannmalik.mcp.server.tools;
 import com.amannmalik.mcp.util.ListChangeSupport;
 import com.amannmalik.mcp.util.Pagination;
 import com.amannmalik.mcp.validation.SchemaValidator;
+import jakarta.json.Json;
+import jakarta.json.JsonArrayBuilder;
 import jakarta.json.JsonObject;
 import jakarta.json.JsonValue;
 
@@ -44,6 +46,27 @@ public final class InMemoryToolProvider implements ToolProvider {
                 throw new IllegalStateException("structured result required");
             }
             SchemaValidator.validate(tool.outputSchema(), result.structuredContent());
+        }
+        if (result.structuredContent() != null) {
+            boolean hasText = false;
+            for (var v : result.content()) {
+                if (v.getValueType() == JsonValue.ValueType.OBJECT) {
+                    JsonObject o = v.asJsonObject();
+                    if ("text".equals(o.getString("type", null)) &&
+                            result.structuredContent().toString().equals(o.getString("text", null))) {
+                        hasText = true;
+                        break;
+                    }
+                }
+            }
+            if (!hasText) {
+                var b = Json.createArrayBuilder(result.content());
+                b.add(Json.createObjectBuilder()
+                        .add("type", "text")
+                        .add("text", result.structuredContent().toString())
+                        .build());
+                result = new ToolResult(b.build(), result.structuredContent(), result.isError(), result._meta());
+            }
         }
         return result;
     }
