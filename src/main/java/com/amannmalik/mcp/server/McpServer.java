@@ -99,6 +99,7 @@ import com.amannmalik.mcp.util.ProgressNotification;
 import com.amannmalik.mcp.util.ProgressToken;
 import com.amannmalik.mcp.util.ProgressUtil;
 import com.amannmalik.mcp.util.Timeouts;
+import com.amannmalik.mcp.util.RootChecker;
 import com.amannmalik.mcp.validation.InputSanitizer;
 import com.amannmalik.mcp.validation.SchemaValidator;
 import com.amannmalik.mcp.wire.NotificationMethod;
@@ -110,9 +111,6 @@ import jakarta.json.stream.JsonParsingException;
 
 import java.io.EOFException;
 import java.io.IOException;
-import java.net.URI;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.EnumMap;
 import java.util.EnumSet;
@@ -500,37 +498,7 @@ public final class McpServer implements AutoCloseable {
     }
 
     private boolean withinRoots(String uri) {
-        URI target;
-        try {
-            target = URI.create(uri);
-        } catch (IllegalArgumentException e) {
-            return false;
-        }
-        if (!"file".equalsIgnoreCase(target.getScheme())) {
-            return true;
-        }
-        if (roots.isEmpty()) return true;
-
-        Path targetPath;
-        try {
-            targetPath = Paths.get(target).normalize();
-        } catch (Exception e) {
-            return false;
-        }
-
-        for (Root r : roots) {
-            try {
-                URI base = URI.create(r.uri());
-                if ("file".equalsIgnoreCase(base.getScheme())) {
-                    Path basePath = Paths.get(base).normalize();
-                    if (targetPath.startsWith(basePath)) {
-                        return true;
-                    }
-                }
-            } catch (Exception ignore) {
-            }
-        }
-        return false;
+        return RootChecker.withinRoots(uri, roots);
     }
 
     private boolean canAccessResource(String uri) {
