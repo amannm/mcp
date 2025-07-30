@@ -88,7 +88,7 @@ public final class LifecycleCodec {
             server.add(c.name().toLowerCase(), b.build());
         }
         resp.capabilities().serverExperimental()
-                .forEach((k, v) -> server.add(k, v));
+                .forEach(server::add);
         var info = Json.createObjectBuilder()
                 .add("name", resp.serverInfo().name())
                 .add("version", resp.serverInfo().version());
