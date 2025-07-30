@@ -56,12 +56,12 @@ public final class ClientCommand implements Callable<Integer> {
                 verbose ? System.err::println : s -> {
                 });
         SamplingProvider samplingProvider = SamplingProviderFactory.createInteractive();
-        
+
         // Create roots provider with current working directory as default root
         String currentDir = System.getProperty("user.dir");
         InMemoryRootsProvider rootsProvider = new InMemoryRootsProvider(
                 List.of(new Root("file://" + currentDir, "Current Directory", null)));
-        
+
         McpClient client = new McpClient(
                 new ClientInfo("cli", "CLI", "0"),
                 EnumSet.of(ClientCapability.SAMPLING, ClientCapability.ROOTS),

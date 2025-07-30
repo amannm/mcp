@@ -112,11 +112,11 @@ class McpConformanceTest {
                     "endTurn",
                     null
             ));
-            
+
             // Create test roots provider with a test directory
             InMemoryRootsProvider rootsProvider = new InMemoryRootsProvider(
                     List.of(new Root("file:///tmp", "Test Root", null)));
-            
+
             McpClient client = new McpClient(
                     new ClientInfo("test-client", "Test Client", "1.0"),
                     EnumSet.allOf(ClientCapability.class),

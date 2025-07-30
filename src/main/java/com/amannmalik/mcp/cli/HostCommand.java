@@ -29,10 +29,10 @@ public final class HostCommand implements Callable<Integer> {
     @CommandLine.Option(names = {"-c", "--config"}, description = "Config file")
     private Path config;
 
-    private HostConfig resolved;
+    private final HostConfig resolved;
 
     @CommandLine.Option(names = {"-v", "--verbose"}, description = "Verbose logging")
-    private boolean verbose;
+    private final boolean verbose;
 
     @CommandLine.Option(names = "--client", description = "Client as id:command", split = ",")
     private List<String> clientSpecs;

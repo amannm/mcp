@@ -36,6 +36,7 @@ import com.amannmalik.mcp.ping.PingCodec;
 import com.amannmalik.mcp.ping.PingRequest;
 import com.amannmalik.mcp.prompts.GetPromptRequest;
 import com.amannmalik.mcp.prompts.InMemoryPromptProvider;
+import com.amannmalik.mcp.prompts.ListPromptsRequest;
 import com.amannmalik.mcp.prompts.Prompt;
 import com.amannmalik.mcp.prompts.PromptArgument;
 import com.amannmalik.mcp.prompts.PromptCodec;
@@ -47,7 +48,6 @@ import com.amannmalik.mcp.prompts.PromptProvider;
 import com.amannmalik.mcp.prompts.PromptTemplate;
 import com.amannmalik.mcp.prompts.PromptsSubscription;
 import com.amannmalik.mcp.prompts.Role;
-import com.amannmalik.mcp.prompts.ListPromptsRequest;
 import com.amannmalik.mcp.security.PrivacyBoundaryEnforcer;
 import com.amannmalik.mcp.security.RateLimiter;
 import com.amannmalik.mcp.security.ResourceAccessController;
@@ -61,15 +61,15 @@ import com.amannmalik.mcp.server.logging.LoggingCodec;
 import com.amannmalik.mcp.server.logging.LoggingLevel;
 import com.amannmalik.mcp.server.logging.LoggingMessageNotification;
 import com.amannmalik.mcp.server.resources.InMemoryResourceProvider;
+import com.amannmalik.mcp.server.resources.ListResourceTemplatesRequest;
+import com.amannmalik.mcp.server.resources.ListResourceTemplatesResult;
+import com.amannmalik.mcp.server.resources.ListResourcesRequest;
+import com.amannmalik.mcp.server.resources.ListResourcesResult;
 import com.amannmalik.mcp.server.resources.Resource;
 import com.amannmalik.mcp.server.resources.ResourceAnnotations;
 import com.amannmalik.mcp.server.resources.ResourceBlock;
 import com.amannmalik.mcp.server.resources.ResourceList;
 import com.amannmalik.mcp.server.resources.ResourceListSubscription;
-import com.amannmalik.mcp.server.resources.ListResourcesResult;
-import com.amannmalik.mcp.server.resources.ListResourcesRequest;
-import com.amannmalik.mcp.server.resources.ListResourceTemplatesRequest;
-import com.amannmalik.mcp.server.resources.ListResourceTemplatesResult;
 import com.amannmalik.mcp.server.resources.ResourceProvider;
 import com.amannmalik.mcp.server.resources.ResourceSubscription;
 import com.amannmalik.mcp.server.resources.ResourceTemplate;
@@ -80,18 +80,17 @@ import com.amannmalik.mcp.server.resources.SubscribeRequest;
 import com.amannmalik.mcp.server.resources.UnsubscribeRequest;
 import com.amannmalik.mcp.server.tools.CallToolRequest;
 import com.amannmalik.mcp.server.tools.InMemoryToolProvider;
+import com.amannmalik.mcp.server.tools.ListToolsRequest;
 import com.amannmalik.mcp.server.tools.Tool;
 import com.amannmalik.mcp.server.tools.ToolCodec;
 import com.amannmalik.mcp.server.tools.ToolListSubscription;
 import com.amannmalik.mcp.server.tools.ToolPage;
 import com.amannmalik.mcp.server.tools.ToolProvider;
 import com.amannmalik.mcp.server.tools.ToolResult;
-import com.amannmalik.mcp.server.tools.ListToolsRequest;
 import com.amannmalik.mcp.transport.Transport;
 import com.amannmalik.mcp.util.CancellationCodec;
 import com.amannmalik.mcp.util.CancellationTracker;
 import com.amannmalik.mcp.util.CancelledNotification;
-import com.amannmalik.mcp.util.PaginationCodec;
 import com.amannmalik.mcp.util.ProgressCodec;
 import com.amannmalik.mcp.util.ProgressNotification;
 import com.amannmalik.mcp.util.ProgressToken;
@@ -521,7 +520,7 @@ public final class McpServer implements AutoCloseable {
                         JsonRpcErrorCode.INVALID_PARAMS.code(), e.getMessage(), null));
             }
         }
-        
+
         ResourceList list;
         try {
             list = resources.list(cursor);
@@ -529,14 +528,14 @@ public final class McpServer implements AutoCloseable {
             return new JsonRpcError(req.id(), new JsonRpcError.ErrorDetail(
                     JsonRpcErrorCode.INVALID_PARAMS.code(), e.getMessage(), null));
         }
-        
+
         List<Resource> filteredResources = new java.util.ArrayList<>();
         for (Resource r : list.resources()) {
             if (allowed(r.annotations())) {
                 filteredResources.add(r);
             }
         }
-        
+
         ListResourcesResult result = new ListResourcesResult(filteredResources, list.nextCursor());
         JsonObject resultJson = ResourcesCodec.toJsonObject(result);
         return new JsonRpcResponse(req.id(), resultJson);
@@ -580,7 +579,7 @@ public final class McpServer implements AutoCloseable {
             return new JsonRpcError(req.id(), new JsonRpcError.ErrorDetail(
                     JsonRpcErrorCode.INVALID_PARAMS.code(), e.getMessage(), null));
         }
-        
+
         String cursor = request.cursor();
         if (cursor != null) {
             try {
@@ -590,7 +589,7 @@ public final class McpServer implements AutoCloseable {
                         JsonRpcErrorCode.INVALID_PARAMS.code(), e.getMessage(), null));
             }
         }
-        
+
         ResourceTemplatePage page;
         try {
             page = resources.listTemplates(cursor);
@@ -598,14 +597,14 @@ public final class McpServer implements AutoCloseable {
             return new JsonRpcError(req.id(), new JsonRpcError.ErrorDetail(
                     JsonRpcErrorCode.INVALID_PARAMS.code(), e.getMessage(), null));
         }
-        
+
         List<ResourceTemplate> filteredTemplates = new java.util.ArrayList<>();
         for (ResourceTemplate t : page.resourceTemplates()) {
             if (allowed(t.annotations())) {
                 filteredTemplates.add(t);
             }
         }
-        
+
         ListResourceTemplatesResult result = new ListResourceTemplatesResult(filteredTemplates, page.nextCursor());
         JsonObject resultJson = ResourcesCodec.toJsonObject(result);
         return new JsonRpcResponse(req.id(), resultJson);

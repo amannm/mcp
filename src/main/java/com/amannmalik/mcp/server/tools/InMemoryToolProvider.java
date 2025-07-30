@@ -60,7 +60,6 @@ public final class InMemoryToolProvider implements ToolProvider {
 
     public void addTool(Tool tool, Function<JsonObject, ToolResult> handler) {
         if (tool == null) throw new IllegalArgumentException("tool required");
-        // ensure each tool name is unique
         if (tools.stream().anyMatch(t -> t.name().equals(tool.name()))) {
             throw new IllegalArgumentException("Duplicate tool name: " + tool.name());
         }
