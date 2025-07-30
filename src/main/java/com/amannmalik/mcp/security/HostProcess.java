@@ -24,31 +24,36 @@ public final class HostProcess implements AutoCloseable {
     private final Principal principal;
     private final ToolAccessController toolAccess;
     private final PrivacyBoundaryEnforcer privacyBoundary;
+    private final SamplingAccessController samplingAccess;
 
-    private static ServerCapability capabilityForMethod(String method) {
-        if (method.startsWith("tools/")) return ServerCapability.TOOLS;
-        if (method.startsWith("resources/")) return ServerCapability.RESOURCES;
-        if (method.startsWith("prompts/")) return ServerCapability.PROMPTS;
-        if (method.startsWith("completion/")) return ServerCapability.COMPLETIONS;
-        if (method.startsWith("logging/")) return ServerCapability.LOGGING;
-        return null;
+    private static java.util.Optional<ServerCapability> capabilityForMethod(String method) {
+        if (method.startsWith("tools/")) return java.util.Optional.of(ServerCapability.TOOLS);
+        if (method.startsWith("resources/")) return java.util.Optional.of(ServerCapability.RESOURCES);
+        if (method.startsWith("prompts/")) return java.util.Optional.of(ServerCapability.PROMPTS);
+        if (method.startsWith("completion/")) return java.util.Optional.of(ServerCapability.COMPLETIONS);
+        if (method.startsWith("logging/")) return java.util.Optional.of(ServerCapability.LOGGING);
+        return java.util.Optional.empty();
     }
 
-    private static void requireCapability(McpClient client, ServerCapability cap) {
-        if (cap != null && !client.serverCapabilities().contains(cap)) {
-            throw new IllegalStateException("Server capability not supported: " + cap);
-        }
+    private static void requireCapability(McpClient client, java.util.Optional<ServerCapability> cap) {
+        cap.ifPresent(c -> {
+            if (!client.serverCapabilities().contains(c)) {
+                throw new IllegalStateException("Server capability not supported: " + c);
+            }
+        });
     }
 
     public HostProcess(SecurityPolicy policy,
                        ConsentManager consents,
                        ToolAccessController toolAccess,
                        PrivacyBoundaryEnforcer privacyBoundary,
+                       SamplingAccessController samplingAccess,
                        Principal principal) {
         this.policy = policy;
         this.consents = consents;
         this.toolAccess = toolAccess;
         this.privacyBoundary = privacyBoundary;
+        this.samplingAccess = samplingAccess;
         this.principal = principal;
     }
 
@@ -92,6 +97,14 @@ public final class HostProcess implements AutoCloseable {
         toolAccess.revoke(principal.id(), tool);
     }
 
+    public void allowSampling() {
+        samplingAccess.allow(principal.id());
+    }
+
+    public void revokeSampling() {
+        samplingAccess.revoke(principal.id());
+    }
+
     public void allowAudience(Role audience) {
         privacyBoundary.allow(principal.id(), audience);
     }
@@ -113,7 +126,7 @@ public final class HostProcess implements AutoCloseable {
     public JsonObject listTools(String clientId, String cursor) throws IOException {
         McpClient client = clients.get(clientId);
         if (client == null) throw new IllegalArgumentException("Unknown client: " + clientId);
-        requireCapability(client, ServerCapability.TOOLS);
+        requireCapability(client, java.util.Optional.of(ServerCapability.TOOLS));
         JsonObject params = cursor == null
                 ? Json.createObjectBuilder().build()
                 : Json.createObjectBuilder().add("cursor", cursor).build();
@@ -126,7 +139,7 @@ public final class HostProcess implements AutoCloseable {
     public JsonObject callTool(String clientId, String name, JsonObject args) throws IOException {
         McpClient client = clients.get(clientId);
         if (client == null) throw new IllegalArgumentException("Unknown client: " + clientId);
-        requireCapability(client, ServerCapability.TOOLS);
+        requireCapability(client, java.util.Optional.of(ServerCapability.TOOLS));
         toolAccess.requireAllowed(principal, name);
         JsonObject params = Json.createObjectBuilder()
                 .add("name", name)
