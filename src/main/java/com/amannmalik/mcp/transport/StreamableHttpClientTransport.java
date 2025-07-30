@@ -33,6 +33,13 @@ public final class StreamableHttpClientTransport implements Transport {
         this.endpoint = endpoint;
     }
 
+    public void setProtocolVersion(String version) {
+        if (version == null || version.isBlank()) {
+            throw new IllegalArgumentException("version required");
+        }
+        this.protocolVersion = version;
+    }
+
     @Override
     public void send(JsonObject message) throws IOException {
         HttpRequest.Builder builder = HttpRequest.newBuilder(endpoint)
