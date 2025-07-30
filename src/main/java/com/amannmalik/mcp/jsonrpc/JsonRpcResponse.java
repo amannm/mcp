@@ -7,6 +7,9 @@ public record JsonRpcResponse(RequestId id, JsonObject result) implements JsonRp
         if (id == null) {
             throw new IllegalArgumentException("id is required");
         }
+        if (result == null) {
+            throw new IllegalArgumentException("result is required");
+        }
     }
 
     @Override
