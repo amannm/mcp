@@ -334,15 +334,17 @@ public final class McpServer implements AutoCloseable {
         if (lifecycle.state() == LifecycleState.INIT &&
                 !"initialize".equals(req.method()) &&
                 !"ping".equals(req.method())) {
-            send(new JsonRpcError(req.id(), new JsonRpcError.ErrorDetail(
-                    NOT_INITIALIZED_CODE, "Server not initialized", null)));
+            send(JsonRpcError.of(req.id(),
+                    JsonRpcErrorCode.INTERNAL_ERROR,
+                    "Server not initialized",
+                    null));
             return;
         }
         var handler = requestHandlers.get(req.method());
         if (handler == null) {
-            send(new JsonRpcError(req.id(), new JsonRpcError.ErrorDetail(
-                    JsonRpcErrorCode.METHOD_NOT_FOUND.code(),
-                    "Unknown method: " + req.method(), null)));
+            send(JsonRpcError.of(req.id(),
+                    JsonRpcErrorCode.METHOD_NOT_FOUND,
+                    "Unknown method: " + req.method()));
             return;
         }
         Optional<ProgressToken> token = Optional.empty();
@@ -351,8 +353,10 @@ public final class McpServer implements AutoCloseable {
             try {
                 idTracker.register(req.id());
             } catch (IllegalArgumentException e) {
-                send(new JsonRpcError(req.id(), new JsonRpcError.ErrorDetail(
-                        JsonRpcErrorCode.INVALID_REQUEST.code(), e.getMessage(), null)));
+                send(JsonRpcError.of(
+                        req.id(),
+                        JsonRpcErrorCode.INVALID_REQUEST,
+                        e.getMessage()));
                 return;
             }
 
@@ -383,8 +387,10 @@ public final class McpServer implements AutoCloseable {
                 send(invalidParams(req, e));
                 return;
             } catch (Exception e) {
-                send(new JsonRpcError(req.id(), new JsonRpcError.ErrorDetail(
-                        JsonRpcErrorCode.INTERNAL_ERROR.code(), e.getMessage(), null)));
+                send(JsonRpcError.of(
+                        req.id(),
+                        JsonRpcErrorCode.INTERNAL_ERROR,
+                        e.getMessage()));
                 return;
             }
 
@@ -500,8 +506,7 @@ public final class McpServer implements AutoCloseable {
     }
 
     private JsonRpcError invalidParams(JsonRpcRequest req, String message) {
-        return new JsonRpcError(req.id(), new JsonRpcError.ErrorDetail(
-                JsonRpcErrorCode.INVALID_PARAMS.code(), message, null));
+        return JsonRpcError.of(req.id(), JsonRpcErrorCode.INVALID_PARAMS, message);
     }
 
     private JsonRpcError invalidParams(JsonRpcRequest req, IllegalArgumentException e) {
@@ -580,17 +585,15 @@ public final class McpServer implements AutoCloseable {
         }
         String uri = rrr.uri();
         if (!withinRoots(uri)) {
-            return new JsonRpcError(req.id(), new JsonRpcError.ErrorDetail(
-                    JsonRpcErrorCode.INTERNAL_ERROR.code(), "Access denied", null));
+            return JsonRpcError.of(req.id(), JsonRpcErrorCode.INTERNAL_ERROR, "Access denied");
         }
         ResourceBlock block = resources.read(uri);
         if (block == null) {
-            return new JsonRpcError(req.id(), new JsonRpcError.ErrorDetail(
-                    -32002, "Resource not found", Json.createObjectBuilder().add("uri", uri).build()));
+            return JsonRpcError.of(req.id(), -32002, "Resource not found",
+                    Json.createObjectBuilder().add("uri", uri).build());
         }
         if (!allowed(block.annotations())) {
-            return new JsonRpcError(req.id(), new JsonRpcError.ErrorDetail(
-                    JsonRpcErrorCode.INTERNAL_ERROR.code(), "Access denied", null));
+            return JsonRpcError.of(req.id(), JsonRpcErrorCode.INTERNAL_ERROR, "Access denied");
         }
         ReadResourceResult result = new ReadResourceResult(List.of(block));
         return new JsonRpcResponse(req.id(), ResourcesCodec.toJsonObject(result));
@@ -643,17 +646,15 @@ public final class McpServer implements AutoCloseable {
         }
         String uri = sr.uri();
         if (!withinRoots(uri)) {
-            return new JsonRpcError(req.id(), new JsonRpcError.ErrorDetail(
-                    JsonRpcErrorCode.INTERNAL_ERROR.code(), "Access denied", null));
+            return JsonRpcError.of(req.id(), JsonRpcErrorCode.INTERNAL_ERROR, "Access denied");
         }
         ResourceBlock existing = resources.read(uri);
         if (existing == null) {
-            return new JsonRpcError(req.id(), new JsonRpcError.ErrorDetail(
-                    -32002, "Resource not found", Json.createObjectBuilder().add("uri", uri).build()));
+            return JsonRpcError.of(req.id(), -32002, "Resource not found",
+                    Json.createObjectBuilder().add("uri", uri).build());
         }
         if (!allowed(existing.annotations())) {
-            return new JsonRpcError(req.id(), new JsonRpcError.ErrorDetail(
-                    JsonRpcErrorCode.INTERNAL_ERROR.code(), "Access denied", null));
+            return JsonRpcError.of(req.id(), JsonRpcErrorCode.INTERNAL_ERROR, "Access denied");
         }
         try {
             ResourceSubscription sub = resources.subscribe(uri, update -> {
@@ -673,8 +674,7 @@ public final class McpServer implements AutoCloseable {
                 }
             }
         } catch (Exception e) {
-            return new JsonRpcError(req.id(), new JsonRpcError.ErrorDetail(
-                    JsonRpcErrorCode.INTERNAL_ERROR.code(), e.getMessage(), null));
+            return JsonRpcError.of(req.id(), JsonRpcErrorCode.INTERNAL_ERROR, e.getMessage());
         }
         return new JsonRpcResponse(req.id(), JsonValue.EMPTY_JSON_OBJECT);
     }
@@ -689,8 +689,7 @@ public final class McpServer implements AutoCloseable {
         }
         String uri = ur.uri();
         if (!withinRoots(uri)) {
-            return new JsonRpcError(req.id(), new JsonRpcError.ErrorDetail(
-                    JsonRpcErrorCode.INTERNAL_ERROR.code(), "Access denied", null));
+            return JsonRpcError.of(req.id(), JsonRpcErrorCode.INTERNAL_ERROR, "Access denied");
         }
         ResourceSubscription sub = resourceSubscriptions.remove(uri);
         if (sub != null) {
@@ -734,14 +733,12 @@ public final class McpServer implements AutoCloseable {
         try {
             toolLimiter.requireAllowance(callRequest.name());
         } catch (SecurityException e) {
-            return new JsonRpcError(req.id(), new JsonRpcError.ErrorDetail(
-                    RATE_LIMIT_CODE, e.getMessage(), null));
+            return JsonRpcError.of(req.id(), RATE_LIMIT_CODE, e.getMessage());
         }
         try {
             toolAccess.requireAllowed(principal, callRequest.name());
         } catch (SecurityException e) {
-            return new JsonRpcError(req.id(), new JsonRpcError.ErrorDetail(
-                    JsonRpcErrorCode.INTERNAL_ERROR.code(), "Access denied", null));
+            return JsonRpcError.of(req.id(), JsonRpcErrorCode.INTERNAL_ERROR, "Access denied");
         }
         try {
             ToolResult result = tools.call(callRequest.name(), callRequest.arguments());
@@ -761,8 +758,7 @@ public final class McpServer implements AutoCloseable {
                     }
                     return invalidParams(req, "Tool invocation cancelled");
                 } catch (Exception ex) {
-                    return new JsonRpcError(req.id(), new JsonRpcError.ErrorDetail(
-                            JsonRpcErrorCode.INTERNAL_ERROR.code(), ex.getMessage(), null));
+                    return JsonRpcError.of(req.id(), JsonRpcErrorCode.INTERNAL_ERROR, ex.getMessage());
                 }
             }
             return invalidParams(req, e);
@@ -835,10 +831,7 @@ public final class McpServer implements AutoCloseable {
 
     private JsonRpcMessage complete(JsonRpcRequest req) {
         if (!lifecycle.serverCapabilities().contains(ServerCapability.COMPLETIONS)) {
-            return new JsonRpcError(req.id(), new JsonRpcError.ErrorDetail(
-                    JsonRpcErrorCode.METHOD_NOT_FOUND.code(),
-                    "Capability not supported",
-                    null));
+            return JsonRpcError.of(req.id(), JsonRpcErrorCode.METHOD_NOT_FOUND, "Capability not supported");
         }
         requireServerCapability(ServerCapability.COMPLETIONS);
         JsonObject params = req.params();
@@ -850,16 +843,14 @@ public final class McpServer implements AutoCloseable {
             try {
                 completionLimiter.requireAllowance(request.ref().toString());
             } catch (SecurityException e) {
-                return new JsonRpcError(req.id(), new JsonRpcError.ErrorDetail(
-                        RATE_LIMIT_CODE, e.getMessage(), null));
+                return JsonRpcError.of(req.id(), RATE_LIMIT_CODE, e.getMessage());
             }
             CompleteResult result = completions.complete(request);
             return new JsonRpcResponse(req.id(), CompletionCodec.toJsonObject(result));
         } catch (IllegalArgumentException e) {
             return invalidParams(req, e);
         } catch (Exception e) {
-            return new JsonRpcError(req.id(), new JsonRpcError.ErrorDetail(
-                    JsonRpcErrorCode.INTERNAL_ERROR.code(), e.getMessage(), null));
+            return JsonRpcError.of(req.id(), JsonRpcErrorCode.INTERNAL_ERROR, e.getMessage());
         }
     }
 
@@ -977,8 +968,7 @@ public final class McpServer implements AutoCloseable {
         } catch (IllegalArgumentException e) {
             return invalidParams(req, e);
         } catch (Exception e) {
-            return new JsonRpcError(req.id(), new JsonRpcError.ErrorDetail(
-                    JsonRpcErrorCode.INTERNAL_ERROR.code(), e.getMessage(), null));
+            return JsonRpcError.of(req.id(), JsonRpcErrorCode.INTERNAL_ERROR, e.getMessage());
         }
     }
 
