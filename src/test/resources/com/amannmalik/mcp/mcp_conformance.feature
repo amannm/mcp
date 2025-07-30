@@ -58,3 +58,20 @@ Feature: MCP protocol conformance
     Given a running MCP server and connected client
     When the client requests an invalid completion
     Then an error with code -32602 is returned
+
+  Scenario: Unknown request method
+    Given a running MCP server and connected client
+    When the client calls an unknown method
+    Then an error with code -32601 is returned
+
+  Scenario: Logging suppression by level
+    Given a running MCP server and connected client
+    When the client sets the log level to "error"
+    Then the call succeeds
+    When the client sends a cancellation notification
+    Then no log message with level "info" is received
+
+  Scenario: Tool rate limiting
+    Given a running MCP server and connected client
+    When the client rapidly calls "test_tool" 6 times
+    Then an error with code -32001 is returned

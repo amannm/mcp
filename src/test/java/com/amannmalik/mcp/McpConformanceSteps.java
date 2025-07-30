@@ -336,6 +336,16 @@ public final class McpConformanceSteps {
         lastMessage = client.request("resources/list", params);
     }
 
+    @When("the client rapidly calls {string} {int} times")
+    public void rapidToolCalls(String name, int count) throws Exception {
+        for (int i = 0; i < count; i++) {
+            lastMessage = client.request(
+                    "tools/call",
+                    Json.createObjectBuilder().add("name", name).build()
+            );
+        }
+    }
+
     @Then("a log message with level {string} is received")
     public void verifyLogMessage(String level) throws Exception {
         long end = System.currentTimeMillis() + 500;
@@ -344,6 +354,16 @@ public final class McpConformanceSteps {
             Thread.sleep(10);
         }
         assertTrue(logEvents.stream().anyMatch(l -> l.level().name().equalsIgnoreCase(level)));
+    }
+
+    @Then("no log message with level {string} is received")
+    public void verifyNoLogMessage(String level) throws Exception {
+        long end = System.currentTimeMillis() + 500;
+        while (System.currentTimeMillis() < end &&
+                logEvents.stream().noneMatch(l -> l.level().name().equalsIgnoreCase(level))) {
+            Thread.sleep(10);
+        }
+        assertTrue(logEvents.stream().noneMatch(l -> l.level().name().equalsIgnoreCase(level)));
     }
 
     @When("the client disconnects")
