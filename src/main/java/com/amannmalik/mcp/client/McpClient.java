@@ -225,15 +225,18 @@ public final class McpClient implements AutoCloseable {
         }
         if (msg instanceof JsonRpcResponse resp) {
             InitializeResponse ir = LifecycleCodec.toInitializeResponse(resp.result());
-            if (!Protocol.LATEST_VERSION.equals(ir.protocolVersion())) {
+            String serverVersion = ir.protocolVersion();
+            if (!Protocol.LATEST_VERSION.equals(serverVersion) &&
+                    !Protocol.PREVIOUS_VERSION.equals(serverVersion)) {
                 try {
                     transport.close();
                 } catch (IOException ignore) {
                 }
-                throw new UnsupportedProtocolVersionException(ir.protocolVersion(), Protocol.LATEST_VERSION);
+                throw new UnsupportedProtocolVersionException(serverVersion,
+                        Protocol.LATEST_VERSION + " or " + Protocol.PREVIOUS_VERSION);
             }
             if (transport instanceof StreamableHttpClientTransport http) {
-                http.setProtocolVersion(ir.protocolVersion());
+                http.setProtocolVersion(serverVersion);
             }
             serverCapabilities = ir.capabilities().server();
             instructions = ir.instructions();
