@@ -47,7 +47,7 @@ public final class StreamableHttpTransport implements Transport {
     private static final String PROTOCOL_HEADER = "MCP-Protocol-Version";
     // Default to the previous protocol revision when no version header is
     // present, as recommended for backwards compatibility.
-    private static final String DEFAULT_VERSION = "2025-03-26";
+    private static final String COMPATIBILITY_VERSION = "2025-03-26";
     private final BlockingQueue<JsonObject> incoming = new LinkedBlockingQueue<>();
     private final Set<SseClient> generalClients = ConcurrentHashMap.newKeySet();
     private final ConcurrentHashMap<String, SseClient> requestStreams = new ConcurrentHashMap<>();
@@ -80,7 +80,7 @@ public final class StreamableHttpTransport implements Transport {
         this.resourceMetadataUrl = resourceMetadataUrl;
         // Until initialization negotiates a version, assume the prior revision
         // as the default when no MCP-Protocol-Version header is present.
-        this.protocolVersion = DEFAULT_VERSION;
+        this.protocolVersion = COMPATIBILITY_VERSION;
     }
 
     public StreamableHttpTransport(int port, OriginValidator validator, AuthorizationManager auth) throws Exception {
@@ -183,7 +183,7 @@ public final class StreamableHttpTransport implements Transport {
             // With the server shut down there is no negotiated protocol
             // version.  Reset to the default used when the version header is
             // absent.
-            protocolVersion = DEFAULT_VERSION;
+            protocolVersion = COMPATIBILITY_VERSION;
         } catch (Exception e) {
             throw new IOException(e);
         }
@@ -564,7 +564,7 @@ public final class StreamableHttpTransport implements Transport {
             // protocol version.  Reset to the backwards compatible default so
             // that a new session without a version header assumes the prior
             // revision as required by the specification.
-            protocolVersion = DEFAULT_VERSION;
+            protocolVersion = COMPATIBILITY_VERSION;
             generalClients.forEach(SseClient::close);
             generalClients.clear();
             lastGeneral.set(null);
