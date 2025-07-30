@@ -4,6 +4,8 @@ import jakarta.json.Json;
 import jakarta.json.JsonObject;
 import jakarta.json.JsonObjectBuilder;
 import jakarta.json.JsonValue;
+import com.amannmalik.mcp.util.JsonUtil;
+import java.util.Set;
 
 public final class LoggingCodec {
     private LoggingCodec() {
@@ -19,6 +21,7 @@ public final class LoggingCodec {
 
     public static LoggingMessageNotification toLoggingMessageNotification(JsonObject obj) {
         if (obj == null) throw new IllegalArgumentException("object required");
+        JsonUtil.requireOnlyKeys(obj, Set.of("level", "logger", "data"));
 
         String rawLevel;
         try {
@@ -51,6 +54,7 @@ public final class LoggingCodec {
 
     public static SetLevelRequest toSetLevelRequest(JsonObject obj) {
         if (obj == null) throw new IllegalArgumentException("level required");
+        JsonUtil.requireOnlyKeys(obj, Set.of("level"));
         String raw;
         try {
             raw = obj.getString("level");
