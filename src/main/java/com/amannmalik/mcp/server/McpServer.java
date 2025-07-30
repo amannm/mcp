@@ -355,6 +355,7 @@ public final class McpServer implements AutoCloseable {
                     null));
             return;
         }
+
         var method = RequestMethod.from(req.method());
         if (method.isEmpty()) {
             send(JsonRpcError.of(req.id(),
@@ -362,6 +363,7 @@ public final class McpServer implements AutoCloseable {
                     "Unknown method: " + req.method()));
             return;
         }
+
         RequestHandler handler = requestHandlers.get(method.get());
         if (handler == null) {
             send(JsonRpcError.of(req.id(),
@@ -369,68 +371,62 @@ public final class McpServer implements AutoCloseable {
                     "Unknown method: " + req.method()));
             return;
         }
-        Optional<ProgressToken> token = Optional.empty();
-        boolean cancellable = false;
+
+        boolean cancellable = method.get() != RequestMethod.INITIALIZE;
+        processRequest(req, handler, cancellable);
+    }
+
+    private void processRequest(JsonRpcRequest req, RequestHandler handler, boolean cancellable) throws IOException {
+        Optional<ProgressToken> token;
         try {
-            try {
-                idTracker.register(req.id());
-            } catch (IllegalArgumentException e) {
-                send(JsonRpcError.of(
-                        req.id(),
-                        JsonRpcErrorCode.INVALID_REQUEST,
-                        e.getMessage()));
-                return;
-            }
-
-            try {
-                token = progressManager.register(req.id(), req.params());
-                token.ifPresent(t -> {
-                    try {
-                        progressManager.send(new ProgressNotification(t, 0.0, 1.0, null), this::send);
-                    } catch (IOException ignore) {
-                    }
-                });
-            } catch (IllegalArgumentException e) {
-                send(invalidParams(req, e));
-                return;
-            }
-
-            cancellable = RequestMethod.from(req.method())
-                    .map(m -> m != RequestMethod.INITIALIZE)
-                    .orElse(true);
-            if (cancellable) {
-                cancellationTracker.register(req.id());
-            }
-
-            JsonRpcMessage resp;
-            try {
-                resp = handler.handle(req);
-            } catch (IllegalArgumentException e) {
-                send(invalidParams(req, e));
-                return;
-            } catch (Exception e) {
-                send(JsonRpcError.of(
-                        req.id(),
-                        JsonRpcErrorCode.INTERNAL_ERROR,
-                        e.getMessage()));
-                return;
-            }
-
-            boolean cancelled = cancellable && cancellationTracker.isCancelled(req.id());
-            if (!cancelled && resp != null) {
-                send(resp);
-            }
-            if (!cancelled) {
-                token.ifPresent(t -> {
-                    try {
-                        progressManager.send(new ProgressNotification(t, 1.0, 1.0, null), this::send);
-                    } catch (IOException ignore) {
-                    }
-                });
-            }
-        } finally {
-            cleanup(req.id());
+            idTracker.register(req.id());
+        } catch (IllegalArgumentException e) {
+            send(JsonRpcError.of(req.id(), JsonRpcErrorCode.INVALID_REQUEST, e.getMessage()));
+            return;
         }
+
+        try {
+            token = progressManager.register(req.id(), req.params());
+            token.ifPresent(t -> {
+                try {
+                    progressManager.send(new ProgressNotification(t, 0.0, 1.0, null), this::send);
+                } catch (IOException ignore) {
+                }
+            });
+        } catch (IllegalArgumentException e) {
+            send(invalidParams(req, e));
+            return;
+        }
+
+        if (cancellable) {
+            cancellationTracker.register(req.id());
+        }
+
+        JsonRpcMessage resp;
+        try {
+            resp = handler.handle(req);
+        } catch (IllegalArgumentException e) {
+            send(invalidParams(req, e));
+            return;
+        } catch (Exception e) {
+            send(JsonRpcError.of(req.id(), JsonRpcErrorCode.INTERNAL_ERROR, e.getMessage()));
+            return;
+        }
+
+        boolean cancelled = cancellable && cancellationTracker.isCancelled(req.id());
+        if (!cancelled && resp != null) {
+            send(resp);
+        }
+        if (!cancelled) {
+            token.ifPresent(t -> {
+                try {
+                    progressManager.send(new ProgressNotification(t, 1.0, 1.0, null), this::send);
+                } catch (IOException ignore) {
+                }
+            });
+        }
+
+        cleanup(req.id());
     }
 
     private void onNotification(JsonRpcNotification note) throws IOException {
