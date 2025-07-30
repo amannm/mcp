@@ -26,4 +26,8 @@ public enum JsonRpcErrorCode {
     public int code() {
         return code;
     }
+
+    public static java.util.Optional<JsonRpcErrorCode> fromCode(int code) {
+        return java.util.Optional.ofNullable(BY_CODE.get(code));
+    }
 }
