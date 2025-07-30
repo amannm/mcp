@@ -1,6 +1,7 @@
 package com.amannmalik.mcp.server.tools;
 
 import com.amannmalik.mcp.util.Pagination;
+import com.amannmalik.mcp.util.ListChangeSupport;
 import com.amannmalik.mcp.validation.SchemaValidator;
 import jakarta.json.Json;
 import jakarta.json.JsonObject;
@@ -15,7 +16,7 @@ import java.util.function.Function;
 public final class InMemoryToolProvider implements ToolProvider {
     private final List<Tool> tools;
     private final Map<String, Function<JsonObject, ToolResult>> handlers;
-    private final List<ToolListListener> listeners = new CopyOnWriteArrayList<>();
+    private final ListChangeSupport<ToolListListener> listChangeSupport = new ListChangeSupport<>();
 
     public InMemoryToolProvider(List<Tool> tools, Map<String, Function<JsonObject, ToolResult>> handlers) {
         this.tools = tools == null ? new CopyOnWriteArrayList<>() : new CopyOnWriteArrayList<>(tools);
@@ -50,8 +51,8 @@ public final class InMemoryToolProvider implements ToolProvider {
 
     @Override
     public ToolListSubscription subscribeList(ToolListListener listener) {
-        listeners.add(listener);
-        return () -> listeners.remove(listener);
+        var sub = listChangeSupport.subscribe(listener);
+        return sub::close;
     }
 
     @Override
@@ -76,6 +77,6 @@ public final class InMemoryToolProvider implements ToolProvider {
     }
 
     private void notifyListeners() {
-        listeners.forEach(ToolListListener::listChanged);
+        listChangeSupport.notifyListeners();
     }
 }

@@ -1,6 +1,7 @@
 package com.amannmalik.mcp.server.resources;
 
 import com.amannmalik.mcp.util.Pagination;
+import com.amannmalik.mcp.util.ListChangeSupport;
 
 import java.util.List;
 import java.util.Map;
@@ -12,7 +13,7 @@ public final class InMemoryResourceProvider implements ResourceProvider {
     private final Map<String, ResourceBlock> contents;
     private final List<ResourceTemplate> templates;
     private final Map<String, List<ResourceListener>> listeners = new ConcurrentHashMap<>();
-    private final List<ResourceListListener> listListeners = new CopyOnWriteArrayList<>();
+    private final ListChangeSupport<ResourceListListener> listChangeSupport = new ListChangeSupport<>();
 
     public InMemoryResourceProvider(List<Resource> resources, Map<String, ResourceBlock> contents, List<ResourceTemplate> templates) {
         this.resources = resources == null ? new CopyOnWriteArrayList<>() : new CopyOnWriteArrayList<>(resources);
@@ -45,8 +46,8 @@ public final class InMemoryResourceProvider implements ResourceProvider {
 
     @Override
     public ResourceListSubscription subscribeList(ResourceListListener listener) {
-        listListeners.add(listener);
-        return () -> listListeners.remove(listener);
+        var sub = listChangeSupport.subscribe(listener);
+        return sub::close;
     }
 
     @Override
@@ -95,6 +96,6 @@ public final class InMemoryResourceProvider implements ResourceProvider {
     }
 
     private void notifyListListeners() {
-        listListeners.forEach(ResourceListListener::listChanged);
+        listChangeSupport.notifyListeners();
     }
 }

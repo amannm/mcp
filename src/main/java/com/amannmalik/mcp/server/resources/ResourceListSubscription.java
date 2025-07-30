@@ -1,6 +1,6 @@
 package com.amannmalik.mcp.server.resources;
 
-public interface ResourceListSubscription extends AutoCloseable {
-    @Override
-    void close();
+import com.amannmalik.mcp.util.ListChangeSubscription;
+
+public interface ResourceListSubscription extends ListChangeSubscription {
 }
