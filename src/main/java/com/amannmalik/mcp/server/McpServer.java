@@ -64,6 +64,10 @@ import com.amannmalik.mcp.server.resources.ResourceAnnotations;
 import com.amannmalik.mcp.server.resources.ResourceBlock;
 import com.amannmalik.mcp.server.resources.ResourceList;
 import com.amannmalik.mcp.server.resources.ResourceListSubscription;
+import com.amannmalik.mcp.server.resources.ListResourcesRequest;
+import com.amannmalik.mcp.server.resources.ListResourcesResult;
+import com.amannmalik.mcp.server.resources.ListResourceTemplatesRequest;
+import com.amannmalik.mcp.server.resources.ListResourceTemplatesResult;
 import com.amannmalik.mcp.server.resources.ResourceProvider;
 import com.amannmalik.mcp.server.resources.ResourceSubscription;
 import com.amannmalik.mcp.server.resources.ResourceTemplate;
@@ -84,7 +88,6 @@ import com.amannmalik.mcp.transport.Transport;
 import com.amannmalik.mcp.util.CancellationCodec;
 import com.amannmalik.mcp.util.CancellationTracker;
 import com.amannmalik.mcp.util.CancelledNotification;
-import com.amannmalik.mcp.util.PaginatedResult;
 import com.amannmalik.mcp.util.PaginationCodec;
 import com.amannmalik.mcp.util.ProgressCodec;
 import com.amannmalik.mcp.util.ProgressNotification;
@@ -505,7 +508,15 @@ public final class McpServer implements AutoCloseable {
 
     private JsonRpcMessage listResources(JsonRpcRequest req) {
         requireServerCapability(ServerCapability.RESOURCES);
-        String cursor = PaginationCodec.toPaginatedRequest(req.params()).cursor();
+        ListResourcesRequest request;
+        try {
+            request = ResourcesCodec.toListResourcesRequest(req.params());
+        } catch (IllegalArgumentException e) {
+            return new JsonRpcError(req.id(), new JsonRpcError.ErrorDetail(
+                    JsonRpcErrorCode.INVALID_PARAMS.code(), e.getMessage(), null));
+        }
+        
+        String cursor = request.cursor();
         if (cursor != null) {
             try {
                 cursor = InputSanitizer.requireClean(cursor);
@@ -514,6 +525,7 @@ public final class McpServer implements AutoCloseable {
                         JsonRpcErrorCode.INVALID_PARAMS.code(), e.getMessage(), null));
             }
         }
+        
         ResourceList list;
         try {
             list = resources.list(cursor);
@@ -521,13 +533,17 @@ public final class McpServer implements AutoCloseable {
             return new JsonRpcError(req.id(), new JsonRpcError.ErrorDetail(
                     JsonRpcErrorCode.INVALID_PARAMS.code(), e.getMessage(), null));
         }
-        var arr = Json.createArrayBuilder();
+        
+        List<Resource> filteredResources = new java.util.ArrayList<>();
         for (Resource r : list.resources()) {
-            if (allowed(r.annotations())) arr.add(ResourcesCodec.toJsonObject(r));
+            if (allowed(r.annotations())) {
+                filteredResources.add(r);
+            }
         }
-        var b = Json.createObjectBuilder().add("resources", arr.build());
-        PaginationCodec.toJsonObject(new PaginatedResult(list.nextCursor())).forEach(b::add);
-        return new JsonRpcResponse(req.id(), b.build());
+        
+        ListResourcesResult result = new ListResourcesResult(filteredResources, list.nextCursor());
+        JsonObject resultJson = ResourcesCodec.toJsonObject(result);
+        return new JsonRpcResponse(req.id(), resultJson);
     }
 
     private JsonRpcMessage readResource(JsonRpcRequest req) {
@@ -561,7 +577,15 @@ public final class McpServer implements AutoCloseable {
 
     private JsonRpcMessage listTemplates(JsonRpcRequest req) {
         requireServerCapability(ServerCapability.RESOURCES);
-        String cursor = PaginationCodec.toPaginatedRequest(req.params()).cursor();
+        ListResourceTemplatesRequest request;
+        try {
+            request = ResourcesCodec.toListResourceTemplatesRequest(req.params());
+        } catch (IllegalArgumentException e) {
+            return new JsonRpcError(req.id(), new JsonRpcError.ErrorDetail(
+                    JsonRpcErrorCode.INVALID_PARAMS.code(), e.getMessage(), null));
+        }
+        
+        String cursor = request.cursor();
         if (cursor != null) {
             try {
                 cursor = InputSanitizer.requireClean(cursor);
@@ -570,6 +594,7 @@ public final class McpServer implements AutoCloseable {
                         JsonRpcErrorCode.INVALID_PARAMS.code(), e.getMessage(), null));
             }
         }
+        
         ResourceTemplatePage page;
         try {
             page = resources.listTemplates(cursor);
@@ -577,13 +602,17 @@ public final class McpServer implements AutoCloseable {
             return new JsonRpcError(req.id(), new JsonRpcError.ErrorDetail(
                     JsonRpcErrorCode.INVALID_PARAMS.code(), e.getMessage(), null));
         }
-        var arr = Json.createArrayBuilder();
-        page.resourceTemplates().forEach(t -> {
-            if (allowed(t.annotations())) arr.add(ResourcesCodec.toJsonObject(t));
-        });
-        var b = Json.createObjectBuilder().add("resourceTemplates", arr.build());
-        PaginationCodec.toJsonObject(new PaginatedResult(page.nextCursor())).forEach(b::add);
-        return new JsonRpcResponse(req.id(), b.build());
+        
+        List<ResourceTemplate> filteredTemplates = new java.util.ArrayList<>();
+        for (ResourceTemplate t : page.resourceTemplates()) {
+            if (allowed(t.annotations())) {
+                filteredTemplates.add(t);
+            }
+        }
+        
+        ListResourceTemplatesResult result = new ListResourceTemplatesResult(filteredTemplates, page.nextCursor());
+        JsonObject resultJson = ResourcesCodec.toJsonObject(result);
+        return new JsonRpcResponse(req.id(), resultJson);
     }
 
     private JsonRpcMessage subscribeResource(JsonRpcRequest req) {

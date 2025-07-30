@@ -224,4 +224,62 @@ public final class ResourcesCodec {
         }
         return new ResourceUpdatedNotification(obj.getString("uri"));
     }
+
+    public static JsonObject toJsonObject(ListResourcesRequest req) {
+        if (req == null) throw new IllegalArgumentException("request required");
+        JsonObjectBuilder b = Json.createObjectBuilder();
+        if (req.cursor() != null) b.add("cursor", req.cursor());
+        return b.build();
+    }
+
+    public static ListResourcesRequest toListResourcesRequest(JsonObject obj) {
+        return new ListResourcesRequest(obj.getString("cursor", null));
+    }
+
+    public static JsonObject toJsonObject(ListResourcesResult result) {
+        if (result == null) throw new IllegalArgumentException("result required");
+        var arr = Json.createArrayBuilder();
+        result.resources().forEach(r -> arr.add(toJsonObject(r)));
+        JsonObjectBuilder b = Json.createObjectBuilder().add("resources", arr.build());
+        if (result.nextCursor() != null) b.add("nextCursor", result.nextCursor());
+        return b.build();
+    }
+
+    public static ListResourcesResult toListResourcesResult(JsonObject obj) {
+        if (obj == null) throw new IllegalArgumentException("object required");
+        var arr = obj.getJsonArray("resources");
+        if (arr == null) throw new IllegalArgumentException("resources required");
+        java.util.List<Resource> resources = new java.util.ArrayList<>();
+        arr.forEach(v -> resources.add(toResource(v.asJsonObject())));
+        return new ListResourcesResult(resources, obj.getString("nextCursor", null));
+    }
+
+    public static JsonObject toJsonObject(ListResourceTemplatesRequest req) {
+        if (req == null) throw new IllegalArgumentException("request required");
+        JsonObjectBuilder b = Json.createObjectBuilder();
+        if (req.cursor() != null) b.add("cursor", req.cursor());
+        return b.build();
+    }
+
+    public static ListResourceTemplatesRequest toListResourceTemplatesRequest(JsonObject obj) {
+        return new ListResourceTemplatesRequest(obj.getString("cursor", null));
+    }
+
+    public static JsonObject toJsonObject(ListResourceTemplatesResult result) {
+        if (result == null) throw new IllegalArgumentException("result required");
+        var arr = Json.createArrayBuilder();
+        result.resourceTemplates().forEach(t -> arr.add(toJsonObject(t)));
+        JsonObjectBuilder b = Json.createObjectBuilder().add("resourceTemplates", arr.build());
+        if (result.nextCursor() != null) b.add("nextCursor", result.nextCursor());
+        return b.build();
+    }
+
+    public static ListResourceTemplatesResult toListResourceTemplatesResult(JsonObject obj) {
+        if (obj == null) throw new IllegalArgumentException("object required");
+        var arr = obj.getJsonArray("resourceTemplates");
+        if (arr == null) throw new IllegalArgumentException("resourceTemplates required");
+        java.util.List<ResourceTemplate> templates = new java.util.ArrayList<>();
+        arr.forEach(v -> templates.add(toResourceTemplate(v.asJsonObject())));
+        return new ListResourceTemplatesResult(templates, obj.getString("nextCursor", null));
+    }
 }
