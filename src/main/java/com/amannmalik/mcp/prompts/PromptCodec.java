@@ -1,11 +1,8 @@
 package com.amannmalik.mcp.prompts;
 
-import com.amannmalik.mcp.server.resources.ResourcesCodec;
-
 import com.amannmalik.mcp.annotations.AnnotationsCodec;
-
+import com.amannmalik.mcp.server.resources.ResourcesCodec;
 import com.amannmalik.mcp.util.EmptyJsonObjectCodec;
-
 import com.amannmalik.mcp.util.PaginatedRequest;
 import com.amannmalik.mcp.util.PaginatedResult;
 import com.amannmalik.mcp.util.Pagination;

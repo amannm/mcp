@@ -9,10 +9,10 @@ import jakarta.json.JsonValue;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.function.Function;
-import java.util.Optional;
 
 public final class InMemoryToolProvider implements ToolProvider {
     private final List<Tool> tools;

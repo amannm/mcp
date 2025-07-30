@@ -1,6 +1,5 @@
 package com.amannmalik.mcp.server.tools;
 
-import com.amannmalik.mcp.annotations.Annotations;
 import com.amannmalik.mcp.annotations.AnnotationsCodec;
 import com.amannmalik.mcp.server.resources.Resource;
 import com.amannmalik.mcp.server.resources.ResourceBlock;
@@ -13,6 +12,7 @@ import jakarta.json.JsonArrayBuilder;
 import jakarta.json.JsonObject;
 import jakarta.json.JsonObjectBuilder;
 import jakarta.json.JsonValue;
+
 import java.util.Base64;
 
 public record ToolResult(JsonArray content,

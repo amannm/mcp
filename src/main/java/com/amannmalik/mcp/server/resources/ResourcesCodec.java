@@ -1,29 +1,16 @@
 package com.amannmalik.mcp.server.resources;
 
 import com.amannmalik.mcp.annotations.Annotations;
-
 import com.amannmalik.mcp.annotations.AnnotationsCodec;
-
-import com.amannmalik.mcp.prompts.Role;
 import com.amannmalik.mcp.util.EmptyJsonObjectCodec;
-
 import com.amannmalik.mcp.util.PaginatedRequest;
 import com.amannmalik.mcp.util.PaginatedResult;
 import com.amannmalik.mcp.util.PaginationCodec;
 import jakarta.json.Json;
 import jakarta.json.JsonObject;
 import jakarta.json.JsonObjectBuilder;
-import jakarta.json.JsonString;
 
-import java.util.ArrayList;
 import java.util.Base64;
-import java.util.List;
-
-import java.time.Instant;
-import java.time.format.DateTimeParseException;
-import java.util.Base64;
-import java.util.EnumSet;
-import java.util.Set;
 import java.util.Set;
 
 public final class ResourcesCodec {
@@ -120,8 +107,6 @@ public final class ResourcesCodec {
         byte[] data = Base64.getDecoder().decode(obj.getString("blob"));
         return new ResourceBlock.Binary(uri, mime, data, ann, meta);
     }
-
-
 
 
     public static JsonObject toJsonObject(ResourceListChangedNotification n) {

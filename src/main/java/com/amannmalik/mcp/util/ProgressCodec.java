@@ -8,6 +8,7 @@ import jakarta.json.JsonObject;
 import jakarta.json.JsonObjectBuilder;
 import jakarta.json.JsonString;
 import jakarta.json.JsonValue;
+
 import java.util.Optional;
 
 public final class ProgressCodec {

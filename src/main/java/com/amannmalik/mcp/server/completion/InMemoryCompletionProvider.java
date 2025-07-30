@@ -1,7 +1,6 @@
 package com.amannmalik.mcp.server.completion;
 
 import com.amannmalik.mcp.validation.InputSanitizer;
-import com.amannmalik.mcp.server.completion.CompleteResult;
 
 import java.util.ArrayList;
 import java.util.Comparator;

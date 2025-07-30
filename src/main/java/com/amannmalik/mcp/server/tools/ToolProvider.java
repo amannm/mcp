@@ -2,6 +2,7 @@ package com.amannmalik.mcp.server.tools;
 
 import com.amannmalik.mcp.util.Pagination;
 import jakarta.json.JsonObject;
+
 import java.util.Optional;
 
 public interface ToolProvider {
