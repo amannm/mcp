@@ -109,6 +109,8 @@ import jakarta.json.stream.JsonParsingException;
 import java.io.EOFException;
 import java.io.IOException;
 import java.net.URI;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.List;
@@ -485,17 +487,24 @@ public final class McpServer implements AutoCloseable {
             return true;
         }
         if (roots.isEmpty()) return true;
+
+        Path targetPath;
+        try {
+            targetPath = Paths.get(target).normalize();
+        } catch (Exception e) {
+            return false;
+        }
+
         for (Root r : roots) {
             try {
                 URI base = URI.create(r.uri());
                 if ("file".equalsIgnoreCase(base.getScheme())) {
-                    String basePath = base.getPath();
-                    String targetPath = target.getPath();
-                    if (basePath != null && targetPath != null && targetPath.startsWith(basePath)) {
+                    Path basePath = Paths.get(base).normalize();
+                    if (targetPath.startsWith(basePath)) {
                         return true;
                     }
                 }
-            } catch (IllegalArgumentException ignore) {
+            } catch (Exception ignore) {
             }
         }
         return false;
