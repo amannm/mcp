@@ -102,9 +102,10 @@ public final class PromptCodec {
             if (v.getValueType() != JsonValue.ValueType.STRING) {
                 throw new IllegalArgumentException("argument values must be strings");
             }
-            args.put(InputSanitizer.requireClean(k),
-                    InputSanitizer.requireClean(((JsonString) v).getString()));
+            String key = InputSanitizer.requireClean(k);
+            String value = InputSanitizer.requireClean(((JsonString) v).getString());
+            args.put(key, value);
         });
-        return args;
+        return Map.copyOf(args);
     }
 }
