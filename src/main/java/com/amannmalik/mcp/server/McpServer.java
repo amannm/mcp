@@ -87,6 +87,7 @@ import com.amannmalik.mcp.util.ProgressCodec;
 import com.amannmalik.mcp.util.ProgressNotification;
 import com.amannmalik.mcp.util.ProgressToken;
 import com.amannmalik.mcp.util.ProgressTracker;
+import com.amannmalik.mcp.validation.InputSanitizer;
 import com.amannmalik.mcp.validation.MetaValidator;
 import com.amannmalik.mcp.validation.SchemaValidator;
 import com.amannmalik.mcp.validation.UriValidator;
@@ -766,7 +767,20 @@ public final class McpServer implements AutoCloseable {
                     JsonRpcErrorCode.INVALID_PARAMS.code(),
                     "name is required", null));
         }
-        Map<String, String> args = PromptCodec.toArguments(params.getJsonObject("arguments"));
+        try {
+            name = InputSanitizer.requireClean(name);
+        } catch (IllegalArgumentException e) {
+            return new JsonRpcError(req.id(), new JsonRpcError.ErrorDetail(
+                    JsonRpcErrorCode.INVALID_PARAMS.code(), e.getMessage(), null));
+        }
+
+        Map<String, String> args;
+        try {
+            args = PromptCodec.toArguments(params.getJsonObject("arguments"));
+        } catch (IllegalArgumentException e) {
+            return new JsonRpcError(req.id(), new JsonRpcError.ErrorDetail(
+                    JsonRpcErrorCode.INVALID_PARAMS.code(), e.getMessage(), null));
+        }
         try {
             PromptInstance inst = prompts.get(name, args);
             JsonObject result = PromptCodec.toJsonObject(inst);
