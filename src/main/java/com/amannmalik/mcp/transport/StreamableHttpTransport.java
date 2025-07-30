@@ -388,6 +388,10 @@ public final class StreamableHttpTransport implements Transport {
             String session = sessionId.get();
             String last = lastSessionId.get();
             String header = req.getHeader("Mcp-Session-Id");
+            if (header != null && !isVisibleAscii(header)) {
+                resp.sendError(HttpServletResponse.SC_BAD_REQUEST);
+                return;
+            }
             String version = req.getHeader(PROTOCOL_HEADER);
             if (session == null) {
                 if (header != null && header.equals(last)) {
@@ -480,6 +484,10 @@ public final class StreamableHttpTransport implements Transport {
             }
             String session = sessionId.get();
             String header = req.getHeader("Mcp-Session-Id");
+            if (header != null && !isVisibleAscii(header)) {
+                resp.sendError(HttpServletResponse.SC_BAD_REQUEST);
+                return;
+            }
             String version = req.getHeader(PROTOCOL_HEADER);
             if (session == null) {
                 resp.sendError(HttpServletResponse.SC_BAD_REQUEST);
