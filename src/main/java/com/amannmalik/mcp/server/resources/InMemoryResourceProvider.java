@@ -59,11 +59,13 @@ public final class InMemoryResourceProvider implements ResourceProvider {
     }
 
     public void notifyUpdate(String uri) {
-        String title = resources.stream()
-                .filter(r -> r.uri().equals(uri))
-                .map(Resource::title)
-                .findFirst()
-                .orElse(null);
+        String title = null;
+        for (Resource r : resources) {
+            if (r.uri().equals(uri)) {
+                title = r.title();
+                break;
+            }
+        }
         ResourceUpdate update = new ResourceUpdate(uri, title);
         listeners.getOrDefault(uri, List.of()).forEach(l -> l.updated(update));
     }

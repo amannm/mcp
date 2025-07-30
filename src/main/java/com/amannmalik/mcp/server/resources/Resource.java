@@ -19,9 +19,9 @@ public record Resource(
     public Resource {
         uri = UriValidator.requireAbsolute(uri);
         name = InputSanitizer.requireClean(name);
-        title = title == null ? null : InputSanitizer.requireClean(title);
-        description = description == null ? null : InputSanitizer.requireClean(description);
-        mimeType = mimeType == null ? null : InputSanitizer.requireClean(mimeType);
+        title = InputSanitizer.cleanNullable(title);
+        description = InputSanitizer.cleanNullable(description);
+        mimeType = InputSanitizer.cleanNullable(mimeType);
         if (size != null && size < 0) {
             throw new IllegalArgumentException("size must be >= 0");
         }
