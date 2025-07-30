@@ -12,9 +12,6 @@ public interface ToolProvider {
         };
     }
 
-    /**
-     * Whether {@link #subscribeList(ToolListListener)} delivers notifications.
-     */
     default boolean supportsListChanged() {
         return false;
     }
