@@ -81,10 +81,14 @@ public final class CompletionCodec {
 
     static JsonObject toJsonObject(CompleteRequest.Ref ref) {
         return switch (ref) {
-            case CompleteRequest.Ref.PromptRef p -> Json.createObjectBuilder()
-                    .add("type", p.type())
-                    .add("name", p.name())
-                    .build();
+            case CompleteRequest.Ref.PromptRef p -> {
+                var b = Json.createObjectBuilder()
+                        .add("type", p.type())
+                        .add("name", p.name());
+                if (p.title() != null) b.add("title", p.title());
+                if (p._meta() != null) b.add("_meta", p._meta());
+                yield b.build();
+            }
             case CompleteRequest.Ref.ResourceRef r -> Json.createObjectBuilder()
                     .add("type", r.type())
                     .add("uri", r.uri())
@@ -97,7 +101,11 @@ public final class CompletionCodec {
         String type = obj.getString("type", null);
         if (type == null) throw new IllegalArgumentException("ref type required");
         return switch (type) {
-            case "ref/prompt" -> new CompleteRequest.Ref.PromptRef(obj.getString("name"));
+            case "ref/prompt" -> new CompleteRequest.Ref.PromptRef(
+                    obj.getString("name"),
+                    obj.containsKey("title") ? obj.getString("title") : null,
+                    obj.containsKey("_meta") ? obj.getJsonObject("_meta") : null
+            );
             case "ref/resource" -> new CompleteRequest.Ref.ResourceRef(obj.getString("uri"));
             default -> throw new IllegalArgumentException("unknown ref type");
         };

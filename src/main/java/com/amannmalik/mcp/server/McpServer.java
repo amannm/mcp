@@ -937,7 +937,7 @@ public final class McpServer implements AutoCloseable {
 
     private static CompletionProvider createDefaultCompletions() {
         InMemoryCompletionProvider provider = new InMemoryCompletionProvider();
-        provider.add(new CompleteRequest.Ref.PromptRef("test_prompt"), "test_arg", Map.of(), List.of("test_completion"));
+        provider.add(new CompleteRequest.Ref.PromptRef("test_prompt", null, null), "test_arg", Map.of(), List.of("test_completion"));
         return provider;
     }
 
