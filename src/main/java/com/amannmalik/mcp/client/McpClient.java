@@ -43,8 +43,8 @@ import com.amannmalik.mcp.server.logging.LoggingLevel;
 import com.amannmalik.mcp.server.logging.LoggingListener;
 import com.amannmalik.mcp.server.logging.SetLevelRequest;
 import com.amannmalik.mcp.server.resources.ResourceListListener;
-import com.amannmalik.mcp.server.tools.ToolListListener;
 import com.amannmalik.mcp.server.tools.ToolCodec;
+import com.amannmalik.mcp.server.tools.ToolListListener;
 import com.amannmalik.mcp.transport.Transport;
 import com.amannmalik.mcp.util.CancellationCodec;
 import com.amannmalik.mcp.util.CancellationTracker;
@@ -57,6 +57,7 @@ import com.amannmalik.mcp.util.ProgressTracker;
 import com.amannmalik.mcp.validation.InputSanitizer;
 import com.amannmalik.mcp.validation.MetaValidator;
 import com.amannmalik.mcp.validation.SchemaValidator;
+import jakarta.json.Json;
 import jakarta.json.JsonObject;
 
 import java.io.IOException;
@@ -166,6 +167,21 @@ public final class McpClient implements AutoCloseable {
                 new ClientFeatures(rootsListChangedSupported)
         );
         var initJson = LifecycleCodec.toJsonObject(init);
+        if (capabilities.contains(ClientCapability.ROOTS) && rootsListChangedSupported) {
+            var caps = initJson.getJsonObject("capabilities");
+            if (caps != null && caps.containsKey("roots")) {
+                var rootsCaps = caps.getJsonObject("roots");
+                rootsCaps = Json.createObjectBuilder(rootsCaps)
+                        .add("listChanged", true)
+                        .build();
+                caps = Json.createObjectBuilder(caps)
+                        .add("roots", rootsCaps)
+                        .build();
+                initJson = Json.createObjectBuilder(initJson)
+                        .add("capabilities", caps)
+                        .build();
+            }
+        }
         RequestId reqId = new RequestId.NumericId(id.getAndIncrement());
         JsonRpcRequest request = new JsonRpcRequest(reqId, "initialize", initJson);
         transport.send(JsonRpcCodec.toJsonObject(request));
@@ -597,6 +613,7 @@ public final class McpClient implements AutoCloseable {
     }
 
     private void sendProgress(ProgressNotification note) throws IOException {
+        if (!progressTracker.isActive(note.token())) return;
         try {
             progressLimiter.requireAllowance(note.token().toString());
             progressTracker.update(note);

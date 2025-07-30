@@ -67,6 +67,8 @@ import com.amannmalik.mcp.server.resources.ListResourceTemplatesRequest;
 import com.amannmalik.mcp.server.resources.ListResourceTemplatesResult;
 import com.amannmalik.mcp.server.resources.ListResourcesRequest;
 import com.amannmalik.mcp.server.resources.ListResourcesResult;
+import com.amannmalik.mcp.server.resources.ReadResourceRequest;
+import com.amannmalik.mcp.server.resources.ReadResourceResult;
 import com.amannmalik.mcp.server.resources.Resource;
 import com.amannmalik.mcp.server.resources.ResourceBlock;
 import com.amannmalik.mcp.server.resources.ResourceList;
@@ -79,8 +81,6 @@ import com.amannmalik.mcp.server.resources.ResourceUpdatedNotification;
 import com.amannmalik.mcp.server.resources.ResourcesCodec;
 import com.amannmalik.mcp.server.resources.SubscribeRequest;
 import com.amannmalik.mcp.server.resources.UnsubscribeRequest;
-import com.amannmalik.mcp.server.resources.ReadResourceRequest;
-import com.amannmalik.mcp.server.resources.ReadResourceResult;
 import com.amannmalik.mcp.server.tools.CallToolRequest;
 import com.amannmalik.mcp.server.tools.InMemoryToolProvider;
 import com.amannmalik.mcp.server.tools.ListToolsRequest;
@@ -109,6 +109,8 @@ import jakarta.json.stream.JsonParsingException;
 
 import java.io.EOFException;
 import java.io.IOException;
+import java.net.URI;
+import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
@@ -482,6 +484,33 @@ public final class McpServer implements AutoCloseable {
         }
     }
 
+    private boolean withinRoots(String uri) {
+        URI target;
+        try {
+            target = URI.create(uri);
+        } catch (IllegalArgumentException e) {
+            return false;
+        }
+        if (!"file".equalsIgnoreCase(target.getScheme())) {
+            return true;
+        }
+        if (roots.isEmpty()) return true;
+        for (Root r : roots) {
+            try {
+                URI base = URI.create(r.uri());
+                if ("file".equalsIgnoreCase(base.getScheme())) {
+                    String basePath = base.getPath();
+                    String targetPath = target.getPath();
+                    if (basePath != null && targetPath != null && targetPath.startsWith(basePath)) {
+                        return true;
+                    }
+                }
+            } catch (IllegalArgumentException ignore) {
+            }
+        }
+        return false;
+    }
+
     private void cancelled(JsonRpcNotification note) {
         CancelledNotification cn = CancellationCodec.toCancelledNotification(note.params());
         cancellationTracker.cancel(cn.requestId(), cn.reason());
@@ -505,6 +534,7 @@ public final class McpServer implements AutoCloseable {
     }
 
     private void sendProgress(ProgressNotification note) throws IOException {
+        if (!progressTracker.isActive(note.token())) return;
         try {
             progressLimiter.requireAllowance(note.token().toString());
             progressTracker.update(note);
@@ -538,9 +568,9 @@ public final class McpServer implements AutoCloseable {
                     JsonRpcErrorCode.INVALID_PARAMS.code(), e.getMessage(), null));
         }
 
-        List<Resource> filteredResources = new java.util.ArrayList<>();
+        List<Resource> filteredResources = new ArrayList<>();
         for (Resource r : list.resources()) {
-            if (allowed(r.annotations())) {
+            if (allowed(r.annotations()) && withinRoots(r.uri())) {
                 filteredResources.add(r);
             }
         }
@@ -560,6 +590,10 @@ public final class McpServer implements AutoCloseable {
                     JsonRpcErrorCode.INVALID_PARAMS.code(), e.getMessage(), null));
         }
         String uri = rrr.uri();
+        if (!withinRoots(uri)) {
+            return new JsonRpcError(req.id(), new JsonRpcError.ErrorDetail(
+                    JsonRpcErrorCode.INTERNAL_ERROR.code(), "Access denied", null));
+        }
         ResourceBlock block = resources.read(uri);
         if (block == null) {
             return new JsonRpcError(req.id(), new JsonRpcError.ErrorDetail(
@@ -569,7 +603,7 @@ public final class McpServer implements AutoCloseable {
             return new JsonRpcError(req.id(), new JsonRpcError.ErrorDetail(
                     JsonRpcErrorCode.INTERNAL_ERROR.code(), "Access denied", null));
         }
-        ReadResourceResult result = new ReadResourceResult(java.util.List.of(block));
+        ReadResourceResult result = new ReadResourceResult(List.of(block));
         return new JsonRpcResponse(req.id(), ResourcesCodec.toJsonObject(result));
     }
 
@@ -601,7 +635,7 @@ public final class McpServer implements AutoCloseable {
                     JsonRpcErrorCode.INVALID_PARAMS.code(), e.getMessage(), null));
         }
 
-        List<ResourceTemplate> filteredTemplates = new java.util.ArrayList<>();
+        List<ResourceTemplate> filteredTemplates = new ArrayList<>();
         for (ResourceTemplate t : page.resourceTemplates()) {
             if (allowed(t.annotations())) {
                 filteredTemplates.add(t);
@@ -623,6 +657,10 @@ public final class McpServer implements AutoCloseable {
                     JsonRpcErrorCode.INVALID_PARAMS.code(), e.getMessage(), null));
         }
         String uri = sr.uri();
+        if (!withinRoots(uri)) {
+            return new JsonRpcError(req.id(), new JsonRpcError.ErrorDetail(
+                    JsonRpcErrorCode.INTERNAL_ERROR.code(), "Access denied", null));
+        }
         ResourceBlock existing = resources.read(uri);
         if (existing == null) {
             return new JsonRpcError(req.id(), new JsonRpcError.ErrorDetail(
@@ -666,6 +704,10 @@ public final class McpServer implements AutoCloseable {
                     JsonRpcErrorCode.INVALID_PARAMS.code(), e.getMessage(), null));
         }
         String uri = ur.uri();
+        if (!withinRoots(uri)) {
+            return new JsonRpcError(req.id(), new JsonRpcError.ErrorDetail(
+                    JsonRpcErrorCode.INTERNAL_ERROR.code(), "Access denied", null));
+        }
         ResourceSubscription sub = resourceSubscriptions.remove(uri);
         if (sub != null) {
             try {

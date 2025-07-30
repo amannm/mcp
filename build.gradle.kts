@@ -34,6 +34,8 @@ dependencies {
     implementation("jakarta.servlet:jakarta.servlet-api:$jakartaServletVersion")
     implementation("org.snakeyaml:snakeyaml-engine:$snakeyamlVersion")
     testImplementation("org.junit.jupiter:junit-jupiter:$junitVersion")
+    testImplementation("io.cucumber:cucumber-java:7.23.0")
+    testImplementation("io.cucumber:cucumber-junit:7.23.0")
     jmh("org.openjdk.jmh:jmh-core:$jmhVersion")
     jmh("org.openjdk.jmh:jmh-generator-annprocess:$jmhVersion")
 }

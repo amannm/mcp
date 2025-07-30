@@ -11,13 +11,17 @@ import com.amannmalik.mcp.security.PrivacyBoundaryEnforcer;
 import com.amannmalik.mcp.security.SamplingAccessController;
 import com.amannmalik.mcp.security.SecurityPolicy;
 import com.amannmalik.mcp.security.ToolAccessController;
+import com.amannmalik.mcp.server.tools.ToolCodec;
 import com.amannmalik.mcp.transport.StdioTransport;
+import jakarta.json.Json;
 import picocli.CommandLine;
 
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.io.StringReader;
 import java.nio.file.Path;
+import java.util.Arrays;
 import java.util.EnumSet;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -166,7 +170,7 @@ public final class HostCommand implements Callable<Integer> {
                         } else {
                             String cursor = parts.length > 2 ? parts[2] : null;
                             var page = host.listTools(parts[1], cursor);
-                            System.out.println(com.amannmalik.mcp.server.tools.ToolCodec.toJsonObject(page));
+                            System.out.println(ToolCodec.toJsonObject(page));
                         }
                     }
                     case "call-tool" -> {
@@ -174,17 +178,17 @@ public final class HostCommand implements Callable<Integer> {
                             System.out.println("Usage: call-tool <client-id> <tool-name> [json-args]");
                         } else {
                             var args = parts.length > 3 ?
-                                    jakarta.json.Json.createReader(new java.io.StringReader(parts[3])).readObject() :
+                                    Json.createReader(new StringReader(parts[3])).readObject() :
                                     null;
                             var result = host.callTool(parts[1], parts[2], args);
-                            System.out.println(com.amannmalik.mcp.server.tools.ToolCodec.toJsonObject(result));
+                            System.out.println(ToolCodec.toJsonObject(result));
                         }
                     }
                     case "create-message" -> {
                         if (parts.length < 3) {
                             System.out.println("Usage: create-message <client-id> <json-params>");
                         } else {
-                            var params = jakarta.json.Json.createReader(new java.io.StringReader(parts[2])).readObject();
+                            var params = Json.createReader(new StringReader(parts[2])).readObject();
                             System.out.println(host.createMessage(parts[1], params));
                         }
                     }
@@ -197,7 +201,7 @@ public final class HostCommand implements Callable<Integer> {
                                 host.allowAudience(audience);
                                 System.out.println("Allowed audience: " + audience);
                             } catch (IllegalArgumentException e) {
-                                System.out.println("Invalid audience. Valid values: " + java.util.Arrays.toString(Role.values()));
+                                System.out.println("Invalid audience. Valid values: " + Arrays.toString(Role.values()));
                             }
                         }
                     }
@@ -210,7 +214,7 @@ public final class HostCommand implements Callable<Integer> {
                                 host.revokeAudience(audience);
                                 System.out.println("Revoked audience: " + audience);
                             } catch (IllegalArgumentException e) {
-                                System.out.println("Invalid audience. Valid values: " + java.util.Arrays.toString(Role.values()));
+                                System.out.println("Invalid audience. Valid values: " + Arrays.toString(Role.values()));
                             }
                         }
                     }
@@ -219,8 +223,8 @@ public final class HostCommand implements Callable<Integer> {
                             System.out.println("Usage: request <client-id> <method> [json-params]");
                         } else {
                             var params = parts.length > 3 ?
-                                    jakarta.json.Json.createReader(new java.io.StringReader(parts[3])).readObject() :
-                                    jakarta.json.Json.createObjectBuilder().build();
+                                    Json.createReader(new StringReader(parts[3])).readObject() :
+                                    Json.createObjectBuilder().build();
                             System.out.println(host.request(parts[1], parts[2], params));
                         }
                     }
@@ -229,8 +233,8 @@ public final class HostCommand implements Callable<Integer> {
                             System.out.println("Usage: notify <client-id> <method> [json-params]");
                         } else {
                             var params = parts.length > 3 ?
-                                    jakarta.json.Json.createReader(new java.io.StringReader(parts[3])).readObject() :
-                                    jakarta.json.Json.createObjectBuilder().build();
+                                    Json.createReader(new StringReader(parts[3])).readObject() :
+                                    Json.createObjectBuilder().build();
                             host.notify(parts[1], parts[2], params);
                             System.out.println("Notification sent");
                         }

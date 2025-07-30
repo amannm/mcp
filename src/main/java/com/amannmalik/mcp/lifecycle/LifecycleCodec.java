@@ -4,6 +4,7 @@ import jakarta.json.Json;
 import jakarta.json.JsonObject;
 
 import java.util.EnumSet;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
@@ -21,7 +22,7 @@ public final class LifecycleCodec {
             caps.add(c.name().toLowerCase(), b.build());
         }
         req.capabilities().clientExperimental()
-                .forEach((k, v) -> caps.add(k, v));
+                .forEach(caps::add);
         var info = Json.createObjectBuilder()
                 .add("name", req.clientInfo().name())
                 .add("version", req.clientInfo().version());
@@ -99,7 +100,7 @@ public final class LifecycleCodec {
             server.add(c.name().toLowerCase(), b.build());
         }
         resp.capabilities().serverExperimental()
-                .forEach((k, v) -> server.add(k, v));
+                .forEach(server::add);
         var info = Json.createObjectBuilder()
                 .add("name", resp.serverInfo().name())
                 .add("version", resp.serverInfo().version());
@@ -119,7 +120,7 @@ public final class LifecycleCodec {
         JsonObject capsObj = obj.getJsonObject("capabilities");
         Set<ClientCapability> client = EnumSet.noneOf(ClientCapability.class);
         Set<ServerCapability> server = EnumSet.noneOf(ServerCapability.class);
-        Map<String, JsonObject> experimental = new java.util.HashMap<>();
+        Map<String, JsonObject> experimental = new HashMap<>();
         if (capsObj != null) {
             capsObj.forEach((k, v) -> {
                 try {

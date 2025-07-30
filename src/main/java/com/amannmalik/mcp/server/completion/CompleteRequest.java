@@ -3,7 +3,9 @@ package com.amannmalik.mcp.server.completion;
 import com.amannmalik.mcp.validation.InputSanitizer;
 import com.amannmalik.mcp.validation.MetaValidator;
 import com.amannmalik.mcp.validation.UriTemplateValidator;
+import jakarta.json.JsonObject;
 
+import java.util.HashMap;
 import java.util.Map;
 
 public record CompleteRequest(
@@ -32,7 +34,7 @@ public record CompleteRequest(
             if (arguments == null || arguments.isEmpty()) {
                 this.arguments = Map.of();
             } else {
-                Map<String, String> copy = new java.util.HashMap<>();
+                Map<String, String> copy = new HashMap<>();
                 arguments.forEach((k, v) -> {
                     copy.put(InputSanitizer.requireClean(k), InputSanitizer.requireClean(v));
                 });
@@ -49,8 +51,8 @@ public record CompleteRequest(
     public sealed interface Ref permits Ref.PromptRef, Ref.ResourceRef {
         String type();
 
-        record PromptRef(String name, String title, jakarta.json.JsonObject _meta) implements Ref {
-            public PromptRef(String name, String title, jakarta.json.JsonObject _meta) {
+        record PromptRef(String name, String title, JsonObject _meta) implements Ref {
+            public PromptRef(String name, String title, JsonObject _meta) {
                 if (name == null) throw new IllegalArgumentException("name required");
                 this.name = InputSanitizer.requireClean(name);
                 this.title = title == null ? null : InputSanitizer.requireClean(title);

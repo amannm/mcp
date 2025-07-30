@@ -1,11 +1,20 @@
 package com.amannmalik.mcp.client.sampling;
 
 import com.amannmalik.mcp.prompts.Role;
+import jakarta.json.Json;
+import jakarta.json.JsonArrayBuilder;
+import jakarta.json.JsonObject;
 
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.io.StringReader;
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
 import java.util.List;
+import java.util.Optional;
 
 public final class InteractiveSamplingProvider implements SamplingProvider {
 
@@ -130,53 +139,53 @@ public final class InteractiveSamplingProvider implements SamplingProvider {
     private record AiResult(String content, String model) {
     }
 
-    private java.util.Optional<AiResult> openAiResponse(CreateMessageRequest request) throws IOException, InterruptedException {
+    private Optional<AiResult> openAiResponse(CreateMessageRequest request) throws IOException, InterruptedException {
         String apiKey = System.getenv("OPENAI_API_KEY");
-        if (apiKey == null || apiKey.isBlank()) return java.util.Optional.empty();
+        if (apiKey == null || apiKey.isBlank()) return Optional.empty();
 
-        java.net.http.HttpClient client = java.net.http.HttpClient.newHttpClient();
+        HttpClient client = HttpClient.newHttpClient();
 
-        jakarta.json.JsonArrayBuilder msgs = jakarta.json.Json.createArrayBuilder();
+        JsonArrayBuilder msgs = Json.createArrayBuilder();
         if (request.systemPrompt() != null) {
-            msgs.add(jakarta.json.Json.createObjectBuilder()
+            msgs.add(Json.createObjectBuilder()
                     .add("role", "system")
                     .add("content", request.systemPrompt())
                     .build());
         }
         for (SamplingMessage m : request.messages()) {
             if (m.content() instanceof MessageContent.Text t) {
-                msgs.add(jakarta.json.Json.createObjectBuilder()
+                msgs.add(Json.createObjectBuilder()
                         .add("role", m.role().name().toLowerCase())
                         .add("content", t.text())
                         .build());
             }
         }
 
-        jakarta.json.JsonObject body = jakarta.json.Json.createObjectBuilder()
+        JsonObject body = Json.createObjectBuilder()
                 .add("model", "gpt-3.5-turbo")
                 .add("messages", msgs)
                 .add("max_tokens", request.maxTokens())
                 .build();
 
-        java.net.http.HttpRequest httpRequest = java.net.http.HttpRequest.newBuilder()
-                .uri(java.net.URI.create("https://api.openai.com/v1/chat/completions"))
+        HttpRequest httpRequest = HttpRequest.newBuilder()
+                .uri(URI.create("https://api.openai.com/v1/chat/completions"))
                 .header("Authorization", "Bearer " + apiKey)
                 .header("Content-Type", "application/json")
-                .POST(java.net.http.HttpRequest.BodyPublishers.ofString(body.toString()))
+                .POST(HttpRequest.BodyPublishers.ofString(body.toString()))
                 .build();
 
-        java.net.http.HttpResponse<String> response = client.send(httpRequest, java.net.http.HttpResponse.BodyHandlers.ofString());
-        if (response.statusCode() / 100 != 2) return java.util.Optional.empty();
+        HttpResponse<String> response = client.send(httpRequest, HttpResponse.BodyHandlers.ofString());
+        if (response.statusCode() / 100 != 2) return Optional.empty();
 
-        jakarta.json.JsonObject obj = jakarta.json.Json.createReader(new java.io.StringReader(response.body())).readObject();
+        JsonObject obj = Json.createReader(new StringReader(response.body())).readObject();
         var choices = obj.getJsonArray("choices");
-        if (choices == null || choices.isEmpty()) return java.util.Optional.empty();
+        if (choices == null || choices.isEmpty()) return Optional.empty();
         var msg = choices.getJsonObject(0).getJsonObject("message");
-        if (msg == null) return java.util.Optional.empty();
+        if (msg == null) return Optional.empty();
         String content = msg.getString("content", null);
-        if (content == null) return java.util.Optional.empty();
+        if (content == null) return Optional.empty();
         String model = obj.getString("model", "openai");
-        return java.util.Optional.of(new AiResult(content.trim(), model));
+        return Optional.of(new AiResult(content.trim(), model));
     }
 
     private String generateSimpleResponse(CreateMessageRequest request) {

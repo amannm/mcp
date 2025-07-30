@@ -10,6 +10,9 @@ import jakarta.json.JsonObject;
 import jakarta.json.JsonObjectBuilder;
 import jakarta.json.JsonValue;
 
+import java.util.ArrayList;
+import java.util.List;
+
 public final class ToolCodec {
     private ToolCodec() {
     }
@@ -94,7 +97,7 @@ public final class ToolCodec {
         if (obj == null) throw new IllegalArgumentException("object required");
         JsonArray arr = obj.getJsonArray("tools");
         if (arr == null) throw new IllegalArgumentException("tools required");
-        java.util.List<Tool> tools = new java.util.ArrayList<>();
+        List<Tool> tools = new ArrayList<>();
         for (JsonValue v : arr) {
             if (v.getValueType() != JsonValue.ValueType.OBJECT) {
                 throw new IllegalArgumentException("tool must be object");

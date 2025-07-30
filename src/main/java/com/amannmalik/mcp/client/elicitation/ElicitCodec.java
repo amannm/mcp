@@ -3,6 +3,7 @@ package com.amannmalik.mcp.client.elicitation;
 import jakarta.json.Json;
 import jakarta.json.JsonObject;
 import jakarta.json.JsonObjectBuilder;
+import jakarta.json.JsonValue;
 
 public final class ElicitCodec {
     private ElicitCodec() {
@@ -21,7 +22,7 @@ public final class ElicitCodec {
         if (!obj.containsKey("message")) throw new IllegalArgumentException("message required");
         if (!obj.containsKey("requestedSchema")) throw new IllegalArgumentException("requestedSchema required");
         var schemaVal = obj.get("requestedSchema");
-        if (schemaVal == null || schemaVal.getValueType() != jakarta.json.JsonValue.ValueType.OBJECT) {
+        if (schemaVal == null || schemaVal.getValueType() != JsonValue.ValueType.OBJECT) {
             throw new IllegalArgumentException("requestedSchema must be object");
         }
         JsonObject meta = obj.containsKey("_meta") ? obj.getJsonObject("_meta") : null;
@@ -52,10 +53,10 @@ public final class ElicitCodec {
         } catch (IllegalArgumentException e) {
             throw new IllegalArgumentException("invalid action", e);
         }
-        jakarta.json.JsonValue c = obj.get("content");
+        JsonValue c = obj.get("content");
         JsonObject content = null;
         if (c != null) {
-            if (c.getValueType() != jakarta.json.JsonValue.ValueType.OBJECT) {
+            if (c.getValueType() != JsonValue.ValueType.OBJECT) {
                 throw new IllegalArgumentException("content must be object");
             }
             content = c.asJsonObject();

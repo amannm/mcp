@@ -12,13 +12,13 @@ import com.amannmalik.mcp.server.tools.ToolCodec;
 import com.amannmalik.mcp.server.tools.ToolResult;
 import com.amannmalik.mcp.util.PaginatedRequest;
 import com.amannmalik.mcp.util.PaginationCodec;
-
 import jakarta.json.Json;
 import jakarta.json.JsonObject;
 
 import java.io.IOException;
 import java.util.Collections;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
@@ -32,16 +32,16 @@ public final class HostProcess implements AutoCloseable {
     private final PrivacyBoundaryEnforcer privacyBoundary;
     private final SamplingAccessController samplingAccess;
 
-    private static java.util.Optional<ServerCapability> capabilityForMethod(String method) {
-        if (method.startsWith("tools/")) return java.util.Optional.of(ServerCapability.TOOLS);
-        if (method.startsWith("resources/")) return java.util.Optional.of(ServerCapability.RESOURCES);
-        if (method.startsWith("prompts/")) return java.util.Optional.of(ServerCapability.PROMPTS);
-        if (method.startsWith("completion/")) return java.util.Optional.of(ServerCapability.COMPLETIONS);
-        if (method.startsWith("logging/")) return java.util.Optional.of(ServerCapability.LOGGING);
-        return java.util.Optional.empty();
+    private static Optional<ServerCapability> capabilityForMethod(String method) {
+        if (method.startsWith("tools/")) return Optional.of(ServerCapability.TOOLS);
+        if (method.startsWith("resources/")) return Optional.of(ServerCapability.RESOURCES);
+        if (method.startsWith("prompts/")) return Optional.of(ServerCapability.PROMPTS);
+        if (method.startsWith("completion/")) return Optional.of(ServerCapability.COMPLETIONS);
+        if (method.startsWith("logging/")) return Optional.of(ServerCapability.LOGGING);
+        return Optional.empty();
     }
 
-    private static void requireCapability(McpClient client, java.util.Optional<ServerCapability> cap) {
+    private static void requireCapability(McpClient client, Optional<ServerCapability> cap) {
         cap.ifPresent(c -> {
             if (!client.serverCapabilities().contains(c)) {
                 throw new IllegalStateException("Server capability not supported: " + c);
@@ -134,7 +134,7 @@ public final class HostProcess implements AutoCloseable {
     public ListToolsResult listTools(String clientId, String cursor) throws IOException {
         McpClient client = clients.get(clientId);
         if (client == null) throw new IllegalArgumentException("Unknown client: " + clientId);
-        requireCapability(client, java.util.Optional.of(ServerCapability.TOOLS));
+        requireCapability(client, Optional.of(ServerCapability.TOOLS));
         JsonObject params = PaginationCodec.toJsonObject(new PaginatedRequest(cursor));
         JsonRpcMessage resp = client.request("tools/list", params);
         if (resp instanceof JsonRpcResponse r) return ToolCodec.toListToolsResult(r.result());
@@ -145,7 +145,7 @@ public final class HostProcess implements AutoCloseable {
     public ToolResult callTool(String clientId, String name, JsonObject args) throws IOException {
         McpClient client = clients.get(clientId);
         if (client == null) throw new IllegalArgumentException("Unknown client: " + clientId);
-        requireCapability(client, java.util.Optional.of(ServerCapability.TOOLS));
+        requireCapability(client, Optional.of(ServerCapability.TOOLS));
         toolAccess.requireAllowed(principal, name);
         JsonObject params = Json.createObjectBuilder()
                 .add("name", name)

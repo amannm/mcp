@@ -1,6 +1,7 @@
 package com.amannmalik.mcp.client.sampling;
 
 import com.amannmalik.mcp.annotations.Annotations;
+import com.amannmalik.mcp.validation.InputSanitizer;
 import com.amannmalik.mcp.validation.MetaValidator;
 import jakarta.json.JsonObject;
 
@@ -14,7 +15,7 @@ public sealed interface MessageContent permits MessageContent.Text, MessageConte
     record Text(String text, Annotations annotations, JsonObject _meta) implements MessageContent {
         public Text {
             if (text == null) throw new IllegalArgumentException("text is required");
-            text = com.amannmalik.mcp.validation.InputSanitizer.requireClean(text);
+            text = InputSanitizer.requireClean(text);
             MetaValidator.requireValid(_meta);
         }
 

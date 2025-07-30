@@ -12,8 +12,10 @@ import jakarta.json.JsonString;
 
 import java.time.Instant;
 import java.time.format.DateTimeParseException;
+import java.util.ArrayList;
 import java.util.Base64;
 import java.util.EnumSet;
+import java.util.List;
 import java.util.Set;
 
 public final class ResourcesCodec {
@@ -213,7 +215,7 @@ public final class ResourcesCodec {
     public static ReadResourceResult toReadResourceResult(JsonObject obj) {
         var arr = obj.getJsonArray("contents");
         if (arr == null) throw new IllegalArgumentException("contents required");
-        java.util.List<ResourceBlock> list = new java.util.ArrayList<>();
+        List<ResourceBlock> list = new ArrayList<>();
         arr.forEach(v -> list.add(toResourceBlock(v.asJsonObject())));
         return new ReadResourceResult(list);
     }
@@ -245,7 +247,7 @@ public final class ResourcesCodec {
         if (obj == null) throw new IllegalArgumentException("object required");
         var arr = obj.getJsonArray("resources");
         if (arr == null) throw new IllegalArgumentException("resources required");
-        java.util.List<Resource> resources = new java.util.ArrayList<>();
+        List<Resource> resources = new ArrayList<>();
         arr.forEach(v -> resources.add(toResource(v.asJsonObject())));
         String cursor = PaginationCodec.toPaginatedResult(obj).nextCursor();
         return new ListResourcesResult(resources, cursor);
@@ -285,7 +287,7 @@ public final class ResourcesCodec {
         if (obj == null) throw new IllegalArgumentException("object required");
         var arr = obj.getJsonArray("resourceTemplates");
         if (arr == null) throw new IllegalArgumentException("resourceTemplates required");
-        java.util.List<ResourceTemplate> templates = new java.util.ArrayList<>();
+        List<ResourceTemplate> templates = new ArrayList<>();
         arr.forEach(v -> templates.add(toResourceTemplate(v.asJsonObject())));
         String cursor = PaginationCodec.toPaginatedResult(obj).nextCursor();
         return new ListResourceTemplatesResult(templates, cursor);
