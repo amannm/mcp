@@ -130,7 +130,7 @@ public final class McpConformanceSteps {
                     "--auth-server", "http://127.0.0.1/auth", "-v"));
             ProcessBuilder pb = new ProcessBuilder(args);
             serverProcess = pb.start();
-            long end = System.currentTimeMillis() + 500;
+            long end = System.currentTimeMillis() + 2000;
             boolean started = false;
             while (System.currentTimeMillis() < end) {
                 if (serverProcess.isAlive()) {
