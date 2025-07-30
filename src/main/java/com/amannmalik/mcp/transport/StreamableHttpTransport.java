@@ -45,9 +45,11 @@ public final class StreamableHttpTransport implements Transport {
     private final AuthorizationManager authManager;
     private final String resourceMetadataUrl;
     private static final String PROTOCOL_HEADER = "MCP-Protocol-Version";
-    // Default to the previous protocol revision when no version header is
-    // present, as recommended for backwards compatibility.
-    private static final String DEFAULT_VERSION = "2025-03-26";
+    // Default to the current protocol revision when no version header is
+    // present. Older clients can still negotiate earlier versions during
+    // initialization.
+    private static final String DEFAULT_VERSION =
+            com.amannmalik.mcp.lifecycle.ProtocolLifecycle.SUPPORTED_VERSION;
     private final BlockingQueue<JsonObject> incoming = new LinkedBlockingQueue<>();
     private final Set<SseClient> generalClients = ConcurrentHashMap.newKeySet();
     private final ConcurrentHashMap<String, SseClient> requestStreams = new ConcurrentHashMap<>();
