@@ -27,4 +27,8 @@ public record Resource(
         }
         MetaValidator.requireValid(_meta);
     }
+
+    public String displayName() {
+        return title != null ? title : name;
+    }
 }
