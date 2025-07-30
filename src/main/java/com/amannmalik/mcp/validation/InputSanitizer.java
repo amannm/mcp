@@ -7,6 +7,15 @@ public final class InputSanitizer {
     private InputSanitizer() {
     }
 
+    public static boolean isVisibleAscii(String value) {
+        if (value == null) return false;
+        for (int i = 0; i < value.length(); i++) {
+            char c = value.charAt(i);
+            if (c < 0x21 || c > 0x7E) return false;
+        }
+        return true;
+    }
+
     public static String requireClean(String value) {
         if (value == null) throw new IllegalArgumentException("value is required");
         for (int i = 0; i < value.length(); i++) {
