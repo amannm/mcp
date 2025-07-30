@@ -17,31 +17,13 @@ public final class RootsCodec {
         return Json.createObjectBuilder().build();
     }
 
-    public static ListRootsRequest toListRootsRequest(JsonObject obj) {
-        if (obj != null && !obj.isEmpty()) {
-            throw new IllegalArgumentException("unexpected fields");
-        }
-        return new ListRootsRequest();
-    }
-
     public static JsonObject toJsonObject(ListRootsResponse resp) {
         return toJsonObject(resp.roots());
-    }
-
-    public static ListRootsResponse toListRootsResponse(JsonObject obj) {
-        return new ListRootsResponse(toRoots(obj));
     }
 
     public static JsonObject toJsonObject(RootsListChangedNotification n) {
         if (n == null) throw new IllegalArgumentException("notification required");
         return Json.createObjectBuilder().build();
-    }
-
-    public static RootsListChangedNotification toRootsListChangedNotification(JsonObject obj) {
-        if (obj != null && !obj.isEmpty()) {
-            throw new IllegalArgumentException("unexpected fields");
-        }
-        return new RootsListChangedNotification();
     }
 
     public static JsonObject toJsonObject(Root root) {
