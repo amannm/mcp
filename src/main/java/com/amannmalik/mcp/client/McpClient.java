@@ -514,8 +514,7 @@ public final class McpClient implements AutoCloseable {
             });
         } catch (IllegalArgumentException e) {
             cancellationTracker.release(req.id());
-            return new JsonRpcError(req.id(), new JsonRpcError.ErrorDetail(
-                    JsonRpcErrorCode.INVALID_PARAMS.code(), e.getMessage(), null));
+            return JsonRpcError.of(req.id(), JsonRpcErrorCode.INVALID_PARAMS, e.getMessage());
         }
 
         boolean cancelled;
@@ -523,9 +522,8 @@ public final class McpClient implements AutoCloseable {
         try {
             RequestHandler handler = requestHandlers.get(req.method());
             if (handler == null) {
-                resp = new JsonRpcError(req.id(), new JsonRpcError.ErrorDetail(
-                        JsonRpcErrorCode.METHOD_NOT_FOUND.code(),
-                        "Unknown method: " + req.method(), null));
+                resp = JsonRpcError.of(req.id(), JsonRpcErrorCode.METHOD_NOT_FOUND,
+                        "Unknown method: " + req.method());
             } else {
                 resp = handler.handle(req);
             }
@@ -548,63 +546,50 @@ public final class McpClient implements AutoCloseable {
 
     private JsonRpcMessage handleCreateMessage(JsonRpcRequest req) {
         if (sampling == null) {
-            return new JsonRpcError(req.id(), new JsonRpcError.ErrorDetail(
-                    JsonRpcErrorCode.METHOD_NOT_FOUND.code(),
-                    "Sampling not supported", null));
+            return JsonRpcError.of(req.id(), JsonRpcErrorCode.METHOD_NOT_FOUND, "Sampling not supported");
         }
         JsonObject params = req.params();
         if (params == null) {
-            return new JsonRpcError(req.id(), new JsonRpcError.ErrorDetail(
-                    JsonRpcErrorCode.INVALID_PARAMS.code(), "Missing params", null));
+            return JsonRpcError.of(req.id(), JsonRpcErrorCode.INVALID_PARAMS, "Missing params");
         }
         try {
             CreateMessageRequest cmr = SamplingCodec.toCreateMessageRequest(params);
             try {
                 samplingAccess.requireAllowed(principal);
             } catch (SecurityException e) {
-                return new JsonRpcError(req.id(), new JsonRpcError.ErrorDetail(
-                        JsonRpcErrorCode.INTERNAL_ERROR.code(), e.getMessage(), null));
+                return JsonRpcError.of(req.id(), JsonRpcErrorCode.INTERNAL_ERROR, e.getMessage());
             }
             CreateMessageResponse resp = sampling.createMessage(cmr);
             return new JsonRpcResponse(req.id(), SamplingCodec.toJsonObject(resp));
         } catch (IllegalArgumentException e) {
-            return new JsonRpcError(req.id(), new JsonRpcError.ErrorDetail(
-                    JsonRpcErrorCode.INVALID_PARAMS.code(), e.getMessage(), null));
+            return JsonRpcError.of(req.id(), JsonRpcErrorCode.INVALID_PARAMS, e.getMessage());
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
-            return new JsonRpcError(req.id(), new JsonRpcError.ErrorDetail(
-                    JsonRpcErrorCode.INTERNAL_ERROR.code(), "Sampling interrupted", null));
+            return JsonRpcError.of(req.id(), JsonRpcErrorCode.INTERNAL_ERROR, "Sampling interrupted");
         } catch (Exception e) {
-            return new JsonRpcError(req.id(), new JsonRpcError.ErrorDetail(
-                    JsonRpcErrorCode.INTERNAL_ERROR.code(), e.getMessage(), null));
+            return JsonRpcError.of(req.id(), JsonRpcErrorCode.INTERNAL_ERROR, e.getMessage());
         }
     }
 
     private JsonRpcMessage handleListRoots(JsonRpcRequest req) {
         if (roots == null) {
-            return new JsonRpcError(req.id(), new JsonRpcError.ErrorDetail(
-                    JsonRpcErrorCode.METHOD_NOT_FOUND.code(),
-                    "Roots not supported", null));
+            return JsonRpcError.of(req.id(), JsonRpcErrorCode.METHOD_NOT_FOUND, "Roots not supported");
         }
         try {
             var list = roots.list();
             return new JsonRpcResponse(req.id(), RootsCodec.toJsonObject(list));
         } catch (Exception e) {
-            return new JsonRpcError(req.id(), new JsonRpcError.ErrorDetail(
-                    JsonRpcErrorCode.INTERNAL_ERROR.code(), e.getMessage(), null));
+            return JsonRpcError.of(req.id(), JsonRpcErrorCode.INTERNAL_ERROR, e.getMessage());
         }
     }
 
     private JsonRpcMessage handleElicit(JsonRpcRequest req) {
         if (elicitation == null) {
-            return new JsonRpcError(req.id(), new JsonRpcError.ErrorDetail(
-                    JsonRpcErrorCode.METHOD_NOT_FOUND.code(),
-                    "Elicitation not supported", null));
+            return JsonRpcError.of(req.id(), JsonRpcErrorCode.METHOD_NOT_FOUND, "Elicitation not supported");
         }
         JsonObject params = req.params();
         if (params == null) {
-            return new JsonRpcError(req.id(), new JsonRpcError.ErrorDetail(
-                    JsonRpcErrorCode.INVALID_PARAMS.code(), "Missing params", null));
+            return JsonRpcError.of(req.id(), JsonRpcErrorCode.INVALID_PARAMS, "Missing params");
         }
         try {
             ElicitRequest er = ElicitCodec.toRequest(params);
@@ -613,17 +598,14 @@ public final class McpClient implements AutoCloseable {
                 try {
                     SchemaValidator.validate(er.requestedSchema(), resp.content());
                 } catch (IllegalArgumentException ve) {
-                    return new JsonRpcError(req.id(), new JsonRpcError.ErrorDetail(
-                            JsonRpcErrorCode.INVALID_PARAMS.code(), ve.getMessage(), null));
+                    return JsonRpcError.of(req.id(), JsonRpcErrorCode.INVALID_PARAMS, ve.getMessage());
                 }
             }
             return new JsonRpcResponse(req.id(), ElicitCodec.toJsonObject(resp));
         } catch (IllegalArgumentException e) {
-            return new JsonRpcError(req.id(), new JsonRpcError.ErrorDetail(
-                    JsonRpcErrorCode.INVALID_PARAMS.code(), e.getMessage(), null));
+            return JsonRpcError.of(req.id(), JsonRpcErrorCode.INVALID_PARAMS, e.getMessage());
         } catch (Exception e) {
-            return new JsonRpcError(req.id(), new JsonRpcError.ErrorDetail(
-                    JsonRpcErrorCode.INTERNAL_ERROR.code(), e.getMessage(), null));
+            return JsonRpcError.of(req.id(), JsonRpcErrorCode.INTERNAL_ERROR, e.getMessage());
         }
     }
 
@@ -632,8 +614,7 @@ public final class McpClient implements AutoCloseable {
             PingCodec.toPingRequest(req);
             return PingCodec.toResponse(req.id());
         } catch (IllegalArgumentException e) {
-            return new JsonRpcError(req.id(), new JsonRpcError.ErrorDetail(
-                    JsonRpcErrorCode.INVALID_PARAMS.code(), e.getMessage(), null));
+            return JsonRpcError.of(req.id(), JsonRpcErrorCode.INVALID_PARAMS, e.getMessage());
         }
     }
 

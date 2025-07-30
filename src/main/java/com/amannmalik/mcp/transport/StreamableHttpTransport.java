@@ -162,11 +162,10 @@ public final class StreamableHttpTransport implements Transport {
             requestStreams.forEach((id, client) -> {
                 try {
                     RequestId reqId = RequestId.parse(id);
-                    JsonRpcError err = new JsonRpcError(reqId,
-                            new JsonRpcError.ErrorDetail(
-                                    JsonRpcErrorCode.INTERNAL_ERROR.code(),
-                                    "Transport closed",
-                                    null));
+                    JsonRpcError err = JsonRpcError.of(
+                            reqId,
+                            JsonRpcErrorCode.INTERNAL_ERROR,
+                            "Transport closed");
                     client.send(JsonRpcCodec.toJsonObject(err));
                     client.close();
                 } catch (Exception ignore) {
@@ -177,11 +176,10 @@ public final class StreamableHttpTransport implements Transport {
 
             responseQueues.forEach((id, queue) -> {
                 RequestId reqId = RequestId.parse(id);
-                JsonRpcError err = new JsonRpcError(reqId,
-                        new JsonRpcError.ErrorDetail(
-                                JsonRpcErrorCode.INTERNAL_ERROR.code(),
-                                "Transport closed",
-                                null));
+                JsonRpcError err = JsonRpcError.of(
+                        reqId,
+                        JsonRpcErrorCode.INTERNAL_ERROR,
+                        "Transport closed");
                 queue.offer(JsonRpcCodec.toJsonObject(err));
             });
             responseQueues.clear();
