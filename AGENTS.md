@@ -26,7 +26,7 @@ description: MCP Implementation Expert
 - Avoid `null` and `Object` and `.orElse(null)`
 - Use `instanceof` to simultaneously select types and reject `null`
 - Use polymorphism/default/sentinels instead of `null` in data models
-- Indicate nullable returns with `Optional<T>`
+- Use `Optional<T>` only for nullable returns
 - Unchecked casts are unacceptable
 - Avoid `java.lang.reflect` and `javax.annotation`
 - Never get lazy and suppress warnings
