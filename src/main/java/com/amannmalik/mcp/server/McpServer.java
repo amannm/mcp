@@ -691,7 +691,7 @@ public final class McpServer implements AutoCloseable {
             return new JsonRpcError(req.id(), new JsonRpcError.ErrorDetail(
                     JsonRpcErrorCode.INTERNAL_ERROR.code(), e.getMessage(), null));
         }
-        return new JsonRpcResponse(req.id(), Json.createObjectBuilder().build());
+        return new JsonRpcResponse(req.id(), JsonValue.EMPTY_JSON_OBJECT);
     }
 
     private JsonRpcMessage unsubscribeResource(JsonRpcRequest req) {
@@ -715,7 +715,7 @@ public final class McpServer implements AutoCloseable {
             } catch (Exception ignore) {
             }
         }
-        return new JsonRpcResponse(req.id(), Json.createObjectBuilder().build());
+        return new JsonRpcResponse(req.id(), JsonValue.EMPTY_JSON_OBJECT);
     }
 
     private JsonRpcMessage listTools(JsonRpcRequest req) {
@@ -841,7 +841,7 @@ public final class McpServer implements AutoCloseable {
         }
         try {
             logLevel = LoggingCodec.toSetLevelRequest(params).level();
-            return new JsonRpcResponse(req.id(), Json.createObjectBuilder().build());
+            return new JsonRpcResponse(req.id(), JsonValue.EMPTY_JSON_OBJECT);
         } catch (IllegalArgumentException e) {
             return new JsonRpcError(req.id(), new JsonRpcError.ErrorDetail(
                     JsonRpcErrorCode.INVALID_PARAMS.code(), e.getMessage(), null));

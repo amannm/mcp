@@ -9,6 +9,7 @@ import jakarta.json.Json;
 import jakarta.json.JsonObject;
 import jakarta.json.JsonObjectBuilder;
 import jakarta.json.JsonString;
+import jakarta.json.JsonValue;
 
 import java.time.Instant;
 import java.time.format.DateTimeParseException;
@@ -147,7 +148,7 @@ public final class ResourcesCodec {
 
     public static JsonObject toJsonObject(ResourceListChangedNotification n) {
         if (n == null) throw new IllegalArgumentException("notification required");
-        return Json.createObjectBuilder().build();
+        return JsonValue.EMPTY_JSON_OBJECT;
     }
 
     public static ResourceListChangedNotification toResourceListChangedNotification(JsonObject obj) {

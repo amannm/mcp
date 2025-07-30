@@ -76,7 +76,7 @@ public final class PromptCodec {
 
     public static JsonObject toJsonObject(PromptListChangedNotification n) {
         if (n == null) throw new IllegalArgumentException("notification required");
-        return Json.createObjectBuilder().build();
+        return JsonValue.EMPTY_JSON_OBJECT;
     }
 
     public static PromptListChangedNotification toPromptListChangedNotification(JsonObject obj) {

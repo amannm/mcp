@@ -4,6 +4,7 @@ import jakarta.json.Json;
 import jakarta.json.JsonArrayBuilder;
 import jakarta.json.JsonObject;
 import jakarta.json.JsonObjectBuilder;
+import jakarta.json.JsonValue;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -14,7 +15,7 @@ public final class RootsCodec {
 
     public static JsonObject toJsonObject(ListRootsRequest req) {
         if (req == null) throw new IllegalArgumentException("request required");
-        return Json.createObjectBuilder().build();
+        return JsonValue.EMPTY_JSON_OBJECT;
     }
 
     public static JsonObject toJsonObject(ListRootsResponse resp) {
@@ -23,7 +24,7 @@ public final class RootsCodec {
 
     public static JsonObject toJsonObject(RootsListChangedNotification n) {
         if (n == null) throw new IllegalArgumentException("notification required");
-        return Json.createObjectBuilder().build();
+        return JsonValue.EMPTY_JSON_OBJECT;
     }
 
     public static JsonObject toJsonObject(Root root) {

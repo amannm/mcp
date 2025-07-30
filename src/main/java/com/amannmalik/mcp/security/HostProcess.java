@@ -14,6 +14,7 @@ import com.amannmalik.mcp.util.PaginatedRequest;
 import com.amannmalik.mcp.util.PaginationCodec;
 import jakarta.json.Json;
 import jakarta.json.JsonObject;
+import jakarta.json.JsonValue;
 
 import java.io.IOException;
 import java.util.Collections;
@@ -149,7 +150,7 @@ public final class HostProcess implements AutoCloseable {
         toolAccess.requireAllowed(principal, name);
         JsonObject params = Json.createObjectBuilder()
                 .add("name", name)
-                .add("arguments", args == null ? Json.createObjectBuilder().build() : args)
+                .add("arguments", args == null ? JsonValue.EMPTY_JSON_OBJECT : args)
                 .build();
         JsonRpcMessage resp = client.request("tools/call", params);
         if (resp instanceof JsonRpcResponse r) return ToolCodec.toToolResult(r.result());

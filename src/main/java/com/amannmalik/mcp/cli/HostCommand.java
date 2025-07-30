@@ -14,6 +14,7 @@ import com.amannmalik.mcp.security.ToolAccessController;
 import com.amannmalik.mcp.server.tools.ToolCodec;
 import com.amannmalik.mcp.transport.StdioTransport;
 import jakarta.json.Json;
+import jakarta.json.JsonValue;
 import picocli.CommandLine;
 
 import java.io.BufferedReader;
@@ -224,7 +225,7 @@ public final class HostCommand implements Callable<Integer> {
                         } else {
                             var params = parts.length > 3 ?
                                     Json.createReader(new StringReader(parts[3])).readObject() :
-                                    Json.createObjectBuilder().build();
+                                    JsonValue.EMPTY_JSON_OBJECT;
                             System.out.println(host.request(parts[1], parts[2], params));
                         }
                     }
@@ -234,7 +235,7 @@ public final class HostCommand implements Callable<Integer> {
                         } else {
                             var params = parts.length > 3 ?
                                     Json.createReader(new StringReader(parts[3])).readObject() :
-                                    Json.createObjectBuilder().build();
+                                    JsonValue.EMPTY_JSON_OBJECT;
                             host.notify(parts[1], parts[2], params);
                             System.out.println("Notification sent");
                         }
