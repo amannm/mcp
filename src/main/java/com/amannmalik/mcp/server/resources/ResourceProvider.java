@@ -15,7 +15,7 @@ public interface ResourceProvider extends AutoCloseable {
     }
 
     default boolean supportsSubscribe() {
-        return true;
+        return false;
     }
 
     default boolean supportsListChanged() {
