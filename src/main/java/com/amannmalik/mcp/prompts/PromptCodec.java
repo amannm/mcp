@@ -81,18 +81,31 @@ public final class PromptCodec {
         if (content.annotations() != null) {
             b.add("annotations", ResourcesCodec.toJsonObject(content.annotations()));
         }
-        if (content._meta() != null) b.add("_meta", content._meta());
         switch (content) {
-            case PromptContent.Text t -> b.add("text", t.text());
-            case PromptContent.Image i -> b.add("data", Base64.getEncoder().encodeToString(i.data()))
-                    .add("mimeType", i.mimeType());
-            case PromptContent.Audio a -> b.add("data", Base64.getEncoder().encodeToString(a.data()))
-                    .add("mimeType", a.mimeType());
-            case PromptContent.EmbeddedResource r -> b.add("resource", ResourcesCodec.toJsonObject(r.resource()));
+            case PromptContent.Text t -> {
+                if (content._meta() != null) b.add("_meta", content._meta());
+                b.add("text", t.text());
+            }
+            case PromptContent.Image i -> {
+                if (content._meta() != null) b.add("_meta", content._meta());
+                b.add("data", Base64.getEncoder().encodeToString(i.data()))
+                        .add("mimeType", i.mimeType());
+            }
+            case PromptContent.Audio a -> {
+                if (content._meta() != null) b.add("_meta", content._meta());
+                b.add("data", Base64.getEncoder().encodeToString(a.data()))
+                        .add("mimeType", a.mimeType());
+            }
+            case PromptContent.EmbeddedResource r -> {
+                if (content._meta() != null) b.add("_meta", content._meta());
+                b.add("resource", ResourcesCodec.toJsonObject(r.resource()));
+            }
             case PromptContent.ResourceLink l -> {
-                for (var e : ResourcesCodec.toJsonObject(l.resource()).entrySet()) {
-                    b.add(e.getKey(), e.getValue());
-                }
+                JsonObject obj = ResourcesCodec.toJsonObject(l.resource());
+                obj.forEach((k, v) -> {
+                    if (!"_meta".equals(k)) b.add(k, v);
+                });
+                if (l.resource()._meta() != null) b.add("_meta", l.resource()._meta());
             }
         }
         return b.build();
