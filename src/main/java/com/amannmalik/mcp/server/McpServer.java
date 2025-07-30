@@ -110,6 +110,7 @@ import jakarta.json.stream.JsonParsingException;
 import java.io.EOFException;
 import java.io.IOException;
 import java.util.EnumSet;
+import java.net.URI;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -482,6 +483,33 @@ public final class McpServer implements AutoCloseable {
         }
     }
 
+    private boolean withinRoots(String uri) {
+        URI target;
+        try {
+            target = URI.create(uri);
+        } catch (IllegalArgumentException e) {
+            return false;
+        }
+        if (!"file".equalsIgnoreCase(target.getScheme())) {
+            return true;
+        }
+        if (roots.isEmpty()) return true;
+        for (Root r : roots) {
+            try {
+                URI base = URI.create(r.uri());
+                if ("file".equalsIgnoreCase(base.getScheme())) {
+                    String basePath = base.getPath();
+                    String targetPath = target.getPath();
+                    if (basePath != null && targetPath != null && targetPath.startsWith(basePath)) {
+                        return true;
+                    }
+                }
+            } catch (IllegalArgumentException ignore) {
+            }
+        }
+        return false;
+    }
+
     private void cancelled(JsonRpcNotification note) {
         CancelledNotification cn = CancellationCodec.toCancelledNotification(note.params());
         cancellationTracker.cancel(cn.requestId(), cn.reason());
@@ -540,7 +568,7 @@ public final class McpServer implements AutoCloseable {
 
         List<Resource> filteredResources = new java.util.ArrayList<>();
         for (Resource r : list.resources()) {
-            if (allowed(r.annotations())) {
+            if (allowed(r.annotations()) && withinRoots(r.uri())) {
                 filteredResources.add(r);
             }
         }
@@ -560,6 +588,10 @@ public final class McpServer implements AutoCloseable {
                     JsonRpcErrorCode.INVALID_PARAMS.code(), e.getMessage(), null));
         }
         String uri = rrr.uri();
+        if (!withinRoots(uri)) {
+            return new JsonRpcError(req.id(), new JsonRpcError.ErrorDetail(
+                    JsonRpcErrorCode.INTERNAL_ERROR.code(), "Access denied", null));
+        }
         ResourceBlock block = resources.read(uri);
         if (block == null) {
             return new JsonRpcError(req.id(), new JsonRpcError.ErrorDetail(
@@ -623,6 +655,10 @@ public final class McpServer implements AutoCloseable {
                     JsonRpcErrorCode.INVALID_PARAMS.code(), e.getMessage(), null));
         }
         String uri = sr.uri();
+        if (!withinRoots(uri)) {
+            return new JsonRpcError(req.id(), new JsonRpcError.ErrorDetail(
+                    JsonRpcErrorCode.INTERNAL_ERROR.code(), "Access denied", null));
+        }
         ResourceBlock existing = resources.read(uri);
         if (existing == null) {
             return new JsonRpcError(req.id(), new JsonRpcError.ErrorDetail(
@@ -666,6 +702,10 @@ public final class McpServer implements AutoCloseable {
                     JsonRpcErrorCode.INVALID_PARAMS.code(), e.getMessage(), null));
         }
         String uri = ur.uri();
+        if (!withinRoots(uri)) {
+            return new JsonRpcError(req.id(), new JsonRpcError.ErrorDetail(
+                    JsonRpcErrorCode.INTERNAL_ERROR.code(), "Access denied", null));
+        }
         ResourceSubscription sub = resourceSubscriptions.remove(uri);
         if (sub != null) {
             try {
