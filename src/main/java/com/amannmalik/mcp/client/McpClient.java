@@ -63,6 +63,7 @@ import java.io.IOException;
 import java.util.EnumSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.EnumMap;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
@@ -111,6 +112,17 @@ public final class McpClient implements AutoCloseable {
     private PromptsListener promptsListener = () -> {
     };
 
+    private final Map<String, RequestHandler> requestHandlers = new ConcurrentHashMap<>();
+    private final Map<NotificationMethod, NotificationHandler> notificationHandlers = new EnumMap<>(NotificationMethod.class);
+
+    private void registerRequestHandler(String method, RequestHandler handler) {
+        requestHandlers.put(method, handler);
+    }
+
+    private void registerNotificationHandler(NotificationMethod method, NotificationHandler handler) {
+        notificationHandlers.put(method, handler);
+    }
+
     public void configurePing(long intervalMillis, long timeoutMillis) {
         if (connected) throw new IllegalStateException("already connected");
         if (intervalMillis < 0 || timeoutMillis <= 0) throw new IllegalArgumentException("invalid ping settings");
@@ -151,6 +163,18 @@ public final class McpClient implements AutoCloseable {
         }
         this.pingInterval = 0;
         this.pingTimeout = 5000;
+
+        registerRequestHandler("sampling/createMessage", this::handleCreateMessage);
+        registerRequestHandler("roots/list", this::handleListRoots);
+        registerRequestHandler("elicitation/create", this::handleElicit);
+        registerRequestHandler("ping", this::handlePing);
+
+        registerNotificationHandler(NotificationMethod.PROGRESS, this::handleProgress);
+        registerNotificationHandler(NotificationMethod.MESSAGE, this::handleMessage);
+        registerNotificationHandler(NotificationMethod.CANCELLED, this::cancelled);
+        registerNotificationHandler(NotificationMethod.RESOURCES_LIST_CHANGED, n -> resourceListListener.listChanged());
+        registerNotificationHandler(NotificationMethod.TOOLS_LIST_CHANGED, this::handleToolsListChanged);
+        registerNotificationHandler(NotificationMethod.PROMPTS_LIST_CHANGED, n -> promptsListener.listChanged());
     }
 
     public ClientInfo info() {
@@ -490,15 +514,14 @@ public final class McpClient implements AutoCloseable {
         boolean cancelled;
         JsonRpcMessage resp;
         try {
-            resp = switch (req.method()) {
-                case "sampling/createMessage" -> handleCreateMessage(req);
-                case "roots/list" -> handleListRoots(req);
-                case "elicitation/create" -> handleElicit(req);
-                case "ping" -> handlePing(req);
-                default -> new JsonRpcError(req.id(), new JsonRpcError.ErrorDetail(
+            RequestHandler handler = requestHandlers.get(req.method());
+            if (handler == null) {
+                resp = new JsonRpcError(req.id(), new JsonRpcError.ErrorDetail(
                         JsonRpcErrorCode.METHOD_NOT_FOUND.code(),
                         "Unknown method: " + req.method(), null));
-            };
+            } else {
+                resp = handler.handle(req);
+            }
         } finally {
             cancelled = cancellationTracker.isCancelled(req.id());
             cancellationTracker.release(req.id());
@@ -653,43 +676,39 @@ public final class McpClient implements AutoCloseable {
 
     private void handleNotification(JsonRpcNotification note) {
         NotificationMethod.from(note.method()).ifPresent(m -> {
-            switch (m) {
-                case PROGRESS -> {
-                    if (note.params() != null) {
-                        try {
-                            ProgressNotification pn = ProgressCodec.toProgressNotification(note.params());
-                            progressTracker.update(pn);
-                            progressListener.onProgress(pn);
-                            if (pn.progress() >= 1.0) {
-                                progressTracker.release(pn.token());
-                                progressTokens.values().removeIf(t -> t.equals(pn.token()));
-                            }
-                        } catch (IllegalArgumentException | IllegalStateException ignore) {
-                        }
-                    }
-                }
-                case MESSAGE -> {
-                    if (note.params() != null) {
-                        try {
-                            loggingListener.onMessage(LoggingCodec.toLoggingMessageNotification(note.params()));
-                        } catch (IllegalArgumentException ignore) {
-                        }
-                    }
-                }
-                case CANCELLED -> cancelled(note);
-                case RESOURCES_LIST_CHANGED -> resourceListListener.listChanged();
-                case TOOLS_LIST_CHANGED -> {
-                    try {
-                        ToolCodec.toToolListChangedNotification(note.params());
-                        toolListListener.listChanged();
-                    } catch (IllegalArgumentException ignore) {
-                    }
-                }
-                case PROMPTS_LIST_CHANGED -> promptsListener.listChanged();
-                default -> {
-                }
-            }
+            NotificationHandler handler = notificationHandlers.get(m);
+            if (handler != null) handler.handle(note);
         });
+    }
+
+    private void handleProgress(JsonRpcNotification note) {
+        if (note.params() == null) return;
+        try {
+            ProgressNotification pn = ProgressCodec.toProgressNotification(note.params());
+            progressTracker.update(pn);
+            progressListener.onProgress(pn);
+            if (pn.progress() >= 1.0) {
+                progressTracker.release(pn.token());
+                progressTokens.values().removeIf(t -> t.equals(pn.token()));
+            }
+        } catch (IllegalArgumentException | IllegalStateException ignore) {
+        }
+    }
+
+    private void handleMessage(JsonRpcNotification note) {
+        if (note.params() == null) return;
+        try {
+            loggingListener.onMessage(LoggingCodec.toLoggingMessageNotification(note.params()));
+        } catch (IllegalArgumentException ignore) {
+        }
+    }
+
+    private void handleToolsListChanged(JsonRpcNotification note) {
+        try {
+            ToolCodec.toToolListChangedNotification(note.params());
+            toolListListener.listChanged();
+        } catch (IllegalArgumentException ignore) {
+        }
     }
 
     private void cancelled(JsonRpcNotification note) {
@@ -703,5 +722,15 @@ public final class McpClient implements AutoCloseable {
         if (reason != null && System.err != null) {
             System.err.println("Request " + cn.requestId() + " cancelled: " + reason);
         }
+    }
+
+    @FunctionalInterface
+    private interface RequestHandler {
+        JsonRpcMessage handle(JsonRpcRequest request);
+    }
+
+    @FunctionalInterface
+    private interface NotificationHandler {
+        void handle(JsonRpcNotification notification);
     }
 }
