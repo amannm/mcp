@@ -29,6 +29,7 @@ import com.amannmalik.mcp.lifecycle.LifecycleCodec;
 import com.amannmalik.mcp.lifecycle.LifecycleState;
 import com.amannmalik.mcp.lifecycle.ProtocolLifecycle;
 import com.amannmalik.mcp.lifecycle.ServerCapability;
+import com.amannmalik.mcp.lifecycle.ServerInfo;
 import com.amannmalik.mcp.lifecycle.UnsupportedProtocolVersionException;
 import com.amannmalik.mcp.ping.PingCodec;
 import com.amannmalik.mcp.ping.PingRequest;
@@ -47,6 +48,7 @@ import com.amannmalik.mcp.prompts.Role;
 import com.amannmalik.mcp.security.PrivacyBoundaryEnforcer;
 import com.amannmalik.mcp.security.RateLimiter;
 import com.amannmalik.mcp.security.ResourceAccessController;
+import com.amannmalik.mcp.security.ToolAccessPolicy;
 import com.amannmalik.mcp.server.completion.CompleteRequest;
 import com.amannmalik.mcp.server.completion.CompleteResult;
 import com.amannmalik.mcp.server.completion.CompletionCodec;
@@ -85,6 +87,7 @@ import com.amannmalik.mcp.util.ProgressCodec;
 import com.amannmalik.mcp.util.ProgressNotification;
 import com.amannmalik.mcp.util.ProgressToken;
 import com.amannmalik.mcp.util.ProgressTracker;
+import com.amannmalik.mcp.validation.InputSanitizer;
 import com.amannmalik.mcp.validation.MetaValidator;
 import com.amannmalik.mcp.validation.SchemaValidator;
 import com.amannmalik.mcp.validation.UriValidator;
@@ -130,6 +133,7 @@ public final class McpServer implements AutoCloseable {
     private final boolean promptsListChangedSupported;
     private final List<RootsListener> rootsListeners = new CopyOnWriteArrayList<>();
     private final ResourceAccessController resourceAccess;
+    private final ToolAccessPolicy toolAccess;
     private final Principal principal;
     private volatile LoggingLevel logLevel = LoggingLevel.INFO;
     private static final int RATE_LIMIT_CODE = -32001;
@@ -142,9 +146,15 @@ public final class McpServer implements AutoCloseable {
     private final Map<RequestId, CompletableFuture<JsonRpcMessage>> pending = new ConcurrentHashMap<>();
 
     public McpServer(Transport transport) {
+        this(transport, null);
+    }
+
+    public McpServer(Transport transport, String instructions) {
         this(createDefaultResources(), createDefaultTools(), createDefaultPrompts(), createDefaultCompletions(),
                 createDefaultPrivacyBoundary("default"),
+                createDefaultToolAccess(),
                 new Principal("default", Set.of()),
+                instructions,
                 transport);
     }
 
@@ -155,7 +165,9 @@ public final class McpServer implements AutoCloseable {
               Transport transport) {
         this(resources, tools, prompts, completions,
                 createDefaultPrivacyBoundary("default"),
+                createDefaultToolAccess(),
                 new Principal("default", Set.of()),
+                null,
                 transport);
     }
 
@@ -164,7 +176,9 @@ public final class McpServer implements AutoCloseable {
               PromptProvider prompts,
               CompletionProvider completions,
               ResourceAccessController resourceAccess,
+              ToolAccessPolicy toolAccess,
               Principal principal,
+              String instructions,
               Transport transport) {
         this.transport = transport;
         EnumSet<ServerCapability> caps = EnumSet.noneOf(ServerCapability.class);
@@ -173,12 +187,13 @@ public final class McpServer implements AutoCloseable {
         if (prompts != null) caps.add(ServerCapability.PROMPTS);
         if (completions != null) caps.add(ServerCapability.COMPLETIONS);
         caps.add(ServerCapability.LOGGING);
-        this.lifecycle = new ProtocolLifecycle(caps);
+        this.lifecycle = new ProtocolLifecycle(caps, new ServerInfo("mcp-java", "MCP Java Reference", "0.1.0"), instructions);
         this.resources = resources;
         this.tools = tools;
         this.prompts = prompts;
         this.completions = completions;
         this.resourceAccess = resourceAccess;
+        this.toolAccess = toolAccess == null ? ToolAccessPolicy.PERMISSIVE : toolAccess;
         this.principal = principal;
         this.toolListChangedSupported = tools != null && tools.supportsListChanged();
         this.resourcesSubscribeSupported = resources != null && resources.supportsSubscribe();
@@ -712,6 +727,12 @@ public final class McpServer implements AutoCloseable {
                     RATE_LIMIT_CODE, e.getMessage(), null));
         }
         try {
+            toolAccess.requireAllowed(principal, name);
+        } catch (SecurityException e) {
+            return new JsonRpcError(req.id(), new JsonRpcError.ErrorDetail(
+                    JsonRpcErrorCode.INTERNAL_ERROR.code(), "Access denied", null));
+        }
+        try {
             ToolResult result = tools.call(name, args);
             return new JsonRpcResponse(req.id(), ToolCodec.toJsonObject(result));
         } catch (IllegalArgumentException e) {
@@ -746,7 +767,20 @@ public final class McpServer implements AutoCloseable {
                     JsonRpcErrorCode.INVALID_PARAMS.code(),
                     "name is required", null));
         }
-        Map<String, String> args = PromptCodec.toArguments(params.getJsonObject("arguments"));
+        try {
+            name = InputSanitizer.requireClean(name);
+        } catch (IllegalArgumentException e) {
+            return new JsonRpcError(req.id(), new JsonRpcError.ErrorDetail(
+                    JsonRpcErrorCode.INVALID_PARAMS.code(), e.getMessage(), null));
+        }
+
+        Map<String, String> args;
+        try {
+            args = PromptCodec.toArguments(params.getJsonObject("arguments"));
+        } catch (IllegalArgumentException e) {
+            return new JsonRpcError(req.id(), new JsonRpcError.ErrorDetail(
+                    JsonRpcErrorCode.INVALID_PARAMS.code(), e.getMessage(), null));
+        }
         try {
             PromptInstance inst = prompts.get(name, args);
             JsonObject result = PromptCodec.toJsonObject(inst);
@@ -924,6 +958,10 @@ public final class McpServer implements AutoCloseable {
         InMemoryCompletionProvider provider = new InMemoryCompletionProvider();
         provider.add(new CompleteRequest.Ref.PromptRef("test_prompt"), "test_arg", Map.of(), List.of("test_completion"));
         return provider;
+    }
+
+    private static ToolAccessPolicy createDefaultToolAccess() {
+        return ToolAccessPolicy.PERMISSIVE;
     }
 
     private static ResourceAccessController createDefaultPrivacyBoundary(String principalId) {

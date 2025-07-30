@@ -3,15 +3,24 @@ package com.amannmalik.mcp.lifecycle;
 import java.util.EnumSet;
 import java.util.Set;
 
+
 public class ProtocolLifecycle {
     public static final String SUPPORTED_VERSION = "2025-06-18";
 
     private final Set<ServerCapability> serverCapabilities;
+    private final ServerInfo serverInfo;
+    private final String instructions;
     private LifecycleState state = LifecycleState.INIT;
     private Set<ClientCapability> clientCapabilities = Set.of();
 
     public ProtocolLifecycle(Set<ServerCapability> serverCapabilities) {
+        this(serverCapabilities, new ServerInfo("mcp-java", "MCP Java Reference", "0.1.0"), null);
+    }
+
+    public ProtocolLifecycle(Set<ServerCapability> serverCapabilities, ServerInfo serverInfo, String instructions) {
         this.serverCapabilities = EnumSet.copyOf(serverCapabilities);
+        this.serverInfo = serverInfo;
+        this.instructions = instructions;
     }
 
     public InitializeResponse initialize(InitializeRequest request) {
@@ -28,8 +37,8 @@ public class ProtocolLifecycle {
         return new InitializeResponse(
                 SUPPORTED_VERSION,
                 new Capabilities(clientCapabilities, serverCapabilities),
-                new ServerInfo("mcp-java", "MCP Java Reference", "0.1.0"),
-                null
+                serverInfo,
+                instructions
         );
     }
 

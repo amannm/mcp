@@ -39,7 +39,10 @@ public final class ConfigLoader {
         String mode = obj.getString("mode");
         String transport = obj.getString("transport", "stdio");
         return switch (mode) {
-            case "server" -> new ServerConfig(parseTransport(transport), obj.getInt("port", 0));
+            case "server" -> new ServerConfig(
+                    parseTransport(transport),
+                    obj.getInt("port", 0),
+                    obj.containsKey("instructions") ? obj.getString("instructions") : null);
             case "client" -> new ClientConfig(parseTransport(transport), obj.getString("command"));
             case "host" -> {
                 var cObj = obj.getJsonObject("clients");
@@ -59,7 +62,10 @@ public final class ConfigLoader {
         Object cmdVal = map.get("command");
         Object clientsVal = map.get("clients");
         return switch (mode) {
-            case "server" -> new ServerConfig(parseTransport(transport), portVal == null ? 0 : ((Number) portVal).intValue());
+            case "server" -> new ServerConfig(
+                    parseTransport(transport),
+                    portVal == null ? 0 : ((Number) portVal).intValue(),
+                    map.get("instructions") == null ? null : map.get("instructions").toString());
             case "client" -> new ClientConfig(parseTransport(transport), cmdVal.toString());
             case "host" -> {
                 if (!(clientsVal instanceof Map<?, ?> cMap) || cMap.isEmpty()) {
