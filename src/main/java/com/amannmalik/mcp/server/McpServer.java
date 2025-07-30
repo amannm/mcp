@@ -927,8 +927,12 @@ public final class McpServer implements AutoCloseable {
 
     public List<Root> listRoots() throws IOException {
         List<Root> fetched = fetchRoots();
+        boolean changed = !roots.equals(fetched);
         roots.clear();
         roots.addAll(fetched);
+        if (changed) {
+            rootsListeners.forEach(RootsListener::listChanged);
+        }
         return List.copyOf(fetched);
     }
 
@@ -951,13 +955,12 @@ public final class McpServer implements AutoCloseable {
     }
 
     private void refreshRootsAsync() {
-        if (!lifecycle.negotiatedClientCapabilities().contains(ClientCapability.ROOTS)) return;
+        if (!lifecycle.negotiatedClientCapabilities().contains(ClientCapability.ROOTS)) {
+            return;
+        }
         Thread t = new Thread(() -> {
             try {
-                List<Root> updated = fetchRoots();
-                roots.clear();
-                roots.addAll(updated);
-                rootsListeners.forEach(RootsListener::listChanged);
+                listRoots();
             } catch (IOException ignore) {
             }
         });
