@@ -36,6 +36,7 @@ public final class ElicitationCodec {
         JsonObjectBuilder b = Json.createObjectBuilder()
                 .add("action", resp.action().name().toLowerCase());
         if (resp.content() != null) b.add("content", resp.content());
+        if (resp._meta() != null) b.add("_meta", resp._meta());
         return b.build();
     }
 
@@ -59,6 +60,7 @@ public final class ElicitationCodec {
             }
             content = c.asJsonObject();
         }
-        return new ElicitationResponse(action, content);
+        JsonObject meta = obj.containsKey("_meta") ? obj.getJsonObject("_meta") : null;
+        return new ElicitationResponse(action, content, meta);
     }
 }
