@@ -44,10 +44,14 @@ public final class StreamableHttpTransport implements Transport {
     private final OriginValidator originValidator;
     private final AuthorizationManager authManager;
     private final String resourceMetadataUrl;
+    private final String metadataPath;
+    private final java.util.List<String> authorizationServers;
+
     private static final JsonObject DEFAULT_RESOURCE_METADATA = Json.createObjectBuilder()
             .add("authorization_servers", Json.createArrayBuilder()
                     .add("urn:example:authorization-server"))
             .build();
+
     private static final String PROTOCOL_HEADER = "MCP-Protocol-Version";
     // Default to the previous protocol revision when no version header is
     // present, as recommended for backwards compatibility.
@@ -72,7 +76,11 @@ public final class StreamableHttpTransport implements Transport {
         resp.sendError(HttpServletResponse.SC_UNAUTHORIZED);
     }
 
-    public StreamableHttpTransport(int port, OriginValidator validator, AuthorizationManager auth, String resourceMetadataUrl) throws Exception {
+    public StreamableHttpTransport(int port,
+                                   OriginValidator validator,
+                                   AuthorizationManager auth,
+                                   String resourceMetadataUrl,
+                                   java.util.List<String> authorizationServers) throws Exception {
         server = new Server(new InetSocketAddress("127.0.0.1", port));
         ServletContextHandler ctx = new ServletContextHandler();
         ctx.addServlet(new ServletHolder(new McpServlet()), "/");
@@ -82,18 +90,23 @@ public final class StreamableHttpTransport implements Transport {
         this.port = ((ServerConnector) server.getConnectors()[0]).getLocalPort();
         this.originValidator = validator;
         this.authManager = auth;
-        if (resourceMetadataUrl == null || resourceMetadataUrl.isBlank()) {
-            this.resourceMetadataUrl = "http://127.0.0.1:" + this.port + "/.well-known/oauth-protected-resource";
+        this.resourceMetadataUrl = resourceMetadataUrl;
+        if (resourceMetadataUrl != null) {
+            var uri = java.net.URI.create(resourceMetadataUrl);
+            this.metadataPath = uri.getPath();
         } else {
-            this.resourceMetadataUrl = resourceMetadataUrl;
+            this.metadataPath = null;
         }
+        this.authorizationServers = authorizationServers == null || authorizationServers.isEmpty()
+                ? java.util.List.of()
+                : java.util.List.copyOf(authorizationServers);
         // Until initialization negotiates a version, assume the prior revision
         // as the default when no MCP-Protocol-Version header is present.
         this.protocolVersion = COMPATIBILITY_VERSION;
     }
 
     public StreamableHttpTransport(int port, OriginValidator validator, AuthorizationManager auth) throws Exception {
-        this(port, validator, auth, null);
+        this(port, validator, auth, null, java.util.List.of());
     }
 
     public int port() {
@@ -386,6 +399,18 @@ public final class StreamableHttpTransport implements Transport {
 
         @Override
         protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws IOException {
+            if (metadataPath != null && metadataPath.equals(req.getRequestURI())) {
+                var arr = jakarta.json.Json.createArrayBuilder();
+                for (String s : authorizationServers) arr.add(s);
+                var body = jakarta.json.Json.createObjectBuilder()
+                        .add("authorization_servers", arr.build())
+                        .build();
+                resp.setStatus(HttpServletResponse.SC_OK);
+                resp.setContentType("application/json");
+                resp.setCharacterEncoding("UTF-8");
+                resp.getWriter().write(body.toString());
+                return;
+            }
             Principal principal = null;
             if (authManager != null) {
                 try {
