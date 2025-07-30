@@ -6,9 +6,4 @@ public record ListResourceTemplatesResult(List<ResourceTemplate> resourceTemplat
     public ListResourceTemplatesResult {
         resourceTemplates = resourceTemplates == null ? List.of() : List.copyOf(resourceTemplates);
     }
-
-    @Override
-    public List<ResourceTemplate> resourceTemplates() {
-        return List.copyOf(resourceTemplates);
-    }
 }

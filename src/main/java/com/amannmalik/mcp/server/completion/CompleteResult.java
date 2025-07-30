@@ -31,10 +31,5 @@ public record CompleteResult(Completion completion, JsonObject _meta) {
                 }
             }
         }
-
-        @Override
-        public List<String> values() {
-            return List.copyOf(values);
-        }
     }
 }
