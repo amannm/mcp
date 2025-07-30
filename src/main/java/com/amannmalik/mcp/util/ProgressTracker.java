@@ -24,6 +24,11 @@ public final class ProgressTracker {
         return active.contains(token);
     }
 
+    public boolean hasProgress(ProgressToken token) {
+        Double p = progress.get(token);
+        return p != null && p > Double.NEGATIVE_INFINITY;
+    }
+
     public void update(ProgressNotification note) {
         ProgressToken token = note.token();
         if (!active.contains(token)) {

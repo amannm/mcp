@@ -409,6 +409,12 @@ public final class McpClient implements AutoCloseable {
             throw new IOException(cause);
         } finally {
             pending.remove(reqId);
+            token.ifPresent(t -> {
+                progressTokens.remove(reqId);
+                if (!progressTracker.hasProgress(t)) {
+                    progressTracker.release(t);
+                }
+            });
         }
     }
 
