@@ -7,8 +7,8 @@ import com.amannmalik.mcp.server.logging.LoggingLevel;
 import com.amannmalik.mcp.transport.StdioTransport;
 import picocli.CommandLine;
 
-import java.nio.file.Path;
 import java.io.IOException;
+import java.nio.file.Path;
 import java.util.EnumSet;
 import java.util.concurrent.Callable;
 
@@ -47,7 +47,7 @@ public final class ClientCommand implements Callable<Integer> {
             cfg = new ClientConfig(TransportType.STDIO, command);
         }
 
-        StdioTransport transport = new StdioTransport(new ProcessBuilder(cfg.command().split(" ")), 
+        StdioTransport transport = new StdioTransport(new ProcessBuilder(cfg.command().split(" ")),
                 verbose ? System.err::println : s -> {
                 });
         McpClient client = new McpClient(

@@ -8,4 +8,5 @@ public record ServerFeatures(
         boolean resourcesListChanged,
         boolean toolsListChanged,
         boolean promptsListChanged
-) {}
+) {
+}

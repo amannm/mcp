@@ -1,8 +1,5 @@
 package com.amannmalik.mcp.server.tools;
 
-import com.amannmalik.mcp.server.resources.Resource;
-import com.amannmalik.mcp.server.resources.ResourceBlock;
-import com.amannmalik.mcp.server.resources.ResourcesCodec;
 import com.amannmalik.mcp.util.PaginatedResult;
 import com.amannmalik.mcp.util.PaginationCodec;
 import jakarta.json.Json;
@@ -34,6 +31,10 @@ public final class ToolCodec {
         JsonObjectBuilder builder = Json.createObjectBuilder().add("tools", arr);
         PaginationCodec.toJsonObject(new PaginatedResult(page.nextCursor())).forEach(builder::add);
         return builder.build();
+    }
+
+    public static JsonObject toJsonObject(ListToolsResult page) {
+        return toJsonObject(new ToolPage(page.tools(), page.nextCursor()));
     }
 
     public static JsonObject toJsonObject(ToolResult result) {
@@ -96,6 +97,11 @@ public final class ToolCodec {
         }
         String cursor = PaginationCodec.toPaginatedResult(obj).nextCursor();
         return new ToolPage(tools, cursor);
+    }
+
+    public static ListToolsResult toListToolsResult(JsonObject obj) {
+        ToolPage page = toToolPage(obj);
+        return new ListToolsResult(page.tools(), page.nextCursor());
     }
 
     public static ToolResult toToolResult(JsonObject obj) {

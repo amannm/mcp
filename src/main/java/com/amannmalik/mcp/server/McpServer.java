@@ -29,8 +29,8 @@ import com.amannmalik.mcp.lifecycle.LifecycleCodec;
 import com.amannmalik.mcp.lifecycle.LifecycleState;
 import com.amannmalik.mcp.lifecycle.ProtocolLifecycle;
 import com.amannmalik.mcp.lifecycle.ServerCapability;
-import com.amannmalik.mcp.lifecycle.ServerInfo;
 import com.amannmalik.mcp.lifecycle.ServerFeatures;
+import com.amannmalik.mcp.lifecycle.ServerInfo;
 import com.amannmalik.mcp.lifecycle.UnsupportedProtocolVersionException;
 import com.amannmalik.mcp.ping.PingCodec;
 import com.amannmalik.mcp.ping.PingRequest;
@@ -58,7 +58,6 @@ import com.amannmalik.mcp.server.completion.InMemoryCompletionProvider;
 import com.amannmalik.mcp.server.logging.LoggingCodec;
 import com.amannmalik.mcp.server.logging.LoggingLevel;
 import com.amannmalik.mcp.server.logging.LoggingMessageNotification;
-import com.amannmalik.mcp.prompts.Role;
 import com.amannmalik.mcp.server.resources.InMemoryResourceProvider;
 import com.amannmalik.mcp.server.resources.Resource;
 import com.amannmalik.mcp.server.resources.ResourceAnnotations;
@@ -70,9 +69,9 @@ import com.amannmalik.mcp.server.resources.ResourceSubscription;
 import com.amannmalik.mcp.server.resources.ResourceTemplate;
 import com.amannmalik.mcp.server.resources.ResourceTemplatePage;
 import com.amannmalik.mcp.server.resources.ResourceUpdatedNotification;
+import com.amannmalik.mcp.server.resources.ResourcesCodec;
 import com.amannmalik.mcp.server.resources.SubscribeRequest;
 import com.amannmalik.mcp.server.resources.UnsubscribeRequest;
-import com.amannmalik.mcp.server.resources.ResourcesCodec;
 import com.amannmalik.mcp.server.tools.InMemoryToolProvider;
 import com.amannmalik.mcp.server.tools.Tool;
 import com.amannmalik.mcp.server.tools.ToolCodec;
@@ -505,6 +504,14 @@ public final class McpServer implements AutoCloseable {
     private JsonRpcMessage listResources(JsonRpcRequest req) {
         requireServerCapability(ServerCapability.RESOURCES);
         String cursor = PaginationCodec.toPaginatedRequest(req.params()).cursor();
+        if (cursor != null) {
+            try {
+                cursor = InputSanitizer.requireClean(cursor);
+            } catch (IllegalArgumentException e) {
+                return new JsonRpcError(req.id(), new JsonRpcError.ErrorDetail(
+                        JsonRpcErrorCode.INVALID_PARAMS.code(), e.getMessage(), null));
+            }
+        }
         ResourceList list;
         try {
             list = resources.list(cursor);
@@ -553,6 +560,14 @@ public final class McpServer implements AutoCloseable {
     private JsonRpcMessage listTemplates(JsonRpcRequest req) {
         requireServerCapability(ServerCapability.RESOURCES);
         String cursor = PaginationCodec.toPaginatedRequest(req.params()).cursor();
+        if (cursor != null) {
+            try {
+                cursor = InputSanitizer.requireClean(cursor);
+            } catch (IllegalArgumentException e) {
+                return new JsonRpcError(req.id(), new JsonRpcError.ErrorDetail(
+                        JsonRpcErrorCode.INVALID_PARAMS.code(), e.getMessage(), null));
+            }
+        }
         ResourceTemplatePage page;
         try {
             page = resources.listTemplates(cursor);
@@ -706,6 +721,14 @@ public final class McpServer implements AutoCloseable {
     private JsonRpcMessage listPrompts(JsonRpcRequest req) {
         requireServerCapability(ServerCapability.PROMPTS);
         String cursor = PaginationCodec.toPaginatedRequest(req.params()).cursor();
+        if (cursor != null) {
+            try {
+                cursor = InputSanitizer.requireClean(cursor);
+            } catch (IllegalArgumentException e) {
+                return new JsonRpcError(req.id(), new JsonRpcError.ErrorDetail(
+                        JsonRpcErrorCode.INVALID_PARAMS.code(), e.getMessage(), null));
+            }
+        }
         PromptPage page;
         try {
             page = prompts.list(cursor);

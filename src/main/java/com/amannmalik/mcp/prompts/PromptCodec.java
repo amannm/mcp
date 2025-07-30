@@ -1,7 +1,5 @@
 package com.amannmalik.mcp.prompts;
 
-import com.amannmalik.mcp.server.resources.Resource;
-import com.amannmalik.mcp.server.resources.ResourceBlock;
 import com.amannmalik.mcp.server.resources.ResourcesCodec;
 import com.amannmalik.mcp.util.PaginatedResult;
 import com.amannmalik.mcp.util.PaginationCodec;
@@ -62,6 +60,10 @@ public final class PromptCodec {
         JsonObjectBuilder builder = Json.createObjectBuilder().add("prompts", arr.build());
         PaginationCodec.toJsonObject(new PaginatedResult(page.nextCursor())).forEach(builder::add);
         return builder.build();
+    }
+
+    public static JsonObject toJsonObject(ListPromptsResult page) {
+        return toJsonObject(new PromptPage(page.prompts(), page.nextCursor()));
     }
 
     public static JsonObject toJsonObject(PromptListChangedNotification n) {
@@ -175,6 +177,11 @@ public final class PromptCodec {
         }
         String cursor = PaginationCodec.toPaginatedResult(obj).nextCursor();
         return new PromptPage(prompts, cursor);
+    }
+
+    public static ListPromptsResult toListPromptsResult(JsonObject obj) {
+        PromptPage page = toPromptPage(obj);
+        return new ListPromptsResult(page.prompts(), page.nextCursor());
     }
 
     private static PromptArgument toPromptArgument(JsonObject obj) {
