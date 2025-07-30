@@ -41,6 +41,9 @@ public final class ServerCommand implements Callable<Integer> {
     @CommandLine.Option(names = {"--resource-metadata"}, description = "Resource metadata URL")
     private String resourceMetadataUrl;
 
+    @CommandLine.Option(names = {"--auth-server"}, description = "Authorization server URL", split = ",")
+    private List<String> authServers;
+
     public ServerCommand() {
     }
 
@@ -62,7 +65,7 @@ public final class ServerCommand implements Callable<Integer> {
             TransportType type = httpPort == null ? TransportType.STDIO : TransportType.HTTP;
             int port = httpPort == null ? 0 : httpPort;
             if (stdio) type = TransportType.STDIO;
-            cfg = new ServerConfig(type, port, null, expectedAudience, resourceMetadataUrl);
+            cfg = new ServerConfig(type, port, null, expectedAudience, resourceMetadataUrl, authServers);
         }
 
         Transport t;
@@ -77,7 +80,8 @@ public final class ServerCommand implements Callable<Integer> {
                     authManager = new AuthorizationManager(List.of(authStrategy));
                 }
                 StreamableHttpTransport ht = new StreamableHttpTransport(
-                        cfg.port(), originValidator, authManager, cfg.resourceMetadataUrl());
+                        cfg.port(), originValidator, authManager,
+                        cfg.resourceMetadataUrl(), cfg.authorizationServers());
                 if (verbose) System.err.println("Listening on http://127.0.0.1:" + ht.port());
                 t = ht;
             }
