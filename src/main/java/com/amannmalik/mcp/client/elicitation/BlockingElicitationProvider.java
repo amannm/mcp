@@ -1,9 +1,4 @@
-package com.amannmalik.mcp;
-
-import com.amannmalik.mcp.client.elicitation.ElicitRequest;
-import com.amannmalik.mcp.client.elicitation.ElicitResult;
-import com.amannmalik.mcp.client.elicitation.ElicitationAction;
-import com.amannmalik.mcp.client.elicitation.ElicitationProvider;
+package com.amannmalik.mcp.client.elicitation;
 
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
