@@ -18,7 +18,14 @@ public record CreateMessageRequest(
 
     public CreateMessageRequest {
         messages = messages == null || messages.isEmpty() ? List.of() : List.copyOf(messages);
-        stopSequences = stopSequences == null || stopSequences.isEmpty() ? List.of() : List.copyOf(stopSequences);
+        systemPrompt = systemPrompt == null ? null : com.amannmalik.mcp.validation.InputSanitizer.requireClean(systemPrompt);
+        if (stopSequences == null || stopSequences.isEmpty()) {
+            stopSequences = List.of();
+        } else {
+            stopSequences = stopSequences.stream()
+                    .map(com.amannmalik.mcp.validation.InputSanitizer::requireClean)
+                    .toList();
+        }
         if (maxTokens <= 0) {
             throw new IllegalArgumentException("maxTokens must be > 0");
         }
