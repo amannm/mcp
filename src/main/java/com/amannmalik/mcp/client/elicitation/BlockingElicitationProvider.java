@@ -17,6 +17,6 @@ public final class BlockingElicitationProvider implements ElicitationProvider {
         ElicitationResponse resp = timeoutMillis <= 0
                 ? responses.take()
                 : responses.poll(timeoutMillis, TimeUnit.MILLISECONDS);
-        return resp != null ? resp : new ElicitationResponse(ElicitationAction.CANCEL, null);
+        return resp != null ? resp : new ElicitationResponse(ElicitationAction.CANCEL, null, null);
     }
 }
