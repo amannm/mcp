@@ -33,7 +33,7 @@ public final class InMemoryPromptProvider implements PromptProvider {
             all.add(t.prompt());
         }
         all.sort(Comparator.comparing(Prompt::name));
-        return Pagination.page(all, cursor, 100);
+        return Pagination.page(all, cursor, Pagination.DEFAULT_PAGE_SIZE);
     }
 
     @Override
