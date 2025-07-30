@@ -43,6 +43,14 @@ public final class InMemoryResourceProvider implements ResourceProvider {
     }
 
     @Override
+    public Resource get(String uri) {
+        for (Resource r : resources) {
+            if (r.uri().equals(uri)) return r;
+        }
+        return null;
+    }
+
+    @Override
     public ResourceListSubscription subscribeList(ResourceListListener listener) {
         var sub = listChangeSupport.subscribe(listener);
         return sub::close;

@@ -7,6 +7,10 @@ public interface ResourceProvider extends AutoCloseable {
 
     ResourceBlock read(String uri);
 
+    default Resource get(String uri) {
+        return null;
+    }
+
     Pagination.Page<ResourceTemplate> listTemplates(String cursor);
 
     ResourceSubscription subscribe(String uri, ResourceListener listener);
