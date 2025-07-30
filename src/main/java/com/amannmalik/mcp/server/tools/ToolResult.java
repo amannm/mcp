@@ -6,6 +6,7 @@ import com.amannmalik.mcp.server.resources.ResourceAnnotations;
 import com.amannmalik.mcp.server.resources.ResourceBlock;
 import com.amannmalik.mcp.server.resources.ResourcesCodec;
 import com.amannmalik.mcp.validation.InputSanitizer;
+import com.amannmalik.mcp.validation.MetaValidator;
 import jakarta.json.Json;
 import jakarta.json.JsonArray;
 import jakarta.json.JsonArrayBuilder;
@@ -22,9 +23,11 @@ import java.util.Set;
 
 public record ToolResult(JsonArray content,
                          JsonObject structuredContent,
-                         boolean isError) {
+                         boolean isError,
+                         JsonObject _meta) {
     public ToolResult {
         content = sanitize(content == null ? JsonValue.EMPTY_JSON_ARRAY : content);
+        MetaValidator.requireValid(_meta);
     }
 
     private static JsonArray sanitize(JsonArray arr) {

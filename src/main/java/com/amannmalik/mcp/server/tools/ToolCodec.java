@@ -43,6 +43,7 @@ public final class ToolCodec {
         if (result.structuredContent() != null) {
             builder.add("structuredContent", result.structuredContent());
         }
+        if (result._meta() != null) builder.add("_meta", result._meta());
         return builder.build();
     }
 
@@ -103,7 +104,8 @@ public final class ToolCodec {
         if (content == null) throw new IllegalArgumentException("content required");
         JsonObject structured = obj.getJsonObject("structuredContent");
         boolean isError = obj.getBoolean("isError", false);
-        return new ToolResult(content, structured, isError);
+        JsonObject meta = obj.containsKey("_meta") ? obj.getJsonObject("_meta") : null;
+        return new ToolResult(content, structured, isError, meta);
     }
 
     private static ToolAnnotations toToolAnnotations(JsonObject obj) {
