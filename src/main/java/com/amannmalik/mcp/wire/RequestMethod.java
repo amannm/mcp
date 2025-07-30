@@ -1,11 +1,8 @@
 package com.amannmalik.mcp.wire;
 
-import java.util.Arrays;
-import java.util.Map;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
-public enum RequestMethod {
+public enum RequestMethod implements WireMethod {
     INITIALIZE("initialize"),
     PING("ping"),
     RESOURCES_LIST("resources/list"),
@@ -23,13 +20,7 @@ public enum RequestMethod {
     ROOTS_LIST("roots/list"),
     ELICITATION_CREATE("elicitation/create");
 
-    private static final Map<String, RequestMethod> BY_METHOD;
     private final String method;
-
-    static {
-        BY_METHOD = Arrays.stream(values())
-                .collect(Collectors.toUnmodifiableMap(m -> m.method, m -> m));
-    }
 
     RequestMethod(String method) {
         this.method = method;
@@ -40,7 +31,6 @@ public enum RequestMethod {
     }
 
     public static Optional<RequestMethod> from(String method) {
-        if (method == null) return Optional.empty();
-        return Optional.ofNullable(BY_METHOD.get(method));
+        return WireMethod.from(RequestMethod.class, method);
     }
 }
