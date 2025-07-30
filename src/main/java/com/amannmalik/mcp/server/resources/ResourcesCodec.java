@@ -2,9 +2,9 @@ package com.amannmalik.mcp.server.resources;
 
 import com.amannmalik.mcp.annotations.Annotations;
 import com.amannmalik.mcp.annotations.AnnotationsCodec;
+import com.amannmalik.mcp.util.Base64Util;
 import com.amannmalik.mcp.util.EmptyJsonObjectCodec;
 import com.amannmalik.mcp.util.PaginatedRequest;
-import com.amannmalik.mcp.util.PaginatedResult;
 import com.amannmalik.mcp.util.Pagination;
 import com.amannmalik.mcp.util.PaginationCodec;
 import com.amannmalik.mcp.util.PaginationJson;
@@ -12,7 +12,6 @@ import jakarta.json.Json;
 import jakarta.json.JsonObject;
 import jakarta.json.JsonObjectBuilder;
 
-import com.amannmalik.mcp.util.Base64Util;
 import java.util.Set;
 
 public final class ResourcesCodec {

@@ -1,7 +1,5 @@
 package com.amannmalik.mcp.client;
 
-import com.amannmalik.mcp.NotificationMethod;
-import com.amannmalik.mcp.RequestMethod;
 import com.amannmalik.mcp.auth.Principal;
 import com.amannmalik.mcp.client.elicitation.ElicitCodec;
 import com.amannmalik.mcp.client.elicitation.ElicitRequest;
@@ -22,7 +20,9 @@ import com.amannmalik.mcp.jsonrpc.JsonRpcMessage;
 import com.amannmalik.mcp.jsonrpc.JsonRpcNotification;
 import com.amannmalik.mcp.jsonrpc.JsonRpcRequest;
 import com.amannmalik.mcp.jsonrpc.JsonRpcResponse;
+import com.amannmalik.mcp.jsonrpc.NotificationMethod;
 import com.amannmalik.mcp.jsonrpc.RequestId;
+import com.amannmalik.mcp.jsonrpc.RequestMethod;
 import com.amannmalik.mcp.lifecycle.Capabilities;
 import com.amannmalik.mcp.lifecycle.ClientCapability;
 import com.amannmalik.mcp.lifecycle.ClientFeatures;

@@ -1,4 +1,4 @@
-package com.amannmalik.mcp;
+package com.amannmalik.mcp.jsonrpc;
 
 import java.util.Arrays;
 import java.util.Map;

@@ -5,8 +5,6 @@ import jakarta.json.Json;
 import jakarta.json.JsonObject;
 import jakarta.json.JsonReader;
 
-import com.amannmalik.mcp.transport.UnauthorizedException;
-
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;

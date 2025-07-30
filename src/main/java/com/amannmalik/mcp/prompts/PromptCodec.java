@@ -2,9 +2,9 @@ package com.amannmalik.mcp.prompts;
 
 import com.amannmalik.mcp.annotations.AnnotationsCodec;
 import com.amannmalik.mcp.server.resources.ResourcesCodec;
+import com.amannmalik.mcp.util.Base64Util;
 import com.amannmalik.mcp.util.EmptyJsonObjectCodec;
 import com.amannmalik.mcp.util.PaginatedRequest;
-import com.amannmalik.mcp.util.PaginatedResult;
 import com.amannmalik.mcp.util.Pagination;
 import com.amannmalik.mcp.util.PaginationCodec;
 import com.amannmalik.mcp.util.PaginationJson;
@@ -18,7 +18,6 @@ import jakarta.json.JsonString;
 import jakarta.json.JsonValue;
 
 import java.util.ArrayList;
-import com.amannmalik.mcp.util.Base64Util;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
