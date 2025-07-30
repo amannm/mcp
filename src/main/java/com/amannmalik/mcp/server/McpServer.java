@@ -344,7 +344,7 @@ public final class McpServer implements AutoCloseable {
                     "Unknown method: " + req.method(), null)));
             return;
         }
-        ProgressToken token = null;
+        Optional<ProgressToken> token = Optional.empty();
         boolean cancellable = false;
         try {
             try {
@@ -357,14 +357,14 @@ public final class McpServer implements AutoCloseable {
 
             try {
                 token = ProgressUtil.tokenFromMeta(req.params());
-                if (token != null) {
-                    progressTracker.register(token);
-                    progressTokens.put(req.id(), token);
+                token.ifPresent(t -> {
+                    progressTracker.register(t);
+                    progressTokens.put(req.id(), t);
                     try {
-                        sendProgress(new ProgressNotification(token, 0.0, 1.0, null));
+                        sendProgress(new ProgressNotification(t, 0.0, 1.0, null));
                     } catch (IOException ignore) {
                     }
-                }
+                });
             } catch (IllegalArgumentException e) {
                 send(new JsonRpcError(req.id(), new JsonRpcError.ErrorDetail(
                         JsonRpcErrorCode.INVALID_PARAMS.code(), e.getMessage(), null)));
@@ -393,11 +393,13 @@ public final class McpServer implements AutoCloseable {
             if (!cancelled && resp != null) {
                 send(resp);
             }
-            if (!cancelled && token != null) {
-                try {
-                    sendProgress(new ProgressNotification(token, 1.0, 1.0, null));
-                } catch (IOException ignore) {
-                }
+            if (!cancelled) {
+                token.ifPresent(t -> {
+                    try {
+                        sendProgress(new ProgressNotification(t, 1.0, 1.0, null));
+                    } catch (IOException ignore) {
+                    }
+                });
             }
         } finally {
             cleanup(req.id());
