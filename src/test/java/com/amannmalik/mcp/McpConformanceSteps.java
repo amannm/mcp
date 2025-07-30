@@ -13,7 +13,7 @@ import com.amannmalik.mcp.client.sampling.SamplingProviderFactory;
 import com.amannmalik.mcp.jsonrpc.JsonRpcError;
 import com.amannmalik.mcp.jsonrpc.JsonRpcMessage;
 import com.amannmalik.mcp.jsonrpc.JsonRpcResponse;
-import com.amannmalik.mcp.jsonrpc.NotificationMethod;
+import com.amannmalik.mcp.wire.NotificationMethod;
 import com.amannmalik.mcp.jsonrpc.RequestId;
 import com.amannmalik.mcp.lifecycle.ClientCapability;
 import com.amannmalik.mcp.lifecycle.ClientInfo;

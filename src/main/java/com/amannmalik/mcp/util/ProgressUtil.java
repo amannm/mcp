@@ -1,7 +1,7 @@
 package com.amannmalik.mcp.util;
 
 import com.amannmalik.mcp.jsonrpc.JsonRpcNotification;
-import com.amannmalik.mcp.jsonrpc.NotificationMethod;
+import com.amannmalik.mcp.wire.NotificationMethod;
 import com.amannmalik.mcp.security.RateLimiter;
 import jakarta.json.JsonObject;
 

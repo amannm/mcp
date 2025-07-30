@@ -5,7 +5,7 @@ import com.amannmalik.mcp.client.McpClient;
 import com.amannmalik.mcp.jsonrpc.JsonRpcError;
 import com.amannmalik.mcp.jsonrpc.JsonRpcMessage;
 import com.amannmalik.mcp.jsonrpc.JsonRpcResponse;
-import com.amannmalik.mcp.jsonrpc.RequestMethod;
+import com.amannmalik.mcp.wire.RequestMethod;
 import com.amannmalik.mcp.lifecycle.ServerCapability;
 import com.amannmalik.mcp.prompts.Role;
 import com.amannmalik.mcp.server.tools.ListToolsResult;
