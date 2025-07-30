@@ -30,10 +30,10 @@ import com.amannmalik.mcp.lifecycle.ClientInfo;
 import com.amannmalik.mcp.lifecycle.InitializeRequest;
 import com.amannmalik.mcp.lifecycle.InitializeResponse;
 import com.amannmalik.mcp.lifecycle.LifecycleCodec;
-import com.amannmalik.mcp.lifecycle.ProtocolLifecycle;
 import com.amannmalik.mcp.lifecycle.ServerCapability;
 import com.amannmalik.mcp.lifecycle.ServerFeatures;
 import com.amannmalik.mcp.lifecycle.UnsupportedProtocolVersionException;
+import com.amannmalik.mcp.lifecycle.Protocol;
 import com.amannmalik.mcp.ping.PingCodec;
 import com.amannmalik.mcp.ping.PingMonitor;
 import com.amannmalik.mcp.ping.PingResponse;
@@ -190,7 +190,7 @@ public final class McpClient implements AutoCloseable {
     public synchronized void connect() throws IOException {
         if (connected) return;
         InitializeRequest init = new InitializeRequest(
-                ProtocolLifecycle.SUPPORTED_VERSION,
+                Protocol.LATEST_VERSION,
                 new Capabilities(capabilities, Set.of(), Map.of(), Map.of()),
                 info,
                 new ClientFeatures(rootsListChangedSupported)
@@ -240,12 +240,12 @@ public final class McpClient implements AutoCloseable {
         }
         if (msg instanceof JsonRpcResponse resp) {
             InitializeResponse ir = LifecycleCodec.toInitializeResponse(resp.result());
-            if (!ProtocolLifecycle.SUPPORTED_VERSION.equals(ir.protocolVersion())) {
+            if (!Protocol.LATEST_VERSION.equals(ir.protocolVersion())) {
                 try {
                     transport.close();
                 } catch (IOException ignore) {
                 }
-                throw new UnsupportedProtocolVersionException(ir.protocolVersion(), ProtocolLifecycle.SUPPORTED_VERSION);
+                throw new UnsupportedProtocolVersionException(ir.protocolVersion(), Protocol.LATEST_VERSION);
             }
             if (transport instanceof StreamableHttpClientTransport http) {
                 http.setProtocolVersion(ir.protocolVersion());

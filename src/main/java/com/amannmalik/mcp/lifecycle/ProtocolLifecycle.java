@@ -6,17 +6,11 @@ import java.util.Set;
 
 
 public class ProtocolLifecycle {
-    public static final String SUPPORTED_VERSION = "2025-06-18";
-    /**
-     * The most recent prior revision that implementations should fall back to
-     * when no protocol version is negotiated.
-     */
-    public static final String PREVIOUS_VERSION = "2025-03-26";
 
     private final Set<ServerCapability> serverCapabilities;
     private final ServerInfo serverInfo;
     private final String instructions;
-    private String protocolVersion = SUPPORTED_VERSION;
+    private String protocolVersion = Protocol.LATEST_VERSION;
     private LifecycleState state = LifecycleState.INIT;
     private Set<ClientCapability> clientCapabilities = Set.of();
     private ClientFeatures clientFeatures = ClientFeatures.EMPTY;
@@ -35,10 +29,10 @@ public class ProtocolLifecycle {
                 : EnumSet.copyOf(requested);
         clientFeatures = request.features() == null ? ClientFeatures.EMPTY : request.features();
 
-        if (request.protocolVersion() != null && request.protocolVersion().equals(SUPPORTED_VERSION)) {
+        if (request.protocolVersion() != null && request.protocolVersion().equals(Protocol.LATEST_VERSION)) {
             protocolVersion = request.protocolVersion();
         } else {
-            protocolVersion = SUPPORTED_VERSION;
+            protocolVersion = Protocol.LATEST_VERSION;
         }
 
         return new InitializeResponse(

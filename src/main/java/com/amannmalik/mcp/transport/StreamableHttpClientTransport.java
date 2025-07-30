@@ -1,6 +1,6 @@
 package com.amannmalik.mcp.transport;
 
-import com.amannmalik.mcp.lifecycle.ProtocolLifecycle;
+import com.amannmalik.mcp.lifecycle.Protocol;
 import jakarta.json.Json;
 import jakarta.json.JsonObject;
 import jakarta.json.JsonReader;
@@ -27,7 +27,7 @@ public final class StreamableHttpClientTransport implements Transport {
     private final BlockingQueue<JsonObject> incoming = new LinkedBlockingQueue<>();
     private final Set<SseReader> streams = ConcurrentHashMap.newKeySet();
     private volatile String sessionId;
-    private volatile String protocolVersion = ProtocolLifecycle.SUPPORTED_VERSION;
+    private volatile String protocolVersion = Protocol.LATEST_VERSION;
 
     public StreamableHttpClientTransport(URI endpoint) {
         this.endpoint = endpoint;

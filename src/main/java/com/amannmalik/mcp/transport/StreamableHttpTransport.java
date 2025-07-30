@@ -30,6 +30,7 @@ import java.io.PrintWriter;
 import java.net.InetSocketAddress;
 import java.security.SecureRandom;
 import com.amannmalik.mcp.util.Base64Util;
+import com.amannmalik.mcp.lifecycle.Protocol;
 import java.util.ArrayDeque;
 import java.util.Deque;
 import java.util.Set;
@@ -54,7 +55,7 @@ public final class StreamableHttpTransport implements Transport {
     // Default to the previous protocol revision when the version header is
     // absent, as recommended for backwards compatibility.
     private static final String COMPATIBILITY_VERSION =
-            com.amannmalik.mcp.lifecycle.ProtocolLifecycle.PREVIOUS_VERSION;
+            Protocol.PREVIOUS_VERSION;
     private final BlockingQueue<JsonObject> incoming = new LinkedBlockingQueue<>();
     private final Set<SseClient> generalClients = ConcurrentHashMap.newKeySet();
     private final ConcurrentHashMap<String, SseClient> requestStreams = new ConcurrentHashMap<>();
