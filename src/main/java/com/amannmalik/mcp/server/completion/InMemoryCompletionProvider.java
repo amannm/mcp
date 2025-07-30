@@ -95,8 +95,8 @@ public final class InMemoryCompletionProvider implements CompletionProvider {
     }
 
     private static boolean refEquals(CompleteRequest.Ref a, CompleteRequest.Ref b) {
-        if (a instanceof CompleteRequest.Ref.PromptRef(var aName, var at, var am) &&
-                b instanceof CompleteRequest.Ref.PromptRef(var bName, var bt, var bm)) {
+        if (a instanceof CompleteRequest.Ref.PromptRef(var aName, var _, var _) &&
+                b instanceof CompleteRequest.Ref.PromptRef(var bName, var _, var _)) {
             return aName.equals(bName);
         }
         if (a instanceof CompleteRequest.Ref.ResourceRef(String aUri) && b instanceof CompleteRequest.Ref.ResourceRef(String bUri)) {
