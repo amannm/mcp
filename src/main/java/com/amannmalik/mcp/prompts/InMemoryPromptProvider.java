@@ -1,29 +1,24 @@
 package com.amannmalik.mcp.prompts;
 
 import com.amannmalik.mcp.util.Pagination;
-
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.concurrent.atomic.AtomicLong;
 
 public final class InMemoryPromptProvider implements PromptProvider {
     private final Map<String, PromptTemplate> templates = new ConcurrentHashMap<>();
     private final List<PromptsListener> listeners = new CopyOnWriteArrayList<>();
-    private final AtomicLong version = new AtomicLong();
 
     public void add(PromptTemplate template) {
         templates.put(template.prompt().name(), template);
-        version.incrementAndGet();
         notifyListeners();
     }
 
     public void remove(String name) {
         templates.remove(name);
-        version.incrementAndGet();
         notifyListeners();
     }
 
@@ -34,8 +29,7 @@ public final class InMemoryPromptProvider implements PromptProvider {
             all.add(t.prompt());
         }
         all.sort(Comparator.comparing(Prompt::name));
-        long v = version.get();
-        Pagination.Page<Prompt> page = Pagination.page(all, cursor, 100, v);
+        Pagination.Page<Prompt> page = Pagination.page(all, cursor, 100);
         return new PromptPage(page.items(), page.nextCursor());
     }
 
