@@ -86,6 +86,11 @@ public final class SchemaValidator {
                         }
                     }
                 }
+                for (String key : value.keySet()) {
+                    if (!props.containsKey(key)) {
+                        throw new IllegalArgumentException("Unexpected field: " + key);
+                    }
+                }
             }
         }
     }
