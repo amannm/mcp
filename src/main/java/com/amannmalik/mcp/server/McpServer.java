@@ -619,8 +619,7 @@ public final class McpServer implements AutoCloseable {
         try {
             ResourceSubscription sub = resources.subscribe(uri, update -> {
                 try {
-                    ResourceUpdatedNotification n = new ResourceUpdatedNotification(
-                            update.uri(), update.title());
+                    ResourceUpdatedNotification n = new ResourceUpdatedNotification(update.uri());
                     send(new JsonRpcNotification(
                             "notifications/resources/updated",
                             ResourcesCodec.toJsonObject(n)));
