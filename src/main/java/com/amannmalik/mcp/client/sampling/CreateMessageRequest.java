@@ -1,6 +1,7 @@
 package com.amannmalik.mcp.client.sampling;
 
 import com.amannmalik.mcp.validation.InputSanitizer;
+import com.amannmalik.mcp.validation.MetaValidator;
 import jakarta.json.JsonObject;
 
 import java.util.List;
@@ -13,7 +14,8 @@ public record CreateMessageRequest(
         Double temperature,
         int maxTokens,
         List<String> stopSequences,
-        JsonObject metadata
+        JsonObject metadata,
+        JsonObject _meta
 ) {
     public enum IncludeContext {NONE, THIS_SERVER, ALL_SERVERS}
 
@@ -30,5 +32,6 @@ public record CreateMessageRequest(
         if (maxTokens <= 0) {
             throw new IllegalArgumentException("maxTokens must be > 0");
         }
+        MetaValidator.requireValid(_meta);
     }
 }
