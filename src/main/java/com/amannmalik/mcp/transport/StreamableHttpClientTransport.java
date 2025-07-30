@@ -49,9 +49,11 @@ public final class StreamableHttpClientTransport implements Transport {
             throw new IOException(e);
         }
         sessionId = response.headers().firstValue("Mcp-Session-Id").orElse(sessionId);
+
         protocolVersion = response.headers()
                 .firstValue("MCP-Protocol-Version")
                 .orElse(protocolVersion);
+
         int status = response.statusCode();
         String ct = response.headers().firstValue("Content-Type").orElse("");
         if (status == 202) {
