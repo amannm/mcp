@@ -94,9 +94,9 @@ import com.amannmalik.mcp.util.CancellationTracker;
 import com.amannmalik.mcp.util.CancelledNotification;
 import com.amannmalik.mcp.util.CloseUtil;
 import com.amannmalik.mcp.util.Pagination;
+import com.amannmalik.mcp.util.ProgressManager;
 import com.amannmalik.mcp.util.ProgressNotification;
 import com.amannmalik.mcp.util.ProgressToken;
-import com.amannmalik.mcp.util.ProgressTracker;
 import com.amannmalik.mcp.util.ProgressUtil;
 import com.amannmalik.mcp.util.Timeouts;
 import com.amannmalik.mcp.validation.InputSanitizer;
@@ -133,8 +133,7 @@ public final class McpServer implements AutoCloseable {
     private final ProtocolLifecycle lifecycle;
     private final Map<RequestMethod, RequestHandler> requestHandlers = new EnumMap<>(RequestMethod.class);
     private final Map<NotificationMethod, NotificationHandler> notificationHandlers = new EnumMap<>(NotificationMethod.class);
-    private final ProgressTracker progressTracker = new ProgressTracker();
-    private final Map<RequestId, ProgressToken> progressTokens = new ConcurrentHashMap<>();
+    private final ProgressManager progressManager = new ProgressManager(new RateLimiter(20, 1000));
     private final CancellationTracker cancellationTracker = new CancellationTracker();
     private final IdTracker idTracker = new IdTracker();
     private final ResourceProvider resources;
@@ -160,7 +159,6 @@ public final class McpServer implements AutoCloseable {
     private final RateLimiter toolLimiter = new RateLimiter(5, 1000);
     private final RateLimiter completionLimiter = new RateLimiter(10, 1000);
     private final RateLimiter logLimiter = new RateLimiter(20, 1000);
-    private final RateLimiter progressLimiter = new RateLimiter(20, 1000);
     private final AtomicLong requestCounter = new AtomicLong(1);
     private final Map<RequestId, CompletableFuture<JsonRpcMessage>> pending = new ConcurrentHashMap<>();
 
@@ -385,12 +383,10 @@ public final class McpServer implements AutoCloseable {
             }
 
             try {
-                token = ProgressUtil.tokenFromMeta(req.params());
+                token = progressManager.register(req.id(), req.params());
                 token.ifPresent(t -> {
-                    progressTracker.register(t);
-                    progressTokens.put(req.id(), t);
                     try {
-                        sendProgress(new ProgressNotification(t, 0.0, 1.0, null));
+                        progressManager.send(new ProgressNotification(t, 0.0, 1.0, null), this::send);
                     } catch (IOException ignore) {
                     }
                 });
@@ -427,7 +423,7 @@ public final class McpServer implements AutoCloseable {
             if (!cancelled) {
                 token.ifPresent(t -> {
                     try {
-                        sendProgress(new ProgressNotification(t, 1.0, 1.0, null));
+                        progressManager.send(new ProgressNotification(t, 1.0, 1.0, null), this::send);
                     } catch (IOException ignore) {
                     }
                 });
@@ -559,10 +555,7 @@ public final class McpServer implements AutoCloseable {
     private void cancelled(JsonRpcNotification note) {
         CancelledNotification cn = CancellationCodec.toCancelledNotification(note.params());
         cancellationTracker.cancel(cn.requestId(), cn.reason());
-        ProgressToken token = progressTokens.get(cn.requestId());
-        if (token != null) {
-            progressTracker.release(token);
-        }
+        progressManager.release(cn.requestId());
         try {
             String reason = cancellationTracker.reason(cn.requestId());
             sendLog(LoggingLevel.INFO, "cancellation",
@@ -572,14 +565,13 @@ public final class McpServer implements AutoCloseable {
     }
 
     private void cleanup(RequestId id) {
-        ProgressToken token = progressTokens.remove(id);
-        if (token != null) progressTracker.release(token);
+        progressManager.release(id);
         cancellationTracker.release(id);
         idTracker.release(id);
     }
 
     private void sendProgress(ProgressNotification note) throws IOException {
-        ProgressUtil.sendProgress(note, progressTracker, progressLimiter, this::send);
+        progressManager.send(note, this::send);
     }
 
     private JsonRpcMessage listResources(JsonRpcRequest req) {
