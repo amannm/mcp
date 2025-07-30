@@ -5,6 +5,7 @@ import com.amannmalik.mcp.prompts.Role;
 import com.amannmalik.mcp.util.PaginatedRequest;
 import com.amannmalik.mcp.util.PaginatedResult;
 import com.amannmalik.mcp.util.PaginationCodec;
+import com.amannmalik.mcp.util.EmptyJsonObjectCodec;
 import jakarta.json.Json;
 import jakarta.json.JsonObject;
 import jakarta.json.JsonObjectBuilder;
@@ -148,13 +149,11 @@ public final class ResourcesCodec {
 
     public static JsonObject toJsonObject(ResourceListChangedNotification n) {
         if (n == null) throw new IllegalArgumentException("notification required");
-        return JsonValue.EMPTY_JSON_OBJECT;
+        return EmptyJsonObjectCodec.toJsonObject();
     }
 
     public static ResourceListChangedNotification toResourceListChangedNotification(JsonObject obj) {
-        if (obj != null && !obj.isEmpty()) {
-            throw new IllegalArgumentException("unexpected fields");
-        }
+        EmptyJsonObjectCodec.requireEmpty(obj);
         return new ResourceListChangedNotification();
     }
 
