@@ -1,6 +1,7 @@
 package com.amannmalik.mcp.util;
 
 import com.amannmalik.mcp.validation.InputSanitizer;
+import com.amannmalik.mcp.validation.MetaValidator;
 import jakarta.json.Json;
 import jakarta.json.JsonNumber;
 import jakarta.json.JsonObject;
@@ -37,6 +38,21 @@ public final class ProgressCodec {
             case STRING -> new ProgressToken.StringToken(InputSanitizer.requireClean(((JsonString) value).getString()));
             case NUMBER -> new ProgressToken.NumericToken(((JsonNumber) value).longValue());
             default -> throw new IllegalArgumentException("Invalid token type");
+        };
+    }
+
+    public static ProgressToken fromMeta(JsonObject params) {
+        if (params == null || !params.containsKey("_meta")) return null;
+        JsonObject meta = params.getJsonObject("_meta");
+        MetaValidator.requireValid(meta);
+        if (!meta.containsKey("progressToken")) return null;
+        var val = meta.get("progressToken");
+        return switch (val.getValueType()) {
+            case STRING -> new ProgressToken.StringToken(
+                    InputSanitizer.requireClean(meta.getString("progressToken"))
+            );
+            case NUMBER -> new ProgressToken.NumericToken(meta.getJsonNumber("progressToken").longValue());
+            default -> throw new IllegalArgumentException("progressToken must be a string or number");
         };
     }
 }
