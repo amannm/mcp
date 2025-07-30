@@ -89,7 +89,7 @@ public final class HostCommand implements Callable<Integer> {
                 host.register(entry.getKey(), client);
                 if (verbose) System.err.println("Registered client: " + entry.getKey());
             }
-            
+
             if (interactive) {
                 runInteractiveMode(host);
             } else {
@@ -102,17 +102,17 @@ public final class HostCommand implements Callable<Integer> {
     private void runInteractiveMode(HostProcess host) throws IOException {
         BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
         System.out.println("MCP Host Interactive Mode. Type 'help' for commands, 'quit' to exit.");
-        
+
         while (true) {
             System.out.print("mcp> ");
             String line = reader.readLine();
             if (line == null || "quit".equals(line.trim())) {
                 break;
             }
-            
+
             String[] parts = line.trim().split("\\s+");
             if (parts.length == 0) continue;
-            
+
             try {
                 switch (parts[0]) {
                     case "help" -> printHelp();
@@ -162,9 +162,9 @@ public final class HostCommand implements Callable<Integer> {
                         if (parts.length < 3) {
                             System.out.println("Usage: call-tool <client-id> <tool-name> [json-args]");
                         } else {
-                            var args = parts.length > 3 ? 
-                                jakarta.json.Json.createReader(new java.io.StringReader(parts[3])).readObject() : 
-                                null;
+                            var args = parts.length > 3 ?
+                                    jakarta.json.Json.createReader(new java.io.StringReader(parts[3])).readObject() :
+                                    null;
                             System.out.println(host.callTool(parts[1], parts[2], args));
                         }
                     }
@@ -198,9 +198,9 @@ public final class HostCommand implements Callable<Integer> {
                         if (parts.length < 3) {
                             System.out.println("Usage: request <client-id> <method> [json-params]");
                         } else {
-                            var params = parts.length > 3 ? 
-                                jakarta.json.Json.createReader(new java.io.StringReader(parts[3])).readObject() : 
-                                jakarta.json.Json.createObjectBuilder().build();
+                            var params = parts.length > 3 ?
+                                    jakarta.json.Json.createReader(new java.io.StringReader(parts[3])).readObject() :
+                                    jakarta.json.Json.createObjectBuilder().build();
                             System.out.println(host.request(parts[1], parts[2], params));
                         }
                     }
@@ -208,9 +208,9 @@ public final class HostCommand implements Callable<Integer> {
                         if (parts.length < 3) {
                             System.out.println("Usage: notify <client-id> <method> [json-params]");
                         } else {
-                            var params = parts.length > 3 ? 
-                                jakarta.json.Json.createReader(new java.io.StringReader(parts[3])).readObject() : 
-                                jakarta.json.Json.createObjectBuilder().build();
+                            var params = parts.length > 3 ?
+                                    jakarta.json.Json.createReader(new java.io.StringReader(parts[3])).readObject() :
+                                    jakarta.json.Json.createObjectBuilder().build();
                             host.notify(parts[1], parts[2], params);
                             System.out.println("Notification sent");
                         }
@@ -225,21 +225,21 @@ public final class HostCommand implements Callable<Integer> {
 
     private void printHelp() {
         System.out.println("""
-            Available commands:
-              help                              - Show this help
-              clients                           - List active client IDs
-              context                           - Show aggregated context
-              grant-consent <scope>             - Grant consent for scope
-              revoke-consent <scope>            - Revoke consent for scope
-              allow-tool <tool>                 - Allow tool access
-              revoke-tool <tool>                - Revoke tool access
-              allow-audience <audience>         - Allow audience access
-              revoke-audience <audience>        - Revoke audience access
-              list-tools <client-id> [cursor]  - List tools from client
-              call-tool <client-id> <tool> [args] - Call tool (args as JSON)
-              request <client-id> <method> [params] - Send request to client
-              notify <client-id> <method> [params]  - Send notification to client
-              quit                              - Exit interactive mode
-            """);
+                Available commands:
+                  help                              - Show this help
+                  clients                           - List active client IDs
+                  context                           - Show aggregated context
+                  grant-consent <scope>             - Grant consent for scope
+                  revoke-consent <scope>            - Revoke consent for scope
+                  allow-tool <tool>                 - Allow tool access
+                  revoke-tool <tool>                - Revoke tool access
+                  allow-audience <audience>         - Allow audience access
+                  revoke-audience <audience>        - Revoke audience access
+                  list-tools <client-id> [cursor]  - List tools from client
+                  call-tool <client-id> <tool> [args] - Call tool (args as JSON)
+                  request <client-id> <method> [params] - Send request to client
+                  notify <client-id> <method> [params]  - Send notification to client
+                  quit                              - Exit interactive mode
+                """);
     }
 }

@@ -49,6 +49,9 @@ import com.amannmalik.mcp.util.ProgressToken;
 import com.amannmalik.mcp.util.ProgressTracker;
 import com.amannmalik.mcp.validation.MetaValidator;
 import com.amannmalik.mcp.validation.SchemaValidator;
+import com.amannmalik.mcp.prompts.PromptsListener;
+import com.amannmalik.mcp.server.resources.ResourceListListener;
+import com.amannmalik.mcp.server.tools.ToolListListener;
 import jakarta.json.JsonObject;
 
 import java.io.IOException;
@@ -93,6 +96,12 @@ public final class McpClient implements AutoCloseable {
     private ProgressListener progressListener = n -> {
     };
     private LoggingListener loggingListener = n -> {
+    };
+    private ResourceListListener resourceListListener = () -> {
+    };
+    private ToolListListener toolListListener = () -> {
+    };
+    private PromptsListener promptsListener = () -> {
     };
 
     public void configurePing(long intervalMillis, long timeoutMillis) {
@@ -393,6 +402,22 @@ public final class McpClient implements AutoCloseable {
         return serverCapabilities;
     }
 
+    public boolean resourcesSubscribeSupported() {
+        return resourcesSubscribeSupported;
+    }
+
+    public boolean resourcesListChangedSupported() {
+        return resourcesListChangedSupported;
+    }
+
+    public boolean toolsListChangedSupported() {
+        return toolsListChangedSupported;
+    }
+
+    public boolean promptsListChangedSupported() {
+        return promptsListChangedSupported;
+    }
+
     private void readLoop() {
         while (connected) {
             JsonRpcMessage msg;
@@ -593,6 +618,21 @@ public final class McpClient implements AutoCloseable {
         } : listener;
     }
 
+    public void setResourceListListener(ResourceListListener listener) {
+        resourceListListener = listener == null ? () -> {
+        } : listener;
+    }
+
+    public void setToolListListener(ToolListListener listener) {
+        toolListListener = listener == null ? () -> {
+        } : listener;
+    }
+
+    public void setPromptsListener(PromptsListener listener) {
+        promptsListener = listener == null ? () -> {
+        } : listener;
+    }
+
     private void handleNotification(JsonRpcNotification note) {
         switch (note.method()) {
             case "notifications/progress" -> {
@@ -618,6 +658,15 @@ public final class McpClient implements AutoCloseable {
                 }
             }
             case "notifications/cancelled" -> cancelled(note);
+            case "notifications/resources/list_changed" -> {
+                resourceListListener.listChanged();
+            }
+            case "notifications/tools/list_changed" -> {
+                toolListListener.listChanged();
+            }
+            case "notifications/prompts/list_changed" -> {
+                promptsListener.listChanged();
+            }
             default -> {
             }
         }
