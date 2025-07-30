@@ -29,7 +29,11 @@ public final class ConfigLoader {
             if (name.endsWith(".yaml") || name.endsWith(".yml")) {
                 Load loader = new Load(LoadSettings.builder().build());
                 Object data = loader.loadFromInputStream(in);
-                if (!(data instanceof Map<?, ?> map)) throw new IllegalArgumentException("invalid yaml");
+                if (!(data instanceof Map<?, ?> raw)) throw new IllegalArgumentException("invalid yaml");
+                var map = new java.util.LinkedHashMap<String, Object>();
+                for (var e : raw.entrySet()) {
+                    map.put(e.getKey().toString(), e.getValue());
+                }
                 return parseMap(map);
             }
         }
@@ -62,7 +66,7 @@ public final class ConfigLoader {
         };
     }
 
-    private static CliConfig parseMap(Map<?, ?> map) {
+    private static CliConfig parseMap(Map<String, ?> map) {
         String mode = map.get("mode").toString();
         Object tVal = map.get("transport");
         String transport = tVal == null ? "stdio" : tVal.toString();

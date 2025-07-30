@@ -154,7 +154,6 @@ public final class McpServer implements AutoCloseable {
     private final Principal principal;
     private volatile LoggingLevel logLevel = LoggingLevel.INFO;
     private static final int RATE_LIMIT_CODE = -32001;
-    private static final int NOT_INITIALIZED_CODE = -32000;
     private final RateLimiter toolLimiter = new RateLimiter(5, 1000);
     private final RateLimiter completionLimiter = new RateLimiter(10, 1000);
     private final RateLimiter logLimiter = new RateLimiter(20, 1000);
