@@ -7,6 +7,9 @@ import com.amannmalik.mcp.jsonrpc.JsonRpcMessage;
 import com.amannmalik.mcp.jsonrpc.JsonRpcResponse;
 import com.amannmalik.mcp.lifecycle.ServerCapability;
 import com.amannmalik.mcp.prompts.Role;
+import com.amannmalik.mcp.server.tools.ListToolsResult;
+import com.amannmalik.mcp.server.tools.ToolCodec;
+import com.amannmalik.mcp.server.tools.ToolResult;
 import jakarta.json.Json;
 import jakarta.json.JsonObject;
 
@@ -125,7 +128,7 @@ public final class HostProcess implements AutoCloseable {
                 .collect(Collectors.joining(System.lineSeparator()));
     }
 
-    public JsonObject listTools(String clientId, String cursor) throws IOException {
+    public ListToolsResult listTools(String clientId, String cursor) throws IOException {
         McpClient client = clients.get(clientId);
         if (client == null) throw new IllegalArgumentException("Unknown client: " + clientId);
         requireCapability(client, java.util.Optional.of(ServerCapability.TOOLS));
@@ -133,12 +136,12 @@ public final class HostProcess implements AutoCloseable {
                 ? Json.createObjectBuilder().build()
                 : Json.createObjectBuilder().add("cursor", cursor).build();
         JsonRpcMessage resp = client.request("tools/list", params);
-        if (resp instanceof JsonRpcResponse r) return r.result();
+        if (resp instanceof JsonRpcResponse r) return ToolCodec.toListToolsResult(r.result());
         if (resp instanceof JsonRpcError err) throw new IOException(err.error().message());
         throw new IOException("Unexpected response");
     }
 
-    public JsonObject callTool(String clientId, String name, JsonObject args) throws IOException {
+    public ToolResult callTool(String clientId, String name, JsonObject args) throws IOException {
         McpClient client = clients.get(clientId);
         if (client == null) throw new IllegalArgumentException("Unknown client: " + clientId);
         requireCapability(client, java.util.Optional.of(ServerCapability.TOOLS));
@@ -148,7 +151,7 @@ public final class HostProcess implements AutoCloseable {
                 .add("arguments", args == null ? Json.createObjectBuilder().build() : args)
                 .build();
         JsonRpcMessage resp = client.request("tools/call", params);
-        if (resp instanceof JsonRpcResponse r) return r.result();
+        if (resp instanceof JsonRpcResponse r) return ToolCodec.toToolResult(r.result());
         if (resp instanceof JsonRpcError err) throw new IOException(err.error().message());
         throw new IOException("Unexpected response");
     }
