@@ -43,12 +43,10 @@ public final class HostProcess implements AutoCloseable {
         return Optional.empty();
     }
 
-    private static void requireCapability(McpClient client, Optional<ServerCapability> cap) {
-        cap.ifPresent(c -> {
-            if (!client.serverCapabilities().contains(c)) {
-                throw new IllegalStateException("Server capability not supported: " + c);
+    private static void requireCapability(McpClient client, ServerCapability cap) {
+            if (!client.serverCapabilities().contains(cap)) {
+                throw new IllegalStateException("Server capability not supported: " + cap);
             }
-        });
     }
 
     public HostProcess(SecurityPolicy policy,
@@ -176,7 +174,7 @@ public final class HostProcess implements AutoCloseable {
         McpClient client = clients.get(id);
         if (client == null) throw new IllegalArgumentException("Unknown client: " + id);
         if (!client.connected()) throw new IllegalStateException("Client not connected: " + id);
-        requireCapabilityIfPresent(client, capabilityForMethod(method));
+        capabilityForMethod(method).ifPresent(it -> requireCapability(client, it));
         return client.request(method, params);
     }
 
@@ -184,7 +182,8 @@ public final class HostProcess implements AutoCloseable {
         McpClient client = clients.get(id);
         if (client == null) throw new IllegalArgumentException("Unknown client: " + id);
         if (!client.connected()) throw new IllegalStateException("Client not connected: " + id);
-        requireCapabilityIfPresent(client, capabilityForMethod(method));
+        capabilityForMethod(method).ifPresent(it -> requireCapability(client, it));
+
         client.notify(method, params);
     }
 
