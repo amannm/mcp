@@ -747,7 +747,7 @@ public final class McpServer implements AutoCloseable {
             ToolResult result = tools.call(callRequest.name(), callRequest.arguments());
             return new JsonRpcResponse(req.id(), ToolCodec.toJsonObject(result));
         } catch (IllegalArgumentException e) {
-            Optional<Tool> tool = findTool(callRequest.name());
+            Optional<Tool> tool = tools == null ? Optional.empty() : tools.find(callRequest.name());
             if (tool.isPresent() && lifecycle.negotiatedClientCapabilities().contains(ClientCapability.ELICITATION)) {
                 try {
                     ElicitRequest er = new ElicitRequest(
@@ -954,14 +954,6 @@ public final class McpServer implements AutoCloseable {
         throw new IOException(((JsonRpcError) msg).error().message());
     }
 
-    private Optional<Tool> findTool(String name) {
-        if (tools == null) return Optional.empty();
-        Pagination.Page<Tool> page = tools.list(null);
-        for (Tool t : page.items()) {
-            if (t.name().equals(name)) return Optional.of(t);
-        }
-        return Optional.empty();
-    }
 
     public CreateMessageResponse createMessage(CreateMessageRequest req) throws IOException {
         requireClientCapability(ClientCapability.SAMPLING);

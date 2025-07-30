@@ -12,6 +12,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.function.Function;
+import java.util.Optional;
 
 public final class InMemoryToolProvider implements ToolProvider {
     private final List<Tool> tools;
@@ -26,6 +27,15 @@ public final class InMemoryToolProvider implements ToolProvider {
     @Override
     public Pagination.Page<Tool> list(String cursor) {
         return Pagination.page(tools, cursor, Pagination.DEFAULT_PAGE_SIZE);
+    }
+
+    @Override
+    public Optional<Tool> find(String name) {
+        if (name == null) throw new IllegalArgumentException("name required");
+        for (Tool t : tools) {
+            if (t.name().equals(name)) return Optional.of(t);
+        }
+        return Optional.empty();
     }
 
     @Override
