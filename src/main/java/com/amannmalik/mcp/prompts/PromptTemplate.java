@@ -10,14 +10,29 @@ public record PromptTemplate(Prompt prompt, List<PromptMessageTemplate> messages
     }
 
     PromptInstance instantiate(Map<String, String> args) {
-        for (PromptArgument a : prompt.arguments()) {
-            if (a.required() && (args == null || !args.containsKey(a.name()))) {
-                throw new IllegalArgumentException("missing argument: " + a.name());
+        Map<String, String> provided = args == null ? Map.of() : Map.copyOf(args);
+
+        if (!prompt.arguments().isEmpty()) {
+            java.util.Set<String> allowed = prompt.arguments().stream()
+                    .map(PromptArgument::name)
+                    .collect(java.util.stream.Collectors.toUnmodifiableSet());
+
+            for (String name : provided.keySet()) {
+                if (!allowed.contains(name)) {
+                    throw new IllegalArgumentException("unknown argument: " + name);
+                }
+            }
+
+            for (PromptArgument a : prompt.arguments()) {
+                if (a.required() && !provided.containsKey(a.name())) {
+                    throw new IllegalArgumentException("missing argument: " + a.name());
+                }
             }
         }
-        List<PromptMessage> list = new ArrayList<>();
+
+        List<PromptMessage> list = new ArrayList<>(messages.size());
         for (PromptMessageTemplate t : messages) {
-            list.add(new PromptMessage(t.role(), instantiate(t.content(), args)));
+            list.add(new PromptMessage(t.role(), instantiate(t.content(), provided)));
         }
         return new PromptInstance(prompt.description(), list);
     }
