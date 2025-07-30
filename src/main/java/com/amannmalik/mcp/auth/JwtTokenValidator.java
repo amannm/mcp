@@ -1,6 +1,7 @@
 package com.amannmalik.mcp.auth;
 
 import com.amannmalik.mcp.util.Base64Util;
+import com.amannmalik.mcp.validation.InputSanitizer;
 import jakarta.json.Json;
 import jakarta.json.JsonArray;
 import jakarta.json.JsonObject;
@@ -25,18 +26,13 @@ public final class JwtTokenValidator implements TokenValidator {
     }
 
     public JwtTokenValidator(String expectedAudience, byte[] secret) {
-        if (expectedAudience == null || expectedAudience.isBlank()) {
-            throw new IllegalArgumentException("expectedAudience required");
-        }
-        this.expectedAudience = expectedAudience;
+        this.expectedAudience = InputSanitizer.requireNonBlank(expectedAudience);
         this.secret = secret == null || secret.length == 0 ? null : secret.clone();
     }
 
     @Override
     public Principal validate(String token) throws AuthorizationException {
-        if (token == null || token.isBlank()) {
-            throw new AuthorizationException("token required");
-        }
+        token = InputSanitizer.requireNonBlank(token);
         String[] parts = token.split("\\.");
         if (parts.length != 3) {
             throw new AuthorizationException("invalid token format");

@@ -31,6 +31,13 @@ public final class InputSanitizer {
         return value == null ? null : requireClean(value);
     }
 
+    public static String requireNonBlank(String value) {
+        if (value == null || value.isBlank()) {
+            throw new IllegalArgumentException("value required");
+        }
+        return requireClean(value);
+    }
+
     public static Map<String, String> requireCleanMap(Map<String, String> map) {
         if (map == null || map.isEmpty()) return Map.of();
         Map<String, String> copy = new HashMap<>();
