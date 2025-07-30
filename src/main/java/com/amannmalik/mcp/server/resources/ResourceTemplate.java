@@ -23,4 +23,8 @@ public record ResourceTemplate(
         mimeType = InputSanitizer.cleanNullable(mimeType);
         MetaValidator.requireValid(_meta);
     }
+
+    public String displayName() {
+        return title != null ? title : name;
+    }
 }

@@ -27,4 +27,10 @@ public record Tool(String name,
         ) ? null : annotations;
         MetaValidator.requireValid(_meta);
     }
+
+    public String displayName() {
+        if (title != null) return title;
+        if (annotations != null && annotations.title() != null) return annotations.title();
+        return name;
+    }
 }

@@ -20,4 +20,8 @@ public record Prompt(
         description = InputSanitizer.cleanNullable(description);
         MetaValidator.requireValid(_meta);
     }
+
+    public String displayName() {
+        return title != null ? title : name;
+    }
 }
