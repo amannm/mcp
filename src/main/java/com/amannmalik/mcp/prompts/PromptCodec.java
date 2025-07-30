@@ -7,6 +7,7 @@ import com.amannmalik.mcp.util.PaginatedRequest;
 import com.amannmalik.mcp.util.PaginatedResult;
 import com.amannmalik.mcp.util.Pagination;
 import com.amannmalik.mcp.util.PaginationCodec;
+import com.amannmalik.mcp.util.PaginationJson;
 import com.amannmalik.mcp.validation.InputSanitizer;
 import jakarta.json.Json;
 import jakarta.json.JsonArray;
@@ -61,11 +62,7 @@ public final class PromptCodec {
     }
 
     public static JsonObject toJsonObject(Pagination.Page<Prompt> page) {
-        JsonArrayBuilder arr = Json.createArrayBuilder();
-        page.items().forEach(p -> arr.add(toJsonObject(p)));
-        JsonObjectBuilder builder = Json.createObjectBuilder().add("prompts", arr.build());
-        PaginationCodec.toJsonObject(new PaginatedResult(page.nextCursor())).forEach(builder::add);
-        return builder.build();
+        return PaginationJson.toJson("prompts", page, PromptCodec::toJsonObject);
     }
 
     public static JsonObject toJsonObject(ListPromptsRequest req) {
