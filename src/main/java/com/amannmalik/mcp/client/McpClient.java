@@ -51,6 +51,7 @@ import com.amannmalik.mcp.transport.Transport;
 import com.amannmalik.mcp.util.CancellationCodec;
 import com.amannmalik.mcp.util.CancellationTracker;
 import com.amannmalik.mcp.util.CancelledNotification;
+import com.amannmalik.mcp.util.CloseUtil;
 import com.amannmalik.mcp.util.ProgressCodec;
 import com.amannmalik.mcp.util.ProgressListener;
 import com.amannmalik.mcp.util.ProgressNotification;
@@ -303,7 +304,7 @@ public final class McpClient implements AutoCloseable {
         }
         transport.close();
         if (rootsSubscription != null) {
-            rootsSubscription.close();
+            CloseUtil.closeQuietly(rootsSubscription);
             rootsSubscription = null;
         }
         if (reader != null) {

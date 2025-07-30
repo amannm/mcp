@@ -92,6 +92,7 @@ import com.amannmalik.mcp.util.CancellationCodec;
 import com.amannmalik.mcp.util.CancellationTracker;
 import com.amannmalik.mcp.util.CancelledNotification;
 import com.amannmalik.mcp.util.Pagination;
+import com.amannmalik.mcp.util.CloseUtil;
 import com.amannmalik.mcp.util.ProgressCodec;
 import com.amannmalik.mcp.util.ProgressNotification;
 import com.amannmalik.mcp.util.ProgressToken;
@@ -1055,31 +1056,19 @@ public final class McpServer implements AutoCloseable {
     public void close() throws IOException {
         lifecycle.shutdown();
         for (ResourceSubscription sub : resourceSubscriptions.values()) {
-            try {
-                sub.close();
-            } catch (Exception ignore) {
-            }
+            CloseUtil.closeQuietly(sub);
         }
         resourceSubscriptions.clear();
         if (resourceListSubscription != null) {
-            try {
-                resourceListSubscription.close();
-            } catch (Exception ignore) {
-            }
+            CloseUtil.closeQuietly(resourceListSubscription);
             resourceListSubscription = null;
         }
         if (toolListSubscription != null) {
-            try {
-                toolListSubscription.close();
-            } catch (Exception ignore) {
-            }
+            CloseUtil.closeQuietly(toolListSubscription);
             toolListSubscription = null;
         }
         if (promptsSubscription != null) {
-            try {
-                promptsSubscription.close();
-            } catch (Exception ignore) {
-            }
+            CloseUtil.closeQuietly(promptsSubscription);
             promptsSubscription = null;
         }
         if (resources != null) resources.close();
