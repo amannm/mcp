@@ -19,7 +19,7 @@ public record CreateMessageRequest(
 
     public CreateMessageRequest {
         messages = messages == null || messages.isEmpty() ? List.of() : List.copyOf(messages);
-        systemPrompt = systemPrompt == null ? null : InputSanitizer.requireClean(systemPrompt);
+        systemPrompt = InputSanitizer.cleanNullable(systemPrompt);
         if (stopSequences == null || stopSequences.isEmpty()) {
             stopSequences = List.of();
         } else {

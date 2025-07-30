@@ -8,8 +8,6 @@ public record LoggingMessageNotification(LoggingLevel level, String logger, Json
         if (level == null || data == null) {
             throw new IllegalArgumentException("level and data are required");
         }
-        if (logger != null) {
-            logger = InputSanitizer.requireClean(logger);
-        }
+        logger = InputSanitizer.cleanNullable(logger);
     }
 }

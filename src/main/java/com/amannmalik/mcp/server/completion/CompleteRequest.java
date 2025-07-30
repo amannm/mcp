@@ -55,7 +55,7 @@ public record CompleteRequest(
             public PromptRef(String name, String title, JsonObject _meta) {
                 if (name == null) throw new IllegalArgumentException("name required");
                 this.name = InputSanitizer.requireClean(name);
-                this.title = title == null ? null : InputSanitizer.requireClean(title);
+                this.title = InputSanitizer.cleanNullable(title);
                 MetaValidator.requireValid(_meta);
                 this._meta = _meta;
             }
