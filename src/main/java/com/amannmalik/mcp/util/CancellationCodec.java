@@ -35,7 +35,7 @@ public final class CancellationCodec {
         }
         return switch (v.getValueType()) {
             case STRING -> new RequestId.StringId(((JsonString) v).getString());
-            case NUMBER -> new RequestId.NumericId(((JsonNumber) v).doubleValue());
+            case NUMBER -> new RequestId.NumericId(((JsonNumber) v).longValue());
             default -> throw new IllegalArgumentException("Invalid requestId type");
         };
     }
