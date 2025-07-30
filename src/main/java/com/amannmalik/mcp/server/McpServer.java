@@ -145,29 +145,12 @@ public final class McpServer implements AutoCloseable {
     private final AtomicLong requestCounter = new AtomicLong(1);
     private final Map<RequestId, CompletableFuture<JsonRpcMessage>> pending = new ConcurrentHashMap<>();
 
-    public McpServer(Transport transport) {
-        this(transport, null);
-    }
-
     public McpServer(Transport transport, String instructions) {
         this(createDefaultResources(), createDefaultTools(), createDefaultPrompts(), createDefaultCompletions(),
                 createDefaultPrivacyBoundary("default"),
                 createDefaultToolAccess(),
                 new Principal("default", Set.of()),
                 instructions,
-                transport);
-    }
-
-    McpServer(ResourceProvider resources,
-              ToolProvider tools,
-              PromptProvider prompts,
-              CompletionProvider completions,
-              Transport transport) {
-        this(resources, tools, prompts, completions,
-                createDefaultPrivacyBoundary("default"),
-                createDefaultToolAccess(),
-                new Principal("default", Set.of()),
-                null,
                 transport);
     }
 
