@@ -59,6 +59,9 @@ public final class JsonRpcCodec {
         var method = obj.getString("method", null);
         var hasError = obj.containsKey("error");
         var hasResult = obj.containsKey("result");
+        if (hasError && hasResult) {
+            throw new IllegalArgumentException("response cannot contain both result and error");
+        }
 
         if (method != null && idValue != null && idValue.getValueType() != JsonValue.ValueType.NULL) {
             return new JsonRpcRequest(toId(idValue), method, obj.getJsonObject("params"));
