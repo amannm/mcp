@@ -549,7 +549,7 @@ public final class McpServer implements AutoCloseable {
         String cursor = lr.cursor();
         if (cursor != null) {
             try {
-                cursor = InputSanitizer.cleanNullable(cursor);
+                cursor = sanitizeCursor(InputSanitizer.cleanNullable(cursor));
             } catch (IllegalArgumentException e) {
                 return invalidParams(req, e);
             }
@@ -610,7 +610,7 @@ public final class McpServer implements AutoCloseable {
         String cursor = request.cursor();
         if (cursor != null) {
             try {
-                cursor = InputSanitizer.cleanNullable(cursor);
+                cursor = sanitizeCursor(InputSanitizer.cleanNullable(cursor));
             } catch (IllegalArgumentException e) {
                 return invalidParams(req, e);
             }
@@ -706,7 +706,7 @@ public final class McpServer implements AutoCloseable {
         String cursor = ltr.cursor();
         if (cursor != null) {
             try {
-                cursor = InputSanitizer.cleanNullable(cursor);
+                cursor = sanitizeCursor(InputSanitizer.cleanNullable(cursor));
             } catch (IllegalArgumentException e) {
                 return invalidParams(req, e);
             }
@@ -770,7 +770,7 @@ public final class McpServer implements AutoCloseable {
         String cursor = lpr.cursor();
         if (cursor != null) {
             try {
-                cursor = InputSanitizer.cleanNullable(cursor);
+                cursor = sanitizeCursor(InputSanitizer.cleanNullable(cursor));
             } catch (IllegalArgumentException e) {
                 return invalidParams(req, e);
             }
