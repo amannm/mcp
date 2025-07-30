@@ -1,4 +1,5 @@
 Feature: MCP protocol conformance
+
   Scenario: Basic server interaction
     Given a running MCP server and connected client
     Then the server capabilities should be advertised
