@@ -351,9 +351,14 @@ public final class McpServer implements AutoCloseable {
                     null));
             return;
         }
-        var handler = RequestMethod.from(req.method())
-                .map(requestHandlers::get)
-                .orElse(null);
+        var method = RequestMethod.from(req.method());
+        if (method.isEmpty()) {
+            send(JsonRpcError.of(req.id(),
+                    JsonRpcErrorCode.METHOD_NOT_FOUND,
+                    "Unknown method: " + req.method()));
+            return;
+        }
+        RequestHandler handler = requestHandlers.get(method.get());
         if (handler == null) {
             send(JsonRpcError.of(req.id(),
                     JsonRpcErrorCode.METHOD_NOT_FOUND,

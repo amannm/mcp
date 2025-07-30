@@ -493,14 +493,18 @@ public final class McpClient implements AutoCloseable {
         boolean cancelled;
         JsonRpcMessage resp;
         try {
-            RequestHandler handler = RequestMethod.from(req.method())
-                    .map(requestHandlers::get)
-                    .orElse(null);
-            if (handler == null) {
+            var method = RequestMethod.from(req.method());
+            if (method.isEmpty()) {
                 resp = JsonRpcError.of(req.id(), JsonRpcErrorCode.METHOD_NOT_FOUND,
                         "Unknown method: " + req.method());
             } else {
-                resp = handler.handle(req);
+                RequestHandler handler = requestHandlers.get(method.get());
+                if (handler == null) {
+                    resp = JsonRpcError.of(req.id(), JsonRpcErrorCode.METHOD_NOT_FOUND,
+                            "Unknown method: " + req.method());
+                } else {
+                    resp = handler.handle(req);
+                }
             }
         } finally {
             cancelled = cancellationTracker.isCancelled(req.id());
