@@ -44,6 +44,7 @@ public final class StreamableHttpTransport implements Transport {
     private final OriginValidator originValidator;
     private final AuthorizationManager authManager;
     private final String resourceMetadataUrl;
+    private final String canonicalResource;
     private final java.util.List<String> authorizationServers;
 
 
@@ -90,6 +91,12 @@ public final class StreamableHttpTransport implements Transport {
                     "/.well-known/oauth-protected-resource";
         } else {
             this.resourceMetadataUrl = resourceMetadataUrl;
+        }
+        int idx = this.resourceMetadataUrl.indexOf("/.well-known/oauth-protected-resource");
+        if (idx >= 0) {
+            this.canonicalResource = this.resourceMetadataUrl.substring(0, idx);
+        } else {
+            this.canonicalResource = "http://127.0.0.1:" + this.port;
         }
         this.authorizationServers = authorizationServers == null || authorizationServers.isEmpty()
                 ? java.util.List.of()
@@ -599,6 +606,7 @@ public final class StreamableHttpTransport implements Transport {
             var arr = jakarta.json.Json.createArrayBuilder();
             for (String s : authorizationServers) arr.add(s);
             var body = jakarta.json.Json.createObjectBuilder()
+                    .add("resource", canonicalResource)
                     .add("authorization_servers", arr.build())
                     .build();
             resp.setStatus(HttpServletResponse.SC_OK);
