@@ -107,6 +107,7 @@ public final class PromptCodec {
             }
             case PromptContent.ResourceLink l -> {
                 JsonObject obj = ResourcesCodec.toJsonObject(l.resource());
+                b.add("type", "resource_link");
                 obj.forEach((k, v) -> {
                     if (!"_meta".equals(k)) b.add(k, v);
                 });
