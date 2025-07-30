@@ -113,6 +113,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.EnumSet;
+import java.util.Optional;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -756,12 +757,12 @@ public final class McpServer implements AutoCloseable {
             ToolResult result = tools.call(callRequest.name(), callRequest.arguments());
             return new JsonRpcResponse(req.id(), ToolCodec.toJsonObject(result));
         } catch (IllegalArgumentException e) {
-            Tool tool = findTool(callRequest.name());
-            if (tool != null && lifecycle.negotiatedClientCapabilities().contains(ClientCapability.ELICITATION)) {
+            Optional<Tool> tool = findTool(callRequest.name());
+            if (tool.isPresent() && lifecycle.negotiatedClientCapabilities().contains(ClientCapability.ELICITATION)) {
                 try {
                     ElicitRequest er = new ElicitRequest(
-                            "Provide arguments for tool '" + tool.name() + "'",
-                            tool.inputSchema(),
+                            "Provide arguments for tool '" + tool.get().name() + "'",
+                            tool.get().inputSchema(),
                             null);
                     ElicitResult res = elicit(er);
                     if (res.action() == ElicitationAction.ACCEPT) {
@@ -973,13 +974,13 @@ public final class McpServer implements AutoCloseable {
         throw new IOException(((JsonRpcError) msg).error().message());
     }
 
-    private Tool findTool(String name) {
-        if (tools == null) return null;
+    private Optional<Tool> findTool(String name) {
+        if (tools == null) return Optional.empty();
         Pagination.Page<Tool> page = tools.list(null);
         for (Tool t : page.items()) {
-            if (t.name().equals(name)) return t;
+            if (t.name().equals(name)) return Optional.of(t);
         }
-        return null;
+        return Optional.empty();
     }
 
     public CreateMessageResponse createMessage(CreateMessageRequest req) throws IOException {
