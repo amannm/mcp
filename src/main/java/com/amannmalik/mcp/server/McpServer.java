@@ -705,11 +705,8 @@ public final class McpServer implements AutoCloseable {
             return new JsonRpcError(req.id(), new JsonRpcError.ErrorDetail(
                     JsonRpcErrorCode.INVALID_PARAMS.code(), e.getMessage(), null));
         }
-        var arr = Json.createArrayBuilder();
-        for (Prompt p : page.prompts()) arr.add(PromptCodec.toJsonObject(p));
-        var builder = Json.createObjectBuilder().add("prompts", arr.build());
-        PaginationCodec.toJsonObject(new PaginatedResult(page.nextCursor())).forEach(builder::add);
-        return new JsonRpcResponse(req.id(), builder.build());
+        JsonObject result = PromptCodec.toJsonObject(page);
+        return new JsonRpcResponse(req.id(), result);
     }
 
     private JsonRpcMessage getPrompt(JsonRpcRequest req) {
