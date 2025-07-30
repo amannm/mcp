@@ -29,8 +29,13 @@ public class ProtocolLifecycle {
                 : EnumSet.copyOf(requested);
         clientFeatures = request.features() == null ? ClientFeatures.EMPTY : request.features();
 
-        if (request.protocolVersion() != null && request.protocolVersion().equals(Protocol.LATEST_VERSION)) {
-            protocolVersion = request.protocolVersion();
+        if (request.protocolVersion() != null) {
+            if (request.protocolVersion().equals(Protocol.LATEST_VERSION) ||
+                    request.protocolVersion().equals(Protocol.PREVIOUS_VERSION)) {
+                protocolVersion = request.protocolVersion();
+            } else {
+                protocolVersion = Protocol.LATEST_VERSION;
+            }
         } else {
             protocolVersion = Protocol.LATEST_VERSION;
         }
