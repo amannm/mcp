@@ -20,9 +20,7 @@ import com.amannmalik.mcp.jsonrpc.JsonRpcMessage;
 import com.amannmalik.mcp.jsonrpc.JsonRpcNotification;
 import com.amannmalik.mcp.jsonrpc.JsonRpcRequest;
 import com.amannmalik.mcp.jsonrpc.JsonRpcResponse;
-import com.amannmalik.mcp.wire.NotificationMethod;
 import com.amannmalik.mcp.jsonrpc.RequestId;
-import com.amannmalik.mcp.wire.RequestMethod;
 import com.amannmalik.mcp.lifecycle.Capabilities;
 import com.amannmalik.mcp.lifecycle.ClientCapability;
 import com.amannmalik.mcp.lifecycle.ClientFeatures;
@@ -30,10 +28,10 @@ import com.amannmalik.mcp.lifecycle.ClientInfo;
 import com.amannmalik.mcp.lifecycle.InitializeRequest;
 import com.amannmalik.mcp.lifecycle.InitializeResponse;
 import com.amannmalik.mcp.lifecycle.LifecycleCodec;
+import com.amannmalik.mcp.lifecycle.Protocol;
 import com.amannmalik.mcp.lifecycle.ServerCapability;
 import com.amannmalik.mcp.lifecycle.ServerFeatures;
 import com.amannmalik.mcp.lifecycle.UnsupportedProtocolVersionException;
-import com.amannmalik.mcp.lifecycle.Protocol;
 import com.amannmalik.mcp.ping.PingCodec;
 import com.amannmalik.mcp.ping.PingMonitor;
 import com.amannmalik.mcp.ping.PingResponse;
@@ -61,7 +59,8 @@ import com.amannmalik.mcp.util.ProgressTracker;
 import com.amannmalik.mcp.util.ProgressUtil;
 import com.amannmalik.mcp.util.Timeouts;
 import com.amannmalik.mcp.validation.SchemaValidator;
-import jakarta.json.Json;
+import com.amannmalik.mcp.wire.NotificationMethod;
+import com.amannmalik.mcp.wire.RequestMethod;
 import jakarta.json.JsonObject;
 
 import java.io.IOException;
@@ -625,14 +624,14 @@ public final class McpClient implements AutoCloseable {
     private void requireCapability(RequestMethod method) {
         ServerCapability cap = switch (method) {
             case RESOURCES_LIST,
-                    RESOURCES_TEMPLATES_LIST,
-                    RESOURCES_READ,
-                    RESOURCES_SUBSCRIBE,
-                    RESOURCES_UNSUBSCRIBE -> ServerCapability.RESOURCES;
+                 RESOURCES_TEMPLATES_LIST,
+                 RESOURCES_READ,
+                 RESOURCES_SUBSCRIBE,
+                 RESOURCES_UNSUBSCRIBE -> ServerCapability.RESOURCES;
             case TOOLS_LIST,
-                    TOOLS_CALL -> ServerCapability.TOOLS;
+                 TOOLS_CALL -> ServerCapability.TOOLS;
             case PROMPTS_LIST,
-                    PROMPTS_GET -> ServerCapability.PROMPTS;
+                 PROMPTS_GET -> ServerCapability.PROMPTS;
             case LOGGING_SET_LEVEL -> ServerCapability.LOGGING;
             case COMPLETION_COMPLETE -> ServerCapability.COMPLETIONS;
             default -> null;

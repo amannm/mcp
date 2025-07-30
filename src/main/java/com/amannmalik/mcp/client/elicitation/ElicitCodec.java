@@ -1,11 +1,10 @@
 package com.amannmalik.mcp.client.elicitation;
 
+import com.amannmalik.mcp.util.JsonUtil;
 import jakarta.json.Json;
 import jakarta.json.JsonObject;
 import jakarta.json.JsonObjectBuilder;
 import jakarta.json.JsonValue;
-
-import com.amannmalik.mcp.util.JsonUtil;
 
 import java.util.Set;
 

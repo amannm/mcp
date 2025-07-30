@@ -29,7 +29,9 @@ public sealed interface RequestId permits RequestId.StringId, RequestId.NumericI
         }
     }
 
-    /** Represents a missing ID for error responses. */
+    /**
+     * Represents a missing ID for error responses.
+     */
     final class NullId implements RequestId {
         @Override
         public String toString() {

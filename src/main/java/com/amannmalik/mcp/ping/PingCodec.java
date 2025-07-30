@@ -8,6 +8,7 @@ import jakarta.json.JsonValue;
 public final class PingCodec {
     private PingCodec() {
     }
+
     public static PingRequest toPingRequest(JsonRpcRequest req) {
         if (req == null) throw new IllegalArgumentException("request required");
         if (req.params() != null && !req.params().isEmpty()) {

@@ -1,12 +1,12 @@
 package com.amannmalik.mcp.auth;
 
+import com.amannmalik.mcp.util.Base64Util;
 import jakarta.json.Json;
 import jakarta.json.JsonArray;
 import jakarta.json.JsonObject;
 import jakarta.json.JsonReader;
 
 import java.io.StringReader;
-import com.amannmalik.mcp.util.Base64Util;
 import java.util.Set;
 
 public final class JwtTokenValidator implements TokenValidator {
