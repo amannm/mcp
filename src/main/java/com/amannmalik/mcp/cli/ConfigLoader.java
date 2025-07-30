@@ -43,7 +43,8 @@ public final class ConfigLoader {
                     parseTransport(transport),
                     obj.getInt("port", 0),
                     obj.containsKey("instructions") ? obj.getString("instructions") : null,
-                    obj.containsKey("expectedAudience") ? obj.getString("expectedAudience") : null);
+                    obj.containsKey("expectedAudience") ? obj.getString("expectedAudience") : null,
+                    obj.containsKey("resourceMetadataUrl") ? obj.getString("resourceMetadataUrl") : null);
             case "client" -> new ClientConfig(parseTransport(transport), obj.getString("command"));
             case "host" -> {
                 var cObj = obj.getJsonObject("clients");
@@ -67,7 +68,8 @@ public final class ConfigLoader {
                     parseTransport(transport),
                     portVal == null ? 0 : ((Number) portVal).intValue(),
                     map.get("instructions") == null ? null : map.get("instructions").toString(),
-                    map.get("expectedAudience") == null ? null : map.get("expectedAudience").toString());
+                    map.get("expectedAudience") == null ? null : map.get("expectedAudience").toString(),
+                    map.get("resourceMetadataUrl") == null ? null : map.get("resourceMetadataUrl").toString());
             case "client" -> new ClientConfig(parseTransport(transport), cmdVal.toString());
             case "host" -> {
                 if (!(clientsVal instanceof Map<?, ?> cMap) || cMap.isEmpty()) {
