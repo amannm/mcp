@@ -505,6 +505,14 @@ public final class McpServer implements AutoCloseable {
     private JsonRpcMessage listResources(JsonRpcRequest req) {
         requireServerCapability(ServerCapability.RESOURCES);
         String cursor = PaginationCodec.toPaginatedRequest(req.params()).cursor();
+        if (cursor != null) {
+            try {
+                cursor = InputSanitizer.requireClean(cursor);
+            } catch (IllegalArgumentException e) {
+                return new JsonRpcError(req.id(), new JsonRpcError.ErrorDetail(
+                        JsonRpcErrorCode.INVALID_PARAMS.code(), e.getMessage(), null));
+            }
+        }
         ResourceList list;
         try {
             list = resources.list(cursor);
@@ -553,6 +561,14 @@ public final class McpServer implements AutoCloseable {
     private JsonRpcMessage listTemplates(JsonRpcRequest req) {
         requireServerCapability(ServerCapability.RESOURCES);
         String cursor = PaginationCodec.toPaginatedRequest(req.params()).cursor();
+        if (cursor != null) {
+            try {
+                cursor = InputSanitizer.requireClean(cursor);
+            } catch (IllegalArgumentException e) {
+                return new JsonRpcError(req.id(), new JsonRpcError.ErrorDetail(
+                        JsonRpcErrorCode.INVALID_PARAMS.code(), e.getMessage(), null));
+            }
+        }
         ResourceTemplatePage page;
         try {
             page = resources.listTemplates(cursor);
@@ -706,6 +722,14 @@ public final class McpServer implements AutoCloseable {
     private JsonRpcMessage listPrompts(JsonRpcRequest req) {
         requireServerCapability(ServerCapability.PROMPTS);
         String cursor = PaginationCodec.toPaginatedRequest(req.params()).cursor();
+        if (cursor != null) {
+            try {
+                cursor = InputSanitizer.requireClean(cursor);
+            } catch (IllegalArgumentException e) {
+                return new JsonRpcError(req.id(), new JsonRpcError.ErrorDetail(
+                        JsonRpcErrorCode.INVALID_PARAMS.code(), e.getMessage(), null));
+            }
+        }
         PromptPage page;
         try {
             page = prompts.list(cursor);
