@@ -167,6 +167,16 @@ class McpConformanceTest {
                     .getJsonArray("contents").getJsonObject(0);
             assertEquals("hello", block.getString("text"));
 
+            m = client.request("resources/subscribe", Json.createObjectBuilder()
+                    .add("uri", "test://example")
+                    .build());
+            assertInstanceOf(JsonRpcResponse.class, m);
+
+            m = client.request("resources/unsubscribe", Json.createObjectBuilder()
+                    .add("uri", "test://example")
+                    .build());
+            assertInstanceOf(JsonRpcResponse.class, m);
+
             m = client.request("resources/templates/list", Json.createObjectBuilder().build());
             assertInstanceOf(JsonRpcResponse.class, m);
             var templates = ((JsonRpcResponse) m).result().getJsonArray("resourceTemplates");
