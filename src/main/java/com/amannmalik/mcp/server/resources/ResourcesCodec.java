@@ -109,12 +109,25 @@ public final class ResourcesCodec {
         return EmptyJsonObjectCodec.toJsonObject();
     }
 
+    public static ResourceListChangedNotification toResourceListChangedNotification(JsonObject obj) {
+        EmptyJsonObjectCodec.requireEmpty(obj);
+        return new ResourceListChangedNotification();
+    }
+
     public static JsonObject toJsonObject(ResourceUpdatedNotification n) {
         if (n == null) throw new IllegalArgumentException("notification required");
         JsonObjectBuilder b = Json.createObjectBuilder()
                 .add("uri", n.uri());
         if (n.title() != null) b.add("title", n.title());
         return b.build();
+    }
+
+    public static ResourceUpdatedNotification toResourceUpdatedNotification(JsonObject obj) {
+        if (obj == null) throw new IllegalArgumentException("object required");
+        String uri = obj.getString("uri", null);
+        if (uri == null) throw new IllegalArgumentException("uri required");
+        String title = obj.getString("title", null);
+        return new ResourceUpdatedNotification(uri, title);
     }
 
     public static JsonObject toJsonObject(SubscribeRequest req) {
