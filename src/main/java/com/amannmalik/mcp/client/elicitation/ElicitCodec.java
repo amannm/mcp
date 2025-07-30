@@ -4,11 +4,11 @@ import jakarta.json.Json;
 import jakarta.json.JsonObject;
 import jakarta.json.JsonObjectBuilder;
 
-public final class ElicitationCodec {
-    private ElicitationCodec() {
+public final class ElicitCodec {
+    private ElicitCodec() {
     }
 
-    public static JsonObject toJsonObject(ElicitationRequest req) {
+    public static JsonObject toJsonObject(ElicitRequest req) {
         JsonObjectBuilder b = Json.createObjectBuilder()
                 .add("message", req.message())
                 .add("requestedSchema", req.requestedSchema());
@@ -16,7 +16,7 @@ public final class ElicitationCodec {
         return b.build();
     }
 
-    public static ElicitationRequest toRequest(JsonObject obj) {
+    public static ElicitRequest toRequest(JsonObject obj) {
         if (obj == null) throw new IllegalArgumentException("object required");
         if (!obj.containsKey("message")) throw new IllegalArgumentException("message required");
         if (!obj.containsKey("requestedSchema")) throw new IllegalArgumentException("requestedSchema required");
@@ -25,14 +25,14 @@ public final class ElicitationCodec {
             throw new IllegalArgumentException("requestedSchema must be object");
         }
         JsonObject meta = obj.containsKey("_meta") ? obj.getJsonObject("_meta") : null;
-        return new ElicitationRequest(
+        return new ElicitRequest(
                 obj.getString("message"),
                 schemaVal.asJsonObject(),
                 meta
         );
     }
 
-    public static JsonObject toJsonObject(ElicitationResponse resp) {
+    public static JsonObject toJsonObject(ElicitResult resp) {
         JsonObjectBuilder b = Json.createObjectBuilder()
                 .add("action", resp.action().name().toLowerCase());
         if (resp.content() != null) b.add("content", resp.content());
@@ -40,7 +40,7 @@ public final class ElicitationCodec {
         return b.build();
     }
 
-    public static ElicitationResponse toResponse(JsonObject obj) {
+    public static ElicitResult toResult(JsonObject obj) {
         if (obj == null || !obj.containsKey("action")) {
             throw new IllegalArgumentException("action required");
         }
@@ -61,6 +61,6 @@ public final class ElicitationCodec {
             content = c.asJsonObject();
         }
         JsonObject meta = obj.containsKey("_meta") ? obj.getJsonObject("_meta") : null;
-        return new ElicitationResponse(action, content, meta);
+        return new ElicitResult(action, content, meta);
     }
 }

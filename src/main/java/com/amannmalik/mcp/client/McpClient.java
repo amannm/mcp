@@ -1,10 +1,10 @@
 package com.amannmalik.mcp.client;
 
 import com.amannmalik.mcp.client.elicitation.ElicitationAction;
-import com.amannmalik.mcp.client.elicitation.ElicitationCodec;
+import com.amannmalik.mcp.client.elicitation.ElicitCodec;
 import com.amannmalik.mcp.client.elicitation.ElicitationProvider;
-import com.amannmalik.mcp.client.elicitation.ElicitationRequest;
-import com.amannmalik.mcp.client.elicitation.ElicitationResponse;
+import com.amannmalik.mcp.client.elicitation.ElicitRequest;
+import com.amannmalik.mcp.client.elicitation.ElicitResult;
 import com.amannmalik.mcp.client.roots.RootsCodec;
 import com.amannmalik.mcp.client.roots.RootsProvider;
 import com.amannmalik.mcp.client.roots.RootsSubscription;
@@ -555,8 +555,8 @@ public final class McpClient implements AutoCloseable {
                     JsonRpcErrorCode.INVALID_PARAMS.code(), "Missing params", null));
         }
         try {
-            ElicitationRequest er = ElicitationCodec.toRequest(params);
-            ElicitationResponse resp = elicitation.elicit(er);
+            ElicitRequest er = ElicitCodec.toRequest(params);
+            ElicitResult resp = elicitation.elicit(er);
             if (resp.action() == ElicitationAction.ACCEPT) {
                 try {
                     SchemaValidator.validate(er.requestedSchema(), resp.content());
@@ -565,7 +565,7 @@ public final class McpClient implements AutoCloseable {
                             JsonRpcErrorCode.INVALID_PARAMS.code(), ve.getMessage(), null));
                 }
             }
-            return new JsonRpcResponse(req.id(), ElicitationCodec.toJsonObject(resp));
+            return new JsonRpcResponse(req.id(), ElicitCodec.toJsonObject(resp));
         } catch (IllegalArgumentException e) {
             return new JsonRpcError(req.id(), new JsonRpcError.ErrorDetail(
                     JsonRpcErrorCode.INVALID_PARAMS.code(), e.getMessage(), null));

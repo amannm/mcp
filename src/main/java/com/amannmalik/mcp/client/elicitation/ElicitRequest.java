@@ -5,10 +5,10 @@ import com.amannmalik.mcp.validation.InputSanitizer;
 import com.amannmalik.mcp.validation.MetaValidator;
 import jakarta.json.JsonObject;
 
-public record ElicitationRequest(String message,
-                                 JsonObject requestedSchema,
-                                 JsonObject _meta) {
-    public ElicitationRequest(String message, JsonObject requestedSchema, JsonObject _meta) {
+public record ElicitRequest(String message,
+                            JsonObject requestedSchema,
+                            JsonObject _meta) {
+    public ElicitRequest(String message, JsonObject requestedSchema, JsonObject _meta) {
         if (message == null || requestedSchema == null) {
             throw new IllegalArgumentException("message and requestedSchema are required");
         }

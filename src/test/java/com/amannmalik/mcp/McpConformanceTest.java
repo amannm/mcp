@@ -3,7 +3,7 @@ package com.amannmalik.mcp;
 import com.amannmalik.mcp.client.McpClient;
 import com.amannmalik.mcp.client.elicitation.BlockingElicitationProvider;
 import com.amannmalik.mcp.client.elicitation.ElicitationAction;
-import com.amannmalik.mcp.client.elicitation.ElicitationResponse;
+import com.amannmalik.mcp.client.elicitation.ElicitResult;
 import com.amannmalik.mcp.client.roots.InMemoryRootsProvider;
 import com.amannmalik.mcp.client.roots.Root;
 import com.amannmalik.mcp.client.sampling.CreateMessageResponse;
@@ -104,7 +104,7 @@ class McpConformanceTest {
             );
 
             BlockingElicitationProvider elicitation = new BlockingElicitationProvider();
-            elicitation.respond(new ElicitationResponse(ElicitationAction.CANCEL, null, null));
+            elicitation.respond(new ElicitResult(ElicitationAction.CANCEL, null, null));
             SamplingProvider sampling = SamplingProviderFactory.createMock(new CreateMessageResponse(
                     Role.ASSISTANT,
                     new MessageContent.Text("ok", null, null),
