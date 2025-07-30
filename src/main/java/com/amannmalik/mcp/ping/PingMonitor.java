@@ -13,7 +13,7 @@ public final class PingMonitor {
     }
 
     public static boolean isAlive(McpClient client, long timeoutMillis) {
-        ExecutorService exec = Executors.newSingleThreadExecutor();
+        ExecutorService exec = Executors.newVirtualThreadPerTaskExecutor();
         Future<PingResponse> future = exec.submit(() -> client.ping(timeoutMillis));
         try {
             future.get(timeoutMillis, TimeUnit.MILLISECONDS);
