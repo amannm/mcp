@@ -141,6 +141,7 @@ public final class McpServer implements AutoCloseable {
     private final boolean resourcesListChangedSupported;
     private final boolean promptsListChangedSupported;
     private final List<RootsListener> rootsListeners = new CopyOnWriteArrayList<>();
+    private final List<Root> roots = new CopyOnWriteArrayList<>();
     private final ResourceAccessController resourceAccess;
     private final ToolAccessPolicy toolAccess;
     private final SamplingAccessPolicy samplingAccess;
@@ -429,6 +430,7 @@ public final class McpServer implements AutoCloseable {
 
     private void initialized(JsonRpcNotification ignored) {
         lifecycle.initialized();
+        refreshRootsAsync();
     }
 
     private JsonRpcMessage ping(JsonRpcRequest req) {
@@ -863,6 +865,13 @@ public final class McpServer implements AutoCloseable {
     }
 
     public List<Root> listRoots() throws IOException {
+        List<Root> fetched = fetchRoots();
+        roots.clear();
+        roots.addAll(fetched);
+        return List.copyOf(fetched);
+    }
+
+    private List<Root> fetchRoots() throws IOException {
         requireClientCapability(ClientCapability.ROOTS);
         JsonRpcMessage msg = sendRequest("roots/list", RootsCodec.toJsonObject(new ListRootsRequest()));
         if (msg instanceof JsonRpcResponse resp) {
@@ -876,8 +885,27 @@ public final class McpServer implements AutoCloseable {
         return () -> rootsListeners.remove(listener);
     }
 
+    public List<Root> roots() {
+        return List.copyOf(roots);
+    }
+
+    private void refreshRootsAsync() {
+        if (!lifecycle.negotiatedClientCapabilities().contains(ClientCapability.ROOTS)) return;
+        Thread t = new Thread(() -> {
+            try {
+                List<Root> updated = fetchRoots();
+                roots.clear();
+                roots.addAll(updated);
+                rootsListeners.forEach(RootsListener::listChanged);
+            } catch (IOException ignore) {
+            }
+        });
+        t.setDaemon(true);
+        t.start();
+    }
+
     private void rootsListChanged() {
-        rootsListeners.forEach(RootsListener::listChanged);
+        refreshRootsAsync();
     }
 
     public ElicitResult elicit(ElicitRequest req) throws IOException {
