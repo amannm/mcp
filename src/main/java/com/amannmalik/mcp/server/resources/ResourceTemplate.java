@@ -5,6 +5,7 @@ import com.amannmalik.mcp.validation.InputSanitizer;
 import com.amannmalik.mcp.validation.MetaValidator;
 import com.amannmalik.mcp.validation.UriTemplateValidator;
 import jakarta.json.JsonObject;
+import com.amannmalik.mcp.util.DisplayNameProvider;
 
 public record ResourceTemplate(
         String uriTemplate,
@@ -14,7 +15,7 @@ public record ResourceTemplate(
         String mimeType,
         Annotations annotations,
         JsonObject _meta
-) {
+) implements DisplayNameProvider {
     public ResourceTemplate {
         uriTemplate = UriTemplateValidator.requireAbsoluteTemplate(uriTemplate);
         name = InputSanitizer.requireClean(name);
@@ -24,7 +25,4 @@ public record ResourceTemplate(
         MetaValidator.requireValid(_meta);
     }
 
-    public String displayName() {
-        return title != null ? title : name;
-    }
 }
