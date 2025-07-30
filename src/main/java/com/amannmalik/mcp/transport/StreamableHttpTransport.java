@@ -102,9 +102,10 @@ public final class StreamableHttpTransport implements Transport {
         } else {
             this.canonicalResource = "http://127.0.0.1:" + this.port;
         }
-        this.authorizationServers = authorizationServers == null || authorizationServers.isEmpty()
-                ? java.util.List.of()
-                : java.util.List.copyOf(authorizationServers);
+        if (authorizationServers == null || authorizationServers.isEmpty()) {
+            throw new IllegalArgumentException("authorizationServers required");
+        }
+        this.authorizationServers = java.util.List.copyOf(authorizationServers);
         // Until initialization negotiates a version, assume the prior revision
         // as the default when no MCP-Protocol-Version header is present.
         this.protocolVersion = COMPATIBILITY_VERSION;
