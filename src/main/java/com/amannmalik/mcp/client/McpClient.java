@@ -607,7 +607,7 @@ public final class McpClient implements AutoCloseable {
         var val = meta.get("progressToken");
         return switch (val.getValueType()) {
             case STRING -> new ProgressToken.StringToken(meta.getString("progressToken"));
-            case NUMBER -> new ProgressToken.NumericToken(meta.getJsonNumber("progressToken").doubleValue());
+            case NUMBER -> new ProgressToken.NumericToken(meta.getJsonNumber("progressToken").longValue());
             default -> throw new IllegalArgumentException("progressToken must be a string or number");
         };
     }
