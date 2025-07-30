@@ -1,11 +1,11 @@
 package com.amannmalik.mcp.client.roots;
 
+import com.amannmalik.mcp.util.EmptyJsonObjectCodec;
 import jakarta.json.Json;
 import jakarta.json.JsonArrayBuilder;
 import jakarta.json.JsonObject;
 import jakarta.json.JsonObjectBuilder;
 import jakarta.json.JsonValue;
-import com.amannmalik.mcp.util.EmptyJsonObjectCodec;
 
 import java.util.ArrayList;
 import java.util.List;

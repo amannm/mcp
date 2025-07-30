@@ -4,7 +4,6 @@ import com.amannmalik.mcp.util.ListChangeSupport;
 import com.amannmalik.mcp.util.Pagination;
 import com.amannmalik.mcp.validation.SchemaValidator;
 import jakarta.json.Json;
-import jakarta.json.JsonArrayBuilder;
 import jakarta.json.JsonObject;
 import jakarta.json.JsonValue;
 

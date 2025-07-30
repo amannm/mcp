@@ -5,9 +5,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
-/**
- * JSON-RPC notification method names used by the protocol.
- */
 public enum NotificationMethod {
     INITIALIZED("notifications/initialized"),
     CANCELLED("notifications/cancelled"),
@@ -31,16 +28,10 @@ public enum NotificationMethod {
                 .collect(Collectors.toUnmodifiableMap(m -> m.method, m -> m));
     }
 
-    /**
-     * Returns the JSON-RPC method string for this notification.
-     */
     public String method() {
         return method;
     }
 
-    /**
-     * Parses a method string into a notification method.
-     */
     public static Optional<NotificationMethod> from(String method) {
         if (method == null) return Optional.empty();
         return Optional.ofNullable(BY_METHOD.get(method));
