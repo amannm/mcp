@@ -16,8 +16,8 @@ public record Prompt(
     public Prompt {
         name = InputSanitizer.requireClean(name);
         arguments = arguments == null || arguments.isEmpty() ? List.of() : List.copyOf(arguments);
-        title = title == null ? null : InputSanitizer.requireClean(title);
-        description = description == null ? null : InputSanitizer.requireClean(description);
+        title = InputSanitizer.cleanNullable(title);
+        description = InputSanitizer.cleanNullable(description);
         MetaValidator.requireValid(_meta);
     }
 }

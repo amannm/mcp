@@ -6,6 +6,6 @@ import com.amannmalik.mcp.validation.UriValidator;
 public record ResourceUpdatedNotification(String uri, String title) {
     public ResourceUpdatedNotification {
         uri = UriValidator.requireAbsolute(uri);
-        title = title == null ? null : InputSanitizer.requireClean(title);
+        title = InputSanitizer.cleanNullable(title);
     }
 }
