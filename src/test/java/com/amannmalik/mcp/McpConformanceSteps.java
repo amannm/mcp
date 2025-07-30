@@ -336,6 +336,37 @@ public final class McpConformanceSteps {
         lastMessage = client.request("resources/list", params);
     }
 
+    @When("the client lists resources with cursor {string}")
+    public void listResourcesWithCursor(String cursor) throws Exception {
+        JsonObject params = Json.createObjectBuilder()
+                .add("cursor", cursor)
+                .build();
+        lastMessage = client.request("resources/list", params);
+    }
+
+    @When("the client lists prompts with cursor {string}")
+    public void listPromptsWithCursor(String cursor) throws Exception {
+        JsonObject params = Json.createObjectBuilder()
+                .add("cursor", cursor)
+                .build();
+        lastMessage = client.request("prompts/list", params);
+    }
+
+    @When("the client lists tools with cursor {string}")
+    public void listToolsWithCursor(String cursor) throws Exception {
+        JsonObject params = Json.createObjectBuilder()
+                .add("cursor", cursor)
+                .build();
+        lastMessage = client.request("tools/list", params);
+    }
+
+    @When("the client gets prompt {string} without arguments")
+    public void getPromptWithoutArgs(String name) throws Exception {
+        lastMessage = client.request("prompts/get", Json.createObjectBuilder()
+                .add("name", name)
+                .build());
+    }
+
     @Then("a log message with level {string} is received")
     public void verifyLogMessage(String level) throws Exception {
         long end = System.currentTimeMillis() + 500;
