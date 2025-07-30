@@ -23,9 +23,8 @@ public final class InMemoryToolProvider implements ToolProvider {
     }
 
     @Override
-    public ToolPage list(String cursor) {
-        Pagination.Page<Tool> page = Pagination.page(tools, cursor, 100);
-        return new ToolPage(page.items(), page.nextCursor());
+    public Pagination.Page<Tool> list(String cursor) {
+        return Pagination.page(tools, cursor, 100);
     }
 
     @Override
