@@ -407,30 +407,28 @@ public final class McpServer implements AutoCloseable {
         var json = LifecycleCodec.toJsonObject(resp);
         var caps = json.getJsonObject("capabilities");
         if (caps != null) {
-            if (caps.containsKey("tools") && !toolListChangedSupported) {
+            if (caps.containsKey("tools")) {
                 var toolsCaps = caps.getJsonObject("tools");
-                toolsCaps = Json.createObjectBuilder(toolsCaps)
-                        .add("listChanged", false)
-                        .build();
+                var b = Json.createObjectBuilder();
+                if (toolListChangedSupported) b.add("listChanged", true);
+                toolsCaps = b.build();
                 caps = Json.createObjectBuilder(caps)
                         .add("tools", toolsCaps)
                         .build();
             }
-            if (caps.containsKey("resources") && (!resourcesSubscribeSupported || !resourcesListChangedSupported)) {
-                var resCaps = caps.getJsonObject("resources");
-                var b = Json.createObjectBuilder(resCaps);
-                if (!resourcesSubscribeSupported) b.add("subscribe", false);
-                if (!resourcesListChangedSupported) b.add("listChanged", false);
-                resCaps = b.build();
+            if (caps.containsKey("resources")) {
+                var b = Json.createObjectBuilder();
+                if (resourcesSubscribeSupported) b.add("subscribe", true);
+                if (resourcesListChangedSupported) b.add("listChanged", true);
+                var resCaps = b.build();
                 caps = Json.createObjectBuilder(caps)
                         .add("resources", resCaps)
                         .build();
             }
-            if (caps.containsKey("prompts") && !promptsListChangedSupported) {
-                var pCaps = caps.getJsonObject("prompts");
-                pCaps = Json.createObjectBuilder(pCaps)
-                        .add("listChanged", false)
-                        .build();
+            if (caps.containsKey("prompts")) {
+                var b = Json.createObjectBuilder();
+                if (promptsListChangedSupported) b.add("listChanged", true);
+                var pCaps = b.build();
                 caps = Json.createObjectBuilder(caps)
                         .add("prompts", pCaps)
                         .build();
