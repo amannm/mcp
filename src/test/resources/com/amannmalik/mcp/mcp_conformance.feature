@@ -58,3 +58,40 @@ Feature: MCP protocol conformance
     Given a running MCP server and connected client
     When the client requests an invalid completion
     Then an error with code -32602 is returned
+
+  Scenario: Unknown method
+    Given a running MCP server and connected client
+    When the client calls an unknown method
+    Then an error with code -32601 is returned
+
+  Scenario: Pagination with invalid cursors
+    Given a running MCP server and connected client
+    When the client lists resources with cursor "bad"
+    Then an error with code -32602 is returned
+    When the client lists prompts with cursor "bad"
+    Then an error with code -32602 is returned
+    When the client lists tools with cursor "bad"
+    Then an error with code -32602 is returned
+
+  Scenario: Prompt missing arguments
+    Given a running MCP server and connected client
+    When the client gets prompt "test_prompt" without arguments
+    Then an error with code -32602 is returned
+
+  Scenario: Tool rate limiting
+    Given a running MCP server and connected client
+    When the client calls "test_tool"
+    When the client calls "test_tool"
+    When the client calls "test_tool"
+    When the client calls "test_tool"
+    When the client calls "test_tool"
+    When the client calls "test_tool"
+    Then an error with code -32001 is returned
+
+  Scenario: Logging on unknown method
+    Given a running MCP server and connected client
+    When the client sets the log level to "debug"
+    Then the call succeeds
+    When the client calls an unknown method
+    Then an error with code -32601 is returned
+
