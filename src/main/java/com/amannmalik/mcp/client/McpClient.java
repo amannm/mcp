@@ -52,8 +52,8 @@ import com.amannmalik.mcp.util.ProgressListener;
 import com.amannmalik.mcp.util.ProgressNotification;
 import com.amannmalik.mcp.util.ProgressToken;
 import com.amannmalik.mcp.util.ProgressTracker;
-import com.amannmalik.mcp.validation.MetaValidator;
 import com.amannmalik.mcp.validation.InputSanitizer;
+import com.amannmalik.mcp.validation.MetaValidator;
 import com.amannmalik.mcp.validation.SchemaValidator;
 import jakarta.json.JsonObject;
 

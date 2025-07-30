@@ -2,8 +2,8 @@ package com.amannmalik.mcp;
 
 import com.amannmalik.mcp.client.McpClient;
 import com.amannmalik.mcp.client.elicitation.BlockingElicitationProvider;
-import com.amannmalik.mcp.client.elicitation.ElicitationAction;
 import com.amannmalik.mcp.client.elicitation.ElicitResult;
+import com.amannmalik.mcp.client.elicitation.ElicitationAction;
 import com.amannmalik.mcp.client.roots.InMemoryRootsProvider;
 import com.amannmalik.mcp.client.roots.Root;
 import com.amannmalik.mcp.client.sampling.CreateMessageResponse;
