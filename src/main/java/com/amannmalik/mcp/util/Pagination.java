@@ -7,6 +7,8 @@ public final class Pagination {
     private Pagination() {
     }
 
+    public static final int DEFAULT_PAGE_SIZE = 100;
+
     public static <T> Page<T> page(List<T> items, String cursor, int size) {
         int start = decode(cursor);
         if (start < 0 || start > items.size()) throw new IllegalArgumentException("Invalid cursor");
