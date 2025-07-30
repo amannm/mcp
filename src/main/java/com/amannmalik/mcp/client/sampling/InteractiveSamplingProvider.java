@@ -102,19 +102,14 @@ public final class InteractiveSamplingProvider implements SamplingProvider {
     }
 
     private CreateMessageResponse generateResponse(CreateMessageRequest request) {
-        // TODO: this
-        // Simple response generation - in a real implementation, this would:
-        // 1. Use the model preferences to select an appropriate LLM
-        // 2. Send the request to the selected LLM
-        // 3. Return the actual LLM response
         String responseText = generateSimpleResponse(request);
 
         return new CreateMessageResponse(
                 Role.ASSISTANT,
                 new MessageContent.Text(responseText, null, null),
-                "claude-3-sonnet-simulation", // Simulated model name
+                "simulated-llm",
                 "endTurn",
-                null // _meta
+                null
         );
     }
 
