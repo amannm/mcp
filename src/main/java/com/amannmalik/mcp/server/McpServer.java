@@ -539,8 +539,10 @@ public final class McpServer implements AutoCloseable {
 
     private boolean canAccessResource(String uri) {
         if (!withinRoots(uri)) return false;
-        Resource meta = resources.get(uri);
-        return allowed(meta == null ? null : meta.annotations());
+        return resources.get(uri)
+                .map(Resource::annotations)
+                .map(this::allowed)
+                .orElse(true);
     }
 
     private JsonRpcError invalidParams(JsonRpcRequest req, String message) {
