@@ -104,6 +104,8 @@ import com.amannmalik.mcp.validation.SchemaValidator;
 import jakarta.json.Json;
 import jakarta.json.JsonObject;
 import jakarta.json.JsonValue;
+import jakarta.json.JsonNumber;
+import jakarta.json.JsonString;
 import jakarta.json.stream.JsonParsingException;
 
 import java.io.EOFException;
@@ -298,7 +300,8 @@ public final class McpServer implements AutoCloseable {
             } catch (JsonParsingException e) {
                 System.err.println("Parse error: " + e.getMessage());
                 sendLog(LoggingLevel.ERROR, "parser", Json.createValue(e.getMessage()));
-                continue;
+                lifecycle.shutdown();
+                break;
             }
 
             try {
@@ -320,6 +323,13 @@ public final class McpServer implements AutoCloseable {
             } catch (IllegalArgumentException e) {
                 System.err.println("Invalid request: " + e.getMessage());
                 sendLog(LoggingLevel.WARNING, "server", Json.createValue(e.getMessage()));
+                RequestId id = parseId(obj.get("id"));
+                if (id != null) {
+                    try {
+                        send(JsonRpcError.of(id, JsonRpcErrorCode.INVALID_REQUEST, e.getMessage()));
+                    } catch (IOException ignore) {
+                    }
+                }
             } catch (IOException e) {
                 System.err.println("Error processing message: " + e.getMessage());
                 sendLog(LoggingLevel.ERROR, "server", Json.createValue(e.getMessage()));
@@ -526,6 +536,17 @@ public final class McpServer implements AutoCloseable {
 
     private static String sanitizeCursor(String cursor) {
         return cursor == null ? null : Pagination.requireValidCursor(cursor);
+    }
+
+    private static RequestId parseId(JsonValue value) {
+        if (value == null || value.getValueType() == JsonValue.ValueType.NULL) {
+            return null;
+        }
+        return switch (value.getValueType()) {
+            case NUMBER -> new RequestId.NumericId(((JsonNumber) value).longValue());
+            case STRING -> new RequestId.StringId(((JsonString) value).getString());
+            default -> null;
+        };
     }
 
 
