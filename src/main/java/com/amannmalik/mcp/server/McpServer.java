@@ -205,6 +205,7 @@ public final class McpServer implements AutoCloseable {
         if (resources != null && resourcesListChangedSupported) {
             try {
                 resourceListSubscription = resources.subscribeList(() -> {
+                    if (lifecycle.state() != LifecycleState.OPERATION) return;
                     try {
                         send(new JsonRpcNotification("notifications/resources/list_changed", null));
                     } catch (IOException ignore) {
@@ -217,6 +218,7 @@ public final class McpServer implements AutoCloseable {
         if (tools != null && toolListChangedSupported) {
             try {
                 toolListSubscription = tools.subscribeList(() -> {
+                    if (lifecycle.state() != LifecycleState.OPERATION) return;
                     try {
                         send(new JsonRpcNotification(
                                 "notifications/tools/list_changed",
@@ -231,6 +233,7 @@ public final class McpServer implements AutoCloseable {
         if (prompts != null && promptsListChangedSupported) {
             try {
                 promptsSubscription = prompts.subscribe(() -> {
+                    if (lifecycle.state() != LifecycleState.OPERATION) return;
                     try {
                         send(new JsonRpcNotification("notifications/prompts/list_changed", null));
                     } catch (IOException ignore) {
