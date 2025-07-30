@@ -224,7 +224,12 @@ public final class StreamableHttpTransport implements Transport {
                 return;
             }
             String accept = req.getHeader("Accept");
-            if (accept == null || !(accept.contains("application/json") && accept.contains("text/event-stream"))) {
+            if (accept == null) {
+                resp.sendError(HttpServletResponse.SC_NOT_ACCEPTABLE);
+                return;
+            }
+            String acceptNorm = accept.toLowerCase(java.util.Locale.ROOT);
+            if (!(acceptNorm.contains("application/json") && acceptNorm.contains("text/event-stream"))) {
                 resp.sendError(HttpServletResponse.SC_NOT_ACCEPTABLE);
                 return;
             }
@@ -404,7 +409,12 @@ public final class StreamableHttpTransport implements Transport {
                 return;
             }
             String accept = req.getHeader("Accept");
-            if (accept == null || !accept.contains("text/event-stream")) {
+            if (accept == null) {
+                resp.sendError(HttpServletResponse.SC_NOT_ACCEPTABLE);
+                return;
+            }
+            String acceptNorm = accept.toLowerCase(java.util.Locale.ROOT);
+            if (!acceptNorm.contains("text/event-stream")) {
                 resp.sendError(HttpServletResponse.SC_NOT_ACCEPTABLE);
                 return;
             }
