@@ -17,8 +17,6 @@ public final class ConsentManager {
     public void requireConsent(Principal principal, String scope) {
         if (principal == null) throw new IllegalArgumentException("principal required");
         if (scope == null || scope.isBlank()) throw new IllegalArgumentException("scope required");
-        if (!consents.contains(principal.id(), scope)) {
-            throw new SecurityException("User consent required: " + scope);
-        }
+        consents.requirePermission(principal.id(), scope, "User consent required: " + scope);
     }
 }
