@@ -240,7 +240,8 @@ public final class McpClient implements AutoCloseable {
         }
         if (msg instanceof JsonRpcResponse resp) {
             InitializeResponse ir = LifecycleCodec.toInitializeResponse(resp.result());
-            if (!ProtocolLifecycle.SUPPORTED_VERSION.equals(ir.protocolVersion())) {
+            if (!ProtocolLifecycle.SUPPORTED_VERSION.equals(ir.protocolVersion()) &&
+                    !ProtocolLifecycle.PREVIOUS_VERSION.equals(ir.protocolVersion())) {
                 try {
                     transport.close();
                 } catch (IOException ignore) {

@@ -35,8 +35,9 @@ public class ProtocolLifecycle {
                 : EnumSet.copyOf(requested);
         clientFeatures = request.features() == null ? ClientFeatures.EMPTY : request.features();
 
-        if (request.protocolVersion() != null && request.protocolVersion().equals(SUPPORTED_VERSION)) {
-            protocolVersion = request.protocolVersion();
+        var versionRequested = request.protocolVersion();
+        if (SUPPORTED_VERSION.equals(versionRequested) || PREVIOUS_VERSION.equals(versionRequested)) {
+            protocolVersion = versionRequested;
         } else {
             protocolVersion = SUPPORTED_VERSION;
         }
