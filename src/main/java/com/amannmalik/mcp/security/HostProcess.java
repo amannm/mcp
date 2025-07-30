@@ -153,6 +153,17 @@ public final class HostProcess implements AutoCloseable {
         throw new IOException("Unexpected response");
     }
 
+    public JsonObject createMessage(String clientId, JsonObject params) throws IOException {
+        McpClient client = clients.get(clientId);
+        if (client == null) throw new IllegalArgumentException("Unknown client: " + clientId);
+        if (!client.connected()) throw new IllegalStateException("Client not connected: " + clientId);
+        samplingAccess.requireAllowed(principal);
+        JsonRpcMessage resp = client.request("sampling/createMessage", params);
+        if (resp instanceof JsonRpcResponse r) return r.result();
+        if (resp instanceof JsonRpcError err) throw new IOException(err.error().message());
+        throw new IOException("Unexpected response");
+    }
+
     public JsonRpcMessage request(String id, String method, JsonObject params) throws IOException {
         McpClient client = clients.get(id);
         if (client == null) throw new IllegalArgumentException("Unknown client: " + id);
