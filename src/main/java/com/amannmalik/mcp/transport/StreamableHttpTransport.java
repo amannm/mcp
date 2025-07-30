@@ -191,7 +191,10 @@ public final class StreamableHttpTransport implements Transport {
             lastSessionId.set(null);
             sessionOwner.set(null);
             sessionPrincipal.set(null);
-            protocolVersion = ProtocolLifecycle.SUPPORTED_VERSION;
+            // With the server shut down there is no negotiated protocol
+            // version.  Reset to the default used when the version header is
+            // absent.
+            protocolVersion = DEFAULT_VERSION;
         } catch (Exception e) {
             throw new IOException(e);
         }
@@ -545,7 +548,11 @@ public final class StreamableHttpTransport implements Transport {
             sessionId.set(null);
             sessionOwner.set(null);
             sessionPrincipal.set(null);
-            protocolVersion = ProtocolLifecycle.SUPPORTED_VERSION;
+            // After the session ends the server no longer knows the negotiated
+            // protocol version.  Reset to the backwards compatible default so
+            // that a new session without a version header assumes the prior
+            // revision as required by the specification.
+            protocolVersion = DEFAULT_VERSION;
             generalClients.forEach(SseClient::close);
             generalClients.clear();
             lastGeneral.set(null);
