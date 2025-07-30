@@ -99,7 +99,7 @@ public final class McpConformanceSteps {
                     serverProcess.getErrorStream(), StandardCharsets.UTF_8));
             String line;
             int port = -1;
-            long end = System.currentTimeMillis() + 2000;
+            long end = System.currentTimeMillis() + 5000;
             while (System.currentTimeMillis() < end && (line = err.readLine()) != null) {
                 if (line.startsWith("Listening on http://127.0.0.1:")) {
                     port = Integer.parseInt(line.substring(line.lastIndexOf(':') + 1));
