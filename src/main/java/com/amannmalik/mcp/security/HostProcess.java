@@ -57,9 +57,7 @@ public final class HostProcess implements AutoCloseable {
             throw new IllegalArgumentException("Client already registered: " + id);
         }
         try {
-            if (client instanceof McpClient dc) {
-                dc.configurePing(30000, 5000);
-            }
+            client.configurePing(30000, 5000);
             client.connect();
         } catch (IOException e) {
             clients.remove(id);
