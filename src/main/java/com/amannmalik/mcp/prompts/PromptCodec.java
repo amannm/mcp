@@ -3,6 +3,7 @@ package com.amannmalik.mcp.prompts;
 import com.amannmalik.mcp.server.resources.ResourcesCodec;
 import com.amannmalik.mcp.util.PaginatedRequest;
 import com.amannmalik.mcp.util.PaginatedResult;
+import com.amannmalik.mcp.util.Pagination;
 import com.amannmalik.mcp.util.PaginationCodec;
 import com.amannmalik.mcp.validation.InputSanitizer;
 import jakarta.json.Json;
@@ -57,9 +58,9 @@ public final class PromptCodec {
         return obj.build();
     }
 
-    public static JsonObject toJsonObject(PromptPage page) {
+    public static JsonObject toJsonObject(Pagination.Page<Prompt> page) {
         JsonArrayBuilder arr = Json.createArrayBuilder();
-        page.prompts().forEach(p -> arr.add(toJsonObject(p)));
+        page.items().forEach(p -> arr.add(toJsonObject(p)));
         JsonObjectBuilder builder = Json.createObjectBuilder().add("prompts", arr.build());
         PaginationCodec.toJsonObject(new PaginatedResult(page.nextCursor())).forEach(builder::add);
         return builder.build();
@@ -71,7 +72,7 @@ public final class PromptCodec {
     }
 
     public static JsonObject toJsonObject(ListPromptsResult page) {
-        return toJsonObject(new PromptPage(page.prompts(), page.nextCursor()));
+        return toJsonObject(new Pagination.Page<>(page.prompts(), page.nextCursor()));
     }
 
     public static JsonObject toJsonObject(PromptListChangedNotification n) {
@@ -184,7 +185,7 @@ public final class PromptCodec {
         return new PromptInstance(description, msgs);
     }
 
-    public static PromptPage toPromptPage(JsonObject obj) {
+    public static Pagination.Page<Prompt> toPromptPage(JsonObject obj) {
         if (obj == null) throw new IllegalArgumentException("object required");
         JsonArray arr = obj.getJsonArray("prompts");
         if (arr == null) throw new IllegalArgumentException("prompts required");
@@ -196,12 +197,12 @@ public final class PromptCodec {
             prompts.add(toPrompt(v.asJsonObject()));
         }
         String cursor = PaginationCodec.toPaginatedResult(obj).nextCursor();
-        return new PromptPage(prompts, cursor);
+        return new Pagination.Page<>(prompts, cursor);
     }
 
     public static ListPromptsResult toListPromptsResult(JsonObject obj) {
-        PromptPage page = toPromptPage(obj);
-        return new ListPromptsResult(page.prompts(), page.nextCursor());
+        Pagination.Page<Prompt> page = toPromptPage(obj);
+        return new ListPromptsResult(page.items(), page.nextCursor());
     }
 
     public static ListPromptsRequest toListPromptsRequest(JsonObject obj) {

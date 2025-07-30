@@ -27,6 +27,7 @@ public final class StreamableHttpClientTransport implements Transport {
     private final BlockingQueue<JsonObject> incoming = new LinkedBlockingQueue<>();
     private final Set<SseReader> streams = ConcurrentHashMap.newKeySet();
     private volatile String sessionId;
+    private volatile String protocolVersion = ProtocolLifecycle.SUPPORTED_VERSION;
 
     public StreamableHttpClientTransport(URI endpoint) {
         this.endpoint = endpoint;
@@ -37,7 +38,7 @@ public final class StreamableHttpClientTransport implements Transport {
         HttpRequest.Builder builder = HttpRequest.newBuilder(endpoint)
                 .header("Accept", "application/json, text/event-stream")
                 .header("Content-Type", "application/json")
-                .header("MCP-Protocol-Version", ProtocolLifecycle.SUPPORTED_VERSION);
+                .header("MCP-Protocol-Version", protocolVersion);
         Optional.ofNullable(sessionId).ifPresent(id -> builder.header("Mcp-Session-Id", id));
         HttpRequest request = builder.POST(HttpRequest.BodyPublishers.ofString(message.toString())).build();
         HttpResponse<InputStream> response;
@@ -48,6 +49,9 @@ public final class StreamableHttpClientTransport implements Transport {
             throw new IOException(e);
         }
         sessionId = response.headers().firstValue("Mcp-Session-Id").orElse(sessionId);
+        protocolVersion = response.headers()
+                .firstValue("MCP-Protocol-Version")
+                .orElse(protocolVersion);
         int status = response.statusCode();
         String ct = response.headers().firstValue("Content-Type").orElse("");
         if (status == 202) {
@@ -87,7 +91,7 @@ public final class StreamableHttpClientTransport implements Transport {
         if (sessionId != null) {
             HttpRequest.Builder builder = HttpRequest.newBuilder(endpoint)
                     .header("Mcp-Session-Id", sessionId)
-                    .header("MCP-Protocol-Version", ProtocolLifecycle.SUPPORTED_VERSION)
+                    .header("MCP-Protocol-Version", protocolVersion)
                     .DELETE();
             try {
                 client.send(builder.build(), HttpResponse.BodyHandlers.discarding());

@@ -361,7 +361,7 @@ public final class McpConformanceSteps {
     @When("the client sends a cancellation notification")
     public void sendCancellation() throws Exception {
         CancelledNotification note = new CancelledNotification(new RequestId.NumericId(999), "test");
-        client.notify("notifications/cancelled", CancellationCodec.toJsonObject(note));
+        client.notify(NotificationMethod.CANCELLED.method(), CancellationCodec.toJsonObject(note));
     }
 
     @When("the client lists resources with an invalid progress token")

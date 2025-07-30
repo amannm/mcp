@@ -9,6 +9,6 @@ public record ServerInfo(String name, String title, String version) {
         }
         name = InputSanitizer.requireClean(name);
         version = InputSanitizer.requireClean(version);
-        title = title == null ? null : InputSanitizer.requireClean(title);
+        title = InputSanitizer.cleanNullable(title);
     }
 }

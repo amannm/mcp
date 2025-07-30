@@ -21,6 +21,6 @@ public record ProgressNotification(
                 throw new IllegalArgumentException("progress must not exceed total");
             }
         }
-        if (message != null) message = InputSanitizer.requireClean(message);
+        message = InputSanitizer.cleanNullable(message);
     }
 }

@@ -10,6 +10,6 @@ public record ToolAnnotations(
         Boolean openWorldHint
 ) {
     public ToolAnnotations {
-        title = title == null ? null : InputSanitizer.requireClean(title);
+        title = InputSanitizer.cleanNullable(title);
     }
 }

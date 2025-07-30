@@ -18,7 +18,7 @@ public sealed interface ResourceBlock permits ResourceBlock.Text, ResourceBlock.
     record Text(String uri, String mimeType, String text, Annotations annotations, JsonObject _meta) implements ResourceBlock {
         public Text {
             uri = UriValidator.requireAbsolute(uri);
-            mimeType = mimeType == null ? null : InputSanitizer.requireClean(mimeType);
+            mimeType = InputSanitizer.cleanNullable(mimeType);
             text = InputSanitizer.requireClean(text);
             MetaValidator.requireValid(_meta);
         }
@@ -27,7 +27,7 @@ public sealed interface ResourceBlock permits ResourceBlock.Text, ResourceBlock.
     record Binary(String uri, String mimeType, byte[] blob, Annotations annotations, JsonObject _meta) implements ResourceBlock {
         public Binary {
             uri = UriValidator.requireAbsolute(uri);
-            mimeType = mimeType == null ? null : InputSanitizer.requireClean(mimeType);
+            mimeType = InputSanitizer.cleanNullable(mimeType);
             if (blob == null) {
                 throw new IllegalArgumentException("blob is required");
             }

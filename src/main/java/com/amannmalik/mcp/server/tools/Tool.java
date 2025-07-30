@@ -16,8 +16,8 @@ public record Tool(String name,
         if (inputSchema == null) {
             throw new IllegalArgumentException("inputSchema is required");
         }
-        title = title == null ? null : InputSanitizer.requireClean(title);
-        description = description == null ? null : InputSanitizer.requireClean(description);
+        title = InputSanitizer.cleanNullable(title);
+        description = InputSanitizer.cleanNullable(description);
         annotations = annotations == null || (
                 annotations.title() == null &&
                         annotations.readOnlyHint() == null &&

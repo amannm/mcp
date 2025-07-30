@@ -2,6 +2,7 @@ package com.amannmalik.mcp.server.tools;
 
 import com.amannmalik.mcp.util.PaginatedRequest;
 import com.amannmalik.mcp.util.PaginatedResult;
+import com.amannmalik.mcp.util.Pagination;
 import com.amannmalik.mcp.util.PaginationCodec;
 import jakarta.json.Json;
 import jakarta.json.JsonArray;
@@ -29,9 +30,9 @@ public final class ToolCodec {
         return builder.build();
     }
 
-    public static JsonObject toJsonObject(ToolPage page) {
+    public static JsonObject toJsonObject(Pagination.Page<Tool> page) {
         JsonArrayBuilder arr = Json.createArrayBuilder();
-        page.tools().forEach(t -> arr.add(toJsonObject(t)));
+        page.items().forEach(t -> arr.add(toJsonObject(t)));
         JsonObjectBuilder builder = Json.createObjectBuilder().add("tools", arr);
         PaginationCodec.toJsonObject(new PaginatedResult(page.nextCursor())).forEach(builder::add);
         return builder.build();
@@ -43,7 +44,7 @@ public final class ToolCodec {
     }
 
     public static JsonObject toJsonObject(ListToolsResult page) {
-        return toJsonObject(new ToolPage(page.tools(), page.nextCursor()));
+        return toJsonObject(new Pagination.Page<>(page.tools(), page.nextCursor()));
     }
 
     public static JsonObject toJsonObject(ToolResult result) {
@@ -93,7 +94,7 @@ public final class ToolCodec {
         return new Tool(name, title, description, inputSchema, outputSchema, ann, meta);
     }
 
-    public static ToolPage toToolPage(JsonObject obj) {
+    public static Pagination.Page<Tool> toToolPage(JsonObject obj) {
         if (obj == null) throw new IllegalArgumentException("object required");
         JsonArray arr = obj.getJsonArray("tools");
         if (arr == null) throw new IllegalArgumentException("tools required");
@@ -105,12 +106,12 @@ public final class ToolCodec {
             tools.add(toTool(v.asJsonObject()));
         }
         String cursor = PaginationCodec.toPaginatedResult(obj).nextCursor();
-        return new ToolPage(tools, cursor);
+        return new Pagination.Page<>(tools, cursor);
     }
 
     public static ListToolsResult toListToolsResult(JsonObject obj) {
-        ToolPage page = toToolPage(obj);
-        return new ListToolsResult(page.tools(), page.nextCursor());
+        Pagination.Page<Tool> page = toToolPage(obj);
+        return new ListToolsResult(page.items(), page.nextCursor());
     }
 
     public static ListToolsRequest toListToolsRequest(JsonObject obj) {

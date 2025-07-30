@@ -22,9 +22,8 @@ public final class InMemoryResourceProvider implements ResourceProvider {
     }
 
     @Override
-    public ResourceList list(String cursor) {
-        Pagination.Page<Resource> page = Pagination.page(resources, cursor, 100);
-        return new ResourceList(page.items(), page.nextCursor());
+    public Pagination.Page<Resource> list(String cursor) {
+        return Pagination.page(resources, cursor, 100);
     }
 
     @Override
@@ -33,9 +32,8 @@ public final class InMemoryResourceProvider implements ResourceProvider {
     }
 
     @Override
-    public ResourceTemplatePage listTemplates(String cursor) {
-        Pagination.Page<ResourceTemplate> page = Pagination.page(templates, cursor, 100);
-        return new ResourceTemplatePage(page.items(), page.nextCursor());
+    public Pagination.Page<ResourceTemplate> listTemplates(String cursor) {
+        return Pagination.page(templates, cursor, 100);
     }
 
     @Override
@@ -61,11 +59,13 @@ public final class InMemoryResourceProvider implements ResourceProvider {
     }
 
     public void notifyUpdate(String uri) {
-        String title = resources.stream()
-                .filter(r -> r.uri().equals(uri))
-                .map(Resource::title)
-                .findFirst()
-                .orElse(null);
+        String title = null;
+        for (Resource r : resources) {
+            if (r.uri().equals(uri)) {
+                title = r.title();
+                break;
+            }
+        }
         ResourceUpdate update = new ResourceUpdate(uri, title);
         listeners.getOrDefault(uri, List.of()).forEach(l -> l.updated(update));
     }

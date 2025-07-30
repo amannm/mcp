@@ -1,5 +1,6 @@
 package com.amannmalik.mcp.server;
 
+import com.amannmalik.mcp.NotificationMethod;
 import com.amannmalik.mcp.annotations.Annotations;
 import com.amannmalik.mcp.auth.Principal;
 import com.amannmalik.mcp.client.elicitation.ElicitCodec;
@@ -44,7 +45,6 @@ import com.amannmalik.mcp.prompts.PromptCodec;
 import com.amannmalik.mcp.prompts.PromptContent;
 import com.amannmalik.mcp.prompts.PromptInstance;
 import com.amannmalik.mcp.prompts.PromptMessageTemplate;
-import com.amannmalik.mcp.prompts.PromptPage;
 import com.amannmalik.mcp.prompts.PromptProvider;
 import com.amannmalik.mcp.prompts.PromptTemplate;
 import com.amannmalik.mcp.prompts.PromptsSubscription;
@@ -71,12 +71,10 @@ import com.amannmalik.mcp.server.resources.ReadResourceRequest;
 import com.amannmalik.mcp.server.resources.ReadResourceResult;
 import com.amannmalik.mcp.server.resources.Resource;
 import com.amannmalik.mcp.server.resources.ResourceBlock;
-import com.amannmalik.mcp.server.resources.ResourceList;
 import com.amannmalik.mcp.server.resources.ResourceListSubscription;
 import com.amannmalik.mcp.server.resources.ResourceProvider;
 import com.amannmalik.mcp.server.resources.ResourceSubscription;
 import com.amannmalik.mcp.server.resources.ResourceTemplate;
-import com.amannmalik.mcp.server.resources.ResourceTemplatePage;
 import com.amannmalik.mcp.server.resources.ResourceUpdatedNotification;
 import com.amannmalik.mcp.server.resources.ResourcesCodec;
 import com.amannmalik.mcp.server.resources.SubscribeRequest;
@@ -88,17 +86,19 @@ import com.amannmalik.mcp.server.tools.Tool;
 import com.amannmalik.mcp.server.tools.ToolCodec;
 import com.amannmalik.mcp.server.tools.ToolListChangedNotification;
 import com.amannmalik.mcp.server.tools.ToolListSubscription;
-import com.amannmalik.mcp.server.tools.ToolPage;
 import com.amannmalik.mcp.server.tools.ToolProvider;
 import com.amannmalik.mcp.server.tools.ToolResult;
 import com.amannmalik.mcp.transport.Transport;
 import com.amannmalik.mcp.util.CancellationCodec;
 import com.amannmalik.mcp.util.CancellationTracker;
 import com.amannmalik.mcp.util.CancelledNotification;
+import com.amannmalik.mcp.util.Pagination;
 import com.amannmalik.mcp.util.ProgressCodec;
 import com.amannmalik.mcp.util.ProgressNotification;
 import com.amannmalik.mcp.util.ProgressToken;
 import com.amannmalik.mcp.util.ProgressTracker;
+import com.amannmalik.mcp.util.ProgressUtil;
+import com.amannmalik.mcp.util.Timeouts;
 import com.amannmalik.mcp.validation.InputSanitizer;
 import com.amannmalik.mcp.validation.SchemaValidator;
 import jakarta.json.Json;
@@ -205,8 +205,9 @@ public final class McpServer implements AutoCloseable {
         if (resources != null && resourcesListChangedSupported) {
             try {
                 resourceListSubscription = resources.subscribeList(() -> {
+                    if (lifecycle.state() != LifecycleState.OPERATION) return;
                     try {
-                        send(new JsonRpcNotification("notifications/resources/list_changed", null));
+                        send(new JsonRpcNotification(NotificationMethod.RESOURCES_LIST_CHANGED.method(), null));
                     } catch (IOException ignore) {
                     }
                 });
@@ -217,9 +218,10 @@ public final class McpServer implements AutoCloseable {
         if (tools != null && toolListChangedSupported) {
             try {
                 toolListSubscription = tools.subscribeList(() -> {
+                    if (lifecycle.state() != LifecycleState.OPERATION) return;
                     try {
                         send(new JsonRpcNotification(
-                                "notifications/tools/list_changed",
+                                NotificationMethod.TOOLS_LIST_CHANGED.method(),
                                 ToolCodec.toJsonObject(new ToolListChangedNotification())));
                     } catch (IOException ignore) {
                     }
@@ -231,8 +233,9 @@ public final class McpServer implements AutoCloseable {
         if (prompts != null && promptsListChangedSupported) {
             try {
                 promptsSubscription = prompts.subscribe(() -> {
+                    if (lifecycle.state() != LifecycleState.OPERATION) return;
                     try {
-                        send(new JsonRpcNotification("notifications/prompts/list_changed", null));
+                        send(new JsonRpcNotification(NotificationMethod.PROMPTS_LIST_CHANGED.method(), null));
                     } catch (IOException ignore) {
                     }
                 });
@@ -241,10 +244,10 @@ public final class McpServer implements AutoCloseable {
         }
 
         registerRequestHandler("initialize", this::initialize);
-        registerNotificationHandler("notifications/initialized", this::initialized);
+        registerNotificationHandler(NotificationMethod.INITIALIZED.method(), this::initialized);
         registerRequestHandler("ping", this::ping);
-        registerNotificationHandler("notifications/cancelled", this::cancelled);
-        registerNotificationHandler("notifications/roots/list_changed", n -> rootsListChanged());
+        registerNotificationHandler(NotificationMethod.CANCELLED.method(), this::cancelled);
+        registerNotificationHandler(NotificationMethod.ROOTS_LIST_CHANGED.method(), n -> rootsListChanged());
 
         if (resources != null) {
             registerRequestHandler("resources/list", this::listResources);
@@ -353,7 +356,7 @@ public final class McpServer implements AutoCloseable {
             }
 
             try {
-                token = parseProgressToken(req.params());
+                token = ProgressUtil.tokenFromMeta(req.params());
                 if (token != null) {
                     progressTracker.register(token);
                     progressTokens.put(req.id(), token);
@@ -463,9 +466,6 @@ public final class McpServer implements AutoCloseable {
         }
     }
 
-    private ProgressToken parseProgressToken(JsonObject params) {
-        return ProgressCodec.fromMeta(params);
-    }
 
     private boolean allowed(Annotations ann) {
         try {
@@ -533,17 +533,8 @@ public final class McpServer implements AutoCloseable {
     }
 
     private void sendProgress(ProgressNotification note) throws IOException {
-        if (!progressTracker.isActive(note.token())) return;
-        try {
-            progressLimiter.requireAllowance(note.token().asString());
-            progressTracker.update(note);
-        } catch (IllegalArgumentException | IllegalStateException ignore) {
-            return;
-
-        }
-        send(new JsonRpcNotification(
-                "notifications/progress",
-                ProgressCodec.toJsonObject(note)));
+        ProgressUtil.sendProgress(note, progressTracker, progressLimiter,
+                n -> send(n));
     }
 
     private JsonRpcMessage listResources(JsonRpcRequest req) {
@@ -559,7 +550,7 @@ public final class McpServer implements AutoCloseable {
             }
         }
 
-        ResourceList list;
+        Pagination.Page<Resource> list;
         try {
             list = resources.list(cursor);
         } catch (IllegalArgumentException e) {
@@ -568,7 +559,7 @@ public final class McpServer implements AutoCloseable {
         }
 
         List<Resource> filteredResources = new ArrayList<>();
-        for (Resource r : list.resources()) {
+        for (Resource r : list.items()) {
             if (allowed(r.annotations()) && withinRoots(r.uri())) {
                 filteredResources.add(r);
             }
@@ -626,7 +617,7 @@ public final class McpServer implements AutoCloseable {
             }
         }
 
-        ResourceTemplatePage page;
+        Pagination.Page<ResourceTemplate> page;
         try {
             page = resources.listTemplates(cursor);
         } catch (IllegalArgumentException e) {
@@ -635,7 +626,7 @@ public final class McpServer implements AutoCloseable {
         }
 
         List<ResourceTemplate> filteredTemplates = new ArrayList<>();
-        for (ResourceTemplate t : page.resourceTemplates()) {
+        for (ResourceTemplate t : page.items()) {
             if (allowed(t.annotations())) {
                 filteredTemplates.add(t);
             }
@@ -674,7 +665,7 @@ public final class McpServer implements AutoCloseable {
                 try {
                     ResourceUpdatedNotification n = new ResourceUpdatedNotification(update.uri(), update.title());
                     send(new JsonRpcNotification(
-                            "notifications/resources/updated",
+                            NotificationMethod.RESOURCES_UPDATED.method(),
                             ResourcesCodec.toJsonObject(n)));
                 } catch (IOException ignore) {
                 }
@@ -729,7 +720,7 @@ public final class McpServer implements AutoCloseable {
                         JsonRpcErrorCode.INVALID_PARAMS.code(), e.getMessage(), null));
             }
         }
-        ToolPage page;
+        Pagination.Page<Tool> page;
         try {
             page = tools.list(cursor);
         } catch (IllegalArgumentException e) {
@@ -801,7 +792,7 @@ public final class McpServer implements AutoCloseable {
                         JsonRpcErrorCode.INVALID_PARAMS.code(), e.getMessage(), null));
             }
         }
-        PromptPage page;
+        Pagination.Page<Prompt> page;
         try {
             page = prompts.list(cursor);
         } catch (IllegalArgumentException e) {
@@ -851,7 +842,7 @@ public final class McpServer implements AutoCloseable {
         logLimiter.requireAllowance(note.logger() == null ? "" : note.logger());
         if (note.level().ordinal() < logLevel.ordinal()) return;
         requireServerCapability(ServerCapability.LOGGING);
-        send(new JsonRpcNotification("notifications/message",
+        send(new JsonRpcNotification(NotificationMethod.MESSAGE.method(),
                 LoggingCodec.toJsonObject(note)));
     }
 
@@ -891,10 +882,8 @@ public final class McpServer implements AutoCloseable {
         }
     }
 
-    private static final long DEFAULT_TIMEOUT = 30_000L;
-
     private JsonRpcMessage sendRequest(String method, JsonObject params) throws IOException {
-        return sendRequest(method, params, DEFAULT_TIMEOUT);
+        return sendRequest(method, params, Timeouts.DEFAULT_TIMEOUT_MS);
     }
 
     private JsonRpcMessage sendRequest(String method, JsonObject params, long timeoutMillis) throws IOException {
@@ -914,7 +903,7 @@ public final class McpServer implements AutoCloseable {
         } catch (TimeoutException e) {
             try {
                 send(new JsonRpcNotification(
-                        "notifications/cancelled",
+                        NotificationMethod.CANCELLED.method(),
                         CancellationCodec.toJsonObject(new CancelledNotification(id, "timeout"))));
             } catch (IOException ignore) {
             }
@@ -986,8 +975,8 @@ public final class McpServer implements AutoCloseable {
 
     private Tool findTool(String name) {
         if (tools == null) return null;
-        ToolPage page = tools.list(null);
-        for (Tool t : page.tools()) {
+        Pagination.Page<Tool> page = tools.list(null);
+        for (Tool t : page.items()) {
             if (t.name().equals(name)) return t;
         }
         return null;

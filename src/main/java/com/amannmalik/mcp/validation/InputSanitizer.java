@@ -14,4 +14,12 @@ public final class InputSanitizer {
         }
         return value;
     }
+
+    /**
+     * Sanitizes optional input. Returns {@code null} if {@code value} is null,
+     * otherwise delegates to {@link #requireClean(String)}.
+     */
+    public static String cleanNullable(String value) {
+        return value == null ? null : requireClean(value);
+    }
 }

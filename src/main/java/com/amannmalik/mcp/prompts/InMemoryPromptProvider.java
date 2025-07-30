@@ -24,14 +24,13 @@ public final class InMemoryPromptProvider implements PromptProvider {
     }
 
     @Override
-    public PromptPage list(String cursor) {
+    public Pagination.Page<Prompt> list(String cursor) {
         List<Prompt> all = new ArrayList<>();
         for (PromptTemplate t : templates.values()) {
             all.add(t.prompt());
         }
         all.sort(Comparator.comparing(Prompt::name));
-        Pagination.Page<Prompt> page = Pagination.page(all, cursor, 100);
-        return new PromptPage(page.items(), page.nextCursor());
+        return Pagination.page(all, cursor, 100);
     }
 
     @Override
