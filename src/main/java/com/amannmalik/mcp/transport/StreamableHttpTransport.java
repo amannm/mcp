@@ -48,9 +48,10 @@ public final class StreamableHttpTransport implements Transport {
 
 
     private static final String PROTOCOL_HEADER = TransportHeaders.PROTOCOL_VERSION;
-    // Default to the previous protocol revision when no version header is
-    // present, as recommended for backwards compatibility.
-    private static final String COMPATIBILITY_VERSION = "2025-03-26";
+    // Default to the previous protocol revision when the version header is
+    // absent, as recommended for backwards compatibility.
+    private static final String COMPATIBILITY_VERSION =
+            com.amannmalik.mcp.lifecycle.ProtocolLifecycle.PREVIOUS_VERSION;
     private final BlockingQueue<JsonObject> incoming = new LinkedBlockingQueue<>();
     private final Set<SseClient> generalClients = ConcurrentHashMap.newKeySet();
     private final ConcurrentHashMap<String, SseClient> requestStreams = new ConcurrentHashMap<>();

@@ -7,6 +7,11 @@ import java.util.Set;
 
 public class ProtocolLifecycle {
     public static final String SUPPORTED_VERSION = "2025-06-18";
+    /**
+     * The most recent prior revision that implementations should fall back to
+     * when no protocol version is negotiated.
+     */
+    public static final String PREVIOUS_VERSION = "2025-03-26";
 
     private final Set<ServerCapability> serverCapabilities;
     private final ServerInfo serverInfo;
