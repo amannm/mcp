@@ -609,6 +609,7 @@ public final class McpClient implements AutoCloseable {
     }
 
     private void sendProgress(ProgressNotification note) throws IOException {
+        if (!progressTracker.isActive(note.token())) return;
         try {
             progressLimiter.requireAllowance(note.token().toString());
             progressTracker.update(note);
