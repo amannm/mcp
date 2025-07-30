@@ -1,6 +1,7 @@
 package com.amannmalik.mcp.prompts;
 
 import com.amannmalik.mcp.server.resources.ResourcesCodec;
+import com.amannmalik.mcp.util.PaginatedRequest;
 import com.amannmalik.mcp.util.PaginatedResult;
 import com.amannmalik.mcp.util.PaginationCodec;
 import com.amannmalik.mcp.validation.InputSanitizer;
@@ -64,9 +65,7 @@ public final class PromptCodec {
 
     public static JsonObject toJsonObject(ListPromptsRequest req) {
         if (req == null) throw new IllegalArgumentException("request required");
-        JsonObjectBuilder b = Json.createObjectBuilder();
-        if (req.cursor() != null) b.add("cursor", req.cursor());
-        return b.build();
+        return PaginationCodec.toJsonObject(new PaginatedRequest(req.cursor()));
     }
 
     public static JsonObject toJsonObject(ListPromptsResult page) {
@@ -204,7 +203,7 @@ public final class PromptCodec {
     }
 
     public static ListPromptsRequest toListPromptsRequest(JsonObject obj) {
-        String cursor = obj == null ? null : obj.getString("cursor", null);
+        String cursor = PaginationCodec.toPaginatedRequest(obj).cursor();
         return new ListPromptsRequest(cursor);
     }
 
