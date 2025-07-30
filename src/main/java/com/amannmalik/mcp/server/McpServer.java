@@ -30,6 +30,7 @@ import com.amannmalik.mcp.lifecycle.LifecycleState;
 import com.amannmalik.mcp.lifecycle.ProtocolLifecycle;
 import com.amannmalik.mcp.lifecycle.ServerCapability;
 import com.amannmalik.mcp.lifecycle.ServerInfo;
+import com.amannmalik.mcp.lifecycle.ServerFeatures;
 import com.amannmalik.mcp.lifecycle.UnsupportedProtocolVersionException;
 import com.amannmalik.mcp.ping.PingCodec;
 import com.amannmalik.mcp.ping.PingRequest;
@@ -406,9 +407,9 @@ public final class McpServer implements AutoCloseable {
 
     private JsonRpcMessage initialize(JsonRpcRequest req) {
         InitializeRequest init = LifecycleCodec.toInitializeRequest(req.params());
-        InitializeResponse resp;
+        InitializeResponse baseResp;
         try {
-            resp = lifecycle.initialize(init);
+            baseResp = lifecycle.initialize(init);
         } catch (UnsupportedProtocolVersionException e) {
             var data = Json.createObjectBuilder()
                     .add("supported", Json.createArrayBuilder().add(e.supported()))
@@ -419,40 +420,19 @@ public final class McpServer implements AutoCloseable {
                     "Unsupported protocol version",
                     data));
         }
+        InitializeResponse resp = new InitializeResponse(
+                baseResp.protocolVersion(),
+                baseResp.capabilities(),
+                baseResp.serverInfo(),
+                baseResp.instructions(),
+                new ServerFeatures(
+                        resourcesSubscribeSupported,
+                        resourcesListChangedSupported,
+                        toolListChangedSupported,
+                        promptsListChangedSupported
+                )
+        );
         var json = LifecycleCodec.toJsonObject(resp);
-        var caps = json.getJsonObject("capabilities");
-        if (caps != null) {
-            if (caps.containsKey("tools")) {
-                var toolsCaps = caps.getJsonObject("tools");
-                var b = Json.createObjectBuilder();
-                if (toolListChangedSupported) b.add("listChanged", true);
-                toolsCaps = b.build();
-                caps = Json.createObjectBuilder(caps)
-                        .add("tools", toolsCaps)
-                        .build();
-            }
-            if (caps.containsKey("resources")) {
-                var b = Json.createObjectBuilder();
-                if (resourcesSubscribeSupported) b.add("subscribe", true);
-                if (resourcesListChangedSupported) b.add("listChanged", true);
-                var resCaps = b.build();
-                caps = Json.createObjectBuilder(caps)
-                        .add("resources", resCaps)
-                        .build();
-            }
-            if (caps.containsKey("prompts")) {
-                var b = Json.createObjectBuilder();
-                if (promptsListChangedSupported) b.add("listChanged", true);
-                var pCaps = b.build();
-                caps = Json.createObjectBuilder(caps)
-                        .add("prompts", pCaps)
-                        .build();
-            }
-            json = Json.createObjectBuilder(json)
-                    .add("capabilities", caps)
-                    .build();
-        }
-        
         return new JsonRpcResponse(req.id(), json);
     }
 

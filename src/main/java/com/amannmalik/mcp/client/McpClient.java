@@ -28,6 +28,7 @@ import com.amannmalik.mcp.lifecycle.InitializeResponse;
 import com.amannmalik.mcp.lifecycle.LifecycleCodec;
 import com.amannmalik.mcp.lifecycle.ProtocolLifecycle;
 import com.amannmalik.mcp.lifecycle.ServerCapability;
+import com.amannmalik.mcp.lifecycle.ServerFeatures;
 import com.amannmalik.mcp.lifecycle.UnsupportedProtocolVersionException;
 import com.amannmalik.mcp.ping.PingCodec;
 import com.amannmalik.mcp.ping.PingMonitor;
@@ -85,6 +86,10 @@ public final class McpClient implements AutoCloseable {
     private volatile boolean connected;
     private Set<ServerCapability> serverCapabilities = Set.of();
     private String instructions;
+    private boolean resourcesSubscribeSupported;
+    private boolean resourcesListChangedSupported;
+    private boolean toolsListChangedSupported;
+    private boolean promptsListChangedSupported;
     private ProgressListener progressListener = n -> {
     };
     private LoggingListener loggingListener = n -> {
@@ -189,6 +194,13 @@ public final class McpClient implements AutoCloseable {
             }
             serverCapabilities = ir.capabilities().server();
             instructions = ir.instructions();
+            ServerFeatures f = ir.features();
+            if (f != null) {
+                resourcesSubscribeSupported = f.resourcesSubscribe();
+                resourcesListChangedSupported = f.resourcesListChanged();
+                toolsListChangedSupported = f.toolsListChanged();
+                promptsListChangedSupported = f.promptsListChanged();
+            }
         } else if (msg instanceof JsonRpcError err) {
             throw new IOException("Initialization failed: " + err.error().message());
         } else {

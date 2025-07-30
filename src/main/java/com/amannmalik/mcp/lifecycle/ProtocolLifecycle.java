@@ -38,7 +38,8 @@ public class ProtocolLifecycle {
                 SUPPORTED_VERSION,
                 new Capabilities(clientCapabilities, serverCapabilities),
                 serverInfo,
-                instructions
+                instructions,
+                null
         );
     }
 
