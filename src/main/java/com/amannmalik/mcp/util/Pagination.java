@@ -1,6 +1,5 @@
 package com.amannmalik.mcp.util;
 
-import java.util.Base64;
 import java.util.List;
 
 public final class Pagination {
@@ -20,13 +19,13 @@ public final class Pagination {
 
     private static String encode(int index) {
         String raw = Integer.toString(index);
-        return Base64.getUrlEncoder().withoutPadding().encodeToString(raw.getBytes());
+        return Base64Util.encodeUrl(raw.getBytes());
     }
 
     private static int decode(String cursor) {
         if (cursor == null) return 0;
         try {
-            String s = new String(Base64.getUrlDecoder().decode(cursor));
+            String s = new String(Base64Util.decodeUrl(cursor));
             return Integer.parseInt(s);
         } catch (IllegalArgumentException e) {
             throw new IllegalArgumentException("Invalid cursor");

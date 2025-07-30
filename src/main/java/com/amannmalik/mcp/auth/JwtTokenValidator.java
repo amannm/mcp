@@ -6,7 +6,7 @@ import jakarta.json.JsonObject;
 import jakarta.json.JsonReader;
 
 import java.io.StringReader;
-import java.util.Base64;
+import com.amannmalik.mcp.util.Base64Util;
 import java.util.Set;
 
 public final class JwtTokenValidator implements TokenValidator {
@@ -30,7 +30,7 @@ public final class JwtTokenValidator implements TokenValidator {
         }
         String payloadJson;
         try {
-            payloadJson = new String(Base64.getUrlDecoder().decode(parts[1]));
+            payloadJson = new String(Base64Util.decodeUrl(parts[1]));
         } catch (IllegalArgumentException e) {
             throw new AuthorizationException("invalid token encoding");
         }
