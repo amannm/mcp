@@ -40,6 +40,11 @@ import com.amannmalik.mcp.util.CancelledNotification;
 import com.amannmalik.mcp.util.CancellationTracker;
 import com.amannmalik.mcp.util.ProgressCodec;
 import com.amannmalik.mcp.util.ProgressListener;
+import com.amannmalik.mcp.util.ProgressNotification;
+import com.amannmalik.mcp.util.ProgressToken;
+import com.amannmalik.mcp.util.ProgressTracker;
+import com.amannmalik.mcp.security.RateLimiter;
+import com.amannmalik.mcp.validation.MetaValidator;
 import com.amannmalik.mcp.validation.SchemaValidator;
 import jakarta.json.JsonObject;
 
@@ -68,6 +73,9 @@ public final class McpClient implements AutoCloseable {
     private final AtomicLong id = new AtomicLong(1);
     private final Map<RequestId, CompletableFuture<JsonRpcMessage>> pending = new ConcurrentHashMap<>();
     private final CancellationTracker cancellationTracker = new CancellationTracker();
+    private final ProgressTracker progressTracker = new ProgressTracker();
+    private final Map<RequestId, ProgressToken> progressTokens = new ConcurrentHashMap<>();
+    private final RateLimiter progressLimiter = new RateLimiter(20, 1000);
     private Thread reader;
     private ScheduledExecutorService pinger;
     private long pingInterval;
@@ -300,10 +308,22 @@ public final class McpClient implements AutoCloseable {
         RequestId reqId = new RequestId.NumericId(id.getAndIncrement());
         CompletableFuture<JsonRpcMessage> future = new CompletableFuture<>();
         pending.put(reqId, future);
+        ProgressToken token = parseProgressToken(params);
+        if (token != null) {
+            try {
+                progressTracker.register(token);
+                progressTokens.put(reqId, token);
+            } catch (IllegalArgumentException e) {
+                pending.remove(reqId);
+                throw new IOException(e);
+            }
+        }
         try {
             transport.send(JsonRpcCodec.toJsonObject(new JsonRpcRequest(reqId, method, params)));
         } catch (IOException e) {
             pending.remove(reqId);
+            if (token != null) progressTracker.release(token);
+            progressTokens.remove(reqId);
             throw e;
         }
         try {
@@ -323,6 +343,8 @@ public final class McpClient implements AutoCloseable {
             throw new IOException(cause);
         } finally {
             pending.remove(reqId);
+            ProgressToken t = progressTokens.remove(reqId);
+            if (t != null) progressTracker.release(t);
         }
     }
 
@@ -377,6 +399,15 @@ public final class McpClient implements AutoCloseable {
 
     private JsonRpcMessage handleRequest(JsonRpcRequest req) {
         cancellationTracker.register(req.id());
+        ProgressToken token = parseProgressToken(req.params());
+        if (token != null) {
+            try {
+                progressTracker.register(token);
+                progressTokens.put(req.id(), token);
+                sendProgress(new ProgressNotification(token, 0.0, 1.0, null));
+            } catch (Exception ignore) {
+            }
+        }
         boolean cancelled;
         JsonRpcMessage resp;
         try {
@@ -392,6 +423,14 @@ public final class McpClient implements AutoCloseable {
         } finally {
             cancelled = cancellationTracker.isCancelled(req.id());
             cancellationTracker.release(req.id());
+            ProgressToken t = progressTokens.remove(req.id());
+            if (!cancelled && t != null) {
+                try {
+                    sendProgress(new ProgressNotification(t, 1.0, 1.0, null));
+                } catch (IOException ignore) {
+                }
+            }
+            if (t != null) progressTracker.release(t);
         }
         return cancelled ? null : resp;
     }
@@ -495,7 +534,10 @@ public final class McpClient implements AutoCloseable {
         switch (note.method()) {
             case "notifications/progress" -> {
                 if (note.params() != null) {
-                    progressListener.onProgress(ProgressCodec.toProgressNotification(note.params()));
+                    try {
+                        progressListener.onProgress(ProgressCodec.toProgressNotification(note.params()));
+                    } catch (IllegalArgumentException ignore) {
+                    }
                 }
             }
             case "notifications/message" -> {
@@ -510,6 +552,37 @@ public final class McpClient implements AutoCloseable {
             default -> {
             }
         }
+    }
+
+    private void sendProgress(ProgressNotification note) throws IOException {
+        try {
+            progressLimiter.requireAllowance(note.token().toString());
+            progressTracker.update(note);
+        } catch (IllegalArgumentException | IllegalStateException ignore) {
+            return;
+        }
+        send(new JsonRpcNotification(
+                "notifications/progress",
+                ProgressCodec.toJsonObject(note)));
+    }
+
+    private ProgressToken parseProgressToken(JsonObject params) {
+        if (params == null || !params.containsKey("_meta")) return null;
+        JsonObject meta = params.getJsonObject("_meta");
+        MetaValidator.requireValid(meta);
+        if (!meta.containsKey("progressToken")) return null;
+        var val = meta.get("progressToken");
+        return switch (val.getValueType()) {
+            case STRING -> new ProgressToken.StringToken(meta.getString("progressToken"));
+            case NUMBER -> {
+                var num = meta.getJsonNumber("progressToken");
+                if (!num.isIntegral()) {
+                    throw new IllegalArgumentException("progressToken must be an integer");
+                }
+                yield new ProgressToken.NumericToken(num.longValue());
+            }
+            default -> throw new IllegalArgumentException("progressToken must be a string or integer");
+        };
     }
 
     private void cancelled(JsonRpcNotification note) {
