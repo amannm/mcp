@@ -326,7 +326,7 @@ public final class McpClient implements AutoCloseable {
     public void setLogLevel(LoggingLevel level) throws IOException {
         if (level == null) throw new IllegalArgumentException("level required");
         JsonRpcMessage msg = request(RequestMethod.LOGGING_SET_LEVEL,
-                LoggingCodec.toJsonObject(new SetLevelRequest(level))); 
+                LoggingCodec.toJsonObject(new SetLevelRequest(level)));
         if (msg instanceof JsonRpcResponse) {
             return;
         }
@@ -334,6 +334,22 @@ public final class McpClient implements AutoCloseable {
             throw new IOException(err.error().message());
         }
         throw new IOException("Unexpected message type: " + msg.getClass().getSimpleName());
+    }
+
+    public void setAccessToken(String token) {
+        if (!(transport instanceof StreamableHttpClientTransport http)) {
+            throw new IllegalStateException("HTTP transport required");
+        }
+        if (token == null || token.isBlank()) {
+            throw new IllegalArgumentException("token required");
+        }
+        http.setAuthorization(token);
+    }
+
+    public void clearAccessToken() {
+        if (transport instanceof StreamableHttpClientTransport http) {
+            http.clearAuthorization();
+        }
     }
 
     public JsonRpcMessage request(String method, JsonObject params) throws IOException {

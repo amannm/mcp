@@ -28,6 +28,7 @@ public final class StreamableHttpClientTransport implements Transport {
     private final Set<SseReader> streams = ConcurrentHashMap.newKeySet();
     private volatile String sessionId;
     private volatile String protocolVersion = Protocol.LATEST_VERSION;
+    private volatile String authorization;
 
     public StreamableHttpClientTransport(URI endpoint) {
         this.endpoint = endpoint;
@@ -40,12 +41,25 @@ public final class StreamableHttpClientTransport implements Transport {
         this.protocolVersion = version;
     }
 
+    public void setAuthorization(String token) {
+        if (token == null || token.isBlank()) {
+            throw new IllegalArgumentException("token required");
+        }
+        this.authorization = token;
+    }
+
+    public void clearAuthorization() {
+        this.authorization = null;
+    }
+
     @Override
     public void send(JsonObject message) throws IOException {
         HttpRequest.Builder builder = HttpRequest.newBuilder(endpoint)
                 .header("Accept", "application/json, text/event-stream")
                 .header("Content-Type", "application/json")
                 .header(TransportHeaders.PROTOCOL_VERSION, protocolVersion);
+        Optional.ofNullable(authorization)
+                .ifPresent(t -> builder.header(TransportHeaders.AUTHORIZATION, "Bearer " + t));
         Optional.ofNullable(sessionId).ifPresent(id -> builder.header(TransportHeaders.SESSION_ID, id));
         HttpRequest request = builder.POST(HttpRequest.BodyPublishers.ofString(message.toString())).build();
         HttpResponse<InputStream> response;
