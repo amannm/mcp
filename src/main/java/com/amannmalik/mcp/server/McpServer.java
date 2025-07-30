@@ -40,6 +40,8 @@ import com.amannmalik.mcp.prompts.PromptArgument;
 import com.amannmalik.mcp.prompts.PromptCodec;
 import com.amannmalik.mcp.prompts.PromptContent;
 import com.amannmalik.mcp.prompts.PromptInstance;
+import com.amannmalik.mcp.prompts.ListPromptsRequest;
+import com.amannmalik.mcp.prompts.GetPromptRequest;
 import com.amannmalik.mcp.prompts.PromptMessageTemplate;
 import com.amannmalik.mcp.prompts.PromptPage;
 import com.amannmalik.mcp.prompts.PromptProvider;
@@ -74,6 +76,8 @@ import com.amannmalik.mcp.server.resources.SubscribeRequest;
 import com.amannmalik.mcp.server.resources.UnsubscribeRequest;
 import com.amannmalik.mcp.server.tools.InMemoryToolProvider;
 import com.amannmalik.mcp.server.tools.Tool;
+import com.amannmalik.mcp.server.tools.ListToolsRequest;
+import com.amannmalik.mcp.server.tools.CallToolRequest;
 import com.amannmalik.mcp.server.tools.ToolCodec;
 import com.amannmalik.mcp.server.tools.ToolListSubscription;
 import com.amannmalik.mcp.server.tools.ToolPage;
@@ -649,7 +653,8 @@ public final class McpServer implements AutoCloseable {
 
     private JsonRpcMessage listTools(JsonRpcRequest req) {
         requireServerCapability(ServerCapability.TOOLS);
-        String cursor = PaginationCodec.toPaginatedRequest(req.params()).cursor();
+        ListToolsRequest lr = ToolCodec.toListToolsRequest(req.params());
+        String cursor = lr.cursor();
         if (cursor != null) {
             try {
                 cursor = InputSanitizer.requireClean(cursor);
@@ -671,32 +676,15 @@ public final class McpServer implements AutoCloseable {
 
     private JsonRpcMessage callTool(JsonRpcRequest req) {
         requireServerCapability(ServerCapability.TOOLS);
-        JsonObject params = req.params();
-        if (params == null) {
-            return new JsonRpcError(req.id(), new JsonRpcError.ErrorDetail(
-                    JsonRpcErrorCode.INVALID_PARAMS.code(), "Missing params", null));
-        }
-        String name = params.getString("name", null);
-        if (name == null) {
-            return new JsonRpcError(req.id(), new JsonRpcError.ErrorDetail(
-                    JsonRpcErrorCode.INVALID_PARAMS.code(), "name required", null));
-        }
+        CallToolRequest ctr;
         try {
-            name = InputSanitizer.requireClean(name);
+            ctr = ToolCodec.toCallToolRequest(req.params());
         } catch (IllegalArgumentException e) {
             return new JsonRpcError(req.id(), new JsonRpcError.ErrorDetail(
                     JsonRpcErrorCode.INVALID_PARAMS.code(), e.getMessage(), null));
         }
-
-        JsonValue argsVal = params.get("arguments");
-        JsonObject args = null;
-        if (argsVal != null) {
-            if (argsVal.getValueType() != JsonValue.ValueType.OBJECT) {
-                return new JsonRpcError(req.id(), new JsonRpcError.ErrorDetail(
-                        JsonRpcErrorCode.INVALID_PARAMS.code(), "arguments must be object", null));
-            }
-            args = params.getJsonObject("arguments");
-        }
+        String name = ctr.name();
+        JsonObject args = ctr.arguments();
         try {
             toolLimiter.requireAllowance(name);
         } catch (SecurityException e) {
@@ -720,7 +708,8 @@ public final class McpServer implements AutoCloseable {
 
     private JsonRpcMessage listPrompts(JsonRpcRequest req) {
         requireServerCapability(ServerCapability.PROMPTS);
-        String cursor = PaginationCodec.toPaginatedRequest(req.params()).cursor();
+        ListPromptsRequest lpr = PromptCodec.toListPromptsRequest(req.params());
+        String cursor = lpr.cursor();
         if (cursor != null) {
             try {
                 cursor = InputSanitizer.requireClean(cursor);
@@ -742,27 +731,15 @@ public final class McpServer implements AutoCloseable {
 
     private JsonRpcMessage getPrompt(JsonRpcRequest req) {
         requireServerCapability(ServerCapability.PROMPTS);
-        JsonObject params = req.params();
-        String name = params.getString("name", null);
-        if (name == null) {
-            return new JsonRpcError(req.id(), new JsonRpcError.ErrorDetail(
-                    JsonRpcErrorCode.INVALID_PARAMS.code(),
-                    "name is required", null));
-        }
+        GetPromptRequest gpr;
         try {
-            name = InputSanitizer.requireClean(name);
+            gpr = PromptCodec.toGetPromptRequest(req.params());
         } catch (IllegalArgumentException e) {
             return new JsonRpcError(req.id(), new JsonRpcError.ErrorDetail(
                     JsonRpcErrorCode.INVALID_PARAMS.code(), e.getMessage(), null));
         }
-
-        Map<String, String> args;
-        try {
-            args = PromptCodec.toArguments(params.getJsonObject("arguments"));
-        } catch (IllegalArgumentException e) {
-            return new JsonRpcError(req.id(), new JsonRpcError.ErrorDetail(
-                    JsonRpcErrorCode.INVALID_PARAMS.code(), e.getMessage(), null));
-        }
+        String name = gpr.name();
+        Map<String, String> args = gpr.arguments();
         try {
             PromptInstance inst = prompts.get(name, args);
             JsonObject result = PromptCodec.toJsonObject(inst);

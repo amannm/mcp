@@ -2,6 +2,7 @@ package com.amannmalik.mcp.prompts;
 
 import com.amannmalik.mcp.server.resources.ResourcesCodec;
 import com.amannmalik.mcp.util.PaginatedResult;
+import com.amannmalik.mcp.util.PaginatedRequest;
 import com.amannmalik.mcp.util.PaginationCodec;
 import com.amannmalik.mcp.validation.InputSanitizer;
 import jakarta.json.Json;
@@ -62,8 +63,24 @@ public final class PromptCodec {
         return builder.build();
     }
 
+    public static JsonObject toJsonObject(ListPromptsRequest req) {
+        if (req == null) throw new IllegalArgumentException("request required");
+        return PaginationCodec.toJsonObject(new PaginatedRequest(req.cursor()));
+    }
+
     public static JsonObject toJsonObject(ListPromptsResult page) {
         return toJsonObject(new PromptPage(page.prompts(), page.nextCursor()));
+    }
+
+    public static JsonObject toJsonObject(GetPromptRequest req) {
+        if (req == null) throw new IllegalArgumentException("request required");
+        JsonObjectBuilder b = Json.createObjectBuilder().add("name", req.name());
+        if (!req.arguments().isEmpty()) {
+            JsonObjectBuilder ab = Json.createObjectBuilder();
+            req.arguments().forEach(ab::add);
+            b.add("arguments", ab.build());
+        }
+        return b.build();
     }
 
     public static JsonObject toJsonObject(PromptListChangedNotification n) {
@@ -182,6 +199,19 @@ public final class PromptCodec {
     public static ListPromptsResult toListPromptsResult(JsonObject obj) {
         PromptPage page = toPromptPage(obj);
         return new ListPromptsResult(page.prompts(), page.nextCursor());
+    }
+
+    public static ListPromptsRequest toListPromptsRequest(JsonObject obj) {
+        return new ListPromptsRequest(PaginationCodec.toPaginatedRequest(obj).cursor());
+    }
+
+    public static GetPromptRequest toGetPromptRequest(JsonObject obj) {
+        if (obj == null || !obj.containsKey("name")) {
+            throw new IllegalArgumentException("name required");
+        }
+        String name = InputSanitizer.requireClean(obj.getString("name"));
+        Map<String, String> args = toArguments(obj.getJsonObject("arguments"));
+        return new GetPromptRequest(name, args);
     }
 
     private static PromptArgument toPromptArgument(JsonObject obj) {

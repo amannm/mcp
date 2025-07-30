@@ -1,7 +1,9 @@
 package com.amannmalik.mcp.server.tools;
 
 import com.amannmalik.mcp.util.PaginatedResult;
+import com.amannmalik.mcp.util.PaginatedRequest;
 import com.amannmalik.mcp.util.PaginationCodec;
+import com.amannmalik.mcp.validation.InputSanitizer;
 import jakarta.json.Json;
 import jakarta.json.JsonArray;
 import jakarta.json.JsonArrayBuilder;
@@ -33,8 +35,20 @@ public final class ToolCodec {
         return builder.build();
     }
 
+    public static JsonObject toJsonObject(ListToolsRequest req) {
+        if (req == null) throw new IllegalArgumentException("request required");
+        return PaginationCodec.toJsonObject(new PaginatedRequest(req.cursor()));
+    }
+
     public static JsonObject toJsonObject(ListToolsResult page) {
         return toJsonObject(new ToolPage(page.tools(), page.nextCursor()));
+    }
+
+    public static JsonObject toJsonObject(CallToolRequest req) {
+        if (req == null) throw new IllegalArgumentException("request required");
+        JsonObjectBuilder b = Json.createObjectBuilder().add("name", req.name());
+        if (req.arguments() != null) b.add("arguments", req.arguments());
+        return b.build();
     }
 
     public static JsonObject toJsonObject(ToolResult result) {
@@ -99,9 +113,22 @@ public final class ToolCodec {
         return new ToolPage(tools, cursor);
     }
 
+    public static ListToolsRequest toListToolsRequest(JsonObject obj) {
+        return new ListToolsRequest(PaginationCodec.toPaginatedRequest(obj).cursor());
+    }
+
     public static ListToolsResult toListToolsResult(JsonObject obj) {
         ToolPage page = toToolPage(obj);
         return new ListToolsResult(page.tools(), page.nextCursor());
+    }
+
+    public static CallToolRequest toCallToolRequest(JsonObject obj) {
+        if (obj == null || !obj.containsKey("name")) {
+            throw new IllegalArgumentException("name required");
+        }
+        String name = InputSanitizer.requireClean(obj.getString("name"));
+        JsonObject args = obj.getJsonObject("arguments");
+        return new CallToolRequest(name, args);
     }
 
     public static ToolResult toToolResult(JsonObject obj) {

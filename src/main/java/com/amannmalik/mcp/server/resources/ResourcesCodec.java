@@ -240,23 +240,6 @@ public final class ResourcesCodec {
         return new ListResourcesRequest(PaginationCodec.toPaginatedRequest(obj).cursor());
     }
 
-    public static JsonObject toJsonObject(ListResourcesResult result) {
-        var arr = Json.createArrayBuilder();
-        result.resources().forEach(r -> arr.add(toJsonObject(r)));
-        JsonObjectBuilder b = Json.createObjectBuilder().add("resources", arr.build());
-        PaginationCodec.toJsonObject(new PaginatedResult(result.nextCursor())).forEach(b::add);
-        return b.build();
-    }
-
-    public static ListResourcesResult toListResourcesResult(JsonObject obj) {
-        var arr = obj.getJsonArray("resources");
-        if (arr == null) throw new IllegalArgumentException("resources required");
-        java.util.List<Resource> list = new java.util.ArrayList<>();
-        arr.forEach(v -> list.add(toResource(v.asJsonObject())));
-        String cursor = PaginationCodec.toPaginatedResult(obj).nextCursor();
-        return new ListResourcesResult(list, cursor);
-    }
-
     public static JsonObject toJsonObject(ListResourceTemplatesRequest req) {
         if (req == null) throw new IllegalArgumentException("request required");
         return PaginationCodec.toJsonObject(new PaginatedRequest(req.cursor()));
@@ -266,27 +249,7 @@ public final class ResourcesCodec {
         return new ListResourceTemplatesRequest(PaginationCodec.toPaginatedRequest(obj).cursor());
     }
 
-    public static JsonObject toJsonObject(ListResourceTemplatesResult result) {
-        var arr = Json.createArrayBuilder();
-        result.resourceTemplates().forEach(t -> arr.add(toJsonObject(t)));
-        JsonObjectBuilder b = Json.createObjectBuilder().add("resourceTemplates", arr.build());
-        PaginationCodec.toJsonObject(new PaginatedResult(result.nextCursor())).forEach(b::add);
-        return b.build();
-    }
 
-    public static ListResourceTemplatesResult toListResourceTemplatesResult(JsonObject obj) {
-        var arr = obj.getJsonArray("resourceTemplates");
-        if (arr == null) throw new IllegalArgumentException("resourceTemplates required");
-        java.util.List<ResourceTemplate> list = new java.util.ArrayList<>();
-        arr.forEach(v -> list.add(toResourceTemplate(v.asJsonObject())));
-        String cursor = PaginationCodec.toPaginatedResult(obj).nextCursor();
-        return new ListResourceTemplatesResult(list, cursor);
-    }
-
-    public static JsonObject toJsonObject(ReadResourceRequest req) {
-        if (req == null) throw new IllegalArgumentException("request required");
-        return Json.createObjectBuilder().add("uri", req.uri()).build();
-    }
 
     public static ReadResourceRequest toReadResourceRequest(JsonObject obj) {
         if (obj == null || !obj.containsKey("uri")) {
