@@ -743,7 +743,7 @@ public final class McpServer implements AutoCloseable {
             ToolResult result = tools.call(callRequest.name(), callRequest.arguments());
             return new JsonRpcResponse(req.id(), ToolCodec.toJsonObject(result));
         } catch (IllegalArgumentException e) {
-            Optional<Tool> tool = tools == null ? Optional.empty() : tools.find(callRequest.name());
+            Optional<Tool> tool = tools.find(callRequest.name());
             if (tool.isPresent() && lifecycle.negotiatedClientCapabilities().contains(ClientCapability.ELICITATION)) {
                 try {
                     ElicitRequest er = new ElicitRequest(
