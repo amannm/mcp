@@ -33,6 +33,13 @@ public final class ToolCodec {
         return builder.build();
     }
 
+    public static JsonObject toJsonObject(ListToolsRequest req) {
+        if (req == null) throw new IllegalArgumentException("request required");
+        JsonObjectBuilder b = Json.createObjectBuilder();
+        if (req.cursor() != null) b.add("cursor", req.cursor());
+        return b.build();
+    }
+
     public static JsonObject toJsonObject(ListToolsResult page) {
         return toJsonObject(new ToolPage(page.tools(), page.nextCursor()));
     }
@@ -102,6 +109,11 @@ public final class ToolCodec {
     public static ListToolsResult toListToolsResult(JsonObject obj) {
         ToolPage page = toToolPage(obj);
         return new ListToolsResult(page.tools(), page.nextCursor());
+    }
+
+    public static ListToolsRequest toListToolsRequest(JsonObject obj) {
+        String cursor = obj == null ? null : obj.getString("cursor", null);
+        return new ListToolsRequest(cursor);
     }
 
     public static ToolResult toToolResult(JsonObject obj) {

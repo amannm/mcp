@@ -62,6 +62,13 @@ public final class PromptCodec {
         return builder.build();
     }
 
+    public static JsonObject toJsonObject(ListPromptsRequest req) {
+        if (req == null) throw new IllegalArgumentException("request required");
+        JsonObjectBuilder b = Json.createObjectBuilder();
+        if (req.cursor() != null) b.add("cursor", req.cursor());
+        return b.build();
+    }
+
     public static JsonObject toJsonObject(ListPromptsResult page) {
         return toJsonObject(new PromptPage(page.prompts(), page.nextCursor()));
     }
@@ -191,6 +198,11 @@ public final class PromptCodec {
     public static ListPromptsResult toListPromptsResult(JsonObject obj) {
         PromptPage page = toPromptPage(obj);
         return new ListPromptsResult(page.prompts(), page.nextCursor());
+    }
+
+    public static ListPromptsRequest toListPromptsRequest(JsonObject obj) {
+        String cursor = obj == null ? null : obj.getString("cursor", null);
+        return new ListPromptsRequest(cursor);
     }
 
     private static PromptArgument toPromptArgument(JsonObject obj) {
