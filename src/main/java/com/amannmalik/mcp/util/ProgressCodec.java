@@ -1,12 +1,12 @@
 package com.amannmalik.mcp.util;
 
+import com.amannmalik.mcp.validation.InputSanitizer;
 import jakarta.json.Json;
 import jakarta.json.JsonNumber;
 import jakarta.json.JsonObject;
 import jakarta.json.JsonObjectBuilder;
 import jakarta.json.JsonString;
 import jakarta.json.JsonValue;
-import com.amannmalik.mcp.validation.InputSanitizer;
 
 public final class ProgressCodec {
     private ProgressCodec() {

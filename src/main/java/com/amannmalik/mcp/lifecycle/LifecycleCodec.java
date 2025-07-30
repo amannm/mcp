@@ -3,8 +3,6 @@ package com.amannmalik.mcp.lifecycle;
 import jakarta.json.Json;
 import jakarta.json.JsonObject;
 
-import com.amannmalik.mcp.lifecycle.ServerFeatures;
-
 import java.util.EnumSet;
 import java.util.Map;
 import java.util.Set;

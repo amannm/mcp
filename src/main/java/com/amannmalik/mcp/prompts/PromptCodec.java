@@ -1,7 +1,5 @@
 package com.amannmalik.mcp.prompts;
 
-import com.amannmalik.mcp.server.resources.Resource;
-import com.amannmalik.mcp.server.resources.ResourceBlock;
 import com.amannmalik.mcp.server.resources.ResourcesCodec;
 import com.amannmalik.mcp.util.PaginatedResult;
 import com.amannmalik.mcp.util.PaginationCodec;

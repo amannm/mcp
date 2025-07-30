@@ -1,13 +1,12 @@
 package com.amannmalik.mcp.transport;
 
+import com.amannmalik.mcp.auth.AuthorizationException;
+import com.amannmalik.mcp.auth.AuthorizationManager;
+import com.amannmalik.mcp.auth.Principal;
 import com.amannmalik.mcp.jsonrpc.JsonRpcCodec;
 import com.amannmalik.mcp.jsonrpc.JsonRpcError;
 import com.amannmalik.mcp.jsonrpc.JsonRpcErrorCode;
 import com.amannmalik.mcp.jsonrpc.RequestId;
-import com.amannmalik.mcp.lifecycle.ProtocolLifecycle;
-import com.amannmalik.mcp.auth.AuthorizationException;
-import com.amannmalik.mcp.auth.AuthorizationManager;
-import com.amannmalik.mcp.auth.Principal;
 import com.amannmalik.mcp.security.OriginValidator;
 import jakarta.json.Json;
 import jakarta.json.JsonObject;
@@ -24,20 +23,19 @@ import org.eclipse.jetty.ee10.servlet.ServletHolder;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.ServerConnector;
 
-import java.util.concurrent.atomic.AtomicLong;
-
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.net.InetSocketAddress;
-import java.util.Set;
 import java.security.SecureRandom;
+import java.util.ArrayDeque;
 import java.util.Base64;
 import java.util.Deque;
-import java.util.ArrayDeque;
+import java.util.Set;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 
 public final class StreamableHttpTransport implements Transport {
@@ -445,7 +443,10 @@ public final class StreamableHttpTransport implements Transport {
                 int idx = lastEvent.lastIndexOf('-');
                 if (idx > 0) {
                     String prefix = lastEvent.substring(0, idx);
-                    try { lastId = Long.parseLong(lastEvent.substring(idx + 1)); } catch (NumberFormatException ignore) {}
+                    try {
+                        lastId = Long.parseLong(lastEvent.substring(idx + 1));
+                    } catch (NumberFormatException ignore) {
+                    }
                     found = clientsByPrefix.get(prefix);
                     if (found != null) {
                         found.attach(ac, lastId);
@@ -633,7 +634,8 @@ public final class StreamableHttpTransport implements Transport {
         }
     }
 
-    private record SseEvent(long id, JsonObject msg) {}
+    private record SseEvent(long id, JsonObject msg) {
+    }
 
     private static boolean isVisibleAscii(String value) {
         for (int i = 0; i < value.length(); i++) {
