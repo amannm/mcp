@@ -1,5 +1,6 @@
 package com.amannmalik.mcp.server.resources;
 
+import com.amannmalik.mcp.annotations.Annotations;
 import com.amannmalik.mcp.annotations.AnnotationsCodec;
 import com.amannmalik.mcp.util.Base64Util;
 import com.amannmalik.mcp.util.EmptyJsonObjectCodec;
@@ -26,7 +27,9 @@ public final class ResourcesCodec {
         if (r.description() != null) b.add("description", r.description());
         if (r.mimeType() != null) b.add("mimeType", r.mimeType());
         if (r.size() != null) b.add("size", r.size());
-        if (r.annotations() != null) b.add("annotations", AnnotationsCodec.toJsonObject(r.annotations()));
+        if (r.annotations() != Annotations.EMPTY) {
+            b.add("annotations", AnnotationsCodec.toJsonObject(r.annotations()));
+        }
         if (r._meta() != null) b.add("_meta", r._meta());
         return b.build();
     }
@@ -39,7 +42,7 @@ public final class ResourcesCodec {
                 obj.getString("description", null),
                 obj.getString("mimeType", null),
                 obj.containsKey("size") ? obj.getJsonNumber("size").longValue() : null,
-                obj.containsKey("annotations") ? AnnotationsCodec.toAnnotations(obj.getJsonObject("annotations")) : null,
+                obj.containsKey("annotations") ? AnnotationsCodec.toAnnotations(obj.getJsonObject("annotations")) : Annotations.EMPTY,
                 obj.containsKey("_meta") ? obj.getJsonObject("_meta") : null
         );
     }
@@ -51,7 +54,9 @@ public final class ResourcesCodec {
         if (t.title() != null) b.add("title", t.title());
         if (t.description() != null) b.add("description", t.description());
         if (t.mimeType() != null) b.add("mimeType", t.mimeType());
-        if (t.annotations() != null) b.add("annotations", AnnotationsCodec.toJsonObject(t.annotations()));
+        if (t.annotations() != Annotations.EMPTY) {
+            b.add("annotations", AnnotationsCodec.toJsonObject(t.annotations()));
+        }
         if (t._meta() != null) b.add("_meta", t._meta());
         return b.build();
     }
@@ -63,7 +68,7 @@ public final class ResourcesCodec {
                 obj.getString("title", null),
                 obj.getString("description", null),
                 obj.getString("mimeType", null),
-                obj.containsKey("annotations") ? AnnotationsCodec.toAnnotations(obj.getJsonObject("annotations")) : null,
+                obj.containsKey("annotations") ? AnnotationsCodec.toAnnotations(obj.getJsonObject("annotations")) : Annotations.EMPTY,
                 obj.containsKey("_meta") ? obj.getJsonObject("_meta") : null
         );
     }

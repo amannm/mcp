@@ -102,7 +102,9 @@ public final class SamplingCodec {
 
     static JsonObject toJsonObject(MessageContent content) {
         JsonObjectBuilder b = Json.createObjectBuilder().add("type", content.type());
-        if (content.annotations() != null) b.add("annotations", AnnotationsCodec.toJsonObject(content.annotations()));
+        if (content.annotations() != Annotations.EMPTY) {
+            b.add("annotations", AnnotationsCodec.toJsonObject(content.annotations()));
+        }
         if (content._meta() != null) b.add("_meta", content._meta());
         switch (content) {
             case MessageContent.Text t -> b.add("text", t.text());
