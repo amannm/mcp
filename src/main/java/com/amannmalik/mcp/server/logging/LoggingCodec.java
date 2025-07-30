@@ -47,14 +47,15 @@ public final class LoggingCodec {
     }
 
     public static JsonObject toJsonObject(SetLevelRequest req) {
-        return Json.createObjectBuilder()
-                .add("level", req.level().name().toLowerCase())
-                .build();
+        JsonObjectBuilder b = Json.createObjectBuilder()
+                .add("level", req.level().name().toLowerCase());
+        if (req._meta() != null) b.add("_meta", req._meta());
+        return b.build();
     }
 
     public static SetLevelRequest toSetLevelRequest(JsonObject obj) {
         if (obj == null) throw new IllegalArgumentException("level required");
-        JsonUtil.requireOnlyKeys(obj, Set.of("level"));
+        JsonUtil.requireOnlyKeys(obj, Set.of("level", "_meta"));
         String raw;
         try {
             raw = obj.getString("level");
@@ -62,6 +63,7 @@ public final class LoggingCodec {
             throw new IllegalArgumentException("level required", e);
         }
         LoggingLevel level = LoggingLevel.fromString(raw);
-        return new SetLevelRequest(level);
+        JsonObject meta = obj.getJsonObject("_meta");
+        return new SetLevelRequest(level, meta);
     }
 }

@@ -135,7 +135,7 @@ public final class HostProcess implements AutoCloseable {
         McpClient client = clients.get(clientId);
         if (client == null) throw new IllegalArgumentException("Unknown client: " + clientId);
         requireCapability(client, ServerCapability.TOOLS);
-        JsonObject params = PaginationCodec.toJsonObject(new PaginatedRequest(cursor));
+        JsonObject params = PaginationCodec.toJsonObject(new PaginatedRequest(cursor, null));
         JsonRpcMessage resp = client.request(RequestMethod.TOOLS_LIST, params);
         if (resp instanceof JsonRpcResponse r) return ToolCodec.toListToolsResult(r.result());
         if (resp instanceof JsonRpcError err) throw new IOException(err.error().message());

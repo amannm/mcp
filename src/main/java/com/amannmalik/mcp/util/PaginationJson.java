@@ -14,11 +14,12 @@ public final class PaginationJson {
 
     public static <T> JsonObject toJson(String itemsField,
                                         Pagination.Page<T> page,
-                                        Function<T, JsonValue> encoder) {
+                                        Function<T, JsonValue> encoder,
+                                        JsonObject meta) {
         JsonArrayBuilder arr = Json.createArrayBuilder();
         page.items().forEach(item -> arr.add(encoder.apply(item)));
         JsonObjectBuilder b = Json.createObjectBuilder().add(itemsField, arr.build());
-        PaginationCodec.toJsonObject(new PaginatedResult(page.nextCursor()))
+        PaginationCodec.toJsonObject(new PaginatedResult(page.nextCursor(), meta))
                 .forEach(b::add);
         return b.build();
     }
