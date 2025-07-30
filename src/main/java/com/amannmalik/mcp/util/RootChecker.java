@@ -31,7 +31,7 @@ public final class RootChecker {
         }
         Path targetPath;
         try {
-            targetPath = Paths.get(target).normalize();
+            targetPath = Paths.get(target).toRealPath();
         } catch (Exception e) {
             return false;
         }
@@ -39,7 +39,7 @@ public final class RootChecker {
             try {
                 URI base = URI.create(r.uri());
                 if ("file".equalsIgnoreCase(base.getScheme())) {
-                    Path basePath = Paths.get(base).normalize();
+                    Path basePath = Paths.get(base).toRealPath();
                     if (targetPath.startsWith(basePath)) {
                         return true;
                     }
