@@ -34,6 +34,13 @@ public final class StreamableHttpClientTransport implements Transport {
         this.endpoint = endpoint;
     }
 
+    public void setProtocolVersion(String version) {
+        if (version == null || version.isBlank()) {
+            throw new IllegalArgumentException("version required");
+        }
+        this.protocolVersion = version;
+    }
+
     @Override
     public void send(JsonObject message) throws IOException {
         HttpRequest.Builder builder = HttpRequest.newBuilder(endpoint)
@@ -49,10 +56,13 @@ public final class StreamableHttpClientTransport implements Transport {
             Thread.currentThread().interrupt();
             throw new IOException(e);
         }
+
         sessionId = response.headers().firstValue(TransportHeaders.SESSION_ID).orElse(sessionId);
+
         protocolVersion = response.headers()
                 .firstValue(TransportHeaders.PROTOCOL_VERSION)
                 .orElse(protocolVersion);
+
         int status = response.statusCode();
         String ct = response.headers().firstValue("Content-Type").orElse("");
         if (status == 202) {
@@ -131,6 +141,9 @@ public final class StreamableHttpClientTransport implements Transport {
                     }
                 }
             } catch (IOException ignore) {
+            } finally {
+                streams.remove(this);
+                close();
             }
         }
 

@@ -39,6 +39,7 @@ import com.amannmalik.mcp.ping.PingResponse;
 import com.amannmalik.mcp.prompts.PromptsListener;
 import com.amannmalik.mcp.security.RateLimiter;
 import com.amannmalik.mcp.security.SamplingAccessPolicy;
+import com.amannmalik.mcp.transport.StreamableHttpClientTransport;
 import com.amannmalik.mcp.server.logging.LoggingCodec;
 import com.amannmalik.mcp.server.logging.LoggingLevel;
 import com.amannmalik.mcp.server.logging.LoggingListener;
@@ -242,6 +243,9 @@ public final class McpClient implements AutoCloseable {
                 } catch (IOException ignore) {
                 }
                 throw new UnsupportedProtocolVersionException(ir.protocolVersion(), ProtocolLifecycle.SUPPORTED_VERSION);
+            }
+            if (transport instanceof StreamableHttpClientTransport http) {
+                http.setProtocolVersion(ir.protocolVersion());
             }
             serverCapabilities = ir.capabilities().server();
             instructions = ir.instructions();

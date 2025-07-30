@@ -14,6 +14,18 @@ public record ServerConfig(
         if (transport == TransportType.HTTP && port <= 0) {
             throw new IllegalArgumentException("port required for HTTP");
         }
+      
+        if (resourceMetadataUrl != null && !resourceMetadataUrl.isBlank()) {
+            try {
+                var uri = java.net.URI.create(resourceMetadataUrl);
+                if (!uri.isAbsolute() || uri.getFragment() != null) {
+                    throw new IllegalArgumentException("invalid resourceMetadataUrl");
+                }
+            } catch (IllegalArgumentException e) {
+                throw new IllegalArgumentException("invalid resourceMetadataUrl", e);
+            }
+        }
+
         authorizationServers = authorizationServers == null || authorizationServers.isEmpty()
                 ? List.of()
                 : List.copyOf(authorizationServers);

@@ -1,5 +1,9 @@
 package com.amannmalik.mcp.jsonrpc;
 
+import java.util.Arrays;
+import java.util.Map;
+import java.util.stream.Collectors;
+
 public enum JsonRpcErrorCode {
     PARSE_ERROR(-32700),
     INVALID_REQUEST(-32600),
@@ -7,10 +11,16 @@ public enum JsonRpcErrorCode {
     INVALID_PARAMS(-32602),
     INTERNAL_ERROR(-32603);
 
+    private static final Map<Integer, JsonRpcErrorCode> BY_CODE;
     private final int code;
 
     JsonRpcErrorCode(int code) {
         this.code = code;
+    }
+
+    static {
+        BY_CODE = Arrays.stream(values())
+                .collect(Collectors.toUnmodifiableMap(e -> e.code, e -> e));
     }
 
     public int code() {
@@ -18,9 +28,8 @@ public enum JsonRpcErrorCode {
     }
 
     public static JsonRpcErrorCode fromCode(int code) {
-        for (var c : values()) {
-            if (c.code == code) return c;
-        }
-        throw new IllegalArgumentException("Unknown error code: " + code);
+        JsonRpcErrorCode e = BY_CODE.get(code);
+        if (e == null) throw new IllegalArgumentException("Unknown error code: " + code);
+        return e;
     }
 }
