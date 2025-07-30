@@ -44,13 +44,8 @@ public final class StreamableHttpTransport implements Transport {
     private final OriginValidator originValidator;
     private final AuthorizationManager authManager;
     private final String resourceMetadataUrl;
-    private final String metadataPath;
     private final java.util.List<String> authorizationServers;
 
-    private static final JsonObject DEFAULT_RESOURCE_METADATA = Json.createObjectBuilder()
-            .add("authorization_servers", Json.createArrayBuilder()
-                    .add("urn:example:authorization-server"))
-            .build();
 
     private static final String PROTOCOL_HEADER = TransportHeaders.PROTOCOL_VERSION;
     // Default to the previous protocol revision when no version header is
@@ -91,12 +86,6 @@ public final class StreamableHttpTransport implements Transport {
         this.originValidator = validator;
         this.authManager = auth;
         this.resourceMetadataUrl = resourceMetadataUrl;
-        if (resourceMetadataUrl != null) {
-            var uri = java.net.URI.create(resourceMetadataUrl);
-            this.metadataPath = uri.getPath();
-        } else {
-            this.metadataPath = null;
-        }
         this.authorizationServers = authorizationServers == null || authorizationServers.isEmpty()
                 ? java.util.List.of()
                 : java.util.List.copyOf(authorizationServers);
@@ -399,18 +388,6 @@ public final class StreamableHttpTransport implements Transport {
 
         @Override
         protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws IOException {
-            if (metadataPath != null && metadataPath.equals(req.getRequestURI())) {
-                var arr = jakarta.json.Json.createArrayBuilder();
-                for (String s : authorizationServers) arr.add(s);
-                var body = jakarta.json.Json.createObjectBuilder()
-                        .add("authorization_servers", arr.build())
-                        .build();
-                resp.setStatus(HttpServletResponse.SC_OK);
-                resp.setContentType("application/json");
-                resp.setCharacterEncoding("UTF-8");
-                resp.getWriter().write(body.toString());
-                return;
-            }
             Principal principal = null;
             if (authManager != null) {
                 try {
@@ -612,9 +589,15 @@ public final class StreamableHttpTransport implements Transport {
     private class MetadataServlet extends HttpServlet {
         @Override
         protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws IOException {
+            var arr = jakarta.json.Json.createArrayBuilder();
+            for (String s : authorizationServers) arr.add(s);
+            var body = jakarta.json.Json.createObjectBuilder()
+                    .add("authorization_servers", arr.build())
+                    .build();
             resp.setStatus(HttpServletResponse.SC_OK);
             resp.setContentType("application/json");
-            resp.getWriter().write(DEFAULT_RESOURCE_METADATA.toString());
+            resp.setCharacterEncoding("UTF-8");
+            resp.getWriter().write(body.toString());
         }
     }
 
