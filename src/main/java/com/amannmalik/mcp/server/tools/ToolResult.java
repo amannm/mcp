@@ -1,6 +1,6 @@
 package com.amannmalik.mcp.server.tools;
 
-import com.amannmalik.mcp.server.resources.Audience;
+import com.amannmalik.mcp.prompts.Role;
 import com.amannmalik.mcp.server.resources.Resource;
 import com.amannmalik.mcp.server.resources.ResourceAnnotations;
 import com.amannmalik.mcp.server.resources.ResourceBlock;
@@ -145,11 +145,11 @@ public record ToolResult(JsonArray content,
 
     private static ResourceAnnotations toAnnotations(JsonObject obj) {
         if (obj == null) return null;
-        Set<Audience> audience = EnumSet.noneOf(Audience.class);
+        Set<Role> audience = EnumSet.noneOf(Role.class);
         JsonArray arr = obj.getJsonArray("audience");
         if (arr != null) {
             arr.getValuesAs(JsonString.class)
-                    .forEach(js -> audience.add(Audience.valueOf(js.getString().toUpperCase())));
+                    .forEach(js -> audience.add(Role.valueOf(js.getString().toUpperCase())));
         }
         Double priority = obj.containsKey("priority") ? obj.getJsonNumber("priority").doubleValue() : null;
         Instant lastModified = null;
