@@ -924,7 +924,7 @@ public final class McpServer implements AutoCloseable {
 
     private static ResourceProvider createDefaultResources() {
         Resource r = new Resource("test://example", "example", null, null, "text/plain", 5L, null, null);
-        ResourceBlock.Text block = new ResourceBlock.Text("test://example", "example", null, "text/plain", "hello", null, null);
+        ResourceBlock.Text block = new ResourceBlock.Text("test://example", "text/plain", "hello", null, null);
         ResourceTemplate t = new ResourceTemplate("test://template", "example_template", null, null, "text/plain", null, null);
         return new InMemoryResourceProvider(List.of(r), Map.of(r.uri(), block), List.of(t));
     }

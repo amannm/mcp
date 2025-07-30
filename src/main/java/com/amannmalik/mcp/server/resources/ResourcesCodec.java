@@ -67,11 +67,8 @@ public final class ResourcesCodec {
 
     public static JsonObject toJsonObject(ResourceBlock block) {
         JsonObjectBuilder b = Json.createObjectBuilder()
-                .add("uri", block.uri())
-                .add("name", block.name());
-        if (block.title() != null) b.add("title", block.title());
+                .add("uri", block.uri());
         if (block.mimeType() != null) b.add("mimeType", block.mimeType());
-        if (block.annotations() != null) b.add("annotations", toJsonObject(block.annotations()));
         if (block._meta() != null) b.add("_meta", block._meta());
         switch (block) {
             case ResourceBlock.Text t -> b.add("text", t.text());
@@ -82,8 +79,6 @@ public final class ResourcesCodec {
 
     public static ResourceBlock toResourceBlock(JsonObject obj) {
         String uri = obj.getString("uri");
-        String name = obj.getString("name");
-        String title = obj.getString("title", null);
         String mime = obj.getString("mimeType", null);
         ResourceAnnotations ann = obj.containsKey("annotations") ? toAnnotations(obj.getJsonObject("annotations")) : null;
         JsonObject meta = obj.containsKey("_meta") ? obj.getJsonObject("_meta") : null;
@@ -93,10 +88,10 @@ public final class ResourcesCodec {
             throw new IllegalArgumentException("exactly one of text or blob must be present");
         }
         if (hasText) {
-            return new ResourceBlock.Text(uri, name, title, mime, obj.getString("text"), ann, meta);
+            return new ResourceBlock.Text(uri, mime, obj.getString("text"), ann, meta);
         }
         byte[] data = Base64.getDecoder().decode(obj.getString("blob"));
-        return new ResourceBlock.Binary(uri, name, title, mime, data, ann, meta);
+        return new ResourceBlock.Binary(uri, mime, data, ann, meta);
     }
 
     public static JsonObject toJsonObject(ResourceAnnotations ann) {
