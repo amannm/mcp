@@ -2,6 +2,9 @@ package com.amannmalik.mcp.server.resources;
 
 import com.amannmalik.mcp.annotations.Annotations;
 import com.amannmalik.mcp.prompts.Role;
+import com.amannmalik.mcp.util.PaginatedRequest;
+import com.amannmalik.mcp.util.PaginatedResult;
+import com.amannmalik.mcp.util.PaginationCodec;
 import jakarta.json.Json;
 import jakarta.json.JsonObject;
 import jakarta.json.JsonObjectBuilder;
@@ -71,6 +74,7 @@ public final class ResourcesCodec {
         JsonObjectBuilder b = Json.createObjectBuilder()
                 .add("uri", block.uri());
         if (block.mimeType() != null) b.add("mimeType", block.mimeType());
+        if (block.annotations() != null) b.add("annotations", toJsonObject(block.annotations()));
         if (block._meta() != null) b.add("_meta", block._meta());
         switch (block) {
             case ResourceBlock.Text t -> b.add("text", t.text());
@@ -85,10 +89,7 @@ public final class ResourcesCodec {
         if (uri == null) throw new IllegalArgumentException("uri required");
         String mime = obj.getString("mimeType", null);
         JsonObject meta = obj.containsKey("_meta") ? obj.getJsonObject("_meta") : null;
-
-        if (obj.containsKey("annotations")) {
-            throw new IllegalArgumentException("annotations not allowed");
-        }
+        Annotations ann = obj.containsKey("annotations") ? toAnnotations(obj.getJsonObject("annotations")) : null;
 
         boolean hasText = obj.containsKey("text");
         boolean hasBlob = obj.containsKey("blob");
@@ -97,17 +98,17 @@ public final class ResourcesCodec {
         }
 
         for (String key : obj.keySet()) {
-            if (!Set.of("uri", "mimeType", "_meta", "text", "blob").contains(key)) {
+            if (!Set.of("uri", "mimeType", "_meta", "annotations", "text", "blob").contains(key)) {
                 throw new IllegalArgumentException("unexpected field: " + key);
             }
         }
 
         if (hasText) {
-            return new ResourceBlock.Text(uri, mime, obj.getString("text"), null, meta);
+            return new ResourceBlock.Text(uri, mime, obj.getString("text"), ann, meta);
         }
 
         byte[] data = Base64.getDecoder().decode(obj.getString("blob"));
-        return new ResourceBlock.Binary(uri, mime, data, null, meta);
+        return new ResourceBlock.Binary(uri, mime, data, ann, meta);
     }
 
     public static JsonObject toJsonObject(Annotations ann) {
@@ -156,9 +157,10 @@ public final class ResourcesCodec {
 
     public static JsonObject toJsonObject(ResourceUpdatedNotification n) {
         if (n == null) throw new IllegalArgumentException("notification required");
-        return Json.createObjectBuilder()
-                .add("uri", n.uri())
-                .build();
+        JsonObjectBuilder b = Json.createObjectBuilder()
+                .add("uri", n.uri());
+        if (n.title() != null) b.add("title", n.title());
+        return b.build();
     }
 
     public static JsonObject toJsonObject(SubscribeRequest req) {
@@ -220,10 +222,12 @@ public final class ResourcesCodec {
         if (obj == null || !obj.containsKey("uri")) {
             throw new IllegalArgumentException("uri required");
         }
-        if (obj.size() != 1) {
-            throw new IllegalArgumentException("unexpected fields");
+        for (String key : obj.keySet()) {
+            if (!Set.of("uri", "title").contains(key)) {
+                throw new IllegalArgumentException("unexpected field: " + key);
+            }
         }
-        return new ResourceUpdatedNotification(obj.getString("uri"));
+        return new ResourceUpdatedNotification(obj.getString("uri"), obj.getString("title", null));
     }
 
 
@@ -232,7 +236,8 @@ public final class ResourcesCodec {
         var arr = Json.createArrayBuilder();
         result.resources().forEach(r -> arr.add(toJsonObject(r)));
         JsonObjectBuilder b = Json.createObjectBuilder().add("resources", arr.build());
-        if (result.nextCursor() != null) b.add("nextCursor", result.nextCursor());
+        PaginationCodec.toJsonObject(new PaginatedResult(result.nextCursor()))
+                .forEach(b::add);
         return b.build();
     }
 
@@ -242,30 +247,28 @@ public final class ResourcesCodec {
         if (arr == null) throw new IllegalArgumentException("resources required");
         java.util.List<Resource> resources = new java.util.ArrayList<>();
         arr.forEach(v -> resources.add(toResource(v.asJsonObject())));
-        return new ListResourcesResult(resources, obj.getString("nextCursor", null));
+        String cursor = PaginationCodec.toPaginatedResult(obj).nextCursor();
+        return new ListResourcesResult(resources, cursor);
     }
 
     public static JsonObject toJsonObject(ListResourcesRequest req) {
         if (req == null) throw new IllegalArgumentException("request required");
-        JsonObjectBuilder b = Json.createObjectBuilder();
-        if (req.cursor() != null) b.add("cursor", req.cursor());
-        return b.build();
+        return PaginationCodec.toJsonObject(new PaginatedRequest(req.cursor()));
     }
 
     public static ListResourcesRequest toListResourcesRequest(JsonObject obj) {
-        String cursor = obj == null ? null : obj.getString("cursor", null);
+        String cursor = PaginationCodec.toPaginatedRequest(obj).cursor();
         return new ListResourcesRequest(cursor);
     }
 
     public static JsonObject toJsonObject(ListResourceTemplatesRequest req) {
         if (req == null) throw new IllegalArgumentException("request required");
-        JsonObjectBuilder b = Json.createObjectBuilder();
-        if (req.cursor() != null) b.add("cursor", req.cursor());
-        return b.build();
+        return PaginationCodec.toJsonObject(new PaginatedRequest(req.cursor()));
     }
 
     public static ListResourceTemplatesRequest toListResourceTemplatesRequest(JsonObject obj) {
-        return new ListResourceTemplatesRequest(obj.getString("cursor", null));
+        String cursor = PaginationCodec.toPaginatedRequest(obj).cursor();
+        return new ListResourceTemplatesRequest(cursor);
     }
 
     public static JsonObject toJsonObject(ListResourceTemplatesResult result) {
@@ -273,7 +276,8 @@ public final class ResourcesCodec {
         var arr = Json.createArrayBuilder();
         result.resourceTemplates().forEach(t -> arr.add(toJsonObject(t)));
         JsonObjectBuilder b = Json.createObjectBuilder().add("resourceTemplates", arr.build());
-        if (result.nextCursor() != null) b.add("nextCursor", result.nextCursor());
+        PaginationCodec.toJsonObject(new PaginatedResult(result.nextCursor()))
+                .forEach(b::add);
         return b.build();
     }
 
@@ -283,6 +287,7 @@ public final class ResourcesCodec {
         if (arr == null) throw new IllegalArgumentException("resourceTemplates required");
         java.util.List<ResourceTemplate> templates = new java.util.ArrayList<>();
         arr.forEach(v -> templates.add(toResourceTemplate(v.asJsonObject())));
-        return new ListResourceTemplatesResult(templates, obj.getString("nextCursor", null));
+        String cursor = PaginationCodec.toPaginatedResult(obj).nextCursor();
+        return new ListResourceTemplatesResult(templates, cursor);
     }
 }

@@ -79,6 +79,8 @@ import com.amannmalik.mcp.server.resources.ResourceUpdatedNotification;
 import com.amannmalik.mcp.server.resources.ResourcesCodec;
 import com.amannmalik.mcp.server.resources.SubscribeRequest;
 import com.amannmalik.mcp.server.resources.UnsubscribeRequest;
+import com.amannmalik.mcp.server.resources.ReadResourceRequest;
+import com.amannmalik.mcp.server.resources.ReadResourceResult;
 import com.amannmalik.mcp.server.tools.CallToolRequest;
 import com.amannmalik.mcp.server.tools.InMemoryToolProvider;
 import com.amannmalik.mcp.server.tools.ListToolsRequest;
@@ -99,7 +101,6 @@ import com.amannmalik.mcp.util.ProgressTracker;
 import com.amannmalik.mcp.validation.InputSanitizer;
 import com.amannmalik.mcp.validation.MetaValidator;
 import com.amannmalik.mcp.validation.SchemaValidator;
-import com.amannmalik.mcp.validation.UriValidator;
 import jakarta.json.Json;
 import jakarta.json.JsonObject;
 import jakarta.json.JsonValue;
@@ -548,18 +549,14 @@ public final class McpServer implements AutoCloseable {
 
     private JsonRpcMessage readResource(JsonRpcRequest req) {
         requireServerCapability(ServerCapability.RESOURCES);
-        JsonObject params = req.params();
-        if (params == null || !params.containsKey("uri")) {
-            return new JsonRpcError(req.id(), new JsonRpcError.ErrorDetail(
-                    JsonRpcErrorCode.INVALID_PARAMS.code(), "uri required", null));
-        }
-        String uri = params.getString("uri");
+        ReadResourceRequest rrr;
         try {
-            uri = UriValidator.requireAbsolute(uri);
+            rrr = ResourcesCodec.toReadResourceRequest(req.params());
         } catch (IllegalArgumentException e) {
             return new JsonRpcError(req.id(), new JsonRpcError.ErrorDetail(
                     JsonRpcErrorCode.INVALID_PARAMS.code(), e.getMessage(), null));
         }
+        String uri = rrr.uri();
         ResourceBlock block = resources.read(uri);
         if (block == null) {
             return new JsonRpcError(req.id(), new JsonRpcError.ErrorDetail(
@@ -569,10 +566,8 @@ public final class McpServer implements AutoCloseable {
             return new JsonRpcError(req.id(), new JsonRpcError.ErrorDetail(
                     JsonRpcErrorCode.INTERNAL_ERROR.code(), "Access denied", null));
         }
-        JsonObject result = Json.createObjectBuilder()
-                .add("contents", Json.createArrayBuilder().add(ResourcesCodec.toJsonObject(block)).build())
-                .build();
-        return new JsonRpcResponse(req.id(), result);
+        ReadResourceResult result = new ReadResourceResult(java.util.List.of(block));
+        return new JsonRpcResponse(req.id(), ResourcesCodec.toJsonObject(result));
     }
 
     private JsonRpcMessage listTemplates(JsonRpcRequest req) {
@@ -637,7 +632,7 @@ public final class McpServer implements AutoCloseable {
         try {
             ResourceSubscription sub = resources.subscribe(uri, update -> {
                 try {
-                    ResourceUpdatedNotification n = new ResourceUpdatedNotification(update.uri());
+                    ResourceUpdatedNotification n = new ResourceUpdatedNotification(update.uri(), update.title());
                     send(new JsonRpcNotification(
                             "notifications/resources/updated",
                             ResourcesCodec.toJsonObject(n)));

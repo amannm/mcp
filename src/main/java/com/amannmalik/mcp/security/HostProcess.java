@@ -10,6 +10,9 @@ import com.amannmalik.mcp.prompts.Role;
 import com.amannmalik.mcp.server.tools.ListToolsResult;
 import com.amannmalik.mcp.server.tools.ToolCodec;
 import com.amannmalik.mcp.server.tools.ToolResult;
+import com.amannmalik.mcp.util.PaginatedRequest;
+import com.amannmalik.mcp.util.PaginationCodec;
+
 import jakarta.json.Json;
 import jakarta.json.JsonObject;
 
@@ -132,9 +135,7 @@ public final class HostProcess implements AutoCloseable {
         McpClient client = clients.get(clientId);
         if (client == null) throw new IllegalArgumentException("Unknown client: " + clientId);
         requireCapability(client, java.util.Optional.of(ServerCapability.TOOLS));
-        JsonObject params = cursor == null
-                ? Json.createObjectBuilder().build()
-                : Json.createObjectBuilder().add("cursor", cursor).build();
+        JsonObject params = PaginationCodec.toJsonObject(new PaginatedRequest(cursor));
         JsonRpcMessage resp = client.request("tools/list", params);
         if (resp instanceof JsonRpcResponse r) return ToolCodec.toListToolsResult(r.result());
         if (resp instanceof JsonRpcError err) throw new IOException(err.error().message());
