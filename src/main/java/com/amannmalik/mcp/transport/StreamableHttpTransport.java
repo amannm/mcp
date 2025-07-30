@@ -268,14 +268,11 @@ public final class StreamableHttpTransport implements Transport {
             } else if (authManager != null && sessionPrincipal.get() != null && !sessionPrincipal.get().id().equals(principal.id())) {
                 resp.sendError(HttpServletResponse.SC_FORBIDDEN);
                 return;
-            } else if (session != null) {
+            } else {
                 if (!initializing && (version == null || !version.equals(protocolVersion))) {
                     resp.sendError(HttpServletResponse.SC_BAD_REQUEST);
                     return;
                 }
-            } else if (version != null && !version.equals(protocolVersion)) {
-                resp.sendError(HttpServletResponse.SC_BAD_REQUEST);
-                return;
             }
 
             boolean hasMethod = obj.containsKey("method");
@@ -447,12 +444,7 @@ public final class StreamableHttpTransport implements Transport {
                 return;
             }
 
-            if (session != null) {
-                if (version == null || !version.equals(protocolVersion)) {
-                    resp.sendError(HttpServletResponse.SC_BAD_REQUEST);
-                    return;
-                }
-            } else if (version != null && !version.equals(protocolVersion)) {
+            if (version == null || !version.equals(protocolVersion)) {
                 resp.sendError(HttpServletResponse.SC_BAD_REQUEST);
                 return;
             }
