@@ -19,6 +19,10 @@ import com.amannmalik.mcp.lifecycle.ServerCapability;
 import com.amannmalik.mcp.prompts.Role;
 import com.amannmalik.mcp.transport.StdioTransport;
 import com.amannmalik.mcp.util.ProgressNotification;
+import com.amannmalik.mcp.server.logging.LoggingMessageNotification;
+import com.amannmalik.mcp.util.CancelledNotification;
+import com.amannmalik.mcp.util.CancellationCodec;
+import com.amannmalik.mcp.jsonrpc.RequestId;
 import io.cucumber.java.After;
 import io.cucumber.java.Before;
 import io.cucumber.java.en.Given;
@@ -43,6 +47,7 @@ public final class McpConformanceSteps {
     private McpClient client;
     private JsonRpcMessage lastMessage;
     private final List<ProgressNotification> progressEvents = new CopyOnWriteArrayList<>();
+    private final List<LoggingMessageNotification> logEvents = new CopyOnWriteArrayList<>();
 
     @Before
     public void startServer() throws Exception {
@@ -87,6 +92,7 @@ public final class McpConformanceSteps {
                 elicitation
         );
         client.setProgressListener(progressEvents::add);
+        client.setLoggingListener(logEvents::add);
         client.connect();
     }
 
@@ -282,6 +288,62 @@ public final class McpConformanceSteps {
     @When("the client calls an unknown tool")
     public void callUnknownTool() throws Exception {
         lastMessage = client.request("tools/call", Json.createObjectBuilder().add("name", "nope").build());
+    }
+
+    @When("the client calls an unknown method")
+    public void callUnknownMethod() throws Exception {
+        lastMessage = client.request("bogus/method", Json.createObjectBuilder().build());
+    }
+
+    @When("the client subscribes to {string}")
+    public void subscribeResource(String uri) throws Exception {
+        lastMessage = client.request("resources/subscribe", Json.createObjectBuilder().add("uri", uri).build());
+    }
+
+    @When("the client unsubscribes from {string}")
+    public void unsubscribeResource(String uri) throws Exception {
+        lastMessage = client.request("resources/unsubscribe", Json.createObjectBuilder().add("uri", uri).build());
+    }
+
+    @When("the client requests an invalid completion")
+    public void requestInvalidCompletion() throws Exception {
+        lastMessage = client.request("completion/complete", Json.createObjectBuilder()
+                .add("ref", Json.createObjectBuilder()
+                        .add("type", "ref/prompt")
+                        .add("name", "bad")
+                        .build())
+                .add("argument", Json.createObjectBuilder()
+                        .add("name", "test_arg")
+                        .add("value", "")
+                        .build())
+                .build());
+    }
+
+    @When("the client sends a cancellation notification")
+    public void sendCancellation() throws Exception {
+        CancelledNotification note = new CancelledNotification(new RequestId.NumericId(999), "test");
+        client.notify("notifications/cancelled", CancellationCodec.toJsonObject(note));
+    }
+
+    @When("the client lists resources with an invalid progress token")
+    public void listResourcesInvalidProgress() throws Exception {
+        JsonObject meta = Json.createObjectBuilder()
+                .add("progressToken", Json.createObjectBuilder().build())
+                .build();
+        JsonObject params = Json.createObjectBuilder()
+                .add("_meta", meta)
+                .build();
+        lastMessage = client.request("resources/list", params);
+    }
+
+    @Then("a log message with level {string} is received")
+    public void verifyLogMessage(String level) throws Exception {
+        long end = System.currentTimeMillis() + 500;
+        while (System.currentTimeMillis() < end &&
+                logEvents.stream().noneMatch(l -> l.level().name().equalsIgnoreCase(level))) {
+            Thread.sleep(10);
+        }
+        assertTrue(logEvents.stream().anyMatch(l -> l.level().name().equalsIgnoreCase(level)));
     }
 
     @When("the client disconnects")
