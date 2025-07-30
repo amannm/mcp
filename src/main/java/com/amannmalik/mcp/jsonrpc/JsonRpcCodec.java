@@ -46,6 +46,7 @@ public final class JsonRpcCodec {
         switch (id) {
             case RequestId.StringId s -> builder.add("id", s.value());
             case RequestId.NumericId n -> builder.add("id", n.value());
+            case RequestId.NullId ignored -> builder.add("id", JsonValue.NULL);
         }
     }
 
@@ -76,8 +77,11 @@ public final class JsonRpcCodec {
             return new JsonRpcResponse(toId(idValue), obj.getJsonObject("result"));
         }
         if (hasError) {
+            RequestId id;
             if (idValue == null || idValue.getValueType() == JsonValue.ValueType.NULL) {
-                throw new IllegalArgumentException("id is required for error");
+                id = new RequestId.NullId();
+            } else {
+                id = toId(idValue);
             }
             var errObj = obj.getJsonObject("error");
             var detail = new JsonRpcError.ErrorDetail(
@@ -85,7 +89,7 @@ public final class JsonRpcCodec {
                     errObj.getString("message"),
                     errObj.get("data")
             );
-            return new JsonRpcError(toId(idValue), detail);
+            return new JsonRpcError(id, detail);
         }
         throw new IllegalArgumentException("Unknown message type");
     }

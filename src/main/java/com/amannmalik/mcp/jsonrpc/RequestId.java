@@ -1,6 +1,6 @@
 package com.amannmalik.mcp.jsonrpc;
 
-public sealed interface RequestId permits RequestId.StringId, RequestId.NumericId {
+public sealed interface RequestId permits RequestId.StringId, RequestId.NumericId, RequestId.NullId {
 
     static RequestId parse(String raw) {
         if (raw == null) throw new IllegalArgumentException("raw required");
@@ -26,6 +26,14 @@ public sealed interface RequestId permits RequestId.StringId, RequestId.NumericI
         @Override
         public String toString() {
             return Long.toString(value);
+        }
+    }
+
+    /** Represents a missing ID for error responses. */
+    final class NullId implements RequestId {
+        @Override
+        public String toString() {
+            return "null";
         }
     }
 }

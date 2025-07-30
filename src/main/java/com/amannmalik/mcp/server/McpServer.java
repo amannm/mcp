@@ -298,6 +298,11 @@ public final class McpServer implements AutoCloseable {
             } catch (JsonParsingException e) {
                 System.err.println("Parse error: " + e.getMessage());
                 sendLog(LoggingLevel.ERROR, "parser", Json.createValue(e.getMessage()));
+                try {
+                    send(JsonRpcError.of(new RequestId.NullId(), JsonRpcErrorCode.PARSE_ERROR, e.getMessage()));
+                } catch (IOException ioe) {
+                    System.err.println("Failed to send error: " + ioe.getMessage());
+                }
                 continue;
             }
 
@@ -320,6 +325,11 @@ public final class McpServer implements AutoCloseable {
             } catch (IllegalArgumentException e) {
                 System.err.println("Invalid request: " + e.getMessage());
                 sendLog(LoggingLevel.WARNING, "server", Json.createValue(e.getMessage()));
+                try {
+                    send(JsonRpcError.of(new RequestId.NullId(), JsonRpcErrorCode.INVALID_REQUEST, e.getMessage()));
+                } catch (IOException ioe) {
+                    System.err.println("Failed to send error: " + ioe.getMessage());
+                }
             } catch (IOException e) {
                 System.err.println("Error processing message: " + e.getMessage());
                 sendLog(LoggingLevel.ERROR, "server", Json.createValue(e.getMessage()));
