@@ -1,6 +1,9 @@
 package com.amannmalik.mcp;
 
+import java.util.Arrays;
+import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 /**
  * JSON-RPC notification method names used by the protocol.
@@ -16,10 +19,16 @@ public enum NotificationMethod {
     MESSAGE("notifications/message"),
     ROOTS_LIST_CHANGED("notifications/roots/list_changed");
 
+    private static final Map<String, NotificationMethod> BY_METHOD;
     private final String method;
 
     NotificationMethod(String method) {
         this.method = method;
+    }
+
+    static {
+        BY_METHOD = Arrays.stream(values())
+                .collect(Collectors.toUnmodifiableMap(m -> m.method, m -> m));
     }
 
     /**
@@ -33,12 +42,8 @@ public enum NotificationMethod {
      * Parses a method string into a notification method.
      */
     public static Optional<NotificationMethod> from(String method) {
-        for (NotificationMethod m : values()) {
-            if (m.method.equals(method)) {
-                return Optional.of(m);
-            }
-        }
-        return Optional.empty();
+        if (method == null) return Optional.empty();
+        return Optional.ofNullable(BY_METHOD.get(method));
     }
 }
 
