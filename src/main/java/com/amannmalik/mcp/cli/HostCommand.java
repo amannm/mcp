@@ -178,6 +178,14 @@ public final class HostCommand implements Callable<Integer> {
                             System.out.println(host.callTool(parts[1], parts[2], args));
                         }
                     }
+                    case "create-message" -> {
+                        if (parts.length < 3) {
+                            System.out.println("Usage: create-message <client-id> <json-params>");
+                        } else {
+                            var params = jakarta.json.Json.createReader(new java.io.StringReader(parts[2])).readObject();
+                            System.out.println(host.createMessage(parts[1], params));
+                        }
+                    }
                     case "allow-audience" -> {
                         if (parts.length != 2) {
                             System.out.println("Usage: allow-audience <audience>");
@@ -249,6 +257,7 @@ public final class HostCommand implements Callable<Integer> {
                   revoke-audience <audience>        - Revoke audience access
                   list-tools <client-id> [cursor]  - List tools from client
                   call-tool <client-id> <tool> [args] - Call tool (args as JSON)
+                  create-message <client-id> <params> - Request sampling
                   request <client-id> <method> [params] - Send request to client
                   notify <client-id> <method> [params]  - Send notification to client
                   quit                              - Exit interactive mode
