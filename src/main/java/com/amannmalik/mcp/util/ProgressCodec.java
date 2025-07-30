@@ -35,13 +35,7 @@ public final class ProgressCodec {
     private static ProgressToken toToken(JsonValue value) {
         return switch (value.getValueType()) {
             case STRING -> new ProgressToken.StringToken(InputSanitizer.requireClean(((JsonString) value).getString()));
-            case NUMBER -> {
-                JsonNumber n = (JsonNumber) value;
-                if (!n.isIntegral()) {
-                    throw new IllegalArgumentException("progressToken must be an integer");
-                }
-                yield new ProgressToken.NumericToken(n.longValue());
-            }
+            case NUMBER -> new ProgressToken.NumericToken(((JsonNumber) value).doubleValue());
             default -> throw new IllegalArgumentException("Invalid token type");
         };
     }
