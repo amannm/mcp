@@ -53,6 +53,7 @@ import com.amannmalik.mcp.util.ProgressNotification;
 import com.amannmalik.mcp.util.ProgressToken;
 import com.amannmalik.mcp.util.ProgressTracker;
 import com.amannmalik.mcp.validation.MetaValidator;
+import com.amannmalik.mcp.validation.InputSanitizer;
 import com.amannmalik.mcp.validation.SchemaValidator;
 import jakarta.json.JsonObject;
 
@@ -624,7 +625,9 @@ public final class McpClient implements AutoCloseable {
         if (!meta.containsKey("progressToken")) return null;
         var val = meta.get("progressToken");
         return switch (val.getValueType()) {
-            case STRING -> new ProgressToken.StringToken(meta.getString("progressToken"));
+            case STRING -> new ProgressToken.StringToken(
+                    InputSanitizer.requireClean(meta.getString("progressToken"))
+            );
             case NUMBER -> new ProgressToken.NumericToken(meta.getJsonNumber("progressToken").longValue());
             default -> throw new IllegalArgumentException("progressToken must be a string or number");
         };
