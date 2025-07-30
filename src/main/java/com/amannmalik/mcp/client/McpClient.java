@@ -7,6 +7,7 @@ import com.amannmalik.mcp.client.elicitation.ElicitResult;
 import com.amannmalik.mcp.client.elicitation.ElicitationAction;
 import com.amannmalik.mcp.client.elicitation.ElicitationProvider;
 import com.amannmalik.mcp.client.roots.RootsCodec;
+import com.amannmalik.mcp.client.roots.RootsListChangedNotification;
 import com.amannmalik.mcp.client.roots.RootsProvider;
 import com.amannmalik.mcp.client.roots.RootsSubscription;
 import com.amannmalik.mcp.client.sampling.CreateMessageRequest;
@@ -258,7 +259,8 @@ public final class McpClient implements AutoCloseable {
             try {
                 rootsSubscription = roots.subscribe(() -> {
                     try {
-                        notify(NotificationMethod.ROOTS_LIST_CHANGED, null);
+                        notify(NotificationMethod.ROOTS_LIST_CHANGED,
+                                RootsCodec.toJsonObject(new RootsListChangedNotification()));
                     } catch (IOException ignore) {
                     }
                 });
