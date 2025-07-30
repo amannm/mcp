@@ -331,41 +331,9 @@ public final class McpClient implements AutoCloseable {
     }
 
     public PingResponse ping(long timeoutMillis) throws IOException {
-        if (!connected) throw new IllegalStateException("not connected");
-        RequestId reqId = new RequestId.NumericId(id.getAndIncrement());
-        CompletableFuture<JsonRpcMessage> future = new CompletableFuture<>();
-        pending.put(reqId, future);
-        try {
-            transport.send(JsonRpcCodec.toJsonObject(PingCodec.toRequest(reqId)));
-        } catch (IOException e) {
-            pending.remove(reqId);
-            throw e;
-        }
-        JsonRpcMessage msg;
-        try {
-            msg = future.get(timeoutMillis, TimeUnit.MILLISECONDS);
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            throw new IOException(e);
-        } catch (TimeoutException e) {
-            try {
-                notify(NotificationMethod.CANCELLED.method(), CancellationCodec.toJsonObject(new CancelledNotification(reqId, "timeout")));
-            } catch (IOException ignore) {
-            }
-            throw new IOException("Request timed out after " + timeoutMillis + " ms");
-        } catch (ExecutionException e) {
-            Throwable cause = e.getCause();
-            if (cause instanceof IOException io) throw io;
-            throw new IOException(cause);
-        } finally {
-            pending.remove(reqId);
-        }
-        if (msg instanceof JsonRpcResponse resp) {
-            return PingCodec.toPingResponse(resp);
-        }
-        if (msg instanceof JsonRpcError err) {
-            throw new IOException(err.error().message());
-        }
+        JsonRpcMessage msg = request("ping", null, timeoutMillis);
+        if (msg instanceof JsonRpcResponse resp) return PingCodec.toPingResponse(resp);
+        if (msg instanceof JsonRpcError err) throw new IOException(err.error().message());
         throw new IOException("Unexpected message type: " + msg.getClass().getSimpleName());
     }
 
