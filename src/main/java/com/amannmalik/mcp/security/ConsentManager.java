@@ -2,28 +2,23 @@ package com.amannmalik.mcp.security;
 
 import com.amannmalik.mcp.auth.Principal;
 
-import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
+
 
 public final class ConsentManager {
-    private final Map<String, Set<String>> consents = new ConcurrentHashMap<>();
+    private final PrincipalPermissions<String> consents = new PrincipalPermissions<>();
 
     public void grant(String principalId, String scope) {
-        consents.computeIfAbsent(principalId, k -> ConcurrentHashMap.newKeySet())
-                .add(scope);
+        consents.grant(principalId, scope);
     }
 
     public void revoke(String principalId, String scope) {
-        var set = consents.get(principalId);
-        if (set != null) set.remove(scope);
+        consents.revoke(principalId, scope);
     }
 
     public void requireConsent(Principal principal, String scope) {
         if (principal == null) throw new IllegalArgumentException("principal required");
         if (scope == null || scope.isBlank()) throw new IllegalArgumentException("scope required");
-        var set = consents.get(principal.id());
-        if (set == null || !set.contains(scope)) {
+        if (!consents.contains(principal.id(), scope)) {
             throw new SecurityException("User consent required: " + scope);
         }
     }
