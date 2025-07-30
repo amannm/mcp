@@ -1,6 +1,5 @@
 package com.amannmalik.mcp.ping;
 
-import com.amannmalik.mcp.RequestMethod;
 import com.amannmalik.mcp.jsonrpc.JsonRpcRequest;
 import com.amannmalik.mcp.jsonrpc.JsonRpcResponse;
 import com.amannmalik.mcp.jsonrpc.RequestId;
@@ -9,12 +8,6 @@ import jakarta.json.JsonValue;
 public final class PingCodec {
     private PingCodec() {
     }
-
-    public static JsonRpcRequest toRequest(RequestId id) {
-        if (id == null) throw new IllegalArgumentException("id required");
-        return new JsonRpcRequest(id, RequestMethod.PING.method(), null);
-    }
-
     public static PingRequest toPingRequest(JsonRpcRequest req) {
         if (req == null) throw new IllegalArgumentException("request required");
         if (req.params() != null && !req.params().isEmpty()) {
