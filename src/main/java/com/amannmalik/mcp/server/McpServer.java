@@ -86,6 +86,7 @@ import com.amannmalik.mcp.server.tools.InMemoryToolProvider;
 import com.amannmalik.mcp.server.tools.ListToolsRequest;
 import com.amannmalik.mcp.server.tools.Tool;
 import com.amannmalik.mcp.server.tools.ToolCodec;
+import com.amannmalik.mcp.server.tools.ToolListChangedNotification;
 import com.amannmalik.mcp.server.tools.ToolListSubscription;
 import com.amannmalik.mcp.server.tools.ToolPage;
 import com.amannmalik.mcp.server.tools.ToolProvider;
@@ -214,7 +215,9 @@ public final class McpServer implements AutoCloseable {
             try {
                 toolListSubscription = tools.subscribeList(() -> {
                     try {
-                        send(new JsonRpcNotification("notifications/tools/list_changed", null));
+                        send(new JsonRpcNotification(
+                                "notifications/tools/list_changed",
+                                ToolCodec.toJsonObject(new ToolListChangedNotification())));
                     } catch (IOException ignore) {
                     }
                 });

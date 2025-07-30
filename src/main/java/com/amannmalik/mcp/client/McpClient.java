@@ -43,6 +43,7 @@ import com.amannmalik.mcp.server.logging.LoggingListener;
 import com.amannmalik.mcp.server.logging.SetLevelRequest;
 import com.amannmalik.mcp.server.resources.ResourceListListener;
 import com.amannmalik.mcp.server.tools.ToolListListener;
+import com.amannmalik.mcp.server.tools.ToolCodec;
 import com.amannmalik.mcp.transport.Transport;
 import com.amannmalik.mcp.util.CancellationCodec;
 import com.amannmalik.mcp.util.CancellationTracker;
@@ -687,7 +688,11 @@ public final class McpClient implements AutoCloseable {
                 resourceListListener.listChanged();
             }
             case "notifications/tools/list_changed" -> {
-                toolListListener.listChanged();
+                try {
+                    ToolCodec.toToolListChangedNotification(note.params());
+                    toolListListener.listChanged();
+                } catch (IllegalArgumentException ignore) {
+                }
             }
             case "notifications/prompts/list_changed" -> {
                 promptsListener.listChanged();
