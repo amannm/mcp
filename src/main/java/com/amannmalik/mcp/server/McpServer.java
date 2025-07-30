@@ -34,6 +34,7 @@ import com.amannmalik.mcp.lifecycle.ServerInfo;
 import com.amannmalik.mcp.lifecycle.UnsupportedProtocolVersionException;
 import com.amannmalik.mcp.ping.PingCodec;
 import com.amannmalik.mcp.ping.PingRequest;
+import com.amannmalik.mcp.prompts.GetPromptRequest;
 import com.amannmalik.mcp.prompts.InMemoryPromptProvider;
 import com.amannmalik.mcp.prompts.Prompt;
 import com.amannmalik.mcp.prompts.PromptArgument;
@@ -745,29 +746,15 @@ public final class McpServer implements AutoCloseable {
 
     private JsonRpcMessage getPrompt(JsonRpcRequest req) {
         requireServerCapability(ServerCapability.PROMPTS);
-        JsonObject params = req.params();
-        String name = params.getString("name", null);
-        if (name == null) {
-            return new JsonRpcError(req.id(), new JsonRpcError.ErrorDetail(
-                    JsonRpcErrorCode.INVALID_PARAMS.code(),
-                    "name is required", null));
-        }
+        GetPromptRequest getRequest;
         try {
-            name = InputSanitizer.requireClean(name);
-        } catch (IllegalArgumentException e) {
-            return new JsonRpcError(req.id(), new JsonRpcError.ErrorDetail(
-                    JsonRpcErrorCode.INVALID_PARAMS.code(), e.getMessage(), null));
-        }
-
-        Map<String, String> args;
-        try {
-            args = PromptCodec.toArguments(params.getJsonObject("arguments"));
+            getRequest = PromptCodec.toGetPromptRequest(req.params());
         } catch (IllegalArgumentException e) {
             return new JsonRpcError(req.id(), new JsonRpcError.ErrorDetail(
                     JsonRpcErrorCode.INVALID_PARAMS.code(), e.getMessage(), null));
         }
         try {
-            PromptInstance inst = prompts.get(name, args);
+            PromptInstance inst = prompts.get(getRequest.name(), getRequest.arguments());
             JsonObject result = PromptCodec.toJsonObject(inst);
             return new JsonRpcResponse(req.id(), result);
         } catch (IllegalArgumentException e) {

@@ -113,6 +113,15 @@ public final class PromptCodec {
         return b.build();
     }
 
+    public static GetPromptRequest toGetPromptRequest(JsonObject obj) {
+        if (obj == null) throw new IllegalArgumentException("params required");
+        String name = obj.getString("name", null);
+        if (name == null) throw new IllegalArgumentException("name required");
+        JsonObject argsObj = obj.getJsonObject("arguments");
+        Map<String, String> args = toArguments(argsObj);
+        return new GetPromptRequest(name, args);
+    }
+
     public static Map<String, String> toArguments(JsonObject obj) {
         if (obj == null) return Map.of();
         Map<String, String> args = new HashMap<>();
