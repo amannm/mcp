@@ -34,7 +34,9 @@ public class ProtocolLifecycle {
                     request.protocolVersion().equals(Protocol.PREVIOUS_VERSION)) {
                 protocolVersion = request.protocolVersion();
             } else {
-                protocolVersion = Protocol.LATEST_VERSION;
+                throw new UnsupportedProtocolVersionException(
+                        request.protocolVersion(),
+                        Protocol.LATEST_VERSION + " or " + Protocol.PREVIOUS_VERSION);
             }
         } else {
             protocolVersion = Protocol.LATEST_VERSION;
