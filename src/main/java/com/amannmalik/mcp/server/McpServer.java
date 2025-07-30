@@ -69,6 +69,8 @@ import com.amannmalik.mcp.server.resources.ResourceSubscription;
 import com.amannmalik.mcp.server.resources.ResourceTemplate;
 import com.amannmalik.mcp.server.resources.ResourceTemplatePage;
 import com.amannmalik.mcp.server.resources.ResourceUpdatedNotification;
+import com.amannmalik.mcp.server.resources.SubscribeRequest;
+import com.amannmalik.mcp.server.resources.UnsubscribeRequest;
 import com.amannmalik.mcp.server.resources.ResourcesCodec;
 import com.amannmalik.mcp.server.tools.InMemoryToolProvider;
 import com.amannmalik.mcp.server.tools.Tool;
@@ -612,18 +614,14 @@ public final class McpServer implements AutoCloseable {
 
     private JsonRpcMessage subscribeResource(JsonRpcRequest req) {
         requireServerCapability(ServerCapability.RESOURCES);
-        JsonObject params = req.params();
-        if (params == null || !params.containsKey("uri")) {
-            return new JsonRpcError(req.id(), new JsonRpcError.ErrorDetail(
-                    JsonRpcErrorCode.INVALID_PARAMS.code(), "uri required", null));
-        }
-        String uri = params.getString("uri");
+        SubscribeRequest sr;
         try {
-            uri = UriValidator.requireAbsolute(uri);
+            sr = ResourcesCodec.toSubscribeRequest(req.params());
         } catch (IllegalArgumentException e) {
             return new JsonRpcError(req.id(), new JsonRpcError.ErrorDetail(
                     JsonRpcErrorCode.INVALID_PARAMS.code(), e.getMessage(), null));
         }
+        String uri = sr.uri();
         ResourceBlock existing = resources.read(uri);
         if (existing == null) {
             return new JsonRpcError(req.id(), new JsonRpcError.ErrorDetail(
@@ -660,18 +658,14 @@ public final class McpServer implements AutoCloseable {
 
     private JsonRpcMessage unsubscribeResource(JsonRpcRequest req) {
         requireServerCapability(ServerCapability.RESOURCES);
-        JsonObject params = req.params();
-        if (params == null || !params.containsKey("uri")) {
-            return new JsonRpcError(req.id(), new JsonRpcError.ErrorDetail(
-                    JsonRpcErrorCode.INVALID_PARAMS.code(), "uri required", null));
-        }
-        String uri = params.getString("uri");
+        UnsubscribeRequest ur;
         try {
-            uri = UriValidator.requireAbsolute(uri);
+            ur = ResourcesCodec.toUnsubscribeRequest(req.params());
         } catch (IllegalArgumentException e) {
             return new JsonRpcError(req.id(), new JsonRpcError.ErrorDetail(
                     JsonRpcErrorCode.INVALID_PARAMS.code(), e.getMessage(), null));
         }
+        String uri = ur.uri();
         ResourceSubscription sub = resourceSubscriptions.remove(uri);
         if (sub != null) {
             try {

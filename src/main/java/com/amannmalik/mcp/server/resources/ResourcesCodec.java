@@ -5,6 +5,7 @@ import jakarta.json.JsonObject;
 import jakarta.json.JsonObjectBuilder;
 import jakarta.json.JsonString;
 
+
 import java.time.Instant;
 import java.time.format.DateTimeParseException;
 import java.util.Base64;
@@ -147,6 +148,34 @@ public final class ResourcesCodec {
                 .add("uri", n.uri());
         if (n.title() != null) b.add("title", n.title());
         return b.build();
+    }
+
+    public static JsonObject toJsonObject(SubscribeRequest req) {
+        if (req == null) throw new IllegalArgumentException("request required");
+        return Json.createObjectBuilder()
+                .add("uri", req.uri())
+                .build();
+    }
+
+    public static SubscribeRequest toSubscribeRequest(JsonObject obj) {
+        if (obj == null || !obj.containsKey("uri")) {
+            throw new IllegalArgumentException("uri required");
+        }
+        return new SubscribeRequest(obj.getString("uri"));
+    }
+
+    public static JsonObject toJsonObject(UnsubscribeRequest req) {
+        if (req == null) throw new IllegalArgumentException("request required");
+        return Json.createObjectBuilder()
+                .add("uri", req.uri())
+                .build();
+    }
+
+    public static UnsubscribeRequest toUnsubscribeRequest(JsonObject obj) {
+        if (obj == null || !obj.containsKey("uri")) {
+            throw new IllegalArgumentException("uri required");
+        }
+        return new UnsubscribeRequest(obj.getString("uri"));
     }
 
     public static ResourceUpdatedNotification toResourceUpdatedNotification(JsonObject obj) {
