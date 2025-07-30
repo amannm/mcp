@@ -127,7 +127,11 @@ public final class SamplingCodec {
         JsonObjectBuilder b = Json.createObjectBuilder();
         if (!prefs.hints().isEmpty()) {
             JsonArrayBuilder arr = Json.createArrayBuilder();
-            for (ModelHint h : prefs.hints()) arr.add(Json.createObjectBuilder().add("name", h.name()).build());
+            for (ModelHint h : prefs.hints()) {
+                JsonObjectBuilder hb = Json.createObjectBuilder();
+                if (h.name() != null) hb.add("name", h.name());
+                arr.add(hb.build());
+            }
             b.add("hints", arr.build());
         }
         if (prefs.costPriority() != null) b.add("costPriority", prefs.costPriority());
@@ -139,7 +143,11 @@ public final class SamplingCodec {
     static ModelPreferences toModelPreferences(JsonObject obj) {
         List<ModelHint> hints = obj.containsKey("hints")
                 ? obj.getJsonArray("hints").stream()
-                .map(v -> new ModelHint(v.asJsonObject().getString("name")))
+                .map(v -> {
+                    JsonObject h = v.asJsonObject();
+                    String name = h.getString("name", null);
+                    return new ModelHint(name);
+                })
                 .toList()
                 : List.of();
         Double cost = obj.containsKey("costPriority") ? obj.getJsonNumber("costPriority").doubleValue() : null;
