@@ -22,6 +22,7 @@ import com.amannmalik.mcp.server.logging.LoggingMessageNotification;
 import com.amannmalik.mcp.transport.StdioTransport;
 import com.amannmalik.mcp.transport.StreamableHttpClientTransport;
 import com.amannmalik.mcp.transport.Transport;
+import com.amannmalik.mcp.NotificationMethod;
 import com.amannmalik.mcp.util.CancellationCodec;
 import com.amannmalik.mcp.util.CancelledNotification;
 import com.amannmalik.mcp.util.ProgressNotification;
@@ -361,7 +362,7 @@ public final class McpConformanceSteps {
     @When("the client sends a cancellation notification")
     public void sendCancellation() throws Exception {
         CancelledNotification note = new CancelledNotification(new RequestId.NumericId(999), "test");
-        client.notify("notifications/cancelled", CancellationCodec.toJsonObject(note));
+        client.notify(NotificationMethod.CANCELLED.method(), CancellationCodec.toJsonObject(note));
     }
 
     @When("the client lists resources with an invalid progress token")

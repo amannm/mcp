@@ -46,6 +46,7 @@ import com.amannmalik.mcp.server.resources.ResourceListListener;
 import com.amannmalik.mcp.server.tools.ToolCodec;
 import com.amannmalik.mcp.server.tools.ToolListListener;
 import com.amannmalik.mcp.transport.Transport;
+import com.amannmalik.mcp.NotificationMethod;
 import com.amannmalik.mcp.util.CancellationCodec;
 import com.amannmalik.mcp.util.CancellationTracker;
 import com.amannmalik.mcp.util.CancelledNotification;
@@ -230,14 +231,14 @@ public final class McpClient implements AutoCloseable {
         } else {
             throw new IOException("Unexpected message type: " + msg.getClass().getSimpleName());
         }
-        JsonRpcNotification note = new JsonRpcNotification("notifications/initialized", null);
+        JsonRpcNotification note = new JsonRpcNotification(NotificationMethod.INITIALIZED.method(), null);
         transport.send(JsonRpcCodec.toJsonObject(note));
         connected = true;
         if (roots != null && capabilities.contains(ClientCapability.ROOTS) && rootsListChangedSupported) {
             try {
                 rootsSubscription = roots.subscribe(() -> {
                     try {
-                        notify("notifications/roots/list_changed", null);
+                        notify(NotificationMethod.ROOTS_LIST_CHANGED.method(), null);
                     } catch (IOException ignore) {
                     }
                 });
@@ -317,7 +318,7 @@ public final class McpClient implements AutoCloseable {
             throw new IOException(e);
         } catch (TimeoutException e) {
             try {
-                notify("notifications/cancelled", CancellationCodec.toJsonObject(new CancelledNotification(reqId, "timeout")));
+                notify(NotificationMethod.CANCELLED.method(), CancellationCodec.toJsonObject(new CancelledNotification(reqId, "timeout")));
             } catch (IOException ignore) {
             }
             throw new IOException("Request timed out after " + timeoutMillis + " ms");
@@ -381,7 +382,7 @@ public final class McpClient implements AutoCloseable {
             throw new IOException(e);
         } catch (TimeoutException e) {
             try {
-                notify("notifications/cancelled", CancellationCodec.toJsonObject(new CancelledNotification(reqId, "timeout")));
+                notify(NotificationMethod.CANCELLED.method(), CancellationCodec.toJsonObject(new CancelledNotification(reqId, "timeout")));
             } catch (IOException ignore) {
             }
             if (token != null) {
@@ -618,7 +619,7 @@ public final class McpClient implements AutoCloseable {
         } catch (IllegalArgumentException | IllegalStateException ignore) {
             return;
         }
-        notify("notifications/progress", ProgressCodec.toJsonObject(note));
+        notify(NotificationMethod.PROGRESS.method(), ProgressCodec.toJsonObject(note));
     }
 
     private ProgressToken parseProgressToken(JsonObject params) {
@@ -651,46 +652,44 @@ public final class McpClient implements AutoCloseable {
     }
 
     private void handleNotification(JsonRpcNotification note) {
-        switch (note.method()) {
-            case "notifications/progress" -> {
-                if (note.params() != null) {
-                    try {
-                        ProgressNotification pn = ProgressCodec.toProgressNotification(note.params());
-                        progressTracker.update(pn);
-                        progressListener.onProgress(pn);
-                        if (pn.progress() >= 1.0) {
-                            progressTracker.release(pn.token());
-                            progressTokens.values().removeIf(t -> t.equals(pn.token()));
+        NotificationMethod.from(note.method()).ifPresent(m -> {
+            switch (m) {
+                case PROGRESS -> {
+                    if (note.params() != null) {
+                        try {
+                            ProgressNotification pn = ProgressCodec.toProgressNotification(note.params());
+                            progressTracker.update(pn);
+                            progressListener.onProgress(pn);
+                            if (pn.progress() >= 1.0) {
+                                progressTracker.release(pn.token());
+                                progressTokens.values().removeIf(t -> t.equals(pn.token()));
+                            }
+                        } catch (IllegalArgumentException | IllegalStateException ignore) {
                         }
-                    } catch (IllegalArgumentException | IllegalStateException ignore) {
                     }
                 }
-            }
-            case "notifications/message" -> {
-                if (note.params() != null) {
+                case MESSAGE -> {
+                    if (note.params() != null) {
+                        try {
+                            loggingListener.onMessage(LoggingCodec.toLoggingMessageNotification(note.params()));
+                        } catch (IllegalArgumentException ignore) {
+                        }
+                    }
+                }
+                case CANCELLED -> cancelled(note);
+                case RESOURCES_LIST_CHANGED -> resourceListListener.listChanged();
+                case TOOLS_LIST_CHANGED -> {
                     try {
-                        loggingListener.onMessage(LoggingCodec.toLoggingMessageNotification(note.params()));
+                        ToolCodec.toToolListChangedNotification(note.params());
+                        toolListListener.listChanged();
                     } catch (IllegalArgumentException ignore) {
                     }
                 }
-            }
-            case "notifications/cancelled" -> cancelled(note);
-            case "notifications/resources/list_changed" -> {
-                resourceListListener.listChanged();
-            }
-            case "notifications/tools/list_changed" -> {
-                try {
-                    ToolCodec.toToolListChangedNotification(note.params());
-                    toolListListener.listChanged();
-                } catch (IllegalArgumentException ignore) {
+                case PROMPTS_LIST_CHANGED -> promptsListener.listChanged();
+                default -> {
                 }
             }
-            case "notifications/prompts/list_changed" -> {
-                promptsListener.listChanged();
-            }
-            default -> {
-            }
-        }
+        });
     }
 
     private void cancelled(JsonRpcNotification note) {
