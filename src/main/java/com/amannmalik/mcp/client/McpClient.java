@@ -39,6 +39,8 @@ import com.amannmalik.mcp.server.logging.LoggingCodec;
 import com.amannmalik.mcp.server.logging.LoggingLevel;
 import com.amannmalik.mcp.server.logging.LoggingListener;
 import com.amannmalik.mcp.server.logging.SetLevelRequest;
+import com.amannmalik.mcp.auth.Principal;
+import com.amannmalik.mcp.security.SamplingAccessPolicy;
 import com.amannmalik.mcp.server.resources.ResourceListListener;
 import com.amannmalik.mcp.server.tools.ToolListListener;
 import com.amannmalik.mcp.transport.Transport;
@@ -76,6 +78,8 @@ public final class McpClient implements AutoCloseable {
     private RootsSubscription rootsSubscription;
     private final boolean rootsListChangedSupported;
     private final ElicitationProvider elicitation;
+    private SamplingAccessPolicy samplingAccess = SamplingAccessPolicy.PERMISSIVE;
+    private Principal principal = new Principal("default", Set.of());
     private final AtomicLong id = new AtomicLong(1);
     private final Map<RequestId, CompletableFuture<JsonRpcMessage>> pending = new ConcurrentHashMap<>();
     private final CancellationTracker cancellationTracker = new CancellationTracker();
@@ -109,6 +113,14 @@ public final class McpClient implements AutoCloseable {
         if (intervalMillis < 0 || timeoutMillis <= 0) throw new IllegalArgumentException("invalid ping settings");
         this.pingInterval = intervalMillis;
         this.pingTimeout = timeoutMillis;
+    }
+
+    public void setSamplingAccessPolicy(SamplingAccessPolicy policy) {
+        samplingAccess = policy == null ? SamplingAccessPolicy.PERMISSIVE : policy;
+    }
+
+    public void setPrincipal(Principal principal) {
+        if (principal != null) this.principal = principal;
     }
 
     public McpClient(ClientInfo info, Set<ClientCapability> capabilities, Transport transport) {
@@ -513,6 +525,12 @@ public final class McpClient implements AutoCloseable {
         }
         try {
             CreateMessageRequest cmr = SamplingCodec.toCreateMessageRequest(params);
+            try {
+                samplingAccess.requireAllowed(principal);
+            } catch (SecurityException e) {
+                return new JsonRpcError(req.id(), new JsonRpcError.ErrorDetail(
+                        JsonRpcErrorCode.INTERNAL_ERROR.code(), e.getMessage(), null));
+            }
             CreateMessageResponse resp = sampling.createMessage(cmr);
             return new JsonRpcResponse(req.id(), SamplingCodec.toJsonObject(resp));
         } catch (IllegalArgumentException e) {
