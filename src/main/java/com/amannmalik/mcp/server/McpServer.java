@@ -605,7 +605,7 @@ public final class McpServer implements AutoCloseable {
             return JsonRpcError.of(req.id(), -32002, "Resource not found",
                     Json.createObjectBuilder().add("uri", uri).build());
         }
-        ReadResourceResult result = new ReadResourceResult(List.of(block));
+        ReadResourceResult result = new ReadResourceResult(List.of(block), null);
         return new JsonRpcResponse(req.id(), ResourcesCodec.toJsonObject(result));
     }
 
@@ -905,7 +905,10 @@ public final class McpServer implements AutoCloseable {
 
     private List<Root> fetchRoots() throws IOException {
         requireClientCapability(ClientCapability.ROOTS);
-        JsonRpcMessage msg = sendRequest(RequestMethod.ROOTS_LIST, RootsCodec.toJsonObject(new ListRootsRequest()));
+        JsonRpcMessage msg = sendRequest(
+                RequestMethod.ROOTS_LIST,
+                RootsCodec.toJsonObject(new ListRootsRequest(null))
+        );
         if (msg instanceof JsonRpcResponse resp) {
             return RootsCodec.toRoots(resp.result());
         }

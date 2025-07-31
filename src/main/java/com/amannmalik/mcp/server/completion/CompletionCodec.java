@@ -58,7 +58,7 @@ public final class CompletionCodec {
             }
             ctx = new CompleteRequest.Context(InputSanitizer.requireCleanMap(args));
         }
-        return new CompleteRequest(ref, argument, ctx);
+        return new CompleteRequest(ref, argument, ctx, null);
     }
 
     public static JsonObject toJsonObject(CompleteResult result) {

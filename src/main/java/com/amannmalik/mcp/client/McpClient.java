@@ -323,8 +323,10 @@ public final class McpClient implements AutoCloseable {
 
     public void setLogLevel(LoggingLevel level) throws IOException {
         if (level == null) throw new IllegalArgumentException("level required");
-        JsonRpcMessage msg = request(RequestMethod.LOGGING_SET_LEVEL,
-                LoggingCodec.toJsonObject(new SetLevelRequest(level)));
+        JsonRpcMessage msg = request(
+                RequestMethod.LOGGING_SET_LEVEL,
+                LoggingCodec.toJsonObject(new SetLevelRequest(level, null))
+        );
         if (msg instanceof JsonRpcResponse) {
             return;
         }

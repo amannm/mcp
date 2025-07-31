@@ -137,43 +137,48 @@ public final class ResourcesCodec {
 
     public static JsonObject toJsonObject(SubscribeRequest req) {
         if (req == null) throw new IllegalArgumentException("request required");
-        return Json.createObjectBuilder()
-                .add("uri", req.uri())
-                .build();
+        JsonObjectBuilder b = Json.createObjectBuilder().add("uri", req.uri());
+        if (req._meta() != null) b.add("_meta", req._meta());
+        return b.build();
     }
 
     public static SubscribeRequest toSubscribeRequest(JsonObject obj) {
         if (obj == null || !obj.containsKey("uri")) {
             throw new IllegalArgumentException("uri required");
         }
-        return new SubscribeRequest(obj.getString("uri"));
+        JsonObject meta = obj.containsKey("_meta") ? obj.getJsonObject("_meta") : null;
+        return new SubscribeRequest(obj.getString("uri"), meta);
     }
 
     public static JsonObject toJsonObject(UnsubscribeRequest req) {
         if (req == null) throw new IllegalArgumentException("request required");
-        return Json.createObjectBuilder()
-                .add("uri", req.uri())
-                .build();
+        JsonObjectBuilder b = Json.createObjectBuilder().add("uri", req.uri());
+        if (req._meta() != null) b.add("_meta", req._meta());
+        return b.build();
     }
 
     public static UnsubscribeRequest toUnsubscribeRequest(JsonObject obj) {
         if (obj == null || !obj.containsKey("uri")) {
             throw new IllegalArgumentException("uri required");
         }
-        return new UnsubscribeRequest(obj.getString("uri"));
+        JsonObject meta = obj.containsKey("_meta") ? obj.getJsonObject("_meta") : null;
+        return new UnsubscribeRequest(obj.getString("uri"), meta);
     }
 
 
     public static JsonObject toJsonObject(ReadResourceRequest req) {
         if (req == null) throw new IllegalArgumentException("request required");
-        return Json.createObjectBuilder().add("uri", req.uri()).build();
+        JsonObjectBuilder b = Json.createObjectBuilder().add("uri", req.uri());
+        if (req._meta() != null) b.add("_meta", req._meta());
+        return b.build();
     }
 
     public static ReadResourceRequest toReadResourceRequest(JsonObject obj) {
         if (obj == null || !obj.containsKey("uri")) {
             throw new IllegalArgumentException("uri required");
         }
-        return new ReadResourceRequest(obj.getString("uri"));
+        JsonObject meta = obj.containsKey("_meta") ? obj.getJsonObject("_meta") : null;
+        return new ReadResourceRequest(obj.getString("uri"), meta);
     }
 
     public static JsonObject toJsonObject(ReadResourceResult result) {

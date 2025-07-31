@@ -33,11 +33,22 @@ public record ServerConfig(
             for (String as : authorizationServers) {
                 try {
                     var uri = java.net.URI.create(as);
-                    if (!uri.isAbsolute() || uri.getFragment() != null
-                            || !"https".equalsIgnoreCase(uri.getScheme())) {
+                    if (!uri.isAbsolute() || uri.getFragment() != null) {
                         throw new IllegalArgumentException();
                     }
-                    validated.add(as);
+                    String scheme = uri.getScheme();
+                    if ("https".equalsIgnoreCase(scheme)) {
+                        validated.add(as);
+                        continue;
+                    }
+                    if ("http".equalsIgnoreCase(scheme)) {
+                        String host = uri.getHost();
+                        if ("localhost".equalsIgnoreCase(host) || "127.0.0.1".equals(host)) {
+                            validated.add(as);
+                            continue;
+                        }
+                    }
+                    throw new IllegalArgumentException();
                 } catch (Exception e) {
                     throw new IllegalArgumentException("invalid authorizationServer: " + as, e);
                 }
