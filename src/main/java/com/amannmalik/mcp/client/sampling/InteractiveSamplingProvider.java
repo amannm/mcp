@@ -1,6 +1,7 @@
 package com.amannmalik.mcp.client.sampling;
 
 import com.amannmalik.mcp.prompts.Role;
+import com.amannmalik.mcp.content.ContentBlock;
 import jakarta.json.Json;
 import jakarta.json.JsonArrayBuilder;
 import jakarta.json.JsonObject;
@@ -104,9 +105,10 @@ public final class InteractiveSamplingProvider implements SamplingProvider {
 
     private String formatContent(MessageContent content) {
         return switch (content) {
-            case MessageContent.Text text -> text.text();
-            case MessageContent.Image image -> "[Image: " + image.mimeType() + ", " + image.data().length + " bytes]";
-            case MessageContent.Audio audio -> "[Audio: " + audio.mimeType() + ", " + audio.data().length + " bytes]";
+            case ContentBlock.Text text -> text.text();
+            case ContentBlock.Image image -> "[Image: " + image.mimeType() + ", " + image.data().length + " bytes]";
+            case ContentBlock.Audio audio -> "[Audio: " + audio.mimeType() + ", " + audio.data().length + " bytes]";
+            default -> "[Unknown content]";
         };
     }
 
@@ -116,7 +118,7 @@ public final class InteractiveSamplingProvider implements SamplingProvider {
             if (ai.isPresent()) {
                 return new CreateMessageResponse(
                         Role.ASSISTANT,
-                        new MessageContent.Text(ai.get().content(), null, null),
+                        new ContentBlock.Text(ai.get().content(), null, null),
                         ai.get().model(),
                         "endTurn",
                         null
@@ -129,7 +131,7 @@ public final class InteractiveSamplingProvider implements SamplingProvider {
 
         return new CreateMessageResponse(
                 Role.ASSISTANT,
-                new MessageContent.Text(responseText, null, null),
+                new ContentBlock.Text(responseText, null, null),
                 "claude-3-sonnet-simulation",
                 "endTurn",
                 null
@@ -153,7 +155,7 @@ public final class InteractiveSamplingProvider implements SamplingProvider {
                     .build());
         }
         for (SamplingMessage m : request.messages()) {
-            if (m.content() instanceof MessageContent.Text t) {
+            if (m.content() instanceof ContentBlock.Text t) {
                 msgs.add(Json.createObjectBuilder()
                         .add("role", m.role().name().toLowerCase())
                         .add("content", t.text())
@@ -195,7 +197,7 @@ public final class InteractiveSamplingProvider implements SamplingProvider {
 
         for (int i = messages.size() - 1; i >= 0; i--) {
             SamplingMessage msg = messages.get(i);
-            if (msg.role() == Role.USER && msg.content() instanceof MessageContent.Text text) {
+            if (msg.role() == Role.USER && msg.content() instanceof ContentBlock.Text text) {
                 lastUserMessage = text.text();
                 break;
             }

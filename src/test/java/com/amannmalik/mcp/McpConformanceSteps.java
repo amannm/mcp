@@ -150,7 +150,7 @@ public final class McpConformanceSteps {
         elicitation.respond(new ElicitResult(ElicitationAction.CANCEL, null, null));
         SamplingProvider sampling = SamplingProviderFactory.createMock(new CreateMessageResponse(
                 Role.ASSISTANT,
-                new MessageContent.Text("ok", null, null),
+                new com.amannmalik.mcp.content.ContentBlock.Text("ok", null, null),
                 "mock-model",
                 "endTurn",
                 null

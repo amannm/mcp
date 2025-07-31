@@ -1,9 +1,8 @@
 package com.amannmalik.mcp.client.sampling;
 
-import com.amannmalik.mcp.annotations.Annotations;
-import com.amannmalik.mcp.annotations.AnnotationsCodec;
+import com.amannmalik.mcp.content.ContentBlock;
+import com.amannmalik.mcp.content.ContentCodec;
 import com.amannmalik.mcp.prompts.Role;
-import com.amannmalik.mcp.util.Base64Util;
 import jakarta.json.Json;
 import jakarta.json.JsonArrayBuilder;
 import jakarta.json.JsonObject;
@@ -101,32 +100,11 @@ public final class SamplingCodec {
     }
 
     static JsonObject toJsonObject(MessageContent content) {
-        JsonObjectBuilder b = Json.createObjectBuilder().add("type", content.type());
-        if (content.annotations() != Annotations.EMPTY) {
-            b.add("annotations", AnnotationsCodec.toJsonObject(content.annotations()));
-        }
-        if (content._meta() != null) b.add("_meta", content._meta());
-        switch (content) {
-            case MessageContent.Text t -> b.add("text", t.text());
-            case MessageContent.Image i -> b.add("data", Base64Util.encode(i.data()))
-                    .add("mimeType", i.mimeType());
-            case MessageContent.Audio a -> b.add("data", Base64Util.encode(a.data()))
-                    .add("mimeType", a.mimeType());
-        }
-        return b.build();
+        return ContentCodec.toJsonObject((ContentBlock) content);
     }
 
     static MessageContent toContent(JsonObject obj) {
-        Annotations ann = obj.containsKey("annotations")
-                ? AnnotationsCodec.toAnnotations(obj.getJsonObject("annotations"))
-                : null;
-        JsonObject meta = obj.containsKey("_meta") ? obj.getJsonObject("_meta") : null;
-        return switch (obj.getString("type")) {
-            case "text" -> new MessageContent.Text(obj.getString("text"), ann, meta);
-            case "image" -> new MessageContent.Image(Base64Util.decode(obj.getString("data")), obj.getString("mimeType"), ann, meta);
-            case "audio" -> new MessageContent.Audio(Base64Util.decode(obj.getString("data")), obj.getString("mimeType"), ann, meta);
-            default -> throw new IllegalArgumentException("Unknown content type");
-        };
+        return (MessageContent) ContentCodec.toContentBlock(obj);
     }
 
     static JsonObject toJsonObject(ModelPreferences prefs) {

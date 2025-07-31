@@ -146,7 +146,7 @@ public final class ResourcesCodec {
         if (obj == null || !obj.containsKey("uri")) {
             throw new IllegalArgumentException("uri required");
         }
-        return new SubscribeRequest(obj.getString("uri"));
+        return new SubscribeRequest(obj.getString("uri"), null);
     }
 
     public static JsonObject toJsonObject(UnsubscribeRequest req) {
@@ -160,7 +160,7 @@ public final class ResourcesCodec {
         if (obj == null || !obj.containsKey("uri")) {
             throw new IllegalArgumentException("uri required");
         }
-        return new UnsubscribeRequest(obj.getString("uri"));
+        return new UnsubscribeRequest(obj.getString("uri"), null);
     }
 
 
@@ -173,7 +173,7 @@ public final class ResourcesCodec {
         if (obj == null || !obj.containsKey("uri")) {
             throw new IllegalArgumentException("uri required");
         }
-        return new ReadResourceRequest(obj.getString("uri"));
+        return new ReadResourceRequest(obj.getString("uri"), null);
     }
 
     public static JsonObject toJsonObject(ReadResourceResult result) {

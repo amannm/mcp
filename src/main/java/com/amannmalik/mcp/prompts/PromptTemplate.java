@@ -1,5 +1,6 @@
 package com.amannmalik.mcp.prompts;
 
+import com.amannmalik.mcp.content.ContentBlock;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -39,11 +40,12 @@ public record PromptTemplate(Prompt prompt, List<PromptMessageTemplate> messages
 
     private static PromptContent instantiate(PromptContent tmpl, Map<String, String> args) {
         return switch (tmpl) {
-            case PromptContent.Text t -> new PromptContent.Text(substitute(t.text(), args), t.annotations(), t._meta());
-            case PromptContent.Image i -> new PromptContent.Image(i.data(), i.mimeType(), i.annotations(), i._meta());
-            case PromptContent.Audio a -> new PromptContent.Audio(a.data(), a.mimeType(), a.annotations(), a._meta());
-            case PromptContent.EmbeddedResource r -> new PromptContent.EmbeddedResource(r.resource(), r.annotations(), r._meta());
-            case PromptContent.ResourceLink l -> new PromptContent.ResourceLink(l.resource());
+            case ContentBlock.Text t -> new ContentBlock.Text(substitute(t.text(), args), t.annotations(), t._meta());
+            case ContentBlock.Image i -> new ContentBlock.Image(i.data(), i.mimeType(), i.annotations(), i._meta());
+            case ContentBlock.Audio a -> new ContentBlock.Audio(a.data(), a.mimeType(), a.annotations(), a._meta());
+            case ContentBlock.EmbeddedResource r -> new ContentBlock.EmbeddedResource(r.resource(), r.annotations(), r._meta());
+            case ContentBlock.ResourceLink l -> new ContentBlock.ResourceLink(l.resource());
+            default -> tmpl;
         };
     }
 
