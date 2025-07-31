@@ -1,9 +1,7 @@
 package com.amannmalik.mcp.prompts;
 
-import com.amannmalik.mcp.annotations.Annotations;
-import com.amannmalik.mcp.annotations.AnnotationsCodec;
-import com.amannmalik.mcp.server.resources.ResourcesCodec;
-import com.amannmalik.mcp.util.Base64Util;
+import com.amannmalik.mcp.content.ContentBlock;
+import com.amannmalik.mcp.content.ContentCodec;
 import com.amannmalik.mcp.util.EmptyJsonObjectCodec;
 import com.amannmalik.mcp.util.PaginatedRequest;
 import com.amannmalik.mcp.util.PaginatedResult;
@@ -83,42 +81,7 @@ public final class PromptCodec {
     }
 
     static JsonObject toJsonObject(PromptContent content) {
-        JsonObjectBuilder b = Json.createObjectBuilder().add("type", content.type());
-        if (content.annotations() != Annotations.EMPTY) {
-            b.add("annotations", AnnotationsCodec.toJsonObject(content.annotations()));
-        }
-        switch (content) {
-            case PromptContent.Text t -> {
-                if (content._meta() != null) b.add("_meta", content._meta());
-                b.add("text", t.text());
-            }
-            case PromptContent.Image i -> {
-                if (content._meta() != null) b.add("_meta", content._meta());
-                b.add("data", Base64Util.encode(i.data()))
-                        .add("mimeType", i.mimeType());
-            }
-            case PromptContent.Audio a -> {
-                if (content._meta() != null) b.add("_meta", content._meta());
-                b.add("data", Base64Util.encode(a.data()))
-                        .add("mimeType", a.mimeType());
-            }
-            case PromptContent.EmbeddedResource r -> {
-                if (content._meta() != null) b.add("_meta", content._meta());
-                b.add("resource", ResourcesCodec.toJsonObject(r.resource()));
-                if (r.annotations() != Annotations.EMPTY) {
-                    b.add("annotations", AnnotationsCodec.toJsonObject(r.annotations()));
-                }
-            }
-            case PromptContent.ResourceLink l -> {
-                JsonObject obj = ResourcesCodec.toJsonObject(l.resource());
-                b.add("type", "resource_link");
-                obj.forEach((k, v) -> {
-                    if (!"_meta".equals(k)) b.add(k, v);
-                });
-                if (l.resource()._meta() != null) b.add("_meta", l.resource()._meta());
-            }
-        }
-        return b.build();
+        return ContentCodec.toJsonObject((ContentBlock) content);
     }
 
     public static GetPromptRequest toGetPromptRequest(JsonObject obj) {
@@ -229,17 +192,6 @@ public final class PromptCodec {
     }
 
     private static PromptContent toPromptContent(JsonObject obj) {
-        String type = obj.getString("type", null);
-        if (type == null) throw new IllegalArgumentException("type required");
-        var ann = obj.containsKey("annotations") ? AnnotationsCodec.toAnnotations(obj.getJsonObject("annotations")) : null;
-        JsonObject meta = obj.containsKey("_meta") ? obj.getJsonObject("_meta") : null;
-        return switch (type) {
-            case "text" -> new PromptContent.Text(obj.getString("text"), ann, meta);
-            case "image" -> new PromptContent.Image(Base64Util.decode(obj.getString("data")), obj.getString("mimeType"), ann, meta);
-            case "audio" -> new PromptContent.Audio(Base64Util.decode(obj.getString("data")), obj.getString("mimeType"), ann, meta);
-            case "resource" -> new PromptContent.EmbeddedResource(ResourcesCodec.toResourceBlock(obj.getJsonObject("resource")), ann, meta);
-            case "resource_link" -> new PromptContent.ResourceLink(ResourcesCodec.toResource(obj));
-            default -> throw new IllegalArgumentException("unknown content type: " + type);
-        };
+        return (PromptContent) ContentCodec.toContentBlock(obj);
     }
 }

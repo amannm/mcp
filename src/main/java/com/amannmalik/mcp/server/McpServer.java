@@ -14,6 +14,7 @@ import com.amannmalik.mcp.client.roots.RootsSubscription;
 import com.amannmalik.mcp.client.sampling.CreateMessageRequest;
 import com.amannmalik.mcp.client.sampling.CreateMessageResponse;
 import com.amannmalik.mcp.client.sampling.SamplingCodec;
+import com.amannmalik.mcp.content.ContentBlock;
 import com.amannmalik.mcp.jsonrpc.IdTracker;
 import com.amannmalik.mcp.jsonrpc.JsonRpcCodec;
 import com.amannmalik.mcp.jsonrpc.JsonRpcError;
@@ -605,7 +606,7 @@ public final class McpServer implements AutoCloseable {
             return JsonRpcError.of(req.id(), -32002, "Resource not found",
                     Json.createObjectBuilder().add("uri", uri).build());
         }
-        ReadResourceResult result = new ReadResourceResult(List.of(block));
+        ReadResourceResult result = new ReadResourceResult(List.of(block), null);
         return new JsonRpcResponse(req.id(), ResourcesCodec.toJsonObject(result));
     }
 
@@ -905,7 +906,7 @@ public final class McpServer implements AutoCloseable {
 
     private List<Root> fetchRoots() throws IOException {
         requireClientCapability(ClientCapability.ROOTS);
-        JsonRpcMessage msg = sendRequest(RequestMethod.ROOTS_LIST, RootsCodec.toJsonObject(new ListRootsRequest()));
+        JsonRpcMessage msg = sendRequest(RequestMethod.ROOTS_LIST, RootsCodec.toJsonObject(new ListRootsRequest(null)));
         if (msg instanceof JsonRpcResponse resp) {
             return RootsCodec.toRoots(resp.result());
         }
@@ -1004,7 +1005,7 @@ public final class McpServer implements AutoCloseable {
         InMemoryPromptProvider p = new InMemoryPromptProvider();
         PromptArgument arg = new PromptArgument("test_arg", null, null, true, null);
         Prompt prompt = new Prompt("test_prompt", "Test Prompt", null, List.of(arg), null);
-        PromptMessageTemplate msg = new PromptMessageTemplate(Role.USER, new PromptContent.Text("hello", null, null));
+        PromptMessageTemplate msg = new PromptMessageTemplate(Role.USER, new ContentBlock.Text("hello", null, null));
         p.add(new PromptTemplate(prompt, List.of(msg)));
         return p;
     }
