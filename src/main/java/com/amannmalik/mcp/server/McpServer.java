@@ -524,16 +524,13 @@ public final class McpServer implements AutoCloseable {
     }
 
     private JsonRpcError invalidParams(JsonRpcRequest req, String message) {
-        return JsonRpcError.of(req.id(), JsonRpcErrorCode.INVALID_PARAMS, message);
+        return JsonRpcError.invalidParams(req.id(), message);
     }
 
     private JsonRpcError invalidParams(JsonRpcRequest req, IllegalArgumentException e) {
         return invalidParams(req, e.getMessage());
     }
 
-    private static String sanitizeCursor(String cursor) {
-        return cursor == null ? null : Pagination.requireValidCursor(cursor);
-    }
 
 
     private void cancelled(JsonRpcNotification note) {
@@ -564,7 +561,7 @@ public final class McpServer implements AutoCloseable {
         String cursor = lr.cursor();
         if (cursor != null) {
             try {
-                cursor = sanitizeCursor(InputSanitizer.cleanNullable(cursor));
+                cursor = Pagination.sanitize(InputSanitizer.cleanNullable(cursor));
             } catch (IllegalArgumentException e) {
                 return invalidParams(req, e);
             }
@@ -622,7 +619,7 @@ public final class McpServer implements AutoCloseable {
         String cursor = request.cursor();
         if (cursor != null) {
             try {
-                cursor = sanitizeCursor(InputSanitizer.cleanNullable(cursor));
+                cursor = Pagination.sanitize(InputSanitizer.cleanNullable(cursor));
             } catch (IllegalArgumentException e) {
                 return invalidParams(req, e);
             }
@@ -715,7 +712,7 @@ public final class McpServer implements AutoCloseable {
         String cursor = ltr.cursor();
         if (cursor != null) {
             try {
-                cursor = sanitizeCursor(InputSanitizer.cleanNullable(cursor));
+                cursor = Pagination.sanitize(InputSanitizer.cleanNullable(cursor));
             } catch (IllegalArgumentException e) {
                 return invalidParams(req, e);
             }
@@ -779,7 +776,7 @@ public final class McpServer implements AutoCloseable {
         String cursor = lpr.cursor();
         if (cursor != null) {
             try {
-                cursor = sanitizeCursor(InputSanitizer.cleanNullable(cursor));
+                cursor = Pagination.sanitize(InputSanitizer.cleanNullable(cursor));
             } catch (IllegalArgumentException e) {
                 return invalidParams(req, e);
             }
