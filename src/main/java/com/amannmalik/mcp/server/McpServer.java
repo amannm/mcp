@@ -574,12 +574,9 @@ public final class McpServer implements AutoCloseable {
             return invalidParams(req, e);
         }
 
-        List<Resource> filteredResources = new ArrayList<>();
-        for (Resource r : list.items()) {
-            if (allowed(r.annotations()) && withinRoots(r.uri())) {
-                filteredResources.add(r);
-            }
-        }
+        List<Resource> filteredResources = list.items().stream()
+                .filter(r -> allowed(r.annotations()) && withinRoots(r.uri()))
+                .toList();
 
         ListResourcesResult result = new ListResourcesResult(filteredResources, list.nextCursor(), null);
         JsonObject resultJson = ResourcesCodec.toJsonObject(result);
@@ -632,12 +629,9 @@ public final class McpServer implements AutoCloseable {
             return invalidParams(req, e);
         }
 
-        List<ResourceTemplate> filteredTemplates = new ArrayList<>();
-        for (ResourceTemplate t : page.items()) {
-            if (allowed(t.annotations())) {
-                filteredTemplates.add(t);
-            }
-        }
+        List<ResourceTemplate> filteredTemplates = page.items().stream()
+                .filter(t -> allowed(t.annotations()))
+                .toList();
 
         ListResourceTemplatesResult result = new ListResourceTemplatesResult(filteredTemplates, page.nextCursor(), null);
         JsonObject resultJson = ResourcesCodec.toJsonObject(result);
@@ -672,12 +666,7 @@ public final class McpServer implements AutoCloseable {
                 }
             });
             ResourceSubscription prev = resourceSubscriptions.put(uri, sub);
-            if (prev != null) {
-                try {
-                    prev.close();
-                } catch (Exception ignore) {
-                }
-            }
+            CloseUtil.closeQuietly(prev);
         } catch (Exception e) {
             return JsonRpcError.of(req.id(), JsonRpcErrorCode.INTERNAL_ERROR, e.getMessage());
         }
@@ -697,12 +686,7 @@ public final class McpServer implements AutoCloseable {
             return JsonRpcError.of(req.id(), JsonRpcErrorCode.INTERNAL_ERROR, "Access denied");
         }
         ResourceSubscription sub = resourceSubscriptions.remove(uri);
-        if (sub != null) {
-            try {
-                sub.close();
-            } catch (Exception ignore) {
-            }
-        }
+        CloseUtil.closeQuietly(sub);
         return new JsonRpcResponse(req.id(), JsonValue.EMPTY_JSON_OBJECT);
     }
 
