@@ -37,6 +37,10 @@ public final class Pagination {
         return cursor;
     }
 
+    public static String sanitize(String cursor) {
+        return cursor == null ? null : requireValidCursor(cursor);
+    }
+
     public record Page<T>(List<T> items, String nextCursor) {
         public Page {
             items = items == null ? List.of() : List.copyOf(items);
