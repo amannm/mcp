@@ -46,6 +46,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.TimeUnit;
 
@@ -70,7 +71,7 @@ public final class McpConformanceSteps {
 
     private Process serverProcess;
     private StreamableHttpTransport serverTransport;
-    private Thread serverThread;
+    private CompletableFuture<Void> serverTask;
     private McpClient client;
     private JsonRpcMessage lastMessage;
     private final List<ProgressNotification> progressEvents = new CopyOnWriteArrayList<>();
@@ -97,15 +98,13 @@ public final class McpConformanceSteps {
                     null
             );
             serverTransport = ht;
-            serverThread = new Thread(() -> {
+            serverTask = CompletableFuture.runAsync(() -> {
                 try (var server = new McpServer(ht, null)) {
                     server.serve();
                 } catch (Exception e) {
                     throw new RuntimeException(e);
                 }
-            });
-            serverThread.setDaemon(true);
-            serverThread.start();
+            }, runnable -> Thread.ofVirtual().start(runnable));
             transport = new StreamableHttpClientTransport(URI.create("http://127.0.0.1:" + ht.port() + "/"));
         } else {
             var args = new java.util.ArrayList<String>();
@@ -169,9 +168,12 @@ public final class McpConformanceSteps {
             serverProcess.destroyForcibly();
             serverProcess.waitFor(2, TimeUnit.SECONDS);
         }
-        if (serverThread != null && serverThread.isAlive()) {
-            serverThread.interrupt();
-            serverThread.join(2000);
+        if (serverTask != null && !serverTask.isDone()) {
+            serverTask.cancel(true);
+            try {
+                serverTask.get(2, TimeUnit.SECONDS);
+            } catch (Exception ignored) {
+            }
         }
         if (serverTransport != null) {
             serverTransport.close();
@@ -181,10 +183,22 @@ public final class McpConformanceSteps {
     @Given("a running MCP server and connected client")
     public void dummy() {
         // server and client started in @Before
+        checkServerTaskForExceptions();
+    }
+    
+    private void checkServerTaskForExceptions() {
+        if (serverTask != null && serverTask.isDone() && serverTask.isCompletedExceptionally()) {
+            try {
+                serverTask.get();
+            } catch (Exception e) {
+                throw new AssertionError("Server task failed with exception", e);
+            }
+        }
     }
 
     @Then("the server capabilities should be advertised")
     public void checkCapabilities() {
+        checkServerTaskForExceptions();
         var expected = EnumSet.of(
                 ServerCapability.RESOURCES,
                 ServerCapability.TOOLS,
@@ -197,6 +211,7 @@ public final class McpConformanceSteps {
 
     @When("the client pings the server")
     public void ping() {
+        checkServerTaskForExceptions();
         assertDoesNotThrow(() -> client.ping());
     }
 
@@ -449,8 +464,8 @@ public final class McpConformanceSteps {
     @When("the client disconnects")
     public void disconnect() throws Exception {
         client.disconnect();
-        if (serverThread != null) {
-            serverThread.interrupt();
+        if (serverTask != null) {
+            serverTask.cancel(true);
         }
         if (serverTransport != null) {
             serverTransport.close();
@@ -468,9 +483,12 @@ public final class McpConformanceSteps {
                 }
             }
             assertFalse(serverProcess.isAlive());
-        } else if (serverThread != null) {
-            serverThread.join(2000);
-            assertFalse(serverThread.isAlive());
+        } else if (serverTask != null) {
+            try {
+                serverTask.get(2, TimeUnit.SECONDS);
+            } catch (Exception ignored) {
+            }
+            assertTrue(serverTask.isDone());
         }
     }
 }
