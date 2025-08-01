@@ -555,16 +555,18 @@ public final class McpServer implements AutoCloseable {
         progressManager.send(note, this::send);
     }
 
+    private String sanitizeCursor(String cursor) {
+        return cursor == null ? null : Pagination.sanitize(InputSanitizer.cleanNullable(cursor));
+    }
+
     private JsonRpcMessage listResources(JsonRpcRequest req) {
         requireServerCapability(ServerCapability.RESOURCES);
         ListResourcesRequest lr = ResourcesCodec.toListResourcesRequest(req.params());
-        String cursor = lr.cursor();
-        if (cursor != null) {
-            try {
-                cursor = Pagination.sanitize(InputSanitizer.cleanNullable(cursor));
-            } catch (IllegalArgumentException e) {
-                return invalidParams(req, e);
-            }
+        String cursor;
+        try {
+            cursor = sanitizeCursor(lr.cursor());
+        } catch (IllegalArgumentException e) {
+            return invalidParams(req, e);
         }
 
         Pagination.Page<Resource> list;
@@ -613,13 +615,11 @@ public final class McpServer implements AutoCloseable {
             return invalidParams(req, e);
         }
 
-        String cursor = request.cursor();
-        if (cursor != null) {
-            try {
-                cursor = Pagination.sanitize(InputSanitizer.cleanNullable(cursor));
-            } catch (IllegalArgumentException e) {
-                return invalidParams(req, e);
-            }
+        String cursor;
+        try {
+            cursor = sanitizeCursor(request.cursor());
+        } catch (IllegalArgumentException e) {
+            return invalidParams(req, e);
         }
 
         Pagination.Page<ResourceTemplate> page;
@@ -693,13 +693,11 @@ public final class McpServer implements AutoCloseable {
     private JsonRpcMessage listTools(JsonRpcRequest req) {
         requireServerCapability(ServerCapability.TOOLS);
         ListToolsRequest ltr = ToolCodec.toListToolsRequest(req.params());
-        String cursor = ltr.cursor();
-        if (cursor != null) {
-            try {
-                cursor = Pagination.sanitize(InputSanitizer.cleanNullable(cursor));
-            } catch (IllegalArgumentException e) {
-                return invalidParams(req, e);
-            }
+        String cursor;
+        try {
+            cursor = sanitizeCursor(ltr.cursor());
+        } catch (IllegalArgumentException e) {
+            return invalidParams(req, e);
         }
         Pagination.Page<Tool> page;
         try {
@@ -757,13 +755,11 @@ public final class McpServer implements AutoCloseable {
     private JsonRpcMessage listPrompts(JsonRpcRequest req) {
         requireServerCapability(ServerCapability.PROMPTS);
         ListPromptsRequest lpr = PromptCodec.toListPromptsRequest(req.params());
-        String cursor = lpr.cursor();
-        if (cursor != null) {
-            try {
-                cursor = Pagination.sanitize(InputSanitizer.cleanNullable(cursor));
-            } catch (IllegalArgumentException e) {
-                return invalidParams(req, e);
-            }
+        String cursor;
+        try {
+            cursor = sanitizeCursor(lpr.cursor());
+        } catch (IllegalArgumentException e) {
+            return invalidParams(req, e);
         }
         Pagination.Page<Prompt> page;
         try {
