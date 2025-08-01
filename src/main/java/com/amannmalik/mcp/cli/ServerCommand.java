@@ -45,6 +45,9 @@ public final class ServerCommand implements Callable<Integer> {
     @CommandLine.Option(names = {"--auth-server"}, description = "Authorization server URL", split = ",")
     private List<String> authServers;
 
+    @CommandLine.Option(names = "--test-mode", description = "Disable auth for testing")
+    private boolean testMode;
+
     public ServerCommand() {
     }
 
@@ -66,10 +69,15 @@ public final class ServerCommand implements Callable<Integer> {
             TransportType type = httpPort == null ? TransportType.STDIO : TransportType.HTTP;
             int port = httpPort == null ? 0 : httpPort;
             if (stdio) type = TransportType.STDIO;
-            if (authServers == null || authServers.isEmpty()) {
-                throw new IllegalArgumentException("--auth-server is required");
+            List<String> auth = authServers;
+            if (!testMode) {
+                if (auth == null || auth.isEmpty()) {
+                    throw new IllegalArgumentException("--auth-server is required");
+                }
+            } else {
+                auth = List.of();
             }
-            cfg = new ServerConfig(type, port, null, expectedAudience, resourceMetadataUrl, authServers);
+            cfg = new ServerConfig(type, port, null, expectedAudience, resourceMetadataUrl, auth);
         }
 
         Transport t;

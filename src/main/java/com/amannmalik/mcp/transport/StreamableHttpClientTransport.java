@@ -52,6 +52,7 @@ public final class StreamableHttpClientTransport implements Transport {
         HttpRequest.Builder builder = HttpRequest.newBuilder(endpoint)
                 .header("Accept", "application/json, text/event-stream")
                 .header("Content-Type", "application/json")
+                .header("Origin", "http://127.0.0.1")
                 .header(TransportHeaders.PROTOCOL_VERSION, protocolVersion);
         Optional.ofNullable(authorization)
                 .ifPresent(t -> builder.header(TransportHeaders.AUTHORIZATION, "Bearer " + t));
