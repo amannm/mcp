@@ -79,6 +79,7 @@ import com.amannmalik.mcp.server.resources.ResourceListChangedNotification;
 import com.amannmalik.mcp.server.resources.ResourceTemplate;
 import com.amannmalik.mcp.server.resources.ResourceUpdatedNotification;
 import com.amannmalik.mcp.server.resources.ResourcesCodec;
+import com.amannmalik.mcp.server.resources.ResourceListListener;
 import com.amannmalik.mcp.server.resources.SubscribeRequest;
 import com.amannmalik.mcp.server.resources.UnsubscribeRequest;
 import com.amannmalik.mcp.server.tools.CallToolRequest;
@@ -90,7 +91,9 @@ import com.amannmalik.mcp.server.tools.ToolListChangedNotification;
 import com.amannmalik.mcp.server.tools.ToolListSubscription;
 import com.amannmalik.mcp.server.tools.ToolProvider;
 import com.amannmalik.mcp.server.tools.ToolResult;
+import com.amannmalik.mcp.server.tools.ToolListListener;
 import com.amannmalik.mcp.prompts.PromptListChangedNotification;
+import com.amannmalik.mcp.prompts.PromptsListener;
 import com.amannmalik.mcp.transport.Transport;
 import com.amannmalik.mcp.util.CancellationCodec;
 import com.amannmalik.mcp.util.CancellationTracker;
@@ -103,6 +106,8 @@ import com.amannmalik.mcp.util.ProgressToken;
 import com.amannmalik.mcp.util.ProgressUtil;
 import com.amannmalik.mcp.util.Timeouts;
 import com.amannmalik.mcp.util.RootChecker;
+import com.amannmalik.mcp.util.ListChangeListener;
+import com.amannmalik.mcp.util.ListChangeSubscription;
 import com.amannmalik.mcp.validation.InputSanitizer;
 import com.amannmalik.mcp.validation.SchemaValidator;
 import com.amannmalik.mcp.wire.NotificationMethod;
@@ -205,48 +210,27 @@ public final class McpServer implements AutoCloseable {
         this.promptsListChangedSupported = prompts != null && prompts.supportsListChanged();
 
         if (resources != null && resourcesListChangedSupported) {
-            try {
-                resourceListSubscription = resources.subscribeList(() -> {
-                    if (lifecycle.state() != LifecycleState.OPERATION) return;
-                    try {
-                        send(new JsonRpcNotification(
-                                NotificationMethod.RESOURCES_LIST_CHANGED.method(),
-                                ResourcesCodec.toJsonObject(new ResourceListChangedNotification())));
-                    } catch (IOException ignore) {
-                    }
-                });
-            } catch (Exception ignore) {
-            }
+            resourceListSubscription = subscribeListChanges(
+                    l -> resources.subscribeList((ResourceListListener) l),
+                    NotificationMethod.RESOURCES_LIST_CHANGED,
+                    () -> ResourcesCodec.toJsonObject(new ResourceListChangedNotification())
+            );
         }
 
         if (tools != null && toolListChangedSupported) {
-            try {
-                toolListSubscription = tools.subscribeList(() -> {
-                    if (lifecycle.state() != LifecycleState.OPERATION) return;
-                    try {
-                        send(new JsonRpcNotification(
-                                NotificationMethod.TOOLS_LIST_CHANGED.method(),
-                                ToolCodec.toJsonObject(new ToolListChangedNotification())));
-                    } catch (IOException ignore) {
-                    }
-                });
-            } catch (Exception ignore) {
-            }
+            toolListSubscription = subscribeListChanges(
+                    l -> tools.subscribeList((ToolListListener) l),
+                    NotificationMethod.TOOLS_LIST_CHANGED,
+                    () -> ToolCodec.toJsonObject(new ToolListChangedNotification())
+            );
         }
 
         if (prompts != null && promptsListChangedSupported) {
-            try {
-                promptsSubscription = prompts.subscribe(() -> {
-                    if (lifecycle.state() != LifecycleState.OPERATION) return;
-                    try {
-                        send(new JsonRpcNotification(
-                                NotificationMethod.PROMPTS_LIST_CHANGED.method(),
-                                PromptCodec.toJsonObject(new PromptListChangedNotification())));
-                    } catch (IOException ignore) {
-                    }
-                });
-            } catch (Exception ignore) {
-            }
+            promptsSubscription = subscribeListChanges(
+                    l -> prompts.subscribe((PromptsListener) l),
+                    NotificationMethod.PROMPTS_LIST_CHANGED,
+                    () -> PromptCodec.toJsonObject(new PromptListChangedNotification())
+            );
         }
 
         registerRequestHandler(RequestMethod.INITIALIZE, this::initialize);
@@ -290,6 +274,23 @@ public final class McpServer implements AutoCloseable {
 
     private void registerNotificationHandler(NotificationMethod method, NotificationHandler handler) {
         notificationHandlers.put(method, handler);
+    }
+
+    private <S extends ListChangeSubscription> S subscribeListChanges(
+            java.util.function.Function<ListChangeListener, S> subscribe,
+            NotificationMethod method,
+            java.util.function.Supplier<JsonObject> payload) {
+        try {
+            return subscribe.apply(() -> {
+                if (lifecycle.state() != LifecycleState.OPERATION) return;
+                try {
+                    send(new JsonRpcNotification(method.method(), payload.get()));
+                } catch (IOException ignore) {
+                }
+            });
+        } catch (Exception ignore) {
+            return null;
+        }
     }
 
     public void serve() throws IOException {
