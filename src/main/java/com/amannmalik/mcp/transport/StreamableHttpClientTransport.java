@@ -90,7 +90,7 @@ public final class StreamableHttpClientTransport implements Transport {
             return;
         }
         if (ct.startsWith("text/event-stream")) {
-            SseReader reader = new SseReader(response.body());
+            SseReader reader = new SseReader(response.body(), incoming, streams);
             streams.add(reader);
             Thread t = new Thread(reader);
             t.setDaemon(true);
@@ -128,13 +128,17 @@ public final class StreamableHttpClientTransport implements Transport {
         streams.clear();
     }
 
-    private final class SseReader implements Runnable {
+    static class SseReader implements Runnable {
         private final InputStream input;
+        private final BlockingQueue<JsonObject> queue;
+        private final Set<SseReader> container;
         private volatile boolean closed;
         private String lastEventId;
 
-        SseReader(InputStream input) {
+        SseReader(InputStream input, BlockingQueue<JsonObject> queue, Set<SseReader> container) {
             this.input = input;
+            this.queue = queue;
+            this.container = container;
         }
 
         @Override
@@ -144,14 +148,15 @@ public final class StreamableHttpClientTransport implements Transport {
                 StringBuilder data = new StringBuilder();
                 String eventId = null;
                 while (!closed && (line = br.readLine()) != null) {
-                    if (line.startsWith("id: ")) {
-                        eventId = line.substring(4);
-                    } else if (line.startsWith("data: ")) {
-                        data.append(line.substring(6));
+                    if (line.startsWith("id:")) {
+                        eventId = line.substring(line.indexOf(':') + 1).trim();
+                    } else if (line.startsWith("data:")) {
+                        if (!data.isEmpty()) data.append('\n');
+                        data.append(line.substring(line.indexOf(':') + 1).trim());
                     } else if (line.isEmpty()) {
                         if (!data.isEmpty()) {
                             try (JsonReader jr = Json.createReader(new StringReader(data.toString()))) {
-                                incoming.add(jr.readObject());
+                                queue.add(jr.readObject());
                             } catch (Exception ignore) {
                             }
                             data.setLength(0);
@@ -164,7 +169,7 @@ public final class StreamableHttpClientTransport implements Transport {
                 }
             } catch (IOException ignore) {
             } finally {
-                streams.remove(this);
+                if (container != null) container.remove(this);
                 close();
             }
         }
