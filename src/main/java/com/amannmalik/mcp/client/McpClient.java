@@ -49,6 +49,9 @@ import com.amannmalik.mcp.server.tools.ToolCodec;
 import com.amannmalik.mcp.server.tools.ToolListListener;
 import com.amannmalik.mcp.transport.StreamableHttpClientTransport;
 import com.amannmalik.mcp.transport.Transport;
+import com.amannmalik.mcp.transport.UnauthorizedException;
+import com.amannmalik.mcp.transport.ResourceMetadata;
+import com.amannmalik.mcp.transport.ResourceMetadataCodec;
 import com.amannmalik.mcp.util.CancellationCodec;
 import com.amannmalik.mcp.util.CancellationTracker;
 import com.amannmalik.mcp.util.CancelledNotification;
@@ -63,9 +66,17 @@ import com.amannmalik.mcp.util.Timeouts;
 import com.amannmalik.mcp.validation.SchemaValidator;
 import com.amannmalik.mcp.wire.NotificationMethod;
 import com.amannmalik.mcp.wire.RequestMethod;
+import jakarta.json.Json;
 import jakarta.json.JsonObject;
+import jakarta.json.JsonReader;
 
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.StringReader;
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
 import java.util.EnumMap;
 import java.util.EnumSet;
 import java.util.Map;
@@ -114,6 +125,7 @@ public final class McpClient implements AutoCloseable {
     };
     private PromptsListener promptsListener = () -> {
     };
+    private volatile ResourceMetadata resourceMetadata;
 
     private final Map<RequestMethod, RequestHandler> requestHandlers = new EnumMap<>(RequestMethod.class);
     private final Map<NotificationMethod, NotificationHandler> notificationHandlers = new EnumMap<>(NotificationMethod.class);
@@ -195,7 +207,12 @@ public final class McpClient implements AutoCloseable {
         var initJson = LifecycleCodec.toJsonObject(init);
         RequestId reqId = new RequestId.NumericId(id.getAndIncrement());
         JsonRpcRequest request = new JsonRpcRequest(reqId, RequestMethod.INITIALIZE.method(), initJson);
-        transport.send(JsonRpcCodec.toJsonObject(request));
+        try {
+            transport.send(JsonRpcCodec.toJsonObject(request));
+        } catch (UnauthorizedException e) {
+            handleUnauthorized(e);
+            throw e;
+        }
         CompletableFuture<JsonRpcMessage> future = CompletableFuture.supplyAsync(() -> {
             try {
                 return JsonRpcCodec.fromJsonObject(transport.receive());
@@ -371,6 +388,11 @@ public final class McpClient implements AutoCloseable {
         pending.put(reqId, future);
         try {
             transport.send(JsonRpcCodec.toJsonObject(new JsonRpcRequest(reqId, method, params)));
+        } catch (UnauthorizedException e) {
+            pending.remove(reqId);
+            token.ifPresent(t -> progressManager.release(reqId));
+            handleUnauthorized(e);
+            throw e;
         } catch (IOException e) {
             pending.remove(reqId);
             token.ifPresent(t -> progressManager.release(reqId));
@@ -432,6 +454,38 @@ public final class McpClient implements AutoCloseable {
 
     public boolean promptsListChangedSupported() {
         return promptsListChangedSupported;
+    }
+
+    public Optional<ResourceMetadata> resourceMetadata() {
+        return Optional.ofNullable(resourceMetadata);
+    }
+
+    private void handleUnauthorized(UnauthorizedException e) throws IOException {
+        var url = e.resourceMetadata();
+        if (url.isPresent()) {
+            fetchResourceMetadata(url.get());
+        }
+    }
+
+    private void fetchResourceMetadata(String url) throws IOException {
+        HttpRequest req = HttpRequest.newBuilder(URI.create(url))
+                .header("Accept", "application/json")
+                .GET()
+                .build();
+        HttpResponse<InputStream> resp;
+        try {
+            resp = HttpClient.newHttpClient().send(req, HttpResponse.BodyHandlers.ofInputStream());
+        } catch (InterruptedException ex) {
+            Thread.currentThread().interrupt();
+            throw new IOException(ex);
+        }
+        if (resp.statusCode() != 200) {
+            resp.body().close();
+            throw new IOException("failed to fetch resource metadata: HTTP " + resp.statusCode());
+        }
+        try (InputStream body = resp.body(); JsonReader reader = Json.createReader(body)) {
+            resourceMetadata = ResourceMetadataCodec.fromJsonObject(reader.readObject());
+        }
     }
 
     private void readLoop() {
