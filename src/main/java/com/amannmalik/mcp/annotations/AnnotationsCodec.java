@@ -6,6 +6,7 @@ import jakarta.json.JsonArrayBuilder;
 import jakarta.json.JsonObject;
 import jakarta.json.JsonObjectBuilder;
 import jakarta.json.JsonString;
+import jakarta.json.JsonValue;
 
 import java.time.Instant;
 import java.time.format.DateTimeParseException;
@@ -17,6 +18,7 @@ public final class AnnotationsCodec {
     }
 
     public static JsonObject toJsonObject(Annotations ann) {
+        if (ann == null) return JsonValue.EMPTY_JSON_OBJECT;
         JsonObjectBuilder b = Json.createObjectBuilder();
         if (!ann.audience().isEmpty()) {
             JsonArrayBuilder arr = Json.createArrayBuilder();
