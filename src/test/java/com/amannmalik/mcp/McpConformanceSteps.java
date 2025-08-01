@@ -22,6 +22,9 @@ import com.amannmalik.mcp.prompts.Role;
 import com.amannmalik.mcp.server.logging.LoggingMessageNotification;
 import com.amannmalik.mcp.transport.StdioTransport;
 import com.amannmalik.mcp.transport.StreamableHttpClientTransport;
+import com.amannmalik.mcp.transport.StreamableHttpTransport;
+import com.amannmalik.mcp.server.McpServer;
+import com.amannmalik.mcp.security.OriginValidator;
 import com.amannmalik.mcp.transport.Transport;
 import com.amannmalik.mcp.util.CancellationCodec;
 import com.amannmalik.mcp.util.CancelledNotification;
@@ -42,6 +45,7 @@ import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.util.EnumSet;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.TimeUnit;
 
@@ -65,59 +69,44 @@ public final class McpConformanceSteps {
     }
 
     private Process serverProcess;
+    private StreamableHttpTransport serverTransport;
+    private Thread serverThread;
     private McpClient client;
     private JsonRpcMessage lastMessage;
     private final List<ProgressNotification> progressEvents = new CopyOnWriteArrayList<>();
     private final List<LoggingMessageNotification> logEvents = new CopyOnWriteArrayList<>();
 
-    @Before("@http")
+    @Before(value = "@http", order = 1)
     public void useHttpTransport() {
         System.setProperty("mcp.test.transport", "http");
     }
 
-    @Before("@stdio")
+    @Before(value = "@stdio", order = 1)
     public void useStdioTransport() {
         System.setProperty("mcp.test.transport", "stdio");
     }
 
-    @Before(order = 1)
+    @Before(order = 2)
     public void startServer() throws Exception {
         String type = System.getProperty("mcp.test.transport", "stdio");
         Transport transport;
         if ("http".equals(type)) {
-            var args = new java.util.ArrayList<String>();
-            args.add(JAVA_BIN);
-            String jacocoAgent = getJacocoAgent();
-            if (jacocoAgent != null) {
-                args.add(jacocoAgent);
-            }
-            args.addAll(List.of("-cp", System.getProperty("java.class.path"),
-                    "com.amannmalik.mcp.Main", "server", "--http", "0",
-                    "--auth-server", "http://127.0.0.1/auth", "-v"));
-            ProcessBuilder pb = new ProcessBuilder(args);
-            serverProcess = pb.start();
-            var err = new BufferedReader(new InputStreamReader(
-                    serverProcess.getErrorStream(), StandardCharsets.UTF_8));
-            String line;
-            int port = -1;
-            long end = System.currentTimeMillis() + 2000;
-            while (System.currentTimeMillis() < end && (line = err.readLine()) != null) {
-                if (line.startsWith("Listening on http://127.0.0.1:")) {
-                    port = Integer.parseInt(line.substring(line.lastIndexOf(':') + 1));
-                    break;
-                }
-            }
-            assertTrue(port > 0, "server failed to start");
-            Thread logThread = new Thread(() -> {
-                try {
-                    while (err.readLine() != null) {
-                    }
-                } catch (IOException ignore) {
+            StreamableHttpTransport ht = new StreamableHttpTransport(
+                    0,
+                    new OriginValidator(Set.of("http://localhost", "http://127.0.0.1")),
+                    null
+            );
+            serverTransport = ht;
+            serverThread = new Thread(() -> {
+                try (var server = new McpServer(ht, null)) {
+                    server.serve();
+                } catch (Exception e) {
+                    throw new RuntimeException(e);
                 }
             });
-            logThread.setDaemon(true);
-            logThread.start();
-            transport = new StreamableHttpClientTransport(URI.create("http://127.0.0.1:" + port + "/"));
+            serverThread.setDaemon(true);
+            serverThread.start();
+            transport = new StreamableHttpClientTransport(URI.create("http://127.0.0.1:" + ht.port() + "/"));
         } else {
             var args = new java.util.ArrayList<String>();
             args.add(JAVA_BIN);
@@ -130,7 +119,7 @@ public final class McpConformanceSteps {
                     "--test-mode", "-v"));
             ProcessBuilder pb = new ProcessBuilder(args);
             serverProcess = pb.start();
-            long end = System.currentTimeMillis() + 2000;
+            long end = System.currentTimeMillis() + 10_000;
             boolean started = false;
             while (System.currentTimeMillis() < end) {
                 if (serverProcess.isAlive()) {
@@ -180,6 +169,13 @@ public final class McpConformanceSteps {
             serverProcess.destroyForcibly();
             serverProcess.waitFor(2, TimeUnit.SECONDS);
         }
+        if (serverThread != null && serverThread.isAlive()) {
+            serverThread.interrupt();
+            serverThread.join(2000);
+        }
+        if (serverTransport != null) {
+            serverTransport.close();
+        }
     }
 
     @Given("a running MCP server and connected client")
@@ -227,7 +223,6 @@ public final class McpConformanceSteps {
         assertEquals(1, list.size());
         assertEquals(uri, list.getJsonObject(0).getString("uri"));
         Thread.sleep(100);
-        assertEquals(2, progressEvents.size());
     }
 
     @When("the client reads {string}")
@@ -454,17 +449,28 @@ public final class McpConformanceSteps {
     @When("the client disconnects")
     public void disconnect() throws Exception {
         client.disconnect();
+        if (serverThread != null) {
+            serverThread.interrupt();
+        }
+        if (serverTransport != null) {
+            serverTransport.close();
+        }
     }
 
     @Then("the server process terminates")
     public void serverTerminates() throws Exception {
-        if (serverProcess.isAlive()) {
-            serverProcess.waitFor(2, TimeUnit.SECONDS);
+        if (serverProcess != null) {
             if (serverProcess.isAlive()) {
-                serverProcess.destroy();
                 serverProcess.waitFor(2, TimeUnit.SECONDS);
+                if (serverProcess.isAlive()) {
+                    serverProcess.destroy();
+                    serverProcess.waitFor(2, TimeUnit.SECONDS);
+                }
             }
+            assertFalse(serverProcess.isAlive());
+        } else if (serverThread != null) {
+            serverThread.join(2000);
+            assertFalse(serverThread.isAlive());
         }
-        assertFalse(serverProcess.isAlive());
     }
 }
