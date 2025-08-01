@@ -5,6 +5,7 @@ import com.amannmalik.mcp.lifecycle.ServerCapability;
 import java.util.Arrays;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 public enum RequestMethod implements WireMethod {
     INITIALIZE("initialize"),
@@ -26,6 +27,9 @@ public enum RequestMethod implements WireMethod {
 
     private final String method;
     private final ServerCapability capability;
+    private static final Map<String, RequestMethod> BY_METHOD =
+            Arrays.stream(values())
+                    .collect(Collectors.toUnmodifiableMap(RequestMethod::method, m -> m));
 
     RequestMethod(String method) {
         this(method, null);
@@ -41,7 +45,8 @@ public enum RequestMethod implements WireMethod {
     }
 
     public static Optional<RequestMethod> from(String method) {
-        return WireMethod.from(RequestMethod.class, method);
+        if (method == null) return Optional.empty();
+        return Optional.ofNullable(BY_METHOD.get(method));
     }
 
     public Optional<ServerCapability> requiredCapability() {
