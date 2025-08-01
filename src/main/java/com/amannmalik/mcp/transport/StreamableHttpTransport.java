@@ -254,22 +254,88 @@ public final class StreamableHttpTransport implements Transport {
         };
     }
 
+    private Principal authorize(HttpServletRequest req, HttpServletResponse resp) throws IOException {
+        if (authManager == null) return null;
+        try {
+            return authManager.authorize(req.getHeader("Authorization"));
+        } catch (AuthorizationException e) {
+            unauthorized(resp);
+            return null;
+        }
+    }
+
+    private boolean verifyOrigin(HttpServletRequest req, HttpServletResponse resp) throws IOException {
+        if (!originValidator.isValid(req.getHeader("Origin"))) {
+            resp.sendError(HttpServletResponse.SC_FORBIDDEN);
+            return false;
+        }
+        return true;
+    }
+
+    private boolean sanitizeHeaders(String sessionHeader, String versionHeader, HttpServletResponse resp) throws IOException {
+        if (sessionHeader != null && !InputSanitizer.isVisibleAscii(sessionHeader)) {
+            resp.sendError(HttpServletResponse.SC_BAD_REQUEST);
+            return false;
+        }
+        if (versionHeader != null && !InputSanitizer.isVisibleAscii(versionHeader)) {
+            resp.sendError(HttpServletResponse.SC_BAD_REQUEST);
+            return false;
+        }
+        return true;
+    }
+
+    private boolean checkSession(HttpServletRequest req,
+                                 HttpServletResponse resp,
+                                 Principal principal,
+                                 boolean initializing,
+                                 String session,
+                                 String last,
+                                 String header,
+                                 String version) throws IOException {
+        if (session == null && initializing) {
+            byte[] bytes = new byte[32];
+            RANDOM.nextBytes(bytes);
+            session = Base64Util.encodeUrl(bytes);
+            sessionId.set(session);
+            sessionOwner.set(req.getRemoteAddr());
+            sessionPrincipal.set(principal);
+            lastSessionId.set(null);
+            resp.setHeader(TransportHeaders.SESSION_ID, session);
+            return true;
+        }
+        if (session == null) {
+            if (header != null && header.equals(last)) {
+                resp.sendError(HttpServletResponse.SC_NOT_FOUND);
+            } else {
+                resp.sendError(HttpServletResponse.SC_BAD_REQUEST);
+            }
+            return false;
+        }
+        if (header == null) {
+            resp.sendError(HttpServletResponse.SC_BAD_REQUEST);
+            return false;
+        }
+        if (!session.equals(header) || !req.getRemoteAddr().equals(sessionOwner.get())) {
+            resp.sendError(HttpServletResponse.SC_NOT_FOUND);
+            return false;
+        }
+        if (authManager != null && sessionPrincipal.get() != null && !sessionPrincipal.get().id().equals(principal.id())) {
+            resp.sendError(HttpServletResponse.SC_FORBIDDEN);
+            return false;
+        }
+        if (!initializing && (version == null || !version.equals(protocolVersion))) {
+            resp.sendError(HttpServletResponse.SC_BAD_REQUEST);
+            return false;
+        }
+        return true;
+    }
+
     private class McpServlet extends HttpServlet {
         @Override
         protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
-            Principal principal = null;
-            if (authManager != null) {
-                try {
-                    principal = authManager.authorize(req.getHeader("Authorization"));
-                } catch (AuthorizationException e) {
-                    unauthorized(resp);
-                    return;
-                }
-            }
-            if (!originValidator.isValid(req.getHeader("Origin"))) {
-                resp.sendError(HttpServletResponse.SC_FORBIDDEN);
-                return;
-            }
+            Principal principal = authorize(req, resp);
+            if (principal == null && authManager != null) return;
+            if (!verifyOrigin(req, resp)) return;
             String accept = req.getHeader("Accept");
             if (accept == null) {
                 resp.sendError(HttpServletResponse.SC_NOT_ACCEPTABLE);
@@ -284,15 +350,8 @@ public final class StreamableHttpTransport implements Transport {
             String session = sessionId.get();
             String last = lastSessionId.get();
             String header = req.getHeader(TransportHeaders.SESSION_ID);
-            if (header != null && !InputSanitizer.isVisibleAscii(header)) {
-                resp.sendError(HttpServletResponse.SC_BAD_REQUEST);
-                return;
-            }
             String version = req.getHeader(PROTOCOL_HEADER);
-            if (version != null && !InputSanitizer.isVisibleAscii(version)) {
-                resp.sendError(HttpServletResponse.SC_BAD_REQUEST);
-                return;
-            }
+            if (!sanitizeHeaders(header, version, resp)) return;
             JsonObject obj;
             try (JsonReader reader = Json.createReader(req.getInputStream())) {
                 obj = reader.readObject();
@@ -303,37 +362,7 @@ public final class StreamableHttpTransport implements Transport {
             boolean initializing = RequestMethod.INITIALIZE.method()
                     .equals(obj.getString("method", null));
 
-            if (session == null && initializing) {
-                byte[] bytes = new byte[32];
-                RANDOM.nextBytes(bytes);
-                session = Base64Util.encodeUrl(bytes);
-                sessionId.set(session);
-                sessionOwner.set(req.getRemoteAddr());
-                sessionPrincipal.set(principal);
-                lastSessionId.set(null);
-                resp.setHeader(TransportHeaders.SESSION_ID, session);
-            } else if (session == null) {
-                if (header != null && header.equals(last)) {
-                    resp.sendError(HttpServletResponse.SC_NOT_FOUND);
-                } else {
-                    resp.sendError(HttpServletResponse.SC_BAD_REQUEST);
-                }
-                return;
-            } else if (header == null) {
-                resp.sendError(HttpServletResponse.SC_BAD_REQUEST);
-                return;
-            } else if (!session.equals(header) || !req.getRemoteAddr().equals(sessionOwner.get())) {
-                resp.sendError(HttpServletResponse.SC_NOT_FOUND);
-                return;
-            } else if (authManager != null && sessionPrincipal.get() != null && !sessionPrincipal.get().id().equals(principal.id())) {
-                resp.sendError(HttpServletResponse.SC_FORBIDDEN);
-                return;
-            } else {
-                if (!initializing && (version == null || !version.equals(protocolVersion))) {
-                    resp.sendError(HttpServletResponse.SC_BAD_REQUEST);
-                    return;
-                }
-            }
+            if (!checkSession(req, resp, principal, initializing, session, last, header, version)) return;
 
             boolean hasMethod = obj.containsKey("method");
             boolean hasId = obj.containsKey("id");
@@ -408,19 +437,9 @@ public final class StreamableHttpTransport implements Transport {
 
         @Override
         protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws IOException {
-            Principal principal = null;
-            if (authManager != null) {
-                try {
-                    principal = authManager.authorize(req.getHeader("Authorization"));
-                } catch (AuthorizationException e) {
-                    unauthorized(resp);
-                    return;
-                }
-            }
-            if (!originValidator.isValid(req.getHeader("Origin"))) {
-                resp.sendError(HttpServletResponse.SC_FORBIDDEN);
-                return;
-            }
+            Principal principal = authorize(req, resp);
+            if (principal == null && authManager != null) return;
+            if (!verifyOrigin(req, resp)) return;
             String accept = req.getHeader("Accept");
             if (accept == null) {
                 resp.sendError(HttpServletResponse.SC_NOT_ACCEPTABLE);
@@ -434,41 +453,9 @@ public final class StreamableHttpTransport implements Transport {
             String session = sessionId.get();
             String last = lastSessionId.get();
             String header = req.getHeader(TransportHeaders.SESSION_ID);
-            if (header != null && !InputSanitizer.isVisibleAscii(header)) {
-                resp.sendError(HttpServletResponse.SC_BAD_REQUEST);
-                return;
-            }
             String version = req.getHeader(PROTOCOL_HEADER);
-            if (version != null && !InputSanitizer.isVisibleAscii(version)) {
-                resp.sendError(HttpServletResponse.SC_BAD_REQUEST);
-                return;
-            }
-            if (session == null) {
-                if (header != null && header.equals(last)) {
-                    resp.sendError(HttpServletResponse.SC_NOT_FOUND);
-                } else {
-                    resp.sendError(HttpServletResponse.SC_BAD_REQUEST);
-                }
-                return;
-            }
-            if (header == null) {
-                resp.sendError(HttpServletResponse.SC_BAD_REQUEST);
-                return;
-            }
-            if (!session.equals(header) || !req.getRemoteAddr().equals(sessionOwner.get())) {
-                resp.sendError(HttpServletResponse.SC_NOT_FOUND);
-                return;
-            }
-
-            if (authManager != null && sessionPrincipal.get() != null && !sessionPrincipal.get().id().equals(principal.id())) {
-                resp.sendError(HttpServletResponse.SC_FORBIDDEN);
-                return;
-            }
-
-            if (version == null || !version.equals(protocolVersion)) {
-                resp.sendError(HttpServletResponse.SC_BAD_REQUEST);
-                return;
-            }
+            if (!sanitizeHeaders(header, version, resp)) return;
+            if (!checkSession(req, resp, principal, false, session, last, header, version)) return;
             resp.setStatus(HttpServletResponse.SC_OK);
             resp.setContentType("text/event-stream;charset=UTF-8");
             resp.setHeader("Cache-Control", "no-cache");
@@ -508,50 +495,18 @@ public final class StreamableHttpTransport implements Transport {
 
         @Override
         protected void doDelete(HttpServletRequest req, HttpServletResponse resp) throws IOException {
-            Principal principal = null;
-            if (authManager != null) {
-                try {
-                    principal = authManager.authorize(req.getHeader("Authorization"));
-                } catch (AuthorizationException e) {
-                    unauthorized(resp);
-                    return;
-                }
-            }
-            if (!originValidator.isValid(req.getHeader("Origin"))) {
-                resp.sendError(HttpServletResponse.SC_FORBIDDEN);
-                return;
-            }
+            Principal principal = authorize(req, resp);
+            if (principal == null && authManager != null) return;
+            if (!verifyOrigin(req, resp)) return;
             String session = sessionId.get();
             String header = req.getHeader(TransportHeaders.SESSION_ID);
-            if (header != null && !InputSanitizer.isVisibleAscii(header)) {
-                resp.sendError(HttpServletResponse.SC_BAD_REQUEST);
-                return;
-            }
             String version = req.getHeader(PROTOCOL_HEADER);
-            if (version != null && !InputSanitizer.isVisibleAscii(version)) {
-                resp.sendError(HttpServletResponse.SC_BAD_REQUEST);
-                return;
-            }
+            if (!sanitizeHeaders(header, version, resp)) return;
             if (session == null) {
                 resp.sendError(HttpServletResponse.SC_BAD_REQUEST);
                 return;
             }
-            if (header == null) {
-                resp.sendError(HttpServletResponse.SC_BAD_REQUEST);
-                return;
-            }
-            if (!session.equals(header) || !req.getRemoteAddr().equals(sessionOwner.get())) {
-                resp.sendError(HttpServletResponse.SC_NOT_FOUND);
-                return;
-            }
-            if (authManager != null && sessionPrincipal.get() != null && !sessionPrincipal.get().id().equals(principal.id())) {
-                resp.sendError(HttpServletResponse.SC_FORBIDDEN);
-                return;
-            }
-            if (version != null && !version.equals(protocolVersion)) {
-                resp.sendError(HttpServletResponse.SC_BAD_REQUEST);
-                return;
-            }
+            if (!checkSession(req, resp, principal, false, session, null, header, version)) return;
             lastSessionId.set(session);
             sessionId.set(null);
             sessionOwner.set(null);
