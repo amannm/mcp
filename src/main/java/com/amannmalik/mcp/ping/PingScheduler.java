@@ -6,10 +6,6 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
-/**
- * Periodically sends ping requests and invokes a callback when a configured
- * number of consecutive pings fail.
- */
 public final class PingScheduler implements AutoCloseable {
     private final McpClient client;
     private final long interval;
