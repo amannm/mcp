@@ -5,13 +5,6 @@ import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-/**
- * Thrown when the server responds with HTTP 401 Unauthorized.
- * <p>
- * The {@code wwwAuthenticate} header may be used by callers to
- * initiate an authorization flow.
- */
-
 public final class UnauthorizedException extends IOException {
     private static final Pattern RESOURCE_METADATA =
             Pattern.compile("resource_metadata=\"([^\"]+)\"");
