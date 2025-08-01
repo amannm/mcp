@@ -10,6 +10,7 @@ import com.amannmalik.mcp.jsonrpc.RequestId;
 import com.amannmalik.mcp.lifecycle.Protocol;
 import com.amannmalik.mcp.security.OriginValidator;
 import com.amannmalik.mcp.util.Base64Util;
+import com.amannmalik.mcp.util.CloseUtil;
 import com.amannmalik.mcp.validation.InputSanitizer;
 import com.amannmalik.mcp.wire.RequestMethod;
 import com.amannmalik.mcp.transport.ResourceMetadata;
@@ -133,11 +134,7 @@ public final class StreamableHttpTransport implements Transport {
             SseClient stream = requestStreams.get(id);
             if (stream != null) {
                 stream.send(message);
-                if (method == null) {
-                    stream.close();
-                    requestStreams.remove(id);
-                    clientsByPrefix.remove(stream.prefix);
-                }
+                if (method == null) removeRequestStream(id, stream);
                 return;
             }
             var q = responseQueues.remove(id);
@@ -225,6 +222,36 @@ public final class StreamableHttpTransport implements Transport {
         } catch (Exception e) {
             throw new IOException(e);
         }
+    }
+
+    private void removeRequestStream(String key, SseClient client) {
+        requestStreams.remove(key);
+        clientsByPrefix.remove(client.prefix);
+        CloseUtil.closeQuietly(client);
+    }
+
+    private AsyncListener requestStreamListener(String key, SseClient client) {
+        return new AsyncListener() {
+            @Override public void onComplete(AsyncEvent event) { removeRequestStream(key, client); }
+            @Override public void onTimeout(AsyncEvent event) { removeRequestStream(key, client); }
+            @Override public void onError(AsyncEvent event) { removeRequestStream(key, client); }
+            @Override public void onStartAsync(AsyncEvent event) { }
+        };
+    }
+
+    private void removeGeneralStream(SseClient client) {
+        generalClients.remove(client);
+        lastGeneral.set(client);
+        CloseUtil.closeQuietly(client);
+    }
+
+    private AsyncListener generalStreamListener(SseClient client) {
+        return new AsyncListener() {
+            @Override public void onComplete(AsyncEvent event) { removeGeneralStream(client); }
+            @Override public void onTimeout(AsyncEvent event) { removeGeneralStream(client); }
+            @Override public void onError(AsyncEvent event) { removeGeneralStream(client); }
+            @Override public void onStartAsync(AsyncEvent event) { }
+        };
     }
 
     private class McpServlet extends HttpServlet {
@@ -368,51 +395,12 @@ public final class StreamableHttpTransport implements Transport {
                 String key = obj.get("id").toString();
                 requestStreams.put(key, client);
                 clientsByPrefix.put(client.prefix, client);
-                ac.addListener(new AsyncListener() {
-                    @Override
-                    public void onComplete(AsyncEvent event) {
-                        requestStreams.remove(key);
-                        clientsByPrefix.remove(client.prefix);
-                        try {
-                            client.close();
-                        } catch (Exception e) {
-                            System.err.println("SSE close failed: " + e.getMessage());
-                        }
-                    }
-
-                    @Override
-                    public void onTimeout(AsyncEvent event) {
-                        requestStreams.remove(key);
-                        clientsByPrefix.remove(client.prefix);
-                        try {
-                            client.close();
-                        } catch (Exception e) {
-                            System.err.println("SSE close failed: " + e.getMessage());
-                        }
-                    }
-
-                    @Override
-                    public void onError(AsyncEvent event) {
-                        requestStreams.remove(key);
-                        clientsByPrefix.remove(client.prefix);
-                        try {
-                            client.close();
-                        } catch (Exception e) {
-                            System.err.println("SSE close failed: " + e.getMessage());
-                        }
-                    }
-
-                    @Override
-                    public void onStartAsync(AsyncEvent event) {
-                    }
-                });
+                ac.addListener(requestStreamListener(key, client));
                 try {
                     incoming.put(obj);
                 } catch (InterruptedException e) {
                     Thread.currentThread().interrupt();
-                    requestStreams.remove(key);
-                    clientsByPrefix.remove(client.prefix);
-                    client.close();
+                    removeRequestStream(key, client);
                     resp.sendError(HttpServletResponse.SC_SERVICE_UNAVAILABLE);
                 }
             }
@@ -515,45 +503,7 @@ public final class StreamableHttpTransport implements Transport {
                 lastGeneral.set(null);
             }
             generalClients.add(client);
-            final SseClient c = client;
-            ac.addListener(new AsyncListener() {
-                @Override
-                public void onComplete(AsyncEvent event) {
-                    generalClients.remove(c);
-                    lastGeneral.set(c);
-                    try {
-                        c.close();
-                    } catch (Exception e) {
-                        System.err.println("SSE close failed: " + e.getMessage());
-                    }
-                }
-
-                @Override
-                public void onTimeout(AsyncEvent event) {
-                    generalClients.remove(c);
-                    lastGeneral.set(c);
-                    try {
-                        c.close();
-                    } catch (Exception e) {
-                        System.err.println("SSE close failed: " + e.getMessage());
-                    }
-                }
-
-                @Override
-                public void onError(AsyncEvent event) {
-                    generalClients.remove(c);
-                    lastGeneral.set(c);
-                    try {
-                        c.close();
-                    } catch (Exception e) {
-                        System.err.println("SSE close failed: " + e.getMessage());
-                    }
-                }
-
-                @Override
-                public void onStartAsync(AsyncEvent event) {
-                }
-            });
+            ac.addListener(generalStreamListener(client));
         }
 
         @Override
@@ -635,7 +585,7 @@ public final class StreamableHttpTransport implements Transport {
         }
     }
 
-    private static class SseClient {
+    private static class SseClient implements AutoCloseable {
         private static final int HISTORY_LIMIT = 100;
 
         private AsyncContext context;
@@ -689,7 +639,8 @@ public final class StreamableHttpTransport implements Transport {
             out.flush();
         }
 
-        void close() {
+        @Override
+        public void close() {
             if (closed) return;
             closed = true;
             try {
