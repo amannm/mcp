@@ -58,17 +58,23 @@ public final class JsonRpcCodec {
 
         var idValue = obj.get("id");
         var method = obj.getString("method", null);
+        var paramsValue = obj.get("params");
+        if (paramsValue != null && paramsValue.getValueType() != JsonValue.ValueType.OBJECT) {
+            throw new IllegalArgumentException("params must be an object");
+        }
         var hasError = obj.containsKey("error");
         var hasResult = obj.containsKey("result");
         if (hasError && hasResult) {
             throw new IllegalArgumentException("response cannot contain both result and error");
         }
 
+        JsonObject paramsObj = paramsValue == null ? null : paramsValue.asJsonObject();
+
         if (method != null && idValue != null && idValue.getValueType() != JsonValue.ValueType.NULL) {
-            return new JsonRpcRequest(toId(idValue), method, obj.getJsonObject("params"));
+            return new JsonRpcRequest(toId(idValue), method, paramsObj);
         }
         if (method != null) {
-            return new JsonRpcNotification(method, obj.getJsonObject("params"));
+            return new JsonRpcNotification(method, paramsObj);
         }
         if (hasResult) {
             if (idValue == null || idValue.getValueType() == JsonValue.ValueType.NULL) {
