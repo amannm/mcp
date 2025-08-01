@@ -284,6 +284,18 @@ public final class StreamableHttpTransport implements Transport {
         return true;
     }
 
+    private boolean validateSession(HttpServletRequest req,
+                                    HttpServletResponse resp,
+                                    Principal principal,
+                                    boolean initializing) throws IOException {
+        String session = sessionId.get();
+        String last = lastSessionId.get();
+        String header = req.getHeader(TransportHeaders.SESSION_ID);
+        String version = req.getHeader(PROTOCOL_HEADER);
+        if (!sanitizeHeaders(header, version, resp)) return false;
+        return checkSession(req, resp, principal, initializing, session, last, header, version);
+    }
+
     private boolean checkSession(HttpServletRequest req,
                                  HttpServletResponse resp,
                                  Principal principal,
@@ -347,11 +359,6 @@ public final class StreamableHttpTransport implements Transport {
                 return;
             }
 
-            String session = sessionId.get();
-            String last = lastSessionId.get();
-            String header = req.getHeader(TransportHeaders.SESSION_ID);
-            String version = req.getHeader(PROTOCOL_HEADER);
-            if (!sanitizeHeaders(header, version, resp)) return;
             JsonObject obj;
             try (JsonReader reader = Json.createReader(req.getInputStream())) {
                 obj = reader.readObject();
@@ -362,7 +369,7 @@ public final class StreamableHttpTransport implements Transport {
             boolean initializing = RequestMethod.INITIALIZE.method()
                     .equals(obj.getString("method", null));
 
-            if (!checkSession(req, resp, principal, initializing, session, last, header, version)) return;
+            if (!validateSession(req, resp, principal, initializing)) return;
 
             boolean hasMethod = obj.containsKey("method");
             boolean hasId = obj.containsKey("id");
@@ -450,12 +457,7 @@ public final class StreamableHttpTransport implements Transport {
                 resp.sendError(HttpServletResponse.SC_NOT_ACCEPTABLE);
                 return;
             }
-            String session = sessionId.get();
-            String last = lastSessionId.get();
-            String header = req.getHeader(TransportHeaders.SESSION_ID);
-            String version = req.getHeader(PROTOCOL_HEADER);
-            if (!sanitizeHeaders(header, version, resp)) return;
-            if (!checkSession(req, resp, principal, false, session, last, header, version)) return;
+            if (!validateSession(req, resp, principal, false)) return;
             resp.setStatus(HttpServletResponse.SC_OK);
             resp.setContentType("text/event-stream;charset=UTF-8");
             resp.setHeader("Cache-Control", "no-cache");
@@ -499,14 +501,7 @@ public final class StreamableHttpTransport implements Transport {
             if (principal == null && authManager != null) return;
             if (!verifyOrigin(req, resp)) return;
             String session = sessionId.get();
-            String header = req.getHeader(TransportHeaders.SESSION_ID);
-            String version = req.getHeader(PROTOCOL_HEADER);
-            if (!sanitizeHeaders(header, version, resp)) return;
-            if (session == null) {
-                resp.sendError(HttpServletResponse.SC_BAD_REQUEST);
-                return;
-            }
-            if (!checkSession(req, resp, principal, false, session, null, header, version)) return;
+            if (!validateSession(req, resp, principal, false)) return;
             lastSessionId.set(session);
             sessionId.set(null);
             sessionOwner.set(null);
