@@ -44,8 +44,11 @@ import java.io.EOFException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public final class StreamableHttpTransport implements Transport {
+    private static final Logger LOG = LoggerFactory.getLogger(StreamableHttpTransport.class);
     private final Server server;
     private final int port;
     private final OriginValidator originValidator;
@@ -73,6 +76,23 @@ public final class StreamableHttpTransport implements Transport {
     private static final SecureRandom RANDOM = new SecureRandom();
     private volatile String protocolVersion;
     private final ConcurrentHashMap<String, BlockingQueue<JsonObject>> responseQueues = new ConcurrentHashMap<>();
+
+    private static boolean isExpectedDisconnection(Exception e) {
+        if (!(e instanceof IOException)) return false;
+        String msg = e.getMessage();
+        if (msg == null) return false;
+        return msg.contains("Broken pipe")
+                || msg.contains("Connection reset")
+                || msg.contains("Stream closed");
+    }
+
+    private static void logCloseFailure(Exception e) {
+        if (isExpectedDisconnection(e)) {
+            LOG.debug("Client disconnected: {}", e.getMessage());
+        } else {
+            LOG.warn("Unexpected SSE close failure", e);
+        }
+    }
 
     private void unauthorized(HttpServletResponse resp) throws IOException {
         if (resourceMetadataUrl != null) {
@@ -376,7 +396,7 @@ public final class StreamableHttpTransport implements Transport {
                         try {
                             client.close();
                         } catch (Exception e) {
-                            System.err.println("SSE close failed: " + e.getMessage());
+                            logCloseFailure(e);
                         }
                     }
 
@@ -387,7 +407,7 @@ public final class StreamableHttpTransport implements Transport {
                         try {
                             client.close();
                         } catch (Exception e) {
-                            System.err.println("SSE close failed: " + e.getMessage());
+                            logCloseFailure(e);
                         }
                     }
 
@@ -398,7 +418,7 @@ public final class StreamableHttpTransport implements Transport {
                         try {
                             client.close();
                         } catch (Exception e) {
-                            System.err.println("SSE close failed: " + e.getMessage());
+                            logCloseFailure(e);
                         }
                     }
 
@@ -524,7 +544,7 @@ public final class StreamableHttpTransport implements Transport {
                     try {
                         c.close();
                     } catch (Exception e) {
-                        System.err.println("SSE close failed: " + e.getMessage());
+                        logCloseFailure(e);
                     }
                 }
 
@@ -535,7 +555,7 @@ public final class StreamableHttpTransport implements Transport {
                     try {
                         c.close();
                     } catch (Exception e) {
-                        System.err.println("SSE close failed: " + e.getMessage());
+                        logCloseFailure(e);
                     }
                 }
 
@@ -546,7 +566,7 @@ public final class StreamableHttpTransport implements Transport {
                     try {
                         c.close();
                     } catch (Exception e) {
-                        System.err.println("SSE close failed: " + e.getMessage());
+                        logCloseFailure(e);
                     }
                 }
 
@@ -673,7 +693,11 @@ public final class StreamableHttpTransport implements Transport {
                 out.write("data: " + msg.toString() + "\n\n");
                 out.flush();
             } catch (Exception e) {
-                System.err.println("SSE send failed: " + e.getMessage());
+                if (isExpectedDisconnection(e)) {
+                    LOG.debug("SSE send failed: {}", e.getMessage());
+                } else {
+                    LOG.warn("SSE send failed", e);
+                }
                 closed = true;
             }
         }
@@ -697,7 +721,7 @@ public final class StreamableHttpTransport implements Transport {
                     context.complete();
                 }
             } catch (Exception e) {
-                System.err.println("SSE close failed: " + e.getMessage());
+                logCloseFailure(e);
             } finally {
                 context = null;
                 out = null;

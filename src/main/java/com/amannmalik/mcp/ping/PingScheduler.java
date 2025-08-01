@@ -5,12 +5,15 @@ import com.amannmalik.mcp.client.McpClient;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Periodically sends ping requests and invokes a callback when a configured
  * number of consecutive pings fail.
  */
 public final class PingScheduler implements AutoCloseable {
+    private static final Logger LOG = LoggerFactory.getLogger(PingScheduler.class);
     private final McpClient client;
     private final long interval;
     private final long timeout;
@@ -56,7 +59,7 @@ public final class PingScheduler implements AutoCloseable {
 
         failureCount++;
         if (failureCount >= maxFailures) {
-            if (System.err != null) System.err.println("Ping failed");
+            LOG.warn("Ping failed");
             try {
                 onFailure.run();
             } catch (Exception ignore) {

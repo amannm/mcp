@@ -77,8 +77,11 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicLong;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public final class McpClient implements AutoCloseable {
+    private static final Logger LOG = LoggerFactory.getLogger(McpClient.class);
     private final ClientInfo info;
     private final Set<ClientCapability> capabilities;
     private final Transport transport;
@@ -669,8 +672,8 @@ public final class McpClient implements AutoCloseable {
         cancellationTracker.cancel(cn.requestId(), cn.reason());
         progressManager.release(cn.requestId());
         String reason = cancellationTracker.reason(cn.requestId());
-        if (reason != null && System.err != null) {
-            System.err.println("Request " + cn.requestId() + " cancelled: " + reason);
+        if (reason != null) {
+            LOG.debug("Request {} cancelled: {}", cn.requestId(), reason);
         }
     }
 

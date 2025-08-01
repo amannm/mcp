@@ -3,8 +3,11 @@ package com.amannmalik.mcp.ping;
 import com.amannmalik.mcp.client.McpClient;
 
 import java.io.IOException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public final class PingMonitor {
+    private static final Logger LOG = LoggerFactory.getLogger(PingMonitor.class);
     private PingMonitor() {
     }
 
@@ -13,7 +16,7 @@ public final class PingMonitor {
             client.ping(timeoutMillis);
             return true;
         } catch (IOException | RuntimeException e) {
-            if (System.err != null) System.err.println("Ping failure: " + e.getMessage());
+            LOG.debug("Ping failure: {}", e.getMessage());
             return false;
         }
     }
