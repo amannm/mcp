@@ -471,6 +471,10 @@ public final class McpConformanceSteps {
     public void serverTerminates() throws Exception {
         if (serverProcess.isAlive()) {
             serverProcess.waitFor(2, TimeUnit.SECONDS);
+            if (serverProcess.isAlive()) {
+                serverProcess.destroy();
+                serverProcess.waitFor(2, TimeUnit.SECONDS);
+            }
         }
         assertFalse(serverProcess.isAlive());
     }

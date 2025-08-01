@@ -26,6 +26,7 @@ public record Resource(
         if (size != null && size < 0) {
             throw new IllegalArgumentException("size must be >= 0");
         }
+        annotations = annotations == null ? Annotations.EMPTY : annotations;
         MetaValidator.requireValid(_meta);
     }
 
