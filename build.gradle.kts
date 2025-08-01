@@ -62,7 +62,7 @@ tasks.test {
     finalizedBy(tasks.jacocoTestReport)
     val agentFile = configurations.jacocoAgent.get().singleFile.absolutePath.replace(".jar", "-runtime.jar")
     systemProperty("jacoco.agent.jar", agentFile)
-    systemProperty("jacoco.exec.file", tasks.jacocoTestReport.get().executionData.singleFile.absolutePath)
+    systemProperty("jacoco.exec.file", "${layout.buildDirectory.get()}/jacoco/test.exec")
 }
 
 graalvmNative {
