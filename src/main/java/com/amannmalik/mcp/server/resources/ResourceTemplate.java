@@ -22,6 +22,7 @@ public record ResourceTemplate(
         title = InputSanitizer.cleanNullable(title);
         description = InputSanitizer.cleanNullable(description);
         mimeType = InputSanitizer.cleanNullable(mimeType);
+        annotations = annotations == null ? Annotations.EMPTY : annotations;
         MetaValidator.requireValid(_meta);
     }
 

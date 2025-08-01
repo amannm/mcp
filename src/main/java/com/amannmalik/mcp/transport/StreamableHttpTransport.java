@@ -40,6 +40,7 @@ import java.util.Set;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.io.EOFException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
@@ -60,6 +61,7 @@ public final class StreamableHttpTransport implements Transport {
     private static final String COMPATIBILITY_VERSION =
             Protocol.PREVIOUS_VERSION;
     private final BlockingQueue<JsonObject> incoming = new LinkedBlockingQueue<>();
+    private volatile boolean closed;
     private final Set<SseClient> generalClients = ConcurrentHashMap.newKeySet();
     private final ConcurrentHashMap<String, SseClient> requestStreams = new ConcurrentHashMap<>();
     private final ConcurrentHashMap<String, SseClient> clientsByPrefix = new ConcurrentHashMap<>();
@@ -162,7 +164,11 @@ public final class StreamableHttpTransport implements Transport {
     @Override
     public JsonObject receive() throws IOException {
         try {
-            return incoming.take();
+            JsonObject obj = incoming.take();
+            if (closed && obj.containsKey("_close")) {
+                throw new EOFException();
+            }
+            return obj;
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             throw new IOException(e);
@@ -214,6 +220,8 @@ public final class StreamableHttpTransport implements Transport {
             // version.  Reset to the default used when the version header is
             // absent.
             protocolVersion = COMPATIBILITY_VERSION;
+            closed = true;
+            incoming.offer(Json.createObjectBuilder().add("_close", true).build());
         } catch (Exception e) {
             throw new IOException(e);
         }
@@ -609,6 +617,8 @@ public final class StreamableHttpTransport implements Transport {
             requestStreams.forEach((id, c) -> c.close());
             requestStreams.clear();
             clientsByPrefix.clear();
+            closed = true;
+            incoming.offer(Json.createObjectBuilder().add("_close", true).build());
             resp.setStatus(HttpServletResponse.SC_OK);
         }
     }
