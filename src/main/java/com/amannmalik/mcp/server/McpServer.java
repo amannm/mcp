@@ -101,6 +101,8 @@ import com.amannmalik.mcp.util.ProgressManager;
 import com.amannmalik.mcp.util.ProgressNotification;
 import com.amannmalik.mcp.util.ProgressToken;
 import com.amannmalik.mcp.util.ProgressUtil;
+import com.amannmalik.mcp.util.ListChangeListener;
+import com.amannmalik.mcp.util.ListChangeSubscription;
 import com.amannmalik.mcp.util.Timeouts;
 import com.amannmalik.mcp.util.RootChecker;
 import com.amannmalik.mcp.validation.InputSanitizer;
@@ -205,48 +207,24 @@ public final class McpServer implements AutoCloseable {
         this.promptsListChangedSupported = prompts != null && prompts.supportsListChanged();
 
         if (resources != null && resourcesListChangedSupported) {
-            try {
-                resourceListSubscription = resources.subscribeList(() -> {
-                    if (lifecycle.state() != LifecycleState.OPERATION) return;
-                    try {
-                        send(new JsonRpcNotification(
-                                NotificationMethod.RESOURCES_LIST_CHANGED.method(),
-                                ResourcesCodec.toJsonObject(new ResourceListChangedNotification())));
-                    } catch (IOException ignore) {
-                    }
-                });
-            } catch (Exception ignore) {
-            }
+            resourceListSubscription = subscribeListChanges(
+                    l -> resources.subscribeList(() -> l.listChanged()),
+                    NotificationMethod.RESOURCES_LIST_CHANGED,
+                    ResourcesCodec.toJsonObject(new ResourceListChangedNotification()));
         }
 
         if (tools != null && toolListChangedSupported) {
-            try {
-                toolListSubscription = tools.subscribeList(() -> {
-                    if (lifecycle.state() != LifecycleState.OPERATION) return;
-                    try {
-                        send(new JsonRpcNotification(
-                                NotificationMethod.TOOLS_LIST_CHANGED.method(),
-                                ToolCodec.toJsonObject(new ToolListChangedNotification())));
-                    } catch (IOException ignore) {
-                    }
-                });
-            } catch (Exception ignore) {
-            }
+            toolListSubscription = subscribeListChanges(
+                    l -> tools.subscribeList(() -> l.listChanged()),
+                    NotificationMethod.TOOLS_LIST_CHANGED,
+                    ToolCodec.toJsonObject(new ToolListChangedNotification()));
         }
 
         if (prompts != null && promptsListChangedSupported) {
-            try {
-                promptsSubscription = prompts.subscribe(() -> {
-                    if (lifecycle.state() != LifecycleState.OPERATION) return;
-                    try {
-                        send(new JsonRpcNotification(
-                                NotificationMethod.PROMPTS_LIST_CHANGED.method(),
-                                PromptCodec.toJsonObject(new PromptListChangedNotification())));
-                    } catch (IOException ignore) {
-                    }
-                });
-            } catch (Exception ignore) {
-            }
+            promptsSubscription = subscribeListChanges(
+                    l -> prompts.subscribe(() -> l.listChanged()),
+                    NotificationMethod.PROMPTS_LIST_CHANGED,
+                    PromptCodec.toJsonObject(new PromptListChangedNotification()));
         }
 
         registerRequestHandler(RequestMethod.INITIALIZE, this::initialize);
@@ -290,6 +268,28 @@ public final class McpServer implements AutoCloseable {
 
     private void registerNotificationHandler(NotificationMethod method, NotificationHandler handler) {
         notificationHandlers.put(method, handler);
+    }
+
+    private <S extends ListChangeSubscription> S subscribeListChanges(
+            SubscriptionFactory<S> factory,
+            NotificationMethod method,
+            jakarta.json.JsonObject payload) {
+        try {
+            return factory.subscribe(() -> {
+                if (lifecycle.state() != LifecycleState.OPERATION) return;
+                try {
+                    send(new JsonRpcNotification(method.method(), payload));
+                } catch (IOException ignore) {
+                }
+            });
+        } catch (Exception ignore) {
+            return null;
+        }
+    }
+
+    @FunctionalInterface
+    private interface SubscriptionFactory<S extends ListChangeSubscription> {
+        S subscribe(ListChangeListener listener) throws Exception;
     }
 
     public void serve() throws IOException {
