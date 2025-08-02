@@ -27,3 +27,24 @@ Feature: MCP protocol conformance
       | transport |
       | stdio     |
       | http      |
+
+  Scenario Outline: MCP prompts specification conformance
+    Given a running MCP server using <transport> transport
+    Then capabilities should be advertised and ping succeeds
+    When testing core functionality
+      | operation                | parameter      | expected_result |
+      | list_prompt_name         |                | test_prompt     |
+      | list_prompt_arg_required |                | true            |
+      | get_prompt_text          | test_prompt    | hello           |
+      | get_prompt_role          | test_prompt    | user            |
+    And testing error conditions
+      | operation              | parameter   | expected_error_code |
+      | get_prompt_invalid     | nope        | -32602              |
+      | get_prompt_missing_arg | test_prompt | -32602              |
+    When the client disconnects
+    Then the server terminates cleanly
+
+    Examples:
+      | transport |
+      | stdio     |
+      | http      |
