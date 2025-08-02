@@ -62,7 +62,7 @@ final class McpServlet extends HttpServlet {
                     lastId = Long.parseLong(lastEvent.substring(idx + 1));
                 } catch (NumberFormatException ignore) {
                 }
-                found = transport.clientsByPrefix.get(prefix);
+                found = transport.clients.byPrefix.get(prefix);
                 if (found != null) {
                     found.attach(ac, lastId);
                 }
@@ -71,13 +71,13 @@ final class McpServlet extends HttpServlet {
         SseClient client;
         if (found == null) {
             client = new SseClient(ac);
-            transport.clientsByPrefix.put(client.prefix, client);
+            transport.clients.byPrefix.put(client.prefix, client);
         } else {
             client = found;
-            transport.lastGeneral.set(null);
+            transport.clients.lastGeneral.set(null);
         }
-        transport.generalClients.add(client);
-        ac.addListener(transport.generalStreamListener(client));
+        transport.clients.general.add(client);
+        ac.addListener(transport.clients.generalListener(client));
     }
 
     @Override
@@ -150,7 +150,7 @@ final class McpServlet extends HttpServlet {
         String id = obj.get("id").toString();
         BlockingQueue<JsonObject> q = new LinkedBlockingQueue<>(
                 McpConfiguration.current().performance().pagination().responseQueueCapacity());
-        transport.responseQueues.put(id, q);
+        transport.clients.responses.put(id, q);
         try {
             transport.incoming.put(obj);
             JsonObject response = q.poll(30, TimeUnit.SECONDS);
@@ -172,7 +172,7 @@ final class McpServlet extends HttpServlet {
             Thread.currentThread().interrupt();
             resp.sendError(HttpServletResponse.SC_SERVICE_UNAVAILABLE);
         } finally {
-            transport.responseQueues.remove(id);
+            transport.clients.responses.remove(id);
         }
     }
 
@@ -182,14 +182,14 @@ final class McpServlet extends HttpServlet {
         AsyncContext ac = initSse(req, resp);
         SseClient client = new SseClient(ac);
         String key = obj.get("id").toString();
-        transport.requestStreams.put(key, client);
-        transport.clientsByPrefix.put(client.prefix, client);
-        ac.addListener(transport.requestStreamListener(key, client));
+        transport.clients.request.put(key, client);
+        transport.clients.byPrefix.put(client.prefix, client);
+        ac.addListener(transport.clients.requestListener(key, client));
         try {
             transport.incoming.put(obj);
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
-            transport.removeRequestStream(key, client);
+            transport.clients.removeRequest(key, client);
             resp.sendError(HttpServletResponse.SC_SERVICE_UNAVAILABLE);
         }
     }

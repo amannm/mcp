@@ -114,6 +114,11 @@ implementation:
    - Protocol designed for future extensibility
    - Backwards compatibility is maintained
 
+5. **Stream state should be isolated**
+   - Dedicated registries manage active streams
+   - Separation avoids tangling connection tracking with routing
+   - Simplifies reasoning about transport state
+
 ## Capability Negotiation
 
 The Model Context Protocol uses a capability-based negotiation system where clients and
