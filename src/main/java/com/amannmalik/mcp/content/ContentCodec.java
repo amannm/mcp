@@ -10,7 +10,6 @@ import jakarta.json.JsonObjectBuilder;
 
 import java.util.Set;
 
-/** Utility methods for encoding and decoding {@link ContentBlock} objects. */
 public final class ContentCodec {
     private ContentCodec() { }
 
