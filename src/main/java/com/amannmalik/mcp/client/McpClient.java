@@ -62,6 +62,7 @@ import com.amannmalik.mcp.util.ProgressManager;
 import com.amannmalik.mcp.util.ProgressNotification;
 import com.amannmalik.mcp.util.ProgressToken;
 import com.amannmalik.mcp.util.ProgressUtil;
+import com.amannmalik.mcp.util.JsonRpcRequestProcessor;
 import com.amannmalik.mcp.util.Timeouts;
 import com.amannmalik.mcp.validation.SchemaValidator;
 import com.amannmalik.mcp.wire.NotificationMethod;
@@ -104,6 +105,7 @@ public final class McpClient implements AutoCloseable {
     private final Map<RequestId, CompletableFuture<JsonRpcMessage>> pending = new ConcurrentHashMap<>();
     private final CancellationTracker cancellationTracker = new CancellationTracker();
     private final ProgressManager progressManager = new ProgressManager(new RateLimiter(20, 1000));
+    private final JsonRpcRequestProcessor requestProcessor;
     private Thread reader;
     private PingScheduler pinger;
     private long pingInterval;
@@ -190,6 +192,11 @@ public final class McpClient implements AutoCloseable {
         registerNotificationHandler(NotificationMethod.RESOURCES_LIST_CHANGED, n -> resourceListListener.listChanged());
         registerNotificationHandler(NotificationMethod.TOOLS_LIST_CHANGED, this::handleToolsListChanged);
         registerNotificationHandler(NotificationMethod.PROMPTS_LIST_CHANGED, n -> promptsListener.listChanged());
+
+        this.requestProcessor = new JsonRpcRequestProcessor(
+                progressManager,
+                cancellationTracker,
+                n -> notify(n.method(), n.params()));
     }
 
     public ClientInfo info() {
@@ -507,7 +514,12 @@ public final class McpClient implements AutoCloseable {
                     if (f != null) f.complete(err);
                 }
                 case JsonRpcRequest req -> {
-                    JsonRpcMessage resp = handleRequest(req);
+                    JsonRpcMessage resp;
+                    try {
+                        resp = handleRequest(req);
+                    } catch (IOException e) {
+                        resp = JsonRpcError.of(req.id(), JsonRpcErrorCode.INTERNAL_ERROR, e.getMessage());
+                    }
                     if (resp != null) {
                         try {
                             send(resp);
@@ -522,52 +534,20 @@ public final class McpClient implements AutoCloseable {
         }
     }
 
-    private JsonRpcMessage handleRequest(JsonRpcRequest req) {
-        cancellationTracker.register(req.id());
-        Optional<ProgressToken> token;
-        try {
-            token = progressManager.register(req.id(), req.params());
-            token.ifPresent(t -> {
-                try {
-                    progressManager.send(new ProgressNotification(t, 0.0, 1.0, null), n -> notify(n.method(), n.params()));
-                } catch (IOException ignore) {
-                }
-            });
-        } catch (IllegalArgumentException e) {
-            cancellationTracker.release(req.id());
-            return JsonRpcError.of(req.id(), JsonRpcErrorCode.INVALID_PARAMS, e.getMessage());
-        }
-
-        boolean cancelled;
-        JsonRpcMessage resp;
-        try {
-            var method = RequestMethod.from(req.method());
+    private JsonRpcMessage handleRequest(JsonRpcRequest req) throws IOException {
+        return requestProcessor.process(req, true, r -> {
+            var method = RequestMethod.from(r.method());
             if (method.isEmpty()) {
-                resp = JsonRpcError.of(req.id(), JsonRpcErrorCode.METHOD_NOT_FOUND,
-                        "Unknown method: " + req.method());
-            } else {
-                RequestHandler handler = requestHandlers.get(method.get());
-                if (handler == null) {
-                    resp = JsonRpcError.of(req.id(), JsonRpcErrorCode.METHOD_NOT_FOUND,
-                            "Unknown method: " + req.method());
-                } else {
-                    resp = handler.handle(req);
-                }
+                return JsonRpcError.of(r.id(), JsonRpcErrorCode.METHOD_NOT_FOUND,
+                        "Unknown method: " + r.method());
             }
-        } finally {
-            cancelled = cancellationTracker.isCancelled(req.id());
-            cancellationTracker.release(req.id());
-            if (!cancelled) {
-                token.ifPresent(t -> {
-                    try {
-                        progressManager.send(new ProgressNotification(t, 1.0, 1.0, null), n -> notify(n.method(), n.params()));
-                    } catch (IOException ignore) {
-                    }
-                });
+            RequestHandler handler = requestHandlers.get(method.get());
+            if (handler == null) {
+                return JsonRpcError.of(r.id(), JsonRpcErrorCode.METHOD_NOT_FOUND,
+                        "Unknown method: " + r.method());
             }
-            progressManager.release(req.id());
-        }
-        return cancelled ? null : resp;
+            return handler.handle(r);
+        });
     }
 
     private JsonRpcMessage handleCreateMessage(JsonRpcRequest req) {
@@ -646,10 +626,6 @@ public final class McpClient implements AutoCloseable {
 
     private void send(JsonRpcMessage msg) throws IOException {
         transport.send(JsonRpcCodec.toJsonObject(msg));
-    }
-
-    private void sendProgress(ProgressNotification note) throws IOException {
-        progressManager.send(note, n -> notify(n.method(), n.params()));
     }
 
     private void requireCapability(RequestMethod method) {

@@ -101,6 +101,7 @@ import com.amannmalik.mcp.util.ProgressManager;
 import com.amannmalik.mcp.util.ProgressNotification;
 import com.amannmalik.mcp.util.ProgressToken;
 import com.amannmalik.mcp.util.ProgressUtil;
+import com.amannmalik.mcp.util.JsonRpcRequestProcessor;
 import com.amannmalik.mcp.util.ListChangeListener;
 import com.amannmalik.mcp.util.ListChangeSubscription;
 import com.amannmalik.mcp.util.Timeouts;
@@ -139,6 +140,8 @@ public final class McpServer implements AutoCloseable {
     private final ProgressManager progressManager = new ProgressManager(new RateLimiter(20, 1000));
     private final CancellationTracker cancellationTracker = new CancellationTracker();
     private final IdTracker idTracker = new IdTracker();
+    private final JsonRpcRequestProcessor requestProcessor =
+            new JsonRpcRequestProcessor(progressManager, cancellationTracker, this::send, idTracker);
     private final ResourceProvider resources;
     private final ToolProvider tools;
     private final PromptProvider prompts;
@@ -374,60 +377,8 @@ public final class McpServer implements AutoCloseable {
         }
 
         boolean cancellable = method.get() != RequestMethod.INITIALIZE;
-        processRequest(req, handler, cancellable);
-    }
-
-    private void processRequest(JsonRpcRequest req, RequestHandler handler, boolean cancellable) throws IOException {
-        Optional<ProgressToken> token;
-        try {
-            idTracker.register(req.id());
-        } catch (IllegalArgumentException e) {
-            send(JsonRpcError.of(req.id(), JsonRpcErrorCode.INVALID_REQUEST, e.getMessage()));
-            return;
-        }
-
-        try {
-            token = progressManager.register(req.id(), req.params());
-            token.ifPresent(t -> {
-                try {
-                    progressManager.send(new ProgressNotification(t, 0.0, 1.0, null), this::send);
-                } catch (IOException ignore) {
-                }
-            });
-        } catch (IllegalArgumentException e) {
-            send(invalidParams(req, e));
-            return;
-        }
-
-        if (cancellable) {
-            cancellationTracker.register(req.id());
-        }
-
-        JsonRpcMessage resp;
-        try {
-            resp = handler.handle(req);
-        } catch (IllegalArgumentException e) {
-            send(invalidParams(req, e));
-            return;
-        } catch (Exception e) {
-            send(JsonRpcError.of(req.id(), JsonRpcErrorCode.INTERNAL_ERROR, e.getMessage()));
-            return;
-        }
-
-        boolean cancelled = cancellable && cancellationTracker.isCancelled(req.id());
-        if (!cancelled && resp != null) {
-            send(resp);
-        }
-        if (!cancelled) {
-            token.ifPresent(t -> {
-                try {
-                    progressManager.send(new ProgressNotification(t, 1.0, 1.0, null), this::send);
-                } catch (IOException ignore) {
-                }
-            });
-        }
-
-        cleanup(req.id());
+        JsonRpcMessage resp = requestProcessor.process(req, cancellable, handler::handle);
+        if (resp != null) send(resp);
     }
 
     private void onNotification(JsonRpcNotification note) throws IOException {
@@ -543,16 +494,6 @@ public final class McpServer implements AutoCloseable {
                     reason == null ? JsonValue.NULL : Json.createValue(reason));
         } catch (IOException ignore) {
         }
-    }
-
-    private void cleanup(RequestId id) {
-        progressManager.release(id);
-        cancellationTracker.release(id);
-        idTracker.release(id);
-    }
-
-    private void sendProgress(ProgressNotification note) throws IOException {
-        progressManager.send(note, this::send);
     }
 
     private String sanitizeCursor(String cursor) {
