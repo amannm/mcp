@@ -239,7 +239,7 @@
 </problem>
 <problem>
   <file>file://$PROJECT_DIR$/src/main/java/com/amannmalik/mcp/client/McpClient.java</file>
-  <line>309</line>
+  <line>312</line>
   <module>mcp.main</module>
   <package>com.amannmalik.mcp.client</package>
   <entry_point TYPE="method" FQNAME="com.amannmalik.mcp.client.McpClient void setAccessToken(java.lang.String token)" />
@@ -256,7 +256,7 @@
 </problem>
 <problem>
   <file>file://$PROJECT_DIR$/src/main/java/com/amannmalik/mcp/client/McpClient.java</file>
-  <line>319</line>
+  <line>322</line>
   <module>mcp.main</module>
   <package>com.amannmalik.mcp.client</package>
   <entry_point TYPE="method" FQNAME="com.amannmalik.mcp.client.McpClient void clearAccessToken()" />
@@ -273,7 +273,7 @@
 </problem>
 <problem>
   <file>file://$PROJECT_DIR$/src/main/java/com/amannmalik/mcp/client/McpClient.java</file>
-  <line>398</line>
+  <line>401</line>
   <module>mcp.main</module>
   <package>com.amannmalik.mcp.client</package>
   <entry_point TYPE="method" FQNAME="com.amannmalik.mcp.client.McpClient boolean resourcesSubscribeSupported()" />
@@ -290,7 +290,7 @@
 </problem>
 <problem>
   <file>file://$PROJECT_DIR$/src/main/java/com/amannmalik/mcp/client/McpClient.java</file>
-  <line>402</line>
+  <line>405</line>
   <module>mcp.main</module>
   <package>com.amannmalik.mcp.client</package>
   <entry_point TYPE="method" FQNAME="com.amannmalik.mcp.client.McpClient boolean resourcesListChangedSupported()" />
@@ -307,7 +307,7 @@
 </problem>
 <problem>
   <file>file://$PROJECT_DIR$/src/main/java/com/amannmalik/mcp/client/McpClient.java</file>
-  <line>406</line>
+  <line>409</line>
   <module>mcp.main</module>
   <package>com.amannmalik.mcp.client</package>
   <entry_point TYPE="method" FQNAME="com.amannmalik.mcp.client.McpClient boolean toolsListChangedSupported()" />
@@ -324,7 +324,7 @@
 </problem>
 <problem>
   <file>file://$PROJECT_DIR$/src/main/java/com/amannmalik/mcp/client/McpClient.java</file>
-  <line>410</line>
+  <line>413</line>
   <module>mcp.main</module>
   <package>com.amannmalik.mcp.client</package>
   <entry_point TYPE="method" FQNAME="com.amannmalik.mcp.client.McpClient boolean promptsListChangedSupported()" />
@@ -341,7 +341,7 @@
 </problem>
 <problem>
   <file>file://$PROJECT_DIR$/src/main/java/com/amannmalik/mcp/client/McpClient.java</file>
-  <line>414</line>
+  <line>417</line>
   <module>mcp.main</module>
   <package>com.amannmalik.mcp.client</package>
   <entry_point TYPE="method" FQNAME="com.amannmalik.mcp.client.McpClient java.util.Optional&lt;com.amannmalik.mcp.transport.ResourceMetadata&gt; resourceMetadata()" />
@@ -358,7 +358,24 @@
 </problem>
 <problem>
   <file>file://$PROJECT_DIR$/src/main/java/com/amannmalik/mcp/client/McpClient.java</file>
-  <line>589</line>
+  <line>421</line>
+  <module>mcp.main</module>
+  <package>com.amannmalik.mcp.client</package>
+  <entry_point TYPE="method" FQNAME="com.amannmalik.mcp.client.McpClient com.amannmalik.mcp.server.resources.ResourceSubscription subscribeResource(java.lang.String uri, com.amannmalik.mcp.server.resources.ResourceListener listener)" />
+  <language>JAVA</language>
+  <offset>32</offset>
+  <length>17</length>
+  <highlighted_element>subscribeResource</highlighted_element>
+  <problem_class id="unused" severity="WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">unused declaration</problem_class>
+  <hints>
+    <hint value="comment" />
+    <hint value="delete" />
+  </hints>
+  <description>Method is never used.</description>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/src/main/java/com/amannmalik/mcp/client/McpClient.java</file>
+  <line>619</line>
   <module>mcp.main</module>
   <package>com.amannmalik.mcp.client</package>
   <entry_point TYPE="method" FQNAME="com.amannmalik.mcp.client.McpClient void setResourceListListener(com.amannmalik.mcp.server.resources.ResourceListListener listener)" />
@@ -375,7 +392,7 @@
 </problem>
 <problem>
   <file>file://$PROJECT_DIR$/src/main/java/com/amannmalik/mcp/client/McpClient.java</file>
-  <line>594</line>
+  <line>624</line>
   <module>mcp.main</module>
   <package>com.amannmalik.mcp.client</package>
   <entry_point TYPE="method" FQNAME="com.amannmalik.mcp.client.McpClient void setToolListListener(com.amannmalik.mcp.server.tools.ToolListListener listener)" />
@@ -392,7 +409,7 @@
 </problem>
 <problem>
   <file>file://$PROJECT_DIR$/src/main/java/com/amannmalik/mcp/client/McpClient.java</file>
-  <line>599</line>
+  <line>629</line>
   <module>mcp.main</module>
   <package>com.amannmalik.mcp.client</package>
   <entry_point TYPE="method" FQNAME="com.amannmalik.mcp.client.McpClient void setPromptsListener(com.amannmalik.mcp.prompts.PromptsListener listener)" />
@@ -406,40 +423,6 @@
     <hint value="delete" />
   </hints>
   <description>Method is never used.</description>
-</problem>
-<problem>
-  <file>file://$PROJECT_DIR$/src/main/java/com/amannmalik/mcp/client/elicitation/InteractiveElicitationProvider.java</file>
-  <line>13</line>
-  <module>mcp.main</module>
-  <package>com.amannmalik.mcp.client.elicitation</package>
-  <entry_point TYPE="method" FQNAME="com.amannmalik.mcp.client.elicitation.InteractiveElicitationProvider InteractiveElicitationProvider()" />
-  <language>JAVA</language>
-  <offset>11</offset>
-  <length>30</length>
-  <highlighted_element>InteractiveElicitationProvider</highlighted_element>
-  <problem_class id="unused" severity="WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">unused declaration</problem_class>
-  <hints>
-    <hint value="comment" />
-    <hint value="delete" />
-  </hints>
-  <description>Constructor is never used.</description>
-</problem>
-<problem>
-  <file>file://$PROJECT_DIR$/src/main/java/com/amannmalik/mcp/client/elicitation/InteractiveElicitationProvider.java</file>
-  <line>18</line>
-  <module>mcp.main</module>
-  <package>com.amannmalik.mcp.client.elicitation</package>
-  <entry_point TYPE="method" FQNAME="com.amannmalik.mcp.client.elicitation.InteractiveElicitationProvider com.amannmalik.mcp.client.elicitation.ElicitResult elicit(com.amannmalik.mcp.client.elicitation.ElicitRequest request, long timeoutMillis)" />
-  <language>JAVA</language>
-  <offset>24</offset>
-  <length>6</length>
-  <highlighted_element>elicit</highlighted_element>
-  <problem_class id="unused" severity="WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">unused declaration</problem_class>
-  <hints>
-    <hint value="comment" />
-    <hint value="delete" />
-  </hints>
-  <description>&lt;ul&gt;&lt;li&gt;Method owner class is never instantiated OR&lt;/li&gt;&lt;li&gt;All instantiations are not reachable from the entry points.&lt;/li&gt;&lt;/ul&gt;</description>
 </problem>
 <problem>
   <file>file://$PROJECT_DIR$/src/main/java/com/amannmalik/mcp/client/roots/InMemoryRootsProvider.java</file>
@@ -474,23 +457,6 @@
     <hint value="delete" />
   </hints>
   <description>Method is never used.</description>
-</problem>
-<problem>
-  <file>file://$PROJECT_DIR$/src/main/java/com/amannmalik/mcp/client/roots/ListRootsResult.java</file>
-  <line>9</line>
-  <module>mcp.main</module>
-  <package>com.amannmalik.mcp.client.roots</package>
-  <entry_point TYPE="method" FQNAME="com.amannmalik.mcp.client.roots.ListRootsResult ListRootsResult(java.util.List&lt;com.amannmalik.mcp.client.roots.Root&gt; roots, jakarta.json.JsonObject _meta)" />
-  <language>JAVA</language>
-  <offset>11</offset>
-  <length>15</length>
-  <highlighted_element>ListRootsResult</highlighted_element>
-  <problem_class id="unused" severity="WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">unused declaration</problem_class>
-  <hints>
-    <hint value="comment" />
-    <hint value="delete" />
-  </hints>
-  <description>Constructor is never used.</description>
 </problem>
 <problem>
   <file>file://$PROJECT_DIR$/src/main/java/com/amannmalik/mcp/client/roots/RootsCodec.java</file>
@@ -678,23 +644,6 @@
     <hint value="delete" />
   </hints>
   <description>Method is never used.</description>
-</problem>
-<problem>
-  <file>file://$PROJECT_DIR$/src/main/java/com/amannmalik/mcp/ping/PingScheduler.java</file>
-  <line>19</line>
-  <module>mcp.main</module>
-  <package>com.amannmalik.mcp.ping</package>
-  <entry_point TYPE="method" FQNAME="com.amannmalik.mcp.ping.PingScheduler PingScheduler(com.amannmalik.mcp.client.McpClient client, long intervalMillis, long timeoutMillis, java.lang.Runnable onFailure)" />
-  <language>JAVA</language>
-  <offset>11</offset>
-  <length>13</length>
-  <highlighted_element>PingScheduler</highlighted_element>
-  <problem_class id="unused" severity="WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">unused declaration</problem_class>
-  <hints>
-    <hint value="comment" />
-    <hint value="delete" />
-  </hints>
-  <description>Constructor is never used.</description>
 </problem>
 <problem>
   <file>file://$PROJECT_DIR$/src/main/java/com/amannmalik/mcp/prompts/InMemoryPromptProvider.java</file>
@@ -995,74 +944,6 @@
   <offset>35</offset>
   <length>18</length>
   <highlighted_element>toResourceTemplate</highlighted_element>
-  <problem_class id="unused" severity="WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">unused declaration</problem_class>
-  <hints>
-    <hint value="comment" />
-    <hint value="delete" />
-  </hints>
-  <description>Method is never used.</description>
-</problem>
-<problem>
-  <file>file://$PROJECT_DIR$/src/main/java/com/amannmalik/mcp/server/resources/ResourcesCodec.java</file>
-  <line>108</line>
-  <module>mcp.main</module>
-  <package>com.amannmalik.mcp.server.resources</package>
-  <entry_point TYPE="method" FQNAME="com.amannmalik.mcp.server.resources.ResourcesCodec com.amannmalik.mcp.server.resources.ResourceListChangedNotification toResourceListChangedNotification(jakarta.json.JsonObject obj)" />
-  <language>JAVA</language>
-  <offset>50</offset>
-  <length>33</length>
-  <highlighted_element>toResourceListChangedNotification</highlighted_element>
-  <problem_class id="unused" severity="WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">unused declaration</problem_class>
-  <hints>
-    <hint value="comment" />
-    <hint value="delete" />
-  </hints>
-  <description>Method is never used.</description>
-</problem>
-<problem>
-  <file>file://$PROJECT_DIR$/src/main/java/com/amannmalik/mcp/server/resources/ResourcesCodec.java</file>
-  <line>121</line>
-  <module>mcp.main</module>
-  <package>com.amannmalik.mcp.server.resources</package>
-  <entry_point TYPE="method" FQNAME="com.amannmalik.mcp.server.resources.ResourcesCodec com.amannmalik.mcp.server.resources.ResourceUpdatedNotification toResourceUpdatedNotification(jakarta.json.JsonObject obj)" />
-  <language>JAVA</language>
-  <offset>46</offset>
-  <length>29</length>
-  <highlighted_element>toResourceUpdatedNotification</highlighted_element>
-  <problem_class id="unused" severity="WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">unused declaration</problem_class>
-  <hints>
-    <hint value="comment" />
-    <hint value="delete" />
-  </hints>
-  <description>Method is never used.</description>
-</problem>
-<problem>
-  <file>file://$PROJECT_DIR$/src/main/java/com/amannmalik/mcp/server/resources/ResourcesCodec.java</file>
-  <line>129</line>
-  <module>mcp.main</module>
-  <package>com.amannmalik.mcp.server.resources</package>
-  <entry_point TYPE="method" FQNAME="com.amannmalik.mcp.server.resources.ResourcesCodec jakarta.json.JsonObject toJsonObject(com.amannmalik.mcp.server.resources.SubscribeRequest req)" />
-  <language>JAVA</language>
-  <offset>29</offset>
-  <length>12</length>
-  <highlighted_element>toJsonObject</highlighted_element>
-  <problem_class id="unused" severity="WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">unused declaration</problem_class>
-  <hints>
-    <hint value="comment" />
-    <hint value="delete" />
-  </hints>
-  <description>Method is never used.</description>
-</problem>
-<problem>
-  <file>file://$PROJECT_DIR$/src/main/java/com/amannmalik/mcp/server/resources/ResourcesCodec.java</file>
-  <line>143</line>
-  <module>mcp.main</module>
-  <package>com.amannmalik.mcp.server.resources</package>
-  <entry_point TYPE="method" FQNAME="com.amannmalik.mcp.server.resources.ResourcesCodec jakarta.json.JsonObject toJsonObject(com.amannmalik.mcp.server.resources.UnsubscribeRequest req)" />
-  <language>JAVA</language>
-  <offset>29</offset>
-  <length>12</length>
-  <highlighted_element>toJsonObject</highlighted_element>
   <problem_class id="unused" severity="WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">unused declaration</problem_class>
   <hints>
     <hint value="comment" />
