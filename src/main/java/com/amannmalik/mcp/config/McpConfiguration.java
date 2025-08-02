@@ -33,6 +33,10 @@ public record McpConfiguration(SystemConfig system,
         return CURRENT;
     }
 
+    static McpConfiguration defaults() {
+        return DEFAULT;
+    }
+
     public static void reload() {
         CURRENT = loadFromEnv();
         notifyListeners();
@@ -428,163 +432,12 @@ public record McpConfiguration(SystemConfig system,
     }
 
     public static JsonObject schema() {
-        return SCHEMA;
+        return McpConfigurationDocs.schema();
     }
 
     public static void writeDocumentation(Path path) throws IOException {
-        Files.writeString(path, asYaml(DEFAULT));
+        McpConfigurationDocs.writeDocumentation(path);
     }
-
-    private static String asYaml(McpConfiguration c) {
-        StringBuilder b = new StringBuilder();
-        b.append("system:\n");
-        b.append("  protocol:\n");
-        b.append("    version: \"").append(c.system().protocol().version()).append("\"\n");
-        b.append("    compatibility_version: \"").append(c.system().protocol().compatibilityVersion()).append("\"\n");
-        b.append("  timeouts:\n");
-        b.append("    default_ms: ").append(c.system().timeouts().defaultMs()).append('\n');
-        b.append("    ping_ms: ").append(c.system().timeouts().pingMs()).append('\n');
-        b.append("    process_wait_seconds: ").append(c.system().timeouts().processWaitSeconds()).append('\n');
-        b.append("performance:\n");
-        b.append("  rate_limits:\n");
-        b.append("    tools_per_second: ").append(c.performance().rateLimits().toolsPerSecond()).append('\n');
-        b.append("    completions_per_second: ").append(c.performance().rateLimits().completionsPerSecond()).append('\n');
-        b.append("    logs_per_second: ").append(c.performance().rateLimits().logsPerSecond()).append('\n');
-        b.append("    progress_per_second: ").append(c.performance().rateLimits().progressPerSecond()).append('\n');
-        b.append("  pagination:\n");
-        b.append("    default_page_size: ").append(c.performance().pagination().defaultPageSize()).append('\n');
-        b.append("    max_completion_values: ").append(c.performance().pagination().maxCompletionValues()).append('\n');
-        b.append("    sse_history_limit: ").append(c.performance().pagination().sseHistoryLimit()).append('\n');
-        b.append("    response_queue_capacity: ").append(c.performance().pagination().responseQueueCapacity()).append('\n');
-        b.append("server:\n");
-        b.append("  info:\n");
-        b.append("    name: \"").append(c.server().info().name()).append("\"\n");
-        b.append("    description: \"").append(c.server().info().description()).append("\"\n");
-        b.append("    version: \"").append(c.server().info().version()).append("\"\n");
-        b.append("  transport:\n");
-        b.append("    type: \"").append(c.server().transport().type()).append("\"\n");
-        b.append("    port: ").append(c.server().transport().port()).append('\n');
-        b.append("    allowed_origins:\n");
-        for (var o : c.server().transport().allowedOrigins()) b.append("      - \"").append(o).append("\"\n");
-        b.append("security:\n");
-        b.append("  auth:\n");
-        b.append("    jwt_secret_env: \"").append(c.security().auth().jwtSecretEnv()).append("\"\n");
-        b.append("    default_principal: \"").append(c.security().auth().defaultPrincipal()).append("\"\n");
-        b.append("client:\n");
-        b.append("  info:\n");
-        b.append("    name: \"").append(c.client().info().name()).append("\"\n");
-        b.append("    display_name: \"").append(c.client().info().displayName()).append("\"\n");
-        b.append("    version: \"").append(c.client().info().version()).append("\"\n");
-        b.append("  capabilities:\n");
-        for (var cap : c.client().capabilities()) b.append("    - \"").append(cap).append("\"\n");
-        b.append("host:\n");
-        b.append("  principal: \"").append(c.host().principal()).append("\"\n");
-        return b.toString();
-    }
-
-    private static final JsonObject SCHEMA = Json.createReader(new StringReader("""
-            {
-              "type": "object",
-              "properties": {
-                "system": {
-                  "type": "object",
-                  "properties": {
-                    "protocol": {
-                      "type": "object",
-                      "properties": {
-                        "version": {"type": "string"},
-                        "compatibility_version": {"type": "string"}
-                      }
-                    },
-                    "timeouts": {
-                      "type": "object",
-                      "properties": {
-                        "default_ms": {"type": "integer"},
-                        "ping_ms": {"type": "integer"},
-                        "process_wait_seconds": {"type": "integer"}
-                      }
-                    }
-                  }
-                },
-                "performance": {
-                  "type": "object",
-                  "properties": {
-                    "rate_limits": {
-                      "type": "object",
-                      "properties": {
-                        "tools_per_second": {"type": "integer"},
-                        "completions_per_second": {"type": "integer"},
-                        "logs_per_second": {"type": "integer"},
-                        "progress_per_second": {"type": "integer"}
-                      }
-                    },
-                    "pagination": {
-                      "type": "object",
-                      "properties": {
-                        "default_page_size": {"type": "integer"},
-                        "max_completion_values": {"type": "integer"},
-                        "sse_history_limit": {"type": "integer"},
-                        "response_queue_capacity": {"type": "integer"}
-                      }
-                    }
-                  }
-                },
-                "server": {
-                  "type": "object",
-                  "properties": {
-                    "info": {
-                      "type": "object",
-                      "properties": {
-                        "name": {"type": "string"},
-                        "description": {"type": "string"},
-                        "version": {"type": "string"}
-                      }
-                    },
-                    "transport": {
-                      "type": "object",
-                      "properties": {
-                        "type": {"type": "string"},
-                        "port": {"type": "integer"},
-                        "allowed_origins": {"type": "array", "items": {"type": "string"}}
-                      }
-                    }
-                  }
-                },
-                "security": {
-                  "type": "object",
-                  "properties": {
-                    "auth": {
-                      "type": "object",
-                      "properties": {
-                        "jwt_secret_env": {"type": "string"},
-                        "default_principal": {"type": "string"}
-                      }
-                    }
-                  }
-                },
-                "client": {
-                  "type": "object",
-                  "properties": {
-                    "info": {
-                      "type": "object",
-                      "properties": {
-                        "name": {"type": "string"},
-                        "display_name": {"type": "string"},
-                        "version": {"type": "string"}
-                      }
-                    },
-                    "capabilities": {"type": "array", "items": {"type": "string"}}
-                  }
-                },
-                "host": {
-                  "type": "object",
-                  "properties": {
-                    "principal": {"type": "string"}
-                  }
-                }
-              }
-            }
-            """)).readObject();
 
     public record SystemConfig(ProtocolConfig protocol, TimeoutsConfig timeouts) {
     }
