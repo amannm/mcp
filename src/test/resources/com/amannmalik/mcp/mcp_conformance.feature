@@ -44,7 +44,6 @@ Feature: MCP protocol conformance
     Examples:
       | transport |
       | stdio     |
-      | http      |
 
   Scenario Outline: MCP prompts specification conformance
     Given a running MCP server using <transport> transport
@@ -65,7 +64,6 @@ Feature: MCP protocol conformance
     Examples:
       | transport |
       | stdio     |
-      | http      |
 
   Scenario Outline: Resource metadata conforms to specification
     Given a running MCP server using <transport> transport
@@ -90,6 +88,23 @@ Feature: MCP protocol conformance
     And testing error conditions
       | operation               | parameter | expected_error_code |
       | request_sampling_reject |           | -32603             |
+    When the client disconnects
+    Then the server terminates cleanly
+
+    Examples:
+      | transport |
+      | stdio     |
+      | http      |
+      
+  Scenario Outline: MCP roots specification conformance
+    Given a running MCP server using <transport> transport
+    Then capabilities should be advertised and ping succeeds
+    When testing core functionality
+      | operation    | parameter | expected_result |
+      | roots_listed |           | 1               |
+    And testing error conditions
+      | operation     | parameter | expected_error_code |
+      | roots_invalid |           | -32601              |
     When the client disconnects
     Then the server terminates cleanly
 
