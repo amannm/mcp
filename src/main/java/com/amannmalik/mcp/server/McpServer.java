@@ -32,7 +32,7 @@ import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicLong;
-import java.util.function.Supplier;
+import java.util.function.*;
 
 public final class McpServer implements AutoCloseable {
     private final Transport transport;
@@ -408,20 +408,35 @@ public final class McpServer implements AutoCloseable {
         return cursor == null ? null : Pagination.sanitize(InputSanitizer.cleanNullable(cursor));
     }
 
-    private JsonRpcMessage listResources(JsonRpcRequest req) {
-        requireServerCapability(ServerCapability.RESOURCES);
+    private <R, T> JsonRpcMessage list(
+            JsonRpcRequest req,
+            Function<JsonObject, R> parse,
+            Function<R, String> cursor,
+            Function<String, Pagination.Page<T>> list,
+            Function<Pagination.Page<T>, JsonObject> encode) {
         try {
-            ListResourcesRequest lr = valid(() -> ResourcesCodec.toListResourcesRequest(req.params()));
-            String cursor = valid(() -> sanitizeCursor(lr.cursor()));
-            Pagination.Page<Resource> list = valid(() -> resources.list(cursor));
-            List<Resource> filtered = list.items().stream()
-                    .filter(r -> allowed(r.annotations()) && withinRoots(r.uri()))
-                    .toList();
-            ListResourcesResult result = new ListResourcesResult(filtered, list.nextCursor(), null);
-            return new JsonRpcResponse(req.id(), ResourcesCodec.toJsonObject(result));
+            R r = valid(() -> parse.apply(req.params()));
+            String c = valid(() -> sanitizeCursor(cursor.apply(r)));
+            Pagination.Page<T> page = valid(() -> list.apply(c));
+            return new JsonRpcResponse(req.id(), encode.apply(page));
         } catch (InvalidParams e) {
             return invalidParams(req, e.getMessage());
         }
+    }
+
+    private JsonRpcMessage listResources(JsonRpcRequest req) {
+        requireServerCapability(ServerCapability.RESOURCES);
+        return list(req,
+                ResourcesCodec::toListResourcesRequest,
+                ListResourcesRequest::cursor,
+                resources::list,
+                page -> {
+                    List<Resource> filtered = page.items().stream()
+                            .filter(r -> allowed(r.annotations()) && withinRoots(r.uri()))
+                            .toList();
+                    ListResourcesResult result = new ListResourcesResult(filtered, page.nextCursor(), null);
+                    return ResourcesCodec.toJsonObject(result);
+                });
     }
 
     private JsonRpcMessage readResource(JsonRpcRequest req) {
@@ -447,18 +462,17 @@ public final class McpServer implements AutoCloseable {
 
     private JsonRpcMessage listTemplates(JsonRpcRequest req) {
         requireServerCapability(ServerCapability.RESOURCES);
-        try {
-            ListResourceTemplatesRequest request = valid(() -> ResourcesCodec.toListResourceTemplatesRequest(req.params()));
-            String cursor = valid(() -> sanitizeCursor(request.cursor()));
-            Pagination.Page<ResourceTemplate> page = valid(() -> resources.listTemplates(cursor));
-            List<ResourceTemplate> filtered = page.items().stream()
-                    .filter(t -> allowed(t.annotations()))
-                    .toList();
-            ListResourceTemplatesResult result = new ListResourceTemplatesResult(filtered, page.nextCursor(), null);
-            return new JsonRpcResponse(req.id(), ResourcesCodec.toJsonObject(result));
-        } catch (InvalidParams e) {
-            return invalidParams(req, e.getMessage());
-        }
+        return list(req,
+                ResourcesCodec::toListResourceTemplatesRequest,
+                ListResourceTemplatesRequest::cursor,
+                resources::listTemplates,
+                page -> {
+                    List<ResourceTemplate> filtered = page.items().stream()
+                            .filter(t -> allowed(t.annotations()))
+                            .toList();
+                    ListResourceTemplatesResult result = new ListResourceTemplatesResult(filtered, page.nextCursor(), null);
+                    return ResourcesCodec.toJsonObject(result);
+                });
     }
 
     private JsonRpcMessage subscribeResource(JsonRpcRequest req) {
@@ -515,14 +529,11 @@ public final class McpServer implements AutoCloseable {
 
     private JsonRpcMessage listTools(JsonRpcRequest req) {
         requireServerCapability(ServerCapability.TOOLS);
-        try {
-            ListToolsRequest ltr = valid(() -> ToolCodec.toListToolsRequest(req.params()));
-            String cursor = valid(() -> sanitizeCursor(ltr.cursor()));
-            Pagination.Page<Tool> page = valid(() -> tools.list(cursor));
-            return new JsonRpcResponse(req.id(), ToolCodec.toJsonObject(page, null));
-        } catch (InvalidParams e) {
-            return invalidParams(req, e.getMessage());
-        }
+        return list(req,
+                ToolCodec::toListToolsRequest,
+                ListToolsRequest::cursor,
+                tools::list,
+                page -> ToolCodec.toJsonObject(page, null));
     }
 
     private JsonRpcMessage callTool(JsonRpcRequest req) {
@@ -573,14 +584,11 @@ public final class McpServer implements AutoCloseable {
 
     private JsonRpcMessage listPrompts(JsonRpcRequest req) {
         requireServerCapability(ServerCapability.PROMPTS);
-        try {
-            ListPromptsRequest lpr = valid(() -> PromptCodec.toListPromptsRequest(req.params()));
-            String cursor = valid(() -> sanitizeCursor(lpr.cursor()));
-            Pagination.Page<Prompt> page = valid(() -> prompts.list(cursor));
-            return new JsonRpcResponse(req.id(), PromptCodec.toJsonObject(page, null));
-        } catch (InvalidParams e) {
-            return invalidParams(req, e.getMessage());
-        }
+        return list(req,
+                PromptCodec::toListPromptsRequest,
+                ListPromptsRequest::cursor,
+                prompts::list,
+                page -> PromptCodec.toJsonObject(page, null));
     }
 
     private JsonRpcMessage getPrompt(JsonRpcRequest req) {
