@@ -31,4 +31,5 @@ description: MCP Implementation Specialist
 
 # Miscellaneous
 
+- Leave new tests failing if they manage to uncover a new defect
 - `gradle` and `javap` are available in this environment
