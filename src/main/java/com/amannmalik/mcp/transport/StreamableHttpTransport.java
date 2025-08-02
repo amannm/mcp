@@ -10,18 +10,10 @@ import com.amannmalik.mcp.jsonrpc.RequestId;
 import com.amannmalik.mcp.lifecycle.Protocol;
 import com.amannmalik.mcp.security.OriginValidator;
 import com.amannmalik.mcp.util.CloseUtil;
-import com.amannmalik.mcp.wire.RequestMethod;
-import com.amannmalik.mcp.transport.ResourceMetadata;
-import com.amannmalik.mcp.transport.ResourceMetadataCodec;
 import jakarta.json.Json;
 import jakarta.json.JsonObject;
-import jakarta.json.JsonReader;
-import jakarta.json.stream.JsonParsingException;
-import jakarta.servlet.AsyncContext;
 import jakarta.servlet.AsyncEvent;
 import jakarta.servlet.AsyncListener;
-import jakarta.servlet.ServletException;
-import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.eclipse.jetty.ee10.servlet.ServletContextHandler;
@@ -36,32 +28,31 @@ import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.io.EOFException;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
 public final class StreamableHttpTransport implements Transport {
     private final Server server;
     private final int port;
     private final OriginValidator originValidator;
-    private final AuthorizationManager authManager;
+    final AuthorizationManager authManager;
     private final String resourceMetadataUrl;
-    private final String canonicalResource;
-    private final java.util.List<String> authorizationServers;
+    final String canonicalResource;
+    final java.util.List<String> authorizationServers;
 
 
-    private static final String PROTOCOL_HEADER = TransportHeaders.PROTOCOL_VERSION;
+    static final String PROTOCOL_HEADER = TransportHeaders.PROTOCOL_VERSION;
     // Default to the previous protocol revision when the version header is
     // absent, as recommended for backwards compatibility.
-    private static final String COMPATIBILITY_VERSION =
+    static final String COMPATIBILITY_VERSION =
             Protocol.PREVIOUS_VERSION;
-    private final BlockingQueue<JsonObject> incoming = new LinkedBlockingQueue<>();
+    final BlockingQueue<JsonObject> incoming = new LinkedBlockingQueue<>();
     private volatile boolean closed;
-    private final Set<SseClient> generalClients = ConcurrentHashMap.newKeySet();
-    private final ConcurrentHashMap<String, SseClient> requestStreams = new ConcurrentHashMap<>();
-    private final ConcurrentHashMap<String, SseClient> clientsByPrefix = new ConcurrentHashMap<>();
-    private final AtomicReference<SseClient> lastGeneral = new AtomicReference<>();
-    private final SessionManager sessions = new SessionManager(COMPATIBILITY_VERSION);
-    private final ConcurrentHashMap<String, BlockingQueue<JsonObject>> responseQueues = new ConcurrentHashMap<>();
+    final Set<SseClient> generalClients = ConcurrentHashMap.newKeySet();
+    final ConcurrentHashMap<String, SseClient> requestStreams = new ConcurrentHashMap<>();
+    final ConcurrentHashMap<String, SseClient> clientsByPrefix = new ConcurrentHashMap<>();
+    final AtomicReference<SseClient> lastGeneral = new AtomicReference<>();
+    final SessionManager sessions = new SessionManager(COMPATIBILITY_VERSION);
+    final ConcurrentHashMap<String, BlockingQueue<JsonObject>> responseQueues = new ConcurrentHashMap<>();
 
     private void unauthorized(HttpServletResponse resp) throws IOException {
         if (resourceMetadataUrl != null) {
@@ -77,8 +68,8 @@ public final class StreamableHttpTransport implements Transport {
                                    java.util.List<String> authorizationServers) throws Exception {
         server = new Server(new InetSocketAddress("127.0.0.1", port));
         ServletContextHandler ctx = new ServletContextHandler();
-        ctx.addServlet(new ServletHolder(new McpServlet()), "/");
-        ctx.addServlet(new ServletHolder(new MetadataServlet()), "/.well-known/oauth-protected-resource");
+        ctx.addServlet(new ServletHolder(new McpServlet(this)), "/");
+        ctx.addServlet(new ServletHolder(new MetadataServlet(this)), "/.well-known/oauth-protected-resource");
         server.setHandler(ctx);
         server.start();
         this.port = ((ServerConnector) server.getConnectors()[0]).getLocalPort();
@@ -191,13 +182,13 @@ public final class StreamableHttpTransport implements Transport {
         }
     }
 
-    private void removeRequestStream(String key, SseClient client) {
+    void removeRequestStream(String key, SseClient client) {
         requestStreams.remove(key);
         clientsByPrefix.remove(client.prefix);
         CloseUtil.closeQuietly(client);
     }
 
-    private AsyncListener requestStreamListener(String key, SseClient client) {
+    AsyncListener requestStreamListener(String key, SseClient client) {
         return new AsyncListener() {
             @Override public void onComplete(AsyncEvent event) { removeRequestStream(key, client); }
             @Override public void onTimeout(AsyncEvent event) { removeRequestStream(key, client); }
@@ -212,7 +203,7 @@ public final class StreamableHttpTransport implements Transport {
         CloseUtil.closeQuietly(client);
     }
 
-    private AsyncListener generalStreamListener(SseClient client) {
+    AsyncListener generalStreamListener(SseClient client) {
         return new AsyncListener() {
             @Override public void onComplete(AsyncEvent event) { removeGeneralStream(client); }
             @Override public void onTimeout(AsyncEvent event) { removeGeneralStream(client); }
@@ -221,7 +212,7 @@ public final class StreamableHttpTransport implements Transport {
         };
     }
 
-    private Principal authorize(HttpServletRequest req, HttpServletResponse resp) throws IOException {
+    Principal authorize(HttpServletRequest req, HttpServletResponse resp) throws IOException {
         if (authManager == null) return null;
         try {
             return authManager.authorize(req.getHeader("Authorization"));
@@ -231,7 +222,7 @@ public final class StreamableHttpTransport implements Transport {
         }
     }
 
-    private boolean verifyOrigin(HttpServletRequest req, HttpServletResponse resp) throws IOException {
+    boolean verifyOrigin(HttpServletRequest req, HttpServletResponse resp) throws IOException {
         if (!originValidator.isValid(req.getHeader("Origin"))) {
             resp.sendError(HttpServletResponse.SC_FORBIDDEN);
             return false;
@@ -239,7 +230,7 @@ public final class StreamableHttpTransport implements Transport {
         return true;
     }
 
-    private boolean validateAccept(HttpServletRequest req, HttpServletResponse resp, boolean post) throws IOException {
+    boolean validateAccept(HttpServletRequest req, HttpServletResponse resp, boolean post) throws IOException {
         String accept = req.getHeader("Accept");
         if (accept == null) {
             resp.sendError(HttpServletResponse.SC_NOT_ACCEPTABLE);
@@ -260,14 +251,14 @@ public final class StreamableHttpTransport implements Transport {
         return true;
     }
 
-    private boolean validateSession(HttpServletRequest req,
-                                    HttpServletResponse resp,
-                                    Principal principal,
-                                    boolean initializing) throws IOException {
+    boolean validateSession(HttpServletRequest req,
+                            HttpServletResponse resp,
+                            Principal principal,
+                            boolean initializing) throws IOException {
         return sessions.validate(req, resp, principal, initializing);
     }
 
-    private void terminateSession(boolean recordId) {
+    void terminateSession(boolean recordId) {
         sessions.terminate(recordId);
         generalClients.forEach(SseClient::close);
         generalClients.clear();
@@ -277,164 +268,6 @@ public final class StreamableHttpTransport implements Transport {
         clientsByPrefix.clear();
         closed = true;
         incoming.offer(Json.createObjectBuilder().add("_close", true).build());
-    }
-
-    private class McpServlet extends HttpServlet {
-        @Override
-        protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
-            Principal principal = authorize(req, resp);
-            if (principal == null && authManager != null) return;
-            if (!verifyOrigin(req, resp)) return;
-            if (!validateAccept(req, resp, true)) return;
-
-            JsonObject obj;
-            try (JsonReader reader = Json.createReader(req.getInputStream())) {
-                obj = reader.readObject();
-            } catch (JsonParsingException e) {
-                resp.sendError(HttpServletResponse.SC_BAD_REQUEST);
-                return;
-            }
-            boolean initializing = RequestMethod.INITIALIZE.method()
-                    .equals(obj.getString("method", null));
-
-            if (!validateSession(req, resp, principal, initializing)) return;
-
-            boolean hasMethod = obj.containsKey("method");
-            boolean hasId = obj.containsKey("id");
-            boolean isRequest = hasMethod && hasId;
-            boolean isNotification = hasMethod && !hasId;
-            boolean isResponse = !hasMethod && (obj.containsKey("result") || obj.containsKey("error"));
-
-            if (isNotification || isResponse) {
-                try {
-                    incoming.put(obj);
-                    resp.setStatus(HttpServletResponse.SC_ACCEPTED);
-                } catch (InterruptedException e) {
-                    Thread.currentThread().interrupt();
-                    resp.sendError(HttpServletResponse.SC_SERVICE_UNAVAILABLE);
-                }
-                return;
-            }
-
-            if (!isRequest) {
-                resp.sendError(HttpServletResponse.SC_BAD_REQUEST);
-                return;
-            }
-
-            if (initializing) {
-                BlockingQueue<JsonObject> q = new LinkedBlockingQueue<>(1);
-                responseQueues.put(obj.get("id").toString(), q);
-                try {
-                    incoming.put(obj);
-                    JsonObject response = q.poll(30, TimeUnit.SECONDS);
-                    if (response == null) {
-                        resp.sendError(HttpServletResponse.SC_REQUEST_TIMEOUT);
-                        return;
-                    }
-                    if (response.containsKey("result")) {
-                        JsonObject result = response.getJsonObject("result");
-                        if (result.containsKey("protocolVersion")) {
-                            sessions.protocolVersion(result.getString("protocolVersion"));
-                        }
-                    }
-                    resp.setContentType("application/json");
-                    resp.setCharacterEncoding("UTF-8");
-                    resp.setHeader(PROTOCOL_HEADER, sessions.protocolVersion());
-                    resp.getWriter().write(response.toString());
-                } catch (InterruptedException e) {
-                    Thread.currentThread().interrupt();
-                    resp.sendError(HttpServletResponse.SC_SERVICE_UNAVAILABLE);
-                } finally {
-                    responseQueues.remove(obj.get("id").toString());
-                }
-            } else {
-                resp.setStatus(HttpServletResponse.SC_OK);
-                resp.setContentType("text/event-stream;charset=UTF-8");
-                resp.setHeader("Cache-Control", "no-cache");
-                resp.setHeader(PROTOCOL_HEADER, sessions.protocolVersion());
-                resp.flushBuffer();
-                AsyncContext ac = req.startAsync();
-                ac.setTimeout(0);
-                SseClient client = new SseClient(ac);
-                String key = obj.get("id").toString();
-                requestStreams.put(key, client);
-                clientsByPrefix.put(client.prefix, client);
-                ac.addListener(requestStreamListener(key, client));
-                try {
-                    incoming.put(obj);
-                } catch (InterruptedException e) {
-                    Thread.currentThread().interrupt();
-                    removeRequestStream(key, client);
-                    resp.sendError(HttpServletResponse.SC_SERVICE_UNAVAILABLE);
-                }
-            }
-        }
-
-        @Override
-        protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws IOException {
-            Principal principal = authorize(req, resp);
-            if (principal == null && authManager != null) return;
-            if (!verifyOrigin(req, resp)) return;
-            if (!validateAccept(req, resp, false)) return;
-            if (!validateSession(req, resp, principal, false)) return;
-            resp.setStatus(HttpServletResponse.SC_OK);
-            resp.setContentType("text/event-stream;charset=UTF-8");
-            resp.setHeader("Cache-Control", "no-cache");
-            resp.setHeader(PROTOCOL_HEADER, sessions.protocolVersion());
-            resp.flushBuffer();
-            AsyncContext ac = req.startAsync();
-            ac.setTimeout(0);
-
-            String lastEvent = req.getHeader("Last-Event-ID");
-            SseClient found = null;
-            long lastId = 0;
-            if (lastEvent != null) {
-                int idx = lastEvent.lastIndexOf('-');
-                if (idx > 0) {
-                    String prefix = lastEvent.substring(0, idx);
-                    try {
-                        lastId = Long.parseLong(lastEvent.substring(idx + 1));
-                    } catch (NumberFormatException ignore) {
-                    }
-                    found = clientsByPrefix.get(prefix);
-                    if (found != null) {
-                        found.attach(ac, lastId);
-                    }
-                }
-            }
-            SseClient client;
-            if (found == null) {
-                client = new SseClient(ac);
-                clientsByPrefix.put(client.prefix, client);
-            } else {
-                client = found;
-                lastGeneral.set(null);
-            }
-            generalClients.add(client);
-            ac.addListener(generalStreamListener(client));
-        }
-
-        @Override
-        protected void doDelete(HttpServletRequest req, HttpServletResponse resp) throws IOException {
-            Principal principal = authorize(req, resp);
-            if (principal == null && authManager != null) return;
-            if (!verifyOrigin(req, resp)) return;
-            if (!validateSession(req, resp, principal, false)) return;
-            terminateSession(true);
-            resp.setStatus(HttpServletResponse.SC_OK);
-        }
-    }
-
-    private class MetadataServlet extends HttpServlet {
-        @Override
-        protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws IOException {
-            ResourceMetadata meta = new ResourceMetadata(canonicalResource, authorizationServers);
-            JsonObject body = ResourceMetadataCodec.toJsonObject(meta);
-            resp.setStatus(HttpServletResponse.SC_OK);
-            resp.setContentType("application/json");
-            resp.setCharacterEncoding("UTF-8");
-            resp.getWriter().write(body.toString());
-        }
     }
 
 }
