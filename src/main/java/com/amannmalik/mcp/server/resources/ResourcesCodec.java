@@ -5,6 +5,8 @@ import com.amannmalik.mcp.annotations.AnnotationsCodec;
 import com.amannmalik.mcp.util.*;
 import jakarta.json.*;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Set;
 
 public final class ResourcesCodec {
@@ -210,6 +212,48 @@ public final class ResourcesCodec {
                 new Pagination.Page<>(result.resourceTemplates(), result.nextCursor()),
                 ResourcesCodec::toJsonObject,
                 result._meta());
+    }
+
+    public static Pagination.Page<Resource> toResourcePage(JsonObject obj) {
+        if (obj == null) throw new IllegalArgumentException("object required");
+        JsonArray arr = obj.getJsonArray("resources");
+        if (arr == null) throw new IllegalArgumentException("resources required");
+        List<Resource> resources = new ArrayList<>();
+        for (JsonValue v : arr) {
+            if (v.getValueType() != JsonValue.ValueType.OBJECT) {
+                throw new IllegalArgumentException("resource must be object");
+            }
+            resources.add(toResource(v.asJsonObject()));
+        }
+        String cursor = PaginationCodec.toPaginatedResult(obj).nextCursor();
+        return new Pagination.Page<>(resources, cursor);
+    }
+
+    public static ListResourcesResult toListResourcesResult(JsonObject obj) {
+        Pagination.Page<Resource> page = toResourcePage(obj);
+        PaginatedResult pr = PaginationCodec.toPaginatedResult(obj);
+        return new ListResourcesResult(page.items(), page.nextCursor(), pr._meta());
+    }
+
+    public static Pagination.Page<ResourceTemplate> toResourceTemplatePage(JsonObject obj) {
+        if (obj == null) throw new IllegalArgumentException("object required");
+        JsonArray arr = obj.getJsonArray("resourceTemplates");
+        if (arr == null) throw new IllegalArgumentException("resourceTemplates required");
+        List<ResourceTemplate> templates = new ArrayList<>();
+        for (JsonValue v : arr) {
+            if (v.getValueType() != JsonValue.ValueType.OBJECT) {
+                throw new IllegalArgumentException("resourceTemplate must be object");
+            }
+            templates.add(toResourceTemplate(v.asJsonObject()));
+        }
+        String cursor = PaginationCodec.toPaginatedResult(obj).nextCursor();
+        return new Pagination.Page<>(templates, cursor);
+    }
+
+    public static ListResourceTemplatesResult toListResourceTemplatesResult(JsonObject obj) {
+        Pagination.Page<ResourceTemplate> page = toResourceTemplatePage(obj);
+        PaginatedResult pr = PaginationCodec.toPaginatedResult(obj);
+        return new ListResourceTemplatesResult(page.items(), page.nextCursor(), pr._meta());
     }
 
 }

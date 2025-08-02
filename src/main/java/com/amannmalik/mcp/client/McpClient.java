@@ -421,6 +421,34 @@ public final class McpClient implements AutoCloseable {
         return Optional.ofNullable(resourceMetadata);
     }
 
+    public ListResourcesResult listResources(String cursor) throws IOException {
+        JsonRpcMessage resp = request(
+                RequestMethod.RESOURCES_LIST,
+                ResourcesCodec.toJsonObject(new ListResourcesRequest(cursor, null))
+        );
+        if (resp instanceof JsonRpcResponse r) {
+            return ResourcesCodec.toListResourcesResult(r.result());
+        }
+        if (resp instanceof JsonRpcError err) {
+            throw new IOException(err.error().message());
+        }
+        throw new IOException("Unexpected response");
+    }
+
+    public ListResourceTemplatesResult listResourceTemplates(String cursor) throws IOException {
+        JsonRpcMessage resp = request(
+                RequestMethod.RESOURCES_TEMPLATES_LIST,
+                ResourcesCodec.toJsonObject(new ListResourceTemplatesRequest(cursor, null))
+        );
+        if (resp instanceof JsonRpcResponse r) {
+            return ResourcesCodec.toListResourceTemplatesResult(r.result());
+        }
+        if (resp instanceof JsonRpcError err) {
+            throw new IOException(err.error().message());
+        }
+        throw new IOException("Unexpected response");
+    }
+
     public ResourceSubscription subscribeResource(String uri, ResourceListener listener) throws IOException {
         if (!resourcesSubscribeSupported) {
             throw new IllegalStateException("resource subscribe not supported");
