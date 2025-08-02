@@ -8,6 +8,8 @@ import java.io.*;
 import java.nio.file.*;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 
 public record McpConfiguration(SystemConfig system,
@@ -121,7 +123,7 @@ private static final AtomicBoolean WATCHING = new AtomicBoolean();
     }
 
     private static void watch(Path path) {
-        if (!WATCHING.replace(false, true)) return;
+        if (!WATCHING.compareAndExchange(false, true)) return;
         Thread.startVirtualThread(() -> {
             try (WatchService svc = FileSystems.getDefault().newWatchService()) {
                 Path dir = path.getParent();

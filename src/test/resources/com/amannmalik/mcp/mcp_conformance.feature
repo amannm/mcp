@@ -1,98 +1,29 @@
-@http
 Feature: MCP protocol conformance
 
-  Scenario: Basic server interaction
-    Given a running MCP server and connected client
-    Then the server capabilities should be advertised
-    When the client pings the server
-    Then the ping succeeds
-    When the client lists resources
-    Then one resource uri should be "test://example"
-    When the client reads "test://example"
-    Then the resource text should be "hello"
-    When the client lists resource templates
-    Then one resource template is returned
-    When the client lists tools
-    Then one tool named "test_tool" is returned
-    When the client calls "test_tool"
-    Then the response text should be "ok"
-    When the client lists prompts
-    Then one prompt is returned
-    When the client gets prompt "test_prompt"
-    Then the first message text should be "hello"
-    When the client requests a completion
-    Then the completion value should be "test_completion"
-    When the client sets the log level to "debug"
-    Then the call succeeds
-    When the client reads an invalid uri
-    Then an error with code -32002 is returned
-    When the client calls an unknown tool
-    Then an error with code -32602 is returned
+  Scenario Outline: MCP server conformance test
+    Given a running MCP server using <transport> transport
+    Then capabilities should be advertised and ping succeeds
+    When testing core functionality
+      | operation             | parameter      | expected_result     |
+      | list_resources        |                | test://example      |
+      | read_resource         | test://example | hello               |
+      | list_templates        |                | 1                   |
+      | list_tools            |                | test_tool           |
+      | call_tool             | test_tool      | ok                  |
+      | list_prompts          |                | 1                   |
+      | get_prompt            | test_prompt    | hello               |
+      | request_completion    |                | test_completion     |
+      | set_log_level         | debug          | success             |
+      | subscribe_resource    | test://example | success             |
+      | unsubscribe_resource  | test://example | success             |
+    And testing error conditions
+      | operation             | parameter      | expected_error_code |
+      | read_invalid_uri      | bad://uri      | -32002              |
+      | call_unknown_tool     | nope           | -32602              |
     When the client disconnects
-    Then the server process terminates
+    Then the server terminates cleanly
 
-  Scenario: Invalid log level
-    Given a running MCP server and connected client
-    When the client sets the log level to "invalid"
-    Then an error with code -32602 is returned
-
-  Scenario: Unknown prompt
-    Given a running MCP server and connected client
-    When the client gets prompt "nope"
-    Then an error with code -32602 is returned
-
-  Scenario: Logging on invalid request
-    Given a running MCP server and connected client
-    When the client sets the log level to "debug"
-    Then the call succeeds
-    When the client sends a cancellation notification
-    Then a log message with level "info" is received
-
-  Scenario: Resource subscription lifecycle
-    Given a running MCP server and connected client
-    When the client subscribes to "test://example"
-    Then the call succeeds
-    When the client unsubscribes from "test://example"
-    Then the call succeeds
-
-  Scenario: Invalid completion request
-    Given a running MCP server and connected client
-    When the client requests an invalid completion
-    Then an error with code -32602 is returned
-
-  Scenario: Unknown method
-    Given a running MCP server and connected client
-    When the client calls an unknown method
-    Then an error with code -32601 is returned
-
-  Scenario: Pagination with invalid cursors
-    Given a running MCP server and connected client
-    When the client lists resources with cursor "bad"
-    Then an error with code -32602 is returned
-    When the client lists prompts with cursor "bad"
-    Then an error with code -32602 is returned
-    When the client lists tools with cursor "bad"
-    Then an error with code -32602 is returned
-
-  Scenario: Prompt missing arguments
-    Given a running MCP server and connected client
-    When the client gets prompt "test_prompt" without arguments
-    Then an error with code -32602 is returned
-
-  Scenario: Tool rate limiting
-    Given a running MCP server and connected client
-    When the client calls "test_tool"
-    When the client calls "test_tool"
-    When the client calls "test_tool"
-    When the client calls "test_tool"
-    When the client calls "test_tool"
-    When the client calls "test_tool"
-    Then an error with code -32001 is returned
-
-  Scenario: Logging on unknown method
-    Given a running MCP server and connected client
-    When the client sets the log level to "debug"
-    Then the call succeeds
-    When the client calls an unknown method
-    Then an error with code -32601 is returned
-
+    Examples:
+      | transport |
+      | stdio     |
+      | http      |

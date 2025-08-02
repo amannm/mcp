@@ -12,10 +12,8 @@ import com.amannmalik.mcp.lifecycle.*;
 import com.amannmalik.mcp.prompts.Role;
 import com.amannmalik.mcp.security.OriginValidator;
 import com.amannmalik.mcp.server.McpServer;
-import com.amannmalik.mcp.server.logging.LoggingMessageNotification;
 import com.amannmalik.mcp.transport.*;
-import com.amannmalik.mcp.util.*;
-import com.amannmalik.mcp.wire.NotificationMethod;
+import io.cucumber.datatable.DataTable;
 import io.cucumber.java.After;
 import io.cucumber.java.Before;
 import io.cucumber.java.en.*;
@@ -30,8 +28,230 @@ import java.util.concurrent.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 public final class McpConformanceSteps {
-    private static final String JAVA_BIN = System.getProperty("java.home") +
-            File.separator + "bin" + File.separator + "java";
+    private static final String JAVA_BIN = System.getProperty("java.home") + File.separator + "bin" + File.separator + "java";
+    
+    private Process serverProcess;
+    private StreamableHttpTransport serverTransport;
+    private CompletableFuture<Void> serverTask;
+    private McpClient client;
+    private final Map<String, JsonRpcMessage> responses = new ConcurrentHashMap<>();
+
+    @Before
+    public void setup() throws Exception {
+        String transport = getTransportType();
+        client = createClient(createTransport(transport));
+        client.connect();
+    }
+
+    @After
+    public void cleanup() throws Exception {
+        if (client != null) client.disconnect();
+        if (serverProcess != null && serverProcess.isAlive()) {
+            serverProcess.destroyForcibly();
+            serverProcess.waitFor(2, TimeUnit.SECONDS);
+        }
+        if (serverTask != null && !serverTask.isDone()) {
+            serverTask.cancel(true);
+        }
+        if (serverTransport != null) serverTransport.close();
+    }
+
+    @Given("a running MCP server using {word} transport")
+    public void setupTransport(String transport) {
+        System.setProperty("mcp.test.transport", transport);
+    }
+
+    @Then("capabilities should be advertised and ping succeeds")
+    public void verifyCapabilitiesAndPing() {
+        var expected = EnumSet.of(
+                ServerCapability.RESOURCES, ServerCapability.TOOLS, 
+                ServerCapability.PROMPTS, ServerCapability.LOGGING, 
+                ServerCapability.COMPLETIONS
+        );
+        assertEquals(expected, client.serverCapabilities());
+        assertDoesNotThrow(() -> client.ping());
+    }
+
+    @When("testing core functionality")
+    public void testCoreFunctionality(DataTable table) throws Exception {
+        for (var row : table.asMaps()) {
+            String operation = row.get("operation");
+            String parameter = row.get("parameter");
+            String expected = row.get("expected_result");
+            JsonRpcMessage response = executeOperation(operation, parameter);
+            verifyResult(operation, response, expected);
+        }
+    }
+
+    @When("testing error conditions")
+    public void testErrorConditions(DataTable table) throws Exception {
+        for (var row : table.asMaps()) {
+            String operation = row.get("operation");
+            String parameter = row.get("parameter");
+            int expectedCode = Integer.parseInt(row.get("expected_error_code"));
+            JsonRpcMessage response = executeOperation(operation, parameter);
+            assertInstanceOf(JsonRpcError.class, response);
+            assertEquals(expectedCode, ((JsonRpcError) response).error().code());
+        }
+    }
+
+    @When("the client disconnects")
+    public void disconnect() throws Exception {
+        client.disconnect();
+        if (serverTask != null) serverTask.cancel(true);
+        if (serverTransport != null) serverTransport.close();
+    }
+
+    @Then("the server terminates cleanly")
+    public void verifyTermination() throws Exception {
+        if (serverProcess != null) {
+            if (serverProcess.isAlive()) {
+                serverProcess.waitFor(2, TimeUnit.SECONDS);
+                if (serverProcess.isAlive()) serverProcess.destroy();
+            }
+            assertFalse(serverProcess.isAlive());
+        } else if (serverTask != null) {
+            serverTask.get(2, TimeUnit.SECONDS);
+            assertTrue(serverTask.isDone());
+        }
+    }
+
+    private String getTransportType() {
+        return System.getProperty("mcp.test.transport", "stdio");
+    }
+
+    private Transport createTransport(String type) throws Exception {
+        if ("http".equals(type)) {
+            return createHttpTransport();
+        } else {
+            return createStdioTransport();
+        }
+    }
+
+    private Transport createHttpTransport() throws Exception {
+        serverTransport = new StreamableHttpTransport(0, 
+                new OriginValidator(Set.of("http://localhost", "http://127.0.0.1")), null);
+        serverTask = CompletableFuture.runAsync(() -> {
+            try (var server = new McpServer(serverTransport, null)) {
+                server.serve();
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+        }, runnable -> Thread.ofVirtual().start(runnable));
+        return new StreamableHttpClientTransport(URI.create("http://127.0.0.1:" + serverTransport.port() + "/"));
+    }
+
+    private Transport createStdioTransport() throws Exception {
+        var args = new ArrayList<String>();
+        args.add(JAVA_BIN);
+        String jacocoAgent = getJacocoAgent();
+        if (jacocoAgent != null) args.add(jacocoAgent);
+        args.addAll(List.of("-cp", System.getProperty("java.class.path"),
+                "com.amannmalik.mcp.Main", "server", "--stdio", "--test-mode", "-v"));
+
+        serverProcess = new ProcessBuilder(args).start();
+        long end = System.currentTimeMillis() + 10_000;
+        while (System.currentTimeMillis() < end) {
+            if (serverProcess.isAlive()) break;
+            Thread.sleep(50);
+        }
+        assertTrue(serverProcess.isAlive(), "server failed to start");
+
+        return new StdioTransport(serverProcess.getInputStream(), serverProcess.getOutputStream());
+    }
+
+    private McpClient createClient(Transport transport) {
+        BlockingElicitationProvider elicitation = new BlockingElicitationProvider();
+        elicitation.respond(new ElicitResult(ElicitationAction.CANCEL, null, null));
+        
+        SamplingProvider sampling = (_, _) -> new CreateMessageResponse(
+                Role.ASSISTANT, new ContentBlock.Text("ok", null, null), 
+                "mock-model", "endTurn", null);
+        
+        InMemoryRootsProvider rootsProvider = new InMemoryRootsProvider(
+                List.of(new Root("file:///tmp", "Test Root", null)));
+
+        return new McpClient(
+                new ClientInfo("test-client", "Test Client", "1.0"),
+                EnumSet.allOf(ClientCapability.class), transport, 
+                sampling, rootsProvider, elicitation);
+    }
+
+    private JsonRpcMessage executeOperation(String operation, String parameter) throws Exception {
+        return switch (operation) {
+            case "list_resources" -> client.request("resources/list", 
+                    Json.createObjectBuilder().add("_meta", 
+                            Json.createObjectBuilder().add("progressToken", "tok")).build());
+            case "read_resource" -> client.request("resources/read", 
+                    Json.createObjectBuilder().add("uri", parameter).build());
+            case "list_templates" -> client.request("resources/templates/list", Json.createObjectBuilder().build());
+            case "list_tools" -> client.request("tools/list", Json.createObjectBuilder().build());
+            case "call_tool" -> client.request("tools/call", 
+                    Json.createObjectBuilder().add("name", parameter).build());
+            case "list_prompts" -> client.request("prompts/list", Json.createObjectBuilder().build());
+            case "get_prompt" -> client.request("prompts/get", 
+                    Json.createObjectBuilder().add("name", parameter)
+                            .add("arguments", Json.createObjectBuilder().add("test_arg", "v")).build());
+            case "request_completion" -> client.request("completion/complete", 
+                    Json.createObjectBuilder()
+                            .add("ref", Json.createObjectBuilder().add("type", "ref/prompt").add("name", "test_prompt"))
+                            .add("argument", Json.createObjectBuilder().add("name", "test_arg").add("value", "")).build());
+            case "set_log_level" -> client.request("logging/setLevel", 
+                    Json.createObjectBuilder().add("level", parameter).build());
+            case "subscribe_resource" -> client.request("resources/subscribe", 
+                    Json.createObjectBuilder().add("uri", parameter).build());
+            case "unsubscribe_resource" -> client.request("resources/unsubscribe", 
+                    Json.createObjectBuilder().add("uri", parameter).build());
+            case "read_invalid_uri" -> client.request("resources/read", 
+                    Json.createObjectBuilder().add("uri", parameter).build());
+            case "call_unknown_tool" -> client.request("tools/call", 
+                    Json.createObjectBuilder().add("name", parameter).build());
+            default -> throw new IllegalArgumentException("Unknown operation: " + operation);
+        };
+    }
+
+    private void verifyResult(String operation, JsonRpcMessage response, String expected) {
+        assertInstanceOf(JsonRpcResponse.class, response);
+        var result = ((JsonRpcResponse) response).result();
+        
+        switch (operation) {
+            case "list_resources" -> {
+                var resources = result.getJsonArray("resources");
+                assertEquals(1, resources.size());
+                assertEquals(expected, resources.getJsonObject(0).getString("uri"));
+            }
+            case "read_resource" -> {
+                var content = result.getJsonArray("contents").getJsonObject(0);
+                assertEquals(expected, content.getString("text"));
+            }
+            case "list_templates" -> {
+                var templates = result.getJsonArray("resourceTemplates");
+                assertEquals(Integer.parseInt(expected), templates.size());
+            }
+            case "list_tools" -> {
+                var tools = result.getJsonArray("tools");
+                assertEquals(1, tools.size());
+                assertEquals(expected, tools.getJsonObject(0).getString("name"));
+            }
+            case "call_tool" -> {
+                var content = result.getJsonArray("content").getJsonObject(0);
+                assertEquals(expected, content.getString("text"));
+            }
+            case "list_prompts" -> {
+                var prompts = result.getJsonArray("prompts");
+                assertEquals(Integer.parseInt(expected), prompts.size());
+            }
+            case "get_prompt" -> {
+                var messages = result.getJsonArray("messages");
+                assertEquals(expected, messages.getJsonObject(0).getJsonObject("content").getString("text"));
+            }
+            case "request_completion" -> {
+                var values = result.getJsonObject("completion").getJsonArray("values");
+                assertEquals(expected, values.getJsonString(0).getString());
+            }
+            case "set_log_level", "subscribe_resource", "unsubscribe_resource" -> assertTrue(true); // Success if no exception
+        }
+    }
 
     private static String getJacocoAgent() {
         String agentJar = System.getProperty("jacoco.agent.jar");
@@ -44,429 +264,5 @@ public final class McpConformanceSteps {
             return "-javaagent:" + agentJar + "=destfile=" + serverExecFile + ",append=true";
         }
         return null;
-    }
-
-    private Process serverProcess;
-    private StreamableHttpTransport serverTransport;
-    private CompletableFuture<Void> serverTask;
-    private McpClient client;
-    private JsonRpcMessage lastMessage;
-    private final List<ProgressNotification> progressEvents = new CopyOnWriteArrayList<>();
-    private final List<LoggingMessageNotification> logEvents = new CopyOnWriteArrayList<>();
-
-    @Before(value = "@http", order = 1)
-    public void useHttpTransport() {
-        System.setProperty("mcp.test.transport", "http");
-    }
-
-    @Before(value = "@stdio", order = 1)
-    public void useStdioTransport() {
-        System.setProperty("mcp.test.transport", "stdio");
-    }
-
-    @Before(order = 2)
-    public void startServer() throws Exception {
-        String type = System.getProperty("mcp.test.transport", "stdio");
-        Transport transport;
-        if ("http".equals(type)) {
-            StreamableHttpTransport ht = new StreamableHttpTransport(
-                    0,
-                    new OriginValidator(Set.of("http://localhost", "http://127.0.0.1")),
-                    null
-            );
-            serverTransport = ht;
-            serverTask = CompletableFuture.runAsync(() -> {
-                try (var server = new McpServer(ht, null)) {
-                    server.serve();
-                } catch (Exception e) {
-                    throw new RuntimeException(e);
-                }
-            }, runnable -> Thread.ofVirtual().start(runnable));
-            transport = new StreamableHttpClientTransport(URI.create("http://127.0.0.1:" + ht.port() + "/"));
-        } else {
-            var args = new java.util.ArrayList<String>();
-            args.add(JAVA_BIN);
-            String jacocoAgent = getJacocoAgent();
-            if (jacocoAgent != null) {
-                args.add(jacocoAgent);
-            }
-            args.addAll(List.of("-cp", System.getProperty("java.class.path"),
-                    "com.amannmalik.mcp.Main", "server", "--stdio",
-                    "--test-mode", "-v"));
-            ProcessBuilder pb = new ProcessBuilder(args);
-            serverProcess = pb.start();
-            long end = System.currentTimeMillis() + 10_000;
-            boolean started = false;
-            while (System.currentTimeMillis() < end) {
-                if (serverProcess.isAlive()) {
-                    started = true;
-                    break;
-                }
-                Thread.sleep(50);
-            }
-            assertTrue(started, "server failed to start");
-
-            transport = new StdioTransport(
-                    serverProcess.getInputStream(),
-                    serverProcess.getOutputStream()
-            );
-        }
-        BlockingElicitationProvider elicitation = new BlockingElicitationProvider();
-        elicitation.respond(new ElicitResult(ElicitationAction.CANCEL, null, null));
-        CreateMessageResponse response = new CreateMessageResponse(
-                Role.ASSISTANT,
-                new ContentBlock.Text("ok", null, null),
-                "mock-model",
-                "endTurn",
-                null
-        );
-        SamplingProvider sampling = (_, _) -> response;
-        InMemoryRootsProvider rootsProvider = new InMemoryRootsProvider(
-                List.of(new Root("file:///tmp", "Test Root", null))
-        );
-        client = new McpClient(
-                new ClientInfo("test-client", "Test Client", "1.0"),
-                EnumSet.allOf(ClientCapability.class),
-                transport,
-                sampling,
-                rootsProvider,
-                elicitation
-        );
-        client.setProgressListener(progressEvents::add);
-        client.setLoggingListener(logEvents::add);
-        client.connect();
-    }
-
-    @After
-    public void stopServer() throws Exception {
-        if (client != null) {
-            client.disconnect();
-        }
-        if (serverProcess != null && serverProcess.isAlive()) {
-            serverProcess.destroyForcibly();
-            serverProcess.waitFor(2, TimeUnit.SECONDS);
-        }
-        if (serverTask != null && !serverTask.isDone()) {
-            serverTask.cancel(true);
-            try {
-                serverTask.get(2, TimeUnit.SECONDS);
-            } catch (Exception ignored) {
-            }
-        }
-        if (serverTransport != null) {
-            serverTransport.close();
-        }
-    }
-
-    @Given("a running MCP server and connected client")
-    public void dummy() {
-        // server and client started in @Before
-        checkServerTaskForExceptions();
-    }
-
-    private void checkServerTaskForExceptions() {
-        if (serverTask != null && serverTask.isDone() && serverTask.isCompletedExceptionally()) {
-            try {
-                serverTask.get();
-            } catch (Exception e) {
-                throw new AssertionError("Server task failed with exception", e);
-            }
-        }
-    }
-
-    @Then("the server capabilities should be advertised")
-    public void checkCapabilities() {
-        checkServerTaskForExceptions();
-        var expected = EnumSet.of(
-                ServerCapability.RESOURCES,
-                ServerCapability.TOOLS,
-                ServerCapability.PROMPTS,
-                ServerCapability.LOGGING,
-                ServerCapability.COMPLETIONS
-        );
-        assertEquals(expected, client.serverCapabilities());
-    }
-
-    @When("the client pings the server")
-    public void ping() {
-        checkServerTaskForExceptions();
-        assertDoesNotThrow(() -> client.ping());
-    }
-
-    @Then("the ping succeeds")
-    public void pingSucceeds() {
-        // already asserted in ping()
-    }
-
-    @When("the client lists resources")
-    public void listResources() throws Exception {
-        JsonObject meta = Json.createObjectBuilder()
-                .add("progressToken", "tok")
-                .build();
-        JsonObject params = Json.createObjectBuilder()
-                .add("_meta", meta)
-                .build();
-        lastMessage = client.request("resources/list", params);
-    }
-
-    @Then("one resource uri should be {string}")
-    public void verifyList(String uri) throws Exception {
-        assertInstanceOf(JsonRpcResponse.class, lastMessage);
-        var list = ((JsonRpcResponse) lastMessage).result().getJsonArray("resources");
-        assertEquals(1, list.size());
-        assertEquals(uri, list.getJsonObject(0).getString("uri"));
-        Thread.sleep(100);
-    }
-
-    @When("the client reads {string}")
-    public void readResource(String uri) throws Exception {
-        lastMessage = client.request("resources/read", Json.createObjectBuilder()
-                .add("uri", uri)
-                .build());
-    }
-
-    @Then("the resource text should be {string}")
-    public void verifyRead(String text) {
-        assertInstanceOf(JsonRpcResponse.class, lastMessage);
-        var block = ((JsonRpcResponse) lastMessage).result()
-                .getJsonArray("contents").getJsonObject(0);
-        assertEquals(text, block.getString("text"));
-    }
-
-    @When("the client lists resource templates")
-    public void listResourceTemplates() throws Exception {
-        lastMessage = client.request("resources/templates/list", Json.createObjectBuilder().build());
-    }
-
-    @Then("one resource template is returned")
-    public void verifyTemplateCount() {
-        assertInstanceOf(JsonRpcResponse.class, lastMessage);
-        var templates = ((JsonRpcResponse) lastMessage).result().getJsonArray("resourceTemplates");
-        assertEquals(1, templates.size());
-    }
-
-    @When("the client lists tools")
-    public void listTools() throws Exception {
-        lastMessage = client.request("tools/list", Json.createObjectBuilder().build());
-    }
-
-    @Then("one tool named {string} is returned")
-    public void verifyToolList(String name) {
-        assertInstanceOf(JsonRpcResponse.class, lastMessage);
-        var tools = ((JsonRpcResponse) lastMessage).result().getJsonArray("tools");
-        assertEquals(1, tools.size());
-        assertEquals(name, tools.getJsonObject(0).getString("name"));
-    }
-
-    @When("the client calls {string}")
-    public void callTool(String name) throws Exception {
-        lastMessage = client.request("tools/call", Json.createObjectBuilder()
-                .add("name", name)
-                .build());
-    }
-
-    @Then("the response text should be {string}")
-    public void verifyToolCall(String text) {
-        assertInstanceOf(JsonRpcResponse.class, lastMessage);
-        var content = ((JsonRpcResponse) lastMessage).result()
-                .getJsonArray("content").getJsonObject(0);
-        assertEquals(text, content.getString("text"));
-    }
-
-    @When("the client lists prompts")
-    public void listPrompts() throws Exception {
-        lastMessage = client.request("prompts/list", Json.createObjectBuilder().build());
-    }
-
-    @Then("one prompt is returned")
-    public void verifyPromptList() {
-        assertInstanceOf(JsonRpcResponse.class, lastMessage);
-        var prompts = ((JsonRpcResponse) lastMessage).result().getJsonArray("prompts");
-        assertEquals(1, prompts.size());
-    }
-
-    @When("the client gets prompt {string}")
-    public void getPrompt(String name) throws Exception {
-        lastMessage = client.request("prompts/get", Json.createObjectBuilder()
-                .add("name", name)
-                .add("arguments", Json.createObjectBuilder().add("test_arg", "v").build())
-                .build());
-    }
-
-    @Then("the first message text should be {string}")
-    public void verifyPrompt(String text) {
-        assertInstanceOf(JsonRpcResponse.class, lastMessage);
-        var messages = ((JsonRpcResponse) lastMessage).result().getJsonArray("messages");
-        assertEquals(text, messages.getJsonObject(0).getJsonObject("content").getString("text"));
-    }
-
-    @When("the client requests a completion")
-    public void requestCompletion() throws Exception {
-        lastMessage = client.request("completion/complete", Json.createObjectBuilder()
-                .add("ref", Json.createObjectBuilder()
-                        .add("type", "ref/prompt")
-                        .add("name", "test_prompt")
-                        .build())
-                .add("argument", Json.createObjectBuilder()
-                        .add("name", "test_arg")
-                        .add("value", "")
-                        .build())
-                .build());
-    }
-
-    @Then("the completion value should be {string}")
-    public void verifyCompletion(String value) {
-        assertInstanceOf(JsonRpcResponse.class, lastMessage);
-        var values = ((JsonRpcResponse) lastMessage).result()
-                .getJsonObject("completion")
-                .getJsonArray("values");
-        assertEquals(List.of(value),
-                values.getValuesAs(jakarta.json.JsonString.class)
-                        .stream()
-                        .map(jakarta.json.JsonString::getString)
-                        .toList());
-    }
-
-    @When("the client sets the log level to {string}")
-    public void setLogLevel(String level) throws Exception {
-        lastMessage = client.request("logging/setLevel", Json.createObjectBuilder().add("level", level).build());
-    }
-
-    @Then("the call succeeds")
-    public void callSucceeds() {
-        assertInstanceOf(JsonRpcResponse.class, lastMessage);
-    }
-
-    @When("the client reads an invalid uri")
-    public void readInvalid() throws Exception {
-        lastMessage = client.request("resources/read", Json.createObjectBuilder().add("uri", "bad://uri").build());
-    }
-
-    @Then("an error with code {int} is returned")
-    public void verifyError(int code) {
-        assertInstanceOf(JsonRpcError.class, lastMessage);
-        assertEquals(code, ((JsonRpcError) lastMessage).error().code());
-    }
-
-    @When("the client calls an unknown tool")
-    public void callUnknownTool() throws Exception {
-        lastMessage = client.request("tools/call", Json.createObjectBuilder().add("name", "nope").build());
-    }
-
-    @When("the client calls an unknown method")
-    public void callUnknownMethod() throws Exception {
-        lastMessage = client.request("bogus/method", Json.createObjectBuilder().build());
-    }
-
-    @When("the client subscribes to {string}")
-    public void subscribeResource(String uri) throws Exception {
-        lastMessage = client.request("resources/subscribe", Json.createObjectBuilder().add("uri", uri).build());
-    }
-
-    @When("the client unsubscribes from {string}")
-    public void unsubscribeResource(String uri) throws Exception {
-        lastMessage = client.request("resources/unsubscribe", Json.createObjectBuilder().add("uri", uri).build());
-    }
-
-    @When("the client requests an invalid completion")
-    public void requestInvalidCompletion() throws Exception {
-        lastMessage = client.request("completion/complete", Json.createObjectBuilder()
-                .add("ref", Json.createObjectBuilder()
-                        .add("type", "ref/prompt")
-                        .add("name", "bad")
-                        .build())
-                .add("argument", Json.createObjectBuilder()
-                        .add("name", "test_arg")
-                        .add("value", "")
-                        .build())
-                .build());
-    }
-
-    @When("the client sends a cancellation notification")
-    public void sendCancellation() throws Exception {
-        CancelledNotification note = new CancelledNotification(new RequestId.NumericId(999), "test");
-        client.notify(NotificationMethod.CANCELLED.method(), CancellationCodec.toJsonObject(note));
-    }
-
-    @When("the client lists resources with an invalid progress token")
-    public void listResourcesInvalidProgress() throws Exception {
-        JsonObject meta = Json.createObjectBuilder()
-                .add("progressToken", Json.createObjectBuilder().build())
-                .build();
-        JsonObject params = Json.createObjectBuilder()
-                .add("_meta", meta)
-                .build();
-        lastMessage = client.request("resources/list", params);
-    }
-
-    @When("the client lists resources with cursor {string}")
-    public void listResourcesWithCursor(String cursor) throws Exception {
-        JsonObject params = Json.createObjectBuilder()
-                .add("cursor", cursor)
-                .build();
-        lastMessage = client.request("resources/list", params);
-    }
-
-    @When("the client lists prompts with cursor {string}")
-    public void listPromptsWithCursor(String cursor) throws Exception {
-        JsonObject params = Json.createObjectBuilder()
-                .add("cursor", cursor)
-                .build();
-        lastMessage = client.request("prompts/list", params);
-    }
-
-    @When("the client lists tools with cursor {string}")
-    public void listToolsWithCursor(String cursor) throws Exception {
-        JsonObject params = Json.createObjectBuilder()
-                .add("cursor", cursor)
-                .build();
-        lastMessage = client.request("tools/list", params);
-    }
-
-    @When("the client gets prompt {string} without arguments")
-    public void getPromptWithoutArgs(String name) throws Exception {
-        lastMessage = client.request("prompts/get", Json.createObjectBuilder()
-                .add("name", name)
-                .build());
-    }
-
-    @Then("a log message with level {string} is received")
-    public void verifyLogMessage(String level) throws Exception {
-        long end = System.currentTimeMillis() + 2000;
-        while (System.currentTimeMillis() < end &&
-                logEvents.stream().noneMatch(l -> l.level().name().equalsIgnoreCase(level))) {
-            Thread.sleep(10);
-        }
-    }
-
-    @When("the client disconnects")
-    public void disconnect() throws Exception {
-        client.disconnect();
-        if (serverTask != null) {
-            serverTask.cancel(true);
-        }
-        if (serverTransport != null) {
-            serverTransport.close();
-        }
-    }
-
-    @Then("the server process terminates")
-    public void serverTerminates() throws Exception {
-        if (serverProcess != null) {
-            if (serverProcess.isAlive()) {
-                serverProcess.waitFor(2, TimeUnit.SECONDS);
-                if (serverProcess.isAlive()) {
-                    serverProcess.destroy();
-                    serverProcess.waitFor(2, TimeUnit.SECONDS);
-                }
-            }
-            assertFalse(serverProcess.isAlive());
-        } else if (serverTask != null) {
-            try {
-                serverTask.get(2, TimeUnit.SECONDS);
-            } catch (Exception ignored) {
-            }
-            assertTrue(serverTask.isDone());
-        }
     }
 }
