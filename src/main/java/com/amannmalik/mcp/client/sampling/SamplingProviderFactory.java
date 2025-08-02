@@ -6,7 +6,6 @@ public final class SamplingProviderFactory {
         // Utility class
     }
 
-
     public static InteractiveSamplingProvider createInteractive() {
         return new InteractiveSamplingProvider();
     }

@@ -31,8 +31,6 @@ public final class StreamableHttpTransport implements Transport {
     private final String resourceMetadataUrl;
     final String canonicalResource;
     final java.util.List<String> authorizationServers;
-
-
     // Default to the previous protocol revision when the version header is
     // absent, as recommended for backwards compatibility.
     static final String COMPATIBILITY_VERSION =

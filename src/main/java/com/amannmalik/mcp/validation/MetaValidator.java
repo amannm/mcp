@@ -13,7 +13,6 @@ public final class MetaValidator {
     private static final Pattern NAME =
             Pattern.compile("(?:[A-Za-z0-9](?:[A-Za-z0-9._-]*[A-Za-z0-9])?)?");
 
-
     public static void requireValid(String key) {
         if (key == null) throw new IllegalArgumentException("key required");
         int slash = key.indexOf('/');

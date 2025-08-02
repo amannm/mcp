@@ -280,7 +280,6 @@ public final class McpClient implements AutoCloseable {
         return instructions == null ? "" : instructions;
     }
 
-
     public PingResponse ping() throws IOException {
         return ping(Timeouts.DEFAULT_TIMEOUT_MS);
     }

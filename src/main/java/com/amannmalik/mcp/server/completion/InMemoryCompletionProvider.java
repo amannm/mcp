@@ -58,7 +58,6 @@ public final class InMemoryCompletionProvider implements CompletionProvider {
         return new CompleteResult(new CompleteResult.Completion(sorted, total, hasMore), null);
     }
 
-
     private static boolean refEquals(CompleteRequest.Ref a, CompleteRequest.Ref b) {
         if (a instanceof CompleteRequest.Ref.PromptRef(var aName, var _, var _) &&
                 b instanceof CompleteRequest.Ref.PromptRef(var bName, var _, var _)) {

@@ -165,7 +165,6 @@ public final class McpServer implements AutoCloseable {
         handlers.register(RequestMethod.SAMPLING_CREATE_MESSAGE, this::handleCreateMessage);
     }
 
-
     private <S extends ListChangeSubscription> S subscribeListChanges(
             SubscriptionFactory<S> factory,
             NotificationMethod method,
@@ -338,7 +337,6 @@ public final class McpServer implements AutoCloseable {
             throw new IllegalStateException("Server capability not declared: " + cap);
         }
     }
-
 
     private boolean allowed(Annotations ann) {
         try {
@@ -727,7 +725,6 @@ public final class McpServer implements AutoCloseable {
         }
         throw new IOException(((JsonRpcError) msg).error().message());
     }
-
 
     public CreateMessageResponse createMessage(CreateMessageRequest req) throws IOException {
         requireClientCapability(ClientCapability.SAMPLING);

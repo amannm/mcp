@@ -2,7 +2,6 @@ package com.amannmalik.mcp.lifecycle;
 
 import java.util.*;
 
-
 public class ProtocolLifecycle {
 
     private final Set<ServerCapability> serverCapabilities;

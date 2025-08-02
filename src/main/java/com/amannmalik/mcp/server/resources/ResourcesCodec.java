@@ -100,7 +100,6 @@ public final class ResourcesCodec {
         return new ResourceBlock.Binary(uri, mime, data, meta);
     }
 
-
     public static JsonObject toJsonObject(ResourceListChangedNotification n) {
         if (n == null) throw new IllegalArgumentException("notification required");
         return EmptyJsonObjectCodec.toJsonObject();
@@ -154,7 +153,6 @@ public final class ResourcesCodec {
         }
         return new UnsubscribeRequest(obj.getString("uri"), null);
     }
-
 
     public static JsonObject toJsonObject(ReadResourceRequest req) {
         if (req == null) throw new IllegalArgumentException("request required");

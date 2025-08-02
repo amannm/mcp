@@ -14,7 +14,6 @@ public sealed interface RequestId permits RequestId.StringId, RequestId.NumericI
         }
     }
 
-
     record StringId(String value) implements RequestId {
         @Override
         public String toString() {
