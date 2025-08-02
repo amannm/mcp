@@ -62,7 +62,6 @@ import com.amannmalik.mcp.util.ProgressListener;
 import com.amannmalik.mcp.util.ProgressManager;
 import com.amannmalik.mcp.util.ProgressNotification;
 import com.amannmalik.mcp.util.ProgressToken;
-import com.amannmalik.mcp.util.ProgressUtil;
 import com.amannmalik.mcp.util.JsonRpcRequestProcessor;
 import com.amannmalik.mcp.util.Timeouts;
 import com.amannmalik.mcp.jsonrpc.RpcHandlerRegistry;
