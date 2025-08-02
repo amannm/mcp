@@ -21,11 +21,9 @@ final class McpServlet extends HttpServlet {
 
     @Override
     protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws IOException {
-        var principalOpt = transport.authorize(req, resp);
+        var principalOpt = authorize(req, resp, true, true);
         if (principalOpt.isEmpty()) return;
         var principal = principalOpt.get();
-        if (!transport.verifyOrigin(req, resp)) return;
-        if (!transport.validateAccept(req, resp, true)) return;
 
         JsonObject obj;
         try (JsonReader reader = Json.createReader(req.getInputStream())) {
@@ -51,13 +49,7 @@ final class McpServlet extends HttpServlet {
         var principalOpt = authorize(req, resp, true, false);
         if (principalOpt.isEmpty()) return;
         if (!transport.validateSession(req, resp, principalOpt.get(), false)) return;
-        resp.setStatus(HttpServletResponse.SC_OK);
-        resp.setContentType("text/event-stream;charset=UTF-8");
-        resp.setHeader("Cache-Control", "no-cache");
-        resp.setHeader(TransportHeaders.PROTOCOL_VERSION, transport.sessions.protocolVersion());
-        resp.flushBuffer();
-        AsyncContext ac = req.startAsync();
-        ac.setTimeout(0);
+        AsyncContext ac = initSse(req, resp);
 
         String lastEvent = req.getHeader("Last-Event-ID");
         SseClient found = null;
@@ -122,6 +114,17 @@ final class McpServlet extends HttpServlet {
         return principalOpt;
     }
 
+    private AsyncContext initSse(HttpServletRequest req, HttpServletResponse resp) throws IOException {
+        resp.setStatus(HttpServletResponse.SC_OK);
+        resp.setContentType("text/event-stream;charset=UTF-8");
+        resp.setHeader("Cache-Control", "no-cache");
+        resp.setHeader(TransportHeaders.PROTOCOL_VERSION, transport.sessions.protocolVersion());
+        resp.flushBuffer();
+        AsyncContext ac = req.startAsync();
+        ac.setTimeout(0);
+        return ac;
+    }
+
     private void enqueue(JsonObject obj, HttpServletResponse resp) throws IOException {
         try {
             transport.incoming.put(obj);
@@ -176,13 +179,7 @@ final class McpServlet extends HttpServlet {
     private void handleStreamRequest(JsonObject obj,
                                      HttpServletRequest req,
                                      HttpServletResponse resp) throws IOException {
-        resp.setStatus(HttpServletResponse.SC_OK);
-        resp.setContentType("text/event-stream;charset=UTF-8");
-        resp.setHeader("Cache-Control", "no-cache");
-        resp.setHeader(TransportHeaders.PROTOCOL_VERSION, transport.sessions.protocolVersion());
-        resp.flushBuffer();
-        AsyncContext ac = req.startAsync();
-        ac.setTimeout(0);
+        AsyncContext ac = initSse(req, resp);
         SseClient client = new SseClient(ac);
         String key = obj.get("id").toString();
         transport.requestStreams.put(key, client);
