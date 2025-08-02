@@ -1,5 +1,6 @@
 package com.amannmalik.mcp.server.tools;
 
+import com.amannmalik.mcp.util.ListChangeSubscription;
 import com.amannmalik.mcp.util.Pagination;
 import jakarta.json.JsonObject;
 
@@ -25,7 +26,7 @@ public interface ToolProvider {
         return Optional.empty();
     }
 
-    default ToolListSubscription subscribeList(ToolListListener listener) {
+    default ListChangeSubscription subscribeList(ToolListListener listener) {
         return () -> {
         };
     }

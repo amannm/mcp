@@ -21,10 +21,9 @@ public final class PaginationCodec {
     }
 
     public static PaginatedRequest toPaginatedRequest(JsonObject obj) {
-        if (obj != null) JsonUtil.requireOnlyKeys(obj, REQUEST_KEYS);
-        String cursor = obj == null ? null : obj.getString("cursor", null);
-        JsonObject meta = obj == null ? null : obj.getJsonObject("_meta");
-        return new PaginatedRequest(cursor, meta);
+        if (obj == null) return new PaginatedRequest(null, null);
+        JsonUtil.requireOnlyKeys(obj, REQUEST_KEYS);
+        return new PaginatedRequest(obj.getString("cursor", null), obj.getJsonObject("_meta"));
     }
 
     public static JsonObject toJsonObject(PaginatedResult result) {
@@ -35,9 +34,8 @@ public final class PaginationCodec {
     }
 
     public static PaginatedResult toPaginatedResult(JsonObject obj) {
-        if (obj != null) JsonUtil.requireOnlyKeys(obj, RESULT_KEYS);
-        String cursor = obj == null ? null : obj.getString("nextCursor", null);
-        JsonObject meta = obj == null ? null : obj.getJsonObject("_meta");
-        return new PaginatedResult(cursor, meta);
+        if (obj == null) return new PaginatedResult(null, null);
+        JsonUtil.requireOnlyKeys(obj, RESULT_KEYS);
+        return new PaginatedResult(obj.getString("nextCursor", null), obj.getJsonObject("_meta"));
     }
 }
