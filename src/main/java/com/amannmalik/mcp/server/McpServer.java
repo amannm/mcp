@@ -33,7 +33,6 @@ import java.io.EOFException;
 import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.*;
-import java.util.concurrent.atomic.AtomicLong;
 import static com.amannmalik.mcp.util.InvalidParams.valid;
 
 public final class McpServer implements AutoCloseable {
@@ -63,8 +62,7 @@ public final class McpServer implements AutoCloseable {
             McpConfiguration.current().performance().rateLimits().completionsPerSecond(), 1000);
     private final RateLimiter logLimiter = new RateLimiter(
             McpConfiguration.current().performance().rateLimits().logsPerSecond(), 1000);
-    private final AtomicLong requestCounter = new AtomicLong(1);
-    private final Map<RequestId, CompletableFuture<JsonRpcMessage>> pending = new ConcurrentHashMap<>();
+    private final PendingRequests pending = new PendingRequests();
 
     public McpServer(Transport transport, String instructions) {
         this(ServerDefaults.resources(),
@@ -222,14 +220,8 @@ public final class McpServer implements AutoCloseable {
         switch (msg) {
             case JsonRpcRequest req -> onRequest(req);
             case JsonRpcNotification note -> onNotification(note);
-            case JsonRpcResponse resp -> {
-                var f = pending.remove(resp.id());
-                if (f != null) f.complete(resp);
-            }
-            case JsonRpcError err -> {
-                var f = pending.remove(err.id());
-                if (f != null) f.complete(err);
-            }
+            case JsonRpcResponse resp -> pending.complete(resp.id(), resp);
+            case JsonRpcError err -> pending.complete(err.id(), err);
             default -> {
             }
         }
@@ -508,12 +500,10 @@ public final class McpServer implements AutoCloseable {
     }
 
     private JsonRpcMessage sendRequest(String method, JsonObject params, long timeoutMillis) throws IOException {
-        RequestId id = new RequestId.NumericId(requestCounter.getAndIncrement());
-        CompletableFuture<JsonRpcMessage> future = new CompletableFuture<>();
-        pending.put(id, future);
-        send(new JsonRpcRequest(id, method, params));
+        var ctx = pending.register();
+        send(new JsonRpcRequest(ctx.id(), method, params));
         try {
-            return future.get(timeoutMillis, TimeUnit.MILLISECONDS);
+            return ctx.future().get(timeoutMillis, TimeUnit.MILLISECONDS);
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             throw new IOException(e);
@@ -525,12 +515,12 @@ public final class McpServer implements AutoCloseable {
             try {
                 send(new JsonRpcNotification(
                         NotificationMethod.CANCELLED.method(),
-                        CancellationCodec.toJsonObject(new CancelledNotification(id, "timeout"))));
+                        CancellationCodec.toJsonObject(new CancelledNotification(ctx.id(), "timeout"))));
             } catch (IOException ignore) {
             }
             throw new IOException("Request timed out after " + timeoutMillis + " ms");
         } finally {
-            pending.remove(id);
+            pending.remove(ctx.id());
         }
     }
 
@@ -599,6 +589,7 @@ public final class McpServer implements AutoCloseable {
             promptsSubscription = null;
         }
         if (completions != null) completions.close();
+        pending.failAll(new EOFException());
         transport.close();
     }
 }
