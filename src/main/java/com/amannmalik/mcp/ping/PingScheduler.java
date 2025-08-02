@@ -2,6 +2,7 @@ package com.amannmalik.mcp.ping;
 
 import com.amannmalik.mcp.client.McpClient;
 
+import java.io.IOException;
 import java.util.Objects;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -45,19 +46,18 @@ public final class PingScheduler implements AutoCloseable {
     }
 
     private void check() {
-        if (PingMonitor.isAlive(client, timeout)) {
+        try {
+            client.ping(timeout);
             failureCount = 0;
-            return;
-        }
-
-        failureCount++;
-        if (failureCount >= maxFailures) {
-            System.err.println("Ping failed");
-            try {
-                onFailure.run();
-            } catch (Exception ignore) {
-            } finally {
+        } catch (IOException | RuntimeException e) {
+            failureCount++;
+            System.err.println("Ping failure: " + e.getMessage());
+            if (failureCount >= maxFailures) {
                 failureCount = 0;
+                try {
+                    onFailure.run();
+                } catch (Exception ignore) {
+                }
             }
         }
     }
