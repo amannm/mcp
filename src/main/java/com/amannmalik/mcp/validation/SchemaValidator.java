@@ -112,7 +112,11 @@ public final class SchemaValidator {
                         throw new IllegalArgumentException("Invalid email for " + field);
                     }
                 }
-                case "uri" -> URI.create(value);
+                case "uri" -> {
+                    if (URI.create(value).toString().isEmpty()) {
+                        throw new IllegalArgumentException("Invalid uri for " + field);
+                    }
+                }
                 case "date" -> LocalDate.parse(value);
                 case "date-time" -> OffsetDateTime.parse(value);
                 default -> {

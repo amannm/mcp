@@ -50,10 +50,6 @@ public final class ToolCodec {
         return EmptyJsonObjectCodec.toJsonObject();
     }
 
-    public static ToolListChangedNotification toToolListChangedNotification(JsonObject obj) {
-        EmptyJsonObjectCodec.requireEmpty(obj);
-        return new ToolListChangedNotification();
-    }
 
     private static JsonObject toJsonObject(ToolAnnotations ann) {
         JsonObjectBuilder b = Json.createObjectBuilder();

@@ -7,7 +7,9 @@ public final class BlockingElicitationProvider implements ElicitationProvider {
 
     public void respond(ElicitResult response) {
         if (response == null) throw new IllegalArgumentException("response is required");
-        responses.offer(response);
+        if (!responses.offer(response)) {
+            throw new IllegalStateException("responses queue full");
+        }
     }
 
     @Override

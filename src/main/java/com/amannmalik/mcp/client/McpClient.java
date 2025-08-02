@@ -12,7 +12,6 @@ import com.amannmalik.mcp.security.RateLimiter;
 import com.amannmalik.mcp.security.SamplingAccessPolicy;
 import com.amannmalik.mcp.server.logging.*;
 import com.amannmalik.mcp.server.resources.ResourceListListener;
-import com.amannmalik.mcp.server.tools.ToolCodec;
 import com.amannmalik.mcp.server.tools.ToolListListener;
 import com.amannmalik.mcp.transport.*;
 import com.amannmalik.mcp.util.*;
@@ -622,7 +621,7 @@ public final class McpClient implements AutoCloseable {
 
     private void handleToolsListChanged(JsonRpcNotification note) {
         try {
-            ToolCodec.toToolListChangedNotification(note.params());
+            EmptyJsonObjectCodec.requireEmpty(note.params());
             toolListListener.listChanged();
         } catch (IllegalArgumentException ignore) {
         }
