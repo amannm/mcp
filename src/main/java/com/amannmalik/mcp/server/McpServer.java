@@ -24,6 +24,7 @@ import com.amannmalik.mcp.jsonrpc.JsonRpcNotification;
 import com.amannmalik.mcp.jsonrpc.JsonRpcRequest;
 import com.amannmalik.mcp.jsonrpc.JsonRpcResponse;
 import com.amannmalik.mcp.jsonrpc.RequestId;
+import com.amannmalik.mcp.util.JsonRpcCallManager;
 import com.amannmalik.mcp.lifecycle.ClientCapability;
 import com.amannmalik.mcp.lifecycle.InitializeRequest;
 import com.amannmalik.mcp.lifecycle.InitializeResponse;
@@ -124,12 +125,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicLong;
 
 public final class McpServer implements AutoCloseable {
@@ -166,7 +163,7 @@ public final class McpServer implements AutoCloseable {
     private final RateLimiter completionLimiter = new RateLimiter(10, 1000);
     private final RateLimiter logLimiter = new RateLimiter(20, 1000);
     private final AtomicLong requestCounter = new AtomicLong(1);
-    private final Map<RequestId, CompletableFuture<JsonRpcMessage>> pending = new ConcurrentHashMap<>();
+    private final JsonRpcCallManager callManager;
 
     public McpServer(Transport transport, String instructions) {
         this(createDefaultResources(), createDefaultTools(), createDefaultPrompts(), createDefaultCompletions(),
@@ -204,6 +201,11 @@ public final class McpServer implements AutoCloseable {
         this.toolAccess = toolAccess == null ? ToolAccessPolicy.PERMISSIVE : toolAccess;
         this.samplingAccess = samplingAccess == null ? SamplingAccessPolicy.PERMISSIVE : samplingAccess;
         this.principal = principal;
+        this.callManager = new JsonRpcCallManager(
+                this::send,
+                id -> send(new JsonRpcNotification(
+                        NotificationMethod.CANCELLED.method(),
+                        CancellationCodec.toJsonObject(new CancelledNotification(id, "timeout")))));
         this.toolListChangedSupported = tools != null && tools.supportsListChanged();
         this.resourcesSubscribeSupported = resources != null && resources.supportsSubscribe();
         this.resourcesListChangedSupported = resources != null && resources.supportsListChanged();
@@ -319,14 +321,8 @@ public final class McpServer implements AutoCloseable {
                 switch (msg) {
                     case JsonRpcRequest req -> onRequest(req);
                     case JsonRpcNotification note -> onNotification(note);
-                    case JsonRpcResponse resp -> {
-                        CompletableFuture<JsonRpcMessage> f = pending.remove(resp.id());
-                        if (f != null) f.complete(resp);
-                    }
-                    case JsonRpcError err -> {
-                        CompletableFuture<JsonRpcMessage> f = pending.remove(err.id());
-                        if (f != null) f.complete(err);
-                    }
+                    case JsonRpcResponse resp -> callManager.complete(resp);
+                    case JsonRpcError err -> callManager.complete(err);
                     default -> {
                     }
                 }
@@ -786,29 +782,7 @@ public final class McpServer implements AutoCloseable {
 
     private JsonRpcMessage sendRequest(String method, JsonObject params, long timeoutMillis) throws IOException {
         RequestId id = new RequestId.NumericId(requestCounter.getAndIncrement());
-        CompletableFuture<JsonRpcMessage> future = new CompletableFuture<>();
-        pending.put(id, future);
-        send(new JsonRpcRequest(id, method, params));
-        try {
-            return future.get(timeoutMillis, TimeUnit.MILLISECONDS);
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            throw new IOException(e);
-        } catch (ExecutionException e) {
-            Throwable cause = e.getCause();
-            if (cause instanceof IOException io) throw io;
-            throw new IOException(cause);
-        } catch (TimeoutException e) {
-            try {
-                send(new JsonRpcNotification(
-                        NotificationMethod.CANCELLED.method(),
-                        CancellationCodec.toJsonObject(new CancelledNotification(id, "timeout"))));
-            } catch (IOException ignore) {
-            }
-            throw new IOException("Request timed out after " + timeoutMillis + " ms");
-        } finally {
-            pending.remove(id);
-        }
+        return callManager.call(id, method, params, timeoutMillis);
     }
 
     public List<Root> listRoots() throws IOException {
