@@ -6,9 +6,7 @@ import com.amannmalik.mcp.client.elicitation.ElicitCodec;
 import com.amannmalik.mcp.client.elicitation.ElicitRequest;
 import com.amannmalik.mcp.client.elicitation.ElicitResult;
 import com.amannmalik.mcp.client.elicitation.ElicitationAction;
-import com.amannmalik.mcp.client.roots.ListRootsRequest;
 import com.amannmalik.mcp.client.roots.Root;
-import com.amannmalik.mcp.client.roots.RootsCodec;
 import com.amannmalik.mcp.client.roots.RootsListener;
 import com.amannmalik.mcp.client.roots.RootsSubscription;
 import com.amannmalik.mcp.client.sampling.CreateMessageRequest;
@@ -117,7 +115,6 @@ import jakarta.json.stream.JsonParsingException;
 
 import java.io.EOFException;
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.EnumMap;
 import java.util.EnumSet;
 import java.util.List;
@@ -126,7 +123,6 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
@@ -154,8 +150,7 @@ public final class McpServer implements AutoCloseable {
     private final boolean resourcesSubscribeSupported;
     private final boolean resourcesListChangedSupported;
     private final boolean promptsListChangedSupported;
-    private final List<RootsListener> rootsListeners = new CopyOnWriteArrayList<>();
-    private final List<Root> roots = new CopyOnWriteArrayList<>();
+    private final RootsManager rootsManager;
     private final ResourceAccessController resourceAccess;
     private final ToolAccessPolicy toolAccess;
     private final SamplingAccessPolicy samplingAccess;
@@ -208,6 +203,7 @@ public final class McpServer implements AutoCloseable {
         this.resourcesSubscribeSupported = resources != null && resources.supportsSubscribe();
         this.resourcesListChangedSupported = resources != null && resources.supportsListChanged();
         this.promptsListChangedSupported = prompts != null && prompts.supportsListChanged();
+        this.rootsManager = new RootsManager(lifecycle, this::sendRequest);
 
         if (resources != null && resourcesListChangedSupported) {
             resourceListSubscription = subscribeListChanges(
@@ -234,7 +230,7 @@ public final class McpServer implements AutoCloseable {
         registerNotificationHandler(NotificationMethod.INITIALIZED, this::initialized);
         registerRequestHandler(RequestMethod.PING, this::ping);
         registerNotificationHandler(NotificationMethod.CANCELLED, this::cancelled);
-        registerNotificationHandler(NotificationMethod.ROOTS_LIST_CHANGED, n -> rootsListChanged());
+        registerNotificationHandler(NotificationMethod.ROOTS_LIST_CHANGED, n -> rootsManager.listChangedNotification());
 
         if (resources != null) {
             registerRequestHandler(RequestMethod.RESOURCES_LIST, this::listResources);
@@ -428,7 +424,7 @@ public final class McpServer implements AutoCloseable {
 
     private void initialized(JsonRpcNotification ignored) {
         lifecycle.initialized();
-        refreshRootsAsync();
+        rootsManager.refreshAsync();
     }
 
     private JsonRpcMessage ping(JsonRpcRequest req) {
@@ -463,7 +459,7 @@ public final class McpServer implements AutoCloseable {
     }
 
     private boolean withinRoots(String uri) {
-        return RootChecker.withinRoots(uri, roots);
+        return RootChecker.withinRoots(uri, rootsManager.roots());
     }
 
     private boolean canAccessResource(String uri) {
@@ -812,50 +808,15 @@ public final class McpServer implements AutoCloseable {
     }
 
     public List<Root> listRoots() throws IOException {
-        List<Root> fetched = fetchRoots();
-        boolean changed = !roots.equals(fetched);
-        roots.clear();
-        roots.addAll(fetched);
-        if (changed) {
-            rootsListeners.forEach(RootsListener::listChanged);
-        }
-        return List.copyOf(fetched);
-    }
-
-    private List<Root> fetchRoots() throws IOException {
-        requireClientCapability(ClientCapability.ROOTS);
-        JsonRpcMessage msg = sendRequest(RequestMethod.ROOTS_LIST, RootsCodec.toJsonObject(new ListRootsRequest(null)));
-        if (msg instanceof JsonRpcResponse resp) {
-            return RootsCodec.toRoots(resp.result());
-        }
-        throw new IOException(((JsonRpcError) msg).error().message());
+        return rootsManager.listRoots();
     }
 
     public RootsSubscription subscribeRoots(RootsListener listener) {
-        rootsListeners.add(listener);
-        return () -> rootsListeners.remove(listener);
+        return rootsManager.subscribe(listener);
     }
 
     public List<Root> roots() {
-        return List.copyOf(roots);
-    }
-
-    private void refreshRootsAsync() {
-        if (!lifecycle.negotiatedClientCapabilities().contains(ClientCapability.ROOTS)) {
-            return;
-        }
-        Thread t = new Thread(() -> {
-            try {
-                listRoots();
-            } catch (IOException ignore) {
-            }
-        });
-        t.setDaemon(true);
-        t.start();
-    }
-
-    private void rootsListChanged() {
-        refreshRootsAsync();
+        return rootsManager.roots();
     }
 
     public ElicitResult elicit(ElicitRequest req) throws IOException {
