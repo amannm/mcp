@@ -168,7 +168,7 @@ public final class McpServer implements AutoCloseable {
     private <S extends ListChangeSubscription> S subscribeListChanges(
             SubscriptionFactory<S> factory,
             NotificationMethod method,
-            jakarta.json.JsonObject payload) {
+            JsonObject payload) {
         try {
             return factory.subscribe(() -> {
                 if (lifecycle.state() != LifecycleState.OPERATION) return;

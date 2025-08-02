@@ -3,6 +3,7 @@ package com.amannmalik.mcp.prompts;
 import com.amannmalik.mcp.content.ContentBlock;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 public record PromptTemplate(Prompt prompt, List<PromptMessageTemplate> messages) {
     public PromptTemplate {
@@ -13,9 +14,9 @@ public record PromptTemplate(Prompt prompt, List<PromptMessageTemplate> messages
         Map<String, String> provided = args == null ? Map.of() : Map.copyOf(args);
 
         if (!prompt.arguments().isEmpty()) {
-            java.util.Set<String> allowed = prompt.arguments().stream()
+            Set<String> allowed = prompt.arguments().stream()
                     .map(PromptArgument::name)
-                    .collect(java.util.stream.Collectors.toUnmodifiableSet());
+                    .collect(Collectors.toUnmodifiableSet());
 
             for (String name : provided.keySet()) {
                 if (!allowed.contains(name)) {

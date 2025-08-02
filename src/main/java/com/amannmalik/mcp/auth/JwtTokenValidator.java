@@ -115,11 +115,11 @@ public final class JwtTokenValidator implements TokenValidator {
 
     private void validateTimestamps(JsonObject payload) throws AuthorizationException {
         long now = System.currentTimeMillis() / 1000;
-        if (payload.containsKey("exp") && payload.get("exp").getValueType() == jakarta.json.JsonValue.ValueType.NUMBER) {
+        if (payload.containsKey("exp") && payload.get("exp").getValueType() == JsonValue.ValueType.NUMBER) {
             long exp = payload.getJsonNumber("exp").longValue();
             if (now >= exp) throw new AuthorizationException("token expired");
         }
-        if (payload.containsKey("nbf") && payload.get("nbf").getValueType() == jakarta.json.JsonValue.ValueType.NUMBER) {
+        if (payload.containsKey("nbf") && payload.get("nbf").getValueType() == JsonValue.ValueType.NUMBER) {
             long nbf = payload.getJsonNumber("nbf").longValue();
             if (now < nbf) throw new AuthorizationException("token not active");
         }

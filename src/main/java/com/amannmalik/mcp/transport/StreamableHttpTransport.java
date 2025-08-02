@@ -19,6 +19,8 @@ import org.eclipse.jetty.server.ServerConnector;
 import java.io.EOFException;
 import java.io.IOException;
 import java.net.InetSocketAddress;
+import java.util.List;
+import java.util.Locale;
 import java.util.Set;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicReference;
@@ -30,7 +32,7 @@ public final class StreamableHttpTransport implements Transport {
     final AuthorizationManager authManager;
     private final String resourceMetadataUrl;
     final String canonicalResource;
-    final java.util.List<String> authorizationServers;
+    final List<String> authorizationServers;
     // Default to the previous protocol revision when the version header is
     // absent, as recommended for backwards compatibility.
     static final String COMPATIBILITY_VERSION =
@@ -55,7 +57,7 @@ public final class StreamableHttpTransport implements Transport {
                                    OriginValidator validator,
                                    AuthorizationManager auth,
                                    String resourceMetadataUrl,
-                                   java.util.List<String> authorizationServers) throws Exception {
+                                   List<String> authorizationServers) throws Exception {
         server = new Server(new InetSocketAddress("127.0.0.1", port));
         ServletContextHandler ctx = new ServletContextHandler();
         ctx.addServlet(new ServletHolder(new McpServlet(this)), "/");
@@ -78,14 +80,14 @@ public final class StreamableHttpTransport implements Transport {
             this.canonicalResource = "http://127.0.0.1:" + this.port;
         }
         if (authorizationServers == null || authorizationServers.isEmpty()) {
-            this.authorizationServers = java.util.List.of();
+            this.authorizationServers = List.of();
         } else {
-            this.authorizationServers = java.util.List.copyOf(authorizationServers);
+            this.authorizationServers = List.copyOf(authorizationServers);
         }
     }
 
     public StreamableHttpTransport(int port, OriginValidator validator, AuthorizationManager auth) throws Exception {
-        this(port, validator, auth, null, java.util.List.of());
+        this(port, validator, auth, null, List.of());
     }
 
     public int port() {
@@ -262,7 +264,7 @@ public final class StreamableHttpTransport implements Transport {
             resp.sendError(HttpServletResponse.SC_NOT_ACCEPTABLE);
             return false;
         }
-        String norm = accept.toLowerCase(java.util.Locale.ROOT);
+        String norm = accept.toLowerCase(Locale.ROOT);
         if (post) {
             if (!(norm.contains("application/json") && norm.contains("text/event-stream"))) {
                 resp.sendError(HttpServletResponse.SC_NOT_ACCEPTABLE);

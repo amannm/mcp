@@ -1,5 +1,6 @@
 package com.amannmalik.mcp.content;
 
+import com.amannmalik.mcp.annotations.Annotations;
 import com.amannmalik.mcp.annotations.AnnotationsCodec;
 import com.amannmalik.mcp.server.resources.ResourcesCodec;
 import com.amannmalik.mcp.util.Base64Util;
@@ -14,7 +15,7 @@ public final class ContentCodec {
 
     public static JsonObject toJsonObject(ContentBlock content) {
         JsonObjectBuilder b = Json.createObjectBuilder().add("type", content.type());
-        if (content.annotations() != null && content.annotations() != com.amannmalik.mcp.annotations.Annotations.EMPTY) {
+        if (content.annotations() != null && content.annotations() != Annotations.EMPTY) {
             b.add("annotations", AnnotationsCodec.toJsonObject(content.annotations()));
         }
         if (content._meta() != null) b.add("_meta", content._meta());

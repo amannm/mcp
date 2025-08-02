@@ -4,6 +4,7 @@ import com.amannmalik.mcp.util.*;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 
@@ -42,13 +43,13 @@ public final class InMemoryResourceProvider implements ResourceProvider {
     }
 
     @Override
-    public java.util.Optional<Resource> get(String uri) {
+    public Optional<Resource> get(String uri) {
         for (Resource r : resources) {
             if (r.uri().equals(uri)) {
-                return java.util.Optional.of(r);
+                return Optional.of(r);
             }
         }
-        return java.util.Optional.empty();
+        return Optional.empty();
     }
 
     @Override

@@ -38,7 +38,7 @@ public final class LifecycleCodec {
         String version = obj.getString("protocolVersion");
         JsonObject capsObj = obj.getJsonObject("capabilities");
         Set<ClientCapability> client = EnumSet.noneOf(ClientCapability.class);
-        Map<String, JsonObject> experimental = new java.util.HashMap<>();
+        Map<String, JsonObject> experimental = new HashMap<>();
         boolean rootsList = false;
         if (capsObj != null) {
             for (var entry : capsObj.entrySet()) {

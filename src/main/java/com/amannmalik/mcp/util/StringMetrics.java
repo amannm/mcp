@@ -1,5 +1,7 @@
 package com.amannmalik.mcp.util;
 
+import java.util.Locale;
+
 public final class StringMetrics {
     private StringMetrics() {
     }
@@ -26,8 +28,8 @@ public final class StringMetrics {
     public static int prefixDistance(String a, String b) {
         int n = Math.min(a.length(), b.length());
         return levenshtein(
-                a.substring(0, n).toLowerCase(java.util.Locale.ROOT),
-                b.substring(0, n).toLowerCase(java.util.Locale.ROOT)
+                a.substring(0, n).toLowerCase(Locale.ROOT),
+                b.substring(0, n).toLowerCase(Locale.ROOT)
         );
     }
 }

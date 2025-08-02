@@ -1,5 +1,7 @@
 package com.amannmalik.mcp.cli;
 
+import java.net.URI;
+import java.util.ArrayList;
 import java.util.List;
 
 public record ServerConfig(
@@ -17,7 +19,7 @@ public record ServerConfig(
 
         if (resourceMetadataUrl != null && !resourceMetadataUrl.isBlank()) {
             try {
-                var uri = java.net.URI.create(resourceMetadataUrl);
+                var uri = URI.create(resourceMetadataUrl);
                 if (!uri.isAbsolute() || uri.getFragment() != null) {
                     throw new IllegalArgumentException("invalid resourceMetadataUrl");
                 }
@@ -29,10 +31,10 @@ public record ServerConfig(
         if (authorizationServers == null || authorizationServers.isEmpty()) {
             authorizationServers = List.of();
         } else {
-            var validated = new java.util.ArrayList<String>(authorizationServers.size());
+            var validated = new ArrayList<String>(authorizationServers.size());
             for (String as : authorizationServers) {
                 try {
-                    var uri = java.net.URI.create(as);
+                    var uri = URI.create(as);
                     if (!uri.isAbsolute() || uri.getFragment() != null
                             || !"https".equalsIgnoreCase(uri.getScheme())) {
                         throw new IllegalArgumentException();

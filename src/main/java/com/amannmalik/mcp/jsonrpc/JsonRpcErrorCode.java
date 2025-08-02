@@ -2,6 +2,7 @@ package com.amannmalik.mcp.jsonrpc;
 
 import java.util.Arrays;
 import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 public enum JsonRpcErrorCode {
@@ -27,7 +28,7 @@ public enum JsonRpcErrorCode {
         return code;
     }
 
-    public static java.util.Optional<JsonRpcErrorCode> fromCode(int code) {
-        return java.util.Optional.ofNullable(BY_CODE.get(code));
+    public static Optional<JsonRpcErrorCode> fromCode(int code) {
+        return Optional.ofNullable(BY_CODE.get(code));
     }
 }
