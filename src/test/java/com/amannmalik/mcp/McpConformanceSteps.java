@@ -10,7 +10,7 @@ import com.amannmalik.mcp.content.ContentBlock;
 import com.amannmalik.mcp.jsonrpc.*;
 import com.amannmalik.mcp.lifecycle.*;
 import com.amannmalik.mcp.prompts.Role;
-import com.amannmalik.mcp.security.OriginValidator;
+import com.amannmalik.mcp.security.*;
 import com.amannmalik.mcp.server.McpServer;
 import com.amannmalik.mcp.transport.*;
 import io.cucumber.datatable.DataTable;
@@ -37,16 +37,15 @@ public final class McpConformanceSteps {
 
     @Before
     public void setup() throws Exception {
-        setupTestConfiguration();
-        String transport = getTransportType();
-        client = createClient(createTransport(transport));
-        client.connect();
+        // Initial setup without transport-specific configuration
+        // Transport setup happens in @Given step
     }
 
-    private void setupTestConfiguration() {
-        // For HTTP transport, we need to load test config in the current process
-        String testConfigPath = getClass().getResource("/mcp-test-config.yaml").getPath();
+    private void setupTestConfiguration(String transport) {
+        String configFile = "http".equals(transport) ? "/mcp-test-config-http.yaml" : "/mcp-test-config.yaml";
+        String testConfigPath = getClass().getResource(configFile).getPath();
         System.setProperty("test.config.path", testConfigPath);
+        System.out.println("DEBUG: Using transport: " + transport + ", config: " + configFile);
     }
 
     @After
@@ -63,8 +62,13 @@ public final class McpConformanceSteps {
     }
 
     @Given("a running MCP server using {word} transport")
-    public void setupTransport(String transport) {
+    public void setupTransport(String transport) throws Exception {
         System.setProperty("mcp.test.transport", transport);
+        setupTestConfiguration(transport);
+        System.out.println("DEBUG: Creating transport: " + transport);
+        client = createClient(createTransport(transport));
+        client.connect();
+        System.out.println("DEBUG: Client connected successfully with " + transport + " transport");
     }
 
     @Then("capabilities should be advertised and ping succeeds")
@@ -127,24 +131,36 @@ public final class McpConformanceSteps {
     }
 
     private Transport createTransport(String type) throws Exception {
+        System.out.println("DEBUG: createTransport called with type: " + type);
         if ("http".equals(type)) {
+            System.out.println("DEBUG: Creating HTTP transport");
             return createHttpTransport();
         } else {
+            System.out.println("DEBUG: Creating stdio transport");
             return createStdioTransport();
         }
     }
 
     private Transport createHttpTransport() throws Exception {
+        System.out.println("DEBUG: Starting StreamableHttpTransport server...");
         serverTransport = new StreamableHttpTransport(0,
-                new OriginValidator(Set.of("http://localhost", "http://127.0.0.1")), null);
+                new OriginValidator(Set.of("http://localhost", "http://127.0.0.1")), 
+                null, 
+                "https://example.com/.well-known/oauth-protected-resource",
+                List.of("https://auth.example.com"));
+        System.out.println("DEBUG: StreamableHttpTransport server started on port: " + serverTransport.port());
         serverTask = CompletableFuture.runAsync(() -> {
             try (var server = new McpServer(serverTransport, null)) {
+                System.out.println("DEBUG: McpServer starting to serve...");
                 server.serve();
             } catch (Exception e) {
+                System.err.println("DEBUG: McpServer error: " + e.getMessage());
                 throw new RuntimeException(e);
             }
         }, runnable -> Thread.ofVirtual().start(runnable));
-        return new StreamableHttpClientTransport(URI.create("http://127.0.0.1:" + serverTransport.port() + "/"));
+        String clientUrl = "http://127.0.0.1:" + serverTransport.port() + "/";
+        System.out.println("DEBUG: Creating HTTP client transport with URL: " + clientUrl);
+        return new StreamableHttpClientTransport(URI.create(clientUrl));
     }
 
     private Transport createStdioTransport() throws Exception {

@@ -28,3 +28,7 @@ description: MCP Implementation Specialist
 - Make illegal states unrepresentable and valid operations obvious
 - Implement external dependencies furthest from the center of a codebase
 - Don't waste time writing PR descriptions
+
+# Miscellaneous
+
+- `gradle` and `javap` are available in this environment
