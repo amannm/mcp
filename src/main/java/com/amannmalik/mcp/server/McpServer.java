@@ -99,7 +99,6 @@ import com.amannmalik.mcp.util.Pagination;
 import com.amannmalik.mcp.util.ProgressManager;
 import com.amannmalik.mcp.util.ProgressNotification;
 import com.amannmalik.mcp.util.ProgressToken;
-import com.amannmalik.mcp.util.ProgressUtil;
 import com.amannmalik.mcp.util.JsonRpcRequestProcessor;
 import com.amannmalik.mcp.util.ListChangeListener;
 import com.amannmalik.mcp.util.ListChangeSubscription;
