@@ -39,29 +39,11 @@ public final class StreamableHttpClientTransport implements Transport {
     }
 
     public void listen() throws IOException {
-        HttpRequest.Builder builder = HttpRequest.newBuilder(endpoint)
+        var request = builder()
                 .header("Accept", "text/event-stream")
-                .header("Origin", "http://127.0.0.1")
-                .header(TransportHeaders.PROTOCOL_VERSION, protocolVersion.get());
-        Optional.ofNullable(authorization.get())
-                .ifPresent(t -> builder.header(TransportHeaders.AUTHORIZATION, "Bearer " + t));
-        Optional.ofNullable(sessionId.get()).ifPresent(id -> builder.header(TransportHeaders.SESSION_ID, id));
-        HttpRequest request = builder.GET().build();
-        HttpResponse<InputStream> response;
-        try {
-            response = client.send(request, HttpResponse.BodyHandlers.ofInputStream());
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            throw new IOException(e);
-        }
-
-        sessionId.updateAndGet(old -> response.headers()
-                .firstValue(TransportHeaders.SESSION_ID)
-                .orElse(old));
-
-        protocolVersion.updateAndGet(old -> response.headers()
-                .firstValue(TransportHeaders.PROTOCOL_VERSION)
-                .orElse(old));
+                .GET()
+                .build();
+        var response = exchange(request);
 
         int status = response.statusCode();
         String ct = response.headers().firstValue("Content-Type").orElse("");
@@ -83,30 +65,12 @@ public final class StreamableHttpClientTransport implements Transport {
 
     @Override
     public void send(JsonObject message) throws IOException {
-        HttpRequest.Builder builder = HttpRequest.newBuilder(endpoint)
+        var request = builder()
                 .header("Accept", "application/json, text/event-stream")
                 .header("Content-Type", "application/json")
-                .header("Origin", "http://127.0.0.1")
-                .header(TransportHeaders.PROTOCOL_VERSION, protocolVersion.get());
-        Optional.ofNullable(authorization.get())
-                .ifPresent(t -> builder.header(TransportHeaders.AUTHORIZATION, "Bearer " + t));
-        Optional.ofNullable(sessionId.get()).ifPresent(id -> builder.header(TransportHeaders.SESSION_ID, id));
-        HttpRequest request = builder.POST(HttpRequest.BodyPublishers.ofString(message.toString())).build();
-        HttpResponse<InputStream> response;
-        try {
-            response = client.send(request, HttpResponse.BodyHandlers.ofInputStream());
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            throw new IOException(e);
-        }
-
-        sessionId.updateAndGet(old -> response.headers()
-                .firstValue(TransportHeaders.SESSION_ID)
-                .orElse(old));
-
-        protocolVersion.updateAndGet(old -> response.headers()
-                .firstValue(TransportHeaders.PROTOCOL_VERSION)
-                .orElse(old));
+                .POST(HttpRequest.BodyPublishers.ofString(message.toString()))
+                .build();
+        var response = exchange(request);
 
         int status = response.statusCode();
         String ct = response.headers().firstValue("Content-Type").orElse("");
@@ -149,20 +113,43 @@ public final class StreamableHttpClientTransport implements Transport {
 
     @Override
     public void close() throws IOException {
-        String sid = sessionId.get();
-        if (sid != null) {
-            HttpRequest.Builder builder = HttpRequest.newBuilder(endpoint)
-                    .header(TransportHeaders.SESSION_ID, sid)
-                    .header(TransportHeaders.PROTOCOL_VERSION, protocolVersion.get())
-                    .DELETE();
+        if (sessionId.get() != null) {
+            var request = builder().DELETE().build();
             try {
-                client.send(builder.build(), HttpResponse.BodyHandlers.discarding());
+                client.send(request, HttpResponse.BodyHandlers.discarding());
             } catch (InterruptedException ignore) {
                 Thread.currentThread().interrupt();
             }
         }
         streams.forEach(SseReader::close);
         streams.clear();
+    }
+
+    private HttpRequest.Builder builder() {
+        var b = HttpRequest.newBuilder(endpoint)
+                .header("Origin", "http://127.0.0.1")
+                .header(TransportHeaders.PROTOCOL_VERSION, protocolVersion.get());
+        Optional.ofNullable(authorization.get())
+                .ifPresent(t -> b.header(TransportHeaders.AUTHORIZATION, "Bearer " + t));
+        Optional.ofNullable(sessionId.get())
+                .ifPresent(id -> b.header(TransportHeaders.SESSION_ID, id));
+        return b;
+    }
+
+    private HttpResponse<InputStream> exchange(HttpRequest request) throws IOException {
+        try {
+            var response = client.send(request, HttpResponse.BodyHandlers.ofInputStream());
+            sessionId.updateAndGet(old -> response.headers()
+                    .firstValue(TransportHeaders.SESSION_ID)
+                    .orElse(old));
+            protocolVersion.updateAndGet(old -> response.headers()
+                    .firstValue(TransportHeaders.PROTOCOL_VERSION)
+                    .orElse(old));
+            return response;
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new IOException(e);
+        }
     }
 
     static class SseReader implements Runnable {
