@@ -1,10 +1,10 @@
 package com.amannmalik.mcp.client;
 
 import com.amannmalik.mcp.auth.Principal;
-import com.amannmalik.mcp.config.McpConfiguration;
 import com.amannmalik.mcp.client.elicitation.*;
 import com.amannmalik.mcp.client.roots.*;
 import com.amannmalik.mcp.client.sampling.*;
+import com.amannmalik.mcp.config.McpConfiguration;
 import com.amannmalik.mcp.jsonrpc.*;
 import com.amannmalik.mcp.lifecycle.*;
 import com.amannmalik.mcp.ping.*;

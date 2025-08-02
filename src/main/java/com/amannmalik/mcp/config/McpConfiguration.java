@@ -4,9 +4,7 @@ import jakarta.json.*;
 import org.snakeyaml.engine.v2.api.Load;
 import org.snakeyaml.engine.v2.api.LoadSettings;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.UncheckedIOException;
+import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
@@ -17,7 +15,9 @@ public record McpConfiguration(SystemConfig system,
                                SecurityConfig security,
                                ClientConfig client,
                                HostConfig host) {
-    public static McpConfiguration current() { return Holder.INSTANCE; }
+    public static McpConfiguration current() {
+        return Holder.INSTANCE;
+    }
 
     private static final class Holder {
         static final McpConfiguration INSTANCE = loadFromEnv();
@@ -193,21 +193,29 @@ public record McpConfiguration(SystemConfig system,
             new ClientConfig(new ClientInfoConfig("cli", "CLI", "0"), List.of("SAMPLING", "ROOTS")),
             new HostConfig("user"));
 
-    public record SystemConfig(ProtocolConfig protocol, TimeoutsConfig timeouts) {}
+    public record SystemConfig(ProtocolConfig protocol, TimeoutsConfig timeouts) {
+    }
 
-    public record ProtocolConfig(String version, String compatibilityVersion) {}
+    public record ProtocolConfig(String version, String compatibilityVersion) {
+    }
 
-    public record TimeoutsConfig(long defaultMs, long pingMs, int processWaitSeconds) {}
+    public record TimeoutsConfig(long defaultMs, long pingMs, int processWaitSeconds) {
+    }
 
-    public record PerformanceConfig(RateLimitsConfig rateLimits, PaginationConfig pagination) {}
+    public record PerformanceConfig(RateLimitsConfig rateLimits, PaginationConfig pagination) {
+    }
 
-    public record RateLimitsConfig(int toolsPerSecond, int completionsPerSecond, int logsPerSecond, int progressPerSecond) {}
+    public record RateLimitsConfig(int toolsPerSecond, int completionsPerSecond, int logsPerSecond, int progressPerSecond) {
+    }
 
-    public record PaginationConfig(int defaultPageSize, int maxCompletionValues, int sseHistoryLimit, int responseQueueCapacity) {}
+    public record PaginationConfig(int defaultPageSize, int maxCompletionValues, int sseHistoryLimit, int responseQueueCapacity) {
+    }
 
-    public record ServerConfig(ServerInfoConfig info, TransportConfig transport) {}
+    public record ServerConfig(ServerInfoConfig info, TransportConfig transport) {
+    }
 
-    public record ServerInfoConfig(String name, String description, String version) {}
+    public record ServerInfoConfig(String name, String description, String version) {
+    }
 
     public record TransportConfig(String type, int port, List<String> allowedOrigins) {
         public TransportConfig {
@@ -215,9 +223,11 @@ public record McpConfiguration(SystemConfig system,
         }
     }
 
-    public record SecurityConfig(AuthConfig auth) {}
+    public record SecurityConfig(AuthConfig auth) {
+    }
 
-    public record AuthConfig(String jwtSecretEnv, String defaultPrincipal) {}
+    public record AuthConfig(String jwtSecretEnv, String defaultPrincipal) {
+    }
 
     public record ClientConfig(ClientInfoConfig info, List<String> capabilities) {
         public ClientConfig {
@@ -225,8 +235,10 @@ public record McpConfiguration(SystemConfig system,
         }
     }
 
-    public record ClientInfoConfig(String name, String displayName, String version) {}
+    public record ClientInfoConfig(String name, String displayName, String version) {
+    }
 
-    public record HostConfig(String principal) {}
+    public record HostConfig(String principal) {
+    }
 }
 

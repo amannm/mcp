@@ -1,12 +1,12 @@
 package com.amannmalik.mcp.transport;
 
 import com.amannmalik.mcp.auth.Principal;
+import com.amannmalik.mcp.config.McpConfiguration;
 import com.amannmalik.mcp.wire.RequestMethod;
 import jakarta.json.*;
 import jakarta.json.stream.JsonParsingException;
 import jakarta.servlet.AsyncContext;
 import jakarta.servlet.http.*;
-import com.amannmalik.mcp.config.McpConfiguration;
 
 import java.io.IOException;
 import java.util.Optional;

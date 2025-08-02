@@ -1,7 +1,8 @@
 package com.amannmalik.mcp.util;
 
-import java.util.List;
 import com.amannmalik.mcp.config.McpConfiguration;
+
+import java.util.List;
 
 public final class Pagination {
     private Pagination() {

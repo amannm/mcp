@@ -1,8 +1,8 @@
 package com.amannmalik.mcp.server.completion;
 
+import com.amannmalik.mcp.config.McpConfiguration;
 import com.amannmalik.mcp.validation.InputSanitizer;
 import com.amannmalik.mcp.validation.MetaValidator;
-import com.amannmalik.mcp.config.McpConfiguration;
 import jakarta.json.JsonObject;
 
 import java.util.List;

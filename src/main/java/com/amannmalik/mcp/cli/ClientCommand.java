@@ -5,11 +5,11 @@ import com.amannmalik.mcp.client.roots.InMemoryRootsProvider;
 import com.amannmalik.mcp.client.roots.Root;
 import com.amannmalik.mcp.client.sampling.SamplingProvider;
 import com.amannmalik.mcp.client.sampling.SamplingProviderFactory;
+import com.amannmalik.mcp.config.McpConfiguration;
 import com.amannmalik.mcp.lifecycle.ClientCapability;
 import com.amannmalik.mcp.lifecycle.ClientInfo;
 import com.amannmalik.mcp.server.logging.LoggingLevel;
 import com.amannmalik.mcp.transport.StdioTransport;
-import com.amannmalik.mcp.config.McpConfiguration;
 import picocli.CommandLine;
 
 import java.io.IOException;

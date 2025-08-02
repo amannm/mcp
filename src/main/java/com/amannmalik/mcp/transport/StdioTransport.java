@@ -1,11 +1,11 @@
 package com.amannmalik.mcp.transport;
 
+import com.amannmalik.mcp.config.McpConfiguration;
 import jakarta.json.*;
 
 import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
-import com.amannmalik.mcp.config.McpConfiguration;
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
