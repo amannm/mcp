@@ -52,7 +52,7 @@ public final class PingScheduler implements AutoCloseable {
 
         failureCount++;
         if (failureCount >= maxFailures) {
-            if (System.err != null) System.err.println("Ping failed");
+            System.err.println("Ping failed");
             try {
                 onFailure.run();
             } catch (Exception ignore) {

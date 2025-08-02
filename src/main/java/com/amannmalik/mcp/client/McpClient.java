@@ -715,7 +715,7 @@ public final class McpClient implements AutoCloseable {
         cancellationTracker.cancel(cn.requestId(), cn.reason());
         progressManager.release(cn.requestId());
         String reason = cancellationTracker.reason(cn.requestId());
-        if (reason != null && System.err != null) {
+        if (reason != null) {
             System.err.println("Request " + cn.requestId() + " cancelled: " + reason);
         }
     }

@@ -13,7 +13,7 @@ public final class PingMonitor {
             client.ping(timeoutMillis);
             return true;
         } catch (IOException | RuntimeException e) {
-            if (System.err != null) System.err.println("Ping failure: " + e.getMessage());
+            System.err.println("Ping failure: " + e.getMessage());
             return false;
         }
     }
