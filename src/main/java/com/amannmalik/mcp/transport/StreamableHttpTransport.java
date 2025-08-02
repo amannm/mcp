@@ -15,6 +15,8 @@ import com.amannmalik.mcp.validation.InputSanitizer;
 import com.amannmalik.mcp.wire.RequestMethod;
 import com.amannmalik.mcp.transport.ResourceMetadata;
 import com.amannmalik.mcp.transport.ResourceMetadataCodec;
+// internal
+import com.amannmalik.mcp.transport.SseClient;
 import jakarta.json.Json;
 import jakarta.json.JsonObject;
 import jakarta.json.JsonReader;
@@ -71,7 +73,7 @@ public final class StreamableHttpTransport implements Transport {
     private final AtomicReference<String> lastSessionId = new AtomicReference<>();
     private final AtomicReference<String> sessionOwner = new AtomicReference<>();
     private final AtomicReference<Principal> sessionPrincipal = new AtomicReference<>();
-    private static final SecureRandom RANDOM = new SecureRandom();
+    static final SecureRandom RANDOM = new SecureRandom();
     private volatile String protocolVersion;
     private final ConcurrentHashMap<String, BlockingQueue<JsonObject>> responseQueues = new ConcurrentHashMap<>();
 
@@ -194,7 +196,7 @@ public final class StreamableHttpTransport implements Transport {
 
     private void removeRequestStream(String key, SseClient client) {
         requestStreams.remove(key);
-        clientsByPrefix.remove(client.prefix);
+        clientsByPrefix.remove(client.prefix());
         CloseUtil.closeQuietly(client);
     }
 
@@ -430,7 +432,7 @@ public final class StreamableHttpTransport implements Transport {
                 SseClient client = new SseClient(ac);
                 String key = obj.get("id").toString();
                 requestStreams.put(key, client);
-                clientsByPrefix.put(client.prefix, client);
+                clientsByPrefix.put(client.prefix(), client);
                 ac.addListener(requestStreamListener(key, client));
                 try {
                     incoming.put(obj);
@@ -477,7 +479,7 @@ public final class StreamableHttpTransport implements Transport {
             SseClient client;
             if (found == null) {
                 client = new SseClient(ac);
-                clientsByPrefix.put(client.prefix, client);
+                clientsByPrefix.put(client.prefix(), client);
             } else {
                 client = found;
                 lastGeneral.set(null);
@@ -507,80 +509,6 @@ public final class StreamableHttpTransport implements Transport {
             resp.setCharacterEncoding("UTF-8");
             resp.getWriter().write(body.toString());
         }
-    }
-
-    private static class SseClient implements AutoCloseable {
-        private static final int HISTORY_LIMIT = 100;
-
-        private AsyncContext context;
-        private PrintWriter out;
-        private final String prefix;
-        private final Deque<SseEvent> history = new ArrayDeque<>();
-        private final AtomicLong nextId = new AtomicLong(1);
-        private volatile boolean closed = false;
-
-        SseClient(AsyncContext context) throws IOException {
-            byte[] bytes = new byte[8];
-            RANDOM.nextBytes(bytes);
-            this.prefix = Base64Util.encodeUrl(bytes);
-            attach(context, 0);
-        }
-
-        void attach(AsyncContext ctx, long lastId) throws IOException {
-            this.context = ctx;
-            this.out = ctx.getResponse().getWriter();
-            this.closed = false;
-            sendHistory(lastId);
-        }
-
-        boolean isActive() {
-            return !closed && context != null;
-        }
-
-        void send(JsonObject msg) {
-            long id = nextId.getAndIncrement();
-            history.addLast(new SseEvent(id, msg));
-            while (history.size() > HISTORY_LIMIT) history.removeFirst();
-            if (closed || context == null) return;
-            try {
-                out.write("id: " + prefix + '-' + id + "\n");
-                out.write("data: " + msg.toString() + "\n\n");
-                out.flush();
-            } catch (Exception e) {
-                System.err.println("SSE send failed: " + e.getMessage());
-                closed = true;
-            }
-        }
-
-        private void sendHistory(long lastId) throws IOException {
-            if (context == null) return;
-            for (SseEvent ev : history) {
-                if (ev.id > lastId) {
-                    out.write("id: " + prefix + '-' + ev.id + "\n");
-                    out.write("data: " + ev.msg.toString() + "\n\n");
-                }
-            }
-            out.flush();
-        }
-
-        @Override
-        public void close() {
-            if (closed) return;
-            closed = true;
-            try {
-                if (context != null && !context.hasOriginalRequestAndResponse()) {
-                    context.complete();
-                }
-            } catch (Exception e) {
-                System.err.println("SSE close failed: " + e.getMessage());
-            } finally {
-                context = null;
-                out = null;
-            }
-        }
-    }
-
-    private record SseEvent(long id, JsonObject msg) {
     }
 
 }

@@ -6,8 +6,11 @@ import org.junit.jupiter.api.Test;
 
 import java.io.ByteArrayInputStream;
 import java.nio.charset.StandardCharsets;
+import java.util.Set;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
+
+import com.amannmalik.mcp.transport.SseReader;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -21,8 +24,8 @@ public class SseReaderTest {
                 "data: {\"b\":2}\n" +
                 "\n";
         BlockingQueue<JsonObject> queue = new LinkedBlockingQueue<>();
-        java.util.Set<StreamableHttpClientTransport.SseReader> container = new java.util.HashSet<>();
-        StreamableHttpClientTransport.SseReader reader = new StreamableHttpClientTransport.SseReader(
+        java.util.Set<SseReader> container = new java.util.HashSet<>();
+        SseReader reader = new SseReader(
                 new ByteArrayInputStream(input.getBytes(StandardCharsets.UTF_8)),
                 queue,
                 container
