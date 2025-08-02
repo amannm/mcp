@@ -1,4 +1,4 @@
-package com.amannmalik.mcp.server.resources;
+package com.amannmalik.mcp.resources;
 
 import com.amannmalik.mcp.annotations.Annotations;
 import com.amannmalik.mcp.annotations.AnnotationsCodec;

@@ -2,7 +2,7 @@ package com.amannmalik.mcp.content;
 
 import com.amannmalik.mcp.annotations.Annotations;
 import com.amannmalik.mcp.annotations.AnnotationsCodec;
-import com.amannmalik.mcp.server.resources.ResourcesCodec;
+import com.amannmalik.mcp.resources.ResourcesCodec;
 import com.amannmalik.mcp.util.Base64Util;
 import com.amannmalik.mcp.util.JsonUtil;
 import jakarta.json.*;

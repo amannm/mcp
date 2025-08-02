@@ -15,7 +15,7 @@ import com.amannmalik.mcp.prompts.*;
 import com.amannmalik.mcp.security.*;
 import com.amannmalik.mcp.server.completion.*;
 import com.amannmalik.mcp.server.logging.*;
-import com.amannmalik.mcp.server.resources.*;
+import com.amannmalik.mcp.resources.*;
 import com.amannmalik.mcp.server.roots.RootsManager;
 import com.amannmalik.mcp.server.tools.*;
 import com.amannmalik.mcp.transport.Transport;

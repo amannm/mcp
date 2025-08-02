@@ -4,7 +4,7 @@ import com.amannmalik.mcp.content.ContentBlock;
 import com.amannmalik.mcp.prompts.*;
 import com.amannmalik.mcp.security.*;
 import com.amannmalik.mcp.server.completion.*;
-import com.amannmalik.mcp.server.resources.*;
+import com.amannmalik.mcp.resources.*;
 import com.amannmalik.mcp.server.tools.*;
 import jakarta.json.Json;
 
