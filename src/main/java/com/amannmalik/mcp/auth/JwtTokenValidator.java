@@ -6,6 +6,8 @@ import jakarta.json.Json;
 import jakarta.json.JsonArray;
 import jakarta.json.JsonObject;
 import jakarta.json.JsonReader;
+import jakarta.json.JsonString;
+import jakarta.json.JsonValue;
 
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
@@ -95,31 +97,28 @@ public final class JwtTokenValidator implements TokenValidator {
     }
 
     private void validateAudience(JsonObject payload) throws AuthorizationException {
-        String aud = payload.getString("aud", null);
-        if (aud != null && expectedAudience.equals(aud)) return;
-        JsonArray arr = payload.getJsonArray("aud");
-        if (arr != null) {
-            for (var js : arr.getValuesAs(jakarta.json.JsonString.class)) {
-                if (expectedAudience.equals(js.getString())) return;
-            }
-        }
-        throw new AuthorizationException("audience mismatch");
+        if (!matches(payload, "aud")) throw new AuthorizationException("audience mismatch");
     }
 
     private void validateResource(JsonObject payload) throws AuthorizationException {
-        if (!payload.containsKey("resource")) return;
-        boolean ok = false;
-        switch (payload.get("resource").getValueType()) {
-            case STRING -> ok = expectedAudience.equals(payload.getString("resource"));
-            case ARRAY -> {
-                JsonArray arr = payload.getJsonArray("resource");
-                for (var js : arr.getValuesAs(jakarta.json.JsonString.class)) {
-                    if (expectedAudience.equals(js.getString())) { ok = true; break; }
-                }
-            }
-            default -> {}
+        if (payload.containsKey("resource") && !matches(payload, "resource")) {
+            throw new AuthorizationException("resource mismatch");
         }
-        if (!ok) throw new AuthorizationException("resource mismatch");
+    }
+
+    private boolean matches(JsonObject payload, String key) {
+        JsonValue val = payload.get(key);
+        if (val == null) return false;
+        return switch (val.getValueType()) {
+            case STRING -> expectedAudience.equals(((JsonString) val).getString());
+            case ARRAY -> {
+                for (JsonString js : payload.getJsonArray(key).getValuesAs(JsonString.class)) {
+                    if (expectedAudience.equals(js.getString())) yield true;
+                }
+                yield false;
+            }
+            default -> false;
+        };
     }
 
     private void validateTimestamps(JsonObject payload) throws AuthorizationException {
