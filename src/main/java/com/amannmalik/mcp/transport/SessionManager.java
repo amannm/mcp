@@ -52,13 +52,19 @@ final class SessionManager {
     private boolean sanitizeHeaders(String sessionHeader,
                                     String versionHeader,
                                     HttpServletResponse resp) throws IOException {
-        if (sessionHeader != null && !InputSanitizer.isVisibleAscii(sessionHeader)) {
-            resp.sendError(HttpServletResponse.SC_BAD_REQUEST);
-            return false;
+        if (sessionHeader != null) {
+            boolean ok = InputSanitizer.isVisibleAscii(sessionHeader);
+            if (!ok) {
+                resp.sendError(HttpServletResponse.SC_BAD_REQUEST);
+                return false;
+            }
         }
-        if (versionHeader != null && !InputSanitizer.isVisibleAscii(versionHeader)) {
-            resp.sendError(HttpServletResponse.SC_BAD_REQUEST);
-            return false;
+        if (versionHeader != null) {
+            boolean ok = InputSanitizer.isVisibleAscii(versionHeader);
+            if (!ok) {
+                resp.sendError(HttpServletResponse.SC_BAD_REQUEST);
+                return false;
+            }
         }
         return true;
     }

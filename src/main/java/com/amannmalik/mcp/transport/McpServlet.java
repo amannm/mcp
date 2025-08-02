@@ -34,12 +34,12 @@ final class McpServlet extends HttpServlet {
         boolean initializing = RequestMethod.INITIALIZE.method()
                 .equals(obj.getString("method", null));
 
-        if (!transport.validateSession(req, resp, principalOpt.get(), initializing)) return;
-
-        switch (classify(obj)) {
-            case NOTIFICATION, RESPONSE -> enqueue(obj, resp);
-            case REQUEST -> handleRequest(obj, initializing, req, resp);
-            default -> resp.sendError(HttpServletResponse.SC_BAD_REQUEST);
+        if (transport.validateSession(req, resp, principalOpt.get(), initializing)) {
+            switch (classify(obj)) {
+                case NOTIFICATION, RESPONSE -> enqueue(obj, resp);
+                case REQUEST -> handleRequest(obj, initializing, req, resp);
+                default -> resp.sendError(HttpServletResponse.SC_BAD_REQUEST);
+            }
         }
     }
 
@@ -47,51 +47,53 @@ final class McpServlet extends HttpServlet {
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws IOException {
         var principalOpt = authorize(req, resp, true, false);
         if (principalOpt.isEmpty()) return;
-        if (!transport.validateSession(req, resp, principalOpt.get(), false)) return;
-        resp.setStatus(HttpServletResponse.SC_OK);
-        resp.setContentType("text/event-stream;charset=UTF-8");
-        resp.setHeader("Cache-Control", "no-cache");
-        resp.setHeader(TransportHeaders.PROTOCOL_VERSION, transport.sessions.protocolVersion());
-        resp.flushBuffer();
-        AsyncContext ac = req.startAsync();
-        ac.setTimeout(0);
+        if (transport.validateSession(req, resp, principalOpt.get(), false)) {
+            resp.setStatus(HttpServletResponse.SC_OK);
+            resp.setContentType("text/event-stream;charset=UTF-8");
+            resp.setHeader("Cache-Control", "no-cache");
+            resp.setHeader(TransportHeaders.PROTOCOL_VERSION, transport.sessions.protocolVersion());
+            resp.flushBuffer();
+            AsyncContext ac = req.startAsync();
+            ac.setTimeout(0);
 
-        String lastEvent = req.getHeader("Last-Event-ID");
-        SseClient found = null;
-        long lastId = 0;
-        if (lastEvent != null) {
-            int idx = lastEvent.lastIndexOf('-');
-            if (idx > 0) {
-                String prefix = lastEvent.substring(0, idx);
-                try {
-                    lastId = Long.parseLong(lastEvent.substring(idx + 1));
-                } catch (NumberFormatException ignore) {
-                }
-                found = transport.clientsByPrefix.get(prefix);
-                if (found != null) {
-                    found.attach(ac, lastId);
+            String lastEvent = req.getHeader("Last-Event-ID");
+            SseClient found = null;
+            long lastId = 0;
+            if (lastEvent != null) {
+                int idx = lastEvent.lastIndexOf('-');
+                if (idx > 0) {
+                    String prefix = lastEvent.substring(0, idx);
+                    try {
+                        lastId = Long.parseLong(lastEvent.substring(idx + 1));
+                    } catch (NumberFormatException ignore) {
+                    }
+                    found = transport.clientsByPrefix.get(prefix);
+                    if (found != null) {
+                        found.attach(ac, lastId);
+                    }
                 }
             }
+            SseClient client;
+            if (found == null) {
+                client = new SseClient(ac);
+                transport.clientsByPrefix.put(client.prefix, client);
+            } else {
+                client = found;
+                transport.lastGeneral.set(null);
+            }
+            transport.generalClients.add(client);
+            ac.addListener(transport.generalStreamListener(client));
         }
-        SseClient client;
-        if (found == null) {
-            client = new SseClient(ac);
-            transport.clientsByPrefix.put(client.prefix, client);
-        } else {
-            client = found;
-            transport.lastGeneral.set(null);
-        }
-        transport.generalClients.add(client);
-        ac.addListener(transport.generalStreamListener(client));
     }
 
     @Override
     protected void doDelete(HttpServletRequest req, HttpServletResponse resp) throws IOException {
         var principalOpt = authorize(req, resp, false, false);
         if (principalOpt.isEmpty()) return;
-        if (!transport.validateSession(req, resp, principalOpt.get(), false)) return;
-        transport.terminateSession(true);
-        resp.setStatus(HttpServletResponse.SC_OK);
+        if (transport.validateSession(req, resp, principalOpt.get(), false)) {
+            transport.terminateSession(true);
+            resp.setStatus(HttpServletResponse.SC_OK);
+        }
     }
 
     private enum MessageType { REQUEST, NOTIFICATION, RESPONSE, INVALID }
@@ -114,9 +116,11 @@ final class McpServlet extends HttpServlet {
                                           boolean post) throws IOException {
         Principal principal = transport.authorize(req, resp);
         if (principal == null) return Optional.empty();
-        if (!transport.verifyOrigin(req, resp)) return Optional.empty();
-        if (requireAccept && !transport.validateAccept(req, resp, post)) return Optional.empty();
-        return Optional.of(principal);
+        if (transport.verifyOrigin(req, resp)
+                && (!requireAccept || transport.validateAccept(req, resp, post))) {
+            return Optional.of(principal);
+        }
+        return Optional.empty();
     }
 
     private void enqueue(JsonObject obj, HttpServletResponse resp) throws IOException {

@@ -89,28 +89,30 @@ public final class JwtTokenValidator implements TokenValidator {
     }
 
     private void validateAudience(JsonObject payload) throws AuthorizationException {
-        if (!matches(payload, "aud")) throw new AuthorizationException("audience mismatch");
+        requireMatch(payload, "aud");
     }
 
     private void validateResource(JsonObject payload) throws AuthorizationException {
-        if (payload.containsKey("resource") && !matches(payload, "resource")) {
-            throw new AuthorizationException("resource mismatch");
-        }
+        if (payload.containsKey("resource")) requireMatch(payload, "resource");
     }
 
-    private boolean matches(JsonObject payload, String key) {
+    private void requireMatch(JsonObject payload, String key) throws AuthorizationException {
         JsonValue val = payload.get(key);
-        if (val == null) return false;
-        return switch (val.getValueType()) {
-            case STRING -> expectedAudience.equals(((JsonString) val).getString());
+        if (val == null) throw new AuthorizationException(key + " mismatch");
+        switch (val.getValueType()) {
+            case STRING -> {
+                if (!expectedAudience.equals(((JsonString) val).getString())) {
+                    throw new AuthorizationException(key + " mismatch");
+                }
+            }
             case ARRAY -> {
                 for (JsonString js : payload.getJsonArray(key).getValuesAs(JsonString.class)) {
-                    if (expectedAudience.equals(js.getString())) yield true;
+                    if (expectedAudience.equals(js.getString())) return;
                 }
-                yield false;
+                throw new AuthorizationException(key + " mismatch");
             }
-            default -> false;
-        };
+            default -> throw new AuthorizationException(key + " mismatch");
+        }
     }
 
     private void validateTimestamps(JsonObject payload) throws AuthorizationException {

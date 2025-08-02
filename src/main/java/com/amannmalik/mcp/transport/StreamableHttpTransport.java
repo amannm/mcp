@@ -212,11 +212,13 @@ public final class StreamableHttpTransport implements Transport {
     }
 
     boolean verifyOrigin(HttpServletRequest req, HttpServletResponse resp) throws IOException {
-        if (!originValidator.isValid(req.getHeader("Origin"))) {
+        try {
+            originValidator.requireValid(req.getHeader("Origin"));
+            return true;
+        } catch (SecurityException e) {
             resp.sendError(HttpServletResponse.SC_FORBIDDEN);
             return false;
         }
-        return true;
     }
 
     boolean validateAccept(HttpServletRequest req, HttpServletResponse resp, boolean post) throws IOException {
