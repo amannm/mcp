@@ -17,10 +17,6 @@ public final class InteractiveSamplingProvider implements SamplingProvider {
     private final BufferedReader reader;
     private final boolean autoApprove;
 
-    public InteractiveSamplingProvider() {
-        this(false);
-    }
-
     public InteractiveSamplingProvider(boolean autoApprove) {
         this.reader = new BufferedReader(new InputStreamReader(System.in));
         this.autoApprove = autoApprove;

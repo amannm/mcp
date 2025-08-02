@@ -34,7 +34,7 @@ import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicLong;
-import java.util.function.Supplier;
+import static com.amannmalik.mcp.util.InvalidParams.valid;
 
 public final class McpServer implements AutoCloseable {
     private final Transport transport;
@@ -345,20 +345,6 @@ public final class McpServer implements AutoCloseable {
 
     private JsonRpcError invalidParams(JsonRpcRequest req, IllegalArgumentException e) {
         return invalidParams(req, e.getMessage());
-    }
-
-    private <T> T valid(Supplier<T> s) {
-        try {
-            return s.get();
-        } catch (IllegalArgumentException e) {
-            throw new InvalidParams(e.getMessage());
-        }
-    }
-
-    private static final class InvalidParams extends RuntimeException {
-        InvalidParams(String message) {
-            super(message);
-        }
     }
 
     private Optional<String> rateLimit(RateLimiter limiter, String key) {

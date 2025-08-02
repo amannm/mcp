@@ -336,22 +336,25 @@ public final class McpClient implements AutoCloseable {
 
     public JsonRpcMessage request(String method, JsonObject params, long timeoutMillis) throws IOException {
         if (!connected) throw new IllegalStateException("not connected");
-        RequestId reqId = new RequestId.NumericId(id.getAndIncrement());
-        Optional<ProgressToken> token = progressManager.register(reqId, params);
-        CompletableFuture<JsonRpcMessage> future = new CompletableFuture<>();
+        var reqId = new RequestId.NumericId(id.getAndIncrement());
+        progressManager.register(reqId, params);
+        var future = new CompletableFuture<JsonRpcMessage>();
         pending.put(reqId, future);
         try {
             transport.send(JsonRpcCodec.toJsonObject(new JsonRpcRequest(reqId, method, params)));
+            return awaitResponse(reqId, future, timeoutMillis);
         } catch (UnauthorizedException e) {
-            pending.remove(reqId);
-            token.ifPresent(t -> progressManager.release(reqId));
             handleUnauthorized(e);
             throw e;
-        } catch (IOException e) {
+        } finally {
             pending.remove(reqId);
-            token.ifPresent(t -> progressManager.release(reqId));
-            throw e;
+            progressManager.release(reqId);
         }
+    }
+
+    private JsonRpcMessage awaitResponse(RequestId reqId,
+                                         CompletableFuture<JsonRpcMessage> future,
+                                         long timeoutMillis) throws IOException {
         try {
             return future.get(timeoutMillis, TimeUnit.MILLISECONDS);
         } catch (InterruptedException e) {
@@ -359,19 +362,15 @@ public final class McpClient implements AutoCloseable {
             throw new IOException(e);
         } catch (TimeoutException e) {
             try {
-                notify(NotificationMethod.CANCELLED, CancellationCodec.toJsonObject(new CancelledNotification(reqId, "timeout")));
+                notify(NotificationMethod.CANCELLED,
+                        CancellationCodec.toJsonObject(new CancelledNotification(reqId, "timeout")));
             } catch (IOException ignore) {
             }
-            token.ifPresent(t -> progressManager.release(reqId));
-            throw new IOException("Request timed out after " + timeoutMillis + " ms");
+            throw new IOException("Request timed out after " + timeoutMillis + " ms", e);
         } catch (ExecutionException e) {
-            Throwable cause = e.getCause();
+            var cause = e.getCause();
             if (cause instanceof IOException io) throw io;
-            token.ifPresent(t -> progressManager.release(reqId));
             throw new IOException(cause);
-        } finally {
-            pending.remove(reqId);
-            token.ifPresent(t -> progressManager.release(reqId));
         }
     }
 

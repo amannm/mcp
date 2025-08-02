@@ -2,10 +2,15 @@ package com.amannmalik.mcp;
 
 import com.amannmalik.mcp.client.McpClient;
 import com.amannmalik.mcp.client.elicitation.*;
+
 import com.amannmalik.mcp.client.roots.InMemoryRootsProvider;
 import com.amannmalik.mcp.client.roots.Root;
+import com.amannmalik.mcp.client.sampling.*;
+
+import com.amannmalik.mcp.client.roots.*;
 import com.amannmalik.mcp.client.sampling.CreateMessageResponse;
 import com.amannmalik.mcp.client.sampling.SamplingProvider;
+
 import com.amannmalik.mcp.content.ContentBlock;
 import com.amannmalik.mcp.jsonrpc.*;
 import com.amannmalik.mcp.lifecycle.*;
@@ -13,6 +18,7 @@ import com.amannmalik.mcp.prompts.Role;
 import com.amannmalik.mcp.security.OriginValidator;
 import com.amannmalik.mcp.server.McpServer;
 import com.amannmalik.mcp.transport.*;
+import com.amannmalik.mcp.util.ListChangeSubscription;
 import io.cucumber.datatable.DataTable;
 import io.cucumber.java.After;
 import io.cucumber.java.Before;
@@ -23,6 +29,7 @@ import java.io.File;
 import java.net.URI;
 import java.util.*;
 import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -34,7 +41,11 @@ public final class McpConformanceSteps {
     private CompletableFuture<Void> serverTask;
     private McpClient client;
     private BlockingElicitationProvider elicitation;
+
+    private SamplingProvider sampling;
+
     private final Map<String, JsonRpcMessage> responses = new ConcurrentHashMap<>();
+    private CountingRootsProvider rootsProvider;
 
     @Before
     public void setup() throws Exception {
@@ -209,12 +220,15 @@ public final class McpConformanceSteps {
     private McpClient createClient(Transport transport) {
         elicitation = new BlockingElicitationProvider();
 
-        SamplingProvider sampling = (_, _) -> new CreateMessageResponse(
-                Role.ASSISTANT, new ContentBlock.Text("ok", null, null),
-                "mock-model", "endTurn", null);
+        sampling = (req, t) -> {
+            var content = (ContentBlock.Text) req.messages().getFirst().content();
+            if (content.text().equals("reject")) throw new InterruptedException();
+            return new CreateMessageResponse(Role.ASSISTANT,
+                    new ContentBlock.Text("ok", null, null),
+                    "mock-model", "endTurn", null);
+        };
 
-        InMemoryRootsProvider rootsProvider = new InMemoryRootsProvider(
-                List.of(new Root("file:///tmp", "Test Root", null)));
+        rootsProvider = new CountingRootsProvider(List.of(new Root("file:///tmp", "Test Root", null)));
 
         return new McpClient(
                 new ClientInfo("test-client", "Test Client", "1.0"),
@@ -266,6 +280,28 @@ public final class McpConformanceSteps {
                     Json.createObjectBuilder()
                             .add("ref", Json.createObjectBuilder().add("type", "ref/prompt").add("name", "test_prompt"))
                             .add("argument", Json.createObjectBuilder().add("name", "test_arg").add("value", "")).build());
+            case "request_sampling" -> {
+                var req = new CreateMessageRequest(
+                        List.of(new SamplingMessage(Role.USER,
+                                new ContentBlock.Text("hi", null, null))),
+                        new ModelPreferences(List.of(new ModelHint("claude-3-sonnet")), null, 0.5, 0.8),
+                        "You are a helpful assistant.", null, null, 10, List.of(), null, null);
+                CreateMessageResponse resp = sampling.createMessage(req);
+                yield new JsonRpcResponse(new RequestId.StringId("1"), SamplingCodec.toJsonObject(resp));
+            }
+            case "request_sampling_reject" -> {
+                var req = new CreateMessageRequest(
+                        List.of(new SamplingMessage(Role.USER,
+                                new ContentBlock.Text("reject", null, null))),
+                        new ModelPreferences(List.of(new ModelHint("claude-3-sonnet")), null, 0.5, 0.8),
+                        "You are a helpful assistant.", null, null, 10, List.of(), null, null);
+                try {
+                    sampling.createMessage(req);
+                    yield new JsonRpcResponse(new RequestId.StringId("1"), Json.createObjectBuilder().build());
+                } catch (InterruptedException e) {
+                    yield JsonRpcError.of(new RequestId.StringId("1"), JsonRpcErrorCode.INTERNAL_ERROR, "Sampling interrupted");
+                }
+            }
             case "set_log_level" -> client.request("logging/setLevel",
                     Json.createObjectBuilder().add("level", parameter).build());
             case "subscribe_resource" -> client.request("resources/subscribe",
@@ -276,6 +312,12 @@ public final class McpConformanceSteps {
                     Json.createObjectBuilder().add("uri", parameter).build());
             case "call_unknown_tool" -> client.request("tools/call",
                     Json.createObjectBuilder().add("name", parameter).build());
+            case "roots_listed" -> {
+                for (int i = 0; i < 50 && rootsProvider.listCount() == 0; i++) Thread.sleep(100);
+                yield new JsonRpcResponse(RequestId.NullId.INSTANCE,
+                        Json.createObjectBuilder().add("count", rootsProvider.listCount()).build());
+            }
+            case "roots_invalid" -> client.request("roots/list", Json.createObjectBuilder().build());
             default -> throw new IllegalArgumentException("Unknown operation: " + operation);
         };
     }
@@ -350,7 +392,49 @@ public final class McpConformanceSteps {
                 var values = result.getJsonObject("completion").getJsonArray("values");
                 assertEquals(expected, values.getJsonString(0).getString());
             }
+
+            case "request_sampling" -> {
+                assertEquals("assistant", result.getString("role"));
+                var content = result.getJsonObject("content");
+                assertEquals(expected, content.getString("text"));
+                assertEquals("mock-model", result.getString("model"));
+                assertEquals("endTurn", result.getString("stopReason"));
+
+            case "roots_listed" -> {
+                int c = result.getInt("count");
+                assertTrue(c >= Integer.parseInt(expected));
+
+            }
             case "set_log_level", "subscribe_resource", "unsubscribe_resource" -> assertTrue(true);
+        }
+    }
+
+    private static final class CountingRootsProvider implements RootsProvider {
+        private final InMemoryRootsProvider delegate;
+        private final AtomicInteger count = new AtomicInteger();
+
+        CountingRootsProvider(List<Root> initial) {
+            delegate = new InMemoryRootsProvider(initial);
+        }
+
+        @Override
+        public List<Root> list() {
+            count.incrementAndGet();
+            return delegate.list();
+        }
+
+        @Override
+        public ListChangeSubscription subscribe(RootsListener listener) {
+            return delegate.subscribe(listener);
+        }
+
+        @Override
+        public boolean supportsListChanged() {
+            return delegate.supportsListChanged();
+        }
+
+        int listCount() {
+            return count.get();
         }
     }
 }
