@@ -138,7 +138,7 @@ public final class McpClient implements AutoCloseable {
         if (connected) return;
         JsonRpcMessage msg = sendInitialization();
         handleInitialization(msg);
-        notifyInitialized();
+        connected = true;
         if (transport instanceof StreamableHttpClientTransport http) {
             try {
                 http.listen();
@@ -147,9 +147,9 @@ public final class McpClient implements AutoCloseable {
                 throw e;
             }
         }
-        connected = true;
-        subscribeRootsIfNeeded();
         startBackgroundTasks();
+        subscribeRootsIfNeeded();
+        notifyInitialized();
     }
 
     private JsonRpcMessage sendInitialization() throws IOException {
