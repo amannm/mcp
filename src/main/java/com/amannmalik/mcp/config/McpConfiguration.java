@@ -16,13 +16,17 @@ public record McpConfiguration(SystemConfig system,
                                SecurityConfig security,
                                ClientConfig client,
                                HostConfig host) {
+
     private static volatile McpConfiguration CURRENT = loadFromEnv();
-    private static volatile boolean WATCHING;
+private static final AtomicBoolean WATCHING = new AtomicBoolean();
     private static final CopyOnWriteArrayList<Consumer<McpConfiguration>> LISTENERS = new CopyOnWriteArrayList<>();
 
     static {
         addChangeListener(c -> System.err.println("Configuration reloaded"));
     }
+
+    private static final AtomicReference<McpConfiguration> REF = new AtomicReference<>();
+    
 
     public static McpConfiguration current() {
         return CURRENT;
@@ -117,8 +121,7 @@ public record McpConfiguration(SystemConfig system,
     }
 
     private static void watch(Path path) {
-        if (WATCHING) return;
-        WATCHING = true;
+        if (!WATCHING.replace(false, true)) return;
         Thread.startVirtualThread(() -> {
             try (WatchService svc = FileSystems.getDefault().newWatchService()) {
                 Path dir = path.getParent();
@@ -351,108 +354,108 @@ public record McpConfiguration(SystemConfig system,
     }
 
     private static final JsonObject SCHEMA = Json.createReader(new StringReader("""
-{
-  "type": "object",
-  "properties": {
-    "system": {
-      "type": "object",
-      "properties": {
-        "protocol": {
-          "type": "object",
-          "properties": {
-            "version": {"type": "string"},
-            "compatibility_version": {"type": "string"}
-          }
-        },
-        "timeouts": {
-          "type": "object",
-          "properties": {
-            "default_ms": {"type": "integer"},
-            "ping_ms": {"type": "integer"},
-            "process_wait_seconds": {"type": "integer"}
-          }
-        }
-      }
-    },
-    "performance": {
-      "type": "object",
-      "properties": {
-        "rate_limits": {
-          "type": "object",
-          "properties": {
-            "tools_per_second": {"type": "integer"},
-            "completions_per_second": {"type": "integer"},
-            "logs_per_second": {"type": "integer"},
-            "progress_per_second": {"type": "integer"}
-          }
-        },
-        "pagination": {
-          "type": "object",
-          "properties": {
-            "default_page_size": {"type": "integer"},
-            "max_completion_values": {"type": "integer"},
-            "sse_history_limit": {"type": "integer"},
-            "response_queue_capacity": {"type": "integer"}
-          }
-        }
-      }
-    },
-    "server": {
-      "type": "object",
-      "properties": {
-        "info": {
-          "type": "object",
-          "properties": {
-            "name": {"type": "string"},
-            "description": {"type": "string"},
-            "version": {"type": "string"}
-          }
-        },
-        "transport": {
-          "type": "object",
-          "properties": {
-            "type": {"type": "string"},
-            "port": {"type": "integer"},
-            "allowed_origins": {"type": "array", "items": {"type": "string"}}
-          }
-        }
-      }
-    },
-    "security": {
-      "type": "object",
-      "properties": {
-        "auth": {
-          "type": "object",
-          "properties": {
-            "jwt_secret_env": {"type": "string"},
-            "default_principal": {"type": "string"}
-          }
-        }
-      }
-    },
-    "client": {
-      "type": "object",
-      "properties": {
-        "info": {
-          "type": "object",
-          "properties": {
-            "name": {"type": "string"},
-            "display_name": {"type": "string"},
-            "version": {"type": "string"}
-          }
-        },
-        "capabilities": {"type": "array", "items": {"type": "string"}}
-      }
-    },
-    "host": {
-      "type": "object",
-      "properties": {
-        "principal": {"type": "string"}
-      }
-    }
-  }
-}
-""")).readObject();
+            {
+              "type": "object",
+              "properties": {
+                "system": {
+                  "type": "object",
+                  "properties": {
+                    "protocol": {
+                      "type": "object",
+                      "properties": {
+                        "version": {"type": "string"},
+                        "compatibility_version": {"type": "string"}
+                      }
+                    },
+                    "timeouts": {
+                      "type": "object",
+                      "properties": {
+                        "default_ms": {"type": "integer"},
+                        "ping_ms": {"type": "integer"},
+                        "process_wait_seconds": {"type": "integer"}
+                      }
+                    }
+                  }
+                },
+                "performance": {
+                  "type": "object",
+                  "properties": {
+                    "rate_limits": {
+                      "type": "object",
+                      "properties": {
+                        "tools_per_second": {"type": "integer"},
+                        "completions_per_second": {"type": "integer"},
+                        "logs_per_second": {"type": "integer"},
+                        "progress_per_second": {"type": "integer"}
+                      }
+                    },
+                    "pagination": {
+                      "type": "object",
+                      "properties": {
+                        "default_page_size": {"type": "integer"},
+                        "max_completion_values": {"type": "integer"},
+                        "sse_history_limit": {"type": "integer"},
+                        "response_queue_capacity": {"type": "integer"}
+                      }
+                    }
+                  }
+                },
+                "server": {
+                  "type": "object",
+                  "properties": {
+                    "info": {
+                      "type": "object",
+                      "properties": {
+                        "name": {"type": "string"},
+                        "description": {"type": "string"},
+                        "version": {"type": "string"}
+                      }
+                    },
+                    "transport": {
+                      "type": "object",
+                      "properties": {
+                        "type": {"type": "string"},
+                        "port": {"type": "integer"},
+                        "allowed_origins": {"type": "array", "items": {"type": "string"}}
+                      }
+                    }
+                  }
+                },
+                "security": {
+                  "type": "object",
+                  "properties": {
+                    "auth": {
+                      "type": "object",
+                      "properties": {
+                        "jwt_secret_env": {"type": "string"},
+                        "default_principal": {"type": "string"}
+                      }
+                    }
+                  }
+                },
+                "client": {
+                  "type": "object",
+                  "properties": {
+                    "info": {
+                      "type": "object",
+                      "properties": {
+                        "name": {"type": "string"},
+                        "display_name": {"type": "string"},
+                        "version": {"type": "string"}
+                      }
+                    },
+                    "capabilities": {"type": "array", "items": {"type": "string"}}
+                  }
+                },
+                "host": {
+                  "type": "object",
+                  "properties": {
+                    "principal": {"type": "string"}
+                  }
+                }
+              }
+            }
+            """)).readObject();
 
     private static final McpConfiguration DEFAULT = new McpConfiguration(
             new SystemConfig(new ProtocolConfig("2025-06-18", "2025-03-26"), new TimeoutsConfig(30_000L, 5_000L, 2)),
@@ -462,6 +465,10 @@ public record McpConfiguration(SystemConfig system,
             new SecurityConfig(new AuthConfig("MCP_JWT_SECRET", "default")),
             new ClientConfig(new ClientInfoConfig("cli", "CLI", "0"), List.of("SAMPLING", "ROOTS")),
             new HostConfig("user"));
+
+    static {
+        REF.set(loadFromEnv());
+    }
 
     public record SystemConfig(ProtocolConfig protocol, TimeoutsConfig timeouts) {
     }
