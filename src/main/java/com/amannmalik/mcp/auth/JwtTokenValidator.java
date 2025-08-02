@@ -30,8 +30,8 @@ public final class JwtTokenValidator implements TokenValidator {
         verifySignature(parts);
         JsonObject payload = parsePayload(parts.payloadJson());
         String subject = extractSubject(payload);
-        validateAudience(payload);
-        validateResource(payload);
+        requireAudience(payload, "aud", false, "audience mismatch");
+        requireAudience(payload, "resource", true, "resource mismatch");
         validateTimestamps(payload);
         Set<String> scopes = extractScopes(payload);
         return new Principal(subject, scopes);
@@ -88,22 +88,20 @@ public final class JwtTokenValidator implements TokenValidator {
         return sub;
     }
 
-    private void validateAudience(JsonObject payload) throws AuthorizationException {
-        if (mismatch(payload, "aud")) throw new AuthorizationException("audience mismatch");
-    }
-
-    private void validateResource(JsonObject payload) throws AuthorizationException {
-        if (payload.containsKey("resource") && mismatch(payload, "resource")) {
-            throw new AuthorizationException("resource mismatch");
-        }
-    }
-
-    private boolean mismatch(JsonObject payload, String key) {
+    private void requireAudience(JsonObject payload, String key, boolean optional, String err)
+            throws AuthorizationException {
         JsonValue val = payload.get(key);
-        if (val == null) return true;
+        if (val == null) {
+            if (!optional) throw new AuthorizationException(err);
+            return;
+        }
+        if (mismatch(val)) throw new AuthorizationException(err);
+    }
+
+    private boolean mismatch(JsonValue val) {
         return switch (val.getValueType()) {
             case STRING -> !expectedAudience.equals(((JsonString) val).getString());
-            case ARRAY -> payload.getJsonArray(key)
+            case ARRAY -> val.asJsonArray()
                     .getValuesAs(JsonString.class)
                     .stream()
                     .noneMatch(js -> expectedAudience.equals(js.getString()));
