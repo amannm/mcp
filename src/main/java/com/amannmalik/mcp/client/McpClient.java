@@ -11,7 +11,7 @@ import com.amannmalik.mcp.prompts.PromptsListener;
 import com.amannmalik.mcp.security.RateLimiter;
 import com.amannmalik.mcp.security.SamplingAccessPolicy;
 import com.amannmalik.mcp.server.logging.*;
-import com.amannmalik.mcp.server.resources.ResourceListListener;
+import com.amannmalik.mcp.server.resources.*;
 import com.amannmalik.mcp.server.tools.ToolListListener;
 import com.amannmalik.mcp.transport.*;
 import com.amannmalik.mcp.util.*;
@@ -65,6 +65,7 @@ public final class McpClient implements AutoCloseable {
     private PromptsListener promptsListener = () -> {
     };
     private volatile ResourceMetadata resourceMetadata;
+    private final Map<String, ResourceListener> resourceListeners = new ConcurrentHashMap<>();
 
     private final RpcHandlerRegistry handlers;
 
@@ -123,7 +124,8 @@ public final class McpClient implements AutoCloseable {
         handlers.register(NotificationMethod.PROGRESS, this::handleProgress);
         handlers.register(NotificationMethod.MESSAGE, this::handleMessage);
         handlers.register(NotificationMethod.CANCELLED, this::cancelled);
-        handlers.register(NotificationMethod.RESOURCES_LIST_CHANGED, n -> resourceListListener.listChanged());
+        handlers.register(NotificationMethod.RESOURCES_LIST_CHANGED, this::handleResourcesListChanged);
+        handlers.register(NotificationMethod.RESOURCES_UPDATED, this::handleResourceUpdated);
         handlers.register(NotificationMethod.TOOLS_LIST_CHANGED, this::handleToolsListChanged);
         handlers.register(NotificationMethod.PROMPTS_LIST_CHANGED, n -> promptsListener.listChanged());
     }
@@ -256,6 +258,7 @@ public final class McpClient implements AutoCloseable {
             pinger = null;
         }
         transport.close();
+        resourceListeners.clear();
         if (rootsSubscription != null) {
             CloseUtil.closeQuietly(rootsSubscription);
             rootsSubscription = null;
@@ -413,6 +416,33 @@ public final class McpClient implements AutoCloseable {
 
     public Optional<ResourceMetadata> resourceMetadata() {
         return Optional.ofNullable(resourceMetadata);
+    }
+
+    public ResourceSubscription subscribeResource(String uri, ResourceListener listener) throws IOException {
+        if (!resourcesSubscribeSupported) {
+            throw new IllegalStateException("resource subscribe not supported");
+        }
+        if (listener == null) {
+            throw new IllegalArgumentException("listener required");
+        }
+        JsonRpcMessage msg = request(
+                RequestMethod.RESOURCES_SUBSCRIBE,
+                ResourcesCodec.toJsonObject(new SubscribeRequest(uri, null))
+        );
+        if (msg instanceof JsonRpcError err) {
+            throw new IOException(err.error().message());
+        }
+        resourceListeners.put(uri, listener);
+        return () -> {
+            resourceListeners.remove(uri);
+            try {
+                request(
+                        RequestMethod.RESOURCES_UNSUBSCRIBE,
+                        ResourcesCodec.toJsonObject(new UnsubscribeRequest(uri, null))
+                );
+            } catch (IOException ignore) {
+            }
+        };
     }
 
     private void handleUnauthorized(UnauthorizedException e) throws IOException {
@@ -615,6 +645,26 @@ public final class McpClient implements AutoCloseable {
         if (note.params() == null) return;
         try {
             loggingListener.onMessage(LoggingCodec.toLoggingMessageNotification(note.params()));
+        } catch (IllegalArgumentException ignore) {
+        }
+    }
+
+    private void handleResourcesListChanged(JsonRpcNotification note) {
+        try {
+            ResourcesCodec.toResourceListChangedNotification(note.params());
+            resourceListListener.listChanged();
+        } catch (IllegalArgumentException ignore) {
+        }
+    }
+
+    private void handleResourceUpdated(JsonRpcNotification note) {
+        if (note.params() == null) return;
+        try {
+            ResourceUpdatedNotification run = ResourcesCodec.toResourceUpdatedNotification(note.params());
+            ResourceListener listener = resourceListeners.get(run.uri());
+            if (listener != null) {
+                listener.updated(new ResourceUpdate(run.uri(), run.title()));
+            }
         } catch (IllegalArgumentException ignore) {
         }
     }
