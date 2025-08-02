@@ -47,12 +47,6 @@ public final class McpConformanceSteps {
     private final Map<String, JsonRpcMessage> responses = new ConcurrentHashMap<>();
     private CountingRootsProvider rootsProvider;
 
-    @Before
-    public void setup() throws Exception {
-        // Initial setup without transport-specific configuration
-        // Transport setup happens in @Given step
-    }
-
     private void setupTestConfiguration(String transport) {
         String configFile = "http".equals(transport) ? "/mcp-test-config-http.yaml" : "/mcp-test-config.yaml";
         String testConfigPath = getClass().getResource(configFile).getPath();
@@ -139,10 +133,6 @@ public final class McpConformanceSteps {
             }
             assertTrue(serverTask.isDone());
         }
-    }
-
-    private String getTransportType() {
-        return System.getProperty("mcp.test.transport", "stdio");
     }
 
     private Transport createTransport(String type) throws Exception {
