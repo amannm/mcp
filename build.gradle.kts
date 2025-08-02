@@ -15,7 +15,7 @@ val picocliVersion by extra("4.7.7")
 val junitVersion by extra("5.13.3")
 val jmhVersion by extra("1.37")
 val slf4jVersion by extra("2.0.16")
-val jettyVersion by extra("12.0.9")
+val jettyVersion by extra("12.0.23")
 val jakartaServletVersion by extra("6.1.0")
 val snakeyamlVersion by extra("2.7")
 
