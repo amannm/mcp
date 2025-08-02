@@ -654,7 +654,7 @@ public final class McpClient implements AutoCloseable {
 
     private void handleResourcesListChanged(JsonRpcNotification note) {
         try {
-            ResourcesCodec.toResourceListChangedNotification(note.params());
+            ResourcesCodec.requireListChangedNotification(note.params());
             resourceListListener.listChanged();
         } catch (IllegalArgumentException ignore) {
         }
