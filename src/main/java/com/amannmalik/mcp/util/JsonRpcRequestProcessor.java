@@ -43,10 +43,7 @@ public final class JsonRpcRequestProcessor {
         if (req == null || handler == null) throw new IllegalArgumentException("request and handler required");
 
         Optional<JsonRpcMessage> idError = registerId(req.id());
-        if (idError.isPresent()) {
-            cleanup(req.id());
-            return idError;
-        }
+        if (idError.isPresent()) return idError;
 
         final Optional<ProgressToken> token;
         try {
@@ -55,21 +52,17 @@ public final class JsonRpcRequestProcessor {
             cleanup(req.id());
             return Optional.of(JsonRpcError.invalidParams(req.id(), e.getMessage()));
         }
-        token.ifPresent(t -> sendProgress(t, 0.0));
 
-        if (cancellable && registerCancellation(req.id())) {
+        try {
+            token.ifPresent(t -> sendProgress(t, 0.0));
+            if (cancellable && registerCancellation(req.id())) return Optional.empty();
+            JsonRpcMessage resp = handle(req, handler);
+            if (cancellable && cancellationTracker.isCancelled(req.id())) return Optional.empty();
+            token.ifPresent(t -> sendProgress(t, 1.0));
+            return Optional.of(resp);
+        } finally {
             cleanup(req.id());
-            return Optional.empty();
         }
-
-        JsonRpcMessage resp = handle(req, handler);
-        if (cancellable && cancellationTracker.isCancelled(req.id())) {
-            cleanup(req.id());
-            return Optional.empty();
-        }
-        token.ifPresent(t -> sendProgress(t, 1.0));
-        cleanup(req.id());
-        return Optional.of(resp);
     }
 
     private Optional<JsonRpcMessage> registerId(RequestId id) {
