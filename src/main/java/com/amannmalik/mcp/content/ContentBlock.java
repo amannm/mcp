@@ -9,10 +9,6 @@ import com.amannmalik.mcp.validation.InputSanitizer;
 import com.amannmalik.mcp.validation.MetaValidator;
 import jakarta.json.JsonObject;
 
-/**
- * Common representation for all content blocks that may appear in prompts,
- * sampling messages and tool results.
- */
 public sealed interface ContentBlock
         permits ContentBlock.Text, ContentBlock.Image, ContentBlock.Audio,
                 ContentBlock.ResourceLink, ContentBlock.EmbeddedResource {
