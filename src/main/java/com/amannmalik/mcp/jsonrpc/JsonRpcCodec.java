@@ -38,56 +38,59 @@ public final class JsonRpcCodec {
     }
 
     public static JsonRpcMessage fromJsonObject(JsonObject obj) {
-        var version = obj.getString("jsonrpc", null);
-        if (!JsonRpc.VERSION.equals(version)) {
-            throw new IllegalArgumentException("Unsupported jsonrpc version: " + version);
-        }
-
+        validateVersion(obj);
         var idValue = obj.get("id");
         var method = obj.getString("method", null);
-        var paramsValue = obj.get("params");
-        if (paramsValue != null && paramsValue.getValueType() != JsonValue.ValueType.OBJECT) {
-            throw new IllegalArgumentException("params must be an object");
-        }
-        var hasError = obj.containsKey("error");
-        var hasResult = obj.containsKey("result");
-        if (hasError && hasResult) {
-            throw new IllegalArgumentException("response cannot contain both result and error");
-        }
+        var params = params(obj.get("params"));
+        var kind = kind(method, idValue, obj.containsKey("result"), obj.containsKey("error"));
+        return switch (kind) {
+            case REQUEST -> new JsonRpcRequest(RequestIdCodec.from(idValue), method, params);
+            case NOTIFICATION -> new JsonRpcNotification(method, params);
+            case RESPONSE -> new JsonRpcResponse(requestId(idValue), result(obj.get("result")));
+            case ERROR -> new JsonRpcError(optionalId(idValue), errorDetail(obj.getJsonObject("error")));
+        };
+    }
 
-        JsonObject paramsObj = paramsValue == null ? null : paramsValue.asJsonObject();
+    private enum Kind { REQUEST, NOTIFICATION, RESPONSE, ERROR }
 
-        if (method != null && idValue != null && idValue.getValueType() != JsonValue.ValueType.NULL) {
-            return new JsonRpcRequest(RequestIdCodec.from(idValue), method, paramsObj);
-        }
+    private static void validateVersion(JsonObject obj) {
+        var version = obj.getString("jsonrpc", null);
+        if (!JsonRpc.VERSION.equals(version)) throw new IllegalArgumentException("Unsupported jsonrpc version: " + version);
+    }
+
+    private static JsonObject params(JsonValue value) {
+        if (value == null) return null;
+        if (value.getValueType() != JsonValue.ValueType.OBJECT) throw new IllegalArgumentException("params must be an object");
+        return value.asJsonObject();
+    }
+
+    private static JsonObject result(JsonValue value) {
+        if (value == null || value.getValueType() != JsonValue.ValueType.OBJECT) throw new IllegalArgumentException("result must be an object");
+        return value.asJsonObject();
+    }
+
+    private static Kind kind(String method, JsonValue idValue, boolean hasResult, boolean hasError) {
+        if (hasResult && hasError) throw new IllegalArgumentException("response cannot contain both result and error");
         if (method != null) {
-            return new JsonRpcNotification(method, paramsObj);
+            if (idValue != null && idValue.getValueType() != JsonValue.ValueType.NULL) return Kind.REQUEST;
+            return Kind.NOTIFICATION;
         }
-        if (hasResult) {
-            if (idValue == null || idValue.getValueType() == JsonValue.ValueType.NULL) {
-                throw new IllegalArgumentException("id is required for response");
-            }
-            var resultVal = obj.get("result");
-            if (resultVal == null || resultVal.getValueType() != JsonValue.ValueType.OBJECT) {
-                throw new IllegalArgumentException("result must be an object");
-            }
-            return new JsonRpcResponse(RequestIdCodec.from(idValue), resultVal.asJsonObject());
-        }
-        if (hasError) {
-            RequestId id;
-            if (idValue == null || idValue.getValueType() == JsonValue.ValueType.NULL) {
-                id = RequestId.NullId.INSTANCE;
-            } else {
-                id = RequestIdCodec.from(idValue);
-            }
-            var errObj = obj.getJsonObject("error");
-            var detail = new JsonRpcError.ErrorDetail(
-                    errObj.getInt("code"),
-                    errObj.getString("message"),
-                    errObj.get("data")
-            );
-            return new JsonRpcError(id, detail);
-        }
+        if (hasResult) return Kind.RESPONSE;
+        if (hasError) return Kind.ERROR;
         throw new IllegalArgumentException("Unknown message type");
+    }
+
+    private static RequestId requestId(JsonValue value) {
+        if (value == null || value.getValueType() == JsonValue.ValueType.NULL) throw new IllegalArgumentException("id is required for response");
+        return RequestIdCodec.from(value);
+    }
+
+    private static RequestId optionalId(JsonValue value) {
+        if (value == null || value.getValueType() == JsonValue.ValueType.NULL) return RequestId.NullId.INSTANCE;
+        return RequestIdCodec.from(value);
+    }
+
+    private static JsonRpcError.ErrorDetail errorDetail(JsonObject obj) {
+        return new JsonRpcError.ErrorDetail(obj.getInt("code"), obj.getString("message"), obj.get("data"));
     }
 }
