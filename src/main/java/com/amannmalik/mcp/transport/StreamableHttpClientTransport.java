@@ -172,23 +172,12 @@ public final class StreamableHttpClientTransport implements Transport {
                 StringBuilder data = new StringBuilder();
                 String eventId = null;
                 while (!closed && (line = br.readLine()) != null) {
-                    if (line.startsWith("id:")) {
+                    if (line.isEmpty()) {
+                        eventId = handleEvent(data, eventId);
+                    } else if (line.startsWith("id:")) {
                         eventId = value(line);
                     } else if (line.startsWith("data:")) {
-                        if (!data.isEmpty()) data.append('\n');
-                        data.append(value(line));
-                    } else if (line.isEmpty()) {
-                        if (!data.isEmpty()) {
-                            try (JsonReader jr = Json.createReader(new StringReader(data.toString()))) {
-                                queue.add(jr.readObject());
-                            } catch (Exception ignore) {
-                            }
-                            data.setLength(0);
-                            if (eventId != null) {
-                                lastEventId = eventId;
-                                eventId = null;
-                            }
-                        }
+                        appendData(line, data);
                     }
                 }
             } catch (IOException ignore) {
@@ -200,6 +189,26 @@ public final class StreamableHttpClientTransport implements Transport {
 
         private String value(String line) {
             return line.substring(line.indexOf(':') + 1).trim();
+        }
+
+        private String handleEvent(StringBuilder data, String eventId) {
+            if (!data.isEmpty()) {
+                try (JsonReader jr = Json.createReader(new StringReader(data.toString()))) {
+                    queue.add(jr.readObject());
+                } catch (Exception ignore) {
+                }
+                data.setLength(0);
+                if (eventId != null) {
+                    lastEventId = eventId;
+                    return null;
+                }
+            }
+            return eventId;
+        }
+
+        private void appendData(String line, StringBuilder data) {
+            if (!data.isEmpty()) data.append('\n');
+            data.append(value(line));
         }
 
         void close() {
