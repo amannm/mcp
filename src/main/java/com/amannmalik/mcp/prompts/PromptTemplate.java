@@ -2,16 +2,18 @@ package com.amannmalik.mcp.prompts;
 
 import com.amannmalik.mcp.content.ContentBlock;
 
+import com.amannmalik.mcp.util.Immutable;
+
 import java.util.*;
 import java.util.stream.Collectors;
 
 public record PromptTemplate(Prompt prompt, List<PromptMessageTemplate> messages) {
     public PromptTemplate {
-        messages = messages == null || messages.isEmpty() ? List.of() : List.copyOf(messages);
+        messages = Immutable.list(messages);
     }
 
     PromptInstance instantiate(Map<String, String> args) {
-        Map<String, String> provided = args == null ? Map.of() : Map.copyOf(args);
+        Map<String, String> provided = Immutable.map(args);
 
         if (!prompt.arguments().isEmpty()) {
             Set<String> allowed = prompt.arguments().stream()
@@ -51,10 +53,8 @@ public record PromptTemplate(Prompt prompt, List<PromptMessageTemplate> messages
 
     private static String substitute(String template, Map<String, String> args) {
         String result = template;
-        if (args != null) {
-            for (Map.Entry<String, String> e : args.entrySet()) {
-                result = result.replace("{" + e.getKey() + "}", e.getValue());
-            }
+        for (Map.Entry<String, String> e : args.entrySet()) {
+            result = result.replace("{" + e.getKey() + "}", e.getValue());
         }
         return result;
     }

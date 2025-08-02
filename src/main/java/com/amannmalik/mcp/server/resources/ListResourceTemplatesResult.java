@@ -1,5 +1,6 @@
 package com.amannmalik.mcp.server.resources;
 
+import com.amannmalik.mcp.util.Immutable;
 import com.amannmalik.mcp.validation.MetaValidator;
 import jakarta.json.JsonObject;
 
@@ -9,7 +10,7 @@ public record ListResourceTemplatesResult(List<ResourceTemplate> resourceTemplat
                                           String nextCursor,
                                           JsonObject _meta) {
     public ListResourceTemplatesResult {
-        resourceTemplates = resourceTemplates == null ? List.of() : List.copyOf(resourceTemplates);
+        resourceTemplates = Immutable.list(resourceTemplates);
         MetaValidator.requireValid(_meta);
     }
 }
