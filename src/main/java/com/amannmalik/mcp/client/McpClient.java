@@ -342,28 +342,35 @@ public final class McpClient implements AutoCloseable {
         pending.put(reqId, future);
         try {
             transport.send(JsonRpcCodec.toJsonObject(new JsonRpcRequest(reqId, method, params)));
-            try {
-                return future.get(timeoutMillis, TimeUnit.MILLISECONDS);
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-                throw new IOException(e);
-            } catch (TimeoutException e) {
-                try {
-                    notify(NotificationMethod.CANCELLED, CancellationCodec.toJsonObject(new CancelledNotification(reqId, "timeout")));
-                } catch (IOException ignore) {
-                }
-                throw new IOException("Request timed out after " + timeoutMillis + " ms", e);
-            } catch (ExecutionException e) {
-                var cause = e.getCause();
-                if (cause instanceof IOException io) throw io;
-                throw new IOException(cause);
-            }
+            return awaitResponse(reqId, future, timeoutMillis);
         } catch (UnauthorizedException e) {
             handleUnauthorized(e);
             throw e;
         } finally {
             pending.remove(reqId);
             progressManager.release(reqId);
+        }
+    }
+
+    private JsonRpcMessage awaitResponse(RequestId reqId,
+                                         CompletableFuture<JsonRpcMessage> future,
+                                         long timeoutMillis) throws IOException {
+        try {
+            return future.get(timeoutMillis, TimeUnit.MILLISECONDS);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new IOException(e);
+        } catch (TimeoutException e) {
+            try {
+                notify(NotificationMethod.CANCELLED,
+                        CancellationCodec.toJsonObject(new CancelledNotification(reqId, "timeout")));
+            } catch (IOException ignore) {
+            }
+            throw new IOException("Request timed out after " + timeoutMillis + " ms", e);
+        } catch (ExecutionException e) {
+            var cause = e.getCause();
+            if (cause instanceof IOException io) throw io;
+            throw new IOException(cause);
         }
     }
 
