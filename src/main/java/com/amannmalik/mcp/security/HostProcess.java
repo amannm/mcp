@@ -8,10 +8,8 @@ import com.amannmalik.mcp.lifecycle.ClientCapability;
 import com.amannmalik.mcp.lifecycle.ServerCapability;
 import com.amannmalik.mcp.prompts.Role;
 import com.amannmalik.mcp.server.tools.*;
-import com.amannmalik.mcp.util.PaginatedRequest;
-import com.amannmalik.mcp.util.PaginationCodec;
 import com.amannmalik.mcp.wire.RequestMethod;
-import jakarta.json.*;
+import jakarta.json.JsonObject;
 
 import java.io.IOException;
 import java.util.*;
@@ -143,8 +141,10 @@ public final class HostProcess implements AutoCloseable {
         McpClient client = clients.get(clientId);
         if (client == null) throw new IllegalArgumentException("Unknown client: " + clientId);
         requireCapability(client, ServerCapability.TOOLS);
-        JsonObject params = PaginationCodec.toJsonObject(new PaginatedRequest(cursor, null));
-        JsonRpcMessage resp = client.request(RequestMethod.TOOLS_LIST, params);
+        JsonRpcMessage resp = client.request(
+                RequestMethod.TOOLS_LIST,
+                ToolCodec.toJsonObject(new ListToolsRequest(cursor, null))
+        );
         if (resp instanceof JsonRpcResponse r) return ToolCodec.toListToolsResult(r.result());
         if (resp instanceof JsonRpcError err) throw new IOException(err.error().message());
         throw new IOException("Unexpected response");
@@ -156,11 +156,10 @@ public final class HostProcess implements AutoCloseable {
         requireCapability(client, ServerCapability.TOOLS);
         consents.requireConsent(principal, "tool:" + name);
         toolAccess.requireAllowed(principal, name);
-        JsonObject params = Json.createObjectBuilder()
-                .add("name", name)
-                .add("arguments", args == null ? JsonValue.EMPTY_JSON_OBJECT : args)
-                .build();
-        JsonRpcMessage resp = client.request(RequestMethod.TOOLS_CALL, params);
+        JsonRpcMessage resp = client.request(
+                RequestMethod.TOOLS_CALL,
+                ToolCodec.toJsonObject(new CallToolRequest(name, args, null))
+        );
         if (resp instanceof JsonRpcResponse r) return ToolCodec.toToolResult(r.result());
         if (resp instanceof JsonRpcError err) throw new IOException(err.error().message());
         throw new IOException("Unexpected response");

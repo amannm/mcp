@@ -30,6 +30,15 @@ public final class ToolCodec {
         return PaginationCodec.toJsonObject(new PaginatedRequest(req.cursor(), req._meta()));
     }
 
+    public static JsonObject toJsonObject(CallToolRequest req) {
+        if (req == null) throw new IllegalArgumentException("request required");
+        JsonObjectBuilder builder = Json.createObjectBuilder()
+                .add("name", req.name())
+                .add("arguments", req.arguments());
+        if (req._meta() != null) builder.add("_meta", req._meta());
+        return builder.build();
+    }
+
     public static JsonObject toJsonObject(ListToolsResult page) {
         return toJsonObject(new Pagination.Page<>(page.tools(), page.nextCursor()), page._meta());
     }
