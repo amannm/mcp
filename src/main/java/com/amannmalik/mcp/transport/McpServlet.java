@@ -6,6 +6,7 @@ import jakarta.json.*;
 import jakarta.json.stream.JsonParsingException;
 import jakarta.servlet.AsyncContext;
 import jakarta.servlet.http.*;
+import com.amannmalik.mcp.config.McpConfiguration;
 
 import java.io.IOException;
 import java.util.Optional;
@@ -144,7 +145,8 @@ final class McpServlet extends HttpServlet {
 
     private void handleInitialize(JsonObject obj, HttpServletResponse resp) throws IOException {
         String id = obj.get("id").toString();
-        BlockingQueue<JsonObject> q = new LinkedBlockingQueue<>(1);
+        BlockingQueue<JsonObject> q = new LinkedBlockingQueue<>(
+                McpConfiguration.current().performance().pagination().responseQueueCapacity());
         transport.responseQueues.put(id, q);
         try {
             transport.incoming.put(obj);

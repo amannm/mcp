@@ -8,6 +8,7 @@ import com.amannmalik.mcp.prompts.Role;
 import com.amannmalik.mcp.security.*;
 import com.amannmalik.mcp.server.tools.ToolCodec;
 import com.amannmalik.mcp.transport.StdioTransport;
+import com.amannmalik.mcp.config.McpConfiguration;
 import jakarta.json.Json;
 import jakarta.json.JsonValue;
 import picocli.CommandLine;
@@ -66,7 +67,7 @@ public final class HostCommand implements Callable<Integer> {
         PrivacyBoundaryEnforcer privacyBoundary = new PrivacyBoundaryEnforcer();
         SamplingAccessController sampling = new SamplingAccessController();
         SecurityPolicy policy = c -> true;
-        Principal principal = new Principal("user", Set.of());
+        Principal principal = new Principal(McpConfiguration.current().host().principal(), Set.of());
 
         try (HostProcess host = new HostProcess(policy, consents, tools, privacyBoundary, sampling, principal)) {
             for (var entry : cfg.clients().entrySet()) {
@@ -75,7 +76,8 @@ public final class HostCommand implements Callable<Integer> {
                 StdioTransport t = new StdioTransport(pb, verbose ? System.err::println : s -> {
                 });
                 McpClient client = new McpClient(
-                        new ClientInfo(entry.getKey(), entry.getKey(), "0"),
+                        new ClientInfo(entry.getKey(), entry.getKey(),
+                                McpConfiguration.current().client().info().version()),
                         EnumSet.noneOf(ClientCapability.class),
                         t);
                 host.register(entry.getKey(), client);

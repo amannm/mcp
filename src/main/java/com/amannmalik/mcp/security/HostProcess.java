@@ -2,6 +2,7 @@ package com.amannmalik.mcp.security;
 
 import com.amannmalik.mcp.auth.Principal;
 import com.amannmalik.mcp.client.McpClient;
+import com.amannmalik.mcp.config.McpConfiguration;
 import com.amannmalik.mcp.jsonrpc.*;
 import com.amannmalik.mcp.lifecycle.ClientCapability;
 import com.amannmalik.mcp.lifecycle.ServerCapability;
@@ -79,7 +80,9 @@ public final class HostProcess implements AutoCloseable {
         try {
             client.setPrincipal(principal);
             client.setSamplingAccessPolicy(samplingAccess);
-            client.configurePing(30000, 5000);
+            client.configurePing(
+                    McpConfiguration.current().system().timeouts().defaultMs(),
+                    McpConfiguration.current().system().timeouts().pingMs());
             client.connect();
         } catch (IOException e) {
             clients.remove(id);

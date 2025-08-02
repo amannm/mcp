@@ -1,12 +1,14 @@
 package com.amannmalik.mcp.util;
 
 import java.util.List;
+import com.amannmalik.mcp.config.McpConfiguration;
 
 public final class Pagination {
     private Pagination() {
     }
 
-    public static final int DEFAULT_PAGE_SIZE = 100;
+    public static final int DEFAULT_PAGE_SIZE =
+            McpConfiguration.current().performance().pagination().defaultPageSize();
 
     public static <T> Page<T> page(List<T> items, String cursor, int size) {
         int start = decode(cursor);

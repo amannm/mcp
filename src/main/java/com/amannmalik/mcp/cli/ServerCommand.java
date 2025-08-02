@@ -4,6 +4,7 @@ import com.amannmalik.mcp.auth.*;
 import com.amannmalik.mcp.security.OriginValidator;
 import com.amannmalik.mcp.server.McpServer;
 import com.amannmalik.mcp.transport.*;
+import com.amannmalik.mcp.config.McpConfiguration;
 import picocli.CommandLine;
 
 import java.nio.charset.StandardCharsets;
@@ -62,8 +63,9 @@ public final class ServerCommand implements Callable<Integer> {
             if (!(loaded instanceof ServerConfig sc)) throw new IllegalArgumentException("server config expected");
             cfg = sc;
         } else {
-            TransportType type = httpPort == null ? TransportType.STDIO : TransportType.HTTP;
-            int port = httpPort == null ? 0 : httpPort;
+            TransportType defType = parseTransport(McpConfiguration.current().server().transport().type());
+            TransportType type = httpPort == null ? defType : TransportType.HTTP;
+            int port = httpPort == null ? McpConfiguration.current().server().transport().port() : httpPort;
             if (stdio) type = TransportType.STDIO;
             List<String> auth = authServers;
             if (!testMode) {
@@ -80,7 +82,8 @@ public final class ServerCommand implements Callable<Integer> {
         switch (cfg.transport()) {
             case STDIO -> t = new StdioTransport(System.in, System.out);
             case HTTP -> {
-                OriginValidator originValidator = new OriginValidator(Set.of("http://localhost", "http://127.0.0.1"));
+                OriginValidator originValidator = new OriginValidator(
+                        Set.copyOf(McpConfiguration.current().server().transport().allowedOrigins()));
                 AuthorizationManager authManager = null;
                 if (cfg.expectedAudience() != null && !cfg.expectedAudience().isBlank()) {
                     String secretEnv = System.getenv("MCP_JWT_SECRET");
@@ -108,5 +111,13 @@ public final class ServerCommand implements Callable<Integer> {
             server.serve();
         }
         return 0;
+    }
+
+    private static TransportType parseTransport(String name) {
+        return switch (name) {
+            case "stdio" -> TransportType.STDIO;
+            case "http" -> TransportType.HTTP;
+            default -> throw new IllegalArgumentException("unknown transport: " + name);
+        };
     }
 }

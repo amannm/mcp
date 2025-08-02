@@ -2,12 +2,14 @@ package com.amannmalik.mcp.server.completion;
 
 import com.amannmalik.mcp.validation.InputSanitizer;
 import com.amannmalik.mcp.validation.MetaValidator;
+import com.amannmalik.mcp.config.McpConfiguration;
 import jakarta.json.JsonObject;
 
 import java.util.List;
 
 public record CompleteResult(Completion completion, JsonObject _meta) {
-    public static final int MAX_VALUES = 100;
+    public static final int MAX_VALUES =
+            McpConfiguration.current().performance().pagination().maxCompletionValues();
 
     public CompleteResult {
         if (completion == null) throw new IllegalArgumentException("completion required");
