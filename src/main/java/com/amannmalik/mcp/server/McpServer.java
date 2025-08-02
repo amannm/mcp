@@ -22,6 +22,7 @@ import com.amannmalik.mcp.jsonrpc.JsonRpcNotification;
 import com.amannmalik.mcp.jsonrpc.JsonRpcRequest;
 import com.amannmalik.mcp.jsonrpc.JsonRpcResponse;
 import com.amannmalik.mcp.jsonrpc.RequestId;
+import com.amannmalik.mcp.jsonrpc.RpcHandlerRegistry;
 import com.amannmalik.mcp.lifecycle.ClientCapability;
 import com.amannmalik.mcp.lifecycle.InitializeRequest;
 import com.amannmalik.mcp.lifecycle.InitializeResponse;
@@ -98,7 +99,6 @@ import com.amannmalik.mcp.util.Pagination;
 import com.amannmalik.mcp.util.ProgressManager;
 import com.amannmalik.mcp.util.ProgressNotification;
 import com.amannmalik.mcp.util.ProgressToken;
-import com.amannmalik.mcp.util.ProgressUtil;
 import com.amannmalik.mcp.util.JsonRpcRequestProcessor;
 import com.amannmalik.mcp.util.ListChangeListener;
 import com.amannmalik.mcp.util.ListChangeSubscription;
@@ -115,7 +115,6 @@ import jakarta.json.stream.JsonParsingException;
 
 import java.io.EOFException;
 import java.io.IOException;
-import java.util.EnumMap;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
@@ -131,8 +130,7 @@ import java.util.concurrent.atomic.AtomicLong;
 public final class McpServer implements AutoCloseable {
     private final Transport transport;
     private final ProtocolLifecycle lifecycle;
-    private final Map<RequestMethod, RequestHandler> requestHandlers = new EnumMap<>(RequestMethod.class);
-    private final Map<NotificationMethod, NotificationHandler> notificationHandlers = new EnumMap<>(NotificationMethod.class);
+    private final RpcHandlerRegistry handlers;
     private final ProgressManager progressManager = new ProgressManager(new RateLimiter(20, 1000));
     private final CancellationTracker cancellationTracker = new CancellationTracker();
     private final IdTracker idTracker = new IdTracker();
@@ -198,6 +196,7 @@ public final class McpServer implements AutoCloseable {
         this.resourceAccess = resourceAccess;
         this.toolAccess = toolAccess == null ? ToolAccessPolicy.PERMISSIVE : toolAccess;
         this.samplingAccess = samplingAccess == null ? SamplingAccessPolicy.PERMISSIVE : samplingAccess;
+        this.handlers = new RpcHandlerRegistry(requestProcessor);
         this.principal = principal;
         this.toolListChangedSupported = tools != null && tools.supportsListChanged();
         this.resourcesSubscribeSupported = resources != null && resources.supportsSubscribe();
@@ -226,48 +225,41 @@ public final class McpServer implements AutoCloseable {
                     PromptCodec.toJsonObject(new PromptListChangedNotification()));
         }
 
-        registerRequestHandler(RequestMethod.INITIALIZE, this::initialize);
-        registerNotificationHandler(NotificationMethod.INITIALIZED, this::initialized);
-        registerRequestHandler(RequestMethod.PING, this::ping);
-        registerNotificationHandler(NotificationMethod.CANCELLED, this::cancelled);
-        registerNotificationHandler(NotificationMethod.ROOTS_LIST_CHANGED, n -> rootsManager.listChangedNotification());
+        handlers.register(RequestMethod.INITIALIZE, this::initialize);
+        handlers.register(NotificationMethod.INITIALIZED, this::initialized);
+        handlers.register(RequestMethod.PING, this::ping);
+        handlers.register(NotificationMethod.CANCELLED, this::cancelled);
+        handlers.register(NotificationMethod.ROOTS_LIST_CHANGED, n -> rootsManager.listChangedNotification());
 
         if (resources != null) {
-            registerRequestHandler(RequestMethod.RESOURCES_LIST, this::listResources);
-            registerRequestHandler(RequestMethod.RESOURCES_READ, this::readResource);
-            registerRequestHandler(RequestMethod.RESOURCES_TEMPLATES_LIST, this::listTemplates);
+            handlers.register(RequestMethod.RESOURCES_LIST, this::listResources);
+            handlers.register(RequestMethod.RESOURCES_READ, this::readResource);
+            handlers.register(RequestMethod.RESOURCES_TEMPLATES_LIST, this::listTemplates);
             if (resourcesSubscribeSupported) {
-                registerRequestHandler(RequestMethod.RESOURCES_SUBSCRIBE, this::subscribeResource);
-                registerRequestHandler(RequestMethod.RESOURCES_UNSUBSCRIBE, this::unsubscribeResource);
+                handlers.register(RequestMethod.RESOURCES_SUBSCRIBE, this::subscribeResource);
+                handlers.register(RequestMethod.RESOURCES_UNSUBSCRIBE, this::unsubscribeResource);
             }
         }
 
         if (tools != null) {
-            registerRequestHandler(RequestMethod.TOOLS_LIST, this::listTools);
-            registerRequestHandler(RequestMethod.TOOLS_CALL, this::callTool);
+            handlers.register(RequestMethod.TOOLS_LIST, this::listTools);
+            handlers.register(RequestMethod.TOOLS_CALL, this::callTool);
         }
 
         if (prompts != null) {
-            registerRequestHandler(RequestMethod.PROMPTS_LIST, this::listPrompts);
-            registerRequestHandler(RequestMethod.PROMPTS_GET, this::getPrompt);
+            handlers.register(RequestMethod.PROMPTS_LIST, this::listPrompts);
+            handlers.register(RequestMethod.PROMPTS_GET, this::getPrompt);
         }
 
-        registerRequestHandler(RequestMethod.LOGGING_SET_LEVEL, this::setLogLevel);
+        handlers.register(RequestMethod.LOGGING_SET_LEVEL, this::setLogLevel);
 
         if (completions != null) {
-            registerRequestHandler(RequestMethod.COMPLETION_COMPLETE, this::complete);
+            handlers.register(RequestMethod.COMPLETION_COMPLETE, this::complete);
         }
 
-        registerRequestHandler(RequestMethod.SAMPLING_CREATE_MESSAGE, this::handleCreateMessage);
+        handlers.register(RequestMethod.SAMPLING_CREATE_MESSAGE, this::handleCreateMessage);
     }
 
-    private void registerRequestHandler(RequestMethod method, RequestHandler handler) {
-        requestHandlers.put(method, handler);
-    }
-
-    private void registerNotificationHandler(NotificationMethod method, NotificationHandler handler) {
-        notificationHandlers.put(method, handler);
-    }
 
     private <S extends ListChangeSubscription> S subscribeListChanges(
             SubscriptionFactory<S> factory,
@@ -356,36 +348,16 @@ public final class McpServer implements AutoCloseable {
             return;
         }
 
-        var method = RequestMethod.from(req.method());
-        if (method.isEmpty()) {
-            send(JsonRpcError.of(req.id(),
-                    JsonRpcErrorCode.METHOD_NOT_FOUND,
-                    "Unknown method: " + req.method()));
-            return;
-        }
-
-        RequestHandler handler = requestHandlers.get(method.get());
-        if (handler == null) {
-            send(JsonRpcError.of(req.id(),
-                    JsonRpcErrorCode.METHOD_NOT_FOUND,
-                    "Unknown method: " + req.method()));
-            return;
-        }
-
-        boolean cancellable = method.get() != RequestMethod.INITIALIZE;
-        var resp = requestProcessor.process(req, cancellable, handler::handle);
+        boolean cancellable = RequestMethod.from(req.method()).map(m -> m != RequestMethod.INITIALIZE).orElse(true);
+        var resp = handlers.handle(req, cancellable);
         if (resp.isPresent()) send(resp.get());
     }
 
     private void onNotification(JsonRpcNotification note) throws IOException {
-        NotificationMethod.from(note.method())
-                .map(notificationHandlers::get)
-                .ifPresent(h -> {
-                    try {
-                        h.handle(note);
-                    } catch (IOException ignore) {
-                    }
-                });
+        try {
+            handlers.handle(note);
+        } catch (IOException ignore) {
+        }
     }
 
     private JsonRpcMessage initialize(JsonRpcRequest req) {
@@ -478,7 +450,14 @@ public final class McpServer implements AutoCloseable {
         return invalidParams(req, e.getMessage());
     }
 
-
+    private Optional<String> rateLimit(RateLimiter limiter, String key) {
+        try {
+            limiter.requireAllowance(key);
+            return Optional.empty();
+        } catch (SecurityException e) {
+            return Optional.of(e.getMessage());
+        }
+    }
 
     private void cancelled(JsonRpcNotification note) {
         CancelledNotification cn = CancellationCodec.toCancelledNotification(note.params());
@@ -654,10 +633,9 @@ public final class McpServer implements AutoCloseable {
         } catch (IllegalArgumentException e) {
             return invalidParams(req, e);
         }
-        try {
-            toolLimiter.requireAllowance(callRequest.name());
-        } catch (SecurityException e) {
-            return JsonRpcError.of(req.id(), RATE_LIMIT_CODE, e.getMessage());
+        Optional<String> limit = rateLimit(toolLimiter, callRequest.name());
+        if (limit.isPresent()) {
+            return JsonRpcError.of(req.id(), RATE_LIMIT_CODE, limit.get());
         }
         try {
             toolAccess.requireAllowed(principal, callRequest.name());
@@ -740,8 +718,8 @@ public final class McpServer implements AutoCloseable {
     }
 
     private void sendLog(LoggingMessageNotification note) throws IOException {
-        logLimiter.requireAllowance(note.logger() == null ? "" : note.logger());
-        if (note.level().ordinal() < logLevel.ordinal()) return;
+        if (rateLimit(logLimiter, note.logger() == null ? "" : note.logger()).isPresent() ||
+                note.level().ordinal() < logLevel.ordinal()) return;
         requireServerCapability(ServerCapability.LOGGING);
         send(new JsonRpcNotification(NotificationMethod.MESSAGE.method(),
                 LoggingCodec.toJsonObject(note)));
@@ -762,10 +740,9 @@ public final class McpServer implements AutoCloseable {
         }
         try {
             CompleteRequest request = CompletionCodec.toCompleteRequest(params);
-            try {
-                completionLimiter.requireAllowance(request.ref().toString());
-            } catch (SecurityException e) {
-                return JsonRpcError.of(req.id(), RATE_LIMIT_CODE, e.getMessage());
+            Optional<String> limit = rateLimit(completionLimiter, request.ref().toString());
+            if (limit.isPresent()) {
+                return JsonRpcError.of(req.id(), RATE_LIMIT_CODE, limit.get());
             }
             CompleteResult result = completions.complete(request);
             return new JsonRpcResponse(req.id(), CompletionCodec.toJsonObject(result));
@@ -931,15 +908,5 @@ public final class McpServer implements AutoCloseable {
         if (resources != null) resources.close();
         if (completions != null) completions.close();
         transport.close();
-    }
-
-    @FunctionalInterface
-    protected interface RequestHandler {
-        JsonRpcMessage handle(JsonRpcRequest request);
-    }
-
-    @FunctionalInterface
-    protected interface NotificationHandler {
-        void handle(JsonRpcNotification notification) throws IOException;
     }
 }

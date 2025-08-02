@@ -1,7 +1,9 @@
 package com.amannmalik.mcp.util;
 
+import com.amannmalik.mcp.jsonrpc.JsonRpcNotification;
 import com.amannmalik.mcp.jsonrpc.RequestId;
 import com.amannmalik.mcp.security.RateLimiter;
+import com.amannmalik.mcp.wire.NotificationMethod;
 import jakarta.json.JsonObject;
 
 import java.io.IOException;
@@ -10,7 +12,7 @@ import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 
 public final class ProgressManager {
-    private final ProgressTracker tracker = new ProgressTracker();
+    private final Map<ProgressToken, Double> progress = new ConcurrentHashMap<>();
     private final Map<RequestId, ProgressToken> tokens = new ConcurrentHashMap<>();
     private final RateLimiter limiter;
 
@@ -20,9 +22,10 @@ public final class ProgressManager {
     }
 
     public Optional<ProgressToken> register(RequestId id, JsonObject params) {
-        Optional<ProgressToken> token = ProgressUtil.tokenFromMeta(params);
+        Optional<ProgressToken> token = ProgressCodec.fromMeta(params);
         token.ifPresent(t -> {
-            tracker.register(t);
+            Double prev = progress.putIfAbsent(t, Double.NEGATIVE_INFINITY);
+            if (prev != null) throw new IllegalArgumentException("Duplicate token: " + t);
             tokens.put(id, t);
         });
         return token;
@@ -30,22 +33,49 @@ public final class ProgressManager {
 
     public void release(RequestId id) {
         ProgressToken t = tokens.remove(id);
-        if (t != null) tracker.release(t);
+        if (t != null) progress.remove(t);
     }
 
     public void record(ProgressNotification note) {
-        tracker.update(note);
+        update(note);
         if (note.progress() >= 1.0) {
-            tracker.release(note.token());
+            progress.remove(note.token());
             tokens.values().removeIf(t -> t.equals(note.token()));
         }
     }
 
+    private void update(ProgressNotification note) {
+        progress.compute(note.token(), (t, prev) -> {
+            if (prev == null) {
+                throw new IllegalStateException("Unknown progress token: " + t);
+            }
+            if (note.progress() <= prev) {
+                throw new IllegalArgumentException("progress must increase");
+            }
+            return note.progress();
+        });
+    }
+
+    private boolean isActive(ProgressToken token) {
+        return progress.containsKey(token);
+    }
+
     public boolean hasProgress(ProgressToken token) {
-        return tracker.hasProgress(token);
+        Double p = progress.get(token);
+        return p != null && p > Double.NEGATIVE_INFINITY;
     }
 
     public void send(ProgressNotification note, NotificationSender sender) throws IOException {
-        ProgressUtil.sendProgress(note, tracker, limiter, sender);
+        if (!isActive(note.token())) return;
+        try {
+            limiter.requireAllowance(note.token().asString());
+            update(note);
+        } catch (IllegalArgumentException | IllegalStateException | SecurityException ignore) {
+            return;
+        }
+        sender.send(new JsonRpcNotification(
+                NotificationMethod.PROGRESS.method(),
+                ProgressCodec.toJsonObject(note)
+        ));
     }
 }

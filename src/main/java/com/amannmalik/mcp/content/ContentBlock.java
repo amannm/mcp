@@ -16,13 +16,31 @@ public sealed interface ContentBlock
     Annotations annotations();
     JsonObject _meta();
 
+    private static Annotations orEmpty(Annotations annotations) {
+        return annotations == null ? Annotations.EMPTY : annotations;
+    }
+
+    private static void validateMeta(JsonObject meta) {
+        MetaValidator.requireValid(meta);
+    }
+
+    private static byte[] requireData(byte[] data) {
+        if (data == null) throw new IllegalArgumentException("data is required");
+        return data.clone();
+    }
+
+    private static String requireMimeType(String mimeType) {
+        if (mimeType == null) throw new IllegalArgumentException("mimeType is required");
+        return InputSanitizer.requireClean(mimeType);
+    }
+
     record Text(String text, Annotations annotations, JsonObject _meta)
             implements ContentBlock, PromptContent, MessageContent {
         public Text {
             if (text == null) throw new IllegalArgumentException("text is required");
             text = InputSanitizer.requireClean(text);
-            MetaValidator.requireValid(_meta);
-            if (annotations == null) annotations = Annotations.EMPTY;
+            validateMeta(_meta);
+            annotations = orEmpty(annotations);
         }
 
         @Override
@@ -34,12 +52,10 @@ public sealed interface ContentBlock
     record Image(byte[] data, String mimeType, Annotations annotations, JsonObject _meta)
             implements ContentBlock, PromptContent, MessageContent {
         public Image {
-            if (data == null || mimeType == null)
-                throw new IllegalArgumentException("data and mimeType are required");
-            data = data.clone();
-            mimeType = InputSanitizer.requireClean(mimeType);
-            MetaValidator.requireValid(_meta);
-            if (annotations == null) annotations = Annotations.EMPTY;
+            data = requireData(data);
+            mimeType = requireMimeType(mimeType);
+            validateMeta(_meta);
+            annotations = orEmpty(annotations);
         }
 
         @Override
@@ -51,12 +67,10 @@ public sealed interface ContentBlock
     record Audio(byte[] data, String mimeType, Annotations annotations, JsonObject _meta)
             implements ContentBlock, PromptContent, MessageContent {
         public Audio {
-            if (data == null || mimeType == null)
-                throw new IllegalArgumentException("data and mimeType are required");
-            data = data.clone();
-            mimeType = InputSanitizer.requireClean(mimeType);
-            MetaValidator.requireValid(_meta);
-            if (annotations == null) annotations = Annotations.EMPTY;
+            data = requireData(data);
+            mimeType = requireMimeType(mimeType);
+            validateMeta(_meta);
+            annotations = orEmpty(annotations);
         }
 
         @Override
@@ -91,8 +105,8 @@ public sealed interface ContentBlock
             implements ContentBlock, PromptContent {
         public EmbeddedResource {
             if (resource == null) throw new IllegalArgumentException("resource is required");
-            MetaValidator.requireValid(_meta);
-            if (annotations == null) annotations = Annotations.EMPTY;
+            validateMeta(_meta);
+            annotations = orEmpty(annotations);
         }
 
         @Override
