@@ -9,9 +9,7 @@ import com.amannmalik.mcp.jsonrpc.JsonRpcErrorCode;
 import com.amannmalik.mcp.jsonrpc.RequestId;
 import com.amannmalik.mcp.lifecycle.Protocol;
 import com.amannmalik.mcp.security.OriginValidator;
-import com.amannmalik.mcp.util.Base64Util;
 import com.amannmalik.mcp.util.CloseUtil;
-import com.amannmalik.mcp.validation.InputSanitizer;
 import com.amannmalik.mcp.wire.RequestMethod;
 import com.amannmalik.mcp.transport.ResourceMetadata;
 import com.amannmalik.mcp.transport.ResourceMetadataCodec;
@@ -32,18 +30,13 @@ import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.ServerConnector;
 
 import java.io.IOException;
-import java.io.PrintWriter;
 import java.net.InetSocketAddress;
-import java.security.SecureRandom;
-import java.util.ArrayDeque;
-import java.util.Deque;
 import java.util.Set;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.io.EOFException;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 
 public final class StreamableHttpTransport implements Transport {
@@ -67,12 +60,7 @@ public final class StreamableHttpTransport implements Transport {
     private final ConcurrentHashMap<String, SseClient> requestStreams = new ConcurrentHashMap<>();
     private final ConcurrentHashMap<String, SseClient> clientsByPrefix = new ConcurrentHashMap<>();
     private final AtomicReference<SseClient> lastGeneral = new AtomicReference<>();
-    private final AtomicReference<String> sessionId = new AtomicReference<>();
-    private final AtomicReference<String> lastSessionId = new AtomicReference<>();
-    private final AtomicReference<String> sessionOwner = new AtomicReference<>();
-    private final AtomicReference<Principal> sessionPrincipal = new AtomicReference<>();
-    private static final SecureRandom RANDOM = new SecureRandom();
-    private volatile String protocolVersion;
+    private final SessionManager sessions = new SessionManager(COMPATIBILITY_VERSION);
     private final ConcurrentHashMap<String, BlockingQueue<JsonObject>> responseQueues = new ConcurrentHashMap<>();
 
     private void unauthorized(HttpServletResponse resp) throws IOException {
@@ -113,9 +101,6 @@ public final class StreamableHttpTransport implements Transport {
         } else {
             this.authorizationServers = java.util.List.copyOf(authorizationServers);
         }
-        // Until initialization negotiates a version, assume the prior revision
-        // as the default when no MCP-Protocol-Version header is present.
-        this.protocolVersion = COMPATIBILITY_VERSION;
     }
 
     public StreamableHttpTransport(int port, OriginValidator validator, AuthorizationManager auth) throws Exception {
@@ -254,18 +239,6 @@ public final class StreamableHttpTransport implements Transport {
         return true;
     }
 
-    private boolean sanitizeHeaders(String sessionHeader, String versionHeader, HttpServletResponse resp) throws IOException {
-        if (sessionHeader != null && !InputSanitizer.isVisibleAscii(sessionHeader)) {
-            resp.sendError(HttpServletResponse.SC_BAD_REQUEST);
-            return false;
-        }
-        if (versionHeader != null && !InputSanitizer.isVisibleAscii(versionHeader)) {
-            resp.sendError(HttpServletResponse.SC_BAD_REQUEST);
-            return false;
-        }
-        return true;
-    }
-
     private boolean validateAccept(HttpServletRequest req, HttpServletResponse resp, boolean post) throws IOException {
         String accept = req.getHeader("Accept");
         if (accept == null) {
@@ -291,70 +264,11 @@ public final class StreamableHttpTransport implements Transport {
                                     HttpServletResponse resp,
                                     Principal principal,
                                     boolean initializing) throws IOException {
-        String session = sessionId.get();
-        String last = lastSessionId.get();
-        String header = req.getHeader(TransportHeaders.SESSION_ID);
-        String version = req.getHeader(PROTOCOL_HEADER);
-        if (!sanitizeHeaders(header, version, resp)) return false;
-        return checkSession(req, resp, principal, initializing, session, last, header, version);
-    }
-
-    private boolean checkSession(HttpServletRequest req,
-                                 HttpServletResponse resp,
-                                 Principal principal,
-                                 boolean initializing,
-                                 String session,
-                                 String last,
-                                 String header,
-                                 String version) throws IOException {
-        if (session == null && initializing) {
-            byte[] bytes = new byte[32];
-            RANDOM.nextBytes(bytes);
-            session = Base64Util.encodeUrl(bytes);
-            sessionId.set(session);
-            sessionOwner.set(req.getRemoteAddr());
-            sessionPrincipal.set(principal);
-            lastSessionId.set(null);
-            resp.setHeader(TransportHeaders.SESSION_ID, session);
-            return true;
-        }
-        if (session == null) {
-            if (header != null && header.equals(last)) {
-                resp.sendError(HttpServletResponse.SC_NOT_FOUND);
-            } else {
-                resp.sendError(HttpServletResponse.SC_BAD_REQUEST);
-            }
-            return false;
-        }
-        if (header == null) {
-            resp.sendError(HttpServletResponse.SC_BAD_REQUEST);
-            return false;
-        }
-        if (!session.equals(header) || !req.getRemoteAddr().equals(sessionOwner.get())) {
-            resp.sendError(HttpServletResponse.SC_NOT_FOUND);
-            return false;
-        }
-        if (authManager != null && sessionPrincipal.get() != null && !sessionPrincipal.get().id().equals(principal.id())) {
-            resp.sendError(HttpServletResponse.SC_FORBIDDEN);
-            return false;
-        }
-        if (!initializing && (version == null || !version.equals(protocolVersion))) {
-            resp.sendError(HttpServletResponse.SC_BAD_REQUEST);
-            return false;
-        }
-        return true;
+        return sessions.validate(req, resp, principal, initializing);
     }
 
     private void terminateSession(boolean recordId) {
-        if (recordId) {
-            lastSessionId.set(sessionId.get());
-        } else {
-            lastSessionId.set(null);
-        }
-        sessionId.set(null);
-        sessionOwner.set(null);
-        sessionPrincipal.set(null);
-        protocolVersion = COMPATIBILITY_VERSION;
+        sessions.terminate(recordId);
         generalClients.forEach(SseClient::close);
         generalClients.clear();
         lastGeneral.set(null);
@@ -420,12 +334,12 @@ public final class StreamableHttpTransport implements Transport {
                     if (response.containsKey("result")) {
                         JsonObject result = response.getJsonObject("result");
                         if (result.containsKey("protocolVersion")) {
-                            protocolVersion = result.getString("protocolVersion");
+                            sessions.protocolVersion(result.getString("protocolVersion"));
                         }
                     }
                     resp.setContentType("application/json");
                     resp.setCharacterEncoding("UTF-8");
-                    resp.setHeader(PROTOCOL_HEADER, protocolVersion);
+                    resp.setHeader(PROTOCOL_HEADER, sessions.protocolVersion());
                     resp.getWriter().write(response.toString());
                 } catch (InterruptedException e) {
                     Thread.currentThread().interrupt();
@@ -437,7 +351,7 @@ public final class StreamableHttpTransport implements Transport {
                 resp.setStatus(HttpServletResponse.SC_OK);
                 resp.setContentType("text/event-stream;charset=UTF-8");
                 resp.setHeader("Cache-Control", "no-cache");
-                resp.setHeader(PROTOCOL_HEADER, protocolVersion);
+                resp.setHeader(PROTOCOL_HEADER, sessions.protocolVersion());
                 resp.flushBuffer();
                 AsyncContext ac = req.startAsync();
                 ac.setTimeout(0);
@@ -466,7 +380,7 @@ public final class StreamableHttpTransport implements Transport {
             resp.setStatus(HttpServletResponse.SC_OK);
             resp.setContentType("text/event-stream;charset=UTF-8");
             resp.setHeader("Cache-Control", "no-cache");
-            resp.setHeader(PROTOCOL_HEADER, protocolVersion);
+            resp.setHeader(PROTOCOL_HEADER, sessions.protocolVersion());
             resp.flushBuffer();
             AsyncContext ac = req.startAsync();
             ac.setTimeout(0);
@@ -521,80 +435,6 @@ public final class StreamableHttpTransport implements Transport {
             resp.setCharacterEncoding("UTF-8");
             resp.getWriter().write(body.toString());
         }
-    }
-
-    private static class SseClient implements AutoCloseable {
-        private static final int HISTORY_LIMIT = 100;
-
-        private AsyncContext context;
-        private PrintWriter out;
-        private final String prefix;
-        private final Deque<SseEvent> history = new ArrayDeque<>();
-        private final AtomicLong nextId = new AtomicLong(1);
-        private volatile boolean closed = false;
-
-        SseClient(AsyncContext context) throws IOException {
-            byte[] bytes = new byte[8];
-            RANDOM.nextBytes(bytes);
-            this.prefix = Base64Util.encodeUrl(bytes);
-            attach(context, 0);
-        }
-
-        void attach(AsyncContext ctx, long lastId) throws IOException {
-            this.context = ctx;
-            this.out = ctx.getResponse().getWriter();
-            this.closed = false;
-            sendHistory(lastId);
-        }
-
-        boolean isActive() {
-            return !closed && context != null;
-        }
-
-        void send(JsonObject msg) {
-            long id = nextId.getAndIncrement();
-            history.addLast(new SseEvent(id, msg));
-            while (history.size() > HISTORY_LIMIT) history.removeFirst();
-            if (closed || context == null) return;
-            try {
-                out.write("id: " + prefix + '-' + id + "\n");
-                out.write("data: " + msg.toString() + "\n\n");
-                out.flush();
-            } catch (Exception e) {
-                System.err.println("SSE send failed: " + e.getMessage());
-                closed = true;
-            }
-        }
-
-        private void sendHistory(long lastId) throws IOException {
-            if (context == null) return;
-            for (SseEvent ev : history) {
-                if (ev.id > lastId) {
-                    out.write("id: " + prefix + '-' + ev.id + "\n");
-                    out.write("data: " + ev.msg.toString() + "\n\n");
-                }
-            }
-            out.flush();
-        }
-
-        @Override
-        public void close() {
-            if (closed) return;
-            closed = true;
-            try {
-                if (context != null && !context.hasOriginalRequestAndResponse()) {
-                    context.complete();
-                }
-            } catch (Exception e) {
-                System.err.println("SSE close failed: " + e.getMessage());
-            } finally {
-                context = null;
-                out = null;
-            }
-        }
-    }
-
-    private record SseEvent(long id, JsonObject msg) {
     }
 
 }
