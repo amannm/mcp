@@ -21,7 +21,6 @@ public final class ServerCommand {
     public static CommandSpec createCommandSpec() {
         CommandSpec spec = CommandSpec.create()
                 .name("server")
-                .mixinStandardHelpOptions(true)
                 .addOption(OptionSpec.builder("--http")
                         .type(Integer.class)
                         .description("HTTP port")
@@ -56,7 +55,7 @@ public final class ServerCommand {
                         .type(boolean.class)
                         .description("Disable auth for testing")
                         .build());
-        
+        spec.usageMessage().description("Run MCP server");
         return spec;
     }
     

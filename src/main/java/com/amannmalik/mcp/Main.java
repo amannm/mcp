@@ -10,8 +10,7 @@ import picocli.CommandLine.UnmatchedArgumentException;
 public final class Main {
     public static void main(String[] args) {
         CommandSpec mainSpec = CommandSpec.create()
-                .name("mcp")
-                .mixinStandardHelpOptions(true);
+                .name("mcp");
 
         CommandLine commandLine = new CommandLine(mainSpec);
         commandLine.addSubcommand("server", ServerCommand.createCommandSpec());

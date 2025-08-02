@@ -23,7 +23,6 @@ public final class HostCommand {
     public static CommandSpec createCommandSpec() {
         CommandSpec spec = CommandSpec.create()
                 .name("host")
-                .mixinStandardHelpOptions(true)
                 .addOption(OptionSpec.builder("-v", "--verbose")
                         .type(boolean.class)
                         .description("Verbose logging")

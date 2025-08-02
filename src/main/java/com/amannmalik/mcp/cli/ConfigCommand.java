@@ -10,7 +10,6 @@ public final class ConfigCommand {
     public static CommandSpec createCommandSpec() {
         CommandSpec spec = CommandSpec.create()
                 .name("config")
-                .mixinStandardHelpOptions(true)
                 .addOption(OptionSpec.builder("--reload")
                         .type(boolean.class)
                         .description("Reload configuration")

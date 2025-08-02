@@ -23,7 +23,6 @@ public final class ClientCommand {
     public static CommandSpec createCommandSpec() {
         CommandSpec spec = CommandSpec.create()
                 .name("client")
-                .mixinStandardHelpOptions(true)
                 .addOption(OptionSpec.builder("--command")
                         .type(String.class)
                         .description("Server command for stdio")
