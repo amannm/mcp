@@ -403,7 +403,6 @@ public final class McpConformanceSteps {
             case "roots_listed" -> {
                 int c = result.getInt("count");
                 assertTrue(c >= Integer.parseInt(expected));
-
             }
             case "set_log_level", "subscribe_resource", "unsubscribe_resource" -> assertTrue(true);
         }

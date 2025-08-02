@@ -65,7 +65,7 @@ Feature: MCP protocol conformance
       | transport |
       | stdio     |
 
-  Scenario Outline: Resource metadata conforms to specification
+  Scenario Outline: MCP Resource metadata conforms to specification
     Given a running MCP server using <transport> transport
     Then capabilities should be advertised and ping succeeds
     When testing core functionality
