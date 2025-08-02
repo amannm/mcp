@@ -1,5 +1,6 @@
 package com.amannmalik.mcp.prompts;
 
+import com.amannmalik.mcp.util.ListChangeSubscription;
 import com.amannmalik.mcp.util.Pagination;
 
 import java.util.Map;
@@ -9,7 +10,7 @@ public interface PromptProvider {
 
     PromptInstance get(String name, Map<String, String> arguments);
 
-    default PromptsSubscription subscribe(PromptsListener listener) {
+    default ListChangeSubscription subscribe(PromptsListener listener) {
         return () -> {
         };
     }

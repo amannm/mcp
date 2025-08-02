@@ -1,5 +1,6 @@
 package com.amannmalik.mcp.server.tools;
 
+import com.amannmalik.mcp.util.ListChangeSubscription;
 import com.amannmalik.mcp.util.ListChangeSupport;
 import com.amannmalik.mcp.util.Pagination;
 import com.amannmalik.mcp.validation.SchemaValidator;
@@ -60,9 +61,8 @@ public final class InMemoryToolProvider implements ToolProvider {
     }
 
     @Override
-    public ToolListSubscription subscribeList(ToolListListener listener) {
-        var sub = listChangeSupport.subscribe(listener);
-        return sub::close;
+    public ListChangeSubscription subscribeList(ToolListListener listener) {
+        return listChangeSupport.subscribe(listener);
     }
 
     @Override

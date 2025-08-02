@@ -4,7 +4,7 @@ import com.amannmalik.mcp.client.roots.ListRootsRequest;
 import com.amannmalik.mcp.client.roots.Root;
 import com.amannmalik.mcp.client.roots.RootsCodec;
 import com.amannmalik.mcp.client.roots.RootsListener;
-import com.amannmalik.mcp.client.roots.RootsSubscription;
+import com.amannmalik.mcp.util.ListChangeSubscription;
 import com.amannmalik.mcp.jsonrpc.JsonRpcError;
 import com.amannmalik.mcp.jsonrpc.JsonRpcMessage;
 import com.amannmalik.mcp.jsonrpc.JsonRpcResponse;
@@ -35,7 +35,7 @@ final class RootsManager {
         return List.copyOf(fetched);
     }
 
-    RootsSubscription subscribe(RootsListener listener) {
+    ListChangeSubscription subscribe(RootsListener listener) {
         listeners.add(listener);
         return () -> listeners.remove(listener);
     }
