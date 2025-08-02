@@ -275,6 +275,10 @@ public final class McpClient implements AutoCloseable {
         return connected;
     }
 
+    public Set<ClientCapability> capabilities() {
+        return Set.copyOf(capabilities);
+    }
+
     public String context() {
         return instructions == null ? "" : instructions;
     }

@@ -3,6 +3,7 @@ package com.amannmalik.mcp.security;
 import com.amannmalik.mcp.auth.Principal;
 import com.amannmalik.mcp.client.McpClient;
 import com.amannmalik.mcp.jsonrpc.*;
+import com.amannmalik.mcp.lifecycle.ClientCapability;
 import com.amannmalik.mcp.lifecycle.ServerCapability;
 import com.amannmalik.mcp.prompts.Role;
 import com.amannmalik.mcp.server.tools.*;
@@ -25,7 +26,7 @@ public final class HostProcess implements AutoCloseable {
     private final PrivacyBoundaryEnforcer privacyBoundary;
     private final SamplingAccessController samplingAccess;
 
-    private static Optional<ServerCapability> capabilityForMethod(String method) {
+    private static Optional<ServerCapability> serverCapabilityForMethod(String method) {
         if (method.startsWith("tools/")) return Optional.of(ServerCapability.TOOLS);
         if (method.startsWith("resources/")) return Optional.of(ServerCapability.RESOURCES);
         if (method.startsWith("prompts/")) return Optional.of(ServerCapability.PROMPTS);
@@ -34,9 +35,22 @@ public final class HostProcess implements AutoCloseable {
         return Optional.empty();
     }
 
+    private static Optional<ClientCapability> clientCapabilityForMethod(String method) {
+        if (method.startsWith("roots/")) return Optional.of(ClientCapability.ROOTS);
+        if (method.startsWith("sampling/")) return Optional.of(ClientCapability.SAMPLING);
+        if (method.startsWith("elicitation/")) return Optional.of(ClientCapability.ELICITATION);
+        return Optional.empty();
+    }
+
     private static void requireCapability(McpClient client, ServerCapability cap) {
         if (!client.serverCapabilities().contains(cap)) {
             throw new IllegalStateException("Server capability not supported: " + cap);
+        }
+    }
+
+    private static void requireCapability(McpClient client, ClientCapability cap) {
+        if (!client.capabilities().contains(cap)) {
+            throw new IllegalStateException("Client capability not supported: " + cap);
         }
     }
 
@@ -153,6 +167,7 @@ public final class HostProcess implements AutoCloseable {
         McpClient client = clients.get(clientId);
         if (client == null) throw new IllegalArgumentException("Unknown client: " + clientId);
         if (!client.connected()) throw new IllegalStateException("Client not connected: " + clientId);
+        requireCapability(client, ClientCapability.SAMPLING);
         consents.requireConsent(principal, "sampling");
         samplingAccess.requireAllowed(principal);
         JsonRpcMessage resp = client.request(RequestMethod.SAMPLING_CREATE_MESSAGE, params);
@@ -165,7 +180,8 @@ public final class HostProcess implements AutoCloseable {
         McpClient client = clients.get(id);
         if (client == null) throw new IllegalArgumentException("Unknown client: " + id);
         if (!client.connected()) throw new IllegalStateException("Client not connected: " + id);
-        capabilityForMethod(method).ifPresent(it -> requireCapability(client, it));
+        serverCapabilityForMethod(method).ifPresent(it -> requireCapability(client, it));
+        clientCapabilityForMethod(method).ifPresent(it -> requireCapability(client, it));
         return client.request(method, params);
     }
 
@@ -173,7 +189,8 @@ public final class HostProcess implements AutoCloseable {
         McpClient client = clients.get(id);
         if (client == null) throw new IllegalArgumentException("Unknown client: " + id);
         if (!client.connected()) throw new IllegalStateException("Client not connected: " + id);
-        capabilityForMethod(method).ifPresent(it -> requireCapability(client, it));
+        serverCapabilityForMethod(method).ifPresent(it -> requireCapability(client, it));
+        clientCapabilityForMethod(method).ifPresent(it -> requireCapability(client, it));
 
         client.notify(method, params);
     }
