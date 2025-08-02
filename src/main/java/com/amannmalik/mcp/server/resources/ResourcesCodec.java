@@ -5,9 +5,7 @@ import com.amannmalik.mcp.annotations.AnnotationsCodec;
 import com.amannmalik.mcp.util.*;
 import jakarta.json.*;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 public final class ResourcesCodec {
     private ResourcesCodec() {
