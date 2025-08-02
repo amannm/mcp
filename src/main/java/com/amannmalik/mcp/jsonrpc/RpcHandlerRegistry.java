@@ -4,7 +4,6 @@ import com.amannmalik.mcp.util.JsonRpcRequestProcessor;
 import com.amannmalik.mcp.wire.NotificationMethod;
 import com.amannmalik.mcp.wire.RequestMethod;
 
-import java.io.IOException;
 import java.util.*;
 
 public final class RpcHandlerRegistry {
@@ -24,7 +23,7 @@ public final class RpcHandlerRegistry {
         notificationHandlers.put(method, handler);
     }
 
-    public Optional<JsonRpcMessage> handle(JsonRpcRequest req, boolean cancellable) throws IOException {
+    public Optional<JsonRpcMessage> handle(JsonRpcRequest req, boolean cancellable) {
         return processor.process(req, cancellable, r -> {
             var method = RequestMethod.from(r.method());
             if (method.isEmpty()) {
@@ -38,7 +37,7 @@ public final class RpcHandlerRegistry {
         });
     }
 
-    public void handle(JsonRpcNotification note) throws IOException {
+    public void handle(JsonRpcNotification note) {
         var method = NotificationMethod.from(note.method());
         if (method.isEmpty()) return;
         var handler = notificationHandlers.get(method.get());
@@ -52,6 +51,6 @@ public final class RpcHandlerRegistry {
 
     @FunctionalInterface
     public interface NotificationHandler {
-        void handle(JsonRpcNotification notification) throws IOException;
+        void handle(JsonRpcNotification notification);
     }
 }

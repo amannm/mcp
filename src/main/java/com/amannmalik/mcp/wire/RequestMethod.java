@@ -2,6 +2,7 @@ package com.amannmalik.mcp.wire;
 
 import com.amannmalik.mcp.lifecycle.ServerCapability;
 
+import java.util.EnumSet;
 import java.util.Optional;
 
 public enum RequestMethod implements WireMethod {
@@ -23,16 +24,16 @@ public enum RequestMethod implements WireMethod {
     ELICITATION_CREATE("elicitation/create");
 
     private final String method;
-    private final Optional<ServerCapability> capability;
+    private final EnumSet<ServerCapability> capabilities;
 
     RequestMethod(String method) {
         this.method = method;
-        this.capability = Optional.empty();
+        this.capabilities = EnumSet.noneOf(ServerCapability.class);
     }
 
     RequestMethod(String method, ServerCapability capability) {
         this.method = method;
-        this.capability = Optional.of(capability);
+        this.capabilities = EnumSet.of(capability);
     }
 
     public String method() {
@@ -44,6 +45,6 @@ public enum RequestMethod implements WireMethod {
     }
 
     public Optional<ServerCapability> requiredCapability() {
-        return capability;
+        return capabilities.stream().findFirst();
     }
 }

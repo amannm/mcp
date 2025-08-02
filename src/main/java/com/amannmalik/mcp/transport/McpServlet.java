@@ -5,7 +5,6 @@ import com.amannmalik.mcp.wire.RequestMethod;
 import jakarta.json.*;
 import jakarta.json.stream.JsonParsingException;
 import jakarta.servlet.AsyncContext;
-import jakarta.servlet.ServletException;
 import jakarta.servlet.http.*;
 
 import java.io.IOException;
@@ -19,7 +18,7 @@ final class McpServlet extends HttpServlet {
     }
 
     @Override
-    protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+    protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws IOException {
         Principal principal = transport.authorize(req, resp);
         if (principal == null && transport.authManager != null) return;
         if (!transport.verifyOrigin(req, resp)) return;

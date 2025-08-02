@@ -89,27 +89,25 @@ public final class JwtTokenValidator implements TokenValidator {
     }
 
     private void validateAudience(JsonObject payload) throws AuthorizationException {
-        if (!matches(payload, "aud")) throw new AuthorizationException("audience mismatch");
+        if (mismatch(payload, "aud")) throw new AuthorizationException("audience mismatch");
     }
 
     private void validateResource(JsonObject payload) throws AuthorizationException {
-        if (payload.containsKey("resource") && !matches(payload, "resource")) {
+        if (payload.containsKey("resource") && mismatch(payload, "resource")) {
             throw new AuthorizationException("resource mismatch");
         }
     }
 
-    private boolean matches(JsonObject payload, String key) {
+    private boolean mismatch(JsonObject payload, String key) {
         JsonValue val = payload.get(key);
-        if (val == null) return false;
+        if (val == null) return true;
         return switch (val.getValueType()) {
-            case STRING -> expectedAudience.equals(((JsonString) val).getString());
-            case ARRAY -> {
-                for (JsonString js : payload.getJsonArray(key).getValuesAs(JsonString.class)) {
-                    if (expectedAudience.equals(js.getString())) yield true;
-                }
-                yield false;
-            }
-            default -> false;
+            case STRING -> !expectedAudience.equals(((JsonString) val).getString());
+            case ARRAY -> payload.getJsonArray(key)
+                    .getValuesAs(JsonString.class)
+                    .stream()
+                    .noneMatch(js -> expectedAudience.equals(js.getString()));
+            default -> true;
         };
     }
 
