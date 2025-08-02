@@ -198,6 +198,15 @@ public final class McpClient implements AutoCloseable {
 
     public synchronized void connect() throws IOException {
         if (connected) return;
+        JsonRpcMessage msg = sendInitialization();
+        handleInitialization(msg);
+        notifyInitialized();
+        connected = true;
+        subscribeRootsIfNeeded();
+        startBackgroundTasks();
+    }
+
+    private JsonRpcMessage sendInitialization() throws IOException {
         InitializeRequest init = new InitializeRequest(
                 Protocol.LATEST_VERSION,
                 new Capabilities(capabilities, Set.of(), Map.of(), Map.of()),
@@ -220,9 +229,8 @@ public final class McpClient implements AutoCloseable {
                 throw new RuntimeException(e);
             }
         });
-        JsonRpcMessage msg;
         try {
-            msg = future.get(Timeouts.DEFAULT_TIMEOUT_MS, TimeUnit.MILLISECONDS);
+            return future.get(Timeouts.DEFAULT_TIMEOUT_MS, TimeUnit.MILLISECONDS);
         } catch (TimeoutException e) {
             try {
                 transport.close();
@@ -237,17 +245,18 @@ public final class McpClient implements AutoCloseable {
             if (cause instanceof IOException io) throw io;
             throw new IOException(cause);
         }
+    }
+
+    private void handleInitialization(JsonRpcMessage msg) throws IOException {
         if (msg instanceof JsonRpcResponse resp) {
             InitializeResponse ir = LifecycleCodec.toInitializeResponse(resp.result());
             String serverVersion = ir.protocolVersion();
-            if (!Protocol.LATEST_VERSION.equals(serverVersion) &&
-                    !Protocol.PREVIOUS_VERSION.equals(serverVersion)) {
+            if (!Protocol.LATEST_VERSION.equals(serverVersion) && !Protocol.PREVIOUS_VERSION.equals(serverVersion)) {
                 try {
                     transport.close();
                 } catch (IOException ignore) {
                 }
-                throw new UnsupportedProtocolVersionException(serverVersion,
-                        Protocol.LATEST_VERSION + " or " + Protocol.PREVIOUS_VERSION);
+                throw new UnsupportedProtocolVersionException(serverVersion, Protocol.LATEST_VERSION + " or " + Protocol.PREVIOUS_VERSION);
             }
             if (transport instanceof StreamableHttpClientTransport http) {
                 http.setProtocolVersion(serverVersion);
@@ -266,22 +275,29 @@ public final class McpClient implements AutoCloseable {
         } else {
             throw new IOException("Unexpected message type: " + msg.getClass().getSimpleName());
         }
+    }
+
+    private void notifyInitialized() throws IOException {
         JsonRpcNotification note = new JsonRpcNotification(NotificationMethod.INITIALIZED.method(), null);
         transport.send(JsonRpcCodec.toJsonObject(note));
-        connected = true;
-        if (roots != null && capabilities.contains(ClientCapability.ROOTS) && rootsListChangedSupported) {
-            try {
-                rootsSubscription = roots.subscribe(() -> {
-                    try {
-                        notify(NotificationMethod.ROOTS_LIST_CHANGED,
-                                RootsCodec.toJsonObject(new RootsListChangedNotification()));
-                    } catch (IOException ignore) {
-                    }
-                });
-            } catch (Exception e) {
-                throw new IOException(e);
-            }
+    }
+
+    private void subscribeRootsIfNeeded() throws IOException {
+        if (roots == null || !capabilities.contains(ClientCapability.ROOTS) || !rootsListChangedSupported) return;
+        try {
+            rootsSubscription = roots.subscribe(() -> {
+                try {
+                    notify(NotificationMethod.ROOTS_LIST_CHANGED,
+                            RootsCodec.toJsonObject(new RootsListChangedNotification()));
+                } catch (IOException ignore) {
+                }
+            });
+        } catch (Exception e) {
+            throw new IOException(e);
         }
+    }
+
+    private void startBackgroundTasks() {
         reader = new Thread(this::readLoop);
         reader.setDaemon(true);
         reader.start();
