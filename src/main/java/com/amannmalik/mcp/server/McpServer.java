@@ -377,8 +377,8 @@ public final class McpServer implements AutoCloseable {
         }
 
         boolean cancellable = method.get() != RequestMethod.INITIALIZE;
-        JsonRpcMessage resp = requestProcessor.process(req, cancellable, handler::handle);
-        if (resp != null) send(resp);
+        var resp = requestProcessor.process(req, cancellable, handler::handle);
+        if (resp.isPresent()) send(resp.get());
     }
 
     private void onNotification(JsonRpcNotification note) throws IOException {

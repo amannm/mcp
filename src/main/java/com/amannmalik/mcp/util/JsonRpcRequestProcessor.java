@@ -46,10 +46,10 @@ public final class JsonRpcRequestProcessor {
 
     /**
      * Process a request using the provided handler. The handler is expected to
-     * perform the actual request logic and return a response or null. If the
-     * request was cancelled the return value will be null.
+     * perform the actual request logic and return a response. If the request
+     * was cancelled the result will be {@link Optional#empty()}.
      */
-    public JsonRpcMessage process(
+    public Optional<JsonRpcMessage> process(
             JsonRpcRequest req,
             boolean cancellable,
             Function<JsonRpcRequest, JsonRpcMessage> handler
@@ -59,7 +59,7 @@ public final class JsonRpcRequestProcessor {
             try {
                 idTracker.register(req.id());
             } catch (IllegalArgumentException e) {
-                return JsonRpcError.of(req.id(), JsonRpcErrorCode.INVALID_REQUEST, e.getMessage());
+                return Optional.of(JsonRpcError.of(req.id(), JsonRpcErrorCode.INVALID_REQUEST, e.getMessage()));
             }
         }
 
@@ -69,7 +69,7 @@ public final class JsonRpcRequestProcessor {
             token.ifPresent(t -> sendProgress(t, 0.0));
         } catch (IllegalArgumentException e) {
             cleanup(req.id());
-            return JsonRpcError.invalidParams(req.id(), e.getMessage());
+            return Optional.of(JsonRpcError.invalidParams(req.id(), e.getMessage()));
         }
 
         if (cancellable) cancellationTracker.register(req.id());
@@ -77,6 +77,7 @@ public final class JsonRpcRequestProcessor {
         JsonRpcMessage resp;
         try {
             resp = handler.apply(req);
+            if (resp == null) throw new IllegalStateException("handler returned null");
         } catch (IllegalArgumentException e) {
             resp = JsonRpcError.invalidParams(req.id(), e.getMessage());
         } catch (Exception e) {
@@ -86,7 +87,7 @@ public final class JsonRpcRequestProcessor {
         boolean cancelled = cancellable && cancellationTracker.isCancelled(req.id());
         if (!cancelled) token.ifPresent(t -> sendProgress(t, 1.0));
         cleanup(req.id());
-        return cancelled ? null : resp;
+        return cancelled ? Optional.empty() : Optional.of(resp);
     }
 
     private void cleanup(RequestId id) {

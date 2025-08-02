@@ -530,18 +530,18 @@ public final class McpClient implements AutoCloseable {
                     if (f != null) f.complete(err);
                 }
                 case JsonRpcRequest req -> {
-                    JsonRpcMessage resp;
+                    Optional<JsonRpcMessage> resp;
                     try {
                         resp = handleRequest(req);
                     } catch (IOException e) {
-                        resp = JsonRpcError.of(req.id(), JsonRpcErrorCode.INTERNAL_ERROR, e.getMessage());
+                        resp = Optional.of(JsonRpcError.of(req.id(), JsonRpcErrorCode.INTERNAL_ERROR, e.getMessage()));
                     }
-                    if (resp != null) {
+                    resp.ifPresent(r -> {
                         try {
-                            send(resp);
+                            send(r);
                         } catch (IOException ignore) {
                         }
-                    }
+                    });
                 }
                 case JsonRpcNotification note -> handleNotification(note);
                 default -> {
@@ -550,7 +550,7 @@ public final class McpClient implements AutoCloseable {
         }
     }
 
-    private JsonRpcMessage handleRequest(JsonRpcRequest req) throws IOException {
+    private Optional<JsonRpcMessage> handleRequest(JsonRpcRequest req) throws IOException {
         return requestProcessor.process(req, true, r -> {
             var method = RequestMethod.from(r.method());
             if (method.isEmpty()) {
