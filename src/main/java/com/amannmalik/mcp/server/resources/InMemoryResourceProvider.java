@@ -2,9 +2,7 @@ package com.amannmalik.mcp.server.resources;
 
 import com.amannmalik.mcp.util.*;
 
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 
