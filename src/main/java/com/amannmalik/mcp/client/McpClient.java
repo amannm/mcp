@@ -62,6 +62,7 @@ import com.amannmalik.mcp.util.ProgressManager;
 import com.amannmalik.mcp.util.ProgressNotification;
 import com.amannmalik.mcp.util.ProgressToken;
 import com.amannmalik.mcp.util.ProgressUtil;
+import com.amannmalik.mcp.util.JsonRpcRequestProcessor;
 import com.amannmalik.mcp.util.Timeouts;
 import com.amannmalik.mcp.validation.SchemaValidator;
 import com.amannmalik.mcp.wire.NotificationMethod;
@@ -104,6 +105,7 @@ public final class McpClient implements AutoCloseable {
     private final Map<RequestId, CompletableFuture<JsonRpcMessage>> pending = new ConcurrentHashMap<>();
     private final CancellationTracker cancellationTracker = new CancellationTracker();
     private final ProgressManager progressManager = new ProgressManager(new RateLimiter(20, 1000));
+    private final JsonRpcRequestProcessor requestProcessor;
     private Thread reader;
     private PingScheduler pinger;
     private long pingInterval;
@@ -190,6 +192,11 @@ public final class McpClient implements AutoCloseable {
         registerNotificationHandler(NotificationMethod.RESOURCES_LIST_CHANGED, n -> resourceListListener.listChanged());
         registerNotificationHandler(NotificationMethod.TOOLS_LIST_CHANGED, this::handleToolsListChanged);
         registerNotificationHandler(NotificationMethod.PROMPTS_LIST_CHANGED, n -> promptsListener.listChanged());
+
+        this.requestProcessor = new JsonRpcRequestProcessor(
+                progressManager,
+                cancellationTracker,
+                n -> notify(n.method(), n.params()));
     }
 
     public ClientInfo info() {
@@ -198,6 +205,15 @@ public final class McpClient implements AutoCloseable {
 
     public synchronized void connect() throws IOException {
         if (connected) return;
+        JsonRpcMessage msg = sendInitialization();
+        handleInitialization(msg);
+        notifyInitialized();
+        connected = true;
+        subscribeRootsIfNeeded();
+        startBackgroundTasks();
+    }
+
+    private JsonRpcMessage sendInitialization() throws IOException {
         InitializeRequest init = new InitializeRequest(
                 Protocol.LATEST_VERSION,
                 new Capabilities(capabilities, Set.of(), Map.of(), Map.of()),
@@ -220,9 +236,8 @@ public final class McpClient implements AutoCloseable {
                 throw new RuntimeException(e);
             }
         });
-        JsonRpcMessage msg;
         try {
-            msg = future.get(Timeouts.DEFAULT_TIMEOUT_MS, TimeUnit.MILLISECONDS);
+            return future.get(Timeouts.DEFAULT_TIMEOUT_MS, TimeUnit.MILLISECONDS);
         } catch (TimeoutException e) {
             try {
                 transport.close();
@@ -237,17 +252,18 @@ public final class McpClient implements AutoCloseable {
             if (cause instanceof IOException io) throw io;
             throw new IOException(cause);
         }
+    }
+
+    private void handleInitialization(JsonRpcMessage msg) throws IOException {
         if (msg instanceof JsonRpcResponse resp) {
             InitializeResponse ir = LifecycleCodec.toInitializeResponse(resp.result());
             String serverVersion = ir.protocolVersion();
-            if (!Protocol.LATEST_VERSION.equals(serverVersion) &&
-                    !Protocol.PREVIOUS_VERSION.equals(serverVersion)) {
+            if (!Protocol.LATEST_VERSION.equals(serverVersion) && !Protocol.PREVIOUS_VERSION.equals(serverVersion)) {
                 try {
                     transport.close();
                 } catch (IOException ignore) {
                 }
-                throw new UnsupportedProtocolVersionException(serverVersion,
-                        Protocol.LATEST_VERSION + " or " + Protocol.PREVIOUS_VERSION);
+                throw new UnsupportedProtocolVersionException(serverVersion, Protocol.LATEST_VERSION + " or " + Protocol.PREVIOUS_VERSION);
             }
             if (transport instanceof StreamableHttpClientTransport http) {
                 http.setProtocolVersion(serverVersion);
@@ -266,22 +282,29 @@ public final class McpClient implements AutoCloseable {
         } else {
             throw new IOException("Unexpected message type: " + msg.getClass().getSimpleName());
         }
+    }
+
+    private void notifyInitialized() throws IOException {
         JsonRpcNotification note = new JsonRpcNotification(NotificationMethod.INITIALIZED.method(), null);
         transport.send(JsonRpcCodec.toJsonObject(note));
-        connected = true;
-        if (roots != null && capabilities.contains(ClientCapability.ROOTS) && rootsListChangedSupported) {
-            try {
-                rootsSubscription = roots.subscribe(() -> {
-                    try {
-                        notify(NotificationMethod.ROOTS_LIST_CHANGED,
-                                RootsCodec.toJsonObject(new RootsListChangedNotification()));
-                    } catch (IOException ignore) {
-                    }
-                });
-            } catch (Exception e) {
-                throw new IOException(e);
-            }
+    }
+
+    private void subscribeRootsIfNeeded() throws IOException {
+        if (roots == null || !capabilities.contains(ClientCapability.ROOTS) || !rootsListChangedSupported) return;
+        try {
+            rootsSubscription = roots.subscribe(() -> {
+                try {
+                    notify(NotificationMethod.ROOTS_LIST_CHANGED,
+                            RootsCodec.toJsonObject(new RootsListChangedNotification()));
+                } catch (IOException ignore) {
+                }
+            });
+        } catch (Exception e) {
+            throw new IOException(e);
         }
+    }
+
+    private void startBackgroundTasks() {
         reader = new Thread(this::readLoop);
         reader.setDaemon(true);
         reader.start();
@@ -507,7 +530,12 @@ public final class McpClient implements AutoCloseable {
                     if (f != null) f.complete(err);
                 }
                 case JsonRpcRequest req -> {
-                    JsonRpcMessage resp = handleRequest(req);
+                    JsonRpcMessage resp;
+                    try {
+                        resp = handleRequest(req);
+                    } catch (IOException e) {
+                        resp = JsonRpcError.of(req.id(), JsonRpcErrorCode.INTERNAL_ERROR, e.getMessage());
+                    }
                     if (resp != null) {
                         try {
                             send(resp);
@@ -522,52 +550,20 @@ public final class McpClient implements AutoCloseable {
         }
     }
 
-    private JsonRpcMessage handleRequest(JsonRpcRequest req) {
-        cancellationTracker.register(req.id());
-        Optional<ProgressToken> token;
-        try {
-            token = progressManager.register(req.id(), req.params());
-            token.ifPresent(t -> {
-                try {
-                    progressManager.send(new ProgressNotification(t, 0.0, 1.0, null), n -> notify(n.method(), n.params()));
-                } catch (IOException ignore) {
-                }
-            });
-        } catch (IllegalArgumentException e) {
-            cancellationTracker.release(req.id());
-            return JsonRpcError.of(req.id(), JsonRpcErrorCode.INVALID_PARAMS, e.getMessage());
-        }
-
-        boolean cancelled;
-        JsonRpcMessage resp;
-        try {
-            var method = RequestMethod.from(req.method());
+    private JsonRpcMessage handleRequest(JsonRpcRequest req) throws IOException {
+        return requestProcessor.process(req, true, r -> {
+            var method = RequestMethod.from(r.method());
             if (method.isEmpty()) {
-                resp = JsonRpcError.of(req.id(), JsonRpcErrorCode.METHOD_NOT_FOUND,
-                        "Unknown method: " + req.method());
-            } else {
-                RequestHandler handler = requestHandlers.get(method.get());
-                if (handler == null) {
-                    resp = JsonRpcError.of(req.id(), JsonRpcErrorCode.METHOD_NOT_FOUND,
-                            "Unknown method: " + req.method());
-                } else {
-                    resp = handler.handle(req);
-                }
+                return JsonRpcError.of(r.id(), JsonRpcErrorCode.METHOD_NOT_FOUND,
+                        "Unknown method: " + r.method());
             }
-        } finally {
-            cancelled = cancellationTracker.isCancelled(req.id());
-            cancellationTracker.release(req.id());
-            if (!cancelled) {
-                token.ifPresent(t -> {
-                    try {
-                        progressManager.send(new ProgressNotification(t, 1.0, 1.0, null), n -> notify(n.method(), n.params()));
-                    } catch (IOException ignore) {
-                    }
-                });
+            RequestHandler handler = requestHandlers.get(method.get());
+            if (handler == null) {
+                return JsonRpcError.of(r.id(), JsonRpcErrorCode.METHOD_NOT_FOUND,
+                        "Unknown method: " + r.method());
             }
-            progressManager.release(req.id());
-        }
-        return cancelled ? null : resp;
+            return handler.handle(r);
+        });
     }
 
     private JsonRpcMessage handleCreateMessage(JsonRpcRequest req) {
@@ -646,10 +642,6 @@ public final class McpClient implements AutoCloseable {
 
     private void send(JsonRpcMessage msg) throws IOException {
         transport.send(JsonRpcCodec.toJsonObject(msg));
-    }
-
-    private void sendProgress(ProgressNotification note) throws IOException {
-        progressManager.send(note, n -> notify(n.method(), n.params()));
     }
 
     private void requireCapability(RequestMethod method) {

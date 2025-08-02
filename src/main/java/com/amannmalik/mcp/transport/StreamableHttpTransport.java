@@ -175,29 +175,7 @@ public final class StreamableHttpTransport implements Transport {
     @Override
     public void close() throws IOException {
         try {
-            generalClients.forEach(client -> {
-                try {
-                    client.close();
-                } catch (Exception ignore) {
-                }
-            });
-            generalClients.clear();
-            lastGeneral.set(null);
-            requestStreams.forEach((id, client) -> {
-                try {
-                    RequestId reqId = RequestId.parse(id);
-                    JsonRpcError err = JsonRpcError.of(
-                            reqId,
-                            JsonRpcErrorCode.INTERNAL_ERROR,
-                            "Transport closed");
-                    client.send(JsonRpcCodec.toJsonObject(err));
-                    client.close();
-                } catch (Exception ignore) {
-                }
-            });
-            requestStreams.clear();
-            clientsByPrefix.clear();
-
+            terminateSession(false);
             responseQueues.forEach((id, queue) -> {
                 RequestId reqId = RequestId.parse(id);
                 JsonRpcError err = JsonRpcError.of(
@@ -209,16 +187,6 @@ public final class StreamableHttpTransport implements Transport {
             responseQueues.clear();
 
             server.stop();
-            sessionId.set(null);
-            lastSessionId.set(null);
-            sessionOwner.set(null);
-            sessionPrincipal.set(null);
-            // With the server shut down there is no negotiated protocol
-            // version.  Reset to the default used when the version header is
-            // absent.
-            protocolVersion = COMPATIBILITY_VERSION;
-            closed = true;
-            incoming.offer(Json.createObjectBuilder().add("_close", true).build());
         } catch (Exception e) {
             throw new IOException(e);
         }
@@ -284,6 +252,27 @@ public final class StreamableHttpTransport implements Transport {
         return true;
     }
 
+    private boolean validateAccept(HttpServletRequest req, HttpServletResponse resp, boolean post) throws IOException {
+        String accept = req.getHeader("Accept");
+        if (accept == null) {
+            resp.sendError(HttpServletResponse.SC_NOT_ACCEPTABLE);
+            return false;
+        }
+        String norm = accept.toLowerCase(java.util.Locale.ROOT);
+        if (post) {
+            if (!(norm.contains("application/json") && norm.contains("text/event-stream"))) {
+                resp.sendError(HttpServletResponse.SC_NOT_ACCEPTABLE);
+                return false;
+            }
+        } else {
+            if (!norm.contains("text/event-stream")) {
+                resp.sendError(HttpServletResponse.SC_NOT_ACCEPTABLE);
+                return false;
+            }
+        }
+        return true;
+    }
+
     private boolean validateSession(HttpServletRequest req,
                                     HttpServletResponse resp,
                                     Principal principal,
@@ -342,22 +331,33 @@ public final class StreamableHttpTransport implements Transport {
         return true;
     }
 
+    private void terminateSession(boolean recordId) {
+        if (recordId) {
+            lastSessionId.set(sessionId.get());
+        } else {
+            lastSessionId.set(null);
+        }
+        sessionId.set(null);
+        sessionOwner.set(null);
+        sessionPrincipal.set(null);
+        protocolVersion = COMPATIBILITY_VERSION;
+        generalClients.forEach(SseClient::close);
+        generalClients.clear();
+        lastGeneral.set(null);
+        requestStreams.forEach((id, c) -> c.close());
+        requestStreams.clear();
+        clientsByPrefix.clear();
+        closed = true;
+        incoming.offer(Json.createObjectBuilder().add("_close", true).build());
+    }
+
     private class McpServlet extends HttpServlet {
         @Override
         protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
             Principal principal = authorize(req, resp);
             if (principal == null && authManager != null) return;
             if (!verifyOrigin(req, resp)) return;
-            String accept = req.getHeader("Accept");
-            if (accept == null) {
-                resp.sendError(HttpServletResponse.SC_NOT_ACCEPTABLE);
-                return;
-            }
-            String acceptNorm = accept.toLowerCase(java.util.Locale.ROOT);
-            if (!(acceptNorm.contains("application/json") && acceptNorm.contains("text/event-stream"))) {
-                resp.sendError(HttpServletResponse.SC_NOT_ACCEPTABLE);
-                return;
-            }
+            if (!validateAccept(req, resp, true)) return;
 
             JsonObject obj;
             try (JsonReader reader = Json.createReader(req.getInputStream())) {
@@ -447,16 +447,7 @@ public final class StreamableHttpTransport implements Transport {
             Principal principal = authorize(req, resp);
             if (principal == null && authManager != null) return;
             if (!verifyOrigin(req, resp)) return;
-            String accept = req.getHeader("Accept");
-            if (accept == null) {
-                resp.sendError(HttpServletResponse.SC_NOT_ACCEPTABLE);
-                return;
-            }
-            String acceptNorm = accept.toLowerCase(java.util.Locale.ROOT);
-            if (!acceptNorm.contains("text/event-stream")) {
-                resp.sendError(HttpServletResponse.SC_NOT_ACCEPTABLE);
-                return;
-            }
+            if (!validateAccept(req, resp, false)) return;
             if (!validateSession(req, resp, principal, false)) return;
             resp.setStatus(HttpServletResponse.SC_OK);
             resp.setContentType("text/event-stream;charset=UTF-8");
@@ -500,25 +491,8 @@ public final class StreamableHttpTransport implements Transport {
             Principal principal = authorize(req, resp);
             if (principal == null && authManager != null) return;
             if (!verifyOrigin(req, resp)) return;
-            String session = sessionId.get();
             if (!validateSession(req, resp, principal, false)) return;
-            lastSessionId.set(session);
-            sessionId.set(null);
-            sessionOwner.set(null);
-            sessionPrincipal.set(null);
-            // After the session ends the server no longer knows the negotiated
-            // protocol version.  Reset to the backwards compatible default so
-            // that a new session without a version header assumes the prior
-            // revision as required by the specification.
-            protocolVersion = COMPATIBILITY_VERSION;
-            generalClients.forEach(SseClient::close);
-            generalClients.clear();
-            lastGeneral.set(null);
-            requestStreams.forEach((id, c) -> c.close());
-            requestStreams.clear();
-            clientsByPrefix.clear();
-            closed = true;
-            incoming.offer(Json.createObjectBuilder().add("_close", true).build());
+            terminateSession(true);
             resp.setStatus(HttpServletResponse.SC_OK);
         }
     }

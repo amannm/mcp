@@ -1,6 +1,7 @@
 package com.amannmalik.mcp.server.completion;
 
 import com.amannmalik.mcp.validation.InputSanitizer;
+import com.amannmalik.mcp.util.StringMetrics;
 
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -51,7 +52,7 @@ public final class InMemoryCompletionProvider implements CompletionProvider {
 
         String prefix = request.argument().value();
         Set<String> unique = new LinkedHashSet<>(matches);
-        Comparator<String> cmp = Comparator.comparingInt((String v) -> similarity(prefix, v))
+        Comparator<String> cmp = Comparator.comparingInt((String v) -> StringMetrics.prefixDistance(prefix, v))
                 .thenComparing(String::compareTo);
         List<String> sorted = unique.stream()
                 .sorted(cmp)
@@ -62,29 +63,6 @@ public final class InMemoryCompletionProvider implements CompletionProvider {
         return new CompleteResult(new CompleteResult.Completion(sorted, total, hasMore), null);
     }
 
-    private static int similarity(String a, String b) {
-        int n = Math.min(a.length(), b.length());
-        return levenshtein(a.substring(0, n).toLowerCase(), b.substring(0, n).toLowerCase());
-    }
-
-    private static int levenshtein(String a, String b) {
-        int[] prev = new int[b.length() + 1];
-        for (int j = 0; j <= b.length(); j++) prev[j] = j;
-        for (int i = 1; i <= a.length(); i++) {
-            int[] curr = new int[b.length() + 1];
-            curr[0] = i;
-            char ca = a.charAt(i - 1);
-            for (int j = 1; j <= b.length(); j++) {
-                int cost = ca == b.charAt(j - 1) ? 0 : 1;
-                int ins = curr[j - 1] + 1;
-                int del = prev[j] + 1;
-                int sub = prev[j - 1] + cost;
-                curr[j] = Math.min(Math.min(ins, del), sub);
-            }
-            prev = curr;
-        }
-        return prev[b.length()];
-    }
 
     private static boolean refEquals(CompleteRequest.Ref a, CompleteRequest.Ref b) {
         if (a instanceof CompleteRequest.Ref.PromptRef(var aName, var _, var _) &&
