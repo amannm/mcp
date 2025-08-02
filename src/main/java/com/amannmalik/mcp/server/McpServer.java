@@ -31,6 +31,7 @@ import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.function.Supplier;
 
 public final class McpServer implements AutoCloseable {
     private final Transport transport;
@@ -373,6 +374,18 @@ public final class McpServer implements AutoCloseable {
         return invalidParams(req, e.getMessage());
     }
 
+    private <T> T valid(Supplier<T> s) {
+        try {
+            return s.get();
+        } catch (IllegalArgumentException e) {
+            throw new InvalidParams(e.getMessage());
+        }
+    }
+
+    private static final class InvalidParams extends RuntimeException {
+        InvalidParams(String message) { super(message); }
+    }
+
     private Optional<String> rateLimit(RateLimiter limiter, String key) {
         try {
             limiter.requireAllowance(key);
@@ -400,37 +413,27 @@ public final class McpServer implements AutoCloseable {
 
     private JsonRpcMessage listResources(JsonRpcRequest req) {
         requireServerCapability(ServerCapability.RESOURCES);
-        ListResourcesRequest lr = ResourcesCodec.toListResourcesRequest(req.params());
-        String cursor;
         try {
-            cursor = sanitizeCursor(lr.cursor());
-        } catch (IllegalArgumentException e) {
-            return invalidParams(req, e);
+            ListResourcesRequest lr = valid(() -> ResourcesCodec.toListResourcesRequest(req.params()));
+            String cursor = valid(() -> sanitizeCursor(lr.cursor()));
+            Pagination.Page<Resource> list = valid(() -> resources.list(cursor));
+            List<Resource> filtered = list.items().stream()
+                    .filter(r -> allowed(r.annotations()) && withinRoots(r.uri()))
+                    .toList();
+            ListResourcesResult result = new ListResourcesResult(filtered, list.nextCursor(), null);
+            return new JsonRpcResponse(req.id(), ResourcesCodec.toJsonObject(result));
+        } catch (InvalidParams e) {
+            return invalidParams(req, e.getMessage());
         }
-
-        Pagination.Page<Resource> list;
-        try {
-            list = resources.list(cursor);
-        } catch (IllegalArgumentException e) {
-            return invalidParams(req, e);
-        }
-
-        List<Resource> filteredResources = list.items().stream()
-                .filter(r -> allowed(r.annotations()) && withinRoots(r.uri()))
-                .toList();
-
-        ListResourcesResult result = new ListResourcesResult(filteredResources, list.nextCursor(), null);
-        JsonObject resultJson = ResourcesCodec.toJsonObject(result);
-        return new JsonRpcResponse(req.id(), resultJson);
     }
 
     private JsonRpcMessage readResource(JsonRpcRequest req) {
         requireServerCapability(ServerCapability.RESOURCES);
         ReadResourceRequest rrr;
         try {
-            rrr = ResourcesCodec.toReadResourceRequest(req.params());
-        } catch (IllegalArgumentException e) {
-            return invalidParams(req, e);
+            rrr = valid(() -> ResourcesCodec.toReadResourceRequest(req.params()));
+        } catch (InvalidParams e) {
+            return invalidParams(req, e.getMessage());
         }
         String uri = rrr.uri();
         if (!canAccessResource(uri)) {
@@ -447,43 +450,27 @@ public final class McpServer implements AutoCloseable {
 
     private JsonRpcMessage listTemplates(JsonRpcRequest req) {
         requireServerCapability(ServerCapability.RESOURCES);
-        ListResourceTemplatesRequest request;
         try {
-            request = ResourcesCodec.toListResourceTemplatesRequest(req.params());
-        } catch (IllegalArgumentException e) {
-            return invalidParams(req, e);
+            ListResourceTemplatesRequest request = valid(() -> ResourcesCodec.toListResourceTemplatesRequest(req.params()));
+            String cursor = valid(() -> sanitizeCursor(request.cursor()));
+            Pagination.Page<ResourceTemplate> page = valid(() -> resources.listTemplates(cursor));
+            List<ResourceTemplate> filtered = page.items().stream()
+                    .filter(t -> allowed(t.annotations()))
+                    .toList();
+            ListResourceTemplatesResult result = new ListResourceTemplatesResult(filtered, page.nextCursor(), null);
+            return new JsonRpcResponse(req.id(), ResourcesCodec.toJsonObject(result));
+        } catch (InvalidParams e) {
+            return invalidParams(req, e.getMessage());
         }
-
-        String cursor;
-        try {
-            cursor = sanitizeCursor(request.cursor());
-        } catch (IllegalArgumentException e) {
-            return invalidParams(req, e);
-        }
-
-        Pagination.Page<ResourceTemplate> page;
-        try {
-            page = resources.listTemplates(cursor);
-        } catch (IllegalArgumentException e) {
-            return invalidParams(req, e);
-        }
-
-        List<ResourceTemplate> filteredTemplates = page.items().stream()
-                .filter(t -> allowed(t.annotations()))
-                .toList();
-
-        ListResourceTemplatesResult result = new ListResourceTemplatesResult(filteredTemplates, page.nextCursor(), null);
-        JsonObject resultJson = ResourcesCodec.toJsonObject(result);
-        return new JsonRpcResponse(req.id(), resultJson);
     }
 
     private JsonRpcMessage subscribeResource(JsonRpcRequest req) {
         requireServerCapability(ServerCapability.RESOURCES);
         SubscribeRequest sr;
         try {
-            sr = ResourcesCodec.toSubscribeRequest(req.params());
-        } catch (IllegalArgumentException e) {
-            return invalidParams(req, e);
+            sr = valid(() -> ResourcesCodec.toSubscribeRequest(req.params()));
+        } catch (InvalidParams e) {
+            return invalidParams(req, e.getMessage());
         }
         String uri = sr.uri();
         if (!canAccessResource(uri)) {
@@ -516,9 +503,9 @@ public final class McpServer implements AutoCloseable {
         requireServerCapability(ServerCapability.RESOURCES);
         UnsubscribeRequest ur;
         try {
-            ur = ResourcesCodec.toUnsubscribeRequest(req.params());
-        } catch (IllegalArgumentException e) {
-            return invalidParams(req, e);
+            ur = valid(() -> ResourcesCodec.toUnsubscribeRequest(req.params()));
+        } catch (InvalidParams e) {
+            return invalidParams(req, e.getMessage());
         }
         String uri = ur.uri();
         if (!canAccessResource(uri)) {
@@ -531,21 +518,14 @@ public final class McpServer implements AutoCloseable {
 
     private JsonRpcMessage listTools(JsonRpcRequest req) {
         requireServerCapability(ServerCapability.TOOLS);
-        ListToolsRequest ltr = ToolCodec.toListToolsRequest(req.params());
-        String cursor;
         try {
-            cursor = sanitizeCursor(ltr.cursor());
-        } catch (IllegalArgumentException e) {
-            return invalidParams(req, e);
+            ListToolsRequest ltr = valid(() -> ToolCodec.toListToolsRequest(req.params()));
+            String cursor = valid(() -> sanitizeCursor(ltr.cursor()));
+            Pagination.Page<Tool> page = valid(() -> tools.list(cursor));
+            return new JsonRpcResponse(req.id(), ToolCodec.toJsonObject(page, null));
+        } catch (InvalidParams e) {
+            return invalidParams(req, e.getMessage());
         }
-        Pagination.Page<Tool> page;
-        try {
-            page = tools.list(cursor);
-        } catch (IllegalArgumentException e) {
-            return invalidParams(req, e);
-        }
-        JsonObject result = ToolCodec.toJsonObject(page, null);
-        return new JsonRpcResponse(req.id(), result);
     }
 
     private JsonRpcMessage callTool(JsonRpcRequest req) {
@@ -592,37 +572,24 @@ public final class McpServer implements AutoCloseable {
 
     private JsonRpcMessage listPrompts(JsonRpcRequest req) {
         requireServerCapability(ServerCapability.PROMPTS);
-        ListPromptsRequest lpr = PromptCodec.toListPromptsRequest(req.params());
-        String cursor;
         try {
-            cursor = sanitizeCursor(lpr.cursor());
-        } catch (IllegalArgumentException e) {
-            return invalidParams(req, e);
+            ListPromptsRequest lpr = valid(() -> PromptCodec.toListPromptsRequest(req.params()));
+            String cursor = valid(() -> sanitizeCursor(lpr.cursor()));
+            Pagination.Page<Prompt> page = valid(() -> prompts.list(cursor));
+            return new JsonRpcResponse(req.id(), PromptCodec.toJsonObject(page, null));
+        } catch (InvalidParams e) {
+            return invalidParams(req, e.getMessage());
         }
-        Pagination.Page<Prompt> page;
-        try {
-            page = prompts.list(cursor);
-        } catch (IllegalArgumentException e) {
-            return invalidParams(req, e);
-        }
-        JsonObject result = PromptCodec.toJsonObject(page, null);
-        return new JsonRpcResponse(req.id(), result);
     }
 
     private JsonRpcMessage getPrompt(JsonRpcRequest req) {
         requireServerCapability(ServerCapability.PROMPTS);
-        GetPromptRequest getRequest;
         try {
-            getRequest = PromptCodec.toGetPromptRequest(req.params());
-        } catch (IllegalArgumentException e) {
-            return invalidParams(req, e);
-        }
-        try {
-            PromptInstance inst = prompts.get(getRequest.name(), getRequest.arguments());
-            JsonObject result = PromptCodec.toJsonObject(inst);
-            return new JsonRpcResponse(req.id(), result);
-        } catch (IllegalArgumentException e) {
-            return invalidParams(req, e);
+            GetPromptRequest getRequest = valid(() -> PromptCodec.toGetPromptRequest(req.params()));
+            PromptInstance inst = valid(() -> prompts.get(getRequest.name(), getRequest.arguments()));
+            return new JsonRpcResponse(req.id(), PromptCodec.toJsonObject(inst));
+        } catch (InvalidParams e) {
+            return invalidParams(req, e.getMessage());
         }
     }
 
@@ -633,10 +600,10 @@ public final class McpServer implements AutoCloseable {
             return invalidParams(req, "Missing params");
         }
         try {
-            logLevel = LoggingCodec.toSetLevelRequest(params).level();
+            logLevel = valid(() -> LoggingCodec.toSetLevelRequest(params)).level();
             return new JsonRpcResponse(req.id(), JsonValue.EMPTY_JSON_OBJECT);
-        } catch (IllegalArgumentException e) {
-            return invalidParams(req, e);
+        } catch (InvalidParams e) {
+            return invalidParams(req, e.getMessage());
         }
     }
 
@@ -662,15 +629,15 @@ public final class McpServer implements AutoCloseable {
             return invalidParams(req, "Missing params");
         }
         try {
-            CompleteRequest request = CompletionCodec.toCompleteRequest(params);
+            CompleteRequest request = valid(() -> CompletionCodec.toCompleteRequest(params));
             Optional<String> limit = rateLimit(completionLimiter, request.ref().toString());
             if (limit.isPresent()) {
                 return JsonRpcError.of(req.id(), RATE_LIMIT_CODE, limit.get());
             }
-            CompleteResult result = completions.complete(request);
+            CompleteResult result = valid(() -> completions.complete(request));
             return new JsonRpcResponse(req.id(), CompletionCodec.toJsonObject(result));
-        } catch (IllegalArgumentException e) {
-            return invalidParams(req, e);
+        } catch (InvalidParams e) {
+            return invalidParams(req, e.getMessage());
         } catch (Exception e) {
             return JsonRpcError.of(req.id(), JsonRpcErrorCode.INTERNAL_ERROR, e.getMessage());
         }
