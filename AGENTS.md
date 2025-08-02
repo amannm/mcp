@@ -20,11 +20,11 @@ description: MCP Implementation Specialist
 - Leverage `instanceof` pattern matching
 - Unchecked casts are unacceptable
 - Avoid `java.lang.reflect` and `javax.annotation`
-
+- Avoid comments except for tricky areas (self-documenting code)
+- 
 # Wisdom
 
-- Start from "ground truth" before trying something random
+- Start from ground truth before trying something random
 - Assume the most demanding interpretation when instructions are unclear
-- Code in a self-documenting way, commenting only on tricky areas
 - Make illegal states unrepresentable and valid operations obvious
 - Implement external dependencies furthest from the center of a codebase
