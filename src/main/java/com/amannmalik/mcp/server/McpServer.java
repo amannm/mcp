@@ -526,25 +526,39 @@ public final class McpServer implements AutoCloseable {
         CompletableFuture<JsonRpcMessage> future = new CompletableFuture<>();
         pending.put(id, future);
         send(new JsonRpcRequest(id, method, params));
-        try {
-            return future.get(timeoutMillis, TimeUnit.MILLISECONDS);
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            throw new IOException(e);
-        } catch (ExecutionException e) {
-            Throwable cause = e.getCause();
-            if (cause instanceof IOException io) throw io;
-            throw new IOException(cause);
-        } catch (TimeoutException e) {
-            try {
-                send(new JsonRpcNotification(
-                        NotificationMethod.CANCELLED.method(),
-                        CancellationCodec.toJsonObject(new CancelledNotification(id, "timeout"))));
-            } catch (IOException ignore) {
+        long end = System.currentTimeMillis() + timeoutMillis;
+        while (true) {
+            if (future.isDone()) {
+                try {
+                    return future.get();
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                    pending.remove(id);
+                    throw new IOException(e);
+                } catch (ExecutionException e) {
+                    pending.remove(id);
+                    Throwable cause = e.getCause();
+                    if (cause instanceof IOException io) throw io;
+                    throw new IOException(cause);
+                }
             }
-            throw new IOException("Request timed out after " + timeoutMillis + " ms");
-        } finally {
-            pending.remove(id);
+            if (System.currentTimeMillis() >= end) {
+                try {
+                    send(new JsonRpcNotification(
+                            NotificationMethod.CANCELLED.method(),
+                            CancellationCodec.toJsonObject(new CancelledNotification(id, "timeout"))));
+                } catch (IOException ignore) {
+                }
+                pending.remove(id);
+                throw new IOException("Request timed out after " + timeoutMillis + " ms");
+            }
+            var obj = receiveMessage();
+            if (obj.isEmpty()) continue;
+            try {
+                processMessage(JsonRpcCodec.fromJsonObject(obj.get()));
+            } catch (IllegalArgumentException ex) {
+                handleInvalidRequest(ex);
+            }
         }
     }
 

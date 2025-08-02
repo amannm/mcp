@@ -17,7 +17,7 @@ import io.cucumber.datatable.DataTable;
 import io.cucumber.java.After;
 import io.cucumber.java.Before;
 import io.cucumber.java.en.*;
-import jakarta.json.Json;
+import jakarta.json.*;
 
 import java.io.File;
 import java.net.URI;
@@ -33,6 +33,7 @@ public final class McpConformanceSteps {
     private StreamableHttpTransport serverTransport;
     private CompletableFuture<Void> serverTask;
     private McpClient client;
+    private BlockingElicitationProvider elicitation;
     private final Map<String, JsonRpcMessage> responses = new ConcurrentHashMap<>();
 
     @Before
@@ -206,8 +207,7 @@ public final class McpConformanceSteps {
     }
 
     private McpClient createClient(Transport transport) {
-        BlockingElicitationProvider elicitation = new BlockingElicitationProvider();
-        elicitation.respond(new ElicitResult(ElicitationAction.CANCEL, null, null));
+        elicitation = new BlockingElicitationProvider();
 
         SamplingProvider sampling = (_, _) -> new CreateMessageResponse(
                 Role.ASSISTANT, new ContentBlock.Text("ok", null, null),
@@ -235,6 +235,17 @@ public final class McpConformanceSteps {
             case "list_tools_schema" -> client.request("tools/list", Json.createObjectBuilder().build());
             case "call_tool" -> client.request("tools/call",
                     Json.createObjectBuilder().add("name", parameter).build());
+            case "call_tool_elicit" -> {
+                elicitation.respond(new ElicitResult(ElicitationAction.ACCEPT,
+                        Json.createObjectBuilder().add("msg", "ping").build(), null));
+                yield client.request("tools/call",
+                        Json.createObjectBuilder().add("name", parameter).build());
+            }
+            case "call_tool_elicit_cancel" -> {
+                elicitation.respond(new ElicitResult(ElicitationAction.CANCEL, null, null));
+                yield client.request("tools/call",
+                        Json.createObjectBuilder().add("name", parameter).build());
+            }
             case "list_prompts" -> client.request("prompts/list", Json.createObjectBuilder().build());
             case "get_prompt" -> client.request("prompts/get",
                     Json.createObjectBuilder().add("name", parameter)
@@ -294,17 +305,19 @@ public final class McpConformanceSteps {
             }
             case "list_tools" -> {
                 var tools = result.getJsonArray("tools");
-                assertEquals(1, tools.size());
-                assertEquals(expected, tools.getJsonObject(0).getString("name"));
+                assertTrue(tools.stream()
+                        .map(JsonValue::asJsonObject)
+                        .anyMatch(t -> expected.equals(t.getString("name"))));
             }
             case "list_tools_schema" -> {
                 var tools = result.getJsonArray("tools");
-                assertEquals(1, tools.size());
-                var tool = tools.getJsonObject(0);
-                assertEquals(expected, tool.getString("name"));
+                var tool = tools.stream()
+                        .map(JsonValue::asJsonObject)
+                        .filter(t -> expected.equals(t.getString("name")))
+                        .findFirst().orElseThrow();
                 assertEquals("object", tool.getJsonObject("inputSchema").getString("type"));
             }
-            case "call_tool" -> {
+            case "call_tool", "call_tool_elicit" -> {
                 var content = result.getJsonArray("content").getJsonObject(0);
                 assertEquals(expected, content.getString("text"));
             }
