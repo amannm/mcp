@@ -163,22 +163,30 @@ public final class StreamableHttpTransport implements Transport {
 
     @Override
     public void close() throws IOException {
+        terminateSession(false);
+        failPendingRequests();
         try {
-            terminateSession(false);
-            responseQueues.forEach((id, queue) -> {
-                RequestId reqId = RequestId.parse(id);
-                JsonRpcError err = JsonRpcError.of(
-                        reqId,
-                        JsonRpcErrorCode.INTERNAL_ERROR,
-                        "Transport closed");
-                queue.offer(JsonRpcCodec.toJsonObject(err));
-            });
-            responseQueues.clear();
-
             server.stop();
+            server.join();
+            server.destroy();
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new IOException(e);
         } catch (Exception e) {
             throw new IOException(e);
         }
+    }
+
+    private void failPendingRequests() {
+        responseQueues.forEach((id, queue) -> {
+            RequestId reqId = RequestId.parse(id);
+            JsonRpcError err = JsonRpcError.of(
+                    reqId,
+                    JsonRpcErrorCode.INTERNAL_ERROR,
+                    "Transport closed");
+            queue.offer(JsonRpcCodec.toJsonObject(err));
+        });
+        responseQueues.clear();
     }
 
     void removeRequestStream(String key, SseClient client) {
