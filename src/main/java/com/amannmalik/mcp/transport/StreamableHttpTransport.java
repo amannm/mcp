@@ -136,7 +136,9 @@ public final class StreamableHttpTransport implements Transport {
                     reqId,
                     JsonRpcErrorCode.INTERNAL_ERROR,
                     "Transport closed");
-            queue.offer(JsonRpcCodec.toJsonObject(err));
+            if (!queue.offer(JsonRpcCodec.toJsonObject(err))) {
+                throw new IllegalStateException("queue full");
+            }
         });
         responseQueues.clear();
     }
@@ -256,7 +258,9 @@ public final class StreamableHttpTransport implements Transport {
         requestStreams.clear();
         clientsByPrefix.clear();
         closed = true;
-        incoming.offer(Json.createObjectBuilder().add("_close", true).build());
+        if (!incoming.offer(Json.createObjectBuilder().add("_close", true).build())) {
+            throw new IllegalStateException("incoming queue full");
+        }
     }
 
 }
