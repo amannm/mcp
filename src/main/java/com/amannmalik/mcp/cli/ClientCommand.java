@@ -29,7 +29,7 @@ public final class ClientCommand implements Callable<Integer> {
     public Integer call() throws Exception {
         if (command == null) throw new IllegalArgumentException("command required");
 
-        StdioTransport transport = new StdioTransport(new ProcessBuilder(command.split(" ")), 
+        StdioTransport transport = new StdioTransport(new ProcessBuilder(command.split(" ")),
                 verbose ? System.err::println : s -> {
                 });
         SamplingProvider samplingProvider = new InteractiveSamplingProvider(false);

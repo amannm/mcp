@@ -9,7 +9,6 @@ import java.nio.file.*;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 
 public record McpConfiguration(SystemConfig system,
@@ -28,7 +27,7 @@ public record McpConfiguration(SystemConfig system,
     static {
         addChangeListener(c -> System.err.println("Configuration reloaded"));
     }
-    
+
 
     public static McpConfiguration current() {
         return CURRENT;

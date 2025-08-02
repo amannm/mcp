@@ -171,13 +171,13 @@ public final class McpConformanceSteps {
         });
         errorReader.setDaemon(true);
         errorReader.start();
-        
+
         long end = System.currentTimeMillis() + 10_000;
         while (System.currentTimeMillis() < end) {
             if (serverProcess.isAlive()) break;
             Thread.sleep(50);
         }
-        
+
         if (!serverProcess.isAlive()) {
             System.err.println("Server process exit code: " + serverProcess.exitValue());
         }
