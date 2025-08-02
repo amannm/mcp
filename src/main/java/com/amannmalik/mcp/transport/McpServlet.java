@@ -20,8 +20,9 @@ final class McpServlet extends HttpServlet {
 
     @Override
     protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws IOException {
-        Principal principal = transport.authorize(req, resp);
-        if (principal == null && transport.authManager != null) return;
+        var principalOpt = transport.authorize(req, resp);
+        if (principalOpt.isEmpty()) return;
+        var principal = principalOpt.get();
         if (!transport.verifyOrigin(req, resp)) return;
         if (!transport.validateAccept(req, resp, true)) return;
 
@@ -113,11 +114,11 @@ final class McpServlet extends HttpServlet {
                                           HttpServletResponse resp,
                                           boolean requireAccept,
                                           boolean post) throws IOException {
-        Principal principal = transport.authorize(req, resp);
-        if (principal == null) return Optional.empty();
+        var principalOpt = transport.authorize(req, resp);
+        if (principalOpt.isEmpty()) return Optional.empty();
         if (!transport.verifyOrigin(req, resp)) return Optional.empty();
         if (requireAccept && !transport.validateAccept(req, resp, post)) return Optional.empty();
-        return Optional.of(principal);
+        return principalOpt;
     }
 
     private void enqueue(JsonObject obj, HttpServletResponse resp) throws IOException {
