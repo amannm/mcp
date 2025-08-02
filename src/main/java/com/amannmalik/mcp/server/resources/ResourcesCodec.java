@@ -105,9 +105,8 @@ public final class ResourcesCodec {
         return EmptyJsonObjectCodec.toJsonObject();
     }
 
-    public static ResourceListChangedNotification toResourceListChangedNotification(JsonObject obj) {
+    public static void requireListChangedNotification(JsonObject obj) {
         EmptyJsonObjectCodec.requireEmpty(obj);
-        return new ResourceListChangedNotification();
     }
 
     public static JsonObject toJsonObject(ResourceUpdatedNotification n) {

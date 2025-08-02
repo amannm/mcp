@@ -58,7 +58,13 @@ public final class JsonRpcRequestProcessor {
             return Optional.of(JsonRpcError.invalidParams(req.id(), e.getMessage()));
         }
 
-        if (cancellable) cancellationTracker.register(req.id());
+        if (cancellable) {
+            cancellationTracker.register(req.id());
+            if (cancellationTracker.isCancelled(req.id())) {
+                cleanup(req.id());
+                return Optional.empty();
+            }
+        }
 
         JsonRpcMessage resp;
         try {
