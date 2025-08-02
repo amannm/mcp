@@ -62,6 +62,7 @@ import com.amannmalik.mcp.util.ProgressManager;
 import com.amannmalik.mcp.util.ProgressNotification;
 import com.amannmalik.mcp.util.ProgressToken;
 import com.amannmalik.mcp.util.ProgressUtil;
+import com.amannmalik.mcp.util.RequestExecutor;
 import com.amannmalik.mcp.util.Timeouts;
 import com.amannmalik.mcp.validation.SchemaValidator;
 import com.amannmalik.mcp.wire.NotificationMethod;
@@ -523,51 +524,25 @@ public final class McpClient implements AutoCloseable {
     }
 
     private JsonRpcMessage handleRequest(JsonRpcRequest req) {
-        cancellationTracker.register(req.id());
-        Optional<ProgressToken> token;
-        try {
-            token = progressManager.register(req.id(), req.params());
-            token.ifPresent(t -> {
-                try {
-                    progressManager.send(new ProgressNotification(t, 0.0, 1.0, null), n -> notify(n.method(), n.params()));
-                } catch (IOException ignore) {
-                }
-            });
-        } catch (IllegalArgumentException e) {
-            cancellationTracker.release(req.id());
-            return JsonRpcError.of(req.id(), JsonRpcErrorCode.INVALID_PARAMS, e.getMessage());
+        var method = RequestMethod.from(req.method());
+        if (method.isEmpty()) {
+            return JsonRpcError.of(req.id(), JsonRpcErrorCode.METHOD_NOT_FOUND,
+                    "Unknown method: " + req.method());
+        }
+        RequestHandler handler = requestHandlers.get(method.get());
+        if (handler == null) {
+            return JsonRpcError.of(req.id(), JsonRpcErrorCode.METHOD_NOT_FOUND,
+                    "Unknown method: " + req.method());
         }
 
-        boolean cancelled;
-        JsonRpcMessage resp;
-        try {
-            var method = RequestMethod.from(req.method());
-            if (method.isEmpty()) {
-                resp = JsonRpcError.of(req.id(), JsonRpcErrorCode.METHOD_NOT_FOUND,
-                        "Unknown method: " + req.method());
-            } else {
-                RequestHandler handler = requestHandlers.get(method.get());
-                if (handler == null) {
-                    resp = JsonRpcError.of(req.id(), JsonRpcErrorCode.METHOD_NOT_FOUND,
-                            "Unknown method: " + req.method());
-                } else {
-                    resp = handler.handle(req);
-                }
-            }
-        } finally {
-            cancelled = cancellationTracker.isCancelled(req.id());
-            cancellationTracker.release(req.id());
-            if (!cancelled) {
-                token.ifPresent(t -> {
-                    try {
-                        progressManager.send(new ProgressNotification(t, 1.0, 1.0, null), n -> notify(n.method(), n.params()));
-                    } catch (IOException ignore) {
-                    }
-                });
-            }
-            progressManager.release(req.id());
-        }
-        return cancelled ? null : resp;
+        return RequestExecutor.execute(
+                req,
+                true,
+                handler::handle,
+                progressManager,
+                cancellationTracker,
+                n -> notify(n.method(), n.params())
+        );
     }
 
     private JsonRpcMessage handleCreateMessage(JsonRpcRequest req) {
