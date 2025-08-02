@@ -27,17 +27,16 @@ final class MessageRouter {
         this.remover = remover;
     }
 
-    void route(JsonObject message) {
+    boolean route(JsonObject message) {
         String id = message.containsKey("id") ? message.get("id").toString() : null;
         String method = message.getString("method", null);
         if (id != null) {
-            if (sendToRequestStream(id, method, message)) return;
-            if (sendToResponseQueue(id, message)) return;
-            if (method == null) return;
+            if (sendToRequestStream(id, method, message)) return true;
+            if (sendToResponseQueue(id, message)) return true;
+            if (method == null) return false;
         }
-        if (!sendToActiveClient(message)) {
-            sendToPending(message);
-        }
+        if (sendToActiveClient(message)) return true;
+        return sendToPending(message);
     }
 
     private boolean sendToRequestStream(String id, String method, JsonObject message) {
@@ -65,9 +64,11 @@ final class MessageRouter {
         return false;
     }
 
-    private void sendToPending(JsonObject message) {
+    private boolean sendToPending(JsonObject message) {
         SseClient pending = lastGeneral.get();
-        if (pending != null) pending.send(message);
+        if (pending == null) return false;
+        pending.send(message);
+        return true;
     }
 }
 
