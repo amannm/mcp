@@ -1,5 +1,6 @@
 package com.amannmalik.mcp.client.roots;
 
+import com.amannmalik.mcp.util.ListChangeSubscription;
 import com.amannmalik.mcp.util.ListChangeSupport;
 
 import java.util.List;
@@ -19,9 +20,8 @@ public final class InMemoryRootsProvider implements RootsProvider {
     }
 
     @Override
-    public RootsSubscription subscribe(RootsListener listener) {
-        var sub = listChangeSupport.subscribe(listener);
-        return sub::close;
+    public ListChangeSubscription subscribe(RootsListener listener) {
+        return listChangeSupport.subscribe(listener);
     }
 
     @Override
