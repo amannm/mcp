@@ -281,47 +281,12 @@ public final class McpServer implements AutoCloseable {
 
     public void serve() throws IOException {
         while (lifecycle.state() != LifecycleState.SHUTDOWN) {
-            JsonObject obj;
+            var obj = receiveMessage();
+            if (obj.isEmpty()) continue;
             try {
-                obj = transport.receive();
-            } catch (EOFException e) {
-                lifecycle.shutdown();
-                break;
-            } catch (JsonParsingException e) {
-                System.err.println("Parse error: " + e.getMessage());
-                sendLog(LoggingLevel.ERROR, "parser", Json.createValue(e.getMessage()));
-                try {
-                    send(JsonRpcError.of(new RequestId.NullId(), JsonRpcErrorCode.PARSE_ERROR, e.getMessage()));
-                } catch (IOException ioe) {
-                    System.err.println("Failed to send error: " + ioe.getMessage());
-                }
-                continue;
-            }
-
-            try {
-                JsonRpcMessage msg = JsonRpcCodec.fromJsonObject(obj);
-                switch (msg) {
-                    case JsonRpcRequest req -> onRequest(req);
-                    case JsonRpcNotification note -> onNotification(note);
-                    case JsonRpcResponse resp -> {
-                        CompletableFuture<JsonRpcMessage> f = pending.remove(resp.id());
-                        if (f != null) f.complete(resp);
-                    }
-                    case JsonRpcError err -> {
-                        CompletableFuture<JsonRpcMessage> f = pending.remove(err.id());
-                        if (f != null) f.complete(err);
-                    }
-                    default -> {
-                    }
-                }
+                processMessage(JsonRpcCodec.fromJsonObject(obj.get()));
             } catch (IllegalArgumentException e) {
-                System.err.println("Invalid request: " + e.getMessage());
-                sendLog(LoggingLevel.WARNING, "server", Json.createValue(e.getMessage()));
-                try {
-                    send(JsonRpcError.of(new RequestId.NullId(), JsonRpcErrorCode.INVALID_REQUEST, e.getMessage()));
-                } catch (IOException ioe) {
-                    System.err.println("Failed to send error: " + ioe.getMessage());
-                }
+                handleInvalidRequest(e);
             } catch (IOException e) {
                 System.err.println("Error processing message: " + e.getMessage());
                 sendLog(LoggingLevel.ERROR, "server", Json.createValue(e.getMessage()));
@@ -329,6 +294,55 @@ public final class McpServer implements AutoCloseable {
                 System.err.println("Unexpected error processing message: " + e.getMessage());
                 sendLog(LoggingLevel.ERROR, "server", Json.createValue(e.getMessage()));
             }
+        }
+    }
+
+    private Optional<JsonObject> receiveMessage() throws IOException {
+        try {
+            return Optional.of(transport.receive());
+        } catch (EOFException e) {
+            lifecycle.shutdown();
+            return Optional.empty();
+        } catch (JsonParsingException e) {
+            handleParseError(e);
+            return Optional.empty();
+        }
+    }
+
+    private void handleParseError(JsonParsingException e) {
+        System.err.println("Parse error: " + e.getMessage());
+        try {
+            sendLog(LoggingLevel.ERROR, "parser", Json.createValue(e.getMessage()));
+            send(JsonRpcError.of(new RequestId.NullId(), JsonRpcErrorCode.PARSE_ERROR, e.getMessage()));
+        } catch (IOException ioe) {
+            System.err.println("Failed to send error: " + ioe.getMessage());
+        }
+    }
+
+    private void processMessage(JsonRpcMessage msg) throws IOException {
+        switch (msg) {
+            case JsonRpcRequest req -> onRequest(req);
+            case JsonRpcNotification note -> onNotification(note);
+            case JsonRpcResponse resp -> {
+                var f = pending.remove(resp.id());
+                if (f != null) f.complete(resp);
+            }
+            case JsonRpcError err -> {
+                var f = pending.remove(err.id());
+                if (f != null) f.complete(err);
+            }
+            default -> {
+            }
+        }
+    }
+
+    private void handleInvalidRequest(IllegalArgumentException e) {
+        System.err.println("Invalid request: " + e.getMessage());
+        try {
+            sendLog(LoggingLevel.WARNING, "server", Json.createValue(e.getMessage()));
+            send(JsonRpcError.of(new RequestId.NullId(), JsonRpcErrorCode.INVALID_REQUEST, e.getMessage()));
+        } catch (IOException ioe) {
+            System.err.println("Failed to send error: " + ioe.getMessage());
         }
     }
 
