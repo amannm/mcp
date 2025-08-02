@@ -24,7 +24,14 @@ public final class ServerDefaults {
 
     public static ToolProvider tools() {
         var schema = Json.createObjectBuilder().add("type", "object").build();
-        Tool tool = new Tool("test_tool", "Test Tool", null, schema, null, null, null);
+        var outSchema = Json.createObjectBuilder()
+                .add("type", "object")
+                .add("properties", Json.createObjectBuilder()
+                        .add("message", Json.createObjectBuilder().add("type", "string")))
+                .add("required", Json.createArrayBuilder().add("message"))
+                .build();
+        Tool tool = new Tool("test_tool", "Test Tool", null, schema, outSchema, null, null);
+        Tool errorTool = new Tool("error_tool", "Error Tool", null, schema, null, null, null);
         var eschema = Json.createObjectBuilder()
                 .add("type", "object")
                 .add("properties", Json.createObjectBuilder()
@@ -33,7 +40,7 @@ public final class ServerDefaults {
                 .build();
         Tool eliciting = new Tool("echo_tool", "Echo Tool", null, eschema, null, null, null);
         return new InMemoryToolProvider(
-                List.of(tool, eliciting),
+                List.of(tool, errorTool, eliciting),
                 Map.of(
                         "test_tool", a -> new ToolResult(
                                 Json.createArrayBuilder()
@@ -41,7 +48,16 @@ public final class ServerDefaults {
                                                 .add("type", "text")
                                                 .add("text", "ok")
                                                 .build())
-                                        .build(), null, false, null),
+                                        .build(),
+                                Json.createObjectBuilder().add("message", "ok").build(),
+                                false, null),
+                        "error_tool", a -> new ToolResult(
+                                Json.createArrayBuilder()
+                                        .add(Json.createObjectBuilder()
+                                                .add("type", "text")
+                                                .add("text", "fail")
+                                                .build())
+                                        .build(), null, true, null),
                         "echo_tool", a -> new ToolResult(
                                 Json.createArrayBuilder()
                                         .add(Json.createObjectBuilder()
