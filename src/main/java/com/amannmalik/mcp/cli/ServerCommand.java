@@ -9,40 +9,42 @@ import picocli.CommandLine;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.Callable;
 
 @CommandLine.Command(name = "server", description = "Run MCP server", mixinStandardHelpOptions = true)
 public final class ServerCommand implements Callable<Integer> {
     @CommandLine.Option(names = {"-c", "--config"}, description = "Config file")
-    private Path config;
+    private Optional<Path> config = Optional.empty();
 
     private ServerConfig resolved;
 
     @CommandLine.Option(names = "--http", description = "HTTP port")
-    private Integer httpPort;
+    private int httpPort = -1;
 
     @CommandLine.Option(names = "--stdio", description = "Use stdio transport")
-    private boolean stdio;
+    private boolean stdio = false;
 
     @CommandLine.Option(names = "--instructions", description = "Instructions file")
-    private Path instructionsFile;
+    private Optional<Path> instructionsFile = Optional.empty();
 
     @CommandLine.Option(names = {"-v", "--verbose"}, description = "Verbose logging")
-    private boolean verbose;
+    private boolean verbose = false;
 
     @CommandLine.Option(names = {"--audience"}, description = "Expected JWT audience for authorization")
-    private String expectedAudience;
+    private Optional<String> expectedAudience = Optional.empty();
 
     @CommandLine.Option(names = {"--resource-metadata"}, description = "Resource metadata URL")
-    private String resourceMetadataUrl;
+    private Optional<String> resourceMetadataUrl = Optional.empty();
 
     @CommandLine.Option(names = {"--auth-server"}, description = "Authorization server URL", split = ",")
-    private List<String> authServers;
+    private List<String> authServers = new ArrayList<>();
 
     @CommandLine.Option(names = "--test-mode", description = "Disable auth for testing")
-    private boolean testMode;
+    private boolean testMode = false;
 
     public ServerCommand() {
     }
@@ -57,23 +59,24 @@ public final class ServerCommand implements Callable<Integer> {
         ServerConfig cfg;
         if (resolved != null) {
             cfg = resolved;
-        } else if (config != null) {
-            CliConfig loaded = ConfigLoader.load(config);
+        } else if (config.isPresent()) {
+            CliConfig loaded = ConfigLoader.load(config.get());
             if (!(loaded instanceof ServerConfig sc)) throw new IllegalArgumentException("server config expected");
             cfg = sc;
         } else {
-            TransportType type = httpPort == null ? TransportType.STDIO : TransportType.HTTP;
-            int port = httpPort == null ? 0 : httpPort;
+            TransportType type = httpPort < 0 ? TransportType.STDIO : TransportType.HTTP;
+            int port = httpPort < 0 ? 0 : httpPort;
             if (stdio) type = TransportType.STDIO;
             List<String> auth = authServers;
             if (!testMode) {
-                if (auth == null || auth.isEmpty()) {
+                if (auth.isEmpty()) {
                     throw new IllegalArgumentException("--auth-server is required");
                 }
             } else {
                 auth = List.of();
             }
-            cfg = new ServerConfig(type, port, null, expectedAudience, resourceMetadataUrl, auth);
+            cfg = new ServerConfig(type, port, null,
+                    expectedAudience.orElse(null), resourceMetadataUrl.orElse(null), auth);
         }
 
         Transport t;
@@ -100,8 +103,8 @@ public final class ServerCommand implements Callable<Integer> {
         }
 
         String instructions = cfg.instructions();
-        if (instructionsFile != null) {
-            instructions = Files.readString(instructionsFile);
+        if (instructionsFile.isPresent()) {
+            instructions = Files.readString(instructionsFile.get());
         }
 
         try (McpServer server = new McpServer(t, instructions)) {

@@ -15,23 +15,24 @@ import picocli.CommandLine;
 import java.io.*;
 import java.nio.file.Path;
 import java.util.*;
+import java.util.Optional;
 import java.util.concurrent.Callable;
 
 @CommandLine.Command(name = "host", description = "Run MCP host", mixinStandardHelpOptions = true)
 public final class HostCommand implements Callable<Integer> {
     @CommandLine.Option(names = {"-c", "--config"}, description = "Config file")
-    private Path config;
+    private Optional<Path> config = Optional.empty();
 
     private HostConfig resolved;
 
     @CommandLine.Option(names = {"-v", "--verbose"}, description = "Verbose logging")
-    private boolean verbose;
+    private boolean verbose = false;
 
     @CommandLine.Option(names = "--client", description = "Client as id:command", split = ",")
     private final List<String> clientSpecs = new ArrayList<>();
 
     @CommandLine.Option(names = "--interactive", description = "Interactive mode for client management")
-    private boolean interactive;
+    private boolean interactive = false;
 
     public HostCommand() {
     }
@@ -46,8 +47,8 @@ public final class HostCommand implements Callable<Integer> {
         HostConfig cfg;
         if (resolved != null) {
             cfg = resolved;
-        } else if (config != null) {
-            CliConfig loaded = ConfigLoader.load(config);
+        } else if (config.isPresent()) {
+            CliConfig loaded = ConfigLoader.load(config.get());
             if (!(loaded instanceof HostConfig hc)) throw new IllegalArgumentException("host config expected");
             cfg = hc;
         } else {

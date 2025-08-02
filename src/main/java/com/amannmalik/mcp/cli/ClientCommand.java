@@ -15,20 +15,24 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.util.EnumSet;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.Callable;
 
 @CommandLine.Command(name = "client", description = "Run MCP client", mixinStandardHelpOptions = true)
 public final class ClientCommand implements Callable<Integer> {
     @CommandLine.Option(names = {"-c", "--config"}, description = "Config file")
-    private Path config;
+    private Optional<Path> config = Optional.empty();
 
     private ClientConfig resolved;
 
     @CommandLine.Option(names = "--command", description = "Server command for stdio")
-    private String command;
+    private Optional<String> command = Optional.empty();
+
+    @CommandLine.Option(names = {"-t", "--token"}, description = "Access token for HTTP")
+    private Optional<String> token = Optional.empty();
 
     @CommandLine.Option(names = {"-v", "--verbose"}, description = "Verbose logging")
-    private boolean verbose;
+    private boolean verbose = false;
 
     public ClientCommand() {
     }
@@ -43,13 +47,13 @@ public final class ClientCommand implements Callable<Integer> {
         ClientConfig cfg;
         if (resolved != null) {
             cfg = resolved;
-        } else if (config != null) {
-            CliConfig loaded = ConfigLoader.load(config);
+        } else if (config.isPresent()) {
+            CliConfig loaded = ConfigLoader.load(config.get());
             if (!(loaded instanceof ClientConfig cc)) throw new IllegalArgumentException("client config expected");
             cfg = cc;
         } else {
-            if (command == null) throw new IllegalArgumentException("command required");
-            cfg = new ClientConfig(TransportType.STDIO, command);
+            if (command.isEmpty()) throw new IllegalArgumentException("command required");
+            cfg = new ClientConfig(TransportType.STDIO, command.get());
         }
 
         StdioTransport transport = new StdioTransport(new ProcessBuilder(cfg.command().split(" ")),
@@ -69,6 +73,7 @@ public final class ClientCommand implements Callable<Integer> {
                 samplingProvider,
                 rootsProvider,
                 null);
+        token.ifPresent(client::setAccessToken);
         client.connect();
         if (verbose) {
             client.setLoggingListener(n -> {

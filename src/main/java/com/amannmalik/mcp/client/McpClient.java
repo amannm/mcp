@@ -319,6 +319,7 @@ public final class McpClient implements AutoCloseable {
         http.setAuthorization(token);
     }
 
+    @SuppressWarnings("unused")
     public void clearAccessToken() {
         if (transport instanceof StreamableHttpClientTransport http) {
             http.clearAuthorization();
