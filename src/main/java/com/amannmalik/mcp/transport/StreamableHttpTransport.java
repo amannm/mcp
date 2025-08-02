@@ -40,7 +40,6 @@ public final class StreamableHttpTransport implements Transport {
     final java.util.List<String> authorizationServers;
 
 
-    static final String PROTOCOL_HEADER = TransportHeaders.PROTOCOL_VERSION;
     // Default to the previous protocol revision when the version header is
     // absent, as recommended for backwards compatibility.
     static final String COMPATIBILITY_VERSION =

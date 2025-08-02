@@ -83,7 +83,7 @@ final class McpServlet extends HttpServlet {
                 }
                 resp.setContentType("application/json");
                 resp.setCharacterEncoding("UTF-8");
-                resp.setHeader(StreamableHttpTransport.PROTOCOL_HEADER, transport.sessions.protocolVersion());
+                resp.setHeader(TransportHeaders.PROTOCOL_VERSION, transport.sessions.protocolVersion());
                 resp.getWriter().write(response.toString());
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
@@ -95,7 +95,7 @@ final class McpServlet extends HttpServlet {
             resp.setStatus(HttpServletResponse.SC_OK);
             resp.setContentType("text/event-stream;charset=UTF-8");
             resp.setHeader("Cache-Control", "no-cache");
-            resp.setHeader(StreamableHttpTransport.PROTOCOL_HEADER, transport.sessions.protocolVersion());
+            resp.setHeader(TransportHeaders.PROTOCOL_VERSION, transport.sessions.protocolVersion());
             resp.flushBuffer();
             AsyncContext ac = req.startAsync();
             ac.setTimeout(0);
@@ -124,7 +124,7 @@ final class McpServlet extends HttpServlet {
         resp.setStatus(HttpServletResponse.SC_OK);
         resp.setContentType("text/event-stream;charset=UTF-8");
         resp.setHeader("Cache-Control", "no-cache");
-        resp.setHeader(StreamableHttpTransport.PROTOCOL_HEADER, transport.sessions.protocolVersion());
+        resp.setHeader(TransportHeaders.PROTOCOL_VERSION, transport.sessions.protocolVersion());
         resp.flushBuffer();
         AsyncContext ac = req.startAsync();
         ac.setTimeout(0);
