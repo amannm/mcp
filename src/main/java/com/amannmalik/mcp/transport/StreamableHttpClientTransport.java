@@ -44,23 +44,14 @@ public final class StreamableHttpClientTransport implements Transport {
                 .GET()
                 .build();
         var response = exchange(request);
-
+        checkUnauthorized(response);
         int status = response.statusCode();
         String ct = response.headers().firstValue("Content-Type").orElse("");
-        if (status == 401) {
-            String header = response.headers().firstValue("WWW-Authenticate").orElse("");
-            response.body().close();
-            throw new UnauthorizedException(header);
-        }
         if (status != 200 || !ct.startsWith("text/event-stream")) {
             response.body().close();
             throw new IOException("Unexpected response: " + status + " " + ct);
         }
-        SseReader reader = new SseReader(response.body(), incoming, streams);
-        streams.add(reader);
-        Thread t = new Thread(reader);
-        t.setDaemon(true);
-        t.start();
+        startReader(response.body());
     }
 
     @Override
@@ -71,14 +62,9 @@ public final class StreamableHttpClientTransport implements Transport {
                 .POST(HttpRequest.BodyPublishers.ofString(message.toString()))
                 .build();
         var response = exchange(request);
-
+        checkUnauthorized(response);
         int status = response.statusCode();
         String ct = response.headers().firstValue("Content-Type").orElse("");
-        if (status == 401) {
-            String header = response.headers().firstValue("WWW-Authenticate").orElse("");
-            response.body().close();
-            throw new UnauthorizedException(header);
-        }
         if (status == 202) {
             response.body().close();
             return;
@@ -90,11 +76,7 @@ public final class StreamableHttpClientTransport implements Transport {
             return;
         }
         if (ct.startsWith("text/event-stream")) {
-            SseReader reader = new SseReader(response.body(), incoming, streams);
-            streams.add(reader);
-            Thread t = new Thread(reader);
-            t.setDaemon(true);
-            t.start();
+            startReader(response.body());
             return;
         }
         response.body().close();
@@ -123,6 +105,22 @@ public final class StreamableHttpClientTransport implements Transport {
         }
         streams.forEach(SseReader::close);
         streams.clear();
+    }
+
+    private void startReader(InputStream body) {
+        SseReader reader = new SseReader(body, incoming, streams);
+        streams.add(reader);
+        Thread t = new Thread(reader);
+        t.setDaemon(true);
+        t.start();
+    }
+
+    private void checkUnauthorized(HttpResponse<InputStream> response) throws IOException {
+        if (response.statusCode() == 401) {
+            String header = response.headers().firstValue("WWW-Authenticate").orElse("");
+            response.body().close();
+            throw new UnauthorizedException(header);
+        }
     }
 
     private HttpRequest.Builder builder() {
