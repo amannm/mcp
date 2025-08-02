@@ -121,7 +121,9 @@ public final class McpConformanceSteps {
             }
             assertFalse(serverProcess.isAlive());
         } else if (serverTask != null) {
-            serverTask.get(2, TimeUnit.SECONDS);
+            if (!serverTask.isCancelled()) {
+                serverTask.get(2, TimeUnit.SECONDS);
+            }
             assertTrue(serverTask.isDone());
         }
     }
