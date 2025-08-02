@@ -77,6 +77,7 @@ final class McpServlet extends HttpServlet {
             transport.clients.lastGeneral.set(null);
         }
         transport.clients.general.add(client);
+        transport.flushBacklog();
         ac.addListener(transport.clients.generalListener(client));
     }
 

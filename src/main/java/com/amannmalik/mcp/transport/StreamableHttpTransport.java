@@ -19,6 +19,7 @@ import java.net.InetSocketAddress;
 import java.util.*;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.ConcurrentLinkedQueue;
 
 public final class StreamableHttpTransport implements Transport {
     private final Server server;
@@ -37,6 +38,7 @@ public final class StreamableHttpTransport implements Transport {
     final SseClients clients = new SseClients();
     final SessionManager sessions = new SessionManager(COMPATIBILITY_VERSION);
     private final MessageRouter router;
+    private final Queue<JsonObject> backlog = new ConcurrentLinkedQueue<>();
 
     private void unauthorized(HttpServletResponse resp) throws IOException {
         if (resourceMetadataUrl != null) {
@@ -85,7 +87,23 @@ public final class StreamableHttpTransport implements Transport {
 
     @Override
     public void send(JsonObject message) {
-        router.route(message);
+        if (router.route(message)) {
+            flushBacklog();
+        } else {
+            backlog.add(message);
+        }
+    }
+
+    void flushBacklog() {
+        while (true) {
+            JsonObject msg = backlog.peek();
+            if (msg == null) return;
+            if (router.route(msg)) {
+                backlog.poll();
+            } else {
+                return;
+            }
+        }
     }
 
     @Override
