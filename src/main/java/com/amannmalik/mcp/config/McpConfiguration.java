@@ -7,8 +7,8 @@ import org.snakeyaml.engine.v2.api.LoadSettings;
 import java.io.*;
 import java.nio.file.*;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicReference;
+import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.function.Consumer;
 
 public record McpConfiguration(SystemConfig system,
                                PerformanceConfig performance,
@@ -16,23 +16,42 @@ public record McpConfiguration(SystemConfig system,
                                SecurityConfig security,
                                ClientConfig client,
                                HostConfig host) {
+
+    private static volatile McpConfiguration CURRENT = loadFromEnv();
+private static final AtomicBoolean WATCHING = new AtomicBoolean();
+    private static final CopyOnWriteArrayList<Consumer<McpConfiguration>> LISTENERS = new CopyOnWriteArrayList<>();
+
+    static {
+        addChangeListener(c -> System.err.println("Configuration reloaded"));
+    }
+
     private static final AtomicReference<McpConfiguration> REF = new AtomicReference<>();
-    private static final AtomicBoolean WATCHING = new AtomicBoolean();
+    
 
     public static McpConfiguration current() {
-        return REF.get();
+        return CURRENT;
     }
 
     public static void reload() {
-        REF.set(loadFromEnv());
+        CURRENT = loadFromEnv();
+        notifyListeners();
     }
 
     static void reload(Path path, String env) {
         try {
-            REF.set(load(path, env));
+            CURRENT = load(path, env);
+            notifyListeners();
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
+    }
+
+    public static void addChangeListener(Consumer<McpConfiguration> l) {
+        LISTENERS.add(l);
+    }
+
+    private static void notifyListeners() {
+        for (var l : LISTENERS) l.accept(CURRENT);
     }
 
     private static McpConfiguration loadFromEnv() {
@@ -102,7 +121,7 @@ public record McpConfiguration(SystemConfig system,
     }
 
     private static void watch(Path path) {
-        if (!WATCHING.compareAndSet(false, true)) return;
+        if (!WATCHING.replace(false, true)) return;
         Thread.startVirtualThread(() -> {
             try (WatchService svc = FileSystems.getDefault().newWatchService()) {
                 Path dir = path.getParent();

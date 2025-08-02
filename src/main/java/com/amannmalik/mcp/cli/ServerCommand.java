@@ -16,11 +16,6 @@ import java.util.concurrent.Callable;
 
 @CommandLine.Command(name = "server", description = "Run MCP server", mixinStandardHelpOptions = true)
 public final class ServerCommand implements Callable<Integer> {
-    @CommandLine.Option(names = {"-c", "--config"}, description = "Config file")
-    private Path config;
-
-    private ServerConfig resolved;
-
     @CommandLine.Option(names = "--http", description = "HTTP port")
     private Integer httpPort;
 
@@ -45,67 +40,43 @@ public final class ServerCommand implements Callable<Integer> {
     @CommandLine.Option(names = "--test-mode", description = "Disable auth for testing")
     private boolean testMode;
 
-    public ServerCommand() {
-    }
-
-    public ServerCommand(ServerConfig config, boolean verbose) {
-        this.resolved = config;
-        this.verbose = verbose;
-    }
-
     @Override
     public Integer call() throws Exception {
-        ServerConfig cfg;
-        if (resolved != null) {
-            cfg = resolved;
-        } else if (config != null) {
-            CliConfig loaded = ConfigLoader.load(config);
-            if (!(loaded instanceof ServerConfig sc)) throw new IllegalArgumentException("server config expected");
-            cfg = sc;
+        TransportType defType = parseTransport(McpConfiguration.current().server().transport().type());
+        TransportType type = httpPort == null ? defType : TransportType.HTTP;
+        int port = httpPort == null ? McpConfiguration.current().server().transport().port() : httpPort;
+        if (stdio) type = TransportType.STDIO;
+        List<String> auth = authServers;
+        if (!testMode) {
+            if (auth == null || auth.isEmpty()) throw new IllegalArgumentException("--auth-server is required");
         } else {
-            TransportType defType = parseTransport(McpConfiguration.current().server().transport().type());
-            TransportType type = httpPort == null ? defType : TransportType.HTTP;
-            int port = httpPort == null ? McpConfiguration.current().server().transport().port() : httpPort;
-            if (stdio) type = TransportType.STDIO;
-            List<String> auth = authServers;
-            if (!testMode) {
-                if (auth == null || auth.isEmpty()) {
-                    throw new IllegalArgumentException("--auth-server is required");
-                }
-            } else {
-                auth = List.of();
-            }
-            cfg = new ServerConfig(type, port, null, expectedAudience, resourceMetadataUrl, auth);
+            auth = List.of();
         }
 
         Transport t;
-        switch (cfg.transport()) {
+        switch (type) {
             case STDIO -> t = new StdioTransport(System.in, System.out);
             case HTTP -> {
                 OriginValidator originValidator = new OriginValidator(
                         Set.copyOf(McpConfiguration.current().server().transport().allowedOrigins()));
                 AuthorizationManager authManager = null;
-                if (cfg.expectedAudience() != null && !cfg.expectedAudience().isBlank()) {
+                if (expectedAudience != null && !expectedAudience.isBlank()) {
                     String secretEnv = System.getenv("MCP_JWT_SECRET");
                     JwtTokenValidator tokenValidator = secretEnv == null || secretEnv.isBlank()
-                            ? new JwtTokenValidator(cfg.expectedAudience())
-                            : new JwtTokenValidator(cfg.expectedAudience(), secretEnv.getBytes(StandardCharsets.UTF_8));
-                    BearerTokenAuthorizationStrategy authStrategy = new BearerTokenAuthorizationStrategy(tokenValidator);
-                    authManager = new AuthorizationManager(List.of(authStrategy));
+                            ? new JwtTokenValidator(expectedAudience)
+                            : new JwtTokenValidator(expectedAudience, secretEnv.getBytes(StandardCharsets.UTF_8));
+                    authManager = new AuthorizationManager(List.of(new BearerTokenAuthorizationStrategy(tokenValidator)));
                 }
                 StreamableHttpTransport ht = new StreamableHttpTransport(
-                        cfg.port(), originValidator, authManager,
-                        cfg.resourceMetadataUrl(), cfg.authorizationServers());
+                        port, originValidator, authManager,
+                        resourceMetadataUrl, auth);
                 if (verbose) System.err.println("Listening on http://127.0.0.1:" + ht.port());
                 t = ht;
             }
             default -> throw new IllegalStateException();
         }
 
-        String instructions = cfg.instructions();
-        if (instructionsFile != null) {
-            instructions = Files.readString(instructionsFile);
-        }
+        String instructions = instructionsFile == null ? null : Files.readString(instructionsFile);
 
         try (McpServer server = new McpServer(t, instructions)) {
             server.serve();

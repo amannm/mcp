@@ -1,5 +1,6 @@
 package com.amannmalik.mcp.cli;
 
+@Deprecated
 public record ClientConfig(TransportType transport, String command) implements CliConfig {
     public ClientConfig {
         if (transport != TransportType.STDIO) {
