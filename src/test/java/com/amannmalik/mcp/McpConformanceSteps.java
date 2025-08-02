@@ -237,7 +237,12 @@ public final class McpConformanceSteps {
             case "list_templates" -> client.request("resources/templates/list", Json.createObjectBuilder().build());
             case "list_tools" -> client.request("tools/list", Json.createObjectBuilder().build());
             case "list_tools_schema" -> client.request("tools/list", Json.createObjectBuilder().build());
+            case "list_tools_output_schema" -> client.request("tools/list", Json.createObjectBuilder().build());
             case "call_tool" -> client.request("tools/call",
+                    Json.createObjectBuilder().add("name", parameter).build());
+            case "call_tool_structured" -> client.request("tools/call",
+                    Json.createObjectBuilder().add("name", parameter).build());
+            case "call_tool_error" -> client.request("tools/call",
                     Json.createObjectBuilder().add("name", parameter).build());
             case "call_tool_elicit" -> {
                 elicitation.respond(new ElicitResult(ElicitationAction.ACCEPT,
@@ -349,9 +354,28 @@ public final class McpConformanceSteps {
                         .findFirst().orElseThrow();
                 assertEquals("object", tool.getJsonObject("inputSchema").getString("type"));
             }
+            case "list_tools_output_schema" -> {
+                var tools = result.getJsonArray("tools");
+                var tool = tools.stream()
+                        .map(JsonValue::asJsonObject)
+                        .filter(t -> expected.equals(t.getString("name")))
+                        .findFirst().orElseThrow();
+                assertEquals("object", tool.getJsonObject("outputSchema").getString("type"));
+            }
             case "call_tool", "call_tool_elicit" -> {
                 var content = result.getJsonArray("content").getJsonObject(0);
                 assertEquals(expected, content.getString("text"));
+            }
+            case "call_tool_structured" -> {
+                var content = result.getJsonArray("content").getJsonObject(0);
+                assertEquals(expected, content.getString("text"));
+                var structured = result.getJsonObject("structuredContent");
+                assertEquals(expected, structured.getString("message"));
+            }
+            case "call_tool_error" -> {
+                var content = result.getJsonArray("content").getJsonObject(0);
+                assertEquals(expected, content.getString("text"));
+                assertTrue(result.getBoolean("isError"));
             }
             case "list_prompts" -> {
                 var prompts = result.getJsonArray("prompts");

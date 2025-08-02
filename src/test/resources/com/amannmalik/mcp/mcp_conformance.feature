@@ -32,9 +32,11 @@ Feature: MCP protocol conformance
     Given a running MCP server using <transport> transport
     Then capabilities should be advertised and ping succeeds
     When testing core functionality
-      | operation         | parameter | expected_result |
-      | list_tools_schema |           | test_tool       |
-      | call_tool         | test_tool | ok              |
+      | operation                 | parameter   | expected_result |
+      | list_tools_schema         |             | test_tool       |
+      | list_tools_output_schema  |             | test_tool       |
+      | call_tool_structured      | test_tool   | ok              |
+      | call_tool_error           | error_tool  | fail            |
     And testing error conditions
       | operation         | parameter | expected_error_code |
       | call_unknown_tool | nope      | -32602              |
