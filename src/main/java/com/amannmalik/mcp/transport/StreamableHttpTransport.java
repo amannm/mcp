@@ -201,13 +201,13 @@ public final class StreamableHttpTransport implements Transport {
 
     private static final Principal DEFAULT_PRINCIPAL = new Principal("default", Set.of());
 
-    Principal authorize(HttpServletRequest req, HttpServletResponse resp) throws IOException {
-        if (authManager == null) return DEFAULT_PRINCIPAL;
+    Optional<Principal> authorize(HttpServletRequest req, HttpServletResponse resp) throws IOException {
+        if (authManager == null) return Optional.of(DEFAULT_PRINCIPAL);
         try {
-            return authManager.authorize(req.getHeader("Authorization"));
+            return Optional.of(authManager.authorize(req.getHeader("Authorization")));
         } catch (AuthorizationException e) {
             unauthorized(resp);
-            return null;
+            return Optional.empty();
         }
     }
 

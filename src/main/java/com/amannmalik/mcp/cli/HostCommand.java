@@ -28,7 +28,7 @@ public final class HostCommand implements Callable<Integer> {
     private boolean verbose;
 
     @CommandLine.Option(names = "--client", description = "Client as id:command", split = ",")
-    private List<String> clientSpecs;
+    private List<String> clientSpecs = new ArrayList<>();
 
     @CommandLine.Option(names = "--interactive", description = "Interactive mode for client management")
     private boolean interactive;
@@ -51,9 +51,7 @@ public final class HostCommand implements Callable<Integer> {
             if (!(loaded instanceof HostConfig hc)) throw new IllegalArgumentException("host config expected");
             cfg = hc;
         } else {
-            if (clientSpecs == null || clientSpecs.isEmpty()) {
-                throw new IllegalArgumentException("--client required");
-            }
+            if (clientSpecs.isEmpty()) throw new IllegalArgumentException("--client required");
             Map<String, String> map = new LinkedHashMap<>();
             for (String spec : clientSpecs) {
                 int idx = spec.indexOf(':');
