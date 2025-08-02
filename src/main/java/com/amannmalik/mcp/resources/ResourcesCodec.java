@@ -214,6 +214,7 @@ public final class ResourcesCodec {
 
     public static Pagination.Page<Resource> toResourcePage(JsonObject obj) {
         if (obj == null) throw new IllegalArgumentException("object required");
+        JsonUtil.requireOnlyKeys(obj, Set.of("resources", "nextCursor", "_meta"));
         JsonArray arr = obj.getJsonArray("resources");
         if (arr == null) throw new IllegalArgumentException("resources required");
         List<Resource> resources = new ArrayList<>();
@@ -223,18 +224,19 @@ public final class ResourcesCodec {
             }
             resources.add(toResource(v.asJsonObject()));
         }
-        String cursor = PaginationCodec.toPaginatedResult(obj).nextCursor();
+        String cursor = obj.getString("nextCursor", null);
         return new Pagination.Page<>(resources, cursor);
     }
 
     public static ListResourcesResult toListResourcesResult(JsonObject obj) {
         Pagination.Page<Resource> page = toResourcePage(obj);
-        PaginatedResult pr = PaginationCodec.toPaginatedResult(obj);
-        return new ListResourcesResult(page.items(), page.nextCursor(), pr._meta());
+        JsonObject meta = obj.containsKey("_meta") ? obj.getJsonObject("_meta") : null;
+        return new ListResourcesResult(page.items(), page.nextCursor(), meta);
     }
 
     public static Pagination.Page<ResourceTemplate> toResourceTemplatePage(JsonObject obj) {
         if (obj == null) throw new IllegalArgumentException("object required");
+        JsonUtil.requireOnlyKeys(obj, Set.of("resourceTemplates", "nextCursor", "_meta"));
         JsonArray arr = obj.getJsonArray("resourceTemplates");
         if (arr == null) throw new IllegalArgumentException("resourceTemplates required");
         List<ResourceTemplate> templates = new ArrayList<>();
@@ -244,14 +246,14 @@ public final class ResourcesCodec {
             }
             templates.add(toResourceTemplate(v.asJsonObject()));
         }
-        String cursor = PaginationCodec.toPaginatedResult(obj).nextCursor();
+        String cursor = obj.getString("nextCursor", null);
         return new Pagination.Page<>(templates, cursor);
     }
 
     public static ListResourceTemplatesResult toListResourceTemplatesResult(JsonObject obj) {
         Pagination.Page<ResourceTemplate> page = toResourceTemplatePage(obj);
-        PaginatedResult pr = PaginationCodec.toPaginatedResult(obj);
-        return new ListResourceTemplatesResult(page.items(), page.nextCursor(), pr._meta());
+        JsonObject meta = obj.containsKey("_meta") ? obj.getJsonObject("_meta") : null;
+        return new ListResourceTemplatesResult(page.items(), page.nextCursor(), meta);
     }
 
 }
