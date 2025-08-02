@@ -164,18 +164,31 @@ public final class StreamableHttpClientTransport implements Transport {
         }
 
         @Override
+        // Minimal SSE parser; recognises id and data fields
         public void run() {
             try (BufferedReader br = new BufferedReader(new InputStreamReader(input, StandardCharsets.UTF_8))) {
                 String line;
-                StringBuilder data = new StringBuilder();
+                var data = new StringBuilder();
                 String eventId = null;
                 while (!closed && (line = br.readLine()) != null) {
                     if (line.isEmpty()) {
-                        eventId = handleEvent(data, eventId);
-                    } else if (line.startsWith("id:")) {
-                        eventId = value(line);
-                    } else if (line.startsWith("data:")) {
-                        appendData(line, data);
+                        if (!data.isEmpty()) {
+                            dispatch(data.toString(), eventId);
+                            data.setLength(0);
+                            eventId = null;
+                        }
+                        continue;
+                    }
+                    int idx = line.indexOf(':');
+                    if (idx < 0) continue;
+                    var field = line.substring(0, idx);
+                    var value = line.substring(idx + 1).trim();
+                    switch (field) {
+                        case "id" -> eventId = value;
+                        case "data" -> {
+                            if (!data.isEmpty()) data.append('\n');
+                            data.append(value);
+                        }
                     }
                 }
             } catch (IOException ignore) {
@@ -185,28 +198,12 @@ public final class StreamableHttpClientTransport implements Transport {
             }
         }
 
-        private String value(String line) {
-            return line.substring(line.indexOf(':') + 1).trim();
-        }
-
-        private String handleEvent(StringBuilder data, String eventId) {
-            if (!data.isEmpty()) {
-                try (JsonReader jr = Json.createReader(new StringReader(data.toString()))) {
-                    queue.add(jr.readObject());
-                } catch (Exception ignore) {
-                }
-                data.setLength(0);
-                if (eventId != null) {
-                    lastEventId = eventId;
-                    return null;
-                }
+        private void dispatch(String payload, String eventId) {
+            try (JsonReader jr = Json.createReader(new StringReader(payload))) {
+                queue.add(jr.readObject());
+            } catch (Exception ignore) {
             }
-            return eventId;
-        }
-
-        private void appendData(String line, StringBuilder data) {
-            if (!data.isEmpty()) data.append('\n');
-            data.append(value(line));
+            if (eventId != null) lastEventId = eventId;
         }
 
         void close() {
