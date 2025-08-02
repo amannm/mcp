@@ -1,5 +1,6 @@
 package com.amannmalik.mcp.prompts;
 
+import com.amannmalik.mcp.util.ListChangeSubscription;
 import com.amannmalik.mcp.util.ListChangeSupport;
 import com.amannmalik.mcp.util.Pagination;
 
@@ -44,9 +45,8 @@ public final class InMemoryPromptProvider implements PromptProvider {
     }
 
     @Override
-    public PromptsSubscription subscribe(PromptsListener listener) {
-        var sub = listChangeSupport.subscribe(listener);
-        return sub::close;
+    public ListChangeSubscription subscribe(PromptsListener listener) {
+        return listChangeSupport.subscribe(listener);
     }
 
     @Override

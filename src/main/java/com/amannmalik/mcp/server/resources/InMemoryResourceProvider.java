@@ -1,5 +1,6 @@
 package com.amannmalik.mcp.server.resources;
 
+import com.amannmalik.mcp.util.ListChangeSubscription;
 import com.amannmalik.mcp.util.ListChangeSupport;
 import com.amannmalik.mcp.util.Pagination;
 
@@ -54,9 +55,8 @@ public final class InMemoryResourceProvider implements ResourceProvider {
     }
 
     @Override
-    public ResourceListSubscription subscribeList(ResourceListListener listener) {
-        var sub = listChangeSupport.subscribe(listener);
-        return sub::close;
+    public ListChangeSubscription subscribeList(ResourceListListener listener) {
+        return listChangeSupport.subscribe(listener);
     }
 
     @Override
