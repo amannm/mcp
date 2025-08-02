@@ -86,7 +86,7 @@ public final class InteractiveElicitationProvider implements ElicitationProvider
                 }
             }
 
-            System.err.print("Action [a]ccept/[d]ecline/[c]ancel: ");
+            System.err.print("Action accept (a)/decline (d)/cancel (c): ");
             String act = reader.readLine();
             if (act == null) return new ElicitResult(ElicitationAction.CANCEL, null, null);
             act = act.trim().toLowerCase();
