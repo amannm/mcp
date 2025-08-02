@@ -71,23 +71,43 @@ final class SessionManager {
                                  String last,
                                  String header,
                                  String version) throws IOException {
-        if (state == null && initializing) {
-            byte[] bytes = new byte[32];
-            RANDOM.nextBytes(bytes);
-            String id = Base64Util.encodeUrl(bytes);
-            current.set(new SessionState(id, req.getRemoteAddr(), principal));
-            lastSessionId.set(null);
-            resp.setHeader(TransportHeaders.SESSION_ID, id);
-            return true;
-        }
         if (state == null) {
-            if (header != null && header.equals(last)) {
-                resp.sendError(HttpServletResponse.SC_NOT_FOUND);
-            } else {
-                resp.sendError(HttpServletResponse.SC_BAD_REQUEST);
-            }
-            return false;
+            return initializing
+                    ? createSession(req, resp, principal)
+                    : failForMissingSession(resp, header, last);
         }
+        return validateExistingSession(req, resp, principal, state, header)
+                && validateVersion(initializing, version, resp);
+    }
+
+    private boolean createSession(HttpServletRequest req,
+                                  HttpServletResponse resp,
+                                  Principal principal) {
+        byte[] bytes = new byte[32];
+        RANDOM.nextBytes(bytes);
+        String id = Base64Util.encodeUrl(bytes);
+        current.set(new SessionState(id, req.getRemoteAddr(), principal));
+        lastSessionId.set(null);
+        resp.setHeader(TransportHeaders.SESSION_ID, id);
+        return true;
+    }
+
+    private boolean failForMissingSession(HttpServletResponse resp,
+                                          String header,
+                                          String last) throws IOException {
+        if (header != null && header.equals(last)) {
+            resp.sendError(HttpServletResponse.SC_NOT_FOUND);
+        } else {
+            resp.sendError(HttpServletResponse.SC_BAD_REQUEST);
+        }
+        return false;
+    }
+
+    private boolean validateExistingSession(HttpServletRequest req,
+                                            HttpServletResponse resp,
+                                            Principal principal,
+                                            SessionState state,
+                                            String header) throws IOException {
         if (header == null) {
             resp.sendError(HttpServletResponse.SC_BAD_REQUEST);
             return false;
@@ -100,14 +120,19 @@ final class SessionManager {
             resp.sendError(HttpServletResponse.SC_FORBIDDEN);
             return false;
         }
-        if (!initializing) {
-            // Per spec 2025-06-18, the client should send MCP-Protocol-Version on
-            // subsequent requests. For backwards compatibility, tolerate a
-            // missing header when the negotiated version is already known.
-            if (version != null && !version.equals(protocolVersion)) {
-                resp.sendError(HttpServletResponse.SC_BAD_REQUEST);
-                return false;
-            }
+        return true;
+    }
+
+    private boolean validateVersion(boolean initializing,
+                                    String version,
+                                    HttpServletResponse resp) throws IOException {
+        if (initializing) return true;
+        // Per spec 2025-06-18, the client should send MCP-Protocol-Version on
+        // subsequent requests. For backwards compatibility, tolerate a
+        // missing header when the negotiated version is already known.
+        if (version != null && !version.equals(protocolVersion)) {
+            resp.sendError(HttpServletResponse.SC_BAD_REQUEST);
+            return false;
         }
         return true;
     }
