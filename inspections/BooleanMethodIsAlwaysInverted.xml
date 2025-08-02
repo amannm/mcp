@@ -1,0 +1,86 @@
+<problems>
+<problem>
+  <file>file://$PROJECT_DIR$/src/main/java/com/amannmalik/mcp/client/McpClient.java</file>
+  <line>279</line>
+  <module>mcp.main</module>
+  <package>com.amannmalik.mcp.client</package>
+  <entry_point TYPE="method" FQNAME="com.amannmalik.mcp.client.McpClient boolean connected()" />
+  <problem_class id="BooleanMethodIsAlwaysInverted" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Boolean method is always inverted</problem_class>
+  <hints />
+  <description>Calls to boolean method 'connected()' are always inverted</description>
+  <highlighted_element>connected</highlighted_element>
+  <language>JAVA</language>
+  <offset>19</offset>
+  <length>9</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/src/main/java/com/amannmalik/mcp/security/OriginValidator.java</file>
+  <line>16</line>
+  <module>mcp.main</module>
+  <package>com.amannmalik.mcp.security</package>
+  <entry_point TYPE="method" FQNAME="com.amannmalik.mcp.security.OriginValidator boolean isValid(java.lang.String origin)" />
+  <problem_class id="BooleanMethodIsAlwaysInverted" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Boolean method is always inverted</problem_class>
+  <hints />
+  <description>Calls to boolean method 'isValid()' are always inverted</description>
+  <highlighted_element>isValid</highlighted_element>
+  <language>JAVA</language>
+  <offset>19</offset>
+  <length>7</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/src/main/java/com/amannmalik/mcp/server/McpServer.java</file>
+  <line>360</line>
+  <module>mcp.main</module>
+  <package>com.amannmalik.mcp.server</package>
+  <entry_point TYPE="method" FQNAME="com.amannmalik.mcp.server.McpServer boolean canAccessResource(java.lang.String uri)" />
+  <problem_class id="BooleanMethodIsAlwaysInverted" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Boolean method is always inverted</problem_class>
+  <hints />
+  <description>Calls to boolean method 'canAccessResource()' are always inverted</description>
+  <highlighted_element>canAccessResource</highlighted_element>
+  <language>JAVA</language>
+  <offset>20</offset>
+  <length>17</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/src/main/java/com/amannmalik/mcp/transport/StreamableHttpTransport.java</file>
+  <line>218</line>
+  <module>mcp.main</module>
+  <package>com.amannmalik.mcp.transport</package>
+  <entry_point TYPE="method" FQNAME="com.amannmalik.mcp.transport.StreamableHttpTransport boolean verifyOrigin(jakarta.servlet.http.HttpServletRequest req, jakarta.servlet.http.HttpServletResponse resp)" />
+  <problem_class id="BooleanMethodIsAlwaysInverted" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Boolean method is always inverted</problem_class>
+  <hints />
+  <description>Calls to boolean method 'verifyOrigin()' are always inverted</description>
+  <highlighted_element>verifyOrigin</highlighted_element>
+  <language>JAVA</language>
+  <offset>12</offset>
+  <length>12</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/src/main/java/com/amannmalik/mcp/transport/StreamableHttpTransport.java</file>
+  <line>226</line>
+  <module>mcp.main</module>
+  <package>com.amannmalik.mcp.transport</package>
+  <entry_point TYPE="method" FQNAME="com.amannmalik.mcp.transport.StreamableHttpTransport boolean validateAccept(jakarta.servlet.http.HttpServletRequest req, jakarta.servlet.http.HttpServletResponse resp, boolean post)" />
+  <problem_class id="BooleanMethodIsAlwaysInverted" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Boolean method is always inverted</problem_class>
+  <hints />
+  <description>Calls to boolean method 'validateAccept()' are always inverted</description>
+  <highlighted_element>validateAccept</highlighted_element>
+  <language>JAVA</language>
+  <offset>12</offset>
+  <length>14</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/src/main/java/com/amannmalik/mcp/transport/StreamableHttpTransport.java</file>
+  <line>247</line>
+  <module>mcp.main</module>
+  <package>com.amannmalik.mcp.transport</package>
+  <entry_point TYPE="method" FQNAME="com.amannmalik.mcp.transport.StreamableHttpTransport boolean validateSession(jakarta.servlet.http.HttpServletRequest req, jakarta.servlet.http.HttpServletResponse resp, com.amannmalik.mcp.auth.Principal principal, boolean initializing)" />
+  <problem_class id="BooleanMethodIsAlwaysInverted" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Boolean method is always inverted</problem_class>
+  <hints />
+  <description>Calls to boolean method 'validateSession()' are always inverted</description>
+  <highlighted_element>validateSession</highlighted_element>
+  <language>JAVA</language>
+  <offset>12</offset>
+  <length>15</length>
+</problem>
+</problems>

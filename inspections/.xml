@@ -1,0 +1,121 @@
+<problems>
+<problem>
+  <file>file://$PROJECT_DIR$/src/main/java/com/amannmalik/mcp/Main.java</file>
+  <line>33</line>
+  <module>mcp.main</module>
+  <package>com.amannmalik.mcp</package>
+  <entry_point TYPE="method" FQNAME="com.amannmalik.mcp.Main void main(java.lang.String[] args)" />
+  <language>JAVA</language>
+  <offset>23</offset>
+  <length>4</length>
+  <highlighted_element>main</highlighted_element>
+  <problem_class id="" severity="WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">unused declaration</problem_class>
+  <hints>
+    <hint value="comment" />
+    <hint value="delete" />
+  </hints>
+  <description>Method is never used.</description>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/src/main/java/com/amannmalik/mcp/client/McpClient.java</file>
+  <line>612</line>
+  <module>mcp.main</module>
+  <package>com.amannmalik.mcp.client</package>
+  <entry_point TYPE="method" FQNAME="com.amannmalik.mcp.client.McpClient void setProgressListener(com.amannmalik.mcp.util.ProgressListener listener)" />
+  <language>JAVA</language>
+  <offset>16</offset>
+  <length>19</length>
+  <highlighted_element>setProgressListener</highlighted_element>
+  <problem_class id="" severity="WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">unused declaration</problem_class>
+  <hints>
+    <hint value="comment" />
+    <hint value="delete" />
+  </hints>
+  <description>Method is never used.</description>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/src/main/java/com/amannmalik/mcp/client/elicitation/BlockingElicitationProvider.java</file>
+  <line>5</line>
+  <module>mcp.main</module>
+  <package>com.amannmalik.mcp.client.elicitation</package>
+  <entry_point TYPE="class" FQNAME="com.amannmalik.mcp.client.elicitation.BlockingElicitationProvider" />
+  <language>JAVA</language>
+  <offset>19</offset>
+  <length>27</length>
+  <highlighted_element>BlockingElicitationProvider</highlighted_element>
+  <problem_class id="" severity="WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">unused declaration</problem_class>
+  <hints>
+    <hint value="comment" />
+    <hint value="delete" />
+  </hints>
+  <description>Class is not instantiated.</description>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/src/main/java/com/amannmalik/mcp/client/elicitation/BlockingElicitationProvider.java</file>
+  <line>8</line>
+  <module>mcp.main</module>
+  <package>com.amannmalik.mcp.client.elicitation</package>
+  <entry_point TYPE="method" FQNAME="com.amannmalik.mcp.client.elicitation.BlockingElicitationProvider void respond(com.amannmalik.mcp.client.elicitation.ElicitResult response)" />
+  <language>JAVA</language>
+  <offset>16</offset>
+  <length>7</length>
+  <highlighted_element>respond</highlighted_element>
+  <problem_class id="" severity="WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">unused declaration</problem_class>
+  <hints>
+    <hint value="comment" />
+    <hint value="delete" />
+  </hints>
+  <description>Method is never used.</description>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/src/main/java/com/amannmalik/mcp/client/sampling/SamplingProviderFactory.java</file>
+  <line>17</line>
+  <module>mcp.main</module>
+  <package>com.amannmalik.mcp.client.sampling</package>
+  <entry_point TYPE="method" FQNAME="com.amannmalik.mcp.client.sampling.SamplingProviderFactory com.amannmalik.mcp.client.sampling.SamplingProvider createMock(com.amannmalik.mcp.client.sampling.CreateMessageResponse response)" />
+  <language>JAVA</language>
+  <offset>35</offset>
+  <length>10</length>
+  <highlighted_element>createMock</highlighted_element>
+  <problem_class id="" severity="WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">unused declaration</problem_class>
+  <hints>
+    <hint value="comment" />
+    <hint value="delete" />
+  </hints>
+  <description>Method is never used.</description>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/src/main/java/com/amannmalik/mcp/transport/StreamableHttpClientTransport.java</file>
+  <line>25</line>
+  <module>mcp.main</module>
+  <package>com.amannmalik.mcp.transport</package>
+  <entry_point TYPE="method" FQNAME="com.amannmalik.mcp.transport.StreamableHttpClientTransport StreamableHttpClientTransport(java.net.URI endpoint)" />
+  <language>JAVA</language>
+  <offset>11</offset>
+  <length>29</length>
+  <highlighted_element>StreamableHttpClientTransport</highlighted_element>
+  <problem_class id="" severity="WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">unused declaration</problem_class>
+  <hints>
+    <hint value="comment" />
+    <hint value="delete" />
+  </hints>
+  <description>Constructor is never used.</description>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/src/main/java/com/amannmalik/mcp/transport/StreamableHttpTransport.java</file>
+  <line>90</line>
+  <module>mcp.main</module>
+  <package>com.amannmalik.mcp.transport</package>
+  <entry_point TYPE="method" FQNAME="com.amannmalik.mcp.transport.StreamableHttpTransport StreamableHttpTransport(int port, com.amannmalik.mcp.security.OriginValidator validator, com.amannmalik.mcp.auth.AuthorizationManager auth)" />
+  <language>JAVA</language>
+  <offset>11</offset>
+  <length>23</length>
+  <highlighted_element>StreamableHttpTransport</highlighted_element>
+  <problem_class id="" severity="WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">unused declaration</problem_class>
+  <hints>
+    <hint value="comment" />
+    <hint value="delete" />
+  </hints>
+  <description>Constructor is never used.</description>
+</problem>
+</problems>

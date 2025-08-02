@@ -1,0 +1,100 @@
+<problems>
+<problem>
+  <file>file://$PROJECT_DIR$/src/main/java/com/amannmalik/mcp/jsonrpc/JsonRpcMessage.java</file>
+  <line>4</line>
+  <module>mcp.main</module>
+  <package>com.amannmalik.mcp.jsonrpc</package>
+  <entry_point TYPE="method" FQNAME="com.amannmalik.mcp.jsonrpc.JsonRpcMessage java.lang.String jsonrpc()" />
+  <problem_class id="SameReturnValue" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Method always returns the same value</problem_class>
+  <hints />
+  <description>All implementations of method &lt;code&gt;jsonrpc()&lt;/code&gt; always return &lt;code&gt;com.amannmalik.mcp.jsonrpc.JsonRpc.VERSION&lt;/code&gt;</description>
+  <highlighted_element>jsonrpc</highlighted_element>
+  <language>JAVA</language>
+  <offset>11</offset>
+  <length>7</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/src/main/java/com/amannmalik/mcp/security/SecurityPolicy.java</file>
+  <line>6</line>
+  <module>mcp.main</module>
+  <package>com.amannmalik.mcp.security</package>
+  <entry_point TYPE="method" FQNAME="com.amannmalik.mcp.security.SecurityPolicy boolean allow(com.amannmalik.mcp.client.McpClient client)" />
+  <problem_class id="SameReturnValue" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Method always returns the same value</problem_class>
+  <hints />
+  <description>All implementations of method &lt;code&gt;allow()&lt;/code&gt; always return &lt;code&gt;true&lt;/code&gt;</description>
+  <highlighted_element>allow</highlighted_element>
+  <language>JAVA</language>
+  <offset>12</offset>
+  <length>5</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/src/main/java/com/amannmalik/mcp/server/ServerDefaults.java</file>
+  <line>54</line>
+  <module>mcp.main</module>
+  <package>com.amannmalik.mcp.server</package>
+  <entry_point TYPE="method" FQNAME="com.amannmalik.mcp.server.ServerDefaults com.amannmalik.mcp.security.ToolAccessPolicy toolAccess()" />
+  <problem_class id="SameReturnValue" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Method always returns the same value</problem_class>
+  <hints />
+  <description>Method &lt;code&gt;toolAccess()&lt;/code&gt; always returns &lt;code&gt;com.amannmalik.mcp.security.ToolAccessPolicy.PERMISSIVE&lt;/code&gt;</description>
+  <highlighted_element>toolAccess</highlighted_element>
+  <language>JAVA</language>
+  <offset>35</offset>
+  <length>10</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/src/main/java/com/amannmalik/mcp/server/ServerDefaults.java</file>
+  <line>58</line>
+  <module>mcp.main</module>
+  <package>com.amannmalik.mcp.server</package>
+  <entry_point TYPE="method" FQNAME="com.amannmalik.mcp.server.ServerDefaults com.amannmalik.mcp.security.SamplingAccessPolicy samplingAccess()" />
+  <problem_class id="SameReturnValue" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Method always returns the same value</problem_class>
+  <hints />
+  <description>Method &lt;code&gt;samplingAccess()&lt;/code&gt; always returns &lt;code&gt;com.amannmalik.mcp.security.SamplingAccessPolicy.PERMISSIVE&lt;/code&gt;</description>
+  <highlighted_element>samplingAccess</highlighted_element>
+  <language>JAVA</language>
+  <offset>39</offset>
+  <length>14</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/src/main/java/com/amannmalik/mcp/transport/SessionManager.java</file>
+  <line>83</line>
+  <module>mcp.main</module>
+  <package>com.amannmalik.mcp.transport</package>
+  <entry_point TYPE="method" FQNAME="com.amannmalik.mcp.transport.SessionManager boolean createSession(jakarta.servlet.http.HttpServletRequest req, jakarta.servlet.http.HttpServletResponse resp, com.amannmalik.mcp.auth.Principal principal)" />
+  <problem_class id="SameReturnValue" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Method always returns the same value</problem_class>
+  <hints />
+  <description>Method &lt;code&gt;createSession()&lt;/code&gt; always returns &lt;code&gt;true&lt;/code&gt;</description>
+  <highlighted_element>createSession</highlighted_element>
+  <language>JAVA</language>
+  <offset>20</offset>
+  <length>13</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/src/main/java/com/amannmalik/mcp/transport/SessionManager.java</file>
+  <line>95</line>
+  <module>mcp.main</module>
+  <package>com.amannmalik.mcp.transport</package>
+  <entry_point TYPE="method" FQNAME="com.amannmalik.mcp.transport.SessionManager boolean failForMissingSession(jakarta.servlet.http.HttpServletResponse resp, java.lang.String header, java.lang.String last)" />
+  <problem_class id="SameReturnValue" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Method always returns the same value</problem_class>
+  <hints />
+  <description>Method &lt;code&gt;failForMissingSession()&lt;/code&gt; always returns &lt;code&gt;false&lt;/code&gt;</description>
+  <highlighted_element>failForMissingSession</highlighted_element>
+  <language>JAVA</language>
+  <offset>20</offset>
+  <length>21</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/src/main/java/com/amannmalik/mcp/util/EmptyJsonObjectCodec.java</file>
+  <line>10</line>
+  <module>mcp.main</module>
+  <package>com.amannmalik.mcp.util</package>
+  <entry_point TYPE="method" FQNAME="com.amannmalik.mcp.util.EmptyJsonObjectCodec jakarta.json.JsonObject toJsonObject()" />
+  <problem_class id="SameReturnValue" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Method always returns the same value</problem_class>
+  <hints />
+  <description>Method &lt;code&gt;toJsonObject()&lt;/code&gt; always returns &lt;code&gt;jakarta.json.JsonValue.EMPTY_JSON_OBJECT&lt;/code&gt;</description>
+  <highlighted_element>toJsonObject</highlighted_element>
+  <language>JAVA</language>
+  <offset>29</offset>
+  <length>12</length>
+</problem>
+</problems>

@@ -1,0 +1,106 @@
+<problems>
+<problem>
+  <file>file://$PROJECT_DIR$/src/main/java/com/amannmalik/mcp/cli/ServerCommand.java</file>
+  <line>96</line>
+  <module>mcp.main</module>
+  <package>com.amannmalik.mcp.cli</package>
+  <entry_point TYPE="method" FQNAME="com.amannmalik.mcp.cli.ServerCommand java.lang.Integer call()" />
+  <problem_class id="AutoCloseableResource" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">AutoCloseable used without 'try'-with-resources</problem_class>
+  <description>'StreamableHttpTransport' used without 'try'-with-resources statement #loc</description>
+  <highlighted_element>StreamableHttpTransport</highlighted_element>
+  <language>JAVA</language>
+  <offset>49</offset>
+  <length>23</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/src/main/java/com/amannmalik/mcp/client/McpClient.java</file>
+  <line>465</line>
+  <module>mcp.main</module>
+  <package>com.amannmalik.mcp.client</package>
+  <entry_point TYPE="method" FQNAME="com.amannmalik.mcp.client.McpClient void fetchResourceMetadata(java.lang.String url)" />
+  <problem_class id="AutoCloseableResource" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">AutoCloseable used without 'try'-with-resources</problem_class>
+  <description>'HttpClient' used without 'try'-with-resources statement #loc</description>
+  <highlighted_element>newHttpClient</highlighted_element>
+  <language>JAVA</language>
+  <offset>30</offset>
+  <length>13</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/src/main/java/com/amannmalik/mcp/client/sampling/InteractiveSamplingProvider.java</file>
+  <line>145</line>
+  <module>mcp.main</module>
+  <package>com.amannmalik.mcp.client.sampling</package>
+  <entry_point TYPE="method" FQNAME="com.amannmalik.mcp.client.sampling.InteractiveSamplingProvider java.util.Optional&lt;com.amannmalik.mcp.client.sampling.InteractiveSamplingProvider.AiResult&gt; openAiResponse(com.amannmalik.mcp.client.sampling.CreateMessageRequest request, long timeoutMillis)" />
+  <problem_class id="AutoCloseableResource" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">AutoCloseable used without 'try'-with-resources</problem_class>
+  <description>'HttpClient' used without 'try'-with-resources statement #loc</description>
+  <highlighted_element>build</highlighted_element>
+  <language>JAVA</language>
+  <offset>42</offset>
+  <length>5</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/src/main/java/com/amannmalik/mcp/client/sampling/InteractiveSamplingProvider.java</file>
+  <line>193</line>
+  <module>mcp.main</module>
+  <package>com.amannmalik.mcp.client.sampling</package>
+  <entry_point TYPE="method" FQNAME="com.amannmalik.mcp.client.sampling.InteractiveSamplingProvider java.lang.String readLine(long timeoutMillis)" />
+  <problem_class id="AutoCloseableResource" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">AutoCloseable used without 'try'-with-resources</problem_class>
+  <description>'ExecutorService' used without 'try'-with-resources statement #loc</description>
+  <highlighted_element>newSingleThreadExecutor</highlighted_element>
+  <language>JAVA</language>
+  <offset>45</offset>
+  <length>23</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/src/main/java/com/amannmalik/mcp/security/HostProcess.java</file>
+  <line>86</line>
+  <module>mcp.main</module>
+  <package>com.amannmalik.mcp.security</package>
+  <entry_point TYPE="method" FQNAME="com.amannmalik.mcp.security.HostProcess void register(java.lang.String id, com.amannmalik.mcp.client.McpClient client)" />
+  <problem_class id="AutoCloseableResource" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">AutoCloseable used without 'try'-with-resources</problem_class>
+  <description>'McpClient' used without 'try'-with-resources statement #loc</description>
+  <highlighted_element>remove</highlighted_element>
+  <language>JAVA</language>
+  <offset>20</offset>
+  <length>6</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/src/main/java/com/amannmalik/mcp/security/HostProcess.java</file>
+  <line>92</line>
+  <module>mcp.main</module>
+  <package>com.amannmalik.mcp.security</package>
+  <entry_point TYPE="method" FQNAME="com.amannmalik.mcp.security.HostProcess void unregister(java.lang.String id)" />
+  <problem_class id="AutoCloseableResource" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">AutoCloseable used without 'try'-with-resources</problem_class>
+  <description>'McpClient' used without 'try'-with-resources statement #loc</description>
+  <highlighted_element>remove</highlighted_element>
+  <language>JAVA</language>
+  <offset>35</offset>
+  <length>6</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/src/main/java/com/amannmalik/mcp/transport/StreamableHttpTransport.java</file>
+  <line>148</line>
+  <module>mcp.main</module>
+  <package>com.amannmalik.mcp.transport</package>
+  <entry_point TYPE="method" FQNAME="com.amannmalik.mcp.transport.StreamableHttpTransport void removeRequestStream(java.lang.String key, com.amannmalik.mcp.transport.SseClient client)" />
+  <problem_class id="AutoCloseableResource" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">AutoCloseable used without 'try'-with-resources</problem_class>
+  <description>'SseClient' used without 'try'-with-resources statement #loc</description>
+  <highlighted_element>remove</highlighted_element>
+  <language>JAVA</language>
+  <offset>23</offset>
+  <length>6</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/src/main/java/com/amannmalik/mcp/transport/StreamableHttpTransport.java</file>
+  <line>149</line>
+  <module>mcp.main</module>
+  <package>com.amannmalik.mcp.transport</package>
+  <entry_point TYPE="method" FQNAME="com.amannmalik.mcp.transport.StreamableHttpTransport void removeRequestStream(java.lang.String key, com.amannmalik.mcp.transport.SseClient client)" />
+  <problem_class id="AutoCloseableResource" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">AutoCloseable used without 'try'-with-resources</problem_class>
+  <description>'SseClient' used without 'try'-with-resources statement #loc</description>
+  <highlighted_element>remove</highlighted_element>
+  <language>JAVA</language>
+  <offset>24</offset>
+  <length>6</length>
+</problem>
+</problems>
