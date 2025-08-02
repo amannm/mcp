@@ -6,7 +6,6 @@ import com.amannmalik.mcp.client.elicitation.*;
 import com.amannmalik.mcp.client.roots.Root;
 import com.amannmalik.mcp.client.roots.RootsListener;
 import com.amannmalik.mcp.client.sampling.*;
-import com.amannmalik.mcp.content.ContentBlock;
 import com.amannmalik.mcp.jsonrpc.*;
 import com.amannmalik.mcp.lifecycle.*;
 import com.amannmalik.mcp.ping.PingCodec;
@@ -67,10 +66,13 @@ public final class McpServer implements AutoCloseable {
     private final Map<RequestId, CompletableFuture<JsonRpcMessage>> pending = new ConcurrentHashMap<>();
 
     public McpServer(Transport transport, String instructions) {
-        this(createDefaultResources(), createDefaultTools(), createDefaultPrompts(), createDefaultCompletions(),
-                createDefaultPrivacyBoundary("default"),
-                createDefaultToolAccess(),
-                createDefaultSamplingAccess(),
+        this(ServerDefaults.resources(),
+                ServerDefaults.tools(),
+                ServerDefaults.prompts(),
+                ServerDefaults.completions(),
+                ServerDefaults.privacyBoundary("default"),
+                ServerDefaults.toolAccess(),
+                ServerDefaults.samplingAccess(),
                 new Principal("default", Set.of()),
                 instructions,
                 transport);
@@ -752,55 +754,6 @@ public final class McpServer implements AutoCloseable {
         }
     }
 
-    private static ResourceProvider createDefaultResources() {
-        Resource r = new Resource("test://example", "example", null, null, "text/plain", 5L, null, null);
-        ResourceBlock.Text block = new ResourceBlock.Text("test://example", "text/plain", "hello", null);
-        ResourceTemplate t = new ResourceTemplate("test://template", "example_template", null, null, "text/plain", null, null);
-        return new InMemoryResourceProvider(List.of(r), Map.of(r.uri(), block), List.of(t));
-    }
-
-    private static ToolProvider createDefaultTools() {
-        var schema = Json.createObjectBuilder().add("type", "object").build();
-        Tool tool = new Tool("test_tool", "Test Tool", null, schema, null, null, null);
-        return new InMemoryToolProvider(
-                List.of(tool),
-                Map.of("test_tool", a -> new ToolResult(
-                        Json.createArrayBuilder()
-                                .add(Json.createObjectBuilder()
-                                        .add("type", "text")
-                                        .add("text", "ok")
-                                        .build())
-                                .build(), null, false, null)));
-    }
-
-    private static PromptProvider createDefaultPrompts() {
-        InMemoryPromptProvider p = new InMemoryPromptProvider();
-        PromptArgument arg = new PromptArgument("test_arg", null, null, true, null);
-        Prompt prompt = new Prompt("test_prompt", "Test Prompt", null, List.of(arg), null);
-        PromptMessageTemplate msg = new PromptMessageTemplate(Role.USER, new ContentBlock.Text("hello", null, null));
-        p.add(new PromptTemplate(prompt, List.of(msg)));
-        return p;
-    }
-
-    private static CompletionProvider createDefaultCompletions() {
-        InMemoryCompletionProvider provider = new InMemoryCompletionProvider();
-        provider.add(new CompleteRequest.Ref.PromptRef("test_prompt", null, null), "test_arg", Map.of(), List.of("test_completion"));
-        return provider;
-    }
-
-    private static ToolAccessPolicy createDefaultToolAccess() {
-        return ToolAccessPolicy.PERMISSIVE;
-    }
-
-    private static SamplingAccessPolicy createDefaultSamplingAccess() {
-        return SamplingAccessPolicy.PERMISSIVE;
-    }
-
-    private static ResourceAccessController createDefaultPrivacyBoundary(String principalId) {
-        var p = new PrivacyBoundaryEnforcer();
-        for (Role a : Role.values()) p.allow(principalId, a);
-        return p;
-    }
 
     @Override
     public void close() throws IOException {
