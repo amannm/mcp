@@ -11,30 +11,31 @@ import java.nio.charset.StandardCharsets;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicReference;
 
 public final class StreamableHttpClientTransport implements Transport {
     private final HttpClient client = HttpClient.newHttpClient();
     private final URI endpoint;
     private final BlockingQueue<JsonObject> incoming = new LinkedBlockingQueue<>();
     private final Set<SseReader> streams = ConcurrentHashMap.newKeySet();
-    private volatile String sessionId;
-    private volatile String protocolVersion = Protocol.LATEST_VERSION;
-    private volatile String authorization;
+    private final AtomicReference<String> sessionId = new AtomicReference<>();
+    private final AtomicReference<String> protocolVersion = new AtomicReference<>(Protocol.LATEST_VERSION);
+    private final AtomicReference<String> authorization = new AtomicReference<>();
 
     public StreamableHttpClientTransport(URI endpoint) {
         this.endpoint = endpoint;
     }
 
     public void setProtocolVersion(String version) {
-        this.protocolVersion = InputSanitizer.requireNonBlank(version);
+        protocolVersion.set(InputSanitizer.requireNonBlank(version));
     }
 
     public void setAuthorization(String token) {
-        this.authorization = InputSanitizer.requireNonBlank(token);
+        authorization.set(InputSanitizer.requireNonBlank(token));
     }
 
     public void clearAuthorization() {
-        this.authorization = null;
+        authorization.set(null);
     }
 
     @Override
@@ -43,10 +44,10 @@ public final class StreamableHttpClientTransport implements Transport {
                 .header("Accept", "application/json, text/event-stream")
                 .header("Content-Type", "application/json")
                 .header("Origin", "http://127.0.0.1")
-                .header(TransportHeaders.PROTOCOL_VERSION, protocolVersion);
-        Optional.ofNullable(authorization)
+                .header(TransportHeaders.PROTOCOL_VERSION, protocolVersion.get());
+        Optional.ofNullable(authorization.get())
                 .ifPresent(t -> builder.header(TransportHeaders.AUTHORIZATION, "Bearer " + t));
-        Optional.ofNullable(sessionId).ifPresent(id -> builder.header(TransportHeaders.SESSION_ID, id));
+        Optional.ofNullable(sessionId.get()).ifPresent(id -> builder.header(TransportHeaders.SESSION_ID, id));
         HttpRequest request = builder.POST(HttpRequest.BodyPublishers.ofString(message.toString())).build();
         HttpResponse<InputStream> response;
         try {
@@ -56,11 +57,13 @@ public final class StreamableHttpClientTransport implements Transport {
             throw new IOException(e);
         }
 
-        sessionId = response.headers().firstValue(TransportHeaders.SESSION_ID).orElse(sessionId);
+        sessionId.updateAndGet(old -> response.headers()
+                .firstValue(TransportHeaders.SESSION_ID)
+                .orElse(old));
 
-        protocolVersion = response.headers()
+        protocolVersion.updateAndGet(old -> response.headers()
                 .firstValue(TransportHeaders.PROTOCOL_VERSION)
-                .orElse(protocolVersion);
+                .orElse(old));
 
         int status = response.statusCode();
         String ct = response.headers().firstValue("Content-Type").orElse("");
@@ -103,10 +106,11 @@ public final class StreamableHttpClientTransport implements Transport {
 
     @Override
     public void close() throws IOException {
-        if (sessionId != null) {
+        String sid = sessionId.get();
+        if (sid != null) {
             HttpRequest.Builder builder = HttpRequest.newBuilder(endpoint)
-                    .header(TransportHeaders.SESSION_ID, sessionId)
-                    .header(TransportHeaders.PROTOCOL_VERSION, protocolVersion)
+                    .header(TransportHeaders.SESSION_ID, sid)
+                    .header(TransportHeaders.PROTOCOL_VERSION, protocolVersion.get())
                     .DELETE();
             try {
                 client.send(builder.build(), HttpResponse.BodyHandlers.discarding());
@@ -139,10 +143,10 @@ public final class StreamableHttpClientTransport implements Transport {
                 String eventId = null;
                 while (!closed && (line = br.readLine()) != null) {
                     if (line.startsWith("id:")) {
-                        eventId = line.substring(line.indexOf(':') + 1).trim();
+                        eventId = value(line);
                     } else if (line.startsWith("data:")) {
                         if (!data.isEmpty()) data.append('\n');
-                        data.append(line.substring(line.indexOf(':') + 1).trim());
+                        data.append(value(line));
                     } else if (line.isEmpty()) {
                         if (!data.isEmpty()) {
                             try (JsonReader jr = Json.createReader(new StringReader(data.toString()))) {
@@ -162,6 +166,10 @@ public final class StreamableHttpClientTransport implements Transport {
                 if (container != null) container.remove(this);
                 close();
             }
+        }
+
+        private String value(String line) {
+            return line.substring(line.indexOf(':') + 1).trim();
         }
 
         void close() {
