@@ -10,7 +10,7 @@ import com.amannmalik.mcp.content.ContentBlock;
 import com.amannmalik.mcp.jsonrpc.*;
 import com.amannmalik.mcp.lifecycle.*;
 import com.amannmalik.mcp.prompts.Role;
-import com.amannmalik.mcp.security.*;
+import com.amannmalik.mcp.security.OriginValidator;
 import com.amannmalik.mcp.server.McpServer;
 import com.amannmalik.mcp.transport.*;
 import io.cucumber.datatable.DataTable;
@@ -146,8 +146,8 @@ public final class McpConformanceSteps {
     private Transport createHttpTransport() throws Exception {
         System.out.println("DEBUG: Starting StreamableHttpTransport server...");
         serverTransport = new StreamableHttpTransport(0,
-                new OriginValidator(Set.of("http://localhost", "http://127.0.0.1")), 
-                null, 
+                new OriginValidator(Set.of("http://localhost", "http://127.0.0.1")),
+                null,
                 "https://example.com/.well-known/oauth-protected-resource",
                 List.of("https://auth.example.com"));
         System.out.println("DEBUG: StreamableHttpTransport server started on port: " + serverTransport.port());

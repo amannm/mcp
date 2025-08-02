@@ -44,14 +44,14 @@ public final class HostCommand {
     public static int execute(ParseResult parseResult) {
         Integer helpExitCode = CommandLine.executeHelpRequest(parseResult);
         if (helpExitCode != null) return helpExitCode;
-        
+
         try {
             boolean verbose = parseResult.matchedOptionValue("--verbose", false);
-            List<String> clientSpecs = parseResult.matchedOptionValue("--client", Collections.<String>emptyList());
+            List<String> clientSpecs = parseResult.matchedOptionValue("--client", Collections.emptyList());
             boolean interactive = parseResult.matchedOptionValue("--interactive", false);
-            
+
             if (clientSpecs.isEmpty()) throw new IllegalArgumentException("--client required");
-            
+
             Map<String, String> clients = new LinkedHashMap<>();
             for (String spec : clientSpecs) {
                 int idx = spec.indexOf(':');

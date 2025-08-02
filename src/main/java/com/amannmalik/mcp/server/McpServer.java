@@ -12,10 +12,10 @@ import com.amannmalik.mcp.lifecycle.*;
 import com.amannmalik.mcp.ping.PingCodec;
 import com.amannmalik.mcp.ping.PingRequest;
 import com.amannmalik.mcp.prompts.*;
+import com.amannmalik.mcp.resources.*;
 import com.amannmalik.mcp.security.*;
 import com.amannmalik.mcp.server.completion.*;
 import com.amannmalik.mcp.server.logging.*;
-import com.amannmalik.mcp.resources.*;
 import com.amannmalik.mcp.server.roots.RootsManager;
 import com.amannmalik.mcp.server.tools.*;
 import com.amannmalik.mcp.transport.Transport;
@@ -380,7 +380,9 @@ public final class McpServer implements AutoCloseable {
     }
 
     private static final class InvalidParams extends RuntimeException {
-        InvalidParams(String message) { super(message); }
+        InvalidParams(String message) {
+            super(message);
+        }
     }
 
     private Optional<String> rateLimit(RateLimiter limiter, String key) {

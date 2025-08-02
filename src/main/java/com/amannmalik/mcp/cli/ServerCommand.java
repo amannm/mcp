@@ -13,9 +13,7 @@ import picocli.CommandLine.ParseResult;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.Collections;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 public final class ServerCommand {
     public static CommandSpec createCommandSpec() {
@@ -58,11 +56,11 @@ public final class ServerCommand {
         spec.usageMessage().description("Run MCP server");
         return spec;
     }
-    
+
     public static int execute(ParseResult parseResult) {
         Integer helpExitCode = CommandLine.executeHelpRequest(parseResult);
         if (helpExitCode != null) return helpExitCode;
-        
+
         try {
             Integer httpPort = parseResult.matchedOptionValue("--http", null);
             boolean stdio = parseResult.matchedOptionValue("--stdio", false);
@@ -70,9 +68,9 @@ public final class ServerCommand {
             boolean verbose = parseResult.matchedOptionValue("--verbose", false);
             String expectedAudience = parseResult.matchedOptionValue("--audience", null);
             String resourceMetadataUrl = parseResult.matchedOptionValue("--resource-metadata", null);
-            List<String> authServers = parseResult.matchedOptionValue("--auth-server", Collections.<String>emptyList());
+            List<String> authServers = parseResult.matchedOptionValue("--auth-server", Collections.emptyList());
             boolean testMode = parseResult.matchedOptionValue("--test-mode", false);
-            
+
             TransportType defType = parseTransport(McpConfiguration.current().server().transport().type());
             TransportType type = httpPort == null ? defType : TransportType.HTTP;
             int port = httpPort == null ? McpConfiguration.current().server().transport().port() : httpPort;
