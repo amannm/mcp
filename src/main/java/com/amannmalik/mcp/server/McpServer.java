@@ -8,7 +8,6 @@ import com.amannmalik.mcp.client.elicitation.ElicitResult;
 import com.amannmalik.mcp.client.elicitation.ElicitationAction;
 import com.amannmalik.mcp.client.roots.Root;
 import com.amannmalik.mcp.client.roots.RootsListener;
-import com.amannmalik.mcp.client.roots.RootsSubscription;
 import com.amannmalik.mcp.client.sampling.CreateMessageRequest;
 import com.amannmalik.mcp.client.sampling.CreateMessageResponse;
 import com.amannmalik.mcp.client.sampling.SamplingCodec;
@@ -46,7 +45,6 @@ import com.amannmalik.mcp.prompts.PromptInstance;
 import com.amannmalik.mcp.prompts.PromptMessageTemplate;
 import com.amannmalik.mcp.prompts.PromptProvider;
 import com.amannmalik.mcp.prompts.PromptTemplate;
-import com.amannmalik.mcp.prompts.PromptsSubscription;
 import com.amannmalik.mcp.prompts.Role;
 import com.amannmalik.mcp.security.PrivacyBoundaryEnforcer;
 import com.amannmalik.mcp.security.RateLimiter;
@@ -70,7 +68,6 @@ import com.amannmalik.mcp.server.resources.ReadResourceRequest;
 import com.amannmalik.mcp.server.resources.ReadResourceResult;
 import com.amannmalik.mcp.server.resources.Resource;
 import com.amannmalik.mcp.server.resources.ResourceBlock;
-import com.amannmalik.mcp.server.resources.ResourceListSubscription;
 import com.amannmalik.mcp.server.resources.ResourceProvider;
 import com.amannmalik.mcp.server.resources.ResourceSubscription;
 import com.amannmalik.mcp.server.resources.ResourceListChangedNotification;
@@ -85,7 +82,6 @@ import com.amannmalik.mcp.server.tools.ListToolsRequest;
 import com.amannmalik.mcp.server.tools.Tool;
 import com.amannmalik.mcp.server.tools.ToolCodec;
 import com.amannmalik.mcp.server.tools.ToolListChangedNotification;
-import com.amannmalik.mcp.server.tools.ToolListSubscription;
 import com.amannmalik.mcp.server.tools.ToolProvider;
 import com.amannmalik.mcp.server.tools.ToolResult;
 import com.amannmalik.mcp.prompts.PromptListChangedNotification;
@@ -142,9 +138,9 @@ public final class McpServer implements AutoCloseable {
     private final PromptProvider prompts;
     private final CompletionProvider completions;
     private final Map<String, ResourceSubscription> resourceSubscriptions = new ConcurrentHashMap<>();
-    private ResourceListSubscription resourceListSubscription;
-    private ToolListSubscription toolListSubscription;
-    private PromptsSubscription promptsSubscription;
+    private ListChangeSubscription resourceListSubscription;
+    private ListChangeSubscription toolListSubscription;
+    private ListChangeSubscription promptsSubscription;
     private final boolean toolListChangedSupported;
     private final boolean resourcesSubscribeSupported;
     private final boolean resourcesListChangedSupported;
@@ -810,7 +806,7 @@ public final class McpServer implements AutoCloseable {
         return rootsManager.listRoots();
     }
 
-    public RootsSubscription subscribeRoots(RootsListener listener) {
+    public ListChangeSubscription subscribeRoots(RootsListener listener) {
         return rootsManager.subscribe(listener);
     }
 

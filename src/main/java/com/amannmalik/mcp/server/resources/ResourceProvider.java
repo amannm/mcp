@@ -1,5 +1,6 @@
 package com.amannmalik.mcp.server.resources;
 
+import com.amannmalik.mcp.util.ListChangeSubscription;
 import com.amannmalik.mcp.util.Pagination;
 import java.util.Optional;
 
@@ -16,7 +17,7 @@ public interface ResourceProvider extends AutoCloseable {
 
     ResourceSubscription subscribe(String uri, ResourceListener listener);
 
-    default ResourceListSubscription subscribeList(ResourceListListener listener) {
+    default ListChangeSubscription subscribeList(ResourceListListener listener) {
         return () -> {
         };
     }
