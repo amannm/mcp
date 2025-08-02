@@ -48,10 +48,6 @@ public final class McpServer implements AutoCloseable {
     private ListChangeSubscription resourceListSubscription;
     private ListChangeSubscription toolListSubscription;
     private ListChangeSubscription promptsSubscription;
-    private final boolean toolListChangedSupported;
-    private final boolean resourcesSubscribeSupported;
-    private final boolean resourcesListChangedSupported;
-    private final boolean promptsListChangedSupported;
     private final RootsManager rootsManager;
     private final ResourceAccessController resourceAccess;
     private final ToolAccessPolicy toolAccess;
@@ -112,27 +108,23 @@ public final class McpServer implements AutoCloseable {
         var requestProcessor = new JsonRpcRequestProcessor(progressManager, cancellationTracker, this::send, idTracker);
         this.handlers = new RpcHandlerRegistry(requestProcessor);
         this.principal = principal;
-        this.toolListChangedSupported = tools != null && tools.supportsListChanged();
-        this.resourcesSubscribeSupported = resources != null && resources.supportsSubscribe();
-        this.resourcesListChangedSupported = resources != null && resources.supportsListChanged();
-        this.promptsListChangedSupported = prompts != null && prompts.supportsListChanged();
         this.rootsManager = new RootsManager(lifecycle, this::sendRequest);
 
-        if (resources != null && resourcesListChangedSupported) {
+        if (resources != null && resources.supportsListChanged()) {
             resourceListSubscription = subscribeListChanges(
                     l -> resources.subscribeList(() -> l.listChanged()),
                     NotificationMethod.RESOURCES_LIST_CHANGED,
                     ResourcesCodec.toJsonObject(new ResourceListChangedNotification()));
         }
 
-        if (tools != null && toolListChangedSupported) {
+        if (tools != null && tools.supportsListChanged()) {
             toolListSubscription = subscribeListChanges(
                     l -> tools.subscribeList(() -> l.listChanged()),
                     NotificationMethod.TOOLS_LIST_CHANGED,
                     ToolCodec.toJsonObject(new ToolListChangedNotification()));
         }
 
-        if (prompts != null && promptsListChangedSupported) {
+        if (prompts != null && prompts.supportsListChanged()) {
             promptsSubscription = subscribeListChanges(
                     l -> prompts.subscribe(() -> l.listChanged()),
                     NotificationMethod.PROMPTS_LIST_CHANGED,
@@ -149,7 +141,7 @@ public final class McpServer implements AutoCloseable {
             handlers.register(RequestMethod.RESOURCES_LIST, this::listResources);
             handlers.register(RequestMethod.RESOURCES_READ, this::readResource);
             handlers.register(RequestMethod.RESOURCES_TEMPLATES_LIST, this::listTemplates);
-            if (resourcesSubscribeSupported) {
+            if (resources.supportsSubscribe()) {
                 handlers.register(RequestMethod.RESOURCES_SUBSCRIBE, this::subscribeResource);
                 handlers.register(RequestMethod.RESOURCES_UNSUBSCRIBE, this::unsubscribeResource);
             }
@@ -307,12 +299,7 @@ public final class McpServer implements AutoCloseable {
                 baseResp.capabilities(),
                 baseResp.serverInfo(),
                 baseResp.instructions(),
-                new ServerFeatures(
-                        resourcesSubscribeSupported,
-                        resourcesListChangedSupported,
-                        toolListChangedSupported,
-                        promptsListChangedSupported
-                )
+                serverFeatures()
         );
         var json = LifecycleCodec.toJsonObject(resp);
         return new JsonRpcResponse(req.id(), json);
@@ -336,6 +323,15 @@ public final class McpServer implements AutoCloseable {
         if (!lifecycle.negotiatedClientCapabilities().contains(cap)) {
             throw new IllegalStateException("Missing client capability: " + cap);
         }
+    }
+
+    private ServerFeatures serverFeatures() {
+        return new ServerFeatures(
+                resources != null && resources.supportsSubscribe(),
+                resources != null && resources.supportsListChanged(),
+                tools != null && tools.supportsListChanged(),
+                prompts != null && prompts.supportsListChanged()
+        );
     }
 
     private void requireServerCapability(ServerCapability cap) {

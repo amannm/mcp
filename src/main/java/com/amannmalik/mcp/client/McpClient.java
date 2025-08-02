@@ -53,10 +53,7 @@ public final class McpClient implements AutoCloseable {
     private volatile boolean connected;
     private Set<ServerCapability> serverCapabilities = Set.of();
     private String instructions;
-    private boolean resourcesSubscribeSupported;
-    private boolean resourcesListChangedSupported;
-    private boolean toolsListChangedSupported;
-    private boolean promptsListChangedSupported;
+    private ServerFeatures serverFeatures = new ServerFeatures(false, false, false, false);
     private ProgressListener progressListener = n -> {
     };
     private LoggingListener loggingListener = n -> {
@@ -214,10 +211,7 @@ public final class McpClient implements AutoCloseable {
             instructions = ir.instructions();
             ServerFeatures f = ir.features();
             if (f != null) {
-                resourcesSubscribeSupported = f.resourcesSubscribe();
-                resourcesListChangedSupported = f.resourcesListChanged();
-                toolsListChangedSupported = f.toolsListChanged();
-                promptsListChangedSupported = f.promptsListChanged();
+                serverFeatures = f;
             }
         } else if (msg instanceof JsonRpcError err) {
             throw new IOException("Initialization failed: " + err.error().message());
@@ -410,19 +404,19 @@ public final class McpClient implements AutoCloseable {
     }
 
     public boolean resourcesSubscribeSupported() {
-        return resourcesSubscribeSupported;
+        return serverFeatures.resourcesSubscribe();
     }
 
     public boolean resourcesListChangedSupported() {
-        return resourcesListChangedSupported;
+        return serverFeatures.resourcesListChanged();
     }
 
     public boolean toolsListChangedSupported() {
-        return toolsListChangedSupported;
+        return serverFeatures.toolsListChanged();
     }
 
     public boolean promptsListChangedSupported() {
-        return promptsListChangedSupported;
+        return serverFeatures.promptsListChanged();
     }
 
     public Optional<ResourceMetadata> resourceMetadata() {
@@ -458,7 +452,7 @@ public final class McpClient implements AutoCloseable {
     }
 
     public ResourceSubscription subscribeResource(String uri, ResourceListener listener) throws IOException {
-        if (!resourcesSubscribeSupported) {
+        if (!serverFeatures.resourcesSubscribe()) {
             throw new IllegalStateException("resource subscribe not supported");
         }
         if (listener == null) {
