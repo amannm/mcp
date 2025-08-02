@@ -51,7 +51,7 @@ public final class JsonRpcCodec {
         };
     }
 
-    private enum Kind { REQUEST, NOTIFICATION, RESPONSE, ERROR }
+    private enum Kind {REQUEST, NOTIFICATION, RESPONSE, ERROR}
 
     private static void validateVersion(JsonObject obj) {
         var version = obj.getString("jsonrpc", null);

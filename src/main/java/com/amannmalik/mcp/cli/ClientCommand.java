@@ -34,15 +34,15 @@ public final class ClientCommand {
         spec.usageMessage().description("Run MCP client");
         return spec;
     }
-    
+
     public static int execute(ParseResult parseResult) {
         Integer helpExitCode = CommandLine.executeHelpRequest(parseResult);
         if (helpExitCode != null) return helpExitCode;
-        
+
         try {
             String command = parseResult.matchedOptionValue("--command", null);
             boolean verbose = parseResult.matchedOptionValue("--verbose", false);
-            
+
             if (command == null) throw new IllegalArgumentException("command required");
 
             StdioTransport transport = new StdioTransport(new ProcessBuilder(command.split(" ")),

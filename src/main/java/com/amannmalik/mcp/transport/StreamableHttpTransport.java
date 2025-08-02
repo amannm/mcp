@@ -2,7 +2,6 @@ package com.amannmalik.mcp.transport;
 
 import com.amannmalik.mcp.auth.*;
 import com.amannmalik.mcp.config.McpConfiguration;
-import com.amannmalik.mcp.jsonrpc.*;
 import com.amannmalik.mcp.lifecycle.Protocol;
 import com.amannmalik.mcp.security.OriginValidator;
 import jakarta.json.Json;
@@ -148,18 +147,11 @@ public final class StreamableHttpTransport implements Transport {
             return false;
         }
         String norm = accept.toLowerCase(Locale.ROOT);
-        if (post) {
-            if (!(norm.contains("application/json") && norm.contains("text/event-stream"))) {
-                resp.sendError(HttpServletResponse.SC_NOT_ACCEPTABLE);
-                return false;
-            }
-        } else {
-            if (!norm.contains("text/event-stream")) {
-                resp.sendError(HttpServletResponse.SC_NOT_ACCEPTABLE);
-                return false;
-            }
-        }
-        return true;
+        boolean ok = post
+                ? norm.contains("application/json") && norm.contains("text/event-stream")
+                : norm.contains("text/event-stream");
+        if (!ok) resp.sendError(HttpServletResponse.SC_NOT_ACCEPTABLE);
+        return ok;
     }
 
     boolean validateSession(HttpServletRequest req,

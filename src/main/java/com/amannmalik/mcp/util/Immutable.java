@@ -1,9 +1,6 @@
 package com.amannmalik.mcp.util;
 
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
 
 public final class Immutable {
     private Immutable() {

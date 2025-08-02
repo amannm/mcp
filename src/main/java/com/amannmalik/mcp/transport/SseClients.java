@@ -26,10 +26,24 @@ final class SseClients {
 
     AsyncListener requestListener(String key, SseClient client) {
         return new AsyncListener() {
-            @Override public void onComplete(AsyncEvent event) { removeRequest(key, client); }
-            @Override public void onTimeout(AsyncEvent event) { removeRequest(key, client); }
-            @Override public void onError(AsyncEvent event) { removeRequest(key, client); }
-            @Override public void onStartAsync(AsyncEvent event) { }
+            @Override
+            public void onComplete(AsyncEvent event) {
+                removeRequest(key, client);
+            }
+
+            @Override
+            public void onTimeout(AsyncEvent event) {
+                removeRequest(key, client);
+            }
+
+            @Override
+            public void onError(AsyncEvent event) {
+                removeRequest(key, client);
+            }
+
+            @Override
+            public void onStartAsync(AsyncEvent event) {
+            }
         };
     }
 
@@ -41,10 +55,24 @@ final class SseClients {
 
     AsyncListener generalListener(SseClient client) {
         return new AsyncListener() {
-            @Override public void onComplete(AsyncEvent event) { removeGeneral(client); }
-            @Override public void onTimeout(AsyncEvent event) { removeGeneral(client); }
-            @Override public void onError(AsyncEvent event) { removeGeneral(client); }
-            @Override public void onStartAsync(AsyncEvent event) { }
+            @Override
+            public void onComplete(AsyncEvent event) {
+                removeGeneral(client);
+            }
+
+            @Override
+            public void onTimeout(AsyncEvent event) {
+                removeGeneral(client);
+            }
+
+            @Override
+            public void onError(AsyncEvent event) {
+                removeGeneral(client);
+            }
+
+            @Override
+            public void onStartAsync(AsyncEvent event) {
+            }
         };
     }
 

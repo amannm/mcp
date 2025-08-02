@@ -21,15 +21,15 @@ public final class ConfigCommand {
         spec.usageMessage().description("Manage configuration");
         return spec;
     }
-    
+
     public static int execute(ParseResult parseResult) {
         Integer helpExitCode = CommandLine.executeHelpRequest(parseResult);
         if (helpExitCode != null) return helpExitCode;
-        
+
         try {
             boolean reload = parseResult.matchedOptionValue("--reload", false);
             boolean watch = parseResult.matchedOptionValue("--watch", false);
-            
+
             if (reload) McpConfiguration.reload();
             System.out.println(McpConfiguration.current());
             if (watch) {
