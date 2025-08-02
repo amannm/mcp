@@ -131,27 +131,41 @@ public final class StreamableHttpTransport implements Transport {
         String id = message.containsKey("id") ? message.get("id").toString() : null;
         String method = message.getString("method", null);
         if (id != null) {
-            SseClient stream = requestStreams.get(id);
-            if (stream != null) {
-                stream.send(message);
-                if (method == null) removeRequestStream(id, stream);
-                return;
-            }
-            var q = responseQueues.remove(id);
-            if (q != null) {
-                q.add(message);
-                return;
-            }
+            if (sendToRequestStream(id, method, message)) return;
+            if (sendToResponseQueue(id, message)) return;
+            if (method == null) return;
         }
-        if (id != null && method == null) {
-            return;
+        if (!sendToActiveClient(message)) {
+            sendToPending(message);
         }
+    }
+
+    private boolean sendToRequestStream(String id, String method, JsonObject message) {
+        SseClient stream = requestStreams.get(id);
+        if (stream == null) return false;
+        stream.send(message);
+        if (method == null) removeRequestStream(id, stream);
+        return true;
+    }
+
+    private boolean sendToResponseQueue(String id, JsonObject message) {
+        var q = responseQueues.remove(id);
+        if (q == null) return false;
+        q.add(message);
+        return true;
+    }
+
+    private boolean sendToActiveClient(JsonObject message) {
         for (SseClient c : generalClients) {
             if (c.isActive()) {
                 c.send(message);
-                return;
+                return true;
             }
         }
+        return false;
+    }
+
+    private void sendToPending(JsonObject message) {
         SseClient pending = lastGeneral.get();
         if (pending != null) {
             pending.send(message);
