@@ -14,7 +14,7 @@
 </problem>
 <problem>
   <file>file://$PROJECT_DIR$/src/main/java/com/amannmalik/mcp/client/McpClient.java</file>
-  <line>465</line>
+  <line>501</line>
   <module>mcp.main</module>
   <package>com.amannmalik.mcp.client</package>
   <entry_point TYPE="method" FQNAME="com.amannmalik.mcp.client.McpClient void fetchResourceMetadata(java.lang.String url)" />

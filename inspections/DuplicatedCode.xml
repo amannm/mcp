@@ -103,4 +103,30 @@
   <offset>8</offset>
   <length>42</length>
 </problem>
+<problem>
+  <file>file://$PROJECT_DIR$/src/main/java/com/amannmalik/mcp/transport/StreamableHttpClientTransport.java</file>
+  <line>50</line>
+  <module>mcp.main</module>
+  <package>com.amannmalik.mcp.transport</package>
+  <entry_point TYPE="method" FQNAME="com.amannmalik.mcp.transport.StreamableHttpClientTransport void listen()" />
+  <problem_class id="DuplicatedCode" severity="WEAK WARNING" attribute_key="INFO_ATTRIBUTES">Duplicated code fragment</problem_class>
+  <description>Duplicate code: lines 50-72</description>
+  <highlighted_element>HttpResponse&lt;InputStream&gt; response;</highlighted_element>
+  <language>JAVA</language>
+  <offset>8</offset>
+  <length>35</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/src/main/java/com/amannmalik/mcp/transport/StreamableHttpClientTransport.java</file>
+  <line>95</line>
+  <module>mcp.main</module>
+  <package>com.amannmalik.mcp.transport</package>
+  <entry_point TYPE="method" FQNAME="com.amannmalik.mcp.transport.StreamableHttpClientTransport void send(jakarta.json.JsonObject message)" />
+  <problem_class id="DuplicatedCode" severity="WEAK WARNING" attribute_key="INFO_ATTRIBUTES">Duplicated code fragment</problem_class>
+  <description>Duplicate code: lines 95-117</description>
+  <highlighted_element>HttpResponse&lt;InputStream&gt; response;</highlighted_element>
+  <language>JAVA</language>
+  <offset>8</offset>
+  <length>35</length>
+</problem>
 </problems>

@@ -18,7 +18,7 @@
 </problem>
 <problem>
   <file>file://$PROJECT_DIR$/src/main/java/com/amannmalik/mcp/client/McpClient.java</file>
-  <line>612</line>
+  <line>648</line>
   <module>mcp.main</module>
   <package>com.amannmalik.mcp.client</package>
   <entry_point TYPE="method" FQNAME="com.amannmalik.mcp.client.McpClient void setProgressListener(com.amannmalik.mcp.util.ProgressListener listener)" />
@@ -68,21 +68,191 @@
   <description>Method is never used.</description>
 </problem>
 <problem>
-  <file>file://$PROJECT_DIR$/src/main/java/com/amannmalik/mcp/client/sampling/SamplingProviderFactory.java</file>
-  <line>17</line>
+  <file>file://$PROJECT_DIR$/src/main/java/com/amannmalik/mcp/client/elicitation/InteractiveElicitationProvider.java</file>
+  <line>9</line>
   <module>mcp.main</module>
-  <package>com.amannmalik.mcp.client.sampling</package>
-  <entry_point TYPE="method" FQNAME="com.amannmalik.mcp.client.sampling.SamplingProviderFactory com.amannmalik.mcp.client.sampling.SamplingProvider createMock(com.amannmalik.mcp.client.sampling.CreateMessageResponse response)" />
+  <package>com.amannmalik.mcp.client.elicitation</package>
+  <entry_point TYPE="class" FQNAME="com.amannmalik.mcp.client.elicitation.InteractiveElicitationProvider" />
   <language>JAVA</language>
-  <offset>35</offset>
-  <length>10</length>
-  <highlighted_element>createMock</highlighted_element>
+  <offset>19</offset>
+  <length>30</length>
+  <highlighted_element>InteractiveElicitationProvider</highlighted_element>
   <problem_class id="" severity="WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">unused declaration</problem_class>
   <hints>
     <hint value="comment" />
     <hint value="delete" />
   </hints>
-  <description>Method is never used.</description>
+  <description>Class is not instantiated.</description>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/src/main/java/com/amannmalik/mcp/client/elicitation/InteractiveElicitationProvider.java</file>
+  <line>13</line>
+  <module>mcp.main</module>
+  <package>com.amannmalik.mcp.client.elicitation</package>
+  <entry_point TYPE="method" FQNAME="com.amannmalik.mcp.client.elicitation.InteractiveElicitationProvider InteractiveElicitationProvider()" />
+  <language>JAVA</language>
+  <offset>11</offset>
+  <length>30</length>
+  <highlighted_element>InteractiveElicitationProvider</highlighted_element>
+  <problem_class id="" severity="WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">unused declaration</problem_class>
+  <hints>
+    <hint value="comment" />
+    <hint value="delete" />
+  </hints>
+  <description>Constructor is never used.</description>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/src/main/java/com/amannmalik/mcp/client/roots/ListRootsResult.java</file>
+  <line>8</line>
+  <module>mcp.main</module>
+  <package>com.amannmalik.mcp.client.roots</package>
+  <entry_point TYPE="class" FQNAME="com.amannmalik.mcp.client.roots.ListRootsResult" />
+  <language>JAVA</language>
+  <offset>14</offset>
+  <length>15</length>
+  <highlighted_element>ListRootsResult</highlighted_element>
+  <problem_class id="" severity="WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">unused declaration</problem_class>
+  <hints>
+    <hint value="comment" />
+    <hint value="delete" />
+  </hints>
+  <description>Record is not instantiated.</description>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/src/main/java/com/amannmalik/mcp/client/roots/ListRootsResult.java</file>
+  <line>9</line>
+  <module>mcp.main</module>
+  <package>com.amannmalik.mcp.client.roots</package>
+  <entry_point TYPE="method" FQNAME="com.amannmalik.mcp.client.roots.ListRootsResult ListRootsResult(java.util.List&lt;com.amannmalik.mcp.client.roots.Root&gt; roots, jakarta.json.JsonObject _meta)" />
+  <language>JAVA</language>
+  <offset>11</offset>
+  <length>15</length>
+  <highlighted_element>ListRootsResult</highlighted_element>
+  <problem_class id="" severity="WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">unused declaration</problem_class>
+  <hints>
+    <hint value="comment" />
+    <hint value="delete" />
+  </hints>
+  <description>Constructor is never used.</description>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/src/main/java/com/amannmalik/mcp/client/sampling/InteractiveSamplingProvider.java</file>
+  <line>15</line>
+  <module>mcp.main</module>
+  <package>com.amannmalik.mcp.client.sampling</package>
+  <entry_point TYPE="class" FQNAME="com.amannmalik.mcp.client.sampling.InteractiveSamplingProvider" />
+  <language>JAVA</language>
+  <offset>19</offset>
+  <length>27</length>
+  <highlighted_element>InteractiveSamplingProvider</highlighted_element>
+  <problem_class id="" severity="WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">unused declaration</problem_class>
+  <hints>
+    <hint value="comment" />
+    <hint value="delete" />
+  </hints>
+  <description>Class has 2 instantiations, but the instantiations are not reachable from the entry points.</description>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/src/main/java/com/amannmalik/mcp/client/sampling/InteractiveSamplingProvider.java</file>
+  <line>20</line>
+  <module>mcp.main</module>
+  <package>com.amannmalik.mcp.client.sampling</package>
+  <entry_point TYPE="method" FQNAME="com.amannmalik.mcp.client.sampling.InteractiveSamplingProvider InteractiveSamplingProvider()" />
+  <language>JAVA</language>
+  <offset>11</offset>
+  <length>27</length>
+  <highlighted_element>InteractiveSamplingProvider</highlighted_element>
+  <problem_class id="" severity="WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">unused declaration</problem_class>
+  <hints>
+    <hint value="comment" />
+    <hint value="delete" />
+  </hints>
+  <description>Constructor is never used.</description>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/src/main/java/com/amannmalik/mcp/client/sampling/InteractiveSamplingProvider.java</file>
+  <line>24</line>
+  <module>mcp.main</module>
+  <package>com.amannmalik.mcp.client.sampling</package>
+  <entry_point TYPE="method" FQNAME="com.amannmalik.mcp.client.sampling.InteractiveSamplingProvider InteractiveSamplingProvider(boolean autoApprove)" />
+  <language>JAVA</language>
+  <offset>11</offset>
+  <length>27</length>
+  <highlighted_element>InteractiveSamplingProvider</highlighted_element>
+  <problem_class id="" severity="WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">unused declaration</problem_class>
+  <hints>
+    <hint value="comment" />
+    <hint value="delete" />
+  </hints>
+  <description>Constructor has 2 usages, but the usages are not reachable from the entry points.</description>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/src/main/java/com/amannmalik/mcp/ping/PingScheduler.java</file>
+  <line>9</line>
+  <module>mcp.main</module>
+  <package>com.amannmalik.mcp.ping</package>
+  <entry_point TYPE="class" FQNAME="com.amannmalik.mcp.ping.PingScheduler" />
+  <language>JAVA</language>
+  <offset>19</offset>
+  <length>13</length>
+  <highlighted_element>PingScheduler</highlighted_element>
+  <problem_class id="" severity="WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">unused declaration</problem_class>
+  <hints>
+    <hint value="comment" />
+    <hint value="delete" />
+  </hints>
+  <description>Class has 2 instantiations, but the instantiations are not reachable from the entry points.</description>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/src/main/java/com/amannmalik/mcp/ping/PingScheduler.java</file>
+  <line>19</line>
+  <module>mcp.main</module>
+  <package>com.amannmalik.mcp.ping</package>
+  <entry_point TYPE="method" FQNAME="com.amannmalik.mcp.ping.PingScheduler PingScheduler(com.amannmalik.mcp.client.McpClient client, long intervalMillis, long timeoutMillis, java.lang.Runnable onFailure)" />
+  <language>JAVA</language>
+  <offset>11</offset>
+  <length>13</length>
+  <highlighted_element>PingScheduler</highlighted_element>
+  <problem_class id="" severity="WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">unused declaration</problem_class>
+  <hints>
+    <hint value="comment" />
+    <hint value="delete" />
+  </hints>
+  <description>Constructor is never used.</description>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/src/main/java/com/amannmalik/mcp/ping/PingScheduler.java</file>
+  <line>26</line>
+  <module>mcp.main</module>
+  <package>com.amannmalik.mcp.ping</package>
+  <entry_point TYPE="method" FQNAME="com.amannmalik.mcp.ping.PingScheduler PingScheduler(com.amannmalik.mcp.client.McpClient client, long intervalMillis, long timeoutMillis, java.lang.Runnable onFailure, int maxFailures)" />
+  <language>JAVA</language>
+  <offset>11</offset>
+  <length>13</length>
+  <highlighted_element>PingScheduler</highlighted_element>
+  <problem_class id="" severity="WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">unused declaration</problem_class>
+  <hints>
+    <hint value="comment" />
+    <hint value="delete" />
+  </hints>
+  <description>Constructor has 2 usages, but the usages are not reachable from the entry points.</description>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/src/main/java/com/amannmalik/mcp/transport/StreamableHttpClientTransport.java</file>
+  <line>16</line>
+  <module>mcp.main</module>
+  <package>com.amannmalik.mcp.transport</package>
+  <entry_point TYPE="class" FQNAME="com.amannmalik.mcp.transport.StreamableHttpClientTransport" />
+  <language>JAVA</language>
+  <offset>19</offset>
+  <length>29</length>
+  <highlighted_element>StreamableHttpClientTransport</highlighted_element>
+  <problem_class id="" severity="WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">unused declaration</problem_class>
+  <hints>
+    <hint value="comment" />
+    <hint value="delete" />
+  </hints>
+  <description>Class is not instantiated.</description>
 </problem>
 <problem>
   <file>file://$PROJECT_DIR$/src/main/java/com/amannmalik/mcp/transport/StreamableHttpClientTransport.java</file>
@@ -100,6 +270,40 @@
     <hint value="delete" />
   </hints>
   <description>Constructor is never used.</description>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/src/main/java/com/amannmalik/mcp/transport/StreamableHttpTransport.java</file>
+  <line>27</line>
+  <module>mcp.main</module>
+  <package>com.amannmalik.mcp.transport</package>
+  <entry_point TYPE="class" FQNAME="com.amannmalik.mcp.transport.StreamableHttpTransport" />
+  <language>JAVA</language>
+  <offset>19</offset>
+  <length>23</length>
+  <highlighted_element>StreamableHttpTransport</highlighted_element>
+  <problem_class id="" severity="WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">unused declaration</problem_class>
+  <hints>
+    <hint value="comment" />
+    <hint value="delete" />
+  </hints>
+  <description>Class has 2 instantiations, but the instantiations are not reachable from the entry points.</description>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/src/main/java/com/amannmalik/mcp/transport/StreamableHttpTransport.java</file>
+  <line>56</line>
+  <module>mcp.main</module>
+  <package>com.amannmalik.mcp.transport</package>
+  <entry_point TYPE="method" FQNAME="com.amannmalik.mcp.transport.StreamableHttpTransport StreamableHttpTransport(int port, com.amannmalik.mcp.security.OriginValidator validator, com.amannmalik.mcp.auth.AuthorizationManager auth, java.lang.String resourceMetadataUrl, java.util.List&lt;java.lang.String&gt; authorizationServers)" />
+  <language>JAVA</language>
+  <offset>11</offset>
+  <length>23</length>
+  <highlighted_element>StreamableHttpTransport</highlighted_element>
+  <problem_class id="" severity="WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">unused declaration</problem_class>
+  <hints>
+    <hint value="comment" />
+    <hint value="delete" />
+  </hints>
+  <description>Constructor has 2 usages, but the usages are not reachable from the entry points.</description>
 </problem>
 <problem>
   <file>file://$PROJECT_DIR$/src/main/java/com/amannmalik/mcp/transport/StreamableHttpTransport.java</file>

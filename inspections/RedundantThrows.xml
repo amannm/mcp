@@ -1,21 +1,5 @@
 <problems>
 <problem>
-  <file>file://$PROJECT_DIR$/src/main/java/com/amannmalik/mcp/client/sampling/SamplingProviderFactory.java</file>
-  <line>29</line>
-  <module>mcp.main</module>
-  <package>com.amannmalik.mcp.client.sampling</package>
-  <entry_point TYPE="method" FQNAME="com.amannmalik.mcp.client.sampling.SamplingProviderFactory.SamplingFunction com.amannmalik.mcp.client.sampling.CreateMessageResponse apply(com.amannmalik.mcp.client.sampling.CreateMessageRequest request, long timeoutMillis)" />
-  <problem_class id="RedundantThrows" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Redundant 'throws' clause</problem_class>
-  <hints>
-    <hint value="InterruptedException" />
-  </hints>
-  <description>The declared exception &lt;code&gt;InterruptedException&lt;/code&gt; is never thrown in any method implementation</description>
-  <highlighted_element>InterruptedException</highlighted_element>
-  <language>JAVA</language>
-  <offset>93</offset>
-  <length>20</length>
-</problem>
-<problem>
   <file>file://$PROJECT_DIR$/src/main/java/com/amannmalik/mcp/transport/SseClient.java</file>
   <line>64</line>
   <module>mcp.main</module>

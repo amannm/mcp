@@ -15,4 +15,8 @@
   <fragment file="file://$PROJECT_DIR$/src/main/java/com/amannmalik/mcp/transport/McpServlet.java" line="54" start="2033" end="2387" />
   <fragment file="file://$PROJECT_DIR$/src/main/java/com/amannmalik/mcp/transport/McpServlet.java" line="179" start="7470" end="7824" />
 </duplicate>
+<duplicate cost="1" hash="0">
+  <fragment file="file://$PROJECT_DIR$/src/main/java/com/amannmalik/mcp/transport/StreamableHttpClientTransport.java" line="50" start="2054" end="2976" />
+  <fragment file="file://$PROJECT_DIR$/src/main/java/com/amannmalik/mcp/transport/StreamableHttpClientTransport.java" line="95" start="4161" end="5083" />
+</duplicate>
 </root>
