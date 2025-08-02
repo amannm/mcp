@@ -1,11 +1,9 @@
 package com.amannmalik.mcp.server.resources;
 
 import com.amannmalik.mcp.annotations.Annotations;
-import com.amannmalik.mcp.validation.InputSanitizer;
-import com.amannmalik.mcp.validation.MetaValidator;
-import com.amannmalik.mcp.validation.UriTemplateValidator;
-import jakarta.json.JsonObject;
 import com.amannmalik.mcp.util.DisplayNameProvider;
+import com.amannmalik.mcp.validation.*;
+import jakarta.json.JsonObject;
 
 public record ResourceTemplate(
         String uriTemplate,

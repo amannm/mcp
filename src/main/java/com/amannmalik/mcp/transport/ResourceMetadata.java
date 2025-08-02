@@ -2,7 +2,9 @@ package com.amannmalik.mcp.transport;
 
 import java.util.List;
 
-/** Metadata for OAuth protected resources as defined in RFC9728. */
+/**
+ * Metadata for OAuth protected resources as defined in RFC9728.
+ */
 public record ResourceMetadata(String resource, List<String> authorizationServers) {
     public ResourceMetadata {
         if (resource == null || resource.isBlank()) {

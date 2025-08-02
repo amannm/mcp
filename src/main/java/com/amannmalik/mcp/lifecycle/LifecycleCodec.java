@@ -3,10 +3,7 @@ package com.amannmalik.mcp.lifecycle;
 import jakarta.json.Json;
 import jakarta.json.JsonObject;
 
-import java.util.EnumSet;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 public final class LifecycleCodec {
     private LifecycleCodec() {

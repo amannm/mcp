@@ -1,8 +1,9 @@
 package com.amannmalik.mcp.client.roots;
 
-import java.util.List;
-import jakarta.json.JsonObject;
 import com.amannmalik.mcp.validation.MetaValidator;
+import jakarta.json.JsonObject;
+
+import java.util.List;
 
 public record ListRootsResult(List<Root> roots, JsonObject _meta) {
     public ListRootsResult {

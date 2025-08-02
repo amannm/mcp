@@ -1,7 +1,7 @@
 package com.amannmalik.mcp.ping;
 
-import jakarta.json.JsonObject;
 import com.amannmalik.mcp.validation.MetaValidator;
+import jakarta.json.JsonObject;
 
 public record PingRequest(JsonObject _meta) {
     public PingRequest {

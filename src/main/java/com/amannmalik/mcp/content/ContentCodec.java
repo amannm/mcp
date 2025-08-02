@@ -4,14 +4,13 @@ import com.amannmalik.mcp.annotations.AnnotationsCodec;
 import com.amannmalik.mcp.server.resources.ResourcesCodec;
 import com.amannmalik.mcp.util.Base64Util;
 import com.amannmalik.mcp.util.JsonUtil;
-import jakarta.json.Json;
-import jakarta.json.JsonObject;
-import jakarta.json.JsonObjectBuilder;
+import jakarta.json.*;
 
 import java.util.Set;
 
 public final class ContentCodec {
-    private ContentCodec() { }
+    private ContentCodec() {
+    }
 
     public static JsonObject toJsonObject(ContentBlock content) {
         JsonObjectBuilder b = Json.createObjectBuilder().add("type", content.type());
@@ -27,7 +26,9 @@ public final class ContentCodec {
                     .add("mimeType", a.mimeType());
             case ContentBlock.ResourceLink l -> {
                 JsonObject obj = ResourcesCodec.toJsonObject(l.resource());
-                obj.forEach((k, v) -> { if (!"_meta".equals(k)) b.add(k, v); });
+                obj.forEach((k, v) -> {
+                    if (!"_meta".equals(k)) b.add(k, v);
+                });
                 if (l.resource()._meta() != null) b.add("_meta", l.resource()._meta());
             }
             case ContentBlock.EmbeddedResource r -> b.add("resource", ResourcesCodec.toJsonObject(r.resource()));

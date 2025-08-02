@@ -3,11 +3,7 @@ package com.amannmalik.mcp.server.tools;
 import com.amannmalik.mcp.content.ContentBlock;
 import com.amannmalik.mcp.content.ContentCodec;
 import com.amannmalik.mcp.validation.MetaValidator;
-import jakarta.json.Json;
-import jakarta.json.JsonArray;
-import jakarta.json.JsonArrayBuilder;
-import jakarta.json.JsonObject;
-import jakarta.json.JsonValue;
+import jakarta.json.*;
 
 public record ToolResult(JsonArray content,
                          JsonObject structuredContent,

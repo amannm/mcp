@@ -1,12 +1,7 @@
 package com.amannmalik.mcp.transport;
 
-import com.amannmalik.mcp.auth.AuthorizationException;
-import com.amannmalik.mcp.auth.AuthorizationManager;
-import com.amannmalik.mcp.auth.Principal;
-import com.amannmalik.mcp.jsonrpc.JsonRpcCodec;
-import com.amannmalik.mcp.jsonrpc.JsonRpcError;
-import com.amannmalik.mcp.jsonrpc.JsonRpcErrorCode;
-import com.amannmalik.mcp.jsonrpc.RequestId;
+import com.amannmalik.mcp.auth.*;
+import com.amannmalik.mcp.jsonrpc.*;
 import com.amannmalik.mcp.lifecycle.Protocol;
 import com.amannmalik.mcp.security.OriginValidator;
 import com.amannmalik.mcp.util.CloseUtil;
@@ -21,13 +16,11 @@ import org.eclipse.jetty.ee10.servlet.ServletHolder;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.ServerConnector;
 
+import java.io.EOFException;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.util.Set;
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.LinkedBlockingQueue;
-import java.io.EOFException;
+import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicReference;
 
 public final class StreamableHttpTransport implements Transport {
@@ -197,10 +190,24 @@ public final class StreamableHttpTransport implements Transport {
 
     AsyncListener requestStreamListener(String key, SseClient client) {
         return new AsyncListener() {
-            @Override public void onComplete(AsyncEvent event) { removeRequestStream(key, client); }
-            @Override public void onTimeout(AsyncEvent event) { removeRequestStream(key, client); }
-            @Override public void onError(AsyncEvent event) { removeRequestStream(key, client); }
-            @Override public void onStartAsync(AsyncEvent event) { }
+            @Override
+            public void onComplete(AsyncEvent event) {
+                removeRequestStream(key, client);
+            }
+
+            @Override
+            public void onTimeout(AsyncEvent event) {
+                removeRequestStream(key, client);
+            }
+
+            @Override
+            public void onError(AsyncEvent event) {
+                removeRequestStream(key, client);
+            }
+
+            @Override
+            public void onStartAsync(AsyncEvent event) {
+            }
         };
     }
 
@@ -212,10 +219,24 @@ public final class StreamableHttpTransport implements Transport {
 
     AsyncListener generalStreamListener(SseClient client) {
         return new AsyncListener() {
-            @Override public void onComplete(AsyncEvent event) { removeGeneralStream(client); }
-            @Override public void onTimeout(AsyncEvent event) { removeGeneralStream(client); }
-            @Override public void onError(AsyncEvent event) { removeGeneralStream(client); }
-            @Override public void onStartAsync(AsyncEvent event) { }
+            @Override
+            public void onComplete(AsyncEvent event) {
+                removeGeneralStream(client);
+            }
+
+            @Override
+            public void onTimeout(AsyncEvent event) {
+                removeGeneralStream(client);
+            }
+
+            @Override
+            public void onError(AsyncEvent event) {
+                removeGeneralStream(client);
+            }
+
+            @Override
+            public void onStartAsync(AsyncEvent event) {
+            }
         };
     }
 

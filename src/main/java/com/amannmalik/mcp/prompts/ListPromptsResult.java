@@ -1,8 +1,9 @@
 package com.amannmalik.mcp.prompts;
 
-import java.util.List;
-import jakarta.json.JsonObject;
 import com.amannmalik.mcp.validation.MetaValidator;
+import jakarta.json.JsonObject;
+
+import java.util.List;
 
 public record ListPromptsResult(List<Prompt> prompts,
                                 String nextCursor,

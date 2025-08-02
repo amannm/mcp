@@ -1,61 +1,36 @@
 package com.amannmalik.mcp;
 
 import com.amannmalik.mcp.client.McpClient;
-import com.amannmalik.mcp.client.elicitation.BlockingElicitationProvider;
-import com.amannmalik.mcp.client.elicitation.ElicitResult;
-import com.amannmalik.mcp.client.elicitation.ElicitationAction;
+import com.amannmalik.mcp.client.elicitation.*;
 import com.amannmalik.mcp.client.roots.InMemoryRootsProvider;
 import com.amannmalik.mcp.client.roots.Root;
-import com.amannmalik.mcp.client.sampling.CreateMessageResponse;
-import com.amannmalik.mcp.client.sampling.MessageContent;
-import com.amannmalik.mcp.client.sampling.SamplingProvider;
-import com.amannmalik.mcp.client.sampling.SamplingProviderFactory;
-import com.amannmalik.mcp.jsonrpc.JsonRpcError;
-import com.amannmalik.mcp.jsonrpc.JsonRpcMessage;
-import com.amannmalik.mcp.jsonrpc.JsonRpcResponse;
-import com.amannmalik.mcp.wire.NotificationMethod;
-import com.amannmalik.mcp.jsonrpc.RequestId;
-import com.amannmalik.mcp.lifecycle.ClientCapability;
-import com.amannmalik.mcp.lifecycle.ClientInfo;
-import com.amannmalik.mcp.lifecycle.ServerCapability;
+import com.amannmalik.mcp.client.sampling.*;
+import com.amannmalik.mcp.jsonrpc.*;
+import com.amannmalik.mcp.lifecycle.*;
 import com.amannmalik.mcp.prompts.Role;
-import com.amannmalik.mcp.server.logging.LoggingMessageNotification;
-import com.amannmalik.mcp.transport.StdioTransport;
-import com.amannmalik.mcp.transport.StreamableHttpClientTransport;
-import com.amannmalik.mcp.transport.StreamableHttpTransport;
-import com.amannmalik.mcp.server.McpServer;
 import com.amannmalik.mcp.security.OriginValidator;
-import com.amannmalik.mcp.transport.Transport;
-import com.amannmalik.mcp.util.CancellationCodec;
-import com.amannmalik.mcp.util.CancelledNotification;
-import com.amannmalik.mcp.util.ProgressNotification;
+import com.amannmalik.mcp.server.McpServer;
+import com.amannmalik.mcp.server.logging.LoggingMessageNotification;
+import com.amannmalik.mcp.transport.*;
+import com.amannmalik.mcp.util.*;
+import com.amannmalik.mcp.wire.NotificationMethod;
 import io.cucumber.java.After;
 import io.cucumber.java.Before;
-import io.cucumber.java.en.Given;
-import io.cucumber.java.en.Then;
-import io.cucumber.java.en.When;
+import io.cucumber.java.en.*;
 import jakarta.json.Json;
 import jakarta.json.JsonObject;
 
-import java.io.BufferedReader;
 import java.io.File;
-import java.io.IOException;
-import java.io.InputStreamReader;
 import java.net.URI;
-import java.nio.charset.StandardCharsets;
-import java.util.EnumSet;
-import java.util.List;
-import java.util.Set;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.concurrent.TimeUnit;
+import java.util.*;
+import java.util.concurrent.*;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 public final class McpConformanceSteps {
     private static final String JAVA_BIN = System.getProperty("java.home") +
             File.separator + "bin" + File.separator + "java";
-    
+
     private static String getJacocoAgent() {
         String agentJar = System.getProperty("jacoco.agent.jar");
         String execFile = System.getProperty("jacoco.exec.file");
@@ -185,7 +160,7 @@ public final class McpConformanceSteps {
         // server and client started in @Before
         checkServerTaskForExceptions();
     }
-    
+
     private void checkServerTaskForExceptions() {
         if (serverTask != null && serverTask.isDone() && serverTask.isCompletedExceptionally()) {
             try {

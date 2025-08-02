@@ -1,8 +1,6 @@
 package com.amannmalik.mcp.server.resources;
 
-import com.amannmalik.mcp.validation.InputSanitizer;
-import com.amannmalik.mcp.validation.MetaValidator;
-import com.amannmalik.mcp.validation.UriValidator;
+import com.amannmalik.mcp.validation.*;
 import jakarta.json.JsonObject;
 
 public sealed interface ResourceBlock permits ResourceBlock.Text, ResourceBlock.Binary {

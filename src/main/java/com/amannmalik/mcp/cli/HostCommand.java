@@ -5,29 +5,16 @@ import com.amannmalik.mcp.client.McpClient;
 import com.amannmalik.mcp.lifecycle.ClientCapability;
 import com.amannmalik.mcp.lifecycle.ClientInfo;
 import com.amannmalik.mcp.prompts.Role;
-import com.amannmalik.mcp.security.ConsentManager;
-import com.amannmalik.mcp.security.HostProcess;
-import com.amannmalik.mcp.security.PrivacyBoundaryEnforcer;
-import com.amannmalik.mcp.security.SamplingAccessController;
-import com.amannmalik.mcp.security.SecurityPolicy;
-import com.amannmalik.mcp.security.ToolAccessController;
+import com.amannmalik.mcp.security.*;
 import com.amannmalik.mcp.server.tools.ToolCodec;
 import com.amannmalik.mcp.transport.StdioTransport;
 import jakarta.json.Json;
 import jakarta.json.JsonValue;
 import picocli.CommandLine;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.StringReader;
+import java.io.*;
 import java.nio.file.Path;
-import java.util.Arrays;
-import java.util.EnumSet;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.Callable;
 
 @CommandLine.Command(name = "host", description = "Run MCP host", mixinStandardHelpOptions = true)

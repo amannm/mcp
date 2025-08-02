@@ -2,10 +2,7 @@ package com.amannmalik.mcp.lifecycle;
 
 import jakarta.json.JsonObject;
 
-import java.util.Collections;
-import java.util.EnumSet;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 public record Capabilities(Set<ClientCapability> client,
                            Set<ServerCapability> server,

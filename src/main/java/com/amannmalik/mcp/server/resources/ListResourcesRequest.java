@@ -1,7 +1,7 @@
 package com.amannmalik.mcp.server.resources;
 
-import jakarta.json.JsonObject;
 import com.amannmalik.mcp.validation.MetaValidator;
+import jakarta.json.JsonObject;
 
 public record ListResourcesRequest(String cursor, JsonObject _meta) {
     public ListResourcesRequest {

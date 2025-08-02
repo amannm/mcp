@@ -1,8 +1,8 @@
 package com.amannmalik.mcp.content;
 
 import com.amannmalik.mcp.annotations.Annotations;
-import com.amannmalik.mcp.prompts.PromptContent;
 import com.amannmalik.mcp.client.sampling.MessageContent;
+import com.amannmalik.mcp.prompts.PromptContent;
 import com.amannmalik.mcp.server.resources.Resource;
 import com.amannmalik.mcp.server.resources.ResourceBlock;
 import com.amannmalik.mcp.validation.InputSanitizer;
@@ -11,9 +11,11 @@ import jakarta.json.JsonObject;
 
 public sealed interface ContentBlock
         permits ContentBlock.Text, ContentBlock.Image, ContentBlock.Audio,
-                ContentBlock.ResourceLink, ContentBlock.EmbeddedResource {
+        ContentBlock.ResourceLink, ContentBlock.EmbeddedResource {
     String type();
+
     Annotations annotations();
+
     JsonObject _meta();
 
     private static Annotations orEmpty(Annotations annotations) {

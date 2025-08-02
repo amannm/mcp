@@ -1,7 +1,7 @@
 package com.amannmalik.mcp.server.logging;
 
-import jakarta.json.JsonObject;
 import com.amannmalik.mcp.validation.MetaValidator;
+import jakarta.json.JsonObject;
 
 public record SetLevelRequest(LoggingLevel level, JsonObject _meta) {
     public SetLevelRequest {

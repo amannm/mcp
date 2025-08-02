@@ -2,21 +2,13 @@ package com.amannmalik.mcp.auth;
 
 import com.amannmalik.mcp.util.Base64Util;
 import com.amannmalik.mcp.validation.InputSanitizer;
-import jakarta.json.Json;
-import jakarta.json.JsonArray;
-import jakarta.json.JsonObject;
-import jakarta.json.JsonReader;
-import jakarta.json.JsonString;
-import jakarta.json.JsonValue;
+import jakarta.json.*;
 
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
-import java.nio.charset.StandardCharsets;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
-import java.security.InvalidKeyException;
-
 import java.io.StringReader;
+import java.nio.charset.StandardCharsets;
+import java.security.*;
 import java.util.Set;
 
 public final class JwtTokenValidator implements TokenValidator {

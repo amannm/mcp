@@ -5,6 +5,7 @@ package com.amannmalik.mcp.util;
  */
 public interface DisplayNameProvider {
     String name();
+
     String title();
 
     default String displayName() {

@@ -2,26 +2,17 @@ package com.amannmalik.mcp.security;
 
 import com.amannmalik.mcp.auth.Principal;
 import com.amannmalik.mcp.client.McpClient;
-import com.amannmalik.mcp.jsonrpc.JsonRpcError;
-import com.amannmalik.mcp.jsonrpc.JsonRpcMessage;
-import com.amannmalik.mcp.jsonrpc.JsonRpcResponse;
+import com.amannmalik.mcp.jsonrpc.*;
 import com.amannmalik.mcp.lifecycle.ServerCapability;
 import com.amannmalik.mcp.prompts.Role;
-import com.amannmalik.mcp.server.tools.ListToolsResult;
-import com.amannmalik.mcp.server.tools.ToolCodec;
-import com.amannmalik.mcp.server.tools.ToolResult;
+import com.amannmalik.mcp.server.tools.*;
 import com.amannmalik.mcp.util.PaginatedRequest;
 import com.amannmalik.mcp.util.PaginationCodec;
 import com.amannmalik.mcp.wire.RequestMethod;
-import jakarta.json.Json;
-import jakarta.json.JsonObject;
-import jakarta.json.JsonValue;
+import jakarta.json.*;
 
 import java.io.IOException;
-import java.util.Collections;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
@@ -44,9 +35,9 @@ public final class HostProcess implements AutoCloseable {
     }
 
     private static void requireCapability(McpClient client, ServerCapability cap) {
-            if (!client.serverCapabilities().contains(cap)) {
-                throw new IllegalStateException("Server capability not supported: " + cap);
-            }
+        if (!client.serverCapabilities().contains(cap)) {
+            throw new IllegalStateException("Server capability not supported: " + cap);
+        }
     }
 
     public HostProcess(SecurityPolicy policy,

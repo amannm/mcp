@@ -2,20 +2,14 @@ package com.amannmalik.mcp.transport;
 
 import com.amannmalik.mcp.auth.Principal;
 import com.amannmalik.mcp.wire.RequestMethod;
-import jakarta.json.Json;
-import jakarta.json.JsonObject;
-import jakarta.json.JsonReader;
+import jakarta.json.*;
 import jakarta.json.stream.JsonParsingException;
 import jakarta.servlet.AsyncContext;
 import jakarta.servlet.ServletException;
-import jakarta.servlet.http.HttpServlet;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.*;
 
 import java.io.IOException;
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
 
 final class McpServlet extends HttpServlet {
     private final StreamableHttpTransport transport;

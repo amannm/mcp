@@ -1,19 +1,12 @@
 package com.amannmalik.mcp.client.sampling;
 
-import com.amannmalik.mcp.prompts.Role;
 import com.amannmalik.mcp.content.ContentBlock;
-import jakarta.json.Json;
-import jakarta.json.JsonArrayBuilder;
-import jakarta.json.JsonObject;
+import com.amannmalik.mcp.prompts.Role;
+import jakarta.json.*;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.StringReader;
+import java.io.*;
 import java.net.URI;
-import java.net.http.HttpClient;
-import java.net.http.HttpRequest;
-import java.net.http.HttpResponse;
+import java.net.http.*;
 import java.util.List;
 import java.util.Optional;
 

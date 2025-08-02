@@ -1,100 +1,32 @@
 package com.amannmalik.mcp.client;
 
 import com.amannmalik.mcp.auth.Principal;
-import com.amannmalik.mcp.client.elicitation.ElicitCodec;
-import com.amannmalik.mcp.client.elicitation.ElicitRequest;
-import com.amannmalik.mcp.client.elicitation.ElicitResult;
-import com.amannmalik.mcp.client.elicitation.ElicitationAction;
-import com.amannmalik.mcp.client.elicitation.ElicitationProvider;
-import com.amannmalik.mcp.client.roots.RootsCodec;
-import com.amannmalik.mcp.client.roots.RootsListChangedNotification;
-import com.amannmalik.mcp.client.roots.RootsProvider;
-import com.amannmalik.mcp.client.sampling.CreateMessageRequest;
-import com.amannmalik.mcp.client.sampling.CreateMessageResponse;
-import com.amannmalik.mcp.client.sampling.SamplingCodec;
-import com.amannmalik.mcp.client.sampling.SamplingProvider;
-import com.amannmalik.mcp.jsonrpc.JsonRpcCodec;
-import com.amannmalik.mcp.jsonrpc.JsonRpcError;
-import com.amannmalik.mcp.jsonrpc.JsonRpcErrorCode;
-import com.amannmalik.mcp.jsonrpc.JsonRpcMessage;
-import com.amannmalik.mcp.jsonrpc.JsonRpcNotification;
-import com.amannmalik.mcp.jsonrpc.JsonRpcRequest;
-import com.amannmalik.mcp.jsonrpc.JsonRpcResponse;
-import com.amannmalik.mcp.jsonrpc.RequestId;
-import com.amannmalik.mcp.lifecycle.Capabilities;
-import com.amannmalik.mcp.lifecycle.ClientCapability;
-import com.amannmalik.mcp.lifecycle.ClientFeatures;
-import com.amannmalik.mcp.lifecycle.ClientInfo;
-import com.amannmalik.mcp.lifecycle.InitializeRequest;
-import com.amannmalik.mcp.lifecycle.InitializeResponse;
-import com.amannmalik.mcp.lifecycle.LifecycleCodec;
-import com.amannmalik.mcp.lifecycle.Protocol;
-import com.amannmalik.mcp.lifecycle.ServerCapability;
-import com.amannmalik.mcp.lifecycle.ServerFeatures;
-import com.amannmalik.mcp.lifecycle.UnsupportedProtocolVersionException;
-import com.amannmalik.mcp.ping.PingCodec;
-import com.amannmalik.mcp.ping.PingMonitor;
-import com.amannmalik.mcp.ping.PingResponse;
-import com.amannmalik.mcp.ping.PingScheduler;
+import com.amannmalik.mcp.client.elicitation.*;
+import com.amannmalik.mcp.client.roots.*;
+import com.amannmalik.mcp.client.sampling.*;
+import com.amannmalik.mcp.jsonrpc.*;
+import com.amannmalik.mcp.lifecycle.*;
+import com.amannmalik.mcp.ping.*;
 import com.amannmalik.mcp.prompts.PromptsListener;
 import com.amannmalik.mcp.security.RateLimiter;
 import com.amannmalik.mcp.security.SamplingAccessPolicy;
-import com.amannmalik.mcp.server.logging.LoggingCodec;
-import com.amannmalik.mcp.server.logging.LoggingLevel;
-import com.amannmalik.mcp.server.logging.LoggingListener;
-import com.amannmalik.mcp.server.logging.SetLevelRequest;
+import com.amannmalik.mcp.server.logging.*;
 import com.amannmalik.mcp.server.resources.ResourceListListener;
 import com.amannmalik.mcp.server.tools.ToolCodec;
 import com.amannmalik.mcp.server.tools.ToolListListener;
-import com.amannmalik.mcp.transport.StreamableHttpClientTransport;
-import com.amannmalik.mcp.transport.Transport;
-import com.amannmalik.mcp.transport.UnauthorizedException;
-import com.amannmalik.mcp.transport.ResourceMetadata;
-import com.amannmalik.mcp.transport.ResourceMetadataCodec;
-import com.amannmalik.mcp.util.CancellationCodec;
-import com.amannmalik.mcp.util.CancellationTracker;
-import com.amannmalik.mcp.util.CancelledNotification;
-import com.amannmalik.mcp.util.CloseUtil;
-import com.amannmalik.mcp.util.ProgressCodec;
-import com.amannmalik.mcp.util.ProgressListener;
-import com.amannmalik.mcp.util.ProgressManager;
-import com.amannmalik.mcp.util.ProgressNotification;
-import com.amannmalik.mcp.util.ProgressToken;
-
-
-import com.amannmalik.mcp.util.ListChangeSubscription;
-
-
-
-import com.amannmalik.mcp.util.ProgressUtil;
-
-import com.amannmalik.mcp.util.JsonRpcRequestProcessor;
-
-import com.amannmalik.mcp.util.Timeouts;
-import com.amannmalik.mcp.jsonrpc.RpcHandlerRegistry;
+import com.amannmalik.mcp.transport.*;
+import com.amannmalik.mcp.util.*;
 import com.amannmalik.mcp.validation.SchemaValidator;
 import com.amannmalik.mcp.wire.NotificationMethod;
 import com.amannmalik.mcp.wire.RequestMethod;
-import jakarta.json.Json;
-import jakarta.json.JsonObject;
-import jakarta.json.JsonReader;
+import jakarta.json.*;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.StringReader;
 import java.net.URI;
-import java.net.http.HttpClient;
-import java.net.http.HttpRequest;
-import java.net.http.HttpResponse;
-import java.util.EnumSet;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
+import java.net.http.*;
+import java.util.*;
+import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicLong;
 
 public final class McpClient implements AutoCloseable {

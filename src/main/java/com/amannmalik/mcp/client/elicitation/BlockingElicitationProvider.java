@@ -1,8 +1,6 @@
 package com.amannmalik.mcp.client.elicitation;
 
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
 
 public final class BlockingElicitationProvider implements ElicitationProvider {
     private final BlockingQueue<ElicitResult> responses = new LinkedBlockingQueue<>();

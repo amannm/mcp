@@ -1,9 +1,7 @@
 package com.amannmalik.mcp.transport;
 
 import jakarta.json.JsonObject;
-import jakarta.servlet.http.HttpServlet;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.*;
 
 import java.io.IOException;
 

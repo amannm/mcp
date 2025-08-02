@@ -90,6 +90,7 @@ final class SseClient implements AutoCloseable {
         }
     }
 
-    private record SseEvent(long id, JsonObject msg) { }
+    private record SseEvent(long id, JsonObject msg) {
+    }
 }
 

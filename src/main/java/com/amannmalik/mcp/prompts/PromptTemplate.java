@@ -1,9 +1,8 @@
 package com.amannmalik.mcp.prompts;
 
 import com.amannmalik.mcp.content.ContentBlock;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
+
+import java.util.*;
 
 public record PromptTemplate(Prompt prompt, List<PromptMessageTemplate> messages) {
     public PromptTemplate {

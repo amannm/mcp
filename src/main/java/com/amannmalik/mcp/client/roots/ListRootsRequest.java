@@ -1,7 +1,7 @@
 package com.amannmalik.mcp.client.roots;
 
-import jakarta.json.JsonObject;
 import com.amannmalik.mcp.validation.MetaValidator;
+import jakarta.json.JsonObject;
 
 public record ListRootsRequest(JsonObject _meta) {
     public ListRootsRequest {

@@ -1,18 +1,14 @@
 package com.amannmalik.mcp.cli;
 
-import com.amannmalik.mcp.auth.AuthorizationManager;
-import com.amannmalik.mcp.auth.BearerTokenAuthorizationStrategy;
-import com.amannmalik.mcp.auth.JwtTokenValidator;
+import com.amannmalik.mcp.auth.*;
 import com.amannmalik.mcp.security.OriginValidator;
 import com.amannmalik.mcp.server.McpServer;
-import com.amannmalik.mcp.transport.StdioTransport;
-import com.amannmalik.mcp.transport.StreamableHttpTransport;
-import com.amannmalik.mcp.transport.Transport;
+import com.amannmalik.mcp.transport.*;
 import picocli.CommandLine;
 
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.Callable;

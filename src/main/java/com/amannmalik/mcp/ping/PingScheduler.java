@@ -3,9 +3,7 @@ package com.amannmalik.mcp.ping;
 import com.amannmalik.mcp.client.McpClient;
 
 import java.util.Objects;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 public final class PingScheduler implements AutoCloseable {

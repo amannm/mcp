@@ -1,12 +1,11 @@
 package com.amannmalik.mcp.prompts;
 
+import com.amannmalik.mcp.util.DisplayNameProvider;
 import com.amannmalik.mcp.validation.InputSanitizer;
 import com.amannmalik.mcp.validation.MetaValidator;
 import jakarta.json.JsonObject;
 
 import java.util.List;
-
-import com.amannmalik.mcp.util.DisplayNameProvider;
 
 public record Prompt(
         String name,

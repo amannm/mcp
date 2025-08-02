@@ -5,11 +5,11 @@ import com.amannmalik.mcp.client.roots.Root;
 import java.net.URI;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.List;
-import java.util.Objects;
-import java.util.Optional;
+import java.util.*;
 
-/** Utility for verifying resource URIs are within allowed roots. */
+/**
+ * Utility for verifying resource URIs are within allowed roots.
+ */
 public final class RootChecker {
     private RootChecker() {
     }

@@ -1,21 +1,9 @@
 package com.amannmalik.mcp.server.tools;
 
-import com.amannmalik.mcp.util.EmptyJsonObjectCodec;
-import com.amannmalik.mcp.util.PaginatedRequest;
-import com.amannmalik.mcp.util.PaginatedResult;
-import com.amannmalik.mcp.util.Pagination;
-import com.amannmalik.mcp.util.PaginationCodec;
-import com.amannmalik.mcp.util.PaginationJson;
-import com.amannmalik.mcp.util.JsonUtil;
-import jakarta.json.Json;
-import jakarta.json.JsonArray;
-import jakarta.json.JsonObject;
-import jakarta.json.JsonObjectBuilder;
-import jakarta.json.JsonValue;
+import com.amannmalik.mcp.util.*;
+import jakarta.json.*;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 public final class ToolCodec {
     private ToolCodec() {

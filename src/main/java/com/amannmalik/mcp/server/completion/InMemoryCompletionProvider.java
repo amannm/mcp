@@ -1,14 +1,9 @@
 package com.amannmalik.mcp.server.completion;
 
-import com.amannmalik.mcp.validation.InputSanitizer;
 import com.amannmalik.mcp.util.StringMetrics;
+import com.amannmalik.mcp.validation.InputSanitizer;
 
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 public final class InMemoryCompletionProvider implements CompletionProvider {

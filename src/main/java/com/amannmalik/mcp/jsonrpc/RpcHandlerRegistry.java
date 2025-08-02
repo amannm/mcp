@@ -5,9 +5,7 @@ import com.amannmalik.mcp.wire.NotificationMethod;
 import com.amannmalik.mcp.wire.RequestMethod;
 
 import java.io.IOException;
-import java.util.EnumMap;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 
 public final class RpcHandlerRegistry {
     private final JsonRpcRequestProcessor processor;

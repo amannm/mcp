@@ -1,8 +1,9 @@
 package com.amannmalik.mcp.server.tools;
 
-import java.util.List;
-import jakarta.json.JsonObject;
 import com.amannmalik.mcp.validation.MetaValidator;
+import jakarta.json.JsonObject;
+
+import java.util.List;
 
 public record ListToolsResult(List<Tool> tools,
                               String nextCursor,

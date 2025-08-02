@@ -1,8 +1,6 @@
 package com.amannmalik.mcp.lifecycle;
 
-import java.util.EnumSet;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 
 public class ProtocolLifecycle {

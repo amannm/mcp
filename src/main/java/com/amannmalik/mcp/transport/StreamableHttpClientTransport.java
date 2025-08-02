@@ -2,25 +2,15 @@ package com.amannmalik.mcp.transport;
 
 import com.amannmalik.mcp.lifecycle.Protocol;
 import com.amannmalik.mcp.validation.InputSanitizer;
-import jakarta.json.Json;
-import jakarta.json.JsonObject;
-import jakarta.json.JsonReader;
+import jakarta.json.*;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.StringReader;
+import java.io.*;
 import java.net.URI;
-import java.net.http.HttpClient;
-import java.net.http.HttpRequest;
-import java.net.http.HttpResponse;
+import java.net.http.*;
 import java.nio.charset.StandardCharsets;
 import java.util.Optional;
 import java.util.Set;
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.*;
 
 public final class StreamableHttpClientTransport implements Transport {
     private final HttpClient client = HttpClient.newHttpClient();

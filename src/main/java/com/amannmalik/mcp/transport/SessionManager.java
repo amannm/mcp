@@ -3,7 +3,6 @@ package com.amannmalik.mcp.transport;
 import com.amannmalik.mcp.auth.Principal;
 import com.amannmalik.mcp.util.Base64Util;
 import com.amannmalik.mcp.validation.InputSanitizer;
-
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
@@ -13,7 +12,10 @@ import java.util.concurrent.atomic.AtomicReference;
 
 final class SessionManager {
     private static final SecureRandom RANDOM = new SecureRandom();
-    private static record SessionState(String id, String owner, Principal principal) {}
+
+    private record SessionState(String id, String owner, Principal principal) {
+    }
+
     private final AtomicReference<SessionState> current = new AtomicReference<>();
     private final AtomicReference<String> lastSessionId = new AtomicReference<>();
     private volatile String protocolVersion;

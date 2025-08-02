@@ -3,11 +3,7 @@ package com.amannmalik.mcp.client.sampling;
 import com.amannmalik.mcp.content.ContentBlock;
 import com.amannmalik.mcp.content.ContentCodec;
 import com.amannmalik.mcp.prompts.Role;
-import jakarta.json.Json;
-import jakarta.json.JsonArrayBuilder;
-import jakarta.json.JsonObject;
-import jakarta.json.JsonObjectBuilder;
-import jakarta.json.JsonString;
+import jakarta.json.*;
 
 import java.util.List;
 
