@@ -41,46 +41,61 @@ public final class JsonRpcRequestProcessor {
             Function<JsonRpcRequest, JsonRpcMessage> handler
     ) {
         if (req == null || handler == null) throw new IllegalArgumentException("request and handler required");
-        if (idTracker != null) {
-            try {
-                idTracker.register(req.id());
-            } catch (IllegalArgumentException e) {
-                return Optional.of(JsonRpcError.of(req.id(), JsonRpcErrorCode.INVALID_REQUEST, e.getMessage()));
-            }
+
+        Optional<JsonRpcMessage> idError = registerId(req.id());
+        if (idError.isPresent()) {
+            cleanup(req.id());
+            return idError;
         }
 
         final Optional<ProgressToken> token;
         try {
             token = progressManager.register(req.id(), req.params());
-            token.ifPresent(t -> sendProgress(t, 0.0));
         } catch (IllegalArgumentException e) {
             cleanup(req.id());
             return Optional.of(JsonRpcError.invalidParams(req.id(), e.getMessage()));
         }
+        token.ifPresent(t -> sendProgress(t, 0.0));
 
-        try {
-            if (cancellable) {
-                cancellationTracker.register(req.id());
-                if (cancellationTracker.isCancelled(req.id())) {
-                    return Optional.empty();
-                }
-            }
-
-            JsonRpcMessage resp;
-            try {
-                resp = handler.apply(req);
-                if (resp == null) throw new IllegalStateException("handler returned null");
-            } catch (IllegalArgumentException e) {
-                resp = JsonRpcError.invalidParams(req.id(), e.getMessage());
-            } catch (Exception e) {
-                resp = JsonRpcError.of(req.id(), JsonRpcErrorCode.INTERNAL_ERROR, e.getMessage());
-            }
-
-            if (cancellable && cancellationTracker.isCancelled(req.id())) return Optional.empty();
-            token.ifPresent(t -> sendProgress(t, 1.0));
-            return Optional.of(resp);
-        } finally {
+        if (cancellable && registerCancellation(req.id())) {
             cleanup(req.id());
+            return Optional.empty();
+        }
+
+        JsonRpcMessage resp = handle(req, handler);
+        if (cancellable && cancellationTracker.isCancelled(req.id())) {
+            cleanup(req.id());
+            return Optional.empty();
+        }
+        token.ifPresent(t -> sendProgress(t, 1.0));
+        cleanup(req.id());
+        return Optional.of(resp);
+    }
+
+    private Optional<JsonRpcMessage> registerId(RequestId id) {
+        if (idTracker == null) return Optional.empty();
+        try {
+            idTracker.register(id);
+            return Optional.empty();
+        } catch (IllegalArgumentException e) {
+            return Optional.of(JsonRpcError.of(id, JsonRpcErrorCode.INVALID_REQUEST, e.getMessage()));
+        }
+    }
+
+    private boolean registerCancellation(RequestId id) {
+        cancellationTracker.register(id);
+        return cancellationTracker.isCancelled(id);
+    }
+
+    private JsonRpcMessage handle(JsonRpcRequest req, Function<JsonRpcRequest, JsonRpcMessage> handler) {
+        try {
+            var resp = handler.apply(req);
+            if (resp == null) throw new IllegalStateException("handler returned null");
+            return resp;
+        } catch (IllegalArgumentException e) {
+            return JsonRpcError.invalidParams(req.id(), e.getMessage());
+        } catch (Exception e) {
+            return JsonRpcError.of(req.id(), JsonRpcErrorCode.INTERNAL_ERROR, e.getMessage());
         }
     }
 
