@@ -79,6 +79,7 @@ public final class McpConformanceSteps {
                 ServerCapability.COMPLETIONS
         );
         assertEquals(expected, client.serverCapabilities());
+        assertTrue(client.toolsListChangedSupported());
         assertDoesNotThrow(() -> client.ping());
     }
 
@@ -230,6 +231,7 @@ public final class McpConformanceSteps {
                     Json.createObjectBuilder().add("uri", parameter).build());
             case "list_templates" -> client.request("resources/templates/list", Json.createObjectBuilder().build());
             case "list_tools" -> client.request("tools/list", Json.createObjectBuilder().build());
+            case "list_tools_schema" -> client.request("tools/list", Json.createObjectBuilder().build());
             case "call_tool" -> client.request("tools/call",
                     Json.createObjectBuilder().add("name", parameter).build());
             case "list_prompts" -> client.request("prompts/list", Json.createObjectBuilder().build());
@@ -276,6 +278,13 @@ public final class McpConformanceSteps {
                 var tools = result.getJsonArray("tools");
                 assertEquals(1, tools.size());
                 assertEquals(expected, tools.getJsonObject(0).getString("name"));
+            }
+            case "list_tools_schema" -> {
+                var tools = result.getJsonArray("tools");
+                assertEquals(1, tools.size());
+                var tool = tools.getJsonObject(0);
+                assertEquals(expected, tool.getString("name"));
+                assertEquals("object", tool.getJsonObject("inputSchema").getString("type"));
             }
             case "call_tool" -> {
                 var content = result.getJsonArray("content").getJsonObject(0);

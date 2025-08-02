@@ -23,6 +23,24 @@ Feature: MCP protocol conformance
     When the client disconnects
     Then the server terminates cleanly
 
+      Examples:
+        | transport |
+        | stdio     |
+        | http      |
+
+  Scenario Outline: MCP tools specification conformance
+    Given a running MCP server using <transport> transport
+    Then capabilities should be advertised and ping succeeds
+    When testing core functionality
+      | operation         | parameter | expected_result |
+      | list_tools_schema |           | test_tool       |
+      | call_tool         | test_tool | ok              |
+    And testing error conditions
+      | operation         | parameter | expected_error_code |
+      | call_unknown_tool | nope      | -32602              |
+    When the client disconnects
+    Then the server terminates cleanly
+
     Examples:
       | transport |
       | stdio     |
