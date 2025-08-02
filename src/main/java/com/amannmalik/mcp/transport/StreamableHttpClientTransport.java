@@ -7,7 +7,6 @@ import jakarta.json.*;
 import java.io.*;
 import java.net.URI;
 import java.net.http.*;
-import java.nio.charset.StandardCharsets;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.*;
@@ -38,14 +37,19 @@ public final class StreamableHttpClientTransport implements Transport {
         authorization.set(null);
     }
 
-    public void listen() throws IOException {
+    private HttpRequest.Builder baseRequest() {
         HttpRequest.Builder builder = HttpRequest.newBuilder(endpoint)
-                .header("Accept", "text/event-stream")
                 .header("Origin", "http://127.0.0.1")
                 .header(TransportHeaders.PROTOCOL_VERSION, protocolVersion.get());
         Optional.ofNullable(authorization.get())
                 .ifPresent(t -> builder.header(TransportHeaders.AUTHORIZATION, "Bearer " + t));
         Optional.ofNullable(sessionId.get()).ifPresent(id -> builder.header(TransportHeaders.SESSION_ID, id));
+        return builder;
+    }
+
+    public void listen() throws IOException {
+        HttpRequest.Builder builder = baseRequest()
+                .header("Accept", "text/event-stream");
         HttpRequest request = builder.GET().build();
         HttpResponse<InputStream> response;
         try {
@@ -83,14 +87,9 @@ public final class StreamableHttpClientTransport implements Transport {
 
     @Override
     public void send(JsonObject message) throws IOException {
-        HttpRequest.Builder builder = HttpRequest.newBuilder(endpoint)
+        HttpRequest.Builder builder = baseRequest()
                 .header("Accept", "application/json, text/event-stream")
-                .header("Content-Type", "application/json")
-                .header("Origin", "http://127.0.0.1")
-                .header(TransportHeaders.PROTOCOL_VERSION, protocolVersion.get());
-        Optional.ofNullable(authorization.get())
-                .ifPresent(t -> builder.header(TransportHeaders.AUTHORIZATION, "Bearer " + t));
-        Optional.ofNullable(sessionId.get()).ifPresent(id -> builder.header(TransportHeaders.SESSION_ID, id));
+                .header("Content-Type", "application/json");
         HttpRequest request = builder.POST(HttpRequest.BodyPublishers.ofString(message.toString())).build();
         HttpResponse<InputStream> response;
         try {
@@ -163,68 +162,5 @@ public final class StreamableHttpClientTransport implements Transport {
         }
         streams.forEach(SseReader::close);
         streams.clear();
-    }
-
-    static class SseReader implements Runnable {
-        private final InputStream input;
-        private final BlockingQueue<JsonObject> queue;
-        private final Set<SseReader> container;
-        private volatile boolean closed;
-        private String lastEventId;
-
-        SseReader(InputStream input, BlockingQueue<JsonObject> queue, Set<SseReader> container) {
-            this.input = input;
-            this.queue = queue;
-            this.container = container;
-        }
-
-        @Override
-        public void run() {
-            try (BufferedReader br = new BufferedReader(new InputStreamReader(input, StandardCharsets.UTF_8))) {
-                String line;
-                StringBuilder data = new StringBuilder();
-                String eventId = null;
-                while (!closed && (line = br.readLine()) != null) {
-                    if (line.startsWith("id:")) {
-                        eventId = value(line);
-                    } else if (line.startsWith("data:")) {
-                        if (!data.isEmpty()) data.append('\n');
-                        data.append(value(line));
-                    } else if (line.isEmpty()) {
-                        if (!data.isEmpty()) {
-                            try (JsonReader jr = Json.createReader(new StringReader(data.toString()))) {
-                                queue.add(jr.readObject());
-                            } catch (Exception ignore) {
-                            }
-                            data.setLength(0);
-                            if (eventId != null) {
-                                lastEventId = eventId;
-                                eventId = null;
-                            }
-                        }
-                    }
-                }
-            } catch (IOException ignore) {
-            } finally {
-                if (container != null) container.remove(this);
-                close();
-            }
-        }
-
-        private String value(String line) {
-            return line.substring(line.indexOf(':') + 1).trim();
-        }
-
-        void close() {
-            closed = true;
-            try {
-                input.close();
-            } catch (IOException ignore) {
-            }
-        }
-
-        String lastEventId() {
-            return lastEventId;
-        }
     }
 }
