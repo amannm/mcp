@@ -14,6 +14,7 @@ public final class RootChecker {
 
     public static boolean withinRoots(String uri, List<Root> roots) {
         Objects.requireNonNull(roots);
+        if (uri == null) return false;
         final URI target;
         try {
             target = URI.create(uri);
