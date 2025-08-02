@@ -1,6 +1,9 @@
 package com.amannmalik.mcp.wire;
 
+import java.util.Arrays;
+import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 public enum NotificationMethod implements WireMethod {
     INITIALIZED("notifications/initialized"),
@@ -14,6 +17,8 @@ public enum NotificationMethod implements WireMethod {
     ROOTS_LIST_CHANGED("notifications/roots/list_changed");
 
     private final String method;
+    private static final Map<String, NotificationMethod> BY_METHOD = Arrays.stream(values())
+            .collect(Collectors.toUnmodifiableMap(NotificationMethod::method, e -> e));
 
     NotificationMethod(String method) {
         this.method = method;
@@ -24,7 +29,8 @@ public enum NotificationMethod implements WireMethod {
     }
 
     public static Optional<NotificationMethod> from(String method) {
-        return WireMethod.from(NotificationMethod.class, method);
+        if (method == null) return Optional.empty();
+        return Optional.ofNullable(BY_METHOD.get(method));
     }
 }
 
