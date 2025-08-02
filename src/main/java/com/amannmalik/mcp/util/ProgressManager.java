@@ -1,7 +1,9 @@
 package com.amannmalik.mcp.util;
 
+import com.amannmalik.mcp.jsonrpc.JsonRpcNotification;
 import com.amannmalik.mcp.jsonrpc.RequestId;
 import com.amannmalik.mcp.security.RateLimiter;
+import com.amannmalik.mcp.wire.NotificationMethod;
 import jakarta.json.JsonObject;
 
 import java.io.IOException;
@@ -20,7 +22,7 @@ public final class ProgressManager {
     }
 
     public Optional<ProgressToken> register(RequestId id, JsonObject params) {
-        Optional<ProgressToken> token = ProgressUtil.tokenFromMeta(params);
+        Optional<ProgressToken> token = ProgressCodec.fromMeta(params);
         token.ifPresent(t -> {
             tracker.register(t);
             tokens.put(id, t);
@@ -46,6 +48,16 @@ public final class ProgressManager {
     }
 
     public void send(ProgressNotification note, NotificationSender sender) throws IOException {
-        ProgressUtil.sendProgress(note, tracker, limiter, sender);
+        if (!tracker.isActive(note.token())) return;
+        try {
+            limiter.requireAllowance(note.token().asString());
+            tracker.update(note);
+        } catch (IllegalArgumentException | IllegalStateException | SecurityException e) {
+            return;
+        }
+        sender.send(new JsonRpcNotification(
+                NotificationMethod.PROGRESS.method(),
+                ProgressCodec.toJsonObject(note)
+        ));
     }
 }
