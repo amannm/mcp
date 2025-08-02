@@ -194,29 +194,29 @@ public final class McpClient implements AutoCloseable {
     }
 
     private void handleInitialization(JsonRpcMessage msg) throws IOException {
-        if (msg instanceof JsonRpcResponse resp) {
-            InitializeResponse ir = LifecycleCodec.toInitializeResponse(resp.result());
-            String serverVersion = ir.protocolVersion();
-            if (!Protocol.LATEST_VERSION.equals(serverVersion) && !Protocol.PREVIOUS_VERSION.equals(serverVersion)) {
-                try {
-                    transport.close();
-                } catch (IOException ignore) {
-                }
-                throw new UnsupportedProtocolVersionException(serverVersion, Protocol.LATEST_VERSION + " or " + Protocol.PREVIOUS_VERSION);
+        JsonRpcResponse resp;
+        try {
+            resp = JsonRpc.expectResponse(msg);
+        } catch (IOException e) {
+            throw new IOException("Initialization failed: " + e.getMessage(), e);
+        }
+        InitializeResponse ir = LifecycleCodec.toInitializeResponse(resp.result());
+        String serverVersion = ir.protocolVersion();
+        if (!Protocol.LATEST_VERSION.equals(serverVersion) && !Protocol.PREVIOUS_VERSION.equals(serverVersion)) {
+            try {
+                transport.close();
+            } catch (IOException ignore) {
             }
-            if (transport instanceof StreamableHttpClientTransport http) {
-                http.setProtocolVersion(serverVersion);
-            }
-            serverCapabilities = ir.capabilities().server();
-            instructions = ir.instructions();
-            ServerFeatures f = ir.features();
-            if (f != null) {
-                serverFeatures = f;
-            }
-        } else if (msg instanceof JsonRpcError err) {
-            throw new IOException("Initialization failed: " + err.error().message());
-        } else {
-            throw new IOException("Unexpected message type: " + msg.getClass().getSimpleName());
+            throw new UnsupportedProtocolVersionException(serverVersion, Protocol.LATEST_VERSION + " or " + Protocol.PREVIOUS_VERSION);
+        }
+        if (transport instanceof StreamableHttpClientTransport http) {
+            http.setProtocolVersion(serverVersion);
+        }
+        serverCapabilities = ir.capabilities().server();
+        instructions = ir.instructions();
+        ServerFeatures f = ir.features();
+        if (f != null) {
+            serverFeatures = f;
         }
     }
 
@@ -295,23 +295,14 @@ public final class McpClient implements AutoCloseable {
     }
 
     public PingResponse ping(long timeoutMillis) throws IOException {
-        JsonRpcMessage msg = request(RequestMethod.PING, null, timeoutMillis);
-        if (msg instanceof JsonRpcResponse resp) return PingCodec.toPingResponse(resp);
-        if (msg instanceof JsonRpcError err) throw new IOException(err.error().message());
-        throw new IOException("Unexpected message type: " + msg.getClass().getSimpleName());
+        JsonRpcResponse resp = JsonRpc.expectResponse(request(RequestMethod.PING, null, timeoutMillis));
+        return PingCodec.toPingResponse(resp);
     }
 
     public void setLogLevel(LoggingLevel level) throws IOException {
         if (level == null) throw new IllegalArgumentException("level required");
-        JsonRpcMessage msg = request(RequestMethod.LOGGING_SET_LEVEL,
-                LoggingCodec.toJsonObject(new SetLevelRequest(level, null)));
-        if (msg instanceof JsonRpcResponse) {
-            return;
-        }
-        if (msg instanceof JsonRpcError err) {
-            throw new IOException(err.error().message());
-        }
-        throw new IOException("Unexpected message type: " + msg.getClass().getSimpleName());
+        JsonRpc.expectResponse(request(RequestMethod.LOGGING_SET_LEVEL,
+                LoggingCodec.toJsonObject(new SetLevelRequest(level, null))));
     }
 
     public void setAccessToken(String token) {
@@ -424,31 +415,19 @@ public final class McpClient implements AutoCloseable {
     }
 
     public ListResourcesResult listResources(String cursor) throws IOException {
-        JsonRpcMessage resp = request(
+        JsonRpcResponse resp = JsonRpc.expectResponse(request(
                 RequestMethod.RESOURCES_LIST,
                 ResourcesCodec.toJsonObject(new ListResourcesRequest(cursor, null))
-        );
-        if (resp instanceof JsonRpcResponse r) {
-            return ResourcesCodec.toListResourcesResult(r.result());
-        }
-        if (resp instanceof JsonRpcError err) {
-            throw new IOException(err.error().message());
-        }
-        throw new IOException("Unexpected response");
+        ));
+        return ResourcesCodec.toListResourcesResult(resp.result());
     }
 
     public ListResourceTemplatesResult listResourceTemplates(String cursor) throws IOException {
-        JsonRpcMessage resp = request(
+        JsonRpcResponse resp = JsonRpc.expectResponse(request(
                 RequestMethod.RESOURCES_TEMPLATES_LIST,
                 ResourcesCodec.toJsonObject(new ListResourceTemplatesRequest(cursor, null))
-        );
-        if (resp instanceof JsonRpcResponse r) {
-            return ResourcesCodec.toListResourceTemplatesResult(r.result());
-        }
-        if (resp instanceof JsonRpcError err) {
-            throw new IOException(err.error().message());
-        }
-        throw new IOException("Unexpected response");
+        ));
+        return ResourcesCodec.toListResourceTemplatesResult(resp.result());
     }
 
     public ResourceSubscription subscribeResource(String uri, ResourceListener listener) throws IOException {
@@ -458,13 +437,10 @@ public final class McpClient implements AutoCloseable {
         if (listener == null) {
             throw new IllegalArgumentException("listener required");
         }
-        JsonRpcMessage msg = request(
+        JsonRpc.expectResponse(request(
                 RequestMethod.RESOURCES_SUBSCRIBE,
                 ResourcesCodec.toJsonObject(new SubscribeRequest(uri, null))
-        );
-        if (msg instanceof JsonRpcError err) {
-            throw new IOException(err.error().message());
-        }
+        ));
         resourceListeners.put(uri, listener);
         return () -> {
             resourceListeners.remove(uri);
