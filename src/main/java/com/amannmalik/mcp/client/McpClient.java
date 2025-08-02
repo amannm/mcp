@@ -9,7 +9,6 @@ import com.amannmalik.mcp.client.elicitation.ElicitationProvider;
 import com.amannmalik.mcp.client.roots.RootsCodec;
 import com.amannmalik.mcp.client.roots.RootsListChangedNotification;
 import com.amannmalik.mcp.client.roots.RootsProvider;
-import com.amannmalik.mcp.client.roots.RootsSubscription;
 import com.amannmalik.mcp.client.sampling.CreateMessageRequest;
 import com.amannmalik.mcp.client.sampling.CreateMessageResponse;
 import com.amannmalik.mcp.client.sampling.SamplingCodec;
@@ -62,7 +61,13 @@ import com.amannmalik.mcp.util.ProgressListener;
 import com.amannmalik.mcp.util.ProgressManager;
 import com.amannmalik.mcp.util.ProgressNotification;
 import com.amannmalik.mcp.util.ProgressToken;
+
+
+import com.amannmalik.mcp.util.ListChangeSubscription;
+import com.amannmalik.mcp.util.ProgressUtil;
+
 import com.amannmalik.mcp.util.JsonRpcRequestProcessor;
+
 import com.amannmalik.mcp.util.Timeouts;
 import com.amannmalik.mcp.jsonrpc.RpcHandlerRegistry;
 import com.amannmalik.mcp.validation.SchemaValidator;
@@ -96,7 +101,7 @@ public final class McpClient implements AutoCloseable {
     private final Transport transport;
     private final SamplingProvider sampling;
     private final RootsProvider roots;
-    private RootsSubscription rootsSubscription;
+    private ListChangeSubscription rootsSubscription;
     private final boolean rootsListChangedSupported;
     private final ElicitationProvider elicitation;
     private SamplingAccessPolicy samplingAccess = SamplingAccessPolicy.PERMISSIVE;

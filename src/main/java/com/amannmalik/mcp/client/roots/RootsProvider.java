@@ -1,12 +1,14 @@
 package com.amannmalik.mcp.client.roots;
 
+import com.amannmalik.mcp.util.ListChangeSubscription;
+
 import java.util.List;
 
 public interface RootsProvider extends AutoCloseable {
 
     List<Root> list();
 
-    RootsSubscription subscribe(RootsListener listener);
+    ListChangeSubscription subscribe(RootsListener listener);
 
     @Override
     default void close() {
