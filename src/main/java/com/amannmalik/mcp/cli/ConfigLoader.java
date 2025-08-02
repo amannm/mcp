@@ -33,8 +33,7 @@ public final class ConfigLoader {
             }
             if (name.endsWith(".yaml") || name.endsWith(".yml")) {
                 Load loader = new Load(LoadSettings.builder().build());
-                Object data = loader.loadFromInputStream(in);
-                JsonValue value = toJsonValue(data);
+                JsonValue value = toJsonValue(loader.loadFromInputStream(in));
                 if (!(value instanceof JsonObject obj)) throw new IllegalArgumentException("invalid yaml");
                 return parseJson(obj);
             }
@@ -100,10 +99,6 @@ public final class ConfigLoader {
                 yield b.build();
             }
             case String s -> Json.createValue(s);
-            case Integer i -> Json.createValue(i);
-            case Long l -> Json.createValue(l);
-            case Double d -> Json.createValue(d);
-            case BigDecimal bd -> Json.createValue(bd);
             case Number n -> Json.createValue(new BigDecimal(n.toString()));
             case Boolean b -> b ? JsonValue.TRUE : JsonValue.FALSE;
             case null -> JsonValue.NULL;
