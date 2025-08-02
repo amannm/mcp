@@ -399,7 +399,7 @@ public final class McpConformanceSteps {
                 assertEquals(expected, content.getString("text"));
                 assertEquals("mock-model", result.getString("model"));
                 assertEquals("endTurn", result.getString("stopReason"));
-
+            }
             case "roots_listed" -> {
                 int c = result.getInt("count");
                 assertTrue(c >= Integer.parseInt(expected));
