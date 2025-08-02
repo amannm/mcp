@@ -23,10 +23,10 @@ Feature: MCP protocol conformance
     When the client disconnects
     Then the server terminates cleanly
 
-      Examples:
-        | transport |
-        | stdio     |
-        | http      |
+    Examples:
+      | transport |
+      | stdio     |
+      | http      |
 
   Scenario Outline: MCP tools specification conformance
     Given a running MCP server using <transport> transport
@@ -49,11 +49,11 @@ Feature: MCP protocol conformance
     Given a running MCP server using <transport> transport
     Then capabilities should be advertised and ping succeeds
     When testing core functionality
-      | operation                | parameter      | expected_result |
-      | list_prompt_name         |                | test_prompt     |
-      | list_prompt_arg_required |                | true            |
-      | get_prompt_text          | test_prompt    | hello           |
-      | get_prompt_role          | test_prompt    | user            |
+      | operation                | parameter   | expected_result |
+      | list_prompt_name         |             | test_prompt     |
+      | list_prompt_arg_required |             | true            |
+      | get_prompt_text          | test_prompt | hello           |
+      | get_prompt_role          | test_prompt | user            |
     And testing error conditions
       | operation              | parameter   | expected_error_code |
       | get_prompt_invalid     | nope        | -32602              |
@@ -105,7 +105,7 @@ Feature: MCP protocol conformance
       | request_sampling |           | ok              |
     And testing error conditions
       | operation               | parameter | expected_error_code |
-      | request_sampling_reject |           | -32603             |
+      | request_sampling_reject |           | -32603              |
     When the client disconnects
     Then the server terminates cleanly
 
@@ -113,7 +113,7 @@ Feature: MCP protocol conformance
       | transport |
       | stdio     |
       | http      |
-      
+
   Scenario Outline: MCP roots specification conformance
     Given a running MCP server using <transport> transport
     Then capabilities should be advertised and ping succeeds
