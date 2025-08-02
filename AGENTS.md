@@ -21,7 +21,7 @@ description: MCP Implementation Specialist
 - Unchecked casts are unacceptable
 - Avoid `java.lang.reflect` and `javax.annotation`
 - Avoid comments except for tricky areas (self-documenting code)
-- 
+
 # Wisdom
 
 - Start from ground truth before trying something random
