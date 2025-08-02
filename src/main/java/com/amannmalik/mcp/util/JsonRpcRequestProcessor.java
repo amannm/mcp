@@ -58,28 +58,30 @@ public final class JsonRpcRequestProcessor {
             return Optional.of(JsonRpcError.invalidParams(req.id(), e.getMessage()));
         }
 
-        if (cancellable) {
-            cancellationTracker.register(req.id());
-            if (cancellationTracker.isCancelled(req.id())) {
-                cleanup(req.id());
-                return Optional.empty();
-            }
-        }
-
-        JsonRpcMessage resp;
         try {
-            resp = handler.apply(req);
-            if (resp == null) throw new IllegalStateException("handler returned null");
-        } catch (IllegalArgumentException e) {
-            resp = JsonRpcError.invalidParams(req.id(), e.getMessage());
-        } catch (Exception e) {
-            resp = JsonRpcError.of(req.id(), JsonRpcErrorCode.INTERNAL_ERROR, e.getMessage());
-        }
+            if (cancellable) {
+                cancellationTracker.register(req.id());
+                if (cancellationTracker.isCancelled(req.id())) {
+                    return Optional.empty();
+                }
+            }
 
-        boolean cancelled = cancellable && cancellationTracker.isCancelled(req.id());
-        if (!cancelled) token.ifPresent(t -> sendProgress(t, 1.0));
-        cleanup(req.id());
-        return cancelled ? Optional.empty() : Optional.of(resp);
+            JsonRpcMessage resp;
+            try {
+                resp = handler.apply(req);
+                if (resp == null) throw new IllegalStateException("handler returned null");
+            } catch (IllegalArgumentException e) {
+                resp = JsonRpcError.invalidParams(req.id(), e.getMessage());
+            } catch (Exception e) {
+                resp = JsonRpcError.of(req.id(), JsonRpcErrorCode.INTERNAL_ERROR, e.getMessage());
+            }
+
+            if (cancellable && cancellationTracker.isCancelled(req.id())) return Optional.empty();
+            token.ifPresent(t -> sendProgress(t, 1.0));
+            return Optional.of(resp);
+        } finally {
+            cleanup(req.id());
+        }
     }
 
     private void cleanup(RequestId id) {
