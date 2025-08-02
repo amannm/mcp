@@ -81,3 +81,20 @@ Feature: MCP protocol conformance
       | stdio     |
       | http      |
 
+  Scenario Outline: MCP sampling specification conformance
+    Given a running MCP server using <transport> transport
+    Then capabilities should be advertised and ping succeeds
+    When testing core functionality
+      | operation        | parameter | expected_result |
+      | request_sampling |           | ok              |
+    And testing error conditions
+      | operation               | parameter | expected_error_code |
+      | request_sampling_reject |           | -32603             |
+    When the client disconnects
+    Then the server terminates cleanly
+
+    Examples:
+      | transport |
+      | stdio     |
+      | http      |
+
