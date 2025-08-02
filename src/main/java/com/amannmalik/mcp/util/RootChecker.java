@@ -6,6 +6,8 @@ import java.net.URI;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
 
 /** Utility for verifying resource URIs are within allowed roots. */
 public final class RootChecker {
@@ -17,36 +19,38 @@ public final class RootChecker {
      * Non-file URIs are always allowed.
      */
     public static boolean withinRoots(String uri, List<Root> roots) {
-        URI target;
+        Objects.requireNonNull(roots);
+        final URI target;
         try {
             target = URI.create(uri);
         } catch (IllegalArgumentException e) {
             return false;
         }
-        if (!"file".equalsIgnoreCase(target.getScheme())) {
-            return true;
-        }
-        if (roots == null || roots.isEmpty()) {
-            return true;
-        }
-        Path targetPath;
+        if (!"file".equalsIgnoreCase(target.getScheme()) || roots.isEmpty()) return true;
+
+        final Path targetPath;
         try {
             targetPath = Paths.get(target).toRealPath();
         } catch (Exception e) {
             return false;
         }
-        for (Root r : roots) {
-            try {
-                URI base = URI.create(r.uri());
-                if ("file".equalsIgnoreCase(base.getScheme())) {
-                    Path basePath = Paths.get(base).toRealPath();
-                    if (targetPath.startsWith(basePath)) {
-                        return true;
-                    }
-                }
-            } catch (Exception ignore) {
+
+        return roots.stream()
+                .map(Root::uri)
+                .map(RootChecker::toRealPath)
+                .flatMap(Optional::stream)
+                .anyMatch(base -> targetPath.startsWith(base));
+    }
+
+    private static Optional<Path> toRealPath(String uri) {
+        try {
+            URI base = URI.create(uri);
+            if ("file".equalsIgnoreCase(base.getScheme())) {
+                return Optional.of(Paths.get(base).toRealPath());
             }
+        } catch (Exception ignore) {
+            // ignore invalid root entries
         }
-        return false;
+        return Optional.empty();
     }
 }

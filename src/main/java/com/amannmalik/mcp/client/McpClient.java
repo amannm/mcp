@@ -55,13 +55,20 @@ import com.amannmalik.mcp.util.CancellationCodec;
 import com.amannmalik.mcp.util.CancellationTracker;
 import com.amannmalik.mcp.util.CancelledNotification;
 import com.amannmalik.mcp.util.CloseUtil;
-import com.amannmalik.mcp.util.JsonRpcRequestProcessor;
 import com.amannmalik.mcp.util.ProgressCodec;
 import com.amannmalik.mcp.util.ProgressListener;
 import com.amannmalik.mcp.util.ProgressManager;
 import com.amannmalik.mcp.util.ProgressNotification;
 import com.amannmalik.mcp.util.ProgressToken;
+
+
 import com.amannmalik.mcp.util.ListChangeSubscription;
+
+
+import com.amannmalik.mcp.util.ProgressUtil;
+
+import com.amannmalik.mcp.util.JsonRpcRequestProcessor;
+
 import com.amannmalik.mcp.util.Timeouts;
 import com.amannmalik.mcp.jsonrpc.RpcHandlerRegistry;
 import com.amannmalik.mcp.validation.SchemaValidator;
@@ -512,38 +519,49 @@ public final class McpClient implements AutoCloseable {
                 break;
             }
             switch (msg) {
-                case JsonRpcResponse resp -> {
-                    CompletableFuture<JsonRpcMessage> f = pending.remove(resp.id());
-                    if (f != null) f.complete(resp);
-                }
-                case JsonRpcError err -> {
-                    CompletableFuture<JsonRpcMessage> f = pending.remove(err.id());
-                    if (f != null) f.complete(err);
-                }
-                case JsonRpcRequest req -> {
-                    Optional<JsonRpcMessage> resp;
-                    try {
-                        resp = handlers.handle(req, true);
-                    } catch (IOException e) {
-                        resp = Optional.of(JsonRpcError.of(req.id(), JsonRpcErrorCode.INTERNAL_ERROR, e.getMessage()));
-                    }
-                    resp.ifPresent(r -> {
-                        try {
-                            send(r);
-                        } catch (IOException ignore) {
-                        }
-                    });
-                }
-                case JsonRpcNotification note -> {
-                    try {
-                        handlers.handle(note);
-                    } catch (IOException ignore) {
-                    }
-                }
+                case JsonRpcResponse resp -> handleResponse(resp);
+                case JsonRpcError err -> handleError(err);
+                case JsonRpcRequest req -> handleRequest(req);
+                case JsonRpcNotification note -> handleNotification(note);
                 default -> {
                 }
             }
         }
+    }
+
+    private void handleResponse(JsonRpcResponse resp) {
+        completePending(resp.id(), resp);
+    }
+
+    private void handleError(JsonRpcError err) {
+        completePending(err.id(), err);
+    }
+
+    private void handleRequest(JsonRpcRequest req) {
+        Optional<JsonRpcMessage> resp;
+        try {
+            resp = handlers.handle(req, true);
+        } catch (IOException e) {
+            resp = Optional.of(JsonRpcError.of(req.id(), JsonRpcErrorCode.INTERNAL_ERROR, e.getMessage()));
+        }
+        resp.ifPresent(r -> {
+            try {
+                send(r);
+            } catch (IOException ignore) {
+            }
+        });
+    }
+
+    private void handleNotification(JsonRpcNotification note) {
+        try {
+            handlers.handle(note);
+        } catch (IOException ignore) {
+        }
+    }
+
+    private void completePending(RequestId id, JsonRpcMessage msg) {
+        CompletableFuture<JsonRpcMessage> f = pending.remove(id);
+        if (f != null) f.complete(msg);
     }
 
     private JsonRpcMessage handleCreateMessage(JsonRpcRequest req) {

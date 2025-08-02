@@ -13,10 +13,9 @@ import java.util.concurrent.atomic.AtomicReference;
 
 final class SessionManager {
     private static final SecureRandom RANDOM = new SecureRandom();
-    private final AtomicReference<String> sessionId = new AtomicReference<>();
+    private static record SessionState(String id, String owner, Principal principal) {}
+    private final AtomicReference<SessionState> current = new AtomicReference<>();
     private final AtomicReference<String> lastSessionId = new AtomicReference<>();
-    private final AtomicReference<String> sessionOwner = new AtomicReference<>();
-    private final AtomicReference<Principal> sessionPrincipal = new AtomicReference<>();
     private volatile String protocolVersion;
     private final String compatibilityVersion;
 
@@ -37,14 +36,15 @@ final class SessionManager {
                      HttpServletResponse resp,
                      Principal principal,
                      boolean initializing) throws IOException {
-        String session = sessionId.get();
+        if (principal == null) throw new IllegalArgumentException("principal required");
+        SessionState state = current.get();
         String last = lastSessionId.get();
         String header = req.getHeader(TransportHeaders.SESSION_ID);
         String version = req.getHeader(TransportHeaders.PROTOCOL_VERSION);
         if (!sanitizeHeaders(header, version, resp)) {
             return false;
         }
-        return checkSession(req, resp, principal, initializing, session, last, header, version);
+        return checkSession(req, resp, principal, initializing, state, last, header, version);
     }
 
     private boolean sanitizeHeaders(String sessionHeader,
@@ -65,22 +65,20 @@ final class SessionManager {
                                  HttpServletResponse resp,
                                  Principal principal,
                                  boolean initializing,
-                                 String session,
+                                 SessionState state,
                                  String last,
                                  String header,
                                  String version) throws IOException {
-        if (session == null && initializing) {
+        if (state == null && initializing) {
             byte[] bytes = new byte[32];
             RANDOM.nextBytes(bytes);
-            session = Base64Util.encodeUrl(bytes);
-            sessionId.set(session);
-            sessionOwner.set(req.getRemoteAddr());
-            sessionPrincipal.set(principal);
+            String id = Base64Util.encodeUrl(bytes);
+            current.set(new SessionState(id, req.getRemoteAddr(), principal));
             lastSessionId.set(null);
-            resp.setHeader(TransportHeaders.SESSION_ID, session);
+            resp.setHeader(TransportHeaders.SESSION_ID, id);
             return true;
         }
-        if (session == null) {
+        if (state == null) {
             if (header != null && header.equals(last)) {
                 resp.sendError(HttpServletResponse.SC_NOT_FOUND);
             } else {
@@ -92,12 +90,11 @@ final class SessionManager {
             resp.sendError(HttpServletResponse.SC_BAD_REQUEST);
             return false;
         }
-        if (!session.equals(header) || !req.getRemoteAddr().equals(sessionOwner.get())) {
+        if (!state.id().equals(header) || !req.getRemoteAddr().equals(state.owner())) {
             resp.sendError(HttpServletResponse.SC_NOT_FOUND);
             return false;
         }
-        var stored = sessionPrincipal.get();
-        if (stored != null && !stored.id().equals(principal.id())) {
+        if (!state.principal().id().equals(principal.id())) {
             resp.sendError(HttpServletResponse.SC_FORBIDDEN);
             return false;
         }
@@ -114,14 +111,12 @@ final class SessionManager {
     }
 
     void terminate(boolean recordId) {
-        if (recordId) {
-            lastSessionId.set(sessionId.get());
+        SessionState state = current.getAndSet(null);
+        if (recordId && state != null) {
+            lastSessionId.set(state.id());
         } else {
             lastSessionId.set(null);
         }
-        sessionId.set(null);
-        sessionOwner.set(null);
-        sessionPrincipal.set(null);
         protocolVersion = compatibilityVersion;
     }
 }
