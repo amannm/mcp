@@ -142,6 +142,14 @@ public final class McpClient implements AutoCloseable {
         JsonRpcMessage msg = sendInitialization();
         handleInitialization(msg);
         notifyInitialized();
+        if (transport instanceof StreamableHttpClientTransport http) {
+            try {
+                http.listen();
+            } catch (UnauthorizedException e) {
+                handleUnauthorized(e);
+                throw e;
+            }
+        }
         connected = true;
         subscribeRootsIfNeeded();
         startBackgroundTasks();
