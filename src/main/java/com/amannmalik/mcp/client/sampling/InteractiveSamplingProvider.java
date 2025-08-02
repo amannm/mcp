@@ -7,15 +7,10 @@ import jakarta.json.*;
 import java.io.*;
 import java.net.URI;
 import java.net.http.*;
+import java.time.Duration;
 import java.util.List;
 import java.util.Optional;
-import java.time.Duration;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
+import java.util.concurrent.*;
 
 public final class InteractiveSamplingProvider implements SamplingProvider {
 

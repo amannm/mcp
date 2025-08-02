@@ -28,7 +28,7 @@ public final class HostCommand implements Callable<Integer> {
     private boolean verbose;
 
     @CommandLine.Option(names = "--client", description = "Client as id:command", split = ",")
-    private List<String> clientSpecs = new ArrayList<>();
+    private final List<String> clientSpecs = new ArrayList<>();
 
     @CommandLine.Option(names = "--interactive", description = "Interactive mode for client management")
     private boolean interactive;
