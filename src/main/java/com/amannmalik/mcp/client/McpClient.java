@@ -56,13 +56,16 @@ import com.amannmalik.mcp.util.CancellationCodec;
 import com.amannmalik.mcp.util.CancellationTracker;
 import com.amannmalik.mcp.util.CancelledNotification;
 import com.amannmalik.mcp.util.CloseUtil;
+import com.amannmalik.mcp.util.JsonRpcRequestProcessor;
 import com.amannmalik.mcp.util.ProgressCodec;
 import com.amannmalik.mcp.util.ProgressListener;
 import com.amannmalik.mcp.util.ProgressManager;
 import com.amannmalik.mcp.util.ProgressNotification;
 import com.amannmalik.mcp.util.ProgressToken;
+import com.amannmalik.mcp.util.ProgressUtil;
 import com.amannmalik.mcp.util.JsonRpcRequestProcessor;
 import com.amannmalik.mcp.util.Timeouts;
+import com.amannmalik.mcp.jsonrpc.RpcHandlerRegistry;
 import com.amannmalik.mcp.validation.SchemaValidator;
 import com.amannmalik.mcp.wire.NotificationMethod;
 import com.amannmalik.mcp.wire.RequestMethod;
@@ -77,7 +80,6 @@ import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
-import java.util.EnumMap;
 import java.util.EnumSet;
 import java.util.Map;
 import java.util.Optional;
@@ -128,16 +130,7 @@ public final class McpClient implements AutoCloseable {
     };
     private volatile ResourceMetadata resourceMetadata;
 
-    private final Map<RequestMethod, RequestHandler> requestHandlers = new EnumMap<>(RequestMethod.class);
-    private final Map<NotificationMethod, NotificationHandler> notificationHandlers = new EnumMap<>(NotificationMethod.class);
-
-    private void registerRequestHandler(RequestMethod method, RequestHandler handler) {
-        requestHandlers.put(method, handler);
-    }
-
-    private void registerNotificationHandler(NotificationMethod method, NotificationHandler handler) {
-        notificationHandlers.put(method, handler);
-    }
+    private final RpcHandlerRegistry handlers;
 
     public void configurePing(long intervalMillis, long timeoutMillis) {
         if (connected) throw new IllegalStateException("already connected");
@@ -180,22 +173,23 @@ public final class McpClient implements AutoCloseable {
         this.pingInterval = 0;
         this.pingTimeout = 5000;
 
-        registerRequestHandler(RequestMethod.SAMPLING_CREATE_MESSAGE, this::handleCreateMessage);
-        registerRequestHandler(RequestMethod.ROOTS_LIST, this::handleListRoots);
-        registerRequestHandler(RequestMethod.ELICITATION_CREATE, this::handleElicit);
-        registerRequestHandler(RequestMethod.PING, this::handlePing);
-
-        registerNotificationHandler(NotificationMethod.PROGRESS, this::handleProgress);
-        registerNotificationHandler(NotificationMethod.MESSAGE, this::handleMessage);
-        registerNotificationHandler(NotificationMethod.CANCELLED, this::cancelled);
-        registerNotificationHandler(NotificationMethod.RESOURCES_LIST_CHANGED, n -> resourceListListener.listChanged());
-        registerNotificationHandler(NotificationMethod.TOOLS_LIST_CHANGED, this::handleToolsListChanged);
-        registerNotificationHandler(NotificationMethod.PROMPTS_LIST_CHANGED, n -> promptsListener.listChanged());
-
         this.requestProcessor = new JsonRpcRequestProcessor(
                 progressManager,
                 cancellationTracker,
                 n -> notify(n.method(), n.params()));
+        this.handlers = new RpcHandlerRegistry(requestProcessor);
+
+        handlers.register(RequestMethod.SAMPLING_CREATE_MESSAGE, this::handleCreateMessage);
+        handlers.register(RequestMethod.ROOTS_LIST, this::handleListRoots);
+        handlers.register(RequestMethod.ELICITATION_CREATE, this::handleElicit);
+        handlers.register(RequestMethod.PING, this::handlePing);
+
+        handlers.register(NotificationMethod.PROGRESS, this::handleProgress);
+        handlers.register(NotificationMethod.MESSAGE, this::handleMessage);
+        handlers.register(NotificationMethod.CANCELLED, this::cancelled);
+        handlers.register(NotificationMethod.RESOURCES_LIST_CHANGED, n -> resourceListListener.listChanged());
+        handlers.register(NotificationMethod.TOOLS_LIST_CHANGED, this::handleToolsListChanged);
+        handlers.register(NotificationMethod.PROMPTS_LIST_CHANGED, n -> promptsListener.listChanged());
     }
 
     public ClientInfo info() {
@@ -531,7 +525,7 @@ public final class McpClient implements AutoCloseable {
                 case JsonRpcRequest req -> {
                     Optional<JsonRpcMessage> resp;
                     try {
-                        resp = handleRequest(req);
+                        resp = handlers.handle(req, true);
                     } catch (IOException e) {
                         resp = Optional.of(JsonRpcError.of(req.id(), JsonRpcErrorCode.INTERNAL_ERROR, e.getMessage()));
                     }
@@ -542,27 +536,16 @@ public final class McpClient implements AutoCloseable {
                         }
                     });
                 }
-                case JsonRpcNotification note -> handleNotification(note);
+                case JsonRpcNotification note -> {
+                    try {
+                        handlers.handle(note);
+                    } catch (IOException ignore) {
+                    }
+                }
                 default -> {
                 }
             }
         }
-    }
-
-    private Optional<JsonRpcMessage> handleRequest(JsonRpcRequest req) throws IOException {
-        return requestProcessor.process(req, true, r -> {
-            var method = RequestMethod.from(r.method());
-            if (method.isEmpty()) {
-                return JsonRpcError.of(r.id(), JsonRpcErrorCode.METHOD_NOT_FOUND,
-                        "Unknown method: " + r.method());
-            }
-            RequestHandler handler = requestHandlers.get(method.get());
-            if (handler == null) {
-                return JsonRpcError.of(r.id(), JsonRpcErrorCode.METHOD_NOT_FOUND,
-                        "Unknown method: " + r.method());
-            }
-            return handler.handle(r);
-        });
     }
 
     private JsonRpcMessage handleCreateMessage(JsonRpcRequest req) {
@@ -676,13 +659,6 @@ public final class McpClient implements AutoCloseable {
         } : listener;
     }
 
-    private void handleNotification(JsonRpcNotification note) {
-        NotificationMethod.from(note.method()).ifPresent(m -> {
-            NotificationHandler handler = notificationHandlers.get(m);
-            if (handler != null) handler.handle(note);
-        });
-    }
-
     private void handleProgress(JsonRpcNotification note) {
         if (note.params() == null) return;
         try {
@@ -719,13 +695,4 @@ public final class McpClient implements AutoCloseable {
         }
     }
 
-    @FunctionalInterface
-    private interface RequestHandler {
-        JsonRpcMessage handle(JsonRpcRequest request);
-    }
-
-    @FunctionalInterface
-    private interface NotificationHandler {
-        void handle(JsonRpcNotification notification);
-    }
 }
