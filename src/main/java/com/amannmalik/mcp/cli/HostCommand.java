@@ -12,64 +12,89 @@ import com.amannmalik.mcp.transport.StdioTransport;
 import jakarta.json.Json;
 import jakarta.json.JsonValue;
 import picocli.CommandLine;
+import picocli.CommandLine.Model.CommandSpec;
+import picocli.CommandLine.Model.OptionSpec;
+import picocli.CommandLine.ParseResult;
 
 import java.io.*;
 import java.util.*;
-import java.util.concurrent.Callable;
 
-@CommandLine.Command(name = "host", description = "Run MCP host", mixinStandardHelpOptions = true)
-public final class HostCommand implements Callable<Integer> {
-    @CommandLine.Option(names = {"-v", "--verbose"}, description = "Verbose logging")
-    private boolean verbose;
-
-    @CommandLine.Option(names = "--client", description = "Client as id:command", split = ",")
-    private final List<String> clientSpecs = new ArrayList<>();
-
-    @CommandLine.Option(names = "--interactive", description = "Interactive mode for client management")
-    private boolean interactive;
-
-    @Override
-    public Integer call() throws Exception {
-        if (clientSpecs.isEmpty()) throw new IllegalArgumentException("--client required");
-        Map<String, String> clients = new LinkedHashMap<>();
-        for (String spec : clientSpecs) {
-            int idx = spec.indexOf(':');
-            if (idx <= 0 || idx == spec.length() - 1) throw new IllegalArgumentException("id:command expected: " + spec);
-            clients.put(spec.substring(0, idx), spec.substring(idx + 1));
-        }
-
-        ConsentManager consents = new ConsentManager();
-        ToolAccessController tools = new ToolAccessController();
-        PrivacyBoundaryEnforcer privacyBoundary = new PrivacyBoundaryEnforcer();
-        SamplingAccessController sampling = new SamplingAccessController();
-        SecurityPolicy policy = c -> true;
-        Principal principal = new Principal(McpConfiguration.current().host().principal(), Set.of());
-
-        try (HostProcess host = new HostProcess(policy, consents, tools, privacyBoundary, sampling, principal)) {
-            for (var entry : clients.entrySet()) {
-                host.grantConsent(entry.getKey());
-                var pb = new ProcessBuilder(entry.getValue().split(" "));
-                StdioTransport t = new StdioTransport(pb, verbose ? System.err::println : s -> {
-                });
-                McpClient client = new McpClient(
-                        new ClientInfo(entry.getKey(), entry.getKey(),
-                                McpConfiguration.current().client().info().version()),
-                        EnumSet.noneOf(ClientCapability.class),
-                        t);
-                host.register(entry.getKey(), client);
-                if (verbose) System.err.println("Registered client: " + entry.getKey());
-            }
-
-            if (interactive) {
-                runInteractiveMode(host);
-            } else {
-                System.out.println(host.aggregateContext());
-            }
-        }
-        return 0;
+public final class HostCommand {
+    public static CommandSpec createCommandSpec() {
+        CommandSpec spec = CommandSpec.create()
+                .name("host")
+                .mixinStandardHelpOptions(true)
+                .addOption(OptionSpec.builder("-v", "--verbose")
+                        .type(boolean.class)
+                        .description("Verbose logging")
+                        .build())
+                .addOption(OptionSpec.builder("--client")
+                        .type(List.class)
+                        .auxiliaryTypes(String.class)
+                        .splitRegex(",")
+                        .description("Client as id:command")
+                        .build())
+                .addOption(OptionSpec.builder("--interactive")
+                        .type(boolean.class)
+                        .description("Interactive mode for client management")
+                        .build());
+        spec.usageMessage().description("Run MCP host");
+        return spec;
     }
 
-    private void runInteractiveMode(HostProcess host) throws IOException {
+    public static int execute(ParseResult parseResult) {
+        Integer helpExitCode = CommandLine.executeHelpRequest(parseResult);
+        if (helpExitCode != null) return helpExitCode;
+        
+        try {
+            boolean verbose = parseResult.matchedOptionValue("--verbose", false);
+            List<String> clientSpecs = parseResult.matchedOptionValue("--client", Collections.<String>emptyList());
+            boolean interactive = parseResult.matchedOptionValue("--interactive", false);
+            
+            if (clientSpecs.isEmpty()) throw new IllegalArgumentException("--client required");
+            
+            Map<String, String> clients = new LinkedHashMap<>();
+            for (String spec : clientSpecs) {
+                int idx = spec.indexOf(':');
+                if (idx <= 0 || idx == spec.length() - 1) throw new IllegalArgumentException("id:command expected: " + spec);
+                clients.put(spec.substring(0, idx), spec.substring(idx + 1));
+            }
+
+            ConsentManager consents = new ConsentManager();
+            ToolAccessController tools = new ToolAccessController();
+            PrivacyBoundaryEnforcer privacyBoundary = new PrivacyBoundaryEnforcer();
+            SamplingAccessController sampling = new SamplingAccessController();
+            SecurityPolicy policy = c -> true;
+            Principal principal = new Principal(McpConfiguration.current().host().principal(), Set.of());
+
+            try (HostProcess host = new HostProcess(policy, consents, tools, privacyBoundary, sampling, principal)) {
+                for (var entry : clients.entrySet()) {
+                    host.grantConsent(entry.getKey());
+                    var pb = new ProcessBuilder(entry.getValue().split(" "));
+                    StdioTransport t = new StdioTransport(pb, verbose ? System.err::println : s -> {
+                    });
+                    McpClient client = new McpClient(
+                            new ClientInfo(entry.getKey(), entry.getKey(),
+                                    McpConfiguration.current().client().info().version()),
+                            EnumSet.noneOf(ClientCapability.class),
+                            t);
+                    host.register(entry.getKey(), client);
+                    if (verbose) System.err.println("Registered client: " + entry.getKey());
+                }
+
+                if (interactive) {
+                    runInteractiveMode(host);
+                } else {
+                    System.out.println(host.aggregateContext());
+                }
+            }
+            return 0;
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private static void runInteractiveMode(HostProcess host) throws IOException {
         BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
         System.out.println("MCP Host Interactive Mode. Type 'help' for commands, 'quit' to exit.");
 
@@ -211,7 +236,7 @@ public final class HostCommand implements Callable<Integer> {
         }
     }
 
-    private void printHelp() {
+    private static void printHelp() {
         System.out.println("""
                 Available commands:
                   help                              - Show this help
