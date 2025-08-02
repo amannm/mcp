@@ -5,9 +5,10 @@ import org.snakeyaml.engine.v2.api.Load;
 import org.snakeyaml.engine.v2.api.LoadSettings;
 
 import java.io.*;
-import java.nio.file.Files;
-import java.nio.file.Path;
+import java.nio.file.*;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 
 public record McpConfiguration(SystemConfig system,
                                PerformanceConfig performance,
@@ -15,19 +16,33 @@ public record McpConfiguration(SystemConfig system,
                                SecurityConfig security,
                                ClientConfig client,
                                HostConfig host) {
+    private static final AtomicReference<McpConfiguration> REF = new AtomicReference<>(loadFromEnv());
+    private static final AtomicBoolean WATCHING = new AtomicBoolean();
+
     public static McpConfiguration current() {
-        return Holder.INSTANCE;
+        return REF.get();
     }
 
-    private static final class Holder {
-        static final McpConfiguration INSTANCE = loadFromEnv();
+    public static void reload() {
+        REF.set(loadFromEnv());
+    }
+
+    static void reload(Path path, String env) {
+        try {
+            REF.set(load(path, env));
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
     }
 
     private static McpConfiguration loadFromEnv() {
-        String env = System.getenv("MCP_CONFIG");
-        if (env != null && !env.isBlank()) {
+        String file = System.getenv("MCP_CONFIG");
+        String env = System.getenv("MCP_ENV");
+        if (file != null && !file.isBlank()) {
+            Path p = Path.of(file);
+            watch(p);
             try {
-                return load(Path.of(env));
+                return load(p, env);
             } catch (IOException e) {
                 throw new UncheckedIOException(e);
             }
@@ -36,12 +51,89 @@ public record McpConfiguration(SystemConfig system,
     }
 
     public static McpConfiguration load(Path path) throws IOException {
+        return load(path, System.getenv("MCP_ENV"));
+    }
+
+    public static McpConfiguration load(Path path, String env) throws IOException {
         try (InputStream in = Files.newInputStream(path)) {
             Load loader = new Load(LoadSettings.builder().build());
             JsonValue val = toJsonValue(loader.loadFromInputStream(in));
             if (!(val instanceof JsonObject obj)) throw new IllegalArgumentException("invalid config");
-            return parse(obj, DEFAULT);
+            JsonObject merged = applyEnvironment(obj, env);
+            McpConfiguration cfg = parse(merged, DEFAULT);
+            validate(cfg);
+            return cfg;
         }
+    }
+
+    private static JsonObject applyEnvironment(JsonObject obj, String env) {
+        JsonObject base = withoutEnvironments(obj);
+        if (env == null || env.isBlank()) return base;
+        JsonObject envs = obj.getJsonObject("environments");
+        if (envs == null) return base;
+        JsonObject ovr = envs.getJsonObject(env);
+        return ovr == null ? base : merge(base, ovr);
+    }
+
+    private static JsonObject withoutEnvironments(JsonObject obj) {
+        JsonObjectBuilder b = Json.createObjectBuilder();
+        for (var e : obj.entrySet()) if (!e.getKey().equals("environments")) b.add(e.getKey(), e.getValue());
+        return b.build();
+    }
+
+    private static JsonObject merge(JsonObject base, JsonObject override) {
+        JsonObjectBuilder b = Json.createObjectBuilder();
+        for (var e : base.entrySet()) {
+            String k = e.getKey();
+            JsonValue bv = e.getValue();
+            JsonValue ov = override.get(k);
+            if (ov != null && bv instanceof JsonObject bObj && ov instanceof JsonObject oObj) {
+                b.add(k, merge(bObj, oObj));
+            } else if (ov != null) {
+                b.add(k, ov);
+            } else {
+                b.add(k, bv);
+            }
+        }
+        for (var e : override.entrySet()) {
+            if (!base.containsKey(e.getKey())) b.add(e.getKey(), e.getValue());
+        }
+        return b.build();
+    }
+
+    private static void watch(Path path) {
+        if (!WATCHING.compareAndSet(false, true)) return;
+        Thread.startVirtualThread(() -> {
+            try (WatchService svc = FileSystems.getDefault().newWatchService()) {
+                Path dir = path.getParent();
+                if (dir == null) return;
+                dir.register(svc, StandardWatchEventKinds.ENTRY_MODIFY);
+                while (true) {
+                    WatchKey key = svc.take();
+                    for (var ev : key.pollEvents()) {
+                        var ctx = ev.context();
+                        if (ctx instanceof Path p && p.equals(path.getFileName())) reload();
+                    }
+                    key.reset();
+                }
+            } catch (InterruptedException | IOException e) {
+                Thread.currentThread().interrupt();
+            }
+        });
+    }
+
+    private static void validate(McpConfiguration c) {
+        if (c.system().timeouts().defaultMs() <= 0 ||
+                c.system().timeouts().pingMs() <= 0 ||
+                c.system().timeouts().processWaitSeconds() <= 0) throw new IllegalArgumentException("timeouts");
+        if (c.performance().rateLimits().toolsPerSecond() < 0 ||
+                c.performance().rateLimits().completionsPerSecond() < 0 ||
+                c.performance().rateLimits().logsPerSecond() < 0 ||
+                c.performance().rateLimits().progressPerSecond() < 0) throw new IllegalArgumentException("rateLimits");
+        if (c.performance().pagination().defaultPageSize() <= 0 ||
+                c.performance().pagination().maxCompletionValues() <= 0 ||
+                c.performance().pagination().responseQueueCapacity() <= 0) throw new IllegalArgumentException("pagination");
+        if (c.server().transport().port() < 0 || c.server().transport().port() > 65_535) throw new IllegalArgumentException("port");
     }
 
     private static McpConfiguration parse(JsonObject obj, McpConfiguration def) {
@@ -177,12 +269,174 @@ public record McpConfiguration(SystemConfig system,
                 yield b.build();
             }
             case String s -> Json.createValue(s);
-            case Number n -> Json.createValue(n.toString());
+            case Number n -> {
+                if (n instanceof Float || n instanceof Double) yield Json.createValue(n.doubleValue());
+                yield Json.createValue(n.longValue());
+            }
             case Boolean b -> b ? JsonValue.TRUE : JsonValue.FALSE;
             case null -> JsonValue.NULL;
             default -> Json.createValue(value.toString());
         };
     }
+
+    public static JsonObject schema() {
+        return SCHEMA;
+    }
+
+    public static void writeDocumentation(Path path) throws IOException {
+        Files.writeString(path, asYaml(DEFAULT));
+    }
+
+    private static String asYaml(McpConfiguration c) {
+        StringBuilder b = new StringBuilder();
+        b.append("system:\n");
+        b.append("  protocol:\n");
+        b.append("    version: \"").append(c.system().protocol().version()).append("\"\n");
+        b.append("    compatibility_version: \"").append(c.system().protocol().compatibilityVersion()).append("\"\n");
+        b.append("  timeouts:\n");
+        b.append("    default_ms: ").append(c.system().timeouts().defaultMs()).append('\n');
+        b.append("    ping_ms: ").append(c.system().timeouts().pingMs()).append('\n');
+        b.append("    process_wait_seconds: ").append(c.system().timeouts().processWaitSeconds()).append('\n');
+        b.append("performance:\n");
+        b.append("  rate_limits:\n");
+        b.append("    tools_per_second: ").append(c.performance().rateLimits().toolsPerSecond()).append('\n');
+        b.append("    completions_per_second: ").append(c.performance().rateLimits().completionsPerSecond()).append('\n');
+        b.append("    logs_per_second: ").append(c.performance().rateLimits().logsPerSecond()).append('\n');
+        b.append("    progress_per_second: ").append(c.performance().rateLimits().progressPerSecond()).append('\n');
+        b.append("  pagination:\n");
+        b.append("    default_page_size: ").append(c.performance().pagination().defaultPageSize()).append('\n');
+        b.append("    max_completion_values: ").append(c.performance().pagination().maxCompletionValues()).append('\n');
+        b.append("    sse_history_limit: ").append(c.performance().pagination().sseHistoryLimit()).append('\n');
+        b.append("    response_queue_capacity: ").append(c.performance().pagination().responseQueueCapacity()).append('\n');
+        b.append("server:\n");
+        b.append("  info:\n");
+        b.append("    name: \"").append(c.server().info().name()).append("\"\n");
+        b.append("    description: \"").append(c.server().info().description()).append("\"\n");
+        b.append("    version: \"").append(c.server().info().version()).append("\"\n");
+        b.append("  transport:\n");
+        b.append("    type: \"").append(c.server().transport().type()).append("\"\n");
+        b.append("    port: ").append(c.server().transport().port()).append('\n');
+        b.append("    allowed_origins:\n");
+        for (var o : c.server().transport().allowedOrigins()) b.append("      - \"").append(o).append("\"\n");
+        b.append("security:\n");
+        b.append("  auth:\n");
+        b.append("    jwt_secret_env: \"").append(c.security().auth().jwtSecretEnv()).append("\"\n");
+        b.append("    default_principal: \"").append(c.security().auth().defaultPrincipal()).append("\"\n");
+        b.append("client:\n");
+        b.append("  info:\n");
+        b.append("    name: \"").append(c.client().info().name()).append("\"\n");
+        b.append("    display_name: \"").append(c.client().info().displayName()).append("\"\n");
+        b.append("    version: \"").append(c.client().info().version()).append("\"\n");
+        b.append("  capabilities:\n");
+        for (var cap : c.client().capabilities()) b.append("    - \"").append(cap).append("\"\n");
+        b.append("host:\n");
+        b.append("  principal: \"").append(c.host().principal()).append("\"\n");
+        return b.toString();
+    }
+
+    private static final JsonObject SCHEMA = Json.createReader(new StringReader("""
+{
+  "type": "object",
+  "properties": {
+    "system": {
+      "type": "object",
+      "properties": {
+        "protocol": {
+          "type": "object",
+          "properties": {
+            "version": {"type": "string"},
+            "compatibility_version": {"type": "string"}
+          }
+        },
+        "timeouts": {
+          "type": "object",
+          "properties": {
+            "default_ms": {"type": "integer"},
+            "ping_ms": {"type": "integer"},
+            "process_wait_seconds": {"type": "integer"}
+          }
+        }
+      }
+    },
+    "performance": {
+      "type": "object",
+      "properties": {
+        "rate_limits": {
+          "type": "object",
+          "properties": {
+            "tools_per_second": {"type": "integer"},
+            "completions_per_second": {"type": "integer"},
+            "logs_per_second": {"type": "integer"},
+            "progress_per_second": {"type": "integer"}
+          }
+        },
+        "pagination": {
+          "type": "object",
+          "properties": {
+            "default_page_size": {"type": "integer"},
+            "max_completion_values": {"type": "integer"},
+            "sse_history_limit": {"type": "integer"},
+            "response_queue_capacity": {"type": "integer"}
+          }
+        }
+      }
+    },
+    "server": {
+      "type": "object",
+      "properties": {
+        "info": {
+          "type": "object",
+          "properties": {
+            "name": {"type": "string"},
+            "description": {"type": "string"},
+            "version": {"type": "string"}
+          }
+        },
+        "transport": {
+          "type": "object",
+          "properties": {
+            "type": {"type": "string"},
+            "port": {"type": "integer"},
+            "allowed_origins": {"type": "array", "items": {"type": "string"}}
+          }
+        }
+      }
+    },
+    "security": {
+      "type": "object",
+      "properties": {
+        "auth": {
+          "type": "object",
+          "properties": {
+            "jwt_secret_env": {"type": "string"},
+            "default_principal": {"type": "string"}
+          }
+        }
+      }
+    },
+    "client": {
+      "type": "object",
+      "properties": {
+        "info": {
+          "type": "object",
+          "properties": {
+            "name": {"type": "string"},
+            "display_name": {"type": "string"},
+            "version": {"type": "string"}
+          }
+        },
+        "capabilities": {"type": "array", "items": {"type": "string"}}
+      }
+    },
+    "host": {
+      "type": "object",
+      "properties": {
+        "principal": {"type": "string"}
+      }
+    }
+  }
+}
+""")).readObject();
 
     private static final McpConfiguration DEFAULT = new McpConfiguration(
             new SystemConfig(new ProtocolConfig("2025-06-18", "2025-03-26"), new TimeoutsConfig(30_000L, 5_000L, 2)),
