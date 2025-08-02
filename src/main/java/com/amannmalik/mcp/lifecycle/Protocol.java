@@ -3,18 +3,16 @@ package com.amannmalik.mcp.lifecycle;
 /**
  * Constants for protocol version negotiation.
  */
+import com.amannmalik.mcp.config.McpConfiguration;
+
 public final class Protocol {
     private Protocol() {
     }
 
-    /**
-     * Latest protocol revision supported by this implementation.
-     */
-    public static final String LATEST_VERSION = "2025-06-18";
+    public static final String LATEST_VERSION =
+            McpConfiguration.current().system().protocol().version();
 
-    /**
-     * Previous revision used for backwards compatibility.
-     */
-    public static final String PREVIOUS_VERSION = "2025-03-26";
+    public static final String PREVIOUS_VERSION =
+            McpConfiguration.current().system().protocol().compatibilityVersion();
 }
 

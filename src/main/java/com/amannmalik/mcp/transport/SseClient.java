@@ -3,6 +3,7 @@ package com.amannmalik.mcp.transport;
 import com.amannmalik.mcp.util.Base64Util;
 import jakarta.json.JsonObject;
 import jakarta.servlet.AsyncContext;
+import com.amannmalik.mcp.config.McpConfiguration;
 
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -13,7 +14,8 @@ import java.util.concurrent.atomic.AtomicLong;
 
 final class SseClient implements AutoCloseable {
     private static final SecureRandom RANDOM = new SecureRandom();
-    private static final int HISTORY_LIMIT = 100;
+    private static final int HISTORY_LIMIT =
+            McpConfiguration.current().performance().pagination().sseHistoryLimit();
 
     private AsyncContext context;
     private PrintWriter out;

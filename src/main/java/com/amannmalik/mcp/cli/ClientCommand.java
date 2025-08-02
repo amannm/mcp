@@ -9,6 +9,7 @@ import com.amannmalik.mcp.lifecycle.ClientCapability;
 import com.amannmalik.mcp.lifecycle.ClientInfo;
 import com.amannmalik.mcp.server.logging.LoggingLevel;
 import com.amannmalik.mcp.transport.StdioTransport;
+import com.amannmalik.mcp.config.McpConfiguration;
 import picocli.CommandLine;
 
 import java.io.IOException;
@@ -57,14 +58,24 @@ public final class ClientCommand implements Callable<Integer> {
                 });
         SamplingProvider samplingProvider = SamplingProviderFactory.createInteractive();
 
-        // Create roots provider with current working directory as default root
         String currentDir = System.getProperty("user.dir");
         InMemoryRootsProvider rootsProvider = new InMemoryRootsProvider(
                 List.of(new Root("file://" + currentDir, "Current Directory", null)));
 
+        McpConfiguration cc = McpConfiguration.current();
+        ClientInfo info = new ClientInfo(
+                cc.client().info().name(),
+                cc.client().info().displayName(),
+                cc.client().info().version());
+        EnumSet<ClientCapability> caps = cc.client().capabilities().isEmpty()
+                ? EnumSet.noneOf(ClientCapability.class)
+                : cc.client().capabilities().stream()
+                .map(s -> ClientCapability.valueOf(s))
+                .collect(() -> EnumSet.noneOf(ClientCapability.class), EnumSet::add, EnumSet::addAll);
+
         McpClient client = new McpClient(
-                new ClientInfo("cli", "CLI", "0"),
-                EnumSet.of(ClientCapability.SAMPLING, ClientCapability.ROOTS),
+                info,
+                caps,
                 transport,
                 samplingProvider,
                 rootsProvider,

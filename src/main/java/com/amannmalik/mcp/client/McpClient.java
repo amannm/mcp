@@ -1,6 +1,7 @@
 package com.amannmalik.mcp.client;
 
 import com.amannmalik.mcp.auth.Principal;
+import com.amannmalik.mcp.config.McpConfiguration;
 import com.amannmalik.mcp.client.elicitation.*;
 import com.amannmalik.mcp.client.roots.*;
 import com.amannmalik.mcp.client.sampling.*;
@@ -38,11 +39,13 @@ public final class McpClient implements AutoCloseable {
     private final boolean rootsListChangedSupported;
     private final ElicitationProvider elicitation;
     private SamplingAccessPolicy samplingAccess = SamplingAccessPolicy.PERMISSIVE;
-    private Principal principal = new Principal("default", Set.of());
+    private Principal principal = new Principal(
+            McpConfiguration.current().security().auth().defaultPrincipal(), Set.of());
     private final AtomicLong id = new AtomicLong(1);
     private final Map<RequestId, CompletableFuture<JsonRpcMessage>> pending = new ConcurrentHashMap<>();
     private final CancellationTracker cancellationTracker = new CancellationTracker();
-    private final ProgressManager progressManager = new ProgressManager(new RateLimiter(20, 1000));
+    private final ProgressManager progressManager = new ProgressManager(
+            new RateLimiter(McpConfiguration.current().performance().rateLimits().progressPerSecond(), 1000));
     private Thread reader;
     private PingScheduler pinger;
     private long pingInterval;
@@ -107,7 +110,7 @@ public final class McpClient implements AutoCloseable {
             throw new IllegalArgumentException("elicitation capability requires provider");
         }
         this.pingInterval = 0;
-        this.pingTimeout = 5000;
+        this.pingTimeout = McpConfiguration.current().system().timeouts().pingMs();
 
         var requestProcessor = new JsonRpcRequestProcessor(
                 progressManager,

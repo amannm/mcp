@@ -7,6 +7,7 @@ import com.amannmalik.mcp.client.roots.Root;
 import com.amannmalik.mcp.client.roots.RootsListener;
 import com.amannmalik.mcp.client.sampling.*;
 import com.amannmalik.mcp.jsonrpc.*;
+import com.amannmalik.mcp.config.McpConfiguration;
 import com.amannmalik.mcp.lifecycle.*;
 import com.amannmalik.mcp.ping.PingCodec;
 import com.amannmalik.mcp.ping.PingRequest;
@@ -35,7 +36,8 @@ public final class McpServer implements AutoCloseable {
     private final Transport transport;
     private final ProtocolLifecycle lifecycle;
     private final RpcHandlerRegistry handlers;
-    private final ProgressManager progressManager = new ProgressManager(new RateLimiter(20, 1000));
+    private final ProgressManager progressManager = new ProgressManager(
+            new RateLimiter(McpConfiguration.current().performance().rateLimits().progressPerSecond(), 1000));
     private final CancellationTracker cancellationTracker = new CancellationTracker();
     private final IdTracker idTracker = new IdTracker();
     private final ResourceProvider resources;
@@ -57,9 +59,12 @@ public final class McpServer implements AutoCloseable {
     private final Principal principal;
     private volatile LoggingLevel logLevel = LoggingLevel.INFO;
     private static final int RATE_LIMIT_CODE = -32001;
-    private final RateLimiter toolLimiter = new RateLimiter(5, 1000);
-    private final RateLimiter completionLimiter = new RateLimiter(10, 1000);
-    private final RateLimiter logLimiter = new RateLimiter(20, 1000);
+    private final RateLimiter toolLimiter = new RateLimiter(
+            McpConfiguration.current().performance().rateLimits().toolsPerSecond(), 1000);
+    private final RateLimiter completionLimiter = new RateLimiter(
+            McpConfiguration.current().performance().rateLimits().completionsPerSecond(), 1000);
+    private final RateLimiter logLimiter = new RateLimiter(
+            McpConfiguration.current().performance().rateLimits().logsPerSecond(), 1000);
     private final AtomicLong requestCounter = new AtomicLong(1);
     private final Map<RequestId, CompletableFuture<JsonRpcMessage>> pending = new ConcurrentHashMap<>();
 
@@ -71,7 +76,7 @@ public final class McpServer implements AutoCloseable {
                 ServerDefaults.privacyBoundary("default"),
                 ServerDefaults.toolAccess(),
                 ServerDefaults.samplingAccess(),
-                new Principal("default", Set.of()),
+                new Principal(McpConfiguration.current().security().auth().defaultPrincipal(), Set.of()),
                 instructions,
                 transport);
     }
@@ -93,7 +98,10 @@ public final class McpServer implements AutoCloseable {
         if (prompts != null) caps.add(ServerCapability.PROMPTS);
         if (completions != null) caps.add(ServerCapability.COMPLETIONS);
         caps.add(ServerCapability.LOGGING);
-        this.lifecycle = new ProtocolLifecycle(caps, new ServerInfo("mcp-java", "MCP Java Reference", "0.1.0"), instructions);
+        this.lifecycle = new ProtocolLifecycle(caps, new ServerInfo(
+                McpConfiguration.current().server().info().name(),
+                McpConfiguration.current().server().info().description(),
+                McpConfiguration.current().server().info().version()), instructions);
         this.resources = resources;
         this.tools = tools;
         this.prompts = prompts;

@@ -5,6 +5,7 @@ import jakarta.json.*;
 import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
+import com.amannmalik.mcp.config.McpConfiguration;
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
@@ -14,7 +15,8 @@ public final class StdioTransport implements Transport {
     private final BufferedWriter out;
     private final Process process;
     private final Thread logReader;
-    private static final Duration WAIT = Duration.ofSeconds(2);
+    private static final Duration WAIT = Duration.ofSeconds(
+            McpConfiguration.current().system().timeouts().processWaitSeconds());
 
     public StdioTransport(InputStream in, OutputStream out) {
         this.in = new BufferedReader(new InputStreamReader(in, StandardCharsets.UTF_8));
