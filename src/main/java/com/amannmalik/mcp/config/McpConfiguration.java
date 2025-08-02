@@ -7,6 +7,7 @@ import org.snakeyaml.engine.v2.api.LoadSettings;
 import java.io.*;
 import java.nio.file.*;
 import java.util.List;
+import java.util.Objects;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
@@ -103,31 +104,28 @@ public record McpConfiguration(SystemConfig system,
     }
 
     private static McpConfiguration parseDefaults(JsonObject obj) {
-        SystemConfig system = parseSystemDefaults(obj.getJsonObject("system"));
-        PerformanceConfig perf = parsePerformanceDefaults(obj.getJsonObject("performance"));
-        ServerConfig server = parseServerDefaults(obj.getJsonObject("server"));
-        SecurityConfig security = parseSecurityDefaults(obj.getJsonObject("security"));
-        ClientConfig client = parseClientDefaults(obj.getJsonObject("client"));
-        HostConfig host = parseHostDefaults(obj.getJsonObject("host"));
+        SystemConfig system = parseSystemDefaults(required(obj.getJsonObject("system"), "system"));
+        PerformanceConfig perf = parsePerformanceDefaults(required(obj.getJsonObject("performance"), "performance"));
+        ServerConfig server = parseServerDefaults(required(obj.getJsonObject("server"), "server"));
+        SecurityConfig security = parseSecurityDefaults(required(obj.getJsonObject("security"), "security"));
+        ClientConfig client = parseClientDefaults(required(obj.getJsonObject("client"), "client"));
+        HostConfig host = parseHostDefaults(required(obj.getJsonObject("host"), "host"));
         return new McpConfiguration(system, perf, server, security, client, host);
     }
 
     private static SystemConfig parseSystemDefaults(JsonObject obj) {
-        if (obj == null) throw new IllegalArgumentException("system config required in defaults");
-        ProtocolConfig protocol = parseProtocolDefaults(obj.getJsonObject("protocol"));
-        TimeoutsConfig timeouts = parseTimeoutsDefaults(obj.getJsonObject("timeouts"));
+        ProtocolConfig protocol = parseProtocolDefaults(required(obj.getJsonObject("protocol"), "protocol"));
+        TimeoutsConfig timeouts = parseTimeoutsDefaults(required(obj.getJsonObject("timeouts"), "timeouts"));
         return new SystemConfig(protocol, timeouts);
     }
 
     private static ProtocolConfig parseProtocolDefaults(JsonObject obj) {
-        if (obj == null) throw new IllegalArgumentException("protocol config required in defaults");
         return new ProtocolConfig(
                 obj.getString("version"),
                 obj.getString("compatibility_version"));
     }
 
     private static TimeoutsConfig parseTimeoutsDefaults(JsonObject obj) {
-        if (obj == null) throw new IllegalArgumentException("timeouts config required in defaults");
         return new TimeoutsConfig(
                 obj.getJsonNumber("default_ms").longValue(),
                 obj.getJsonNumber("ping_ms").longValue(),
@@ -135,14 +133,12 @@ public record McpConfiguration(SystemConfig system,
     }
 
     private static PerformanceConfig parsePerformanceDefaults(JsonObject obj) {
-        if (obj == null) throw new IllegalArgumentException("performance config required in defaults");
-        RateLimitsConfig rl = parseRateLimitsDefaults(obj.getJsonObject("rate_limits"));
-        PaginationConfig pg = parsePaginationDefaults(obj.getJsonObject("pagination"));
+        RateLimitsConfig rl = parseRateLimitsDefaults(required(obj.getJsonObject("rate_limits"), "rate_limits"));
+        PaginationConfig pg = parsePaginationDefaults(required(obj.getJsonObject("pagination"), "pagination"));
         return new PerformanceConfig(rl, pg);
     }
 
     private static RateLimitsConfig parseRateLimitsDefaults(JsonObject obj) {
-        if (obj == null) throw new IllegalArgumentException("rate_limits config required in defaults");
         return new RateLimitsConfig(
                 obj.getInt("tools_per_second"),
                 obj.getInt("completions_per_second"),
@@ -151,7 +147,6 @@ public record McpConfiguration(SystemConfig system,
     }
 
     private static PaginationConfig parsePaginationDefaults(JsonObject obj) {
-        if (obj == null) throw new IllegalArgumentException("pagination config required in defaults");
         return new PaginationConfig(
                 obj.getInt("default_page_size"),
                 obj.getInt("max_completion_values"),
@@ -160,14 +155,12 @@ public record McpConfiguration(SystemConfig system,
     }
 
     private static ServerConfig parseServerDefaults(JsonObject obj) {
-        if (obj == null) throw new IllegalArgumentException("server config required in defaults");
-        ServerInfoConfig info = parseServerInfoDefaults(obj.getJsonObject("info"));
-        TransportConfig transport = parseTransportDefaults(obj.getJsonObject("transport"));
+        ServerInfoConfig info = parseServerInfoDefaults(required(obj.getJsonObject("info"), "server info"));
+        TransportConfig transport = parseTransportDefaults(required(obj.getJsonObject("transport"), "transport"));
         return new ServerConfig(info, transport);
     }
 
     private static ServerInfoConfig parseServerInfoDefaults(JsonObject obj) {
-        if (obj == null) throw new IllegalArgumentException("server info config required in defaults");
         return new ServerInfoConfig(
                 obj.getString("name"),
                 obj.getString("description"),
@@ -175,7 +168,6 @@ public record McpConfiguration(SystemConfig system,
     }
 
     private static TransportConfig parseTransportDefaults(JsonObject obj) {
-        if (obj == null) throw new IllegalArgumentException("transport config required in defaults");
         List<String> origins = obj.getJsonArray("allowed_origins").getValuesAs(JsonString.class)
                 .stream().map(JsonString::getString).toList();
         return new TransportConfig(
@@ -185,28 +177,25 @@ public record McpConfiguration(SystemConfig system,
     }
 
     private static SecurityConfig parseSecurityDefaults(JsonObject obj) {
-        if (obj == null) throw new IllegalArgumentException("security config required in defaults");
-        AuthConfig auth = parseAuthDefaults(obj.getJsonObject("auth"));
+        AuthConfig auth = parseAuthDefaults(required(obj.getJsonObject("auth"), "auth"));
         return new SecurityConfig(auth);
     }
 
     private static AuthConfig parseAuthDefaults(JsonObject obj) {
-        if (obj == null) throw new IllegalArgumentException("auth config required in defaults");
         return new AuthConfig(
                 obj.getString("jwt_secret_env"),
                 obj.getString("default_principal"));
     }
 
     private static ClientConfig parseClientDefaults(JsonObject obj) {
-        if (obj == null) throw new IllegalArgumentException("client config required in defaults");
-        ClientInfoConfig info = parseClientInfoDefaults(obj.getJsonObject("info"));
-        List<String> caps = obj.getJsonArray("capabilities").getValuesAs(JsonString.class)
+        ClientInfoConfig info = parseClientInfoDefaults(required(obj.getJsonObject("info"), "client info"));
+        List<String> caps = Objects.requireNonNull(obj.getJsonArray("capabilities"), "capabilities config required in defaults")
+                .getValuesAs(JsonString.class)
                 .stream().map(JsonString::getString).toList();
         return new ClientConfig(info, caps);
     }
 
     private static ClientInfoConfig parseClientInfoDefaults(JsonObject obj) {
-        if (obj == null) throw new IllegalArgumentException("client info config required in defaults");
         return new ClientInfoConfig(
                 obj.getString("name"),
                 obj.getString("display_name"),
@@ -214,8 +203,11 @@ public record McpConfiguration(SystemConfig system,
     }
 
     private static HostConfig parseHostDefaults(JsonObject obj) {
-        if (obj == null) throw new IllegalArgumentException("host config required in defaults");
         return new HostConfig(obj.getString("principal"));
+    }
+
+    private static JsonObject required(JsonObject obj, String name) {
+        return Objects.requireNonNull(obj, name + " config required in defaults");
     }
 
     private static JsonObject applyEnvironment(JsonObject obj, String env) {
