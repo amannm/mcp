@@ -12,6 +12,7 @@ import com.amannmalik.mcp.security.OriginValidator;
 import com.amannmalik.mcp.util.Base64Util;
 import com.amannmalik.mcp.util.CloseUtil;
 import com.amannmalik.mcp.validation.InputSanitizer;
+import com.amannmalik.mcp.transport.SessionVerifier;
 import com.amannmalik.mcp.wire.RequestMethod;
 import com.amannmalik.mcp.transport.ResourceMetadata;
 import com.amannmalik.mcp.transport.ResourceMetadataCodec;
@@ -56,7 +57,7 @@ public final class StreamableHttpTransport implements Transport {
     private final java.util.List<String> authorizationServers;
 
 
-    private static final String PROTOCOL_HEADER = TransportHeaders.PROTOCOL_VERSION;
+    static final String PROTOCOL_HEADER = TransportHeaders.PROTOCOL_VERSION;
     // Default to the previous protocol revision when the version header is
     // absent, as recommended for backwards compatibility.
     private static final String COMPATIBILITY_VERSION =
@@ -67,10 +68,7 @@ public final class StreamableHttpTransport implements Transport {
     private final ConcurrentHashMap<String, SseClient> requestStreams = new ConcurrentHashMap<>();
     private final ConcurrentHashMap<String, SseClient> clientsByPrefix = new ConcurrentHashMap<>();
     private final AtomicReference<SseClient> lastGeneral = new AtomicReference<>();
-    private final AtomicReference<String> sessionId = new AtomicReference<>();
-    private final AtomicReference<String> lastSessionId = new AtomicReference<>();
-    private final AtomicReference<String> sessionOwner = new AtomicReference<>();
-    private final AtomicReference<Principal> sessionPrincipal = new AtomicReference<>();
+    private final SessionVerifier sessions = new SessionVerifier();
     private static final SecureRandom RANDOM = new SecureRandom();
     private volatile String protocolVersion;
     private final ConcurrentHashMap<String, BlockingQueue<JsonObject>> responseQueues = new ConcurrentHashMap<>();
@@ -240,17 +238,6 @@ public final class StreamableHttpTransport implements Transport {
         return true;
     }
 
-    private boolean sanitizeHeaders(String sessionHeader, String versionHeader, HttpServletResponse resp) throws IOException {
-        if (sessionHeader != null && !InputSanitizer.isVisibleAscii(sessionHeader)) {
-            resp.sendError(HttpServletResponse.SC_BAD_REQUEST);
-            return false;
-        }
-        if (versionHeader != null && !InputSanitizer.isVisibleAscii(versionHeader)) {
-            resp.sendError(HttpServletResponse.SC_BAD_REQUEST);
-            return false;
-        }
-        return true;
-    }
 
     private boolean validateAccept(HttpServletRequest req, HttpServletResponse resp, boolean post) throws IOException {
         String accept = req.getHeader("Accept");
@@ -277,69 +264,11 @@ public final class StreamableHttpTransport implements Transport {
                                     HttpServletResponse resp,
                                     Principal principal,
                                     boolean initializing) throws IOException {
-        String session = sessionId.get();
-        String last = lastSessionId.get();
-        String header = req.getHeader(TransportHeaders.SESSION_ID);
-        String version = req.getHeader(PROTOCOL_HEADER);
-        if (!sanitizeHeaders(header, version, resp)) return false;
-        return checkSession(req, resp, principal, initializing, session, last, header, version);
-    }
-
-    private boolean checkSession(HttpServletRequest req,
-                                 HttpServletResponse resp,
-                                 Principal principal,
-                                 boolean initializing,
-                                 String session,
-                                 String last,
-                                 String header,
-                                 String version) throws IOException {
-        if (session == null && initializing) {
-            byte[] bytes = new byte[32];
-            RANDOM.nextBytes(bytes);
-            session = Base64Util.encodeUrl(bytes);
-            sessionId.set(session);
-            sessionOwner.set(req.getRemoteAddr());
-            sessionPrincipal.set(principal);
-            lastSessionId.set(null);
-            resp.setHeader(TransportHeaders.SESSION_ID, session);
-            return true;
-        }
-        if (session == null) {
-            if (header != null && header.equals(last)) {
-                resp.sendError(HttpServletResponse.SC_NOT_FOUND);
-            } else {
-                resp.sendError(HttpServletResponse.SC_BAD_REQUEST);
-            }
-            return false;
-        }
-        if (header == null) {
-            resp.sendError(HttpServletResponse.SC_BAD_REQUEST);
-            return false;
-        }
-        if (!session.equals(header) || !req.getRemoteAddr().equals(sessionOwner.get())) {
-            resp.sendError(HttpServletResponse.SC_NOT_FOUND);
-            return false;
-        }
-        if (authManager != null && sessionPrincipal.get() != null && !sessionPrincipal.get().id().equals(principal.id())) {
-            resp.sendError(HttpServletResponse.SC_FORBIDDEN);
-            return false;
-        }
-        if (!initializing && (version == null || !version.equals(protocolVersion))) {
-            resp.sendError(HttpServletResponse.SC_BAD_REQUEST);
-            return false;
-        }
-        return true;
+        return sessions.validate(req, resp, principal, initializing, protocolVersion);
     }
 
     private void terminateSession(boolean recordId) {
-        if (recordId) {
-            lastSessionId.set(sessionId.get());
-        } else {
-            lastSessionId.set(null);
-        }
-        sessionId.set(null);
-        sessionOwner.set(null);
-        sessionPrincipal.set(null);
+        sessions.terminate(recordId);
         protocolVersion = COMPATIBILITY_VERSION;
         generalClients.forEach(SseClient::close);
         generalClients.clear();
