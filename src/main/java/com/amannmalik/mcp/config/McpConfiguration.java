@@ -16,7 +16,7 @@ public record McpConfiguration(SystemConfig system,
                                SecurityConfig security,
                                ClientConfig client,
                                HostConfig host) {
-    private static final AtomicReference<McpConfiguration> REF = new AtomicReference<>(loadFromEnv());
+    private static final AtomicReference<McpConfiguration> REF = new AtomicReference<>();
     private static final AtomicBoolean WATCHING = new AtomicBoolean();
 
     public static McpConfiguration current() {
@@ -446,6 +446,10 @@ public record McpConfiguration(SystemConfig system,
             new SecurityConfig(new AuthConfig("MCP_JWT_SECRET", "default")),
             new ClientConfig(new ClientInfoConfig("cli", "CLI", "0"), List.of("SAMPLING", "ROOTS")),
             new HostConfig("user"));
+
+    static {
+        REF.set(loadFromEnv());
+    }
 
     public record SystemConfig(ProtocolConfig protocol, TimeoutsConfig timeouts) {
     }
