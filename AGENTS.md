@@ -15,11 +15,11 @@ description: MCP Implementation Specialist
 # Preferences
 
 - Write typed, idiomatic, modern Java 24
-- Avoid introducing `null` or `Object`
 - Leverage `instanceof` pattern matching
 - Unchecked casts are unacceptable
+- Avoid introducing `null` or `Object`
 - Avoid `java.lang.reflect` and `javax.annotation`
-- Avoid comments except for tricky areas (self-documenting code)
+- Avoid comments except for tricky areas (use self-documenting code)
 
 # Wisdom
 
