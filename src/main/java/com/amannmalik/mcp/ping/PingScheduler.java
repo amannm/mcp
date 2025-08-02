@@ -2,9 +2,11 @@ package com.amannmalik.mcp.ping;
 
 import com.amannmalik.mcp.client.McpClient;
 
+import java.util.Objects;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 public final class PingScheduler implements AutoCloseable {
     private final McpClient client;
@@ -13,7 +15,8 @@ public final class PingScheduler implements AutoCloseable {
     private final Runnable onFailure;
     private final int maxFailures;
     private int failureCount;
-    private ScheduledExecutorService exec;
+    private final ScheduledExecutorService exec = Executors.newSingleThreadScheduledExecutor();
+    private final AtomicBoolean started = new AtomicBoolean();
 
     public PingScheduler(McpClient client,
                          long intervalMillis,
@@ -27,7 +30,8 @@ public final class PingScheduler implements AutoCloseable {
                          long timeoutMillis,
                          Runnable onFailure,
                          int maxFailures) {
-        if (client == null || onFailure == null) throw new IllegalArgumentException("client and onFailure required");
+        Objects.requireNonNull(client, "client");
+        Objects.requireNonNull(onFailure, "onFailure");
         if (intervalMillis <= 0 || timeoutMillis <= 0) throw new IllegalArgumentException("invalid timing");
         if (maxFailures <= 0) throw new IllegalArgumentException("maxFailures must be > 0");
         this.client = client;
@@ -35,12 +39,10 @@ public final class PingScheduler implements AutoCloseable {
         this.timeout = timeoutMillis;
         this.onFailure = onFailure;
         this.maxFailures = maxFailures;
-        this.failureCount = 0;
     }
 
-    public synchronized void start() {
-        if (exec != null) throw new IllegalStateException("already started");
-        exec = Executors.newSingleThreadScheduledExecutor();
+    public void start() {
+        if (!started.compareAndSet(false, true)) throw new IllegalStateException("already started");
         exec.scheduleAtFixedRate(this::check, interval, interval, TimeUnit.MILLISECONDS);
     }
 
@@ -52,7 +54,6 @@ public final class PingScheduler implements AutoCloseable {
 
         failureCount++;
         if (failureCount >= maxFailures) {
-            if (System.err != null) System.err.println("Ping failed");
             try {
                 onFailure.run();
             } catch (Exception ignore) {
@@ -63,10 +64,7 @@ public final class PingScheduler implements AutoCloseable {
     }
 
     @Override
-    public synchronized void close() {
-        if (exec != null) {
-            exec.shutdownNow();
-            exec = null;
-        }
+    public void close() {
+        exec.shutdownNow();
     }
 }
