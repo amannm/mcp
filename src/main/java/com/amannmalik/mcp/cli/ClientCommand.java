@@ -12,50 +12,25 @@ import com.amannmalik.mcp.transport.StdioTransport;
 import picocli.CommandLine;
 
 import java.io.IOException;
-import java.nio.file.Path;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.concurrent.Callable;
 
 @CommandLine.Command(name = "client", description = "Run MCP client", mixinStandardHelpOptions = true)
 public final class ClientCommand implements Callable<Integer> {
-    @CommandLine.Option(names = {"-c", "--config"}, description = "Config file")
-    private Path config;
-
-    private ClientConfig resolved;
-
     @CommandLine.Option(names = "--command", description = "Server command for stdio")
     private String command;
 
     @CommandLine.Option(names = {"-v", "--verbose"}, description = "Verbose logging")
     private boolean verbose;
 
-    public ClientCommand() {
-    }
-
-    public ClientCommand(ClientConfig config, boolean verbose) {
-        this.resolved = config;
-        this.verbose = verbose;
-    }
-
     @Override
     public Integer call() throws Exception {
-        ClientConfig cfg;
-        if (resolved != null) {
-            cfg = resolved;
-        } else if (config != null) {
-            CliConfig loaded = ConfigLoader.load(config);
-            if (!(loaded instanceof ClientConfig cc)) throw new IllegalArgumentException("client config expected");
-            cfg = cc;
-        } else {
-            if (command == null) throw new IllegalArgumentException("command required");
-            cfg = new ClientConfig(TransportType.STDIO, command);
-        }
+        if (command == null) throw new IllegalArgumentException("command required");
 
-        StdioTransport transport = new StdioTransport(new ProcessBuilder(cfg.command().split(" ")),
+        StdioTransport transport = new StdioTransport(new ProcessBuilder(command.split(" ")), 
                 verbose ? System.err::println : s -> {
                 });
-        // TODO: pull auto approve into config
         SamplingProvider samplingProvider = new InteractiveSamplingProvider(false);
 
         String currentDir = System.getProperty("user.dir");
@@ -70,7 +45,7 @@ public final class ClientCommand implements Callable<Integer> {
         EnumSet<ClientCapability> caps = cc.client().capabilities().isEmpty()
                 ? EnumSet.noneOf(ClientCapability.class)
                 : cc.client().capabilities().stream()
-                .map(s -> ClientCapability.valueOf(s))
+                .map(ClientCapability::valueOf)
                 .collect(() -> EnumSet.noneOf(ClientCapability.class), EnumSet::add, EnumSet::addAll);
 
         McpClient client = new McpClient(
@@ -93,10 +68,9 @@ public final class ClientCommand implements Callable<Integer> {
             }
         }
         client.ping();
-        if (verbose) {
-            System.err.println("Ping OK");
-        }
+        if (verbose) System.err.println("Ping OK");
         client.disconnect();
         return 0;
     }
 }
+

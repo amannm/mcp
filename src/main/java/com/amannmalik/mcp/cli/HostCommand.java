@@ -14,17 +14,11 @@ import jakarta.json.JsonValue;
 import picocli.CommandLine;
 
 import java.io.*;
-import java.nio.file.Path;
 import java.util.*;
 import java.util.concurrent.Callable;
 
 @CommandLine.Command(name = "host", description = "Run MCP host", mixinStandardHelpOptions = true)
 public final class HostCommand implements Callable<Integer> {
-    @CommandLine.Option(names = {"-c", "--config"}, description = "Config file")
-    private Path config;
-
-    private HostConfig resolved;
-
     @CommandLine.Option(names = {"-v", "--verbose"}, description = "Verbose logging")
     private boolean verbose;
 
@@ -34,32 +28,14 @@ public final class HostCommand implements Callable<Integer> {
     @CommandLine.Option(names = "--interactive", description = "Interactive mode for client management")
     private boolean interactive;
 
-    public HostCommand() {
-    }
-
-    public HostCommand(HostConfig config, boolean verbose) {
-        this.resolved = config;
-        this.verbose = verbose;
-    }
-
     @Override
     public Integer call() throws Exception {
-        HostConfig cfg;
-        if (resolved != null) {
-            cfg = resolved;
-        } else if (config != null) {
-            CliConfig loaded = ConfigLoader.load(config);
-            if (!(loaded instanceof HostConfig hc)) throw new IllegalArgumentException("host config expected");
-            cfg = hc;
-        } else {
-            if (clientSpecs.isEmpty()) throw new IllegalArgumentException("--client required");
-            Map<String, String> map = new LinkedHashMap<>();
-            for (String spec : clientSpecs) {
-                int idx = spec.indexOf(':');
-                if (idx <= 0 || idx == spec.length() - 1) throw new IllegalArgumentException("id:command expected: " + spec);
-                map.put(spec.substring(0, idx), spec.substring(idx + 1));
-            }
-            cfg = new HostConfig(map);
+        if (clientSpecs.isEmpty()) throw new IllegalArgumentException("--client required");
+        Map<String, String> clients = new LinkedHashMap<>();
+        for (String spec : clientSpecs) {
+            int idx = spec.indexOf(':');
+            if (idx <= 0 || idx == spec.length() - 1) throw new IllegalArgumentException("id:command expected: " + spec);
+            clients.put(spec.substring(0, idx), spec.substring(idx + 1));
         }
 
         ConsentManager consents = new ConsentManager();
@@ -70,7 +46,7 @@ public final class HostCommand implements Callable<Integer> {
         Principal principal = new Principal(McpConfiguration.current().host().principal(), Set.of());
 
         try (HostProcess host = new HostProcess(policy, consents, tools, privacyBoundary, sampling, principal)) {
-            for (var entry : cfg.clients().entrySet()) {
+            for (var entry : clients.entrySet()) {
                 host.grantConsent(entry.getKey());
                 var pb = new ProcessBuilder(entry.getValue().split(" "));
                 StdioTransport t = new StdioTransport(pb, verbose ? System.err::println : s -> {

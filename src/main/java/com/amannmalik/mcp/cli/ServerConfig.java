@@ -4,6 +4,7 @@ import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
 
+@Deprecated
 public record ServerConfig(
         TransportType transport,
         int port,
