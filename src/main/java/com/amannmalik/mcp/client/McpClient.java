@@ -44,7 +44,6 @@ public final class McpClient implements AutoCloseable {
     private final Map<RequestId, CompletableFuture<JsonRpcMessage>> pending = new ConcurrentHashMap<>();
     private final CancellationTracker cancellationTracker = new CancellationTracker();
     private final ProgressManager progressManager = new ProgressManager(new RateLimiter(20, 1000));
-    private final JsonRpcRequestProcessor requestProcessor;
     private Thread reader;
     private PingScheduler pinger;
     private long pingInterval;
@@ -111,7 +110,7 @@ public final class McpClient implements AutoCloseable {
         this.pingInterval = 0;
         this.pingTimeout = 5000;
 
-        this.requestProcessor = new JsonRpcRequestProcessor(
+        var requestProcessor = new JsonRpcRequestProcessor(
                 progressManager,
                 cancellationTracker,
                 n -> notify(n.method(), n.params()));
@@ -470,12 +469,7 @@ public final class McpClient implements AutoCloseable {
     }
 
     private void handleRequest(JsonRpcRequest req) {
-        Optional<JsonRpcMessage> resp;
-        try {
-            resp = handlers.handle(req, true);
-        } catch (IOException e) {
-            resp = Optional.of(JsonRpcError.of(req.id(), JsonRpcErrorCode.INTERNAL_ERROR, e.getMessage()));
-        }
+        Optional<JsonRpcMessage> resp = handlers.handle(req, true);
         resp.ifPresent(r -> {
             try {
                 send(r);
@@ -485,10 +479,7 @@ public final class McpClient implements AutoCloseable {
     }
 
     private void handleNotification(JsonRpcNotification note) {
-        try {
-            handlers.handle(note);
-        } catch (IOException ignore) {
-        }
+        handlers.handle(note);
     }
 
     private void completePending(RequestId id, JsonRpcMessage msg) {

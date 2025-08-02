@@ -39,7 +39,7 @@ public final class JsonRpcRequestProcessor {
             JsonRpcRequest req,
             boolean cancellable,
             Function<JsonRpcRequest, JsonRpcMessage> handler
-    ) throws IOException {
+    ) {
         if (req == null || handler == null) throw new IllegalArgumentException("request and handler required");
         if (idTracker != null) {
             try {

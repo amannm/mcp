@@ -7,13 +7,13 @@ public final class InputSanitizer {
     private InputSanitizer() {
     }
 
-    public static boolean isVisibleAscii(String value) {
-        if (value == null) return false;
+    public static boolean containsNonVisibleAscii(String value) {
+        if (value == null) return true;
         for (int i = 0; i < value.length(); i++) {
             char c = value.charAt(i);
-            if (c < 0x21 || c > 0x7E) return false;
+            if (c < 0x21 || c > 0x7E) return true;
         }
-        return true;
+        return false;
     }
 
     public static String requireClean(String value) {

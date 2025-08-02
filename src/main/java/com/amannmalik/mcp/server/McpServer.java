@@ -38,8 +38,6 @@ public final class McpServer implements AutoCloseable {
     private final ProgressManager progressManager = new ProgressManager(new RateLimiter(20, 1000));
     private final CancellationTracker cancellationTracker = new CancellationTracker();
     private final IdTracker idTracker = new IdTracker();
-    private final JsonRpcRequestProcessor requestProcessor =
-            new JsonRpcRequestProcessor(progressManager, cancellationTracker, this::send, idTracker);
     private final ResourceProvider resources;
     private final ToolProvider tools;
     private final PromptProvider prompts;
@@ -103,6 +101,7 @@ public final class McpServer implements AutoCloseable {
         this.resourceAccess = resourceAccess;
         this.toolAccess = toolAccess == null ? ToolAccessPolicy.PERMISSIVE : toolAccess;
         this.samplingAccess = samplingAccess == null ? SamplingAccessPolicy.PERMISSIVE : samplingAccess;
+        var requestProcessor = new JsonRpcRequestProcessor(progressManager, cancellationTracker, this::send, idTracker);
         this.handlers = new RpcHandlerRegistry(requestProcessor);
         this.principal = principal;
         this.toolListChangedSupported = tools != null && tools.supportsListChanged();
@@ -179,14 +178,14 @@ public final class McpServer implements AutoCloseable {
                 } catch (IOException ignore) {
                 }
             });
-        } catch (Exception ignore) {
+        } catch (RuntimeException ignore) {
             return null;
         }
     }
 
     @FunctionalInterface
     private interface SubscriptionFactory<S extends ListChangeSubscription> {
-        S subscribe(ListChangeListener listener) throws Exception;
+        S subscribe(ListChangeListener listener);
     }
 
     public void serve() throws IOException {
@@ -273,11 +272,8 @@ public final class McpServer implements AutoCloseable {
         if (resp.isPresent()) send(resp.get());
     }
 
-    private void onNotification(JsonRpcNotification note) throws IOException {
-        try {
-            handlers.handle(note);
-        } catch (IOException ignore) {
-        }
+    private void onNotification(JsonRpcNotification note) {
+        handlers.handle(note);
     }
 
     private JsonRpcMessage initialize(JsonRpcRequest req) {
