@@ -35,7 +35,7 @@ final class McpServlet extends HttpServlet {
         boolean initializing = RequestMethod.INITIALIZE.method()
                 .equals(obj.getString("method", null));
 
-        if (!transport.validateSession(req, resp, principalOpt.get(), initializing)) return;
+        if (!transport.validateSession(req, resp, principal, initializing)) return;
 
         switch (classify(obj)) {
             case NOTIFICATION, RESPONSE -> enqueue(obj, resp);
