@@ -1,6 +1,7 @@
 package com.amannmalik.mcp.server.completion;
 
 import com.amannmalik.mcp.config.McpConfiguration;
+import com.amannmalik.mcp.util.Immutable;
 import com.amannmalik.mcp.validation.InputSanitizer;
 import com.amannmalik.mcp.validation.MetaValidator;
 import jakarta.json.JsonObject;
@@ -18,8 +19,7 @@ public record CompleteResult(Completion completion, JsonObject _meta) {
 
     public record Completion(List<String> values, Integer total, Boolean hasMore) {
         public Completion(List<String> values, Integer total, Boolean hasMore) {
-            List<String> copy = values == null ? List.of() : List.copyOf(values);
-            copy = copy.stream()
+            List<String> copy = Immutable.list(values).stream()
                     .map(InputSanitizer::requireClean)
                     .toList();
             this.values = copy;

@@ -632,7 +632,7 @@ public final class McpClient implements AutoCloseable {
     }
 
     private void requireCapability(RequestMethod method) {
-        method.requiredCapability()
+        CapabilityRequirements.forMethod(method)
                 .filter(c -> !serverCapabilities.contains(c))
                 .ifPresent(c -> {
                     throw new IllegalStateException("Server capability not negotiated: " + c);

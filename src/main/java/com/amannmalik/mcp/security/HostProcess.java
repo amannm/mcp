@@ -4,6 +4,7 @@ import com.amannmalik.mcp.auth.Principal;
 import com.amannmalik.mcp.client.McpClient;
 import com.amannmalik.mcp.config.McpConfiguration;
 import com.amannmalik.mcp.jsonrpc.*;
+import com.amannmalik.mcp.lifecycle.CapabilityRequirements;
 import com.amannmalik.mcp.lifecycle.ClientCapability;
 import com.amannmalik.mcp.lifecycle.ServerCapability;
 import com.amannmalik.mcp.prompts.Role;
@@ -26,12 +27,16 @@ public final class HostProcess implements AutoCloseable {
     private final SamplingAccessController samplingAccess;
 
     private static Optional<ServerCapability> serverCapabilityForMethod(String method) {
-        if (method.startsWith("tools/")) return Optional.of(ServerCapability.TOOLS);
-        if (method.startsWith("resources/")) return Optional.of(ServerCapability.RESOURCES);
-        if (method.startsWith("prompts/")) return Optional.of(ServerCapability.PROMPTS);
-        if (method.startsWith("completion/")) return Optional.of(ServerCapability.COMPLETIONS);
-        if (method.startsWith("logging/")) return Optional.of(ServerCapability.LOGGING);
-        return Optional.empty();
+        return RequestMethod.from(method)
+                .flatMap(CapabilityRequirements::forMethod)
+                .or(() -> {
+                    if (method.startsWith("tools/")) return Optional.of(ServerCapability.TOOLS);
+                    if (method.startsWith("resources/")) return Optional.of(ServerCapability.RESOURCES);
+                    if (method.startsWith("prompts/")) return Optional.of(ServerCapability.PROMPTS);
+                    if (method.startsWith("completion/")) return Optional.of(ServerCapability.COMPLETIONS);
+                    if (method.startsWith("logging/")) return Optional.of(ServerCapability.LOGGING);
+                    return Optional.empty();
+                });
     }
 
     private static Optional<ClientCapability> clientCapabilityForMethod(String method) {
