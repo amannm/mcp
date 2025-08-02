@@ -336,42 +336,34 @@ public final class McpClient implements AutoCloseable {
 
     public JsonRpcMessage request(String method, JsonObject params, long timeoutMillis) throws IOException {
         if (!connected) throw new IllegalStateException("not connected");
-        RequestId reqId = new RequestId.NumericId(id.getAndIncrement());
-        Optional<ProgressToken> token = progressManager.register(reqId, params);
-        CompletableFuture<JsonRpcMessage> future = new CompletableFuture<>();
+        var reqId = new RequestId.NumericId(id.getAndIncrement());
+        progressManager.register(reqId, params);
+        var future = new CompletableFuture<JsonRpcMessage>();
         pending.put(reqId, future);
         try {
             transport.send(JsonRpcCodec.toJsonObject(new JsonRpcRequest(reqId, method, params)));
+            try {
+                return future.get(timeoutMillis, TimeUnit.MILLISECONDS);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                throw new IOException(e);
+            } catch (TimeoutException e) {
+                try {
+                    notify(NotificationMethod.CANCELLED, CancellationCodec.toJsonObject(new CancelledNotification(reqId, "timeout")));
+                } catch (IOException ignore) {
+                }
+                throw new IOException("Request timed out after " + timeoutMillis + " ms", e);
+            } catch (ExecutionException e) {
+                var cause = e.getCause();
+                if (cause instanceof IOException io) throw io;
+                throw new IOException(cause);
+            }
         } catch (UnauthorizedException e) {
-            pending.remove(reqId);
-            token.ifPresent(t -> progressManager.release(reqId));
             handleUnauthorized(e);
             throw e;
-        } catch (IOException e) {
-            pending.remove(reqId);
-            token.ifPresent(t -> progressManager.release(reqId));
-            throw e;
-        }
-        try {
-            return future.get(timeoutMillis, TimeUnit.MILLISECONDS);
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            throw new IOException(e);
-        } catch (TimeoutException e) {
-            try {
-                notify(NotificationMethod.CANCELLED, CancellationCodec.toJsonObject(new CancelledNotification(reqId, "timeout")));
-            } catch (IOException ignore) {
-            }
-            token.ifPresent(t -> progressManager.release(reqId));
-            throw new IOException("Request timed out after " + timeoutMillis + " ms");
-        } catch (ExecutionException e) {
-            Throwable cause = e.getCause();
-            if (cause instanceof IOException io) throw io;
-            token.ifPresent(t -> progressManager.release(reqId));
-            throw new IOException(cause);
         } finally {
             pending.remove(reqId);
-            token.ifPresent(t -> progressManager.release(reqId));
+            progressManager.release(reqId);
         }
     }
 
