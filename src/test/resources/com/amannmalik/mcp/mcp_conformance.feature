@@ -67,8 +67,6 @@ Feature: MCP protocol conformance
       | stdio     |
       | http      |
 
-
-
   Scenario Outline: Resource metadata conforms to specification
     Given a running MCP server using <transport> transport
     Then capabilities should be advertised and ping succeeds
