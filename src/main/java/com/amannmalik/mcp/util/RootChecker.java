@@ -7,17 +7,11 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
 
-/**
- * Utility for verifying resource URIs are within allowed roots.
- */
+
 public final class RootChecker {
     private RootChecker() {
     }
 
-    /**
-     * Returns {@code true} if the given URI is within one of the provided roots.
-     * Non-file URIs are always allowed.
-     */
     public static boolean withinRoots(String uri, List<Root> roots) {
         Objects.requireNonNull(roots);
         final URI target;
