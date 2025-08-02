@@ -12,7 +12,6 @@ description: MCP Implementation Specialist
 - Immutable over mutable
 - Composition over inheritance
 
-
 # Preferences
 
 - Write typed, idiomatic, modern Java 24
