@@ -1,10 +1,8 @@
 package com.amannmalik.mcp.jsonrpc;
 
 import jakarta.json.Json;
-import jakarta.json.JsonNumber;
 import jakarta.json.JsonObject;
 import jakarta.json.JsonObjectBuilder;
-import jakarta.json.JsonString;
 import jakarta.json.JsonValue;
 
 public final class JsonRpcCodec {
@@ -17,7 +15,7 @@ public final class JsonRpcCodec {
 
         switch (msg) {
             case JsonRpcRequest r -> {
-                addId(builder, r.id());
+                RequestIdCodec.add(builder, "id", r.id());
                 builder.add("method", r.method());
                 if (r.params() != null) builder.add("params", r.params());
             }
@@ -26,11 +24,11 @@ public final class JsonRpcCodec {
                 if (n.params() != null) builder.add("params", n.params());
             }
             case JsonRpcResponse r -> {
-                addId(builder, r.id());
+                RequestIdCodec.add(builder, "id", r.id());
                 builder.add("result", r.result());
             }
             case JsonRpcError e -> {
-                addId(builder, e.id());
+                RequestIdCodec.add(builder, "id", e.id());
                 var err = e.error();
                 var errBuilder = Json.createObjectBuilder()
                         .add("code", err.code())
@@ -40,14 +38,6 @@ public final class JsonRpcCodec {
             }
         }
         return builder.build();
-    }
-
-    private static void addId(JsonObjectBuilder builder, RequestId id) {
-        switch (id) {
-            case RequestId.StringId s -> builder.add("id", s.value());
-            case RequestId.NumericId n -> builder.add("id", n.value());
-            case RequestId.NullId ignored -> builder.add("id", JsonValue.NULL);
-        }
     }
 
     public static JsonRpcMessage fromJsonObject(JsonObject obj) {
@@ -71,7 +61,7 @@ public final class JsonRpcCodec {
         JsonObject paramsObj = paramsValue == null ? null : paramsValue.asJsonObject();
 
         if (method != null && idValue != null && idValue.getValueType() != JsonValue.ValueType.NULL) {
-            return new JsonRpcRequest(toId(idValue), method, paramsObj);
+            return new JsonRpcRequest(RequestIdCodec.from(idValue), method, paramsObj);
         }
         if (method != null) {
             return new JsonRpcNotification(method, paramsObj);
@@ -84,14 +74,14 @@ public final class JsonRpcCodec {
             if (resultVal == null || resultVal.getValueType() != JsonValue.ValueType.OBJECT) {
                 throw new IllegalArgumentException("result must be an object");
             }
-            return new JsonRpcResponse(toId(idValue), resultVal.asJsonObject());
+            return new JsonRpcResponse(RequestIdCodec.from(idValue), resultVal.asJsonObject());
         }
         if (hasError) {
             RequestId id;
             if (idValue == null || idValue.getValueType() == JsonValue.ValueType.NULL) {
                 id = new RequestId.NullId();
             } else {
-                id = toId(idValue);
+                id = RequestIdCodec.from(idValue);
             }
             var errObj = obj.getJsonObject("error");
             var detail = new JsonRpcError.ErrorDetail(
@@ -102,16 +92,5 @@ public final class JsonRpcCodec {
             return new JsonRpcError(id, detail);
         }
         throw new IllegalArgumentException("Unknown message type");
-    }
-
-    private static RequestId toId(JsonValue value) {
-        if (value == null || value.getValueType() == JsonValue.ValueType.NULL) {
-            throw new IllegalArgumentException("id is required");
-        }
-        return switch (value.getValueType()) {
-            case NUMBER -> new RequestId.NumericId(((JsonNumber) value).longValue());
-            case STRING -> new RequestId.StringId(((JsonString) value).getString());
-            default -> throw new IllegalArgumentException("Invalid id type");
-        };
     }
 }
