@@ -8,6 +8,7 @@ import jakarta.servlet.AsyncContext;
 import jakarta.servlet.http.*;
 
 import java.io.IOException;
+import java.util.Optional;
 import java.util.concurrent.*;
 
 final class McpServlet extends HttpServlet {
@@ -34,86 +35,20 @@ final class McpServlet extends HttpServlet {
         boolean initializing = RequestMethod.INITIALIZE.method()
                 .equals(obj.getString("method", null));
 
-        if (!transport.validateSession(req, resp, principal, initializing)) return;
+        if (!transport.validateSession(req, resp, principalOpt.get(), initializing)) return;
 
-        boolean hasMethod = obj.containsKey("method");
-        boolean hasId = obj.containsKey("id");
-        boolean isRequest = hasMethod && hasId;
-        boolean isNotification = hasMethod && !hasId;
-        boolean isResponse = !hasMethod && (obj.containsKey("result") || obj.containsKey("error"));
-
-        if (isNotification || isResponse) {
-            try {
-                transport.incoming.put(obj);
-                resp.setStatus(HttpServletResponse.SC_ACCEPTED);
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-                resp.sendError(HttpServletResponse.SC_SERVICE_UNAVAILABLE);
-            }
-            return;
-        }
-
-        if (!isRequest) {
-            resp.sendError(HttpServletResponse.SC_BAD_REQUEST);
-            return;
-        }
-
-        if (initializing) {
-            BlockingQueue<JsonObject> q = new LinkedBlockingQueue<>(1);
-            transport.responseQueues.put(obj.get("id").toString(), q);
-            try {
-                transport.incoming.put(obj);
-                JsonObject response = q.poll(30, TimeUnit.SECONDS);
-                if (response == null) {
-                    resp.sendError(HttpServletResponse.SC_REQUEST_TIMEOUT);
-                    return;
-                }
-                if (response.containsKey("result")) {
-                    JsonObject result = response.getJsonObject("result");
-                    if (result.containsKey("protocolVersion")) {
-                        transport.sessions.protocolVersion(result.getString("protocolVersion"));
-                    }
-                }
-                resp.setContentType("application/json");
-                resp.setCharacterEncoding("UTF-8");
-                resp.setHeader(TransportHeaders.PROTOCOL_VERSION, transport.sessions.protocolVersion());
-                resp.getWriter().write(response.toString());
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-                resp.sendError(HttpServletResponse.SC_SERVICE_UNAVAILABLE);
-            } finally {
-                transport.responseQueues.remove(obj.get("id").toString());
-            }
-        } else {
-            resp.setStatus(HttpServletResponse.SC_OK);
-            resp.setContentType("text/event-stream;charset=UTF-8");
-            resp.setHeader("Cache-Control", "no-cache");
-            resp.setHeader(TransportHeaders.PROTOCOL_VERSION, transport.sessions.protocolVersion());
-            resp.flushBuffer();
-            AsyncContext ac = req.startAsync();
-            ac.setTimeout(0);
-            SseClient client = new SseClient(ac);
-            String key = obj.get("id").toString();
-            transport.requestStreams.put(key, client);
-            transport.clientsByPrefix.put(client.prefix, client);
-            ac.addListener(transport.requestStreamListener(key, client));
-            try {
-                transport.incoming.put(obj);
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-                transport.removeRequestStream(key, client);
-                resp.sendError(HttpServletResponse.SC_SERVICE_UNAVAILABLE);
-            }
+        switch (classify(obj)) {
+            case NOTIFICATION, RESPONSE -> enqueue(obj, resp);
+            case REQUEST -> handleRequest(obj, initializing, req, resp);
+            default -> resp.sendError(HttpServletResponse.SC_BAD_REQUEST);
         }
     }
 
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws IOException {
-        Principal principal = transport.authorize(req, resp);
-        if (principal == null && transport.authManager != null) return;
-        if (!transport.verifyOrigin(req, resp)) return;
-        if (!transport.validateAccept(req, resp, false)) return;
-        if (!transport.validateSession(req, resp, principal, false)) return;
+        var principalOpt = authorize(req, resp, true, false);
+        if (principalOpt.isEmpty()) return;
+        if (!transport.validateSession(req, resp, principalOpt.get(), false)) return;
         resp.setStatus(HttpServletResponse.SC_OK);
         resp.setContentType("text/event-stream;charset=UTF-8");
         resp.setHeader("Cache-Control", "no-cache");
@@ -153,12 +88,110 @@ final class McpServlet extends HttpServlet {
 
     @Override
     protected void doDelete(HttpServletRequest req, HttpServletResponse resp) throws IOException {
-        Principal principal = transport.authorize(req, resp);
-        if (principal == null && transport.authManager != null) return;
-        if (!transport.verifyOrigin(req, resp)) return;
-        if (!transport.validateSession(req, resp, principal, false)) return;
+        var principalOpt = authorize(req, resp, false, false);
+        if (principalOpt.isEmpty()) return;
+        if (!transport.validateSession(req, resp, principalOpt.get(), false)) return;
         transport.terminateSession(true);
         resp.setStatus(HttpServletResponse.SC_OK);
+    }
+
+    private enum MessageType { REQUEST, NOTIFICATION, RESPONSE, INVALID }
+
+    private static MessageType classify(JsonObject obj) {
+        boolean hasMethod = obj.containsKey("method");
+        boolean hasId = obj.containsKey("id");
+        boolean isRequest = hasMethod && hasId;
+        boolean isNotification = hasMethod && !hasId;
+        boolean isResponse = !hasMethod && (obj.containsKey("result") || obj.containsKey("error"));
+        if (isRequest) return MessageType.REQUEST;
+        if (isNotification) return MessageType.NOTIFICATION;
+        if (isResponse) return MessageType.RESPONSE;
+        return MessageType.INVALID;
+    }
+
+    private Optional<Principal> authorize(HttpServletRequest req,
+                                          HttpServletResponse resp,
+                                          boolean requireAccept,
+                                          boolean post) throws IOException {
+        Principal principal = transport.authorize(req, resp);
+        if (principal == null) return Optional.empty();
+        if (!transport.verifyOrigin(req, resp)) return Optional.empty();
+        if (requireAccept && !transport.validateAccept(req, resp, post)) return Optional.empty();
+        return Optional.of(principal);
+    }
+
+    private void enqueue(JsonObject obj, HttpServletResponse resp) throws IOException {
+        try {
+            transport.incoming.put(obj);
+            resp.setStatus(HttpServletResponse.SC_ACCEPTED);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            resp.sendError(HttpServletResponse.SC_SERVICE_UNAVAILABLE);
+        }
+    }
+
+    private void handleRequest(JsonObject obj,
+                               boolean initializing,
+                               HttpServletRequest req,
+                               HttpServletResponse resp) throws IOException {
+        if (initializing) {
+            handleInitialize(obj, resp);
+        } else {
+            handleStreamRequest(obj, req, resp);
+        }
+    }
+
+    private void handleInitialize(JsonObject obj, HttpServletResponse resp) throws IOException {
+        String id = obj.get("id").toString();
+        BlockingQueue<JsonObject> q = new LinkedBlockingQueue<>(1);
+        transport.responseQueues.put(id, q);
+        try {
+            transport.incoming.put(obj);
+            JsonObject response = q.poll(30, TimeUnit.SECONDS);
+            if (response == null) {
+                resp.sendError(HttpServletResponse.SC_REQUEST_TIMEOUT);
+                return;
+            }
+            if (response.containsKey("result")) {
+                JsonObject result = response.getJsonObject("result");
+                if (result.containsKey("protocolVersion")) {
+                    transport.sessions.protocolVersion(result.getString("protocolVersion"));
+                }
+            }
+            resp.setContentType("application/json");
+            resp.setCharacterEncoding("UTF-8");
+            resp.setHeader(TransportHeaders.PROTOCOL_VERSION, transport.sessions.protocolVersion());
+            resp.getWriter().write(response.toString());
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            resp.sendError(HttpServletResponse.SC_SERVICE_UNAVAILABLE);
+        } finally {
+            transport.responseQueues.remove(id);
+        }
+    }
+
+    private void handleStreamRequest(JsonObject obj,
+                                     HttpServletRequest req,
+                                     HttpServletResponse resp) throws IOException {
+        resp.setStatus(HttpServletResponse.SC_OK);
+        resp.setContentType("text/event-stream;charset=UTF-8");
+        resp.setHeader("Cache-Control", "no-cache");
+        resp.setHeader(TransportHeaders.PROTOCOL_VERSION, transport.sessions.protocolVersion());
+        resp.flushBuffer();
+        AsyncContext ac = req.startAsync();
+        ac.setTimeout(0);
+        SseClient client = new SseClient(ac);
+        String key = obj.get("id").toString();
+        transport.requestStreams.put(key, client);
+        transport.clientsByPrefix.put(client.prefix, client);
+        ac.addListener(transport.requestStreamListener(key, client));
+        try {
+            transport.incoming.put(obj);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            transport.removeRequestStream(key, client);
+            resp.sendError(HttpServletResponse.SC_SERVICE_UNAVAILABLE);
+        }
     }
 }
 
