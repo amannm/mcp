@@ -1,0 +1,106 @@
+<problems>
+<problem>
+  <file>file://$PROJECT_DIR$/src/main/java/com/amannmalik/mcp/prompts/PromptCodec.java</file>
+  <line>97</line>
+  <module>mcp.main</module>
+  <package>com.amannmalik.mcp.prompts</package>
+  <entry_point TYPE="method" FQNAME="com.amannmalik.mcp.prompts.PromptCodec com.amannmalik.mcp.prompts.Prompt toPrompt(jakarta.json.JsonObject obj)" />
+  <problem_class id="DuplicatedCode" severity="WEAK WARNING" attribute_key="INFO_ATTRIBUTES">Duplicated code fragment</problem_class>
+  <description>Duplicate code: lines 97-101</description>
+  <highlighted_element>if (obj == null) throw new IllegalArgumentException(&quot;object required&quot;);</highlighted_element>
+  <language>JAVA</language>
+  <offset>8</offset>
+  <length>71</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/src/main/java/com/amannmalik/mcp/security/HostProcess.java</file>
+  <line>180</line>
+  <module>mcp.main</module>
+  <package>com.amannmalik.mcp.security</package>
+  <entry_point TYPE="method" FQNAME="com.amannmalik.mcp.security.HostProcess com.amannmalik.mcp.jsonrpc.JsonRpcMessage request(java.lang.String id, java.lang.String method, jakarta.json.JsonObject params)" />
+  <problem_class id="DuplicatedCode" severity="WEAK WARNING" attribute_key="INFO_ATTRIBUTES">Duplicated code fragment</problem_class>
+  <description>Duplicate code: lines 180-184</description>
+  <highlighted_element>McpClient client = clients.get(id);</highlighted_element>
+  <language>JAVA</language>
+  <offset>8</offset>
+  <length>35</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/src/main/java/com/amannmalik/mcp/security/HostProcess.java</file>
+  <line>189</line>
+  <module>mcp.main</module>
+  <package>com.amannmalik.mcp.security</package>
+  <entry_point TYPE="method" FQNAME="com.amannmalik.mcp.security.HostProcess void notify(java.lang.String id, java.lang.String method, jakarta.json.JsonObject params)" />
+  <problem_class id="DuplicatedCode" severity="WEAK WARNING" attribute_key="INFO_ATTRIBUTES">Duplicated code fragment</problem_class>
+  <description>Duplicate code: lines 189-193</description>
+  <highlighted_element>McpClient client = clients.get(id);</highlighted_element>
+  <language>JAVA</language>
+  <offset>8</offset>
+  <length>35</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/src/main/java/com/amannmalik/mcp/server/McpServer.java</file>
+  <line>427</line>
+  <module>mcp.main</module>
+  <package>com.amannmalik.mcp.server</package>
+  <entry_point TYPE="method" FQNAME="com.amannmalik.mcp.server.McpServer com.amannmalik.mcp.jsonrpc.JsonRpcMessage readResource(com.amannmalik.mcp.jsonrpc.JsonRpcRequest req)" />
+  <problem_class id="DuplicatedCode" severity="WEAK WARNING" attribute_key="INFO_ATTRIBUTES">Duplicated code fragment</problem_class>
+  <description>Duplicate code: lines 427-435</description>
+  <highlighted_element>String uri = rrr.uri();</highlighted_element>
+  <language>JAVA</language>
+  <offset>8</offset>
+  <length>23</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/src/main/java/com/amannmalik/mcp/server/McpServer.java</file>
+  <line>480</line>
+  <module>mcp.main</module>
+  <package>com.amannmalik.mcp.server</package>
+  <entry_point TYPE="method" FQNAME="com.amannmalik.mcp.server.McpServer com.amannmalik.mcp.jsonrpc.JsonRpcMessage subscribeResource(com.amannmalik.mcp.jsonrpc.JsonRpcRequest req)" />
+  <problem_class id="DuplicatedCode" severity="WEAK WARNING" attribute_key="INFO_ATTRIBUTES">Duplicated code fragment</problem_class>
+  <description>Duplicate code: lines 480-488</description>
+  <highlighted_element>String uri = sr.uri();</highlighted_element>
+  <language>JAVA</language>
+  <offset>8</offset>
+  <length>22</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/src/main/java/com/amannmalik/mcp/server/tools/ToolCodec.java</file>
+  <line>65</line>
+  <module>mcp.main</module>
+  <package>com.amannmalik.mcp.server.tools</package>
+  <entry_point TYPE="method" FQNAME="com.amannmalik.mcp.server.tools.ToolCodec com.amannmalik.mcp.server.tools.Tool toTool(jakarta.json.JsonObject obj)" />
+  <problem_class id="DuplicatedCode" severity="WEAK WARNING" attribute_key="INFO_ATTRIBUTES">Duplicated code fragment</problem_class>
+  <description>Duplicate code: lines 65-69</description>
+  <highlighted_element>if (obj == null) throw new IllegalArgumentException(&quot;object required&quot;);</highlighted_element>
+  <language>JAVA</language>
+  <offset>8</offset>
+  <length>71</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/src/main/java/com/amannmalik/mcp/transport/McpServlet.java</file>
+  <line>53</line>
+  <module>mcp.main</module>
+  <package>com.amannmalik.mcp.transport</package>
+  <entry_point TYPE="method" FQNAME="com.amannmalik.mcp.transport.McpServlet void doGet(jakarta.servlet.http.HttpServletRequest req, jakarta.servlet.http.HttpServletResponse resp)" />
+  <problem_class id="DuplicatedCode" severity="WEAK WARNING" attribute_key="INFO_ATTRIBUTES">Duplicated code fragment</problem_class>
+  <description>Duplicate code: lines 53-59</description>
+  <highlighted_element>resp.setStatus(HttpServletResponse.SC_OK);</highlighted_element>
+  <language>JAVA</language>
+  <offset>8</offset>
+  <length>42</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/src/main/java/com/amannmalik/mcp/transport/McpServlet.java</file>
+  <line>177</line>
+  <module>mcp.main</module>
+  <package>com.amannmalik.mcp.transport</package>
+  <entry_point TYPE="method" FQNAME="com.amannmalik.mcp.transport.McpServlet void handleStreamRequest(jakarta.json.JsonObject obj, jakarta.servlet.http.HttpServletRequest req, jakarta.servlet.http.HttpServletResponse resp)" />
+  <problem_class id="DuplicatedCode" severity="WEAK WARNING" attribute_key="INFO_ATTRIBUTES">Duplicated code fragment</problem_class>
+  <description>Duplicate code: lines 177-183</description>
+  <highlighted_element>resp.setStatus(HttpServletResponse.SC_OK);</highlighted_element>
+  <language>JAVA</language>
+  <offset>8</offset>
+  <length>42</length>
+</problem>
+</problems>

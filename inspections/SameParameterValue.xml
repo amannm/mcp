@@ -1,0 +1,114 @@
+<problems>
+<problem>
+  <file>file://$PROJECT_DIR$/src/main/java/com/amannmalik/mcp/lifecycle/ProtocolLifecycle.java</file>
+  <line>80</line>
+  <module>mcp.main</module>
+  <package>com.amannmalik.mcp.lifecycle</package>
+  <entry_point TYPE="method" FQNAME="com.amannmalik.mcp.lifecycle.ProtocolLifecycle void ensureState(com.amannmalik.mcp.lifecycle.LifecycleState expected)" />
+  <problem_class id="SameParameterValue" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Method parameter always has the same value</problem_class>
+  <hints>
+    <hint value="expected com.amannmalik.mcp.lifecycle.LifecycleState.INIT" />
+  </hints>
+  <description>Value of parameter &lt;code&gt;expected&lt;/code&gt; is always 'LifecycleState.INIT'</description>
+  <highlighted_element>expected</highlighted_element>
+  <language>JAVA</language>
+  <offset>44</offset>
+  <length>8</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/src/main/java/com/amannmalik/mcp/server/McpServer.java</file>
+  <line>675</line>
+  <module>mcp.main</module>
+  <package>com.amannmalik.mcp.server</package>
+  <entry_point TYPE="method" FQNAME="com.amannmalik.mcp.server.McpServer com.amannmalik.mcp.jsonrpc.JsonRpcMessage sendRequest(java.lang.String method, jakarta.json.JsonObject params, long timeoutMillis)" />
+  <problem_class id="SameParameterValue" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Method parameter always has the same value</problem_class>
+  <hints>
+    <hint value="timeoutMillis com.amannmalik.mcp.util.Timeouts.DEFAULT_TIMEOUT_MS" />
+  </hints>
+  <description>Value of parameter &lt;code&gt;timeoutMillis&lt;/code&gt; is always 'Timeouts.DEFAULT_TIMEOUT_MS'</description>
+  <highlighted_element>timeoutMillis</highlighted_element>
+  <language>JAVA</language>
+  <offset>78</offset>
+  <length>13</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/src/main/java/com/amannmalik/mcp/server/RootsManager.java</file>
+  <line>69</line>
+  <module>mcp.main</module>
+  <package>com.amannmalik.mcp.server</package>
+  <entry_point TYPE="method" FQNAME="com.amannmalik.mcp.server.RootsManager void requireClientCapability(com.amannmalik.mcp.lifecycle.ClientCapability cap)" />
+  <problem_class id="SameParameterValue" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Method parameter always has the same value</problem_class>
+  <hints>
+    <hint value="cap com.amannmalik.mcp.lifecycle.ClientCapability.ROOTS" />
+  </hints>
+  <description>Value of parameter &lt;code&gt;cap&lt;/code&gt; is always 'ClientCapability.ROOTS'</description>
+  <highlighted_element>cap</highlighted_element>
+  <language>JAVA</language>
+  <offset>58</offset>
+  <length>3</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/src/main/java/com/amannmalik/mcp/transport/McpServlet.java</file>
+  <line>116</line>
+  <module>mcp.main</module>
+  <package>com.amannmalik.mcp.transport</package>
+  <entry_point TYPE="method" FQNAME="com.amannmalik.mcp.transport.McpServlet java.util.Optional&lt;com.amannmalik.mcp.auth.Principal&gt; authorize(jakarta.servlet.http.HttpServletRequest req, jakarta.servlet.http.HttpServletResponse resp, boolean requireAccept, boolean post)" />
+  <problem_class id="SameParameterValue" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Method parameter always has the same value</problem_class>
+  <hints>
+    <hint value="post false" />
+  </hints>
+  <description>Value of parameter &lt;code&gt;post&lt;/code&gt; is always 'false'</description>
+  <highlighted_element>post</highlighted_element>
+  <language>JAVA</language>
+  <offset>50</offset>
+  <length>4</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/src/main/java/com/amannmalik/mcp/transport/SessionManager.java</file>
+  <line>24</line>
+  <module>mcp.main</module>
+  <package>com.amannmalik.mcp.transport</package>
+  <entry_point TYPE="method" FQNAME="com.amannmalik.mcp.transport.SessionManager SessionManager(java.lang.String compatibilityVersion)" />
+  <problem_class id="SameParameterValue" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Method parameter always has the same value</problem_class>
+  <hints>
+    <hint value="compatibilityVersion com.amannmalik.mcp.transport.StreamableHttpTransport.COMPATIBILITY_VERSION" />
+  </hints>
+  <description>Value of parameter &lt;code&gt;compatibilityVersion&lt;/code&gt; is always 'StreamableHttpTransport.COMPATIBILITY_VERSION'</description>
+  <highlighted_element>compatibilityVersion</highlighted_element>
+  <language>JAVA</language>
+  <offset>26</offset>
+  <length>20</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/src/main/java/com/amannmalik/mcp/validation/SchemaValidator.java</file>
+  <line>143</line>
+  <module>mcp.main</module>
+  <package>com.amannmalik.mcp.validation</package>
+  <entry_point TYPE="method" FQNAME="com.amannmalik.mcp.validation.SchemaValidator void requireType(jakarta.json.JsonValue value, jakarta.json.JsonValue.ValueType a, jakarta.json.JsonValue.ValueType b, java.lang.String field)" />
+  <problem_class id="SameParameterValue" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Method parameter always has the same value</problem_class>
+  <hints>
+    <hint value="a jakarta.json.JsonValue.ValueType.TRUE" />
+  </hints>
+  <description>Value of parameter &lt;code&gt;a&lt;/code&gt; is always 'ValueType.TRUE'</description>
+  <highlighted_element>a</highlighted_element>
+  <language>JAVA</language>
+  <offset>73</offset>
+  <length>1</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/src/main/java/com/amannmalik/mcp/validation/SchemaValidator.java</file>
+  <line>143</line>
+  <module>mcp.main</module>
+  <package>com.amannmalik.mcp.validation</package>
+  <entry_point TYPE="method" FQNAME="com.amannmalik.mcp.validation.SchemaValidator void requireType(jakarta.json.JsonValue value, jakarta.json.JsonValue.ValueType a, jakarta.json.JsonValue.ValueType b, java.lang.String field)" />
+  <problem_class id="SameParameterValue" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Method parameter always has the same value</problem_class>
+  <hints>
+    <hint value="b jakarta.json.JsonValue.ValueType.FALSE" />
+  </hints>
+  <description>Value of parameter &lt;code&gt;b&lt;/code&gt; is always 'ValueType.FALSE'</description>
+  <highlighted_element>b</highlighted_element>
+  <language>JAVA</language>
+  <offset>96</offset>
+  <length>1</length>
+</problem>
+</problems>

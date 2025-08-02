@@ -1,0 +1,18 @@
+<root>
+<duplicate cost="1" hash="0">
+  <fragment file="file://$PROJECT_DIR$/src/main/java/com/amannmalik/mcp/prompts/PromptCodec.java" line="97" start="4220" end="4539" />
+  <fragment file="file://$PROJECT_DIR$/src/main/java/com/amannmalik/mcp/server/tools/ToolCodec.java" line="65" start="2790" end="3109" />
+</duplicate>
+<duplicate cost="1" hash="0">
+  <fragment file="file://$PROJECT_DIR$/src/main/java/com/amannmalik/mcp/security/HostProcess.java" line="180" start="7708" end="8109" />
+  <fragment file="file://$PROJECT_DIR$/src/main/java/com/amannmalik/mcp/security/HostProcess.java" line="189" start="8261" end="8662" />
+</duplicate>
+<duplicate cost="1" hash="0">
+  <fragment file="file://$PROJECT_DIR$/src/main/java/com/amannmalik/mcp/server/McpServer.java" line="427" start="18222" end="18628" />
+  <fragment file="file://$PROJECT_DIR$/src/main/java/com/amannmalik/mcp/server/McpServer.java" line="480" start="20330" end="20741" />
+</duplicate>
+<duplicate cost="1" hash="0">
+  <fragment file="file://$PROJECT_DIR$/src/main/java/com/amannmalik/mcp/transport/McpServlet.java" line="53" start="1982" end="2336" />
+  <fragment file="file://$PROJECT_DIR$/src/main/java/com/amannmalik/mcp/transport/McpServlet.java" line="177" start="7326" end="7680" />
+</duplicate>
+</root>
