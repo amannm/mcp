@@ -95,7 +95,7 @@ final class McpServlet extends HttpServlet {
         resp.setStatus(HttpServletResponse.SC_OK);
     }
 
-    private enum MessageType { REQUEST, NOTIFICATION, RESPONSE, INVALID }
+    private enum MessageType {REQUEST, NOTIFICATION, RESPONSE, INVALID}
 
     private static MessageType classify(JsonObject obj) {
         boolean hasMethod = obj.containsKey("method");
