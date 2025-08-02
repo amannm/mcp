@@ -238,6 +238,18 @@ public final class McpConformanceSteps {
             case "get_prompt" -> client.request("prompts/get",
                     Json.createObjectBuilder().add("name", parameter)
                             .add("arguments", Json.createObjectBuilder().add("test_arg", "v")).build());
+            case "list_prompt_name" -> client.request("prompts/list", Json.createObjectBuilder().build());
+            case "list_prompt_arg_required" -> client.request("prompts/list", Json.createObjectBuilder().build());
+            case "get_prompt_text" -> client.request("prompts/get",
+                    Json.createObjectBuilder().add("name", parameter)
+                            .add("arguments", Json.createObjectBuilder().add("test_arg", "v")).build());
+            case "get_prompt_role" -> client.request("prompts/get",
+                    Json.createObjectBuilder().add("name", parameter)
+                            .add("arguments", Json.createObjectBuilder().add("test_arg", "v")).build());
+            case "get_prompt_invalid" -> client.request("prompts/get",
+                    Json.createObjectBuilder().add("name", parameter).build());
+            case "get_prompt_missing_arg" -> client.request("prompts/get",
+                    Json.createObjectBuilder().add("name", parameter).build());
             case "request_completion" -> client.request("completion/complete",
                     Json.createObjectBuilder()
                             .add("ref", Json.createObjectBuilder().add("type", "ref/prompt").add("name", "test_prompt"))
@@ -297,6 +309,23 @@ public final class McpConformanceSteps {
             case "get_prompt" -> {
                 var messages = result.getJsonArray("messages");
                 assertEquals(expected, messages.getJsonObject(0).getJsonObject("content").getString("text"));
+            }
+            case "list_prompt_name" -> {
+                var prompts = result.getJsonArray("prompts");
+                assertEquals(expected, prompts.getJsonObject(0).getString("name"));
+            }
+            case "list_prompt_arg_required" -> {
+                var prompts = result.getJsonArray("prompts");
+                var args = prompts.getJsonObject(0).getJsonArray("arguments");
+                assertEquals(Boolean.parseBoolean(expected), args.getJsonObject(0).getBoolean("required"));
+            }
+            case "get_prompt_text" -> {
+                var messages = result.getJsonArray("messages");
+                assertEquals(expected, messages.getJsonObject(0).getJsonObject("content").getString("text"));
+            }
+            case "get_prompt_role" -> {
+                var messages = result.getJsonArray("messages");
+                assertEquals(expected, messages.getJsonObject(0).getString("role"));
             }
             case "request_completion" -> {
                 var values = result.getJsonObject("completion").getJsonArray("values");
