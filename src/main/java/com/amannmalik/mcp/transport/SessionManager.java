@@ -101,9 +101,14 @@ final class SessionManager {
             resp.sendError(HttpServletResponse.SC_FORBIDDEN);
             return false;
         }
-        if (!initializing && (version == null || !version.equals(protocolVersion))) {
-            resp.sendError(HttpServletResponse.SC_BAD_REQUEST);
-            return false;
+        if (!initializing) {
+            // Per spec 2025-06-18, the client should send MCP-Protocol-Version on
+            // subsequent requests. For backwards compatibility, tolerate a
+            // missing header when the negotiated version is already known.
+            if (version != null && !version.equals(protocolVersion)) {
+                resp.sendError(HttpServletResponse.SC_BAD_REQUEST);
+                return false;
+            }
         }
         return true;
     }
