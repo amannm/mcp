@@ -57,16 +57,21 @@ public final class McpClient implements AutoCloseable {
     private boolean resourcesListChangedSupported;
     private boolean toolsListChangedSupported;
     private boolean promptsListChangedSupported;
-    private ProgressListener progressListener = n -> {
+    private static final ProgressListener NOOP_PROGRESS = n -> {
     };
-    private LoggingListener loggingListener = n -> {
+    private static final LoggingListener NOOP_LOGGING = n -> {
     };
-    private ResourceListListener resourceListListener = () -> {
+    private static final ResourceListListener NOOP_RESOURCE_LIST = () -> {
     };
-    private ToolListListener toolListListener = () -> {
+    private static final ToolListListener NOOP_TOOL_LIST = () -> {
     };
-    private PromptsListener promptsListener = () -> {
+    private static final PromptsListener NOOP_PROMPTS = () -> {
     };
+    private ProgressListener progressListener = NOOP_PROGRESS;
+    private LoggingListener loggingListener = NOOP_LOGGING;
+    private ResourceListListener resourceListListener = NOOP_RESOURCE_LIST;
+    private ToolListListener toolListListener = NOOP_TOOL_LIST;
+    private PromptsListener promptsListener = NOOP_PROMPTS;
     private volatile ResourceMetadata resourceMetadata;
     private final Map<String, ResourceListener> resourceListeners = new ConcurrentHashMap<>();
 
@@ -80,11 +85,11 @@ public final class McpClient implements AutoCloseable {
     }
 
     public void setSamplingAccessPolicy(SamplingAccessPolicy policy) {
-        samplingAccess = policy == null ? SamplingAccessPolicy.PERMISSIVE : policy;
+        samplingAccess = Objects.requireNonNullElse(policy, SamplingAccessPolicy.PERMISSIVE);
     }
 
     public void setPrincipal(Principal principal) {
-        if (principal != null) this.principal = principal;
+        this.principal = Objects.requireNonNullElse(principal, this.principal);
     }
 
     public McpClient(ClientInfo info, Set<ClientCapability> capabilities, Transport transport) {
@@ -646,28 +651,23 @@ public final class McpClient implements AutoCloseable {
     }
 
     public void setProgressListener(ProgressListener listener) {
-        progressListener = listener == null ? n -> {
-        } : listener;
+        progressListener = Objects.requireNonNullElse(listener, NOOP_PROGRESS);
     }
 
     public void setLoggingListener(LoggingListener listener) {
-        loggingListener = listener == null ? n -> {
-        } : listener;
+        loggingListener = Objects.requireNonNullElse(listener, NOOP_LOGGING);
     }
 
     public void setResourceListListener(ResourceListListener listener) {
-        resourceListListener = listener == null ? () -> {
-        } : listener;
+        resourceListListener = Objects.requireNonNullElse(listener, NOOP_RESOURCE_LIST);
     }
 
     public void setToolListListener(ToolListListener listener) {
-        toolListListener = listener == null ? () -> {
-        } : listener;
+        toolListListener = Objects.requireNonNullElse(listener, NOOP_TOOL_LIST);
     }
 
     public void setPromptsListener(PromptsListener listener) {
-        promptsListener = listener == null ? () -> {
-        } : listener;
+        promptsListener = Objects.requireNonNullElse(listener, NOOP_PROMPTS);
     }
 
     private void handleProgress(JsonRpcNotification note) {
