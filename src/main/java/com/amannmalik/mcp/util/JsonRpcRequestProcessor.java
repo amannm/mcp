@@ -63,23 +63,16 @@ public final class JsonRpcRequestProcessor {
             }
         }
 
-        Optional<ProgressToken> token;
+        final Optional<ProgressToken> token;
         try {
             token = progressManager.register(req.id(), req.params());
-            token.ifPresent(t -> {
-                try {
-                    progressManager.send(new ProgressNotification(t, 0.0, 1.0, null), sender);
-                } catch (IOException ignore) {
-                }
-            });
+            token.ifPresent(t -> sendProgress(t, 0.0));
         } catch (IllegalArgumentException e) {
             cleanup(req.id());
             return JsonRpcError.invalidParams(req.id(), e.getMessage());
         }
 
-        if (cancellable) {
-            cancellationTracker.register(req.id());
-        }
+        if (cancellable) cancellationTracker.register(req.id());
 
         JsonRpcMessage resp;
         try {
@@ -91,14 +84,7 @@ public final class JsonRpcRequestProcessor {
         }
 
         boolean cancelled = cancellable && cancellationTracker.isCancelled(req.id());
-        if (!cancelled) {
-            token.ifPresent(t -> {
-                try {
-                    progressManager.send(new ProgressNotification(t, 1.0, 1.0, null), sender);
-                } catch (IOException ignore) {
-                }
-            });
-        }
+        if (!cancelled) token.ifPresent(t -> sendProgress(t, 1.0));
         cleanup(req.id());
         return cancelled ? null : resp;
     }
@@ -107,5 +93,12 @@ public final class JsonRpcRequestProcessor {
         progressManager.release(id);
         cancellationTracker.release(id);
         if (idTracker != null) idTracker.release(id);
+    }
+
+    private void sendProgress(ProgressToken token, double current) {
+        try {
+            progressManager.send(new ProgressNotification(token, current, 1.0, null), sender);
+        } catch (IOException ignore) {
+        }
     }
 }
