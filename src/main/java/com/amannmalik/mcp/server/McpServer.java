@@ -15,8 +15,9 @@ import com.amannmalik.mcp.prompts.*;
 import com.amannmalik.mcp.security.*;
 import com.amannmalik.mcp.server.completion.*;
 import com.amannmalik.mcp.server.logging.*;
-import com.amannmalik.mcp.resources.*;
+import com.amannmalik.mcp.server.resources.ResourceFeature;
 import com.amannmalik.mcp.server.roots.RootsManager;
+import com.amannmalik.mcp.resources.ResourceProvider;
 import com.amannmalik.mcp.server.tools.*;
 import com.amannmalik.mcp.transport.Transport;
 import com.amannmalik.mcp.util.*;
@@ -42,12 +43,10 @@ public final class McpServer implements AutoCloseable {
             new RateLimiter(McpConfiguration.current().performance().rateLimits().progressPerSecond(), 1000));
     private final CancellationTracker cancellationTracker = new CancellationTracker();
     private final IdTracker idTracker = new IdTracker();
-    private final ResourceProvider resources;
+    private final ResourceFeature resourceFeature;
     private final ToolProvider tools;
     private final PromptProvider prompts;
     private final CompletionProvider completions;
-    private final Map<String, ResourceSubscription> resourceSubscriptions = new ConcurrentHashMap<>();
-    private ListChangeSubscription resourceListSubscription;
     private ListChangeSubscription toolListSubscription;
     private ListChangeSubscription promptsSubscription;
     private final RootsManager rootsManager;
@@ -100,7 +99,6 @@ public final class McpServer implements AutoCloseable {
                 McpConfiguration.current().server().info().name(),
                 McpConfiguration.current().server().info().description(),
                 McpConfiguration.current().server().info().version()), instructions);
-        this.resources = resources;
         this.tools = tools;
         this.prompts = prompts;
         this.completions = completions;
@@ -111,13 +109,8 @@ public final class McpServer implements AutoCloseable {
         this.handlers = new RpcHandlerRegistry(requestProcessor);
         this.principal = principal;
         this.rootsManager = new RootsManager(lifecycle, this::sendRequest);
-
-        if (resources != null && resources.supportsListChanged()) {
-            resourceListSubscription = subscribeListChanges(
-                    l -> resources.subscribeList(() -> l.listChanged()),
-                    NotificationMethod.RESOURCES_LIST_CHANGED,
-                    ResourcesCodec.toJsonObject(new ResourceListChangedNotification()));
-        }
+        this.resourceFeature = resources == null ? null :
+                new ResourceFeature(resources, resourceAccess, principal, rootsManager, lifecycle, this::send);
 
         if (tools != null && tools.supportsListChanged()) {
             toolListSubscription = subscribeListChanges(
@@ -139,14 +132,8 @@ public final class McpServer implements AutoCloseable {
         handlers.register(NotificationMethod.CANCELLED, this::cancelled);
         handlers.register(NotificationMethod.ROOTS_LIST_CHANGED, n -> rootsManager.listChangedNotification());
 
-        if (resources != null) {
-            handlers.register(RequestMethod.RESOURCES_LIST, this::listResources);
-            handlers.register(RequestMethod.RESOURCES_READ, this::readResource);
-            handlers.register(RequestMethod.RESOURCES_TEMPLATES_LIST, this::listTemplates);
-            if (resources.supportsSubscribe()) {
-                handlers.register(RequestMethod.RESOURCES_SUBSCRIBE, this::subscribeResource);
-                handlers.register(RequestMethod.RESOURCES_UNSUBSCRIBE, this::unsubscribeResource);
-            }
+        if (resourceFeature != null) {
+            resourceFeature.register(handlers);
         }
 
         if (tools != null) {
@@ -329,8 +316,8 @@ public final class McpServer implements AutoCloseable {
 
     private ServerFeatures serverFeatures() {
         return new ServerFeatures(
-                resources != null && resources.supportsSubscribe(),
-                resources != null && resources.supportsListChanged(),
+                resourceFeature != null && resourceFeature.supportsSubscribe(),
+                resourceFeature != null && resourceFeature.supportsListChanged(),
                 tools != null && tools.supportsListChanged(),
                 prompts != null && prompts.supportsListChanged()
         );
@@ -349,18 +336,6 @@ public final class McpServer implements AutoCloseable {
         } catch (SecurityException e) {
             return false;
         }
-    }
-
-    private boolean withinRoots(String uri) {
-        return RootChecker.withinRoots(uri, rootsManager.roots());
-    }
-
-    private boolean canAccessResource(String uri) {
-        if (!withinRoots(uri)) return false;
-        return resources.get(uri)
-                .map(Resource::annotations)
-                .map(this::allowed)
-                .orElse(true);
     }
 
     private JsonRpcError invalidParams(JsonRpcRequest req, String message) {
@@ -406,111 +381,6 @@ public final class McpServer implements AutoCloseable {
 
     private String sanitizeCursor(String cursor) {
         return cursor == null ? null : Pagination.sanitize(InputSanitizer.cleanNullable(cursor));
-    }
-
-    private JsonRpcMessage listResources(JsonRpcRequest req) {
-        requireServerCapability(ServerCapability.RESOURCES);
-        try {
-            ListResourcesRequest lr = valid(() -> ResourcesCodec.toListResourcesRequest(req.params()));
-            String cursor = valid(() -> sanitizeCursor(lr.cursor()));
-            Pagination.Page<Resource> list = valid(() -> resources.list(cursor));
-            List<Resource> filtered = list.items().stream()
-                    .filter(r -> allowed(r.annotations()) && withinRoots(r.uri()))
-                    .toList();
-            ListResourcesResult result = new ListResourcesResult(filtered, list.nextCursor(), null);
-            return new JsonRpcResponse(req.id(), ResourcesCodec.toJsonObject(result));
-        } catch (InvalidParams e) {
-            return invalidParams(req, e.getMessage());
-        }
-    }
-
-    private JsonRpcMessage readResource(JsonRpcRequest req) {
-        requireServerCapability(ServerCapability.RESOURCES);
-        ReadResourceRequest rrr;
-        try {
-            rrr = valid(() -> ResourcesCodec.toReadResourceRequest(req.params()));
-        } catch (InvalidParams e) {
-            return invalidParams(req, e.getMessage());
-        }
-        String uri = rrr.uri();
-        if (!canAccessResource(uri)) {
-            return JsonRpcError.of(req.id(), JsonRpcErrorCode.INTERNAL_ERROR, "Access denied");
-        }
-        ResourceBlock block = resources.read(uri);
-        if (block == null) {
-            return JsonRpcError.of(req.id(), -32002, "Resource not found",
-                    Json.createObjectBuilder().add("uri", uri).build());
-        }
-        ReadResourceResult result = new ReadResourceResult(List.of(block), null);
-        return new JsonRpcResponse(req.id(), ResourcesCodec.toJsonObject(result));
-    }
-
-    private JsonRpcMessage listTemplates(JsonRpcRequest req) {
-        requireServerCapability(ServerCapability.RESOURCES);
-        try {
-            ListResourceTemplatesRequest request = valid(() -> ResourcesCodec.toListResourceTemplatesRequest(req.params()));
-            String cursor = valid(() -> sanitizeCursor(request.cursor()));
-            Pagination.Page<ResourceTemplate> page = valid(() -> resources.listTemplates(cursor));
-            List<ResourceTemplate> filtered = page.items().stream()
-                    .filter(t -> allowed(t.annotations()))
-                    .toList();
-            ListResourceTemplatesResult result = new ListResourceTemplatesResult(filtered, page.nextCursor(), null);
-            return new JsonRpcResponse(req.id(), ResourcesCodec.toJsonObject(result));
-        } catch (InvalidParams e) {
-            return invalidParams(req, e.getMessage());
-        }
-    }
-
-    private JsonRpcMessage subscribeResource(JsonRpcRequest req) {
-        requireServerCapability(ServerCapability.RESOURCES);
-        SubscribeRequest sr;
-        try {
-            sr = valid(() -> ResourcesCodec.toSubscribeRequest(req.params()));
-        } catch (InvalidParams e) {
-            return invalidParams(req, e.getMessage());
-        }
-        String uri = sr.uri();
-        if (!canAccessResource(uri)) {
-            return JsonRpcError.of(req.id(), JsonRpcErrorCode.INTERNAL_ERROR, "Access denied");
-        }
-        ResourceBlock existing = resources.read(uri);
-        if (existing == null) {
-            return JsonRpcError.of(req.id(), -32002, "Resource not found",
-                    Json.createObjectBuilder().add("uri", uri).build());
-        }
-        try {
-            ResourceSubscription sub = resources.subscribe(uri, update -> {
-                try {
-                    ResourceUpdatedNotification n = new ResourceUpdatedNotification(update.uri(), update.title());
-                    send(new JsonRpcNotification(
-                            NotificationMethod.RESOURCES_UPDATED.method(),
-                            ResourcesCodec.toJsonObject(n)));
-                } catch (IOException ignore) {
-                }
-            });
-            ResourceSubscription prev = resourceSubscriptions.put(uri, sub);
-            CloseUtil.closeQuietly(prev);
-        } catch (Exception e) {
-            return JsonRpcError.of(req.id(), JsonRpcErrorCode.INTERNAL_ERROR, e.getMessage());
-        }
-        return new JsonRpcResponse(req.id(), JsonValue.EMPTY_JSON_OBJECT);
-    }
-
-    private JsonRpcMessage unsubscribeResource(JsonRpcRequest req) {
-        requireServerCapability(ServerCapability.RESOURCES);
-        UnsubscribeRequest ur;
-        try {
-            ur = valid(() -> ResourcesCodec.toUnsubscribeRequest(req.params()));
-        } catch (InvalidParams e) {
-            return invalidParams(req, e.getMessage());
-        }
-        String uri = ur.uri();
-        if (!canAccessResource(uri)) {
-            return JsonRpcError.of(req.id(), JsonRpcErrorCode.INTERNAL_ERROR, "Access denied");
-        }
-        ResourceSubscription sub = resourceSubscriptions.remove(uri);
-        CloseUtil.closeQuietly(sub);
-        return new JsonRpcResponse(req.id(), JsonValue.EMPTY_JSON_OBJECT);
     }
 
     private JsonRpcMessage listTools(JsonRpcRequest req) {
@@ -730,14 +600,7 @@ public final class McpServer implements AutoCloseable {
     @Override
     public void close() throws IOException {
         lifecycle.shutdown();
-        for (ResourceSubscription sub : resourceSubscriptions.values()) {
-            CloseUtil.closeQuietly(sub);
-        }
-        resourceSubscriptions.clear();
-        if (resourceListSubscription != null) {
-            CloseUtil.closeQuietly(resourceListSubscription);
-            resourceListSubscription = null;
-        }
+        CloseUtil.closeQuietly(resourceFeature);
         if (toolListSubscription != null) {
             CloseUtil.closeQuietly(toolListSubscription);
             toolListSubscription = null;
@@ -746,7 +609,6 @@ public final class McpServer implements AutoCloseable {
             CloseUtil.closeQuietly(promptsSubscription);
             promptsSubscription = null;
         }
-        if (resources != null) resources.close();
         if (completions != null) completions.close();
         transport.close();
     }
