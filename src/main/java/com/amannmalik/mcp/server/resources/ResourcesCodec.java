@@ -11,18 +11,22 @@ public final class ResourcesCodec {
     private ResourcesCodec() {
     }
 
+    private static void addDescriptorFields(JsonObjectBuilder b, ResourceDescriptor d) {
+        if (d.title() != null) b.add("title", d.title());
+        if (d.description() != null) b.add("description", d.description());
+        if (d.mimeType() != null) b.add("mimeType", d.mimeType());
+        if (d.annotations() != Annotations.EMPTY) {
+            b.add("annotations", AnnotationsCodec.toJsonObject(d.annotations()));
+        }
+        if (d._meta() != null) b.add("_meta", d._meta());
+    }
+
     public static JsonObject toJsonObject(Resource r) {
         JsonObjectBuilder b = Json.createObjectBuilder()
                 .add("uri", r.uri())
                 .add("name", r.name());
-        if (r.title() != null) b.add("title", r.title());
-        if (r.description() != null) b.add("description", r.description());
-        if (r.mimeType() != null) b.add("mimeType", r.mimeType());
+        addDescriptorFields(b, r);
         if (r.size() != null) b.add("size", r.size());
-        if (r.annotations() != Annotations.EMPTY) {
-            b.add("annotations", AnnotationsCodec.toJsonObject(r.annotations()));
-        }
-        if (r._meta() != null) b.add("_meta", r._meta());
         return b.build();
     }
 
@@ -43,13 +47,7 @@ public final class ResourcesCodec {
         JsonObjectBuilder b = Json.createObjectBuilder()
                 .add("uriTemplate", t.uriTemplate())
                 .add("name", t.name());
-        if (t.title() != null) b.add("title", t.title());
-        if (t.description() != null) b.add("description", t.description());
-        if (t.mimeType() != null) b.add("mimeType", t.mimeType());
-        if (t.annotations() != Annotations.EMPTY) {
-            b.add("annotations", AnnotationsCodec.toJsonObject(t.annotations()));
-        }
-        if (t._meta() != null) b.add("_meta", t._meta());
+        addDescriptorFields(b, t);
         return b.build();
     }
 

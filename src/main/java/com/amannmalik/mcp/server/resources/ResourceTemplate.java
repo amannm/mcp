@@ -13,7 +13,7 @@ public record ResourceTemplate(
         String mimeType,
         Annotations annotations,
         JsonObject _meta
-) implements DisplayNameProvider {
+) implements DisplayNameProvider, ResourceDescriptor {
     public ResourceTemplate {
         uriTemplate = UriTemplateValidator.requireAbsoluteTemplate(uriTemplate);
         name = InputSanitizer.requireClean(name);

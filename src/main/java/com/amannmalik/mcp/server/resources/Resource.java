@@ -14,7 +14,7 @@ public record Resource(
         Long size,
         Annotations annotations,
         JsonObject _meta
-) implements DisplayNameProvider {
+) implements DisplayNameProvider, ResourceDescriptor {
     public Resource {
         uri = UriValidator.requireAbsolute(uri);
         name = InputSanitizer.requireClean(name);
