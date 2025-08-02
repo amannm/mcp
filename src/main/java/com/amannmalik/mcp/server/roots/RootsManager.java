@@ -12,18 +12,18 @@ import java.io.IOException;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 
-final class RootsManager {
+public final class RootsManager {
     private final ProtocolLifecycle lifecycle;
     private final RequestSender requester;
     private final List<RootsListener> listeners = new CopyOnWriteArrayList<>();
     private final List<Root> roots = new CopyOnWriteArrayList<>();
 
-    RootsManager(ProtocolLifecycle lifecycle, RequestSender requester) {
+    public RootsManager(ProtocolLifecycle lifecycle, RequestSender requester) {
         this.lifecycle = lifecycle;
         this.requester = requester;
     }
 
-    List<Root> listRoots() throws IOException {
+    public List<Root> listRoots() throws IOException {
         List<Root> fetched = fetchRoots();
         boolean changed = !roots.equals(fetched);
         roots.clear();
@@ -32,16 +32,16 @@ final class RootsManager {
         return List.copyOf(fetched);
     }
 
-    ListChangeSubscription subscribe(RootsListener listener) {
+    public ListChangeSubscription subscribe(RootsListener listener) {
         listeners.add(listener);
         return () -> listeners.remove(listener);
     }
 
-    List<Root> roots() {
+    public List<Root> roots() {
         return List.copyOf(roots);
     }
 
-    void refreshAsync() {
+    public void refreshAsync() {
         if (!lifecycle.negotiatedClientCapabilities().contains(ClientCapability.ROOTS)) return;
         Thread t = new Thread(() -> {
             try {
@@ -53,7 +53,7 @@ final class RootsManager {
         t.start();
     }
 
-    void listChangedNotification() {
+    public void listChangedNotification() {
         refreshAsync();
     }
 
