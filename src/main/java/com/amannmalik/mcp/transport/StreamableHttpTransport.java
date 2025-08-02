@@ -87,10 +87,6 @@ public final class StreamableHttpTransport implements Transport {
         this.router = new MessageRouter(requestStreams, responseQueues, generalClients, lastGeneral, this::removeRequestStream);
     }
 
-    public StreamableHttpTransport(int port, OriginValidator validator, AuthorizationManager auth) throws Exception {
-        this(port, validator, auth, null, List.of());
-    }
-
     public int port() {
         return port;
     }
