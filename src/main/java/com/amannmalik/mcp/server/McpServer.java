@@ -450,7 +450,14 @@ public final class McpServer implements AutoCloseable {
         return invalidParams(req, e.getMessage());
     }
 
-
+    private Optional<String> rateLimit(RateLimiter limiter, String key) {
+        try {
+            limiter.requireAllowance(key);
+            return Optional.empty();
+        } catch (SecurityException e) {
+            return Optional.of(e.getMessage());
+        }
+    }
 
     private void cancelled(JsonRpcNotification note) {
         CancelledNotification cn = CancellationCodec.toCancelledNotification(note.params());
@@ -626,10 +633,9 @@ public final class McpServer implements AutoCloseable {
         } catch (IllegalArgumentException e) {
             return invalidParams(req, e);
         }
-        try {
-            toolLimiter.requireAllowance(callRequest.name());
-        } catch (SecurityException e) {
-            return JsonRpcError.of(req.id(), RATE_LIMIT_CODE, e.getMessage());
+        Optional<String> limit = rateLimit(toolLimiter, callRequest.name());
+        if (limit.isPresent()) {
+            return JsonRpcError.of(req.id(), RATE_LIMIT_CODE, limit.get());
         }
         try {
             toolAccess.requireAllowed(principal, callRequest.name());
@@ -712,8 +718,8 @@ public final class McpServer implements AutoCloseable {
     }
 
     private void sendLog(LoggingMessageNotification note) throws IOException {
-        logLimiter.requireAllowance(note.logger() == null ? "" : note.logger());
-        if (note.level().ordinal() < logLevel.ordinal()) return;
+        if (rateLimit(logLimiter, note.logger() == null ? "" : note.logger()).isPresent() ||
+                note.level().ordinal() < logLevel.ordinal()) return;
         requireServerCapability(ServerCapability.LOGGING);
         send(new JsonRpcNotification(NotificationMethod.MESSAGE.method(),
                 LoggingCodec.toJsonObject(note)));
@@ -734,10 +740,9 @@ public final class McpServer implements AutoCloseable {
         }
         try {
             CompleteRequest request = CompletionCodec.toCompleteRequest(params);
-            try {
-                completionLimiter.requireAllowance(request.ref().toString());
-            } catch (SecurityException e) {
-                return JsonRpcError.of(req.id(), RATE_LIMIT_CODE, e.getMessage());
+            Optional<String> limit = rateLimit(completionLimiter, request.ref().toString());
+            if (limit.isPresent()) {
+                return JsonRpcError.of(req.id(), RATE_LIMIT_CODE, limit.get());
             }
             CompleteResult result = completions.complete(request);
             return new JsonRpcResponse(req.id(), CompletionCodec.toJsonObject(result));
