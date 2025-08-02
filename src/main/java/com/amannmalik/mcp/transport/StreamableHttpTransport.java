@@ -5,11 +5,8 @@ import com.amannmalik.mcp.config.McpConfiguration;
 import com.amannmalik.mcp.jsonrpc.*;
 import com.amannmalik.mcp.lifecycle.Protocol;
 import com.amannmalik.mcp.security.OriginValidator;
-import com.amannmalik.mcp.util.CloseUtil;
 import jakarta.json.Json;
 import jakarta.json.JsonObject;
-import jakarta.servlet.AsyncEvent;
-import jakarta.servlet.AsyncListener;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.eclipse.jetty.ee10.servlet.ServletContextHandler;
@@ -21,8 +18,8 @@ import java.io.EOFException;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.util.*;
-import java.util.concurrent.*;
-import java.util.concurrent.atomic.AtomicReference;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.LinkedBlockingQueue;
 
 public final class StreamableHttpTransport implements Transport {
     private final Server server;
@@ -38,12 +35,8 @@ public final class StreamableHttpTransport implements Transport {
             Protocol.PREVIOUS_VERSION;
     final BlockingQueue<JsonObject> incoming = new LinkedBlockingQueue<>();
     private volatile boolean closed;
-    final Set<SseClient> generalClients = ConcurrentHashMap.newKeySet();
-    final ConcurrentHashMap<String, SseClient> requestStreams = new ConcurrentHashMap<>();
-    final ConcurrentHashMap<String, SseClient> clientsByPrefix = new ConcurrentHashMap<>();
-    final AtomicReference<SseClient> lastGeneral = new AtomicReference<>();
+    final SseClients clients = new SseClients();
     final SessionManager sessions = new SessionManager(COMPATIBILITY_VERSION);
-    final ConcurrentHashMap<String, BlockingQueue<JsonObject>> responseQueues = new ConcurrentHashMap<>();
     private final MessageRouter router;
 
     private void unauthorized(HttpServletResponse resp) throws IOException {
@@ -84,7 +77,7 @@ public final class StreamableHttpTransport implements Transport {
         } else {
             this.authorizationServers = List.copyOf(authorizationServers);
         }
-        this.router = new MessageRouter(requestStreams, responseQueues, generalClients, lastGeneral, this::removeRequestStream);
+        this.router = new MessageRouter(clients.request, clients.responses, clients.general, clients.lastGeneral, clients::removeRequest);
     }
 
     public int port() {
@@ -113,7 +106,7 @@ public final class StreamableHttpTransport implements Transport {
     @Override
     public void close() throws IOException {
         terminateSession(false);
-        failPendingRequests();
+        clients.failPending();
         try {
             server.stop();
             server.join();
@@ -126,77 +119,6 @@ public final class StreamableHttpTransport implements Transport {
         }
     }
 
-    private void failPendingRequests() {
-        responseQueues.forEach((id, queue) -> {
-            RequestId reqId = RequestId.parse(id);
-            JsonRpcError err = JsonRpcError.of(
-                    reqId,
-                    JsonRpcErrorCode.INTERNAL_ERROR,
-                    "Transport closed");
-            if (!queue.offer(JsonRpcCodec.toJsonObject(err))) {
-                throw new IllegalStateException("queue full");
-            }
-        });
-        responseQueues.clear();
-    }
-
-    void removeRequestStream(String key, SseClient client) {
-        requestStreams.remove(key);
-        clientsByPrefix.remove(client.prefix);
-        CloseUtil.closeQuietly(client);
-    }
-
-    AsyncListener requestStreamListener(String key, SseClient client) {
-        return new AsyncListener() {
-            @Override
-            public void onComplete(AsyncEvent event) {
-                removeRequestStream(key, client);
-            }
-
-            @Override
-            public void onTimeout(AsyncEvent event) {
-                removeRequestStream(key, client);
-            }
-
-            @Override
-            public void onError(AsyncEvent event) {
-                removeRequestStream(key, client);
-            }
-
-            @Override
-            public void onStartAsync(AsyncEvent event) {
-            }
-        };
-    }
-
-    private void removeGeneralStream(SseClient client) {
-        generalClients.remove(client);
-        lastGeneral.set(client);
-        CloseUtil.closeQuietly(client);
-    }
-
-    AsyncListener generalStreamListener(SseClient client) {
-        return new AsyncListener() {
-            @Override
-            public void onComplete(AsyncEvent event) {
-                removeGeneralStream(client);
-            }
-
-            @Override
-            public void onTimeout(AsyncEvent event) {
-                removeGeneralStream(client);
-            }
-
-            @Override
-            public void onError(AsyncEvent event) {
-                removeGeneralStream(client);
-            }
-
-            @Override
-            public void onStartAsync(AsyncEvent event) {
-            }
-        };
-    }
 
     private static final Principal DEFAULT_PRINCIPAL = new Principal(
             McpConfiguration.current().security().auth().defaultPrincipal(), Set.of());
@@ -249,12 +171,7 @@ public final class StreamableHttpTransport implements Transport {
 
     void terminateSession(boolean recordId) {
         sessions.terminate(recordId);
-        generalClients.forEach(SseClient::close);
-        generalClients.clear();
-        lastGeneral.set(null);
-        requestStreams.forEach((id, c) -> c.close());
-        requestStreams.clear();
-        clientsByPrefix.clear();
+        clients.clear();
         closed = true;
         if (!incoming.offer(Json.createObjectBuilder().add("_close", true).build())) {
             throw new IllegalStateException("incoming queue full");
