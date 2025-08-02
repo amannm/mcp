@@ -1,8 +1,12 @@
 package com.amannmalik.mcp.cli;
 
 import jakarta.json.Json;
+import jakarta.json.JsonArray;
+import jakarta.json.JsonArrayBuilder;
 import jakarta.json.JsonObject;
 import jakarta.json.JsonReader;
+import jakarta.json.JsonString;
+import jakarta.json.JsonValue;
 import org.snakeyaml.engine.v2.api.Load;
 import org.snakeyaml.engine.v2.api.LoadSettings;
 
@@ -13,6 +17,7 @@ import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+import java.math.BigDecimal;
 
 public final class ConfigLoader {
     private ConfigLoader() {
@@ -29,12 +34,9 @@ public final class ConfigLoader {
             if (name.endsWith(".yaml") || name.endsWith(".yml")) {
                 Load loader = new Load(LoadSettings.builder().build());
                 Object data = loader.loadFromInputStream(in);
-                if (!(data instanceof Map<?, ?> raw)) throw new IllegalArgumentException("invalid yaml");
-                var map = new java.util.LinkedHashMap<String, Object>();
-                for (var e : raw.entrySet()) {
-                    map.put(e.getKey().toString(), e.getValue());
-                }
-                return parseMap(map);
+                JsonValue value = toJsonValue(data);
+                if (!(value instanceof JsonObject obj)) throw new IllegalArgumentException("invalid yaml");
+                return parseJson(obj);
             }
         }
         throw new IllegalArgumentException("Unsupported config: " + name);
@@ -43,6 +45,13 @@ public final class ConfigLoader {
     private static CliConfig parseJson(JsonObject obj) {
         String mode = obj.getString("mode");
         String transport = obj.getString("transport", "stdio");
+        List<String> authServers = switch (obj.get("authorizationServers")) {
+            case JsonArray arr -> arr.getValuesAs(JsonString.class)
+                    .stream().map(JsonString::getString).toList();
+            case JsonString s -> List.of(s.getString());
+            case null -> List.of();
+            default -> throw new IllegalArgumentException("authorizationServers must be string or array");
+        };
         return switch (mode) {
             case "server" -> new ServerConfig(
                     parseTransport(transport),
@@ -50,44 +59,19 @@ public final class ConfigLoader {
                     obj.containsKey("instructions") ? obj.getString("instructions") : null,
                     obj.containsKey("expectedAudience") ? obj.getString("expectedAudience") : null,
                     obj.containsKey("resourceMetadataUrl") ? obj.getString("resourceMetadataUrl") : null,
-                    obj.containsKey("authorizationServers")
-                            ? obj.getJsonArray("authorizationServers")
-                            .getValuesAs(jakarta.json.JsonString.class)
-                            .stream().map(jakarta.json.JsonString::getString).toList()
-                            : List.of());
+                    authServers);
             case "client" -> new ClientConfig(parseTransport(transport), obj.getString("command"));
             case "host" -> {
                 var cObj = obj.getJsonObject("clients");
                 if (cObj == null || cObj.isEmpty()) throw new IllegalArgumentException("clients required");
                 yield new HostConfig(cObj.entrySet().stream()
-                        .collect(Collectors.toMap(Map.Entry::getKey, e -> e.getValue().toString())));
-            }
-            default -> throw new IllegalArgumentException("Invalid mode: " + mode);
-        };
-    }
-
-    private static CliConfig parseMap(Map<String, ?> map) {
-        String mode = map.get("mode").toString();
-        Object tVal = map.get("transport");
-        String transport = tVal == null ? "stdio" : tVal.toString();
-        Object portVal = map.get("port");
-        Object cmdVal = map.get("command");
-        Object clientsVal = map.get("clients");
-        return switch (mode) {
-            case "server" -> new ServerConfig(
-                    parseTransport(transport),
-                    portVal == null ? 0 : ((Number) portVal).intValue(),
-                    map.get("instructions") == null ? null : map.get("instructions").toString(),
-                    map.get("expectedAudience") == null ? null : map.get("expectedAudience").toString(),
-                    map.get("resourceMetadataUrl") == null ? null : map.get("resourceMetadataUrl").toString(),
-                    parseAuthServers(map.get("authorizationServers")));
-            case "client" -> new ClientConfig(parseTransport(transport), cmdVal.toString());
-            case "host" -> {
-                if (!(clientsVal instanceof Map<?, ?> cMap) || cMap.isEmpty()) {
-                    throw new IllegalArgumentException("clients required");
-                }
-                yield new HostConfig(cMap.entrySet().stream()
-                        .collect(Collectors.toMap(e -> e.getKey().toString(), e -> e.getValue().toString())));
+                        .collect(Collectors.toMap(Map.Entry::getKey, e -> {
+                            var v = e.getValue();
+                            if (!(v instanceof JsonString s)) {
+                                throw new IllegalArgumentException("client command must be string");
+                            }
+                            return s.getString();
+                        })));
             }
             default -> throw new IllegalArgumentException("Invalid mode: " + mode);
         };
@@ -101,13 +85,29 @@ public final class ConfigLoader {
         };
     }
 
-    private static List<String> parseAuthServers(Object val) {
-        if (val == null) return List.of();
-        if (val instanceof Iterable<?> it) {
-            List<String> list = new java.util.ArrayList<>();
-            for (Object o : it) list.add(o.toString());
-            return List.copyOf(list);
-        }
-        return List.of(val.toString());
+    private static JsonValue toJsonValue(Object value) {
+        return switch (value) {
+            case Map<?, ?> m -> {
+                var b = Json.createObjectBuilder();
+                for (var e : m.entrySet()) {
+                    b.add(e.getKey().toString(), toJsonValue(e.getValue()));
+                }
+                yield b.build();
+            }
+            case List<?> l -> {
+                JsonArrayBuilder b = Json.createArrayBuilder();
+                for (var item : l) b.add(toJsonValue(item));
+                yield b.build();
+            }
+            case String s -> Json.createValue(s);
+            case Integer i -> Json.createValue(i);
+            case Long l -> Json.createValue(l);
+            case Double d -> Json.createValue(d);
+            case BigDecimal bd -> Json.createValue(bd);
+            case Number n -> Json.createValue(new BigDecimal(n.toString()));
+            case Boolean b -> b ? JsonValue.TRUE : JsonValue.FALSE;
+            case null -> JsonValue.NULL;
+            default -> Json.createValue(value.toString());
+        };
     }
 }
