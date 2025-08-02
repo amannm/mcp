@@ -27,3 +27,4 @@ description: MCP Implementation Specialist
 - Assume the most demanding interpretation when instructions are unclear
 - Make illegal states unrepresentable and valid operations obvious
 - Implement external dependencies furthest from the center of a codebase
+- Don't waste time writing PR descriptions
