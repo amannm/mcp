@@ -19,16 +19,16 @@ public final class JsonRpcRequestProcessor {
     private final ProgressManager progressManager;
     private final CancellationTracker cancellationTracker;
     private final NotificationSender sender;
-    private final IdTracker idTracker;
+    private final Optional<IdTracker> idTracker;
 
     public JsonRpcRequestProcessor(
             ProgressManager progressManager,
             CancellationTracker cancellationTracker,
             NotificationSender sender,
-            IdTracker idTracker
+            Optional<IdTracker> idTracker
     ) {
-        if (progressManager == null || cancellationTracker == null || sender == null) {
-            throw new IllegalArgumentException("manager, tracker and sender required");
+        if (progressManager == null || cancellationTracker == null || sender == null || idTracker == null) {
+            throw new IllegalArgumentException("manager, tracker, sender and idTracker required");
         }
         this.progressManager = progressManager;
         this.cancellationTracker = cancellationTracker;
@@ -41,7 +41,7 @@ public final class JsonRpcRequestProcessor {
             CancellationTracker cancellationTracker,
             NotificationSender sender
     ) {
-        this(progressManager, cancellationTracker, sender, null);
+        this(progressManager, cancellationTracker, sender, Optional.empty());
     }
 
     /**
@@ -55,12 +55,10 @@ public final class JsonRpcRequestProcessor {
             Function<JsonRpcRequest, JsonRpcMessage> handler
     ) throws IOException {
         if (req == null || handler == null) throw new IllegalArgumentException("request and handler required");
-        if (idTracker != null) {
-            try {
-                idTracker.register(req.id());
-            } catch (IllegalArgumentException e) {
-                return JsonRpcError.of(req.id(), JsonRpcErrorCode.INVALID_REQUEST, e.getMessage());
-            }
+        try {
+            idTracker.ifPresent(t -> t.register(req.id()));
+        } catch (IllegalArgumentException e) {
+            return JsonRpcError.of(req.id(), JsonRpcErrorCode.INVALID_REQUEST, e.getMessage());
         }
 
         final Optional<ProgressToken> token;
@@ -92,7 +90,7 @@ public final class JsonRpcRequestProcessor {
     private void cleanup(RequestId id) {
         progressManager.release(id);
         cancellationTracker.release(id);
-        if (idTracker != null) idTracker.release(id);
+        idTracker.ifPresent(t -> t.release(id));
     }
 
     private void sendProgress(ProgressToken token, double current) {

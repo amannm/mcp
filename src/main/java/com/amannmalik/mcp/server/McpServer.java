@@ -141,7 +141,7 @@ public final class McpServer implements AutoCloseable {
     private final CancellationTracker cancellationTracker = new CancellationTracker();
     private final IdTracker idTracker = new IdTracker();
     private final JsonRpcRequestProcessor requestProcessor =
-            new JsonRpcRequestProcessor(progressManager, cancellationTracker, this::send, idTracker);
+            new JsonRpcRequestProcessor(progressManager, cancellationTracker, this::send, Optional.of(idTracker));
     private final ResourceProvider resources;
     private final ToolProvider tools;
     private final PromptProvider prompts;
