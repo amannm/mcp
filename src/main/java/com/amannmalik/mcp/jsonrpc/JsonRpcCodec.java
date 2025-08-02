@@ -76,7 +76,7 @@ public final class JsonRpcCodec {
         if (hasError) {
             RequestId id;
             if (idValue == null || idValue.getValueType() == JsonValue.ValueType.NULL) {
-                id = new RequestId.NullId();
+                id = RequestId.NullId.INSTANCE;
             } else {
                 id = RequestIdCodec.from(idValue);
             }

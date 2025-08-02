@@ -4,6 +4,7 @@ public sealed interface RequestId permits RequestId.StringId, RequestId.NumericI
 
     static RequestId parse(String raw) {
         if (raw == null) throw new IllegalArgumentException("raw required");
+        if (raw.equals("null")) return NullId.INSTANCE;
         if (raw.startsWith("\"") && raw.endsWith("\"") && raw.length() > 1) {
             return new StringId(raw.substring(1, raw.length() - 1));
         }
@@ -28,10 +29,9 @@ public sealed interface RequestId permits RequestId.StringId, RequestId.NumericI
         }
     }
 
-    /**
-     * Represents a missing ID for error responses.
-     */
-    final class NullId implements RequestId {
+    enum NullId implements RequestId {
+        INSTANCE;
+
         @Override
         public String toString() {
             return "null";
