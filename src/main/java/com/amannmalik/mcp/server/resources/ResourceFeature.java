@@ -16,7 +16,7 @@ import jakarta.json.*;
 import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.function.Supplier;
+import static com.amannmalik.mcp.util.InvalidParams.valid;
 
 public final class ResourceFeature implements AutoCloseable {
     private final ResourceProvider resources;
@@ -202,14 +202,6 @@ public final class ResourceFeature implements AutoCloseable {
         return JsonRpcError.invalidParams(req.id(), message);
     }
 
-    private <T> T valid(Supplier<T> s) {
-        try {
-            return s.get();
-        } catch (IllegalArgumentException e) {
-            throw new InvalidParams(e.getMessage());
-        }
-    }
-
     private <S extends ListChangeSubscription> S subscribeListChanges(
             SubscriptionFactory<S> factory,
             NotificationMethod method,
@@ -230,10 +222,6 @@ public final class ResourceFeature implements AutoCloseable {
     @FunctionalInterface
     private interface SubscriptionFactory<S extends ListChangeSubscription> {
         S subscribe(ListChangeListener listener);
-    }
-
-    private static final class InvalidParams extends RuntimeException {
-        InvalidParams(String message) { super(message); }
     }
 
     @FunctionalInterface
