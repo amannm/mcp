@@ -1,4 +1,4 @@
-package com.amannmalik.mcp.server;
+package com.amannmalik.mcp.server.roots;
 
 import com.amannmalik.mcp.jsonrpc.JsonRpcMessage;
 import com.amannmalik.mcp.wire.RequestMethod;

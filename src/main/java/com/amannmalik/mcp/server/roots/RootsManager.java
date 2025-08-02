@@ -4,7 +4,6 @@ import com.amannmalik.mcp.client.roots.*;
 import com.amannmalik.mcp.jsonrpc.*;
 import com.amannmalik.mcp.lifecycle.ClientCapability;
 import com.amannmalik.mcp.lifecycle.ProtocolLifecycle;
-import com.amannmalik.mcp.server.RequestSender;
 import com.amannmalik.mcp.util.ListChangeSubscription;
 import com.amannmalik.mcp.wire.RequestMethod;
 
