@@ -38,6 +38,49 @@ public final class StreamableHttpClientTransport implements Transport {
         authorization.set(null);
     }
 
+    public void listen() throws IOException {
+        HttpRequest.Builder builder = HttpRequest.newBuilder(endpoint)
+                .header("Accept", "text/event-stream")
+                .header("Origin", "http://127.0.0.1")
+                .header(TransportHeaders.PROTOCOL_VERSION, protocolVersion.get());
+        Optional.ofNullable(authorization.get())
+                .ifPresent(t -> builder.header(TransportHeaders.AUTHORIZATION, "Bearer " + t));
+        Optional.ofNullable(sessionId.get()).ifPresent(id -> builder.header(TransportHeaders.SESSION_ID, id));
+        HttpRequest request = builder.GET().build();
+        HttpResponse<InputStream> response;
+        try {
+            response = client.send(request, HttpResponse.BodyHandlers.ofInputStream());
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new IOException(e);
+        }
+
+        sessionId.updateAndGet(old -> response.headers()
+                .firstValue(TransportHeaders.SESSION_ID)
+                .orElse(old));
+
+        protocolVersion.updateAndGet(old -> response.headers()
+                .firstValue(TransportHeaders.PROTOCOL_VERSION)
+                .orElse(old));
+
+        int status = response.statusCode();
+        String ct = response.headers().firstValue("Content-Type").orElse("");
+        if (status == 401) {
+            String header = response.headers().firstValue("WWW-Authenticate").orElse("");
+            response.body().close();
+            throw new UnauthorizedException(header);
+        }
+        if (status != 200 || !ct.startsWith("text/event-stream")) {
+            response.body().close();
+            throw new IOException("Unexpected response: " + status + " " + ct);
+        }
+        SseReader reader = new SseReader(response.body(), incoming, streams);
+        streams.add(reader);
+        Thread t = new Thread(reader);
+        t.setDaemon(true);
+        t.start();
+    }
+
     @Override
     public void send(JsonObject message) throws IOException {
         HttpRequest.Builder builder = HttpRequest.newBuilder(endpoint)
