@@ -6,10 +6,6 @@ import java.io.IOException;
 import java.util.Optional;
 import java.util.function.Function;
 
-/**
- * Handles common request lifecycle concerns like progress tracking,
- * cancellation and id management.
- */
 public final class JsonRpcRequestProcessor {
     private final ProgressManager progressManager;
     private final CancellationTracker cancellationTracker;
@@ -39,11 +35,6 @@ public final class JsonRpcRequestProcessor {
         this(progressManager, cancellationTracker, sender, null);
     }
 
-    /**
-     * Process a request using the provided handler. The handler is expected to
-     * perform the actual request logic and return a response. If the request
-     * was cancelled the result will be {@link Optional#empty()}.
-     */
     public Optional<JsonRpcMessage> process(
             JsonRpcRequest req,
             boolean cancellable,
