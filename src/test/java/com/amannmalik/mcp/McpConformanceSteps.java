@@ -5,6 +5,7 @@ import com.amannmalik.mcp.client.elicitation.*;
 import com.amannmalik.mcp.client.roots.InMemoryRootsProvider;
 import com.amannmalik.mcp.client.roots.Root;
 import com.amannmalik.mcp.client.sampling.*;
+import com.amannmalik.mcp.content.ContentBlock;
 import com.amannmalik.mcp.jsonrpc.*;
 import com.amannmalik.mcp.lifecycle.*;
 import com.amannmalik.mcp.prompts.Role;
@@ -111,13 +112,14 @@ public final class McpConformanceSteps {
         }
         BlockingElicitationProvider elicitation = new BlockingElicitationProvider();
         elicitation.respond(new ElicitResult(ElicitationAction.CANCEL, null, null));
-        SamplingProvider sampling = SamplingProviderFactory.createMock(new CreateMessageResponse(
+        CreateMessageResponse response = new CreateMessageResponse(
                 Role.ASSISTANT,
-                new com.amannmalik.mcp.content.ContentBlock.Text("ok", null, null),
+                new ContentBlock.Text("ok", null, null),
                 "mock-model",
                 "endTurn",
                 null
-        ));
+        );
+        SamplingProvider sampling = (_, _) -> response;
         InMemoryRootsProvider rootsProvider = new InMemoryRootsProvider(
                 List.of(new Root("file:///tmp", "Test Root", null))
         );

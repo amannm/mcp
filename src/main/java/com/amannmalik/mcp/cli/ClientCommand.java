@@ -3,8 +3,7 @@ package com.amannmalik.mcp.cli;
 import com.amannmalik.mcp.client.McpClient;
 import com.amannmalik.mcp.client.roots.InMemoryRootsProvider;
 import com.amannmalik.mcp.client.roots.Root;
-import com.amannmalik.mcp.client.sampling.SamplingProvider;
-import com.amannmalik.mcp.client.sampling.SamplingProviderFactory;
+import com.amannmalik.mcp.client.sampling.*;
 import com.amannmalik.mcp.config.McpConfiguration;
 import com.amannmalik.mcp.lifecycle.ClientCapability;
 import com.amannmalik.mcp.lifecycle.ClientInfo;
@@ -56,7 +55,8 @@ public final class ClientCommand implements Callable<Integer> {
         StdioTransport transport = new StdioTransport(new ProcessBuilder(cfg.command().split(" ")),
                 verbose ? System.err::println : s -> {
                 });
-        SamplingProvider samplingProvider = SamplingProviderFactory.createInteractive();
+        // TODO: pull auto approve into config
+        SamplingProvider samplingProvider = new InteractiveSamplingProvider(false);
 
         String currentDir = System.getProperty("user.dir");
         InMemoryRootsProvider rootsProvider = new InMemoryRootsProvider(
