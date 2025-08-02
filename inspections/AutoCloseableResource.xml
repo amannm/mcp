@@ -1,7 +1,7 @@
 <problems>
 <problem>
   <file>file://$PROJECT_DIR$/src/main/java/com/amannmalik/mcp/cli/ServerCommand.java</file>
-  <line>93</line>
+  <line>96</line>
   <module>mcp.main</module>
   <package>com.amannmalik.mcp.cli</package>
   <entry_point TYPE="method" FQNAME="com.amannmalik.mcp.cli.ServerCommand java.lang.Integer call()" />
@@ -14,7 +14,7 @@
 </problem>
 <problem>
   <file>file://$PROJECT_DIR$/src/main/java/com/amannmalik/mcp/client/McpClient.java</file>
-  <line>462</line>
+  <line>465</line>
   <module>mcp.main</module>
   <package>com.amannmalik.mcp.client</package>
   <entry_point TYPE="method" FQNAME="com.amannmalik.mcp.client.McpClient void fetchResourceMetadata(java.lang.String url)" />
@@ -53,7 +53,7 @@
 </problem>
 <problem>
   <file>file://$PROJECT_DIR$/src/main/java/com/amannmalik/mcp/security/HostProcess.java</file>
-  <line>85</line>
+  <line>88</line>
   <module>mcp.main</module>
   <package>com.amannmalik.mcp.security</package>
   <entry_point TYPE="method" FQNAME="com.amannmalik.mcp.security.HostProcess void register(java.lang.String id, com.amannmalik.mcp.client.McpClient client)" />
@@ -66,7 +66,7 @@
 </problem>
 <problem>
   <file>file://$PROJECT_DIR$/src/main/java/com/amannmalik/mcp/security/HostProcess.java</file>
-  <line>91</line>
+  <line>94</line>
   <module>mcp.main</module>
   <package>com.amannmalik.mcp.security</package>
   <entry_point TYPE="method" FQNAME="com.amannmalik.mcp.security.HostProcess void unregister(java.lang.String id)" />
@@ -79,7 +79,7 @@
 </problem>
 <problem>
   <file>file://$PROJECT_DIR$/src/main/java/com/amannmalik/mcp/transport/StreamableHttpTransport.java</file>
-  <line>147</line>
+  <line>148</line>
   <module>mcp.main</module>
   <package>com.amannmalik.mcp.transport</package>
   <entry_point TYPE="method" FQNAME="com.amannmalik.mcp.transport.StreamableHttpTransport void removeRequestStream(java.lang.String key, com.amannmalik.mcp.transport.SseClient client)" />
@@ -92,7 +92,7 @@
 </problem>
 <problem>
   <file>file://$PROJECT_DIR$/src/main/java/com/amannmalik/mcp/transport/StreamableHttpTransport.java</file>
-  <line>148</line>
+  <line>149</line>
   <module>mcp.main</module>
   <package>com.amannmalik.mcp.transport</package>
   <entry_point TYPE="method" FQNAME="com.amannmalik.mcp.transport.StreamableHttpTransport void removeRequestStream(java.lang.String key, com.amannmalik.mcp.transport.SseClient client)" />

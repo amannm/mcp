@@ -18,7 +18,7 @@
 </problem>
 <problem>
   <file>file://$PROJECT_DIR$/src/main/java/com/amannmalik/mcp/client/McpClient.java</file>
-  <line>609</line>
+  <line>612</line>
   <module>mcp.main</module>
   <package>com.amannmalik.mcp.client</package>
   <entry_point TYPE="method" FQNAME="com.amannmalik.mcp.client.McpClient void setProgressListener(com.amannmalik.mcp.util.ProgressListener listener)" />
@@ -239,7 +239,7 @@
 </problem>
 <problem>
   <file>file://$PROJECT_DIR$/src/main/java/com/amannmalik/mcp/transport/StreamableHttpTransport.java</file>
-  <line>26</line>
+  <line>27</line>
   <module>mcp.main</module>
   <package>com.amannmalik.mcp.transport</package>
   <entry_point TYPE="class" FQNAME="com.amannmalik.mcp.transport.StreamableHttpTransport" />
@@ -256,7 +256,7 @@
 </problem>
 <problem>
   <file>file://$PROJECT_DIR$/src/main/java/com/amannmalik/mcp/transport/StreamableHttpTransport.java</file>
-  <line>55</line>
+  <line>56</line>
   <module>mcp.main</module>
   <package>com.amannmalik.mcp.transport</package>
   <entry_point TYPE="method" FQNAME="com.amannmalik.mcp.transport.StreamableHttpTransport StreamableHttpTransport(int port, com.amannmalik.mcp.security.OriginValidator validator, com.amannmalik.mcp.auth.AuthorizationManager auth, java.lang.String resourceMetadataUrl, java.util.List&lt;java.lang.String&gt; authorizationServers)" />
@@ -273,7 +273,7 @@
 </problem>
 <problem>
   <file>file://$PROJECT_DIR$/src/main/java/com/amannmalik/mcp/transport/StreamableHttpTransport.java</file>
-  <line>89</line>
+  <line>90</line>
   <module>mcp.main</module>
   <package>com.amannmalik.mcp.transport</package>
   <entry_point TYPE="method" FQNAME="com.amannmalik.mcp.transport.StreamableHttpTransport StreamableHttpTransport(int port, com.amannmalik.mcp.security.OriginValidator validator, com.amannmalik.mcp.auth.AuthorizationManager auth)" />

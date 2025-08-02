@@ -1,7 +1,7 @@
 <problems>
 <problem>
   <file>file://$PROJECT_DIR$/src/main/java/com/amannmalik/mcp/client/McpClient.java</file>
-  <line>276</line>
+  <line>279</line>
   <module>mcp.main</module>
   <package>com.amannmalik.mcp.client</package>
   <entry_point TYPE="method" FQNAME="com.amannmalik.mcp.client.McpClient boolean connected()" />
@@ -29,7 +29,7 @@
 </problem>
 <problem>
   <file>file://$PROJECT_DIR$/src/main/java/com/amannmalik/mcp/server/McpServer.java</file>
-  <line>352</line>
+  <line>360</line>
   <module>mcp.main</module>
   <package>com.amannmalik.mcp.server</package>
   <entry_point TYPE="method" FQNAME="com.amannmalik.mcp.server.McpServer boolean canAccessResource(java.lang.String uri)" />
@@ -43,7 +43,7 @@
 </problem>
 <problem>
   <file>file://$PROJECT_DIR$/src/main/java/com/amannmalik/mcp/transport/StreamableHttpTransport.java</file>
-  <line>216</line>
+  <line>218</line>
   <module>mcp.main</module>
   <package>com.amannmalik.mcp.transport</package>
   <entry_point TYPE="method" FQNAME="com.amannmalik.mcp.transport.StreamableHttpTransport boolean verifyOrigin(jakarta.servlet.http.HttpServletRequest req, jakarta.servlet.http.HttpServletResponse resp)" />
@@ -57,7 +57,7 @@
 </problem>
 <problem>
   <file>file://$PROJECT_DIR$/src/main/java/com/amannmalik/mcp/transport/StreamableHttpTransport.java</file>
-  <line>224</line>
+  <line>226</line>
   <module>mcp.main</module>
   <package>com.amannmalik.mcp.transport</package>
   <entry_point TYPE="method" FQNAME="com.amannmalik.mcp.transport.StreamableHttpTransport boolean validateAccept(jakarta.servlet.http.HttpServletRequest req, jakarta.servlet.http.HttpServletResponse resp, boolean post)" />
@@ -71,7 +71,7 @@
 </problem>
 <problem>
   <file>file://$PROJECT_DIR$/src/main/java/com/amannmalik/mcp/transport/StreamableHttpTransport.java</file>
-  <line>245</line>
+  <line>247</line>
   <module>mcp.main</module>
   <package>com.amannmalik.mcp.transport</package>
   <entry_point TYPE="method" FQNAME="com.amannmalik.mcp.transport.StreamableHttpTransport boolean validateSession(jakarta.servlet.http.HttpServletRequest req, jakarta.servlet.http.HttpServletResponse resp, com.amannmalik.mcp.auth.Principal principal, boolean initializing)" />

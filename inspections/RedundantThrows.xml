@@ -17,7 +17,7 @@
 </problem>
 <problem>
   <file>file://$PROJECT_DIR$/src/main/java/com/amannmalik/mcp/transport/SseClient.java</file>
-  <line>62</line>
+  <line>64</line>
   <module>mcp.main</module>
   <package>com.amannmalik.mcp.transport</package>
   <entry_point TYPE="method" FQNAME="com.amannmalik.mcp.transport.SseClient void sendHistory(long lastId)" />

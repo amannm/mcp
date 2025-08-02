@@ -1,5 +1,21 @@
 <problems>
 <problem>
+  <file>file://$PROJECT_DIR$/src/main/java/com/amannmalik/mcp/config/McpConfiguration.java</file>
+  <line>47</line>
+  <module>mcp.main</module>
+  <package>com.amannmalik.mcp.config</package>
+  <entry_point TYPE="method" FQNAME="com.amannmalik.mcp.config.McpConfiguration com.amannmalik.mcp.config.McpConfiguration parse(jakarta.json.JsonObject obj, com.amannmalik.mcp.config.McpConfiguration def)" />
+  <problem_class id="SameParameterValue" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Method parameter always has the same value</problem_class>
+  <hints>
+    <hint value="def com.amannmalik.mcp.config.McpConfiguration.DEFAULT" />
+  </hints>
+  <description>Value of parameter &lt;code&gt;def&lt;/code&gt; is always 'McpConfiguration.DEFAULT'</description>
+  <highlighted_element>def</highlighted_element>
+  <language>JAVA</language>
+  <offset>75</offset>
+  <length>3</length>
+</problem>
+<problem>
   <file>file://$PROJECT_DIR$/src/main/java/com/amannmalik/mcp/lifecycle/ProtocolLifecycle.java</file>
   <line>80</line>
   <module>mcp.main</module>
@@ -17,7 +33,7 @@
 </problem>
 <problem>
   <file>file://$PROJECT_DIR$/src/main/java/com/amannmalik/mcp/server/McpServer.java</file>
-  <line>675</line>
+  <line>683</line>
   <module>mcp.main</module>
   <package>com.amannmalik.mcp.server</package>
   <entry_point TYPE="method" FQNAME="com.amannmalik.mcp.server.McpServer com.amannmalik.mcp.jsonrpc.JsonRpcMessage sendRequest(java.lang.String method, jakarta.json.JsonObject params, long timeoutMillis)" />
@@ -49,7 +65,7 @@
 </problem>
 <problem>
   <file>file://$PROJECT_DIR$/src/main/java/com/amannmalik/mcp/transport/McpServlet.java</file>
-  <line>116</line>
+  <line>117</line>
   <module>mcp.main</module>
   <package>com.amannmalik.mcp.transport</package>
   <entry_point TYPE="method" FQNAME="com.amannmalik.mcp.transport.McpServlet java.util.Optional&lt;com.amannmalik.mcp.auth.Principal&gt; authorize(jakarta.servlet.http.HttpServletRequest req, jakarta.servlet.http.HttpServletResponse resp, boolean requireAccept, boolean post)" />

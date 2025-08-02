@@ -35,7 +35,7 @@
 </problem>
 <problem>
   <file>file://$PROJECT_DIR$/src/main/java/com/amannmalik/mcp/cli/ClientCommand.java</file>
-  <line>23</line>
+  <line>24</line>
   <module>mcp.main</module>
   <package>com.amannmalik.mcp.cli</package>
   <entry_point TYPE="field" FQNAME="com.amannmalik.mcp.cli.ClientCommand config" />
@@ -52,7 +52,7 @@
 </problem>
 <problem>
   <file>file://$PROJECT_DIR$/src/main/java/com/amannmalik/mcp/cli/ClientCommand.java</file>
-  <line>28</line>
+  <line>29</line>
   <module>mcp.main</module>
   <package>com.amannmalik.mcp.cli</package>
   <entry_point TYPE="field" FQNAME="com.amannmalik.mcp.cli.ClientCommand command" />
@@ -69,7 +69,7 @@
 </problem>
 <problem>
   <file>file://$PROJECT_DIR$/src/main/java/com/amannmalik/mcp/cli/HostCommand.java</file>
-  <line>23</line>
+  <line>24</line>
   <module>mcp.main</module>
   <package>com.amannmalik.mcp.cli</package>
   <entry_point TYPE="field" FQNAME="com.amannmalik.mcp.cli.HostCommand config" />
@@ -86,7 +86,7 @@
 </problem>
 <problem>
   <file>file://$PROJECT_DIR$/src/main/java/com/amannmalik/mcp/cli/HostCommand.java</file>
-  <line>34</line>
+  <line>35</line>
   <module>mcp.main</module>
   <package>com.amannmalik.mcp.cli</package>
   <entry_point TYPE="field" FQNAME="com.amannmalik.mcp.cli.HostCommand interactive" />
@@ -103,7 +103,7 @@
 </problem>
 <problem>
   <file>file://$PROJECT_DIR$/src/main/java/com/amannmalik/mcp/cli/ServerCommand.java</file>
-  <line>19</line>
+  <line>20</line>
   <module>mcp.main</module>
   <package>com.amannmalik.mcp.cli</package>
   <entry_point TYPE="field" FQNAME="com.amannmalik.mcp.cli.ServerCommand config" />
@@ -120,7 +120,7 @@
 </problem>
 <problem>
   <file>file://$PROJECT_DIR$/src/main/java/com/amannmalik/mcp/cli/ServerCommand.java</file>
-  <line>24</line>
+  <line>25</line>
   <module>mcp.main</module>
   <package>com.amannmalik.mcp.cli</package>
   <entry_point TYPE="field" FQNAME="com.amannmalik.mcp.cli.ServerCommand httpPort" />
@@ -137,7 +137,7 @@
 </problem>
 <problem>
   <file>file://$PROJECT_DIR$/src/main/java/com/amannmalik/mcp/cli/ServerCommand.java</file>
-  <line>27</line>
+  <line>28</line>
   <module>mcp.main</module>
   <package>com.amannmalik.mcp.cli</package>
   <entry_point TYPE="field" FQNAME="com.amannmalik.mcp.cli.ServerCommand stdio" />
@@ -154,7 +154,7 @@
 </problem>
 <problem>
   <file>file://$PROJECT_DIR$/src/main/java/com/amannmalik/mcp/cli/ServerCommand.java</file>
-  <line>30</line>
+  <line>31</line>
   <module>mcp.main</module>
   <package>com.amannmalik.mcp.cli</package>
   <entry_point TYPE="field" FQNAME="com.amannmalik.mcp.cli.ServerCommand instructionsFile" />
@@ -171,7 +171,7 @@
 </problem>
 <problem>
   <file>file://$PROJECT_DIR$/src/main/java/com/amannmalik/mcp/cli/ServerCommand.java</file>
-  <line>36</line>
+  <line>37</line>
   <module>mcp.main</module>
   <package>com.amannmalik.mcp.cli</package>
   <entry_point TYPE="field" FQNAME="com.amannmalik.mcp.cli.ServerCommand expectedAudience" />
@@ -188,7 +188,7 @@
 </problem>
 <problem>
   <file>file://$PROJECT_DIR$/src/main/java/com/amannmalik/mcp/cli/ServerCommand.java</file>
-  <line>39</line>
+  <line>40</line>
   <module>mcp.main</module>
   <package>com.amannmalik.mcp.cli</package>
   <entry_point TYPE="field" FQNAME="com.amannmalik.mcp.cli.ServerCommand resourceMetadataUrl" />
@@ -205,7 +205,7 @@
 </problem>
 <problem>
   <file>file://$PROJECT_DIR$/src/main/java/com/amannmalik/mcp/cli/ServerCommand.java</file>
-  <line>42</line>
+  <line>43</line>
   <module>mcp.main</module>
   <package>com.amannmalik.mcp.cli</package>
   <entry_point TYPE="field" FQNAME="com.amannmalik.mcp.cli.ServerCommand authServers" />
@@ -222,7 +222,7 @@
 </problem>
 <problem>
   <file>file://$PROJECT_DIR$/src/main/java/com/amannmalik/mcp/cli/ServerCommand.java</file>
-  <line>45</line>
+  <line>46</line>
   <module>mcp.main</module>
   <package>com.amannmalik.mcp.cli</package>
   <entry_point TYPE="field" FQNAME="com.amannmalik.mcp.cli.ServerCommand testMode" />
@@ -239,7 +239,7 @@
 </problem>
 <problem>
   <file>file://$PROJECT_DIR$/src/main/java/com/amannmalik/mcp/client/McpClient.java</file>
-  <line>312</line>
+  <line>315</line>
   <module>mcp.main</module>
   <package>com.amannmalik.mcp.client</package>
   <entry_point TYPE="method" FQNAME="com.amannmalik.mcp.client.McpClient void setAccessToken(java.lang.String token)" />
@@ -256,7 +256,7 @@
 </problem>
 <problem>
   <file>file://$PROJECT_DIR$/src/main/java/com/amannmalik/mcp/client/McpClient.java</file>
-  <line>322</line>
+  <line>325</line>
   <module>mcp.main</module>
   <package>com.amannmalik.mcp.client</package>
   <entry_point TYPE="method" FQNAME="com.amannmalik.mcp.client.McpClient void clearAccessToken()" />
@@ -273,7 +273,7 @@
 </problem>
 <problem>
   <file>file://$PROJECT_DIR$/src/main/java/com/amannmalik/mcp/client/McpClient.java</file>
-  <line>401</line>
+  <line>404</line>
   <module>mcp.main</module>
   <package>com.amannmalik.mcp.client</package>
   <entry_point TYPE="method" FQNAME="com.amannmalik.mcp.client.McpClient boolean resourcesSubscribeSupported()" />
@@ -290,7 +290,7 @@
 </problem>
 <problem>
   <file>file://$PROJECT_DIR$/src/main/java/com/amannmalik/mcp/client/McpClient.java</file>
-  <line>405</line>
+  <line>408</line>
   <module>mcp.main</module>
   <package>com.amannmalik.mcp.client</package>
   <entry_point TYPE="method" FQNAME="com.amannmalik.mcp.client.McpClient boolean resourcesListChangedSupported()" />
@@ -307,7 +307,7 @@
 </problem>
 <problem>
   <file>file://$PROJECT_DIR$/src/main/java/com/amannmalik/mcp/client/McpClient.java</file>
-  <line>409</line>
+  <line>412</line>
   <module>mcp.main</module>
   <package>com.amannmalik.mcp.client</package>
   <entry_point TYPE="method" FQNAME="com.amannmalik.mcp.client.McpClient boolean toolsListChangedSupported()" />
@@ -324,7 +324,7 @@
 </problem>
 <problem>
   <file>file://$PROJECT_DIR$/src/main/java/com/amannmalik/mcp/client/McpClient.java</file>
-  <line>413</line>
+  <line>416</line>
   <module>mcp.main</module>
   <package>com.amannmalik.mcp.client</package>
   <entry_point TYPE="method" FQNAME="com.amannmalik.mcp.client.McpClient boolean promptsListChangedSupported()" />
@@ -341,7 +341,7 @@
 </problem>
 <problem>
   <file>file://$PROJECT_DIR$/src/main/java/com/amannmalik/mcp/client/McpClient.java</file>
-  <line>417</line>
+  <line>420</line>
   <module>mcp.main</module>
   <package>com.amannmalik.mcp.client</package>
   <entry_point TYPE="method" FQNAME="com.amannmalik.mcp.client.McpClient java.util.Optional&lt;com.amannmalik.mcp.transport.ResourceMetadata&gt; resourceMetadata()" />
@@ -358,7 +358,7 @@
 </problem>
 <problem>
   <file>file://$PROJECT_DIR$/src/main/java/com/amannmalik/mcp/client/McpClient.java</file>
-  <line>421</line>
+  <line>424</line>
   <module>mcp.main</module>
   <package>com.amannmalik.mcp.client</package>
   <entry_point TYPE="method" FQNAME="com.amannmalik.mcp.client.McpClient com.amannmalik.mcp.server.resources.ResourceSubscription subscribeResource(java.lang.String uri, com.amannmalik.mcp.server.resources.ResourceListener listener)" />
@@ -375,7 +375,7 @@
 </problem>
 <problem>
   <file>file://$PROJECT_DIR$/src/main/java/com/amannmalik/mcp/client/McpClient.java</file>
-  <line>619</line>
+  <line>622</line>
   <module>mcp.main</module>
   <package>com.amannmalik.mcp.client</package>
   <entry_point TYPE="method" FQNAME="com.amannmalik.mcp.client.McpClient void setResourceListListener(com.amannmalik.mcp.server.resources.ResourceListListener listener)" />
@@ -392,7 +392,7 @@
 </problem>
 <problem>
   <file>file://$PROJECT_DIR$/src/main/java/com/amannmalik/mcp/client/McpClient.java</file>
-  <line>624</line>
+  <line>627</line>
   <module>mcp.main</module>
   <package>com.amannmalik.mcp.client</package>
   <entry_point TYPE="method" FQNAME="com.amannmalik.mcp.client.McpClient void setToolListListener(com.amannmalik.mcp.server.tools.ToolListListener listener)" />
@@ -409,7 +409,7 @@
 </problem>
 <problem>
   <file>file://$PROJECT_DIR$/src/main/java/com/amannmalik/mcp/client/McpClient.java</file>
-  <line>629</line>
+  <line>632</line>
   <module>mcp.main</module>
   <package>com.amannmalik.mcp.client</package>
   <entry_point TYPE="method" FQNAME="com.amannmalik.mcp.client.McpClient void setPromptsListener(com.amannmalik.mcp.prompts.PromptsListener listener)" />
@@ -749,7 +749,7 @@
 </problem>
 <problem>
   <file>file://$PROJECT_DIR$/src/main/java/com/amannmalik/mcp/server/McpServer.java</file>
-  <line>702</line>
+  <line>710</line>
   <module>mcp.main</module>
   <package>com.amannmalik.mcp.server</package>
   <entry_point TYPE="method" FQNAME="com.amannmalik.mcp.server.McpServer java.util.List&lt;com.amannmalik.mcp.client.roots.Root&gt; listRoots()" />
@@ -766,7 +766,7 @@
 </problem>
 <problem>
   <file>file://$PROJECT_DIR$/src/main/java/com/amannmalik/mcp/server/McpServer.java</file>
-  <line>706</line>
+  <line>714</line>
   <module>mcp.main</module>
   <package>com.amannmalik.mcp.server</package>
   <entry_point TYPE="method" FQNAME="com.amannmalik.mcp.server.McpServer com.amannmalik.mcp.util.ListChangeSubscription subscribeRoots(com.amannmalik.mcp.client.roots.RootsListener listener)" />
@@ -783,7 +783,7 @@
 </problem>
 <problem>
   <file>file://$PROJECT_DIR$/src/main/java/com/amannmalik/mcp/server/McpServer.java</file>
-  <line>710</line>
+  <line>718</line>
   <module>mcp.main</module>
   <package>com.amannmalik.mcp.server</package>
   <entry_point TYPE="method" FQNAME="com.amannmalik.mcp.server.McpServer java.util.List&lt;com.amannmalik.mcp.client.roots.Root&gt; roots()" />

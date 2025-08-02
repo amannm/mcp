@@ -1,7 +1,7 @@
 <problems>
 <problem>
   <file>file://$PROJECT_DIR$/src/main/java/com/amannmalik/mcp/server/McpServer.java</file>
-  <line>40</line>
+  <line>42</line>
   <module>mcp.main</module>
   <package>com.amannmalik.mcp.server</package>
   <entry_point TYPE="field" FQNAME="com.amannmalik.mcp.server.McpServer idTracker" />

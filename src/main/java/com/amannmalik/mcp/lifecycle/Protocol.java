@@ -1,9 +1,5 @@
 package com.amannmalik.mcp.lifecycle;
 
-/**
- * Constants for protocol version negotiation.
- */
-
 import com.amannmalik.mcp.config.McpConfiguration;
 
 public final class Protocol {
