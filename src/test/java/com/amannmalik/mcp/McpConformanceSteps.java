@@ -90,7 +90,7 @@ public final class McpConformanceSteps {
             String parameter = row.get("parameter");
             String expected = row.get("expected_result");
             JsonRpcMessage response = executeOperation(operation, parameter);
-            verifyResult(operation, response, expected);
+            verifyResult(operation, response, expected, parameter);
         }
     }
 
@@ -227,6 +227,7 @@ public final class McpConformanceSteps {
             case "list_resources" -> client.request("resources/list",
                     Json.createObjectBuilder().add("_meta",
                             Json.createObjectBuilder().add("progressToken", "tok")).build());
+            case "resource_metadata" -> client.request("resources/list", Json.createObjectBuilder().build());
             case "read_resource" -> client.request("resources/read",
                     Json.createObjectBuilder().add("uri", parameter).build());
             case "list_templates" -> client.request("resources/templates/list", Json.createObjectBuilder().build());
@@ -268,7 +269,7 @@ public final class McpConformanceSteps {
         };
     }
 
-    private void verifyResult(String operation, JsonRpcMessage response, String expected) {
+    private void verifyResult(String operation, JsonRpcMessage response, String expected, String parameter) {
         assertInstanceOf(JsonRpcResponse.class, response);
         var result = ((JsonRpcResponse) response).result();
 
@@ -277,6 +278,11 @@ public final class McpConformanceSteps {
                 var resources = result.getJsonArray("resources");
                 assertEquals(1, resources.size());
                 assertEquals(expected, resources.getJsonObject(0).getString("uri"));
+            }
+            case "resource_metadata" -> {
+                var resource = result.getJsonArray("resources").getJsonObject(0);
+                assertEquals(parameter, resource.getString("name"));
+                assertEquals(expected, resource.getString("mimeType"));
             }
             case "read_resource" -> {
                 var content = result.getJsonArray("contents").getJsonObject(0);
@@ -331,7 +337,7 @@ public final class McpConformanceSteps {
                 var values = result.getJsonObject("completion").getJsonArray("values");
                 assertEquals(expected, values.getJsonString(0).getString());
             }
-            case "set_log_level", "subscribe_resource", "unsubscribe_resource" -> assertTrue(true); // Success if no exception
+            case "set_log_level", "subscribe_resource", "unsubscribe_resource" -> assertTrue(true);
         }
     }
 }
