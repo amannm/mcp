@@ -43,6 +43,7 @@ public final class StreamableHttpTransport implements Transport {
     final AtomicReference<SseClient> lastGeneral = new AtomicReference<>();
     final SessionManager sessions = new SessionManager(COMPATIBILITY_VERSION);
     final ConcurrentHashMap<String, BlockingQueue<JsonObject>> responseQueues = new ConcurrentHashMap<>();
+    private final MessageRouter router;
 
     private void unauthorized(HttpServletResponse resp) throws IOException {
         if (resourceMetadataUrl != null) {
@@ -82,6 +83,7 @@ public final class StreamableHttpTransport implements Transport {
         } else {
             this.authorizationServers = List.copyOf(authorizationServers);
         }
+        this.router = new MessageRouter(requestStreams, responseQueues, generalClients, lastGeneral, this::removeRequestStream);
     }
 
     public StreamableHttpTransport(int port, OriginValidator validator, AuthorizationManager auth) throws Exception {
@@ -94,48 +96,7 @@ public final class StreamableHttpTransport implements Transport {
 
     @Override
     public void send(JsonObject message) {
-        String id = message.containsKey("id") ? message.get("id").toString() : null;
-        String method = message.getString("method", null);
-        if (id != null) {
-            if (sendToRequestStream(id, method, message)) return;
-            if (sendToResponseQueue(id, message)) return;
-            if (method == null) return;
-        }
-        if (!sendToActiveClient(message)) {
-            sendToPending(message);
-        }
-    }
-
-    private boolean sendToRequestStream(String id, String method, JsonObject message) {
-        SseClient stream = requestStreams.get(id);
-        if (stream == null) return false;
-        stream.send(message);
-        if (method == null) removeRequestStream(id, stream);
-        return true;
-    }
-
-    private boolean sendToResponseQueue(String id, JsonObject message) {
-        var q = responseQueues.remove(id);
-        if (q == null) return false;
-        q.add(message);
-        return true;
-    }
-
-    private boolean sendToActiveClient(JsonObject message) {
-        for (SseClient c : generalClients) {
-            if (c.isActive()) {
-                c.send(message);
-                return true;
-            }
-        }
-        return false;
-    }
-
-    private void sendToPending(JsonObject message) {
-        SseClient pending = lastGeneral.get();
-        if (pending != null) {
-            pending.send(message);
-        }
+        router.route(message);
     }
 
     @Override
