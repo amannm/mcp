@@ -569,25 +569,29 @@ public final class McpServer implements AutoCloseable {
             ToolResult result = tools.call(callRequest.name(), callRequest.arguments());
             return new JsonRpcResponse(req.id(), ToolCodec.toJsonObject(result));
         } catch (IllegalArgumentException e) {
-            Optional<Tool> tool = tools.find(callRequest.name());
-            if (tool.isPresent() && lifecycle.negotiatedClientCapabilities().contains(ClientCapability.ELICITATION)) {
-                try {
-                    ElicitRequest er = new ElicitRequest(
-                            "Provide arguments for tool '" + tool.get().name() + "'",
-                            tool.get().inputSchema(),
-                            null);
-                    ElicitResult res = elicit(er);
-                    if (res.action() == ElicitationAction.ACCEPT) {
-                        ToolResult result = tools.call(callRequest.name(), res.content());
-                        return new JsonRpcResponse(req.id(), ToolCodec.toJsonObject(result));
-                    }
-                    return invalidParams(req, "Tool invocation cancelled");
-                } catch (Exception ex) {
-                    return JsonRpcError.of(req.id(), JsonRpcErrorCode.INTERNAL_ERROR, ex.getMessage());
-                }
-            }
-            return invalidParams(req, e);
+            return handleToolCallFailure(req, callRequest, e);
         }
+    }
+
+    private JsonRpcMessage handleToolCallFailure(JsonRpcRequest req, CallToolRequest callRequest, IllegalArgumentException e) {
+        Optional<Tool> tool = tools.find(callRequest.name());
+        if (tool.isPresent() && lifecycle.negotiatedClientCapabilities().contains(ClientCapability.ELICITATION)) {
+            try {
+                ElicitRequest er = new ElicitRequest(
+                        "Provide arguments for tool '" + tool.get().name() + "'",
+                        tool.get().inputSchema(),
+                        null);
+                ElicitResult res = elicit(er);
+                if (res.action() == ElicitationAction.ACCEPT) {
+                    ToolResult result = tools.call(callRequest.name(), res.content());
+                    return new JsonRpcResponse(req.id(), ToolCodec.toJsonObject(result));
+                }
+                return invalidParams(req, "Tool invocation cancelled");
+            } catch (Exception ex) {
+                return JsonRpcError.of(req.id(), JsonRpcErrorCode.INTERNAL_ERROR, ex.getMessage());
+            }
+        }
+        return invalidParams(req, e);
     }
 
     private JsonRpcMessage listPrompts(JsonRpcRequest req) {
