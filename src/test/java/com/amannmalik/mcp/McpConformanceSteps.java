@@ -18,7 +18,6 @@ import io.cucumber.java.After;
 import io.cucumber.java.Before;
 import io.cucumber.java.en.*;
 import jakarta.json.Json;
-import jakarta.json.JsonObject;
 
 import java.io.File;
 import java.net.URI;
@@ -29,7 +28,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 public final class McpConformanceSteps {
     private static final String JAVA_BIN = System.getProperty("java.home") + File.separator + "bin" + File.separator + "java";
-    
+
     private Process serverProcess;
     private StreamableHttpTransport serverTransport;
     private CompletableFuture<Void> serverTask;
@@ -38,9 +37,16 @@ public final class McpConformanceSteps {
 
     @Before
     public void setup() throws Exception {
+        setupTestConfiguration();
         String transport = getTransportType();
         client = createClient(createTransport(transport));
         client.connect();
+    }
+
+    private void setupTestConfiguration() {
+        // For HTTP transport, we need to load test config in the current process
+        String testConfigPath = getClass().getResource("/mcp-test-config.yaml").getPath();
+        System.setProperty("test.config.path", testConfigPath);
     }
 
     @After
@@ -64,8 +70,8 @@ public final class McpConformanceSteps {
     @Then("capabilities should be advertised and ping succeeds")
     public void verifyCapabilitiesAndPing() {
         var expected = EnumSet.of(
-                ServerCapability.RESOURCES, ServerCapability.TOOLS, 
-                ServerCapability.PROMPTS, ServerCapability.LOGGING, 
+                ServerCapability.RESOURCES, ServerCapability.TOOLS,
+                ServerCapability.PROMPTS, ServerCapability.LOGGING,
                 ServerCapability.COMPLETIONS
         );
         assertEquals(expected, client.serverCapabilities());
@@ -129,7 +135,7 @@ public final class McpConformanceSteps {
     }
 
     private Transport createHttpTransport() throws Exception {
-        serverTransport = new StreamableHttpTransport(0, 
+        serverTransport = new StreamableHttpTransport(0,
                 new OriginValidator(Set.of("http://localhost", "http://127.0.0.1")), null);
         serverTask = CompletableFuture.runAsync(() -> {
             try (var server = new McpServer(serverTransport, null)) {
@@ -144,16 +150,36 @@ public final class McpConformanceSteps {
     private Transport createStdioTransport() throws Exception {
         var args = new ArrayList<String>();
         args.add(JAVA_BIN);
-        String jacocoAgent = getJacocoAgent();
-        if (jacocoAgent != null) args.add(jacocoAgent);
         args.addAll(List.of("-cp", System.getProperty("java.class.path"),
                 "com.amannmalik.mcp.Main", "server", "--stdio", "--test-mode", "-v"));
 
-        serverProcess = new ProcessBuilder(args).start();
+        ProcessBuilder pb = new ProcessBuilder(args);
+        pb.redirectErrorStream(false);
+        serverProcess = pb.start();
+
+        Thread errorReader = new Thread(() -> {
+            try (var reader = new java.io.BufferedReader(new java.io.InputStreamReader(serverProcess.getErrorStream()))) {
+                String line;
+                while ((line = reader.readLine()) != null) {
+                    System.err.println("Server error: " + line);
+                    fail(line);
+                }
+            } catch (Exception e) {
+                System.err.println("Error reading server stderr: " + e.getMessage());
+                fail(e.getMessage());
+            }
+        });
+        errorReader.setDaemon(true);
+        errorReader.start();
+        
         long end = System.currentTimeMillis() + 10_000;
         while (System.currentTimeMillis() < end) {
             if (serverProcess.isAlive()) break;
             Thread.sleep(50);
+        }
+        
+        if (!serverProcess.isAlive()) {
+            System.err.println("Server process exit code: " + serverProcess.exitValue());
         }
         assertTrue(serverProcess.isAlive(), "server failed to start");
 
@@ -163,48 +189,48 @@ public final class McpConformanceSteps {
     private McpClient createClient(Transport transport) {
         BlockingElicitationProvider elicitation = new BlockingElicitationProvider();
         elicitation.respond(new ElicitResult(ElicitationAction.CANCEL, null, null));
-        
+
         SamplingProvider sampling = (_, _) -> new CreateMessageResponse(
-                Role.ASSISTANT, new ContentBlock.Text("ok", null, null), 
+                Role.ASSISTANT, new ContentBlock.Text("ok", null, null),
                 "mock-model", "endTurn", null);
-        
+
         InMemoryRootsProvider rootsProvider = new InMemoryRootsProvider(
                 List.of(new Root("file:///tmp", "Test Root", null)));
 
         return new McpClient(
                 new ClientInfo("test-client", "Test Client", "1.0"),
-                EnumSet.allOf(ClientCapability.class), transport, 
+                EnumSet.allOf(ClientCapability.class), transport,
                 sampling, rootsProvider, elicitation);
     }
 
     private JsonRpcMessage executeOperation(String operation, String parameter) throws Exception {
         return switch (operation) {
-            case "list_resources" -> client.request("resources/list", 
-                    Json.createObjectBuilder().add("_meta", 
+            case "list_resources" -> client.request("resources/list",
+                    Json.createObjectBuilder().add("_meta",
                             Json.createObjectBuilder().add("progressToken", "tok")).build());
-            case "read_resource" -> client.request("resources/read", 
+            case "read_resource" -> client.request("resources/read",
                     Json.createObjectBuilder().add("uri", parameter).build());
             case "list_templates" -> client.request("resources/templates/list", Json.createObjectBuilder().build());
             case "list_tools" -> client.request("tools/list", Json.createObjectBuilder().build());
-            case "call_tool" -> client.request("tools/call", 
+            case "call_tool" -> client.request("tools/call",
                     Json.createObjectBuilder().add("name", parameter).build());
             case "list_prompts" -> client.request("prompts/list", Json.createObjectBuilder().build());
-            case "get_prompt" -> client.request("prompts/get", 
+            case "get_prompt" -> client.request("prompts/get",
                     Json.createObjectBuilder().add("name", parameter)
                             .add("arguments", Json.createObjectBuilder().add("test_arg", "v")).build());
-            case "request_completion" -> client.request("completion/complete", 
+            case "request_completion" -> client.request("completion/complete",
                     Json.createObjectBuilder()
                             .add("ref", Json.createObjectBuilder().add("type", "ref/prompt").add("name", "test_prompt"))
                             .add("argument", Json.createObjectBuilder().add("name", "test_arg").add("value", "")).build());
-            case "set_log_level" -> client.request("logging/setLevel", 
+            case "set_log_level" -> client.request("logging/setLevel",
                     Json.createObjectBuilder().add("level", parameter).build());
-            case "subscribe_resource" -> client.request("resources/subscribe", 
+            case "subscribe_resource" -> client.request("resources/subscribe",
                     Json.createObjectBuilder().add("uri", parameter).build());
-            case "unsubscribe_resource" -> client.request("resources/unsubscribe", 
+            case "unsubscribe_resource" -> client.request("resources/unsubscribe",
                     Json.createObjectBuilder().add("uri", parameter).build());
-            case "read_invalid_uri" -> client.request("resources/read", 
+            case "read_invalid_uri" -> client.request("resources/read",
                     Json.createObjectBuilder().add("uri", parameter).build());
-            case "call_unknown_tool" -> client.request("tools/call", 
+            case "call_unknown_tool" -> client.request("tools/call",
                     Json.createObjectBuilder().add("name", parameter).build());
             default -> throw new IllegalArgumentException("Unknown operation: " + operation);
         };
@@ -213,7 +239,7 @@ public final class McpConformanceSteps {
     private void verifyResult(String operation, JsonRpcMessage response, String expected) {
         assertInstanceOf(JsonRpcResponse.class, response);
         var result = ((JsonRpcResponse) response).result();
-        
+
         switch (operation) {
             case "list_resources" -> {
                 var resources = result.getJsonArray("resources");
@@ -251,18 +277,5 @@ public final class McpConformanceSteps {
             }
             case "set_log_level", "subscribe_resource", "unsubscribe_resource" -> assertTrue(true); // Success if no exception
         }
-    }
-
-    private static String getJacocoAgent() {
-        String agentJar = System.getProperty("jacoco.agent.jar");
-        String execFile = System.getProperty("jacoco.exec.file");
-        if (agentJar != null && execFile != null) {
-            File execFileObj = new File(execFile);
-            File jacocoDir = execFileObj.getParentFile();
-            jacocoDir.mkdirs();
-            String serverExecFile = new File(jacocoDir, "server-" + System.currentTimeMillis() + ".exec").getAbsolutePath();
-            return "-javaagent:" + agentJar + "=destfile=" + serverExecFile + ",append=true";
-        }
-        return null;
     }
 }

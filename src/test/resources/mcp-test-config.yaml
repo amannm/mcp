@@ -1,0 +1,49 @@
+system:
+  protocol:
+    version: "2025-06-18"
+    compatibility_version: "2025-03-26"
+  timeouts:
+    default_ms: 5000
+    ping_ms: 1000
+    process_wait_seconds: 5
+
+performance:
+  rate_limits:
+    tools_per_second: 100
+    completions_per_second: 100
+    logs_per_second: 100
+    progress_per_second: 100
+  pagination:
+    default_page_size: 10
+    max_completion_values: 10
+    sse_history_limit: 10
+    response_queue_capacity: 10
+
+server:
+  info:
+    name: "mcp-java-test"
+    description: "MCP Java Test Server"
+    version: "0.1.0-test"
+  transport:
+    type: "stdio"
+    port: 0
+    allowed_origins:
+      - "http://localhost"
+      - "http://127.0.0.1"
+
+security:
+  auth:
+    jwt_secret_env: "MCP_TEST_JWT_SECRET"
+    default_principal: "test-user"
+
+client:
+  info:
+    name: "test-cli"
+    display_name: "Test CLI"
+    version: "0.1.0-test"
+  capabilities:
+    - "SAMPLING"
+    - "ROOTS"
+
+host:
+  principal: "test-user"
