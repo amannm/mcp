@@ -9,6 +9,13 @@ import java.net.URI;
 import java.net.http.*;
 import java.util.List;
 import java.util.Optional;
+import java.time.Duration;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 public final class InteractiveSamplingProvider implements SamplingProvider {
 
@@ -27,7 +34,7 @@ public final class InteractiveSamplingProvider implements SamplingProvider {
     @Override
     public CreateMessageResponse createMessage(CreateMessageRequest request, long timeoutMillis) throws InterruptedException {
         if (autoApprove) {
-            return generateResponse(request);
+            return generateResponse(request, timeoutMillis);
         }
 
         try {
@@ -62,7 +69,7 @@ public final class InteractiveSamplingProvider implements SamplingProvider {
             }
 
             System.err.print("\nApprove this sampling request? [y/N/edit]: ");
-            String response = reader.readLine();
+            String response = readLine(timeoutMillis);
 
             if (response == null || response.trim().isEmpty() || response.toLowerCase().startsWith("n")) {
                 throw new InterruptedException("User rejected sampling request");
@@ -73,7 +80,7 @@ public final class InteractiveSamplingProvider implements SamplingProvider {
             }
 
             System.err.println("Generating response...");
-            CreateMessageResponse result = generateResponse(request);
+            CreateMessageResponse result = generateResponse(request, timeoutMillis);
 
             System.err.println("\n=== Generated Response ===");
             System.err.println("Role: " + result.role());
@@ -82,7 +89,7 @@ public final class InteractiveSamplingProvider implements SamplingProvider {
             System.err.println("Stop reason: " + (result.stopReason() != null ? result.stopReason() : "(unknown)"));
 
             System.err.print("\nApprove this response? [Y/n]: ");
-            String approveResponse = reader.readLine();
+            String approveResponse = readLine(timeoutMillis);
 
             if (approveResponse != null && approveResponse.toLowerCase().startsWith("n")) {
                 throw new InterruptedException("User rejected response");
@@ -105,9 +112,9 @@ public final class InteractiveSamplingProvider implements SamplingProvider {
         };
     }
 
-    private CreateMessageResponse generateResponse(CreateMessageRequest request) throws InterruptedException {
+    private CreateMessageResponse generateResponse(CreateMessageRequest request, long timeoutMillis) throws InterruptedException {
         try {
-            var ai = openAiResponse(request);
+            var ai = openAiResponse(request, timeoutMillis);
             if (ai.isPresent()) {
                 return new CreateMessageResponse(
                         Role.ASSISTANT,
@@ -134,11 +141,13 @@ public final class InteractiveSamplingProvider implements SamplingProvider {
     private record AiResult(String content, String model) {
     }
 
-    private Optional<AiResult> openAiResponse(CreateMessageRequest request) throws IOException, InterruptedException {
+    private Optional<AiResult> openAiResponse(CreateMessageRequest request, long timeoutMillis) throws IOException, InterruptedException {
         String apiKey = System.getenv("OPENAI_API_KEY");
         if (apiKey == null || apiKey.isBlank()) return Optional.empty();
 
-        HttpClient client = HttpClient.newHttpClient();
+        HttpClient.Builder clientBuilder = HttpClient.newBuilder();
+        if (timeoutMillis > 0) clientBuilder.connectTimeout(Duration.ofMillis(timeoutMillis));
+        HttpClient client = clientBuilder.build();
 
         JsonArrayBuilder msgs = Json.createArrayBuilder();
         if (request.systemPrompt() != null) {
@@ -162,12 +171,13 @@ public final class InteractiveSamplingProvider implements SamplingProvider {
                 .add("max_tokens", request.maxTokens())
                 .build();
 
-        HttpRequest httpRequest = HttpRequest.newBuilder()
+        HttpRequest.Builder requestBuilder = HttpRequest.newBuilder()
                 .uri(URI.create("https://api.openai.com/v1/chat/completions"))
                 .header("Authorization", "Bearer " + apiKey)
                 .header("Content-Type", "application/json")
-                .POST(HttpRequest.BodyPublishers.ofString(body.toString()))
-                .build();
+                .POST(HttpRequest.BodyPublishers.ofString(body.toString()));
+        if (timeoutMillis > 0) requestBuilder.timeout(Duration.ofMillis(timeoutMillis));
+        HttpRequest httpRequest = requestBuilder.build();
 
         HttpResponse<String> response = client.send(httpRequest, HttpResponse.BodyHandlers.ofString());
         if (response.statusCode() / 100 != 2) return Optional.empty();
@@ -181,6 +191,26 @@ public final class InteractiveSamplingProvider implements SamplingProvider {
         if (content == null) return Optional.empty();
         String model = obj.getString("model", "openai");
         return Optional.of(new AiResult(content.trim(), model));
+    }
+
+    private String readLine(long timeoutMillis) throws IOException, InterruptedException {
+        if (timeoutMillis <= 0) return reader.readLine();
+        ExecutorService executor = Executors.newSingleThreadExecutor();
+        try {
+            Future<String> future = executor.submit(reader::readLine);
+            try {
+                return future.get(timeoutMillis, TimeUnit.MILLISECONDS);
+            } catch (TimeoutException e) {
+                future.cancel(true);
+                throw new InterruptedException("Timed out waiting for user input");
+            }
+        } catch (ExecutionException e) {
+            Throwable cause = e.getCause();
+            if (cause instanceof IOException io) throw io;
+            throw new InterruptedException(cause.toString());
+        } finally {
+            executor.shutdownNow();
+        }
     }
 
     private String generateSimpleResponse(CreateMessageRequest request) {

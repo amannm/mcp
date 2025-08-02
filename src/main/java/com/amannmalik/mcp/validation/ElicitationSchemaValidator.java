@@ -50,7 +50,7 @@ public final class ElicitationSchemaValidator {
     private static void validateString(JsonObject prop, String name) {
         boolean hasEnum = prop.containsKey("enum");
         requireAllowedKeys(prop, hasEnum ? ENUM_KEYS : STRING_KEYS, name);
-        validateCommonFields(prop, name);
+        validateCommonFields(prop);
         if (prop.containsKey("minLength") && prop.getInt("minLength") < 0) {
             throw new IllegalArgumentException("minLength must be >= 0 for " + name);
         }
@@ -94,7 +94,7 @@ public final class ElicitationSchemaValidator {
 
     private static void validateNumber(JsonObject prop, String name, String type) {
         requireAllowedKeys(prop, NUMBER_KEYS, name);
-        validateCommonFields(prop, name);
+        validateCommonFields(prop);
         JsonValue min = prop.get("minimum");
         JsonValue max = prop.get("maximum");
         if (min != null) ensureNumber(min, name + ".minimum", type);
@@ -107,14 +107,14 @@ public final class ElicitationSchemaValidator {
 
     private static void validateBoolean(JsonObject prop, String name) {
         requireAllowedKeys(prop, BOOLEAN_KEYS, name);
-        validateCommonFields(prop, name);
+        validateCommonFields(prop);
         if (prop.containsKey("default") && prop.get("default").getValueType() != JsonValue.ValueType.TRUE
                 && prop.get("default").getValueType() != JsonValue.ValueType.FALSE) {
             throw new IllegalArgumentException("default must be boolean for " + name);
         }
     }
 
-    private static void validateCommonFields(JsonObject prop, String name) {
+    private static void validateCommonFields(JsonObject prop) {
         if (prop.containsKey("title")) InputSanitizer.requireClean(prop.getString("title"));
         if (prop.containsKey("description")) InputSanitizer.requireClean(prop.getString("description"));
     }
