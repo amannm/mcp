@@ -12,7 +12,7 @@ import com.amannmalik.mcp.prompts.PromptsListener;
 import com.amannmalik.mcp.security.RateLimiter;
 import com.amannmalik.mcp.security.SamplingAccessPolicy;
 import com.amannmalik.mcp.server.logging.*;
-import com.amannmalik.mcp.server.resources.*;
+import com.amannmalik.mcp.resources.*;
 import com.amannmalik.mcp.server.tools.ToolListListener;
 import com.amannmalik.mcp.transport.*;
 import com.amannmalik.mcp.util.*;
