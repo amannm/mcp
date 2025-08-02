@@ -139,10 +139,10 @@ public final class StreamableHttpClientTransport implements Transport {
                 String eventId = null;
                 while (!closed && (line = br.readLine()) != null) {
                     if (line.startsWith("id:")) {
-                        eventId = line.substring(line.indexOf(':') + 1).trim();
+                        eventId = afterColon(line);
                     } else if (line.startsWith("data:")) {
                         if (!data.isEmpty()) data.append('\n');
-                        data.append(line.substring(line.indexOf(':') + 1).trim());
+                        data.append(afterColon(line));
                     } else if (line.isEmpty()) {
                         if (!data.isEmpty()) {
                             try (JsonReader jr = Json.createReader(new StringReader(data.toString()))) {
@@ -162,6 +162,10 @@ public final class StreamableHttpClientTransport implements Transport {
                 if (container != null) container.remove(this);
                 close();
             }
+        }
+
+        private static String afterColon(String line) {
+            return line.substring(line.indexOf(':') + 1).trim();
         }
 
         void close() {

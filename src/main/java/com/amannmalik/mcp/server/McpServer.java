@@ -273,11 +273,8 @@ public final class McpServer implements AutoCloseable {
         if (resp.isPresent()) send(resp.get());
     }
 
-    private void onNotification(JsonRpcNotification note) throws IOException {
-        try {
-            handlers.handle(note);
-        } catch (IOException ignore) {
-        }
+    private void onNotification(JsonRpcNotification note) {
+        handlers.handle(note);
     }
 
     private JsonRpcMessage initialize(JsonRpcRequest req) {

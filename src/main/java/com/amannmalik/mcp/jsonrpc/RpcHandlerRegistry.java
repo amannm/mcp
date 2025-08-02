@@ -38,7 +38,7 @@ public final class RpcHandlerRegistry {
         });
     }
 
-    public void handle(JsonRpcNotification note) throws IOException {
+    public void handle(JsonRpcNotification note) {
         var method = NotificationMethod.from(note.method());
         if (method.isEmpty()) return;
         var handler = notificationHandlers.get(method.get());
@@ -52,6 +52,6 @@ public final class RpcHandlerRegistry {
 
     @FunctionalInterface
     public interface NotificationHandler {
-        void handle(JsonRpcNotification notification) throws IOException;
+        void handle(JsonRpcNotification notification);
     }
 }

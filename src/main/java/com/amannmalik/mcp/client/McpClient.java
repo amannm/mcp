@@ -485,10 +485,7 @@ public final class McpClient implements AutoCloseable {
     }
 
     private void handleNotification(JsonRpcNotification note) {
-        try {
-            handlers.handle(note);
-        } catch (IOException ignore) {
-        }
+        handlers.handle(note);
     }
 
     private void completePending(RequestId id, JsonRpcMessage msg) {
