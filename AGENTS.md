@@ -20,6 +20,7 @@ description: MCP Specification Expert
 - Avoid introducing `null` or `Object`
 - Avoid `java.lang.reflect` and `javax.annotation`
 - Avoid comments except for tricky areas (use self-documenting code)
+- Avoid inversion-of-control patterns
 
 # Wisdom
 
