@@ -385,6 +385,8 @@ public final class McpConformanceSteps {
                     Json.createObjectBuilder().add("level", parameter).build());
             case "set_log_level_missing" -> client.request("logging/setLevel",
                     Json.createObjectBuilder().build());
+            case "set_log_level_extra" -> client.request("logging/setLevel",
+                    Json.createObjectBuilder().add("level", parameter).add("extra", true).build());
             case "subscribe_resource" -> client.request("resources/subscribe",
                     Json.createObjectBuilder().add("uri", parameter).build());
             case "unsubscribe_resource" -> client.request("resources/unsubscribe",
@@ -402,6 +404,8 @@ public final class McpConformanceSteps {
                     yield JsonRpcError.of(RequestId.NullId.INSTANCE, JsonRpcErrorCode.INTERNAL_ERROR, e.getMessage());
                 }
             }
+            case "ping_invalid" -> client.request("ping",
+                    Json.createObjectBuilder().add("extra", parameter).build());
             case "roots_listed" -> {
                 for (int i = 0; i < 50 && rootsProvider.listCount() == 0; i++) Thread.sleep(100);
                 yield new JsonRpcResponse(RequestId.NullId.INSTANCE,
