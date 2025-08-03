@@ -78,3 +78,5 @@ org.gradle.java.installations.auto-detect=false
 org.gradle.java.installations.paths=${GRAALVM_HOME}
 EOF
 
+chmod 444 ./specification/**/*.*
+
