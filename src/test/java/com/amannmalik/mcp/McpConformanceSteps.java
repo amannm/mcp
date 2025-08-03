@@ -2,14 +2,8 @@ package com.amannmalik.mcp;
 
 import com.amannmalik.mcp.client.McpClient;
 import com.amannmalik.mcp.client.elicitation.*;
-
-import com.amannmalik.mcp.client.roots.InMemoryRootsProvider;
-import com.amannmalik.mcp.client.roots.Root;
-import com.amannmalik.mcp.client.sampling.*;
-
 import com.amannmalik.mcp.client.roots.*;
-import com.amannmalik.mcp.client.sampling.CreateMessageResponse;
-import com.amannmalik.mcp.client.sampling.SamplingProvider;
+import com.amannmalik.mcp.client.sampling.*;
 
 import com.amannmalik.mcp.content.ContentBlock;
 import com.amannmalik.mcp.jsonrpc.*;
@@ -21,7 +15,6 @@ import com.amannmalik.mcp.transport.*;
 import com.amannmalik.mcp.util.ListChangeSubscription;
 import io.cucumber.datatable.DataTable;
 import io.cucumber.java.After;
-import io.cucumber.java.Before;
 import io.cucumber.java.en.*;
 import jakarta.json.*;
 
@@ -281,8 +274,7 @@ public final class McpConformanceSteps {
                                 new ContentBlock.Text("hi", null, null))),
                         new ModelPreferences(List.of(new ModelHint("claude-3-sonnet")), null, 0.5, 0.8),
                         "You are a helpful assistant.", null, null, 10, List.of(), null, null);
-                CreateMessageResponse resp = sampling.createMessage(req);
-                yield new JsonRpcResponse(new RequestId.StringId("1"), SamplingCodec.toJsonObject(resp));
+                yield client.request("sampling/createMessage", SamplingCodec.toJsonObject(req));
             }
             case "request_sampling_reject" -> {
                 var req = new CreateMessageRequest(
@@ -290,12 +282,7 @@ public final class McpConformanceSteps {
                                 new ContentBlock.Text("reject", null, null))),
                         new ModelPreferences(List.of(new ModelHint("claude-3-sonnet")), null, 0.5, 0.8),
                         "You are a helpful assistant.", null, null, 10, List.of(), null, null);
-                try {
-                    sampling.createMessage(req);
-                    yield new JsonRpcResponse(new RequestId.StringId("1"), Json.createObjectBuilder().build());
-                } catch (InterruptedException e) {
-                    yield JsonRpcError.of(new RequestId.StringId("1"), JsonRpcErrorCode.INTERNAL_ERROR, "Sampling interrupted");
-                }
+                yield client.request("sampling/createMessage", SamplingCodec.toJsonObject(req));
             }
             case "set_log_level" -> client.request("logging/setLevel",
                     Json.createObjectBuilder().add("level", parameter).build());
