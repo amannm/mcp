@@ -2,6 +2,7 @@ package com.amannmalik.mcp.resources;
 
 import com.amannmalik.mcp.annotations.Annotations;
 import com.amannmalik.mcp.annotations.AnnotationsCodec;
+import com.amannmalik.mcp.core.AbstractEntityCodec;
 import com.amannmalik.mcp.util.*;
 import jakarta.json.*;
 
@@ -176,7 +177,7 @@ public final class ResourcesCodec {
 
     public static JsonObject toJsonObject(ListResourcesResult result) {
         if (result == null) throw new IllegalArgumentException("result required");
-        return PaginationJson.toJson(
+        return AbstractEntityCodec.paginated(
                 "resources",
                 new Pagination.Page<>(result.resources(), result.nextCursor()),
                 ResourcesCodec::toJsonObject,
@@ -185,27 +186,27 @@ public final class ResourcesCodec {
 
     public static JsonObject toJsonObject(ListResourcesRequest req) {
         if (req == null) throw new IllegalArgumentException("request required");
-        return PaginationCodec.toJsonObject(new PaginatedRequest(req.cursor(), req._meta()));
+        return AbstractEntityCodec.toJson(new PaginatedRequest(req.cursor(), req._meta()));
     }
 
     public static ListResourcesRequest toListResourcesRequest(JsonObject obj) {
-        PaginatedRequest page = PaginationCodec.toPaginatedRequest(obj);
+        PaginatedRequest page = AbstractEntityCodec.fromPaginatedRequest(obj);
         return new ListResourcesRequest(page.cursor(), page._meta());
     }
 
     public static JsonObject toJsonObject(ListResourceTemplatesRequest req) {
         if (req == null) throw new IllegalArgumentException("request required");
-        return PaginationCodec.toJsonObject(new PaginatedRequest(req.cursor(), req._meta()));
+        return AbstractEntityCodec.toJson(new PaginatedRequest(req.cursor(), req._meta()));
     }
 
     public static ListResourceTemplatesRequest toListResourceTemplatesRequest(JsonObject obj) {
-        PaginatedRequest page = PaginationCodec.toPaginatedRequest(obj);
+        PaginatedRequest page = AbstractEntityCodec.fromPaginatedRequest(obj);
         return new ListResourceTemplatesRequest(page.cursor(), page._meta());
     }
 
     public static JsonObject toJsonObject(ListResourceTemplatesResult result) {
         if (result == null) throw new IllegalArgumentException("result required");
-        return PaginationJson.toJson(
+        return AbstractEntityCodec.paginated(
                 "resourceTemplates",
                 new Pagination.Page<>(result.resourceTemplates(), result.nextCursor()),
                 ResourcesCodec::toJsonObject,
@@ -224,14 +225,14 @@ public final class ResourcesCodec {
             }
             resources.add(toResource(v.asJsonObject()));
         }
-        String cursor = obj.getString("nextCursor", null);
+        String cursor = AbstractEntityCodec.fromPaginatedResult(obj).nextCursor();
         return new Pagination.Page<>(resources, cursor);
     }
 
     public static ListResourcesResult toListResourcesResult(JsonObject obj) {
         Pagination.Page<Resource> page = toResourcePage(obj);
-        JsonObject meta = obj.containsKey("_meta") ? obj.getJsonObject("_meta") : null;
-        return new ListResourcesResult(page.items(), page.nextCursor(), meta);
+        PaginatedResult pr = AbstractEntityCodec.fromPaginatedResult(obj);
+        return new ListResourcesResult(page.items(), page.nextCursor(), pr._meta());
     }
 
     public static Pagination.Page<ResourceTemplate> toResourceTemplatePage(JsonObject obj) {
@@ -246,14 +247,14 @@ public final class ResourcesCodec {
             }
             templates.add(toResourceTemplate(v.asJsonObject()));
         }
-        String cursor = obj.getString("nextCursor", null);
+        String cursor = AbstractEntityCodec.fromPaginatedResult(obj).nextCursor();
         return new Pagination.Page<>(templates, cursor);
     }
 
     public static ListResourceTemplatesResult toListResourceTemplatesResult(JsonObject obj) {
         Pagination.Page<ResourceTemplate> page = toResourceTemplatePage(obj);
-        JsonObject meta = obj.containsKey("_meta") ? obj.getJsonObject("_meta") : null;
-        return new ListResourceTemplatesResult(page.items(), page.nextCursor(), meta);
+        PaginatedResult pr = AbstractEntityCodec.fromPaginatedResult(obj);
+        return new ListResourceTemplatesResult(page.items(), page.nextCursor(), pr._meta());
     }
 
 }

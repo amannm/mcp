@@ -1,5 +1,6 @@
 package com.amannmalik.mcp.tools;
 
+import com.amannmalik.mcp.core.AbstractEntityCodec;
 import com.amannmalik.mcp.util.*;
 import jakarta.json.*;
 
@@ -22,12 +23,12 @@ public final class ToolCodec {
     }
 
     public static JsonObject toJsonObject(Pagination.Page<Tool> page, JsonObject meta) {
-        return PaginationJson.toJson("tools", page, ToolCodec::toJsonObject, meta);
+        return AbstractEntityCodec.paginated("tools", page, ToolCodec::toJsonObject, meta);
     }
 
     public static JsonObject toJsonObject(ListToolsRequest req) {
         if (req == null) throw new IllegalArgumentException("request required");
-        return PaginationCodec.toJsonObject(new PaginatedRequest(req.cursor(), req._meta()));
+        return AbstractEntityCodec.toJson(new PaginatedRequest(req.cursor(), req._meta()));
     }
 
     public static JsonObject toJsonObject(CallToolRequest req) {
@@ -94,18 +95,18 @@ public final class ToolCodec {
             }
             tools.add(toTool(v.asJsonObject()));
         }
-        String cursor = PaginationCodec.toPaginatedResult(obj).nextCursor();
+        String cursor = AbstractEntityCodec.fromPaginatedResult(obj).nextCursor();
         return new Pagination.Page<>(tools, cursor);
     }
 
     public static ListToolsResult toListToolsResult(JsonObject obj) {
         Pagination.Page<Tool> page = toToolPage(obj);
-        PaginatedResult pr = PaginationCodec.toPaginatedResult(obj);
+        PaginatedResult pr = AbstractEntityCodec.fromPaginatedResult(obj);
         return new ListToolsResult(page.items(), page.nextCursor(), pr._meta());
     }
 
     public static ListToolsRequest toListToolsRequest(JsonObject obj) {
-        PaginatedRequest pr = PaginationCodec.toPaginatedRequest(obj);
+        PaginatedRequest pr = AbstractEntityCodec.fromPaginatedRequest(obj);
         return new ListToolsRequest(pr.cursor(), pr._meta());
     }
 
