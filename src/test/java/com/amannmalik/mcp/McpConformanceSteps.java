@@ -19,11 +19,15 @@ import io.cucumber.datatable.DataTable;
 import io.cucumber.java.After;
 import io.cucumber.java.en.*;
 import jakarta.json.Json;
+import jakarta.json.JsonObject;
 import jakarta.json.JsonValue;
 
 import java.io.File;
 import java.io.IOException;
 import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse.BodyHandlers;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -57,6 +61,7 @@ public final class McpConformanceSteps {
     private final BlockingQueue<ResourceUpdate> resourceUpdates = new LinkedBlockingQueue<>();
     private final BlockingQueue<ProgressNotification> progressUpdates = new LinkedBlockingQueue<>();
     private final List<String> paginatedTools = new ArrayList<>();
+    private JsonObject authorizationMetadata = JsonValue.EMPTY_JSON_OBJECT;
 
     private void setupTestConfiguration(String transport) {
         String configFile = "http".equals(transport) ? "/mcp-test-config-http.yaml" : "/mcp-test-config.yaml";
@@ -772,6 +777,36 @@ public final class McpConformanceSteps {
             }
             case "set_log_level", "subscribe_resource", "unsubscribe_resource" -> assertTrue(true);
         }
+    }
+
+    @When("fetching authorization metadata")
+    public void fetchAuthorizationMetadata() throws Exception {
+        if (serverTransport instanceof StreamableHttpTransport http) {
+            var url = URI.create("http://127.0.0.1:" + http.port() + "/.well-known/oauth-protected-resource");
+            var request = HttpRequest.newBuilder(url).header("Accept", "application/json").build();
+            var response = HttpClient.newHttpClient().send(request, BodyHandlers.ofInputStream());
+            try (var reader = Json.createReader(response.body())) {
+                authorizationMetadata = reader.readObject();
+            }
+        } else {
+            fail("HTTP transport required");
+        }
+    }
+
+    @Then("authorization metadata uses server base URL")
+    public void verifyAuthorizationMetadataResource() {
+        if (serverTransport instanceof StreamableHttpTransport http) {
+            var expected = "http://127.0.0.1:" + http.port();
+            assertEquals(expected, authorizationMetadata.getString("resource"));
+        } else {
+            fail("HTTP transport required");
+        }
+    }
+
+    @Then("authorization servers are advertised")
+    public void verifyAuthorizationServers() {
+        var servers = authorizationMetadata.getJsonArray("authorization_servers");
+        assertFalse(servers.isEmpty());
     }
 
     private static final class CountingRootsProvider implements RootsProvider {
