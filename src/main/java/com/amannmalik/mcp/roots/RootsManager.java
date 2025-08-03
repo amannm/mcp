@@ -60,9 +60,9 @@ public final class RootsManager {
     private List<Root> fetchRoots() throws IOException {
         requireClientCapability(ClientCapability.ROOTS);
         JsonRpcMessage msg = requester.send(RequestMethod.ROOTS_LIST,
-                RootsCodec.toJsonObject(new ListRootsRequest(null)));
+                ListRootsRequest.CODEC.toJson(new ListRootsRequest(null)));
         if (msg instanceof JsonRpcResponse resp) {
-            return RootsCodec.toRoots(resp.result());
+            return ListRootsResult.CODEC.fromJson(resp.result()).roots();
         }
         throw new IOException(((JsonRpcError) msg).error().message());
     }
