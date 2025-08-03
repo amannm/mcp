@@ -574,9 +574,9 @@ public final class McpServer implements AutoCloseable {
 
     public ElicitResult elicit(ElicitRequest req) throws IOException {
         requireClientCapability(ClientCapability.ELICITATION);
-        JsonRpcMessage msg = sendRequest(RequestMethod.ELICITATION_CREATE, ElicitCodec.toJsonObject(req));
+        JsonRpcMessage msg = sendRequest(RequestMethod.ELICITATION_CREATE, ElicitRequest.CODEC.toJson(req));
         if (msg instanceof JsonRpcResponse resp) {
-            ElicitResult er = ElicitCodec.toResult(resp.result());
+            ElicitResult er = ElicitResult.CODEC.fromJson(resp.result());
             if (er.action() == ElicitationAction.ACCEPT) {
                 SchemaValidator.validate(req.requestedSchema(), er.content());
             }
