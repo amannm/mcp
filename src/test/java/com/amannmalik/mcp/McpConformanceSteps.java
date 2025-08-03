@@ -127,6 +127,11 @@ public final class McpConformanceSteps {
         assertEquals(expected, client.serverCapabilities());
         assertTrue(client.toolsListChangedSupported());
         assertDoesNotThrow(() -> client.ping());
+        assertTrue(Set.of(Protocol.LATEST_VERSION, Protocol.PREVIOUS_VERSION)
+                .contains(client.protocolVersion()));
+        var info = client.serverInfo();
+        assertFalse(info.name().isBlank());
+        assertFalse(info.version().isBlank());
     }
 
     @When("requesting resource list with progress tracking")
@@ -393,7 +398,7 @@ public final class McpConformanceSteps {
             case "set_log_level_missing" -> client.request("logging/setLevel",
                     Json.createObjectBuilder().build());
             case "set_log_level_extra" -> client.request("logging/setLevel",
-                    Json.createObjectBuilder().add("level", parameter).add("extra", true).build());
+                    Json.createObjectBuilder().add("level", parameter).add("extra", 1).build());
             case "subscribe_resource" -> client.request("resources/subscribe",
                     Json.createObjectBuilder().add("uri", parameter).build());
             case "unsubscribe_resource" -> client.request("resources/unsubscribe",

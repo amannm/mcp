@@ -50,6 +50,8 @@ public final class McpClient implements AutoCloseable {
     private Set<ServerCapability> serverCapabilities = Set.of();
     private String instructions;
     private ServerFeatures serverFeatures = new ServerFeatures(false, false, false, false);
+    private String protocolVersion;
+    private ServerInfo serverInfo;
     private final McpClientListener listener;
     private volatile ResourceMetadata resourceMetadata;
     private final Map<String, ResourceListener> resourceListeners = new ConcurrentHashMap<>();
@@ -134,6 +136,14 @@ public final class McpClient implements AutoCloseable {
         return info;
     }
 
+    public String protocolVersion() {
+        return protocolVersion;
+    }
+
+    public ServerInfo serverInfo() {
+        return serverInfo;
+    }
+
     public synchronized void connect() throws IOException {
         if (connected) return;
         JsonRpcMessage msg = sendInitialization();
@@ -212,6 +222,8 @@ public final class McpClient implements AutoCloseable {
         if (transport instanceof StreamableHttpClientTransport http) {
             http.setProtocolVersion(serverVersion);
         }
+        protocolVersion = serverVersion;
+        serverInfo = ir.serverInfo();
         serverCapabilities = ir.capabilities().server();
         instructions = ir.instructions();
         ServerFeatures f = ir.features();
