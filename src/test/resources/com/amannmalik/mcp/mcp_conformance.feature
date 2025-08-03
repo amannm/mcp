@@ -136,6 +136,27 @@ Feature: MCP protocol conformance
       | http      |
 
   # Specification Links:
+  # - [Completion](specification/2025-06-18/server/utilities/completion.mdx)
+  Scenario Outline: MCP completion specification conformance
+    Given a running MCP server using <transport> transport
+    Then capabilities should be advertised and ping succeeds
+    When testing core functionality
+      | operation          | parameter | expected_result |
+      | request_completion |           | test_completion |
+    And testing error conditions
+      | operation                      | parameter | expected_error_code |
+      | request_completion_invalid     |           | -32602              |
+      | request_completion_missing_arg |           | -32602              |
+      | request_completion_missing_ref |           | -32602              |
+    When the client disconnects
+    Then the server terminates cleanly
+
+    Examples:
+      | transport |
+      | stdio     |
+      | http      |
+
+  # Specification Links:
   # - [Elicitation](specification/2025-06-18/client/elicitation.mdx)
   Scenario Outline: MCP elicitation specification conformance
     Given a running MCP server using <transport> transport
