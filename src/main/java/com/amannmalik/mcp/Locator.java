@@ -19,10 +19,16 @@ public final class Locator {
 
     public static ResourceProvider resources() {
         Annotations ann = new Annotations(Set.of(Role.USER), 0.5, Instant.parse("2024-01-01T00:00:00Z"));
-        Resource r = new Resource("test://example", "example", null, null, "text/plain", 5L, ann, null);
-        ResourceBlock.Text block = new ResourceBlock.Text("test://example", "text/plain", "hello", null);
+        Resource r0 = new Resource("test://example", "example", null, null, "text/plain", 5L, ann, null);
+        Resource r1 = new Resource("test://example1", "example1", null, null, "text/plain", 5L, ann, null);
+        Resource r2 = new Resource("test://example2", "example2", null, null, "text/plain", 5L, ann, null);
+        Map<String, ResourceBlock> c = Map.of(
+                r0.uri(), new ResourceBlock.Text(r0.uri(), "text/plain", "hello", null),
+                r1.uri(), new ResourceBlock.Text(r1.uri(), "text/plain", "hello", null),
+                r2.uri(), new ResourceBlock.Text(r2.uri(), "text/plain", "hello", null)
+        );
         ResourceTemplate t = new ResourceTemplate("test://template", "example_template", null, null, "text/plain", null, null);
-        return new InMemoryResourceProvider(List.of(r), Map.of(r.uri(), block), List.of(t));
+        return new InMemoryResourceProvider(List.of(r0), c, List.of(t));
     }
 
     public static ToolProvider tools() {
