@@ -204,13 +204,7 @@ public final class McpConformanceSteps {
     private McpClient createClient(Transport transport) {
         elicitation = new BlockingElicitationProvider();
 
-        sampling = (req, t) -> {
-            var content = (ContentBlock.Text) req.messages().getFirst().content();
-            if (content.text().equals("reject")) throw new InterruptedException();
-            return new CreateMessageResponse(Role.ASSISTANT,
-                    new ContentBlock.Text("ok", null, null),
-                    "mock-model", "endTurn", null);
-        };
+        sampling = new InteractiveSamplingProvider(true);
 
         rootsProvider = new CountingRootsProvider(List.of(new Root("file:///tmp", "Test Root", null)));
 
