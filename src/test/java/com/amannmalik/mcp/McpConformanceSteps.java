@@ -363,6 +363,16 @@ public final class McpConformanceSteps {
                     Json.createObjectBuilder()
                             .add("ref", Json.createObjectBuilder().add("type", "ref/prompt").add("name", "test_prompt"))
                             .add("argument", Json.createObjectBuilder().add("name", "test_arg").add("value", "")).build());
+            case "request_completion_invalid" -> client.request("completion/complete",
+                    Json.createObjectBuilder()
+                            .add("ref", Json.createObjectBuilder().add("type", "ref/prompt").add("name", "nope"))
+                            .add("argument", Json.createObjectBuilder().add("name", "test_arg").add("value", "")).build());
+            case "request_completion_missing_arg" -> client.request("completion/complete",
+                    Json.createObjectBuilder()
+                            .add("ref", Json.createObjectBuilder().add("type", "ref/prompt").add("name", "test_prompt")).build());
+            case "request_completion_missing_ref" -> client.request("completion/complete",
+                    Json.createObjectBuilder()
+                            .add("argument", Json.createObjectBuilder().add("name", "test_arg").add("value", "")).build());
             case "request_sampling" -> {
                 var req = new CreateMessageRequest(
                         List.of(new SamplingMessage(Role.USER,
@@ -385,6 +395,8 @@ public final class McpConformanceSteps {
                     Json.createObjectBuilder().add("level", parameter).build());
             case "set_log_level_missing" -> client.request("logging/setLevel",
                     Json.createObjectBuilder().build());
+            case "set_log_level_extra" -> client.request("logging/setLevel",
+                    Json.createObjectBuilder().add("level", parameter).add("extra", true).build());
             case "subscribe_resource" -> client.request("resources/subscribe",
                     Json.createObjectBuilder().add("uri", parameter).build());
             case "unsubscribe_resource" -> client.request("resources/unsubscribe",
@@ -755,8 +767,10 @@ public final class McpConformanceSteps {
                 assertEquals(expected, messages.getJsonObject(0).getString("role"));
             }
             case "request_completion" -> {
-                var values = result.getJsonObject("completion").getJsonArray("values");
+                var completion = result.getJsonObject("completion");
+                var values = completion.getJsonArray("values");
                 assertEquals(expected, values.getJsonString(0).getString());
+                assertTrue(completion.containsKey("hasMore"));
             }
 
             case "request_sampling" -> {
