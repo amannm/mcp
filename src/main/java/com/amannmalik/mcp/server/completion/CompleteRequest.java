@@ -1,6 +1,6 @@
 package com.amannmalik.mcp.server.completion;
 
-import com.amannmalik.mcp.validation.*;
+import com.amannmalik.mcp.server.roots.validation.*;
 import jakarta.json.JsonObject;
 
 import java.util.Map;

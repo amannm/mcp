@@ -1,6 +1,6 @@
 package com.amannmalik.mcp.client.elicitation;
 
-import com.amannmalik.mcp.validation.*;
+import com.amannmalik.mcp.server.roots.validation.*;
 import jakarta.json.JsonObject;
 
 public record ElicitRequest(String message,

@@ -2,7 +2,7 @@ package com.amannmalik.mcp.server.tools;
 
 import com.amannmalik.mcp.content.ContentBlock;
 import com.amannmalik.mcp.content.ContentCodec;
-import com.amannmalik.mcp.validation.MetaValidator;
+import com.amannmalik.mcp.server.roots.validation.MetaValidator;
 import jakarta.json.*;
 
 public record ToolResult(JsonArray content,

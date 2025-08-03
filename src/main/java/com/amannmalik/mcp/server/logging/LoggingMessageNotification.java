@@ -1,6 +1,6 @@
 package com.amannmalik.mcp.server.logging;
 
-import com.amannmalik.mcp.validation.InputSanitizer;
+import com.amannmalik.mcp.server.roots.validation.InputSanitizer;
 import jakarta.json.JsonValue;
 
 public record LoggingMessageNotification(LoggingLevel level, String logger, JsonValue data) {

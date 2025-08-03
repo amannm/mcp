@@ -1,6 +1,6 @@
 package com.amannmalik.mcp.util;
 
-import com.amannmalik.mcp.validation.InputSanitizer;
+import com.amannmalik.mcp.server.roots.validation.InputSanitizer;
 
 public record ProgressNotification(
         ProgressToken token,

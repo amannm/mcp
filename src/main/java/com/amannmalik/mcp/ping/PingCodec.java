@@ -2,7 +2,7 @@ package com.amannmalik.mcp.ping;
 
 import com.amannmalik.mcp.jsonrpc.*;
 import com.amannmalik.mcp.util.JsonUtil;
-import com.amannmalik.mcp.validation.MetaValidator;
+import com.amannmalik.mcp.server.roots.validation.MetaValidator;
 import jakarta.json.JsonObject;
 import jakarta.json.JsonValue;
 

@@ -1,6 +1,6 @@
 package com.amannmalik.mcp.client.sampling;
 
-import com.amannmalik.mcp.validation.InputSanitizer;
+import com.amannmalik.mcp.server.roots.validation.InputSanitizer;
 
 public record ModelHint(String name) {
     public ModelHint {

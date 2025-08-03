@@ -1,8 +1,8 @@
 package com.amannmalik.mcp.server.tools;
 
 import com.amannmalik.mcp.util.DisplayNameProvider;
-import com.amannmalik.mcp.validation.InputSanitizer;
-import com.amannmalik.mcp.validation.MetaValidator;
+import com.amannmalik.mcp.server.roots.validation.InputSanitizer;
+import com.amannmalik.mcp.server.roots.validation.MetaValidator;
 import jakarta.json.JsonObject;
 
 public record Tool(String name,
