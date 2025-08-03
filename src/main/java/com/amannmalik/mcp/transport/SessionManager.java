@@ -10,6 +10,8 @@ import java.io.IOException;
 import java.security.SecureRandom;
 import java.util.concurrent.atomic.AtomicReference;
 
+/// - [Lifecycle](specification/2025-06-18/basic/lifecycle.mdx)
+/// - [Security Best Practices](specification/2025-06-18/basic/security_best_practices.mdx)
 final class SessionManager {
     private static final SecureRandom RANDOM = new SecureRandom();
 

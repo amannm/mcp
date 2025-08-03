@@ -12,6 +12,8 @@ import java.io.IOException;
 import java.util.Optional;
 import java.util.concurrent.*;
 
+/// - [Transports](specification/2025-06-18/basic/transports.mdx)
+/// - [MCP Conformance](src/test/resources/com/amannmalik/mcp/mcp_conformance.feature:6-34)
 final class McpServlet extends HttpServlet {
     private final StreamableHttpTransport transport;
 

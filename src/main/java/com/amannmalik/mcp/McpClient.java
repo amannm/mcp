@@ -24,6 +24,9 @@ import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicLong;
 
+/// - [Client Features](specification/2025-06-18/client/index.mdx)
+/// - [Sampling](specification/2025-06-18/client/sampling.mdx)
+/// - [Elicitation](specification/2025-06-18/client/elicitation.mdx)
 public final class McpClient implements AutoCloseable {
     private final ClientInfo info;
     private final Set<ClientCapability> capabilities;

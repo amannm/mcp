@@ -6,6 +6,8 @@ import com.amannmalik.mcp.wire.RequestMethod;
 
 import java.util.*;
 
+/// - [Base Protocol](specification/2025-06-18/basic/index.mdx)
+/// - [MCP Conformance](src/test/resources/com/amannmalik/mcp/mcp_conformance.feature:6-34)
 public final class RpcHandlerRegistry {
     private final JsonRpcRequestProcessor processor;
     private final Map<RequestMethod, RequestHandler> requestHandlers = new EnumMap<>(RequestMethod.class);

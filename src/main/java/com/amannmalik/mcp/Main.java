@@ -5,6 +5,8 @@ import picocli.CommandLine;
 import picocli.CommandLine.Model.CommandSpec;
 import picocli.CommandLine.*;
 
+/// - [Overview](specification/2025-06-18/index.mdx)
+/// - [Architecture](specification/2025-06-18/architecture/index.mdx)
 public final class Main {
     public static void main(String[] args) {
         CommandSpec mainSpec = CommandSpec.create()

@@ -20,6 +20,8 @@ import java.io.IOException;
 import java.util.EnumSet;
 import java.util.List;
 
+/// - [Overview](specification/2025-06-18/index.mdx)
+/// - [Client Features](specification/2025-06-18/client/index.mdx)
 public final class ClientCommand {
     public static CommandSpec createCommandSpec() {
         CommandSpec spec = CommandSpec.create()
