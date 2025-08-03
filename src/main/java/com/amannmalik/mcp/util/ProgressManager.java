@@ -2,7 +2,6 @@ package com.amannmalik.mcp.util;
 
 import com.amannmalik.mcp.jsonrpc.JsonRpcNotification;
 import com.amannmalik.mcp.jsonrpc.RequestId;
-import com.amannmalik.mcp.security.RateLimiter;
 import com.amannmalik.mcp.wire.NotificationMethod;
 import jakarta.json.JsonObject;
 
@@ -11,6 +10,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 
+/// - [Progress](specification/2025-06-18/basic/utilities/progress.mdx)
 public final class ProgressManager {
     private final Map<ProgressToken, Double> progress = new ConcurrentHashMap<>();
     private final Map<RequestId, ProgressToken> tokens = new ConcurrentHashMap<>();

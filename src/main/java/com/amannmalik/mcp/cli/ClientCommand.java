@@ -1,15 +1,15 @@
 package com.amannmalik.mcp.cli;
 
-import com.amannmalik.mcp.client.McpClient;
-import com.amannmalik.mcp.client.roots.InMemoryRootsProvider;
-import com.amannmalik.mcp.client.roots.Root;
-import com.amannmalik.mcp.client.sampling.InteractiveSamplingProvider;
-import com.amannmalik.mcp.client.sampling.SamplingProvider;
+import com.amannmalik.mcp.McpClient;
 import com.amannmalik.mcp.config.McpConfiguration;
 import com.amannmalik.mcp.lifecycle.ClientCapability;
 import com.amannmalik.mcp.lifecycle.ClientInfo;
-import com.amannmalik.mcp.server.logging.LoggingLevel;
-import com.amannmalik.mcp.server.logging.LoggingMessageNotification;
+import com.amannmalik.mcp.logging.LoggingLevel;
+import com.amannmalik.mcp.logging.LoggingMessageNotification;
+import com.amannmalik.mcp.roots.InMemoryRootsProvider;
+import com.amannmalik.mcp.roots.Root;
+import com.amannmalik.mcp.sampling.InteractiveSamplingProvider;
+import com.amannmalik.mcp.sampling.SamplingProvider;
 import com.amannmalik.mcp.transport.StdioTransport;
 import picocli.CommandLine;
 import picocli.CommandLine.Model.CommandSpec;

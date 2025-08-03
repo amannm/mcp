@@ -1,12 +1,14 @@
 package com.amannmalik.mcp.ping;
 
-import com.amannmalik.mcp.client.McpClient;
+import com.amannmalik.mcp.McpClient;
 
 import java.io.IOException;
 import java.util.Objects;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+
+/// - [Prompts](specification/2025-06-18/basic/utilities/ping.mdx)
 public final class PingScheduler implements AutoCloseable {
     private final McpClient client;
     private final long interval;

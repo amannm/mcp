@@ -5,6 +5,7 @@ import jakarta.json.JsonObject;
 
 import java.util.*;
 
+/// - [Lifecycle](specification/2025-06-18/basic/lifecycle.mdx)
 public final class LifecycleCodec {
     private LifecycleCodec() {
     }

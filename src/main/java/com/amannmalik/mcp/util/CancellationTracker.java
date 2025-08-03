@@ -6,6 +6,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
+/// - [Pagination](specification/2025-06-18/basic/utilities/cancellation.mdx)
 public final class CancellationTracker {
     private final Set<RequestId> active = ConcurrentHashMap.newKeySet();
     private final Map<RequestId, String> cancelled = new ConcurrentHashMap<>();

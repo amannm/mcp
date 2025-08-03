@@ -1,13 +1,15 @@
 package com.amannmalik.mcp.cli;
 
+import com.amannmalik.mcp.McpClient;
 import com.amannmalik.mcp.auth.Principal;
-import com.amannmalik.mcp.client.McpClient;
 import com.amannmalik.mcp.config.McpConfiguration;
+import com.amannmalik.mcp.host.*;
 import com.amannmalik.mcp.lifecycle.ClientCapability;
 import com.amannmalik.mcp.lifecycle.ClientInfo;
 import com.amannmalik.mcp.prompts.Role;
-import com.amannmalik.mcp.security.*;
-import com.amannmalik.mcp.server.tools.ToolCodec;
+import com.amannmalik.mcp.sampling.SamplingAccessController;
+import com.amannmalik.mcp.tools.ToolAccessController;
+import com.amannmalik.mcp.tools.ToolCodec;
 import com.amannmalik.mcp.transport.StdioTransport;
 import jakarta.json.Json;
 import jakarta.json.JsonValue;

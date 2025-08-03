@@ -2,6 +2,8 @@ package com.amannmalik.mcp.jsonrpc;
 
 import java.io.IOException;
 
+/// - [Base Protocol](specification/2025-06-18/basic/index.mdx)
+/// - [MCP server conformance test](src/test/resources/com/amannmalik/mcp/mcp_conformance.feature:6-34)
 public final class JsonRpc {
     private JsonRpc() {
     }

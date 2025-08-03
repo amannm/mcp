@@ -4,6 +4,7 @@ import jakarta.json.JsonObject;
 
 import java.io.IOException;
 
+/// - [Transports](specification/2025-06-18/basic/transports.mdx)
 public interface Transport extends AutoCloseable {
     void send(JsonObject message) throws IOException;
 

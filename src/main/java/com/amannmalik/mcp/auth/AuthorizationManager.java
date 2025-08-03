@@ -2,6 +2,8 @@ package com.amannmalik.mcp.auth;
 
 import java.util.List;
 
+/// - [Authorization](specification/2025-06-18/basic/authorization.mdx)
+/// - [Security Best Practices](specification/2025-06-18/basic/security_best_practices.mdx)
 public final class AuthorizationManager {
     private final List<AuthorizationStrategy> strategies;
 

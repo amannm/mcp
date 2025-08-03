@@ -4,6 +4,7 @@ import com.amannmalik.mcp.jsonrpc.RequestId;
 import com.amannmalik.mcp.jsonrpc.RequestIdCodec;
 import jakarta.json.*;
 
+/// - [Cancellation](specification/2025-06-18/basic/utilities/cancellation.mdx)
 public final class CancellationCodec {
     private CancellationCodec() {
     }

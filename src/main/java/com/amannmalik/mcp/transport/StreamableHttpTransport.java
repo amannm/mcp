@@ -3,7 +3,6 @@ package com.amannmalik.mcp.transport;
 import com.amannmalik.mcp.auth.*;
 import com.amannmalik.mcp.config.McpConfiguration;
 import com.amannmalik.mcp.lifecycle.Protocol;
-import com.amannmalik.mcp.security.OriginValidator;
 import jakarta.json.Json;
 import jakarta.json.JsonObject;
 import jakarta.servlet.http.HttpServletRequest;

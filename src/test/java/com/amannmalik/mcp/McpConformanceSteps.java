@@ -1,20 +1,17 @@
 package com.amannmalik.mcp;
 
-import com.amannmalik.mcp.client.McpClient;
-import com.amannmalik.mcp.client.elicitation.*;
-import com.amannmalik.mcp.client.roots.*;
-import com.amannmalik.mcp.client.sampling.*;
 import com.amannmalik.mcp.annotations.AnnotationsCodec;
 import com.amannmalik.mcp.content.ContentBlock;
+import com.amannmalik.mcp.elicitation.*;
 import com.amannmalik.mcp.jsonrpc.*;
 import com.amannmalik.mcp.lifecycle.*;
+import com.amannmalik.mcp.logging.LoggingLevel;
+import com.amannmalik.mcp.logging.LoggingMessageNotification;
 import com.amannmalik.mcp.prompts.Role;
 import com.amannmalik.mcp.resources.ResourceSubscription;
 import com.amannmalik.mcp.resources.ResourceUpdate;
-import com.amannmalik.mcp.security.OriginValidator;
-import com.amannmalik.mcp.server.McpServer;
-import com.amannmalik.mcp.server.logging.LoggingLevel;
-import com.amannmalik.mcp.server.logging.LoggingMessageNotification;
+import com.amannmalik.mcp.roots.*;
+import com.amannmalik.mcp.sampling.*;
 import com.amannmalik.mcp.transport.*;
 import com.amannmalik.mcp.util.ListChangeSubscription;
 import io.cucumber.datatable.DataTable;
@@ -32,6 +29,14 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+/// - [ToolProvider](src/main/java/com/amannmalik/mcp/tools/ToolProvider.java) - Tools conformance testing
+/// - [PromptProvider](src/main/java/com/amannmalik/mcp/prompts/PromptProvider.java) - Prompts conformance testing
+/// - [ResourceProvider](src/main/java/com/amannmalik/mcp/resources/ResourceProvider.java) - Resources conformance testing
+/// - [ElicitationProvider](src/main/java/com/amannmalik/mcp/elicitation/ElicitationProvider.java) - Elicitation conformance testing
+/// - [SamplingProvider](src/main/java/com/amannmalik/mcp/sampling/SamplingProvider.java) - Sampling conformance testing
+/// - [RootsManager](src/main/java/com/amannmalik/mcp/roots/RootsManager.java) - Roots conformance testing
+/// - [McpServer](src/main/java/com/amannmalik/mcp/McpServer.java) - Core server functionality testing
+/// - [JsonRpc](src/main/java/com/amannmalik/mcp/jsonrpc/JsonRpc.java) - Base protocol testing
 public final class McpConformanceSteps {
     private static final String JAVA_BIN = System.getProperty("java.home") + File.separator + "bin" + File.separator + "java";
 
@@ -255,13 +260,11 @@ public final class McpConformanceSteps {
             case "list_resources" -> client.request("resources/list",
                     Json.createObjectBuilder().add("_meta",
                             Json.createObjectBuilder().add("progressToken", "tok")).build());
-            case "resource_metadata", "list_resources_annotations" ->
-                    client.request("resources/list", Json.createObjectBuilder().build());
+            case "resource_metadata", "list_resources_annotations" -> client.request("resources/list", Json.createObjectBuilder().build());
             case "read_resource" -> client.request("resources/read",
                     Json.createObjectBuilder().add("uri", parameter).build());
             case "list_templates" -> client.request("resources/templates/list", Json.createObjectBuilder().build());
-            case "list_tools", "list_tools_schema", "list_tools_output_schema", "list_tools_annotations" ->
-                    client.request("tools/list", Json.createObjectBuilder().build());
+            case "list_tools", "list_tools_schema", "list_tools_output_schema", "list_tools_annotations" -> client.request("tools/list", Json.createObjectBuilder().build());
             case "call_tool" -> client.request("tools/call",
                     Json.createObjectBuilder().add("name", parameter).build());
             case "call_tool_structured" -> client.request("tools/call",

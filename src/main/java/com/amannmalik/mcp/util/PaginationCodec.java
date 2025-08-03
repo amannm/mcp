@@ -4,6 +4,7 @@ import jakarta.json.*;
 
 import java.util.Set;
 
+/// - [Pagination](specification/2025-06-18/server/utilities/pagination.mdx)
 public final class PaginationCodec {
     private PaginationCodec() {
     }

@@ -1,9 +1,8 @@
 package com.amannmalik.mcp.cli;
 
+import com.amannmalik.mcp.McpServer;
 import com.amannmalik.mcp.auth.*;
 import com.amannmalik.mcp.config.McpConfiguration;
-import com.amannmalik.mcp.security.OriginValidator;
-import com.amannmalik.mcp.server.McpServer;
 import com.amannmalik.mcp.transport.*;
 import picocli.CommandLine;
 import picocli.CommandLine.Model.CommandSpec;

@@ -5,6 +5,8 @@ import com.amannmalik.mcp.util.Pagination;
 
 import java.util.Optional;
 
+/// - [Resources](specification/2025-06-18/server/resources.mdx)
+/// - [MCP Resource metadata conforms to specification](src/test/resources/com/amannmalik/mcp/mcp_conformance.feature:83-95)
 public interface ResourceProvider extends AutoCloseable {
     Pagination.Page<Resource> list(String cursor);
 

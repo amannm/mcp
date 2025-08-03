@@ -8,6 +8,7 @@ import jakarta.json.JsonValue;
 
 import java.util.Set;
 
+/// - [Ping](specification/2025-06-18/basic/utilities/ping.mdx)
 public final class PingCodec {
     private PingCodec() {
     }

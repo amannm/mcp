@@ -1,5 +1,8 @@
 Feature: MCP protocol conformance
 
+  # Specification Links:
+  # - [Base Protocol](specification/2025-06-18/basic.mdx)
+  # - [Server Features](specification/2025-06-18/server.mdx)
   Scenario Outline: MCP server conformance test
     Given a running MCP server using <transport> transport
     Then capabilities should be advertised and ping succeeds
@@ -30,6 +33,8 @@ Feature: MCP protocol conformance
       | stdio     |
       | http      |
 
+  # Specification Links:
+  # - [Tools](specification/2025-06-18/server/tools.mdx)
   Scenario Outline: MCP tools specification conformance
     Given a running MCP server using <transport> transport
     Then capabilities should be advertised and ping succeeds
@@ -50,6 +55,8 @@ Feature: MCP protocol conformance
       | stdio     |
       | http      |
 
+  # Specification Links:
+  # - [Prompts](specification/2025-06-18/server/prompts.mdx)
   Scenario Outline: MCP prompts specification conformance
     Given a running MCP server using <transport> transport
     Then capabilities should be advertised and ping succeeds
@@ -71,6 +78,8 @@ Feature: MCP protocol conformance
       | stdio     |
       | http      |
 
+  # Specification Links:
+  # - [Resources](specification/2025-06-18/server/resources.mdx)
   Scenario Outline: MCP Resource metadata conforms to specification
     Given a running MCP server using <transport> transport
     Then capabilities should be advertised and ping succeeds
@@ -80,11 +89,13 @@ Feature: MCP protocol conformance
     When the client disconnects
     Then the server terminates cleanly
 
-  Examples:
-    | transport |
-    | stdio     |
-    | http      |
+    Examples:
+      | transport |
+      | stdio     |
+      | http      |
 
+  # Specification Links:
+  # - [Annotations](specification/2025-06-18/server/annotations.mdx)
   Scenario Outline: MCP annotations specification conformance
     Given a running MCP server using <transport> transport
     Then capabilities should be advertised and ping succeeds
@@ -100,6 +111,8 @@ Feature: MCP protocol conformance
       | stdio     |
       | http      |
 
+  # Specification Links:
+  # - [Elicitation](specification/2025-06-18/client/elicitation.mdx)
   Scenario Outline: MCP elicitation specification conformance
     Given a running MCP server using <transport> transport
     Then capabilities should be advertised and ping succeeds
@@ -117,7 +130,8 @@ Feature: MCP protocol conformance
       | stdio     |
       | http      |
 
-
+  # Specification Links:
+  # - [Sampling](specification/2025-06-18/client/sampling.mdx)
   Scenario Outline: MCP sampling specification conformance
     Given a running MCP server using <transport> transport
     Then capabilities should be advertised and ping succeeds
@@ -135,6 +149,8 @@ Feature: MCP protocol conformance
       | stdio     |
       | http      |
 
+  # Specification Links:
+  # - [Roots](specification/2025-06-18/client/roots.mdx)
   Scenario Outline: MCP roots specification conformance
     Given a running MCP server using <transport> transport
     Then capabilities should be advertised and ping succeeds
@@ -152,6 +168,9 @@ Feature: MCP protocol conformance
       | stdio     |
       | http      |
 
+  # Specification Links:
+  # - [Subscriptions](specification/2025-06-18/server/subscriptions.mdx)
+  # - [Notifications](specification/2025-06-18/server/notifications.mdx)
   Scenario Outline: MCP notification and subscription specification conformance
     Given a running MCP server using <transport> transport
     Then capabilities should be advertised and ping succeeds
@@ -187,6 +206,8 @@ Feature: MCP protocol conformance
       | stdio     |
       | http      |
 
+  # Specification Links:
+  # - [Notifications](specification/2025-06-18/server/notifications.mdx)
   Scenario Outline: MCP notification timing and delivery conformance
     Given a running MCP server using <transport> transport
     Then capabilities should be advertised and ping succeeds

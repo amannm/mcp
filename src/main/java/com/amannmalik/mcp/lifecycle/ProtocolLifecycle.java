@@ -2,6 +2,7 @@ package com.amannmalik.mcp.lifecycle;
 
 import java.util.*;
 
+/// - [Roots](specification/2025-06-18/basic/lifecycle.mdx)
 public class ProtocolLifecycle {
 
     private final Set<ServerCapability> serverCapabilities;
