@@ -12,7 +12,7 @@ public final class JsonRpcCodec {
 
         switch (msg) {
             case JsonRpcRequest r -> {
-                RequestIdCodec.add(builder, "id", r.id());
+                builder.add("id", RequestId.toJsonValue(r.id()));
                 builder.add("method", r.method());
                 if (r.params() != null) builder.add("params", r.params());
             }
@@ -21,11 +21,11 @@ public final class JsonRpcCodec {
                 if (n.params() != null) builder.add("params", n.params());
             }
             case JsonRpcResponse r -> {
-                RequestIdCodec.add(builder, "id", r.id());
+                builder.add("id", RequestId.toJsonValue(r.id()));
                 builder.add("result", r.result());
             }
             case JsonRpcError e -> {
-                RequestIdCodec.add(builder, "id", e.id());
+                builder.add("id", RequestId.toJsonValue(e.id()));
                 var err = e.error();
                 var errBuilder = Json.createObjectBuilder()
                         .add("code", err.code())
@@ -44,7 +44,7 @@ public final class JsonRpcCodec {
         var params = params(obj.get("params"));
         var kind = kind(method, idValue, obj.containsKey("result"), obj.containsKey("error"));
         return switch (kind) {
-            case REQUEST -> new JsonRpcRequest(RequestIdCodec.from(idValue), method, params);
+            case REQUEST -> new JsonRpcRequest(RequestId.from(idValue), method, params);
             case NOTIFICATION -> new JsonRpcNotification(method, params);
             case RESPONSE -> new JsonRpcResponse(requestId(idValue), result(obj.get("result")));
             case ERROR -> new JsonRpcError(optionalId(idValue), errorDetail(obj.getJsonObject("error")));
@@ -82,12 +82,12 @@ public final class JsonRpcCodec {
 
     private static RequestId requestId(JsonValue value) {
         if (value == null || value.getValueType() == JsonValue.ValueType.NULL) throw new IllegalArgumentException("id is required for response");
-        return RequestIdCodec.from(value);
+        return RequestId.from(value);
     }
 
     private static RequestId optionalId(JsonValue value) {
         if (value == null || value.getValueType() == JsonValue.ValueType.NULL) return RequestId.NullId.INSTANCE;
-        return RequestIdCodec.from(value);
+        return RequestId.from(value);
     }
 
     private static JsonRpcError.ErrorDetail errorDetail(JsonObject obj) {
