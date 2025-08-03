@@ -41,7 +41,7 @@ public final class McpServer implements AutoCloseable {
     private final ProtocolLifecycle lifecycle;
     private final RpcHandlerRegistry handlers;
     private final ProgressManager progressManager = new ProgressManager(
-            new RateLimiter(McpConfiguration.current().performance().rateLimits().progressPerSecond(), 
+            new RateLimiter(McpConfiguration.current().performance().rateLimits().progressPerSecond(),
                     McpConfiguration.current().performance().runtime().rateLimiterWindowMs()));
     private final CancellationTracker cancellationTracker = new CancellationTracker();
     private final IdTracker idTracker = new IdTracker();
@@ -59,13 +59,13 @@ public final class McpServer implements AutoCloseable {
     private volatile LoggingLevel logLevel = LoggingLevel.INFO;
     private static final int RATE_LIMIT_CODE = McpConfiguration.current().server().messaging().errorCodes().rateLimit();
     private final RateLimiter toolLimiter = new RateLimiter(
-            McpConfiguration.current().performance().rateLimits().toolsPerSecond(), 
+            McpConfiguration.current().performance().rateLimits().toolsPerSecond(),
             McpConfiguration.current().performance().runtime().rateLimiterWindowMs());
     private final RateLimiter completionLimiter = new RateLimiter(
-            McpConfiguration.current().performance().rateLimits().completionsPerSecond(), 
+            McpConfiguration.current().performance().rateLimits().completionsPerSecond(),
             McpConfiguration.current().performance().runtime().rateLimiterWindowMs());
     private final RateLimiter logLimiter = new RateLimiter(
-            McpConfiguration.current().performance().rateLimits().logsPerSecond(), 
+            McpConfiguration.current().performance().rateLimits().logsPerSecond(),
             McpConfiguration.current().performance().runtime().rateLimiterWindowMs());
     private final AtomicLong requestCounter = new AtomicLong(McpConfiguration.current().performance().runtime().initialRequestId());
     private final Map<RequestId, CompletableFuture<JsonRpcMessage>> pending = new ConcurrentHashMap<>();

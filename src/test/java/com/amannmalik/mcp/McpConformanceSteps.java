@@ -4,12 +4,12 @@ import com.amannmalik.mcp.client.McpClient;
 import com.amannmalik.mcp.client.elicitation.*;
 import com.amannmalik.mcp.client.roots.*;
 import com.amannmalik.mcp.client.sampling.*;
-
 import com.amannmalik.mcp.content.ContentBlock;
 import com.amannmalik.mcp.jsonrpc.*;
-import com.amannmalik.mcp.resources.*;
 import com.amannmalik.mcp.lifecycle.*;
 import com.amannmalik.mcp.prompts.Role;
+import com.amannmalik.mcp.resources.ResourceSubscription;
+import com.amannmalik.mcp.resources.ResourceUpdate;
 import com.amannmalik.mcp.security.OriginValidator;
 import com.amannmalik.mcp.server.McpServer;
 import com.amannmalik.mcp.server.logging.LoggingLevel;
@@ -19,7 +19,8 @@ import com.amannmalik.mcp.util.ListChangeSubscription;
 import io.cucumber.datatable.DataTable;
 import io.cucumber.java.After;
 import io.cucumber.java.en.*;
-import jakarta.json.*;
+import jakarta.json.Json;
+import jakarta.json.JsonValue;
 
 import java.io.File;
 import java.io.IOException;
@@ -78,17 +79,17 @@ public final class McpConformanceSteps {
             public void onMessage(LoggingMessageNotification notification) {
                 logs.add(notification);
             }
-            
+
             @Override
             public void onResourceListChanged() {
                 notifications.add(new JsonRpcNotification("notifications/resources/list_changed", null));
             }
-            
+
             @Override
             public void onToolListChanged() {
                 notifications.add(new JsonRpcNotification("notifications/tools/list_changed", null));
             }
-            
+
             @Override
             public void onPromptsListChanged() {
                 notifications.add(new JsonRpcNotification("notifications/prompts/list_changed", null));
@@ -350,7 +351,7 @@ public final class McpConformanceSteps {
             String capabilityType = row.get("capability_type");
             String feature = row.get("feature");
             boolean expectedSupport = Boolean.parseBoolean(row.get("expected_support"));
-            
+
             boolean actualSupport = switch (capabilityType) {
                 case "resources" -> switch (feature) {
                     case "subscribe" -> client.resourcesSubscribeSupported();
@@ -371,9 +372,9 @@ public final class McpConformanceSteps {
                 };
                 default -> throw new IllegalArgumentException("Unknown capability type: " + capabilityType);
             };
-            
-            assertEquals(expectedSupport, actualSupport, 
-                "Capability " + capabilityType + "." + feature + " support mismatch");
+
+            assertEquals(expectedSupport, actualSupport,
+                    "Capability " + capabilityType + "." + feature + " support mismatch");
         }
     }
 
@@ -383,7 +384,7 @@ public final class McpConformanceSteps {
             String notificationType = row.get("notification_type");
             String triggerAction = row.get("trigger_action");
             String expectedNotification = row.get("expected_notification");
-            
+
             // Test that the server can handle operations without throwing errors
             switch (triggerAction) {
                 case "modify_resource_list" -> {
@@ -393,13 +394,13 @@ public final class McpConformanceSteps {
                 case "update_subscribed" -> {
                     // Test subscription works without errors
                     if (client.resourcesSubscribeSupported()) {
-                        JsonRpcMessage response = client.request("resources/subscribe", 
-                            Json.createObjectBuilder().add("uri", "test://example").build());
+                        JsonRpcMessage response = client.request("resources/subscribe",
+                                Json.createObjectBuilder().add("uri", "test://example").build());
                         assertInstanceOf(JsonRpcResponse.class, response);
-                        
+
                         // Test reading the subscribed resource
-                        response = client.request("resources/read", 
-                            Json.createObjectBuilder().add("uri", "test://example").build());
+                        response = client.request("resources/read",
+                                Json.createObjectBuilder().add("uri", "test://example").build());
                         assertInstanceOf(JsonRpcResponse.class, response);
                     }
                 }
@@ -413,13 +414,13 @@ public final class McpConformanceSteps {
                 }
                 case "modify_root_list" -> {
                     // Test that roots functionality works
-                    assertTrue(rootsProvider != null);
+                    assertNotNull(rootsProvider);
                     if (rootsProvider.supportsListChanged()) {
                         assertNotNull(rootsProvider.list());
                     }
                 }
             }
-            
+
             // Mark test as successful if we got this far without exceptions
             if ("received".equals(expectedNotification)) {
                 receivedNotifications.add(notificationType);
@@ -430,12 +431,12 @@ public final class McpConformanceSteps {
     @And("testing subscription lifecycle")
     public void testSubscriptionLifecycle(DataTable table) throws Exception {
         ResourceSubscription activeSubscription = null;
-        
+
         for (var row : table.asMaps()) {
             String operation = row.get("operation");
             String parameter = row.get("parameter");
             String expectedResult = row.get("expected_result");
-            
+
             switch (operation) {
                 case "subscribe_resource" -> {
                     if (client.resourcesSubscribeSupported()) {
@@ -446,8 +447,8 @@ public final class McpConformanceSteps {
                 }
                 case "receive_update_notification" -> {
                     // Test that reading the resource works
-                    JsonRpcMessage response = client.request("resources/read", 
-                        Json.createObjectBuilder().add("uri", parameter).build());
+                    JsonRpcMessage response = client.request("resources/read",
+                            Json.createObjectBuilder().add("uri", parameter).build());
                     if ("success".equals(expectedResult)) {
                         assertInstanceOf(JsonRpcResponse.class, response);
                     }
@@ -459,15 +460,15 @@ public final class McpConformanceSteps {
                     } else {
                         // Test direct unsubscribe request
                         JsonRpcMessage response = client.request("resources/unsubscribe",
-                            Json.createObjectBuilder().add("uri", parameter).build());
+                                Json.createObjectBuilder().add("uri", parameter).build());
                         // May return error if not subscribed, which is valid
                         assertTrue(response instanceof JsonRpcResponse || response instanceof JsonRpcError);
                     }
                 }
                 case "no_further_notifications" -> {
                     // Test that operations still work after unsubscribe
-                    JsonRpcMessage response = client.request("resources/read", 
-                        Json.createObjectBuilder().add("uri", parameter).build());
+                    JsonRpcMessage response = client.request("resources/read",
+                            Json.createObjectBuilder().add("uri", parameter).build());
                     if ("success".equals(expectedResult)) {
                         assertInstanceOf(JsonRpcResponse.class, response);
                     }
@@ -482,15 +483,15 @@ public final class McpConformanceSteps {
             String operation = row.get("operation");
             String parameter = row.get("parameter");
             int expectedCode = Integer.parseInt(row.get("expected_error_code"));
-            
+
             JsonRpcMessage response = switch (operation) {
                 case "subscribe_invalid_resource" -> client.request("resources/subscribe",
-                    Json.createObjectBuilder().add("uri", parameter).build());
+                        Json.createObjectBuilder().add("uri", parameter).build());
                 case "unsubscribe_nonexistent" -> client.request("resources/unsubscribe",
-                    Json.createObjectBuilder().add("uri", parameter).build());
+                        Json.createObjectBuilder().add("uri", parameter).build());
                 default -> throw new IllegalArgumentException("Unknown notification error operation: " + operation);
             };
-            
+
             // Test may pass with either error or success response depending on server implementation
             if (response instanceof JsonRpcError error) {
                 assertEquals(expectedCode, error.error().code());
@@ -507,7 +508,7 @@ public final class McpConformanceSteps {
             String patternType = row.get("pattern_type");
             String setupAction = row.get("setup_action");
             String expectedBehavior = row.get("expected_behavior");
-            
+
             switch (patternType) {
                 case "immediate_notification" -> {
                     if ("subscribe_then_update".equals(setupAction)) {
@@ -516,12 +517,12 @@ public final class McpConformanceSteps {
                             try {
                                 ResourceSubscription sub = client.subscribeResource("test://example", resourceUpdates::add);
                                 assertNotNull(sub);
-                                
+
                                 JsonRpcMessage response = client.request("resources/read",
-                                    Json.createObjectBuilder().add("uri", "test://example").build());
+                                        Json.createObjectBuilder().add("uri", "test://example").build());
                                 // Response may be success or error, both are valid
                                 assertTrue(response instanceof JsonRpcResponse || response instanceof JsonRpcError);
-                                
+
                                 sub.close();
                             } catch (IOException e) {
                                 // Subscription may fail if resource doesn't exist, which is acceptable for test
@@ -535,7 +536,7 @@ public final class McpConformanceSteps {
                         // Test multiple resource operations work
                         for (int i = 0; i < 3; i++) {
                             JsonRpcMessage response = client.request("resources/read",
-                                Json.createObjectBuilder().add("uri", "test://example").build());
+                                    Json.createObjectBuilder().add("uri", "test://example").build());
                             assertInstanceOf(JsonRpcResponse.class, response);
                         }
                         // Test passes if operations complete successfully
@@ -582,14 +583,14 @@ public final class McpConformanceSteps {
             String notificationType = row.get("notification_type");
             String requiredField = row.get("required_field");
             String validationResult = row.get("validation_result");
-            
+
             // Test that the operations associated with notifications work
             if ("notifications/resources/updated".equals(notificationType)) {
                 // Test resource operations work
                 JsonRpcMessage response = client.request("resources/read",
-                    Json.createObjectBuilder().add("uri", "test://example").build());
+                        Json.createObjectBuilder().add("uri", "test://example").build());
                 assertInstanceOf(JsonRpcResponse.class, response);
-                
+
                 if ("present".equals(validationResult) && "uri".equals(requiredField)) {
                     var result = ((JsonRpcResponse) response).result();
                     var contents = result.getJsonArray("contents");
@@ -604,7 +605,7 @@ public final class McpConformanceSteps {
                     case "notifications/tools/list_changed" -> "tools/list";
                     default -> "resources/list";
                 };
-                
+
                 JsonRpcMessage response = client.request(operation, Json.createObjectBuilder().build());
                 assertInstanceOf(JsonRpcResponse.class, response);
             }

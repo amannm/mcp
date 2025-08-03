@@ -83,7 +83,8 @@ public final class McpClient implements AutoCloseable {
                      SamplingProvider sampling,
                      RootsProvider roots,
                      ElicitationProvider elicitation) {
-        this(info, capabilities, transport, sampling, roots, elicitation, new McpClientListener() {});
+        this(info, capabilities, transport, sampling, roots, elicitation, new McpClientListener() {
+        });
     }
 
     public McpClient(ClientInfo info,
@@ -100,7 +101,8 @@ public final class McpClient implements AutoCloseable {
         this.roots = roots;
         this.rootsListChangedSupported = roots != null && roots.supportsListChanged();
         this.elicitation = elicitation;
-        this.listener = listener == null ? new McpClientListener() {} : listener;
+        this.listener = listener == null ? new McpClientListener() {
+        } : listener;
         if (this.capabilities.contains(ClientCapability.SAMPLING) && this.sampling == null) {
             throw new IllegalArgumentException("sampling capability requires provider");
         }
@@ -673,11 +675,20 @@ public final class McpClient implements AutoCloseable {
 
 
     public interface McpClientListener {
-        default void onProgress(ProgressNotification notification) {}
-        default void onMessage(LoggingMessageNotification notification) {}
-        default void onResourceListChanged() {}
-        default void onToolListChanged() {}
-        default void onPromptsListChanged() {}
+        default void onProgress(ProgressNotification notification) {
+        }
+
+        default void onMessage(LoggingMessageNotification notification) {
+        }
+
+        default void onResourceListChanged() {
+        }
+
+        default void onToolListChanged() {
+        }
+
+        default void onPromptsListChanged() {
+        }
     }
 
 }
