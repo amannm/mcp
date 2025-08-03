@@ -5,7 +5,7 @@ import com.amannmalik.mcp.core.JsonCodec;
 import com.amannmalik.mcp.prompts.PromptContent;
 import com.amannmalik.mcp.resources.Resource;
 import com.amannmalik.mcp.resources.ResourceBlock;
-import com.amannmalik.mcp.resources.ResourcesCodec;
+import com.amannmalik.mcp.resources.Resource;
 import com.amannmalik.mcp.sampling.MessageContent;
 import com.amannmalik.mcp.util.Base64Util;
 import com.amannmalik.mcp.util.JsonUtil;
@@ -39,14 +39,14 @@ public sealed interface ContentBlock
                 case Audio a -> b.add("data", Base64Util.encode(a.data()))
                         .add("mimeType", a.mimeType()).build();
                 case ResourceLink l -> {
-                    JsonObject obj = ResourcesCodec.toJsonObject(l.resource());
+                    JsonObject obj = Resource.CODEC.toJson(l.resource());
                     obj.forEach((k, v) -> {
                         if (!"_meta".equals(k)) b.add(k, v);
                     });
                     if (l.resource()._meta() != null) b.add("_meta", l.resource()._meta());
                     yield b.build();
                 }
-                case EmbeddedResource r -> b.add("resource", ResourcesCodec.toJsonObject(r.resource())).build();
+                case EmbeddedResource r -> b.add("resource", ResourceBlock.CODEC.toJson(r.resource())).build();
             };
         }
 
@@ -78,10 +78,10 @@ public sealed interface ContentBlock
                         obj.containsKey("annotations") ? Annotations.CODEC.fromJson(obj.getJsonObject("annotations")) : null,
                         obj.getJsonObject("_meta"));
                 case "resource" -> new EmbeddedResource(
-                        ResourcesCodec.toResourceBlock(obj.getJsonObject("resource")),
+                        ResourceBlock.CODEC.fromJson(obj.getJsonObject("resource")),
                         obj.containsKey("annotations") ? Annotations.CODEC.fromJson(obj.getJsonObject("annotations")) : null,
                         obj.getJsonObject("_meta"));
-                case "resource_link" -> new ResourceLink(ResourcesCodec.toResource(obj));
+                case "resource_link" -> new ResourceLink(Resource.CODEC.fromJson(obj));
                 default -> throw new IllegalArgumentException("unknown content type: " + type);
             };
         }
