@@ -501,13 +501,13 @@ public final class McpServer implements AutoCloseable {
             return invalidParams(req, "Missing params");
         }
         try {
-            CompleteRequest request = valid(() -> CompletionCodec.toCompleteRequest(params));
+            CompleteRequest request = valid(() -> CompleteRequest.CODEC.fromJson(params));
             Optional<String> limit = rateLimit(completionLimiter, request.ref().toString());
             if (limit.isPresent()) {
                 return JsonRpcError.of(req.id(), RATE_LIMIT_CODE, limit.get());
             }
             CompleteResult result = valid(() -> completions.complete(request));
-            return new JsonRpcResponse(req.id(), CompletionCodec.toJsonObject(result));
+            return new JsonRpcResponse(req.id(), CompleteResult.CODEC.toJson(result));
         } catch (InvalidParams e) {
             return invalidParams(req, e.getMessage());
         } catch (Exception e) {
