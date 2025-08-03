@@ -242,7 +242,7 @@ public final class McpClient implements AutoCloseable {
             rootsSubscription = roots.subscribe(() -> {
                 try {
                     notify(NotificationMethod.ROOTS_LIST_CHANGED,
-                            RootsCodec.toJsonObject(new RootsListChangedNotification()));
+                            RootsListChangedNotification.CODEC.toJson(new RootsListChangedNotification()));
                 } catch (IOException ignore) {
                 }
             });
@@ -572,7 +572,8 @@ public final class McpClient implements AutoCloseable {
         }
         try {
             var list = roots.list();
-            return new JsonRpcResponse(req.id(), RootsCodec.toJsonObject(list));
+            return new JsonRpcResponse(req.id(),
+                    ListRootsResult.CODEC.toJson(new ListRootsResult(list, null)));
         } catch (Exception e) {
             return JsonRpcError.of(req.id(), JsonRpcErrorCode.INTERNAL_ERROR, e.getMessage());
         }
