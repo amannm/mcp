@@ -9,10 +9,12 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.function.BiFunction;
 import java.util.function.Function;
+import java.util.function.Supplier;
 
 public abstract class AbstractEntityCodec<T> implements JsonCodec<T> {
     private static final Set<String> REQUEST_KEYS = Set.of("cursor", "_meta");
     private static final Set<String> RESULT_KEYS = Set.of("nextCursor", "_meta");
+    private static final Set<String> META_KEYS = Set.of("_meta");
 
     public static JsonObject toJson(PaginatedRequest req) {
         JsonObjectBuilder b = Json.createObjectBuilder();
@@ -91,6 +93,42 @@ public abstract class AbstractEntityCodec<T> implements JsonCodec<T> {
                 }
                 PaginatedResult pr = fromPaginatedResult(obj);
                 return from.apply(items, pr);
+            }
+        };
+    }
+
+    public static <T> JsonCodec<T> metaOnly(
+            Function<T, JsonObject> meta,
+            Function<JsonObject, T> from) {
+        return new AbstractEntityCodec<>() {
+            @Override
+            public JsonObject toJson(T value) {
+                JsonObjectBuilder b = Json.createObjectBuilder();
+                JsonObject m = meta.apply(value);
+                if (m != null) b.add("_meta", m);
+                return b.build();
+            }
+
+            @Override
+            public T fromJson(JsonObject obj) {
+                if (obj == null) return from.apply(null);
+                JsonUtil.requireOnlyKeys(obj, META_KEYS);
+                return from.apply(obj.getJsonObject("_meta"));
+            }
+        };
+    }
+
+    public static <T> JsonCodec<T> empty(Supplier<T> from) {
+        return new AbstractEntityCodec<>() {
+            @Override
+            public JsonObject toJson(T value) {
+                return JsonValue.EMPTY_JSON_OBJECT;
+            }
+
+            @Override
+            public T fromJson(JsonObject obj) {
+                if (obj != null && !obj.isEmpty()) throw new IllegalArgumentException("unexpected fields");
+                return from.get();
             }
         };
     }

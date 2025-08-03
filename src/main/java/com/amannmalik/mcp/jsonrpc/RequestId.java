@@ -1,5 +1,10 @@
 package com.amannmalik.mcp.jsonrpc;
 
+import jakarta.json.Json;
+import jakarta.json.JsonNumber;
+import jakarta.json.JsonString;
+import jakarta.json.JsonValue;
+
 public sealed interface RequestId permits RequestId.StringId, RequestId.NumericId, RequestId.NullId {
 
     static RequestId parse(String raw) {
@@ -13,6 +18,25 @@ public sealed interface RequestId permits RequestId.StringId, RequestId.NumericI
         } catch (NumberFormatException ignore) {
             return new StringId(raw);
         }
+    }
+
+    static JsonValue toJsonValue(RequestId id) {
+        return switch (id) {
+            case StringId s -> Json.createValue(s.value());
+            case NumericId n -> Json.createValue(n.value());
+            case NullId ignored -> JsonValue.NULL;
+        };
+    }
+
+    static RequestId from(JsonValue value) {
+        if (value == null || value.getValueType() == JsonValue.ValueType.NULL) {
+            throw new IllegalArgumentException("id is required");
+        }
+        return switch (value.getValueType()) {
+            case STRING -> new StringId(((JsonString) value).getString());
+            case NUMBER -> new NumericId(((JsonNumber) value).longValue());
+            default -> throw new IllegalArgumentException("Invalid id type");
+        };
     }
 
     record StringId(String value) implements RequestId {
