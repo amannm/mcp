@@ -11,6 +11,8 @@ import com.amannmalik.mcp.lifecycle.*;
 import com.amannmalik.mcp.prompts.Role;
 import com.amannmalik.mcp.security.OriginValidator;
 import com.amannmalik.mcp.server.McpServer;
+import com.amannmalik.mcp.server.logging.LoggingLevel;
+import com.amannmalik.mcp.server.logging.LoggingMessageNotification;
 import com.amannmalik.mcp.transport.*;
 import com.amannmalik.mcp.util.ListChangeSubscription;
 import io.cucumber.datatable.DataTable;
@@ -40,6 +42,7 @@ public final class McpConformanceSteps {
 
     private final Map<String, JsonRpcMessage> responses = new ConcurrentHashMap<>();
     private CountingRootsProvider rootsProvider;
+    private final BlockingQueue<LoggingMessageNotification> logs = new LinkedBlockingQueue<>();
 
     private void setupTestConfiguration(String transport) {
         String configFile = "http".equals(transport) ? "/mcp-test-config-http.yaml" : "/mcp-test-config.yaml";
@@ -67,6 +70,7 @@ public final class McpConformanceSteps {
         setupTestConfiguration(transport);
         System.out.println("DEBUG: Creating transport: " + transport);
         client = createClient(createTransport(transport));
+        client.setLoggingListener(logs::add);
         client.connect();
         System.out.println("DEBUG: Client connected successfully with " + transport + " transport");
     }
@@ -104,6 +108,14 @@ public final class McpConformanceSteps {
             assertInstanceOf(JsonRpcError.class, response);
             assertEquals(expectedCode, ((JsonRpcError) response).error().code());
         }
+    }
+
+    @And("a cancellation log message is received")
+    public void verifyCancellationLog() throws Exception {
+        LoggingMessageNotification log = logs.poll(2, TimeUnit.SECONDS);
+        assertNotNull(log);
+        assertEquals(LoggingLevel.INFO, log.level());
+        assertEquals("cancellation", log.logger());
     }
 
     @When("the client disconnects")
