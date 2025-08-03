@@ -305,6 +305,17 @@ public final class McpConformanceSteps {
                 yield client.request("tools/call",
                         Json.createObjectBuilder().add("name", parameter).build());
             }
+            case "call_tool_elicit_decline" -> {
+                elicitation.respond(new ElicitResult(ElicitationAction.DECLINE, null, null));
+                yield client.request("tools/call",
+                        Json.createObjectBuilder().add("name", parameter).build());
+            }
+            case "call_tool_elicit_invalid" -> {
+                elicitation.respond(new ElicitResult(ElicitationAction.ACCEPT,
+                        Json.createObjectBuilder().add("msg", 1).build(), null));
+                yield client.request("tools/call",
+                        Json.createObjectBuilder().add("name", parameter).build());
+            }
             case "list_prompts" -> client.request("prompts/list", Json.createObjectBuilder().build());
             case "get_prompt" -> client.request("prompts/get",
                     Json.createObjectBuilder().add("name", parameter)
