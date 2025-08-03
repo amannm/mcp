@@ -14,6 +14,7 @@ import com.amannmalik.mcp.roots.*;
 import com.amannmalik.mcp.sampling.*;
 import com.amannmalik.mcp.transport.*;
 import com.amannmalik.mcp.util.ListChangeSubscription;
+import com.amannmalik.mcp.util.ProgressNotification;
 import io.cucumber.datatable.DataTable;
 import io.cucumber.java.After;
 import io.cucumber.java.en.*;
@@ -54,6 +55,7 @@ public final class McpConformanceSteps {
     private final BlockingQueue<JsonRpcMessage> notifications = new LinkedBlockingQueue<>();
     private final Set<String> receivedNotifications = ConcurrentHashMap.newKeySet();
     private final BlockingQueue<ResourceUpdate> resourceUpdates = new LinkedBlockingQueue<>();
+    private final BlockingQueue<ProgressNotification> progressUpdates = new LinkedBlockingQueue<>();
 
     private void setupTestConfiguration(String transport) {
         String configFile = "http".equals(transport) ? "/mcp-test-config-http.yaml" : "/mcp-test-config.yaml";
@@ -79,6 +81,11 @@ public final class McpConformanceSteps {
         setupTestConfiguration(transport);
         System.out.println("DEBUG: Creating transport: " + transport);
         McpClient.McpClientListener testListener = new McpClient.McpClientListener() {
+            @Override
+            public void onProgress(ProgressNotification notification) {
+                progressUpdates.add(notification);
+            }
+
             @Override
             public void onMessage(LoggingMessageNotification notification) {
                 logs.add(notification);
@@ -114,6 +121,20 @@ public final class McpConformanceSteps {
         assertEquals(expected, client.serverCapabilities());
         assertTrue(client.toolsListChangedSupported());
         assertDoesNotThrow(() -> client.ping());
+    }
+
+    @When("requesting resource list with progress tracking")
+    public void requestResourceListWithProgress() throws Exception {
+        JsonRpcMessage response = client.request("resources/list", Json.createObjectBuilder().add("_meta",
+                Json.createObjectBuilder().add("progressToken", "tok")).build());
+        assertInstanceOf(JsonRpcResponse.class, response);
+    }
+
+    @Then("progress updates are received")
+    public void verifyProgressUpdates() throws Exception {
+        ProgressNotification note = progressUpdates.poll(2, TimeUnit.SECONDS);
+        assertNotNull(note);
+        assertEquals("tok", note.token().asString());
     }
 
     @When("testing core functionality")
