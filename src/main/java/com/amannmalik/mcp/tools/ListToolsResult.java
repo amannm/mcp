@@ -11,32 +11,14 @@ import java.util.*;
 public record ListToolsResult(List<Tool> tools,
                               String nextCursor,
                               JsonObject _meta) {
-    public static final JsonCodec<ListToolsResult> CODEC = new JsonCodec<>() {
-        @Override
-        public JsonObject toJson(ListToolsResult r) {
-            return AbstractEntityCodec.paginated(
+    public static final JsonCodec<ListToolsResult> CODEC =
+            AbstractEntityCodec.paginatedResult(
                     "tools",
-                    new Pagination.Page<>(r.tools(), r.nextCursor()),
-                    Tool.CODEC::toJson,
-                    r._meta());
-        }
-
-        @Override
-        public ListToolsResult fromJson(JsonObject obj) {
-            if (obj == null) throw new IllegalArgumentException("object required");
-            JsonArray arr = obj.getJsonArray("tools");
-            if (arr == null) throw new IllegalArgumentException("tools required");
-            List<Tool> tools = new ArrayList<>();
-            for (JsonValue v : arr) {
-                if (v.getValueType() != JsonValue.ValueType.OBJECT) {
-                    throw new IllegalArgumentException("tool must be object");
-                }
-                tools.add(Tool.CODEC.fromJson(v.asJsonObject()));
-            }
-            PaginatedResult pr = AbstractEntityCodec.fromPaginatedResult(obj);
-            return new ListToolsResult(tools, pr.nextCursor(), pr._meta());
-        }
-    };
+                    "tool",
+                    r -> new Pagination.Page<>(r.tools(), r.nextCursor()),
+                    ListToolsResult::_meta,
+                    Tool.CODEC,
+                    (items, pr) -> new ListToolsResult(items, pr.nextCursor(), pr._meta()));
 
     public ListToolsResult {
         tools = Immutable.list(tools);

@@ -7,18 +7,10 @@ import com.amannmalik.mcp.validation.MetaValidator;
 import jakarta.json.JsonObject;
 
 public record ListPromptsRequest(String cursor, JsonObject _meta) {
-    public static final JsonCodec<ListPromptsRequest> CODEC = new JsonCodec<>() {
-        @Override
-        public JsonObject toJson(ListPromptsRequest req) {
-            return AbstractEntityCodec.toJson(new PaginatedRequest(req.cursor(), req._meta()));
-        }
-
-        @Override
-        public ListPromptsRequest fromJson(JsonObject obj) {
-            PaginatedRequest pr = AbstractEntityCodec.fromPaginatedRequest(obj);
-            return new ListPromptsRequest(pr.cursor(), pr._meta());
-        }
-    };
+    public static final JsonCodec<ListPromptsRequest> CODEC =
+            AbstractEntityCodec.paginatedRequest(
+                    r -> new PaginatedRequest(r.cursor(), r._meta()),
+                    pr -> new ListPromptsRequest(pr.cursor(), pr._meta()));
 
     public ListPromptsRequest {
         MetaValidator.requireValid(_meta);
