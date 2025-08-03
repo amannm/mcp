@@ -1,9 +1,7 @@
 package com.amannmalik.mcp.ping;
 
 import com.amannmalik.mcp.core.JsonCodec;
-import com.amannmalik.mcp.util.EmptyJsonObjectCodec;
-import jakarta.json.JsonObject;
-import jakarta.json.JsonValue;
+import jakarta.json.*;
 
 public record PingResponse() {
     public static final JsonCodec<PingResponse> CODEC = new JsonCodec<>() {
@@ -14,7 +12,7 @@ public record PingResponse() {
 
         @Override
         public PingResponse fromJson(JsonObject obj) {
-            EmptyJsonObjectCodec.requireEmpty(obj);
+            if (obj != null && !obj.isEmpty()) throw new IllegalArgumentException("unexpected fields");
             return new PingResponse();
         }
     };
