@@ -362,7 +362,7 @@ public final class McpServer implements AutoCloseable {
     }
 
     private void cancelled(JsonRpcNotification note) {
-        CancelledNotification cn = CancellationCodec.toCancelledNotification(note.params());
+        CancelledNotification cn = CancelledNotification.CODEC.fromJson(note.params());
         cancellationTracker.cancel(cn.requestId(), cn.reason());
         progressManager.release(cn.requestId());
         try {
@@ -544,7 +544,7 @@ public final class McpServer implements AutoCloseable {
                 try {
                     send(new JsonRpcNotification(
                             NotificationMethod.CANCELLED.method(),
-                            CancellationCodec.toJsonObject(new CancelledNotification(id, "timeout"))));
+                            CancelledNotification.CODEC.toJson(new CancelledNotification(id, "timeout"))));
                 } catch (IOException ignore) {
                 }
                 pending.remove(id);

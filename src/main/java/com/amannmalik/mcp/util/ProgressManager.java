@@ -10,7 +10,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 
-/// - [Progress](specification/2025-06-18/basic/utilities/progress.mdx)
 public final class ProgressManager {
     private final Map<ProgressToken, Double> progress = new ConcurrentHashMap<>();
     private final Map<RequestId, ProgressToken> tokens = new ConcurrentHashMap<>();
@@ -22,7 +21,7 @@ public final class ProgressManager {
     }
 
     public Optional<ProgressToken> register(RequestId id, JsonObject params) {
-        Optional<ProgressToken> token = ProgressCodec.fromMeta(params);
+        Optional<ProgressToken> token = ProgressNotification.fromMeta(params);
         token.ifPresent(t -> {
             Double prev = progress.putIfAbsent(t, Double.NEGATIVE_INFINITY);
             if (prev != null) throw new IllegalArgumentException("Duplicate token: " + t);
@@ -75,7 +74,7 @@ public final class ProgressManager {
         }
         sender.send(new JsonRpcNotification(
                 NotificationMethod.PROGRESS.method(),
-                ProgressCodec.toJsonObject(note)
+                ProgressNotification.CODEC.toJson(note)
         ));
     }
 }

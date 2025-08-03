@@ -9,6 +9,7 @@ import com.amannmalik.mcp.logging.*;
 import com.amannmalik.mcp.ping.*;
 import com.amannmalik.mcp.resources.*;
 import com.amannmalik.mcp.roots.*;
+import com.amannmalik.mcp.tools.*;
 import com.amannmalik.mcp.sampling.*;
 import com.amannmalik.mcp.transport.*;
 import com.amannmalik.mcp.util.*;
@@ -374,7 +375,7 @@ public final class McpClient implements AutoCloseable {
         } catch (TimeoutException e) {
             try {
                 notify(NotificationMethod.CANCELLED,
-                        CancellationCodec.toJsonObject(new CancelledNotification(reqId, "timeout")));
+                        CancelledNotification.CODEC.toJson(new CancelledNotification(reqId, "timeout")));
             } catch (IOException ignore) {
             }
             throw new IOException("Request timed out after " + timeoutMillis + " ms", e);
@@ -488,7 +489,7 @@ public final class McpClient implements AutoCloseable {
             throw new IOException("failed to fetch resource metadata: HTTP " + resp.statusCode());
         }
         try (InputStream body = resp.body(); JsonReader reader = Json.createReader(body)) {
-            resourceMetadata = ResourceMetadataCodec.fromJsonObject(reader.readObject());
+            resourceMetadata = ResourceMetadata.CODEC.fromJson(reader.readObject());
         }
     }
 
@@ -622,7 +623,7 @@ public final class McpClient implements AutoCloseable {
     private void handleProgress(JsonRpcNotification note) {
         if (note.params() == null) return;
         try {
-            ProgressNotification pn = ProgressCodec.toProgressNotification(note.params());
+            ProgressNotification pn = ProgressNotification.CODEC.fromJson(note.params());
             progressManager.record(pn);
             listener.onProgress(pn);
         } catch (IllegalArgumentException | IllegalStateException ignore) {
@@ -659,14 +660,14 @@ public final class McpClient implements AutoCloseable {
 
     private void handleToolsListChanged(JsonRpcNotification note) {
         try {
-            EmptyJsonObjectCodec.requireEmpty(note.params());
+            ToolListChangedNotification.CODEC.fromJson(note.params());
             listener.onToolListChanged();
         } catch (IllegalArgumentException ignore) {
         }
     }
 
     private void cancelled(JsonRpcNotification note) {
-        CancelledNotification cn = CancellationCodec.toCancelledNotification(note.params());
+        CancelledNotification cn = CancelledNotification.CODEC.fromJson(note.params());
         cancellationTracker.cancel(cn.requestId(), cn.reason());
         progressManager.release(cn.requestId());
         String reason = cancellationTracker.reason(cn.requestId());

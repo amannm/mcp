@@ -1,20 +1,19 @@
 package com.amannmalik.mcp.roots;
 
 import com.amannmalik.mcp.core.JsonCodec;
-import com.amannmalik.mcp.util.EmptyJsonObjectCodec;
-import jakarta.json.JsonObject;
+import jakarta.json.*;
 
 public record RootsListChangedNotification() {
     public static final JsonCodec<RootsListChangedNotification> CODEC = new JsonCodec<>() {
         @Override
         public JsonObject toJson(RootsListChangedNotification n) {
             if (n == null) throw new IllegalArgumentException("notification required");
-            return EmptyJsonObjectCodec.toJsonObject();
+            return JsonValue.EMPTY_JSON_OBJECT;
         }
 
         @Override
         public RootsListChangedNotification fromJson(JsonObject obj) {
-            EmptyJsonObjectCodec.requireEmpty(obj);
+            if (obj != null && !obj.isEmpty()) throw new IllegalArgumentException("unexpected fields");
             return new RootsListChangedNotification();
         }
     };
