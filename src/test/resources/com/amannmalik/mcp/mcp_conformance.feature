@@ -1,6 +1,5 @@
 Feature: MCP protocol conformance
 
-  # Specification Links:
   # - [Base Protocol](specification/2025-06-18/basic.mdx)
   # - [Server Features](specification/2025-06-18/server.mdx)
   Scenario Outline: MCP server conformance test
@@ -34,7 +33,6 @@ Feature: MCP protocol conformance
       | stdio     |
       | http      |
 
-  # Specification Links:
   # - [Tools](specification/2025-06-18/server/tools.mdx)
   Scenario Outline: MCP tools specification conformance
     Given a running MCP server using <transport> transport
@@ -57,7 +55,6 @@ Feature: MCP protocol conformance
       | stdio     |
       | http      |
 
-  # Specification Links:
   # - [Prompts](specification/2025-06-18/server/prompts.mdx)
   Scenario Outline: MCP prompts specification conformance
     Given a running MCP server using <transport> transport
@@ -81,7 +78,6 @@ Feature: MCP protocol conformance
       | stdio     |
       | http      |
 
-  # Specification Links:
   # - [Resources](specification/2025-06-18/server/resources.mdx)
   Scenario Outline: MCP Resource metadata conforms to specification
     Given a running MCP server using <transport> transport
@@ -97,7 +93,6 @@ Feature: MCP protocol conformance
       | stdio     |
       | http      |
 
-  # Specification Links:
   # - [Annotations](specification/2025-06-18/server/annotations.mdx)
   Scenario Outline: MCP annotations specification conformance
     Given a running MCP server using <transport> transport
@@ -114,7 +109,6 @@ Feature: MCP protocol conformance
       | stdio     |
       | http      |
 
-  # Specification Links:
   # - [Logging](specification/2025-06-18/server/utilities/logging.mdx)
   Scenario Outline: MCP logging specification conformance
     Given a running MCP server using <transport> transport
@@ -135,7 +129,6 @@ Feature: MCP protocol conformance
       | stdio     |
       | http      |
 
-  # Specification Links:
   # - [Completion](specification/2025-06-18/server/utilities/completion.mdx)
   Scenario Outline: MCP completion specification conformance
     Given a running MCP server using <transport> transport
@@ -156,7 +149,6 @@ Feature: MCP protocol conformance
       | stdio     |
       | http      |
 
-  # Specification Links:
   # - [Elicitation](specification/2025-06-18/client/elicitation.mdx)
   Scenario Outline: MCP elicitation specification conformance
     Given a running MCP server using <transport> transport
@@ -177,7 +169,6 @@ Feature: MCP protocol conformance
       | stdio     |
       | http      |
 
-  # Specification Links:
   # - [Sampling](specification/2025-06-18/client/sampling.mdx)
   Scenario Outline: MCP sampling specification conformance
     Given a running MCP server using <transport> transport
@@ -196,7 +187,6 @@ Feature: MCP protocol conformance
       | stdio     |
       | http      |
 
-  # Specification Links:
   # - [Ping](specification/2025-06-18/basic/utilities/ping.mdx)
   Scenario Outline: MCP ping error handling specification conformance
     Given a running MCP server using <transport> transport
@@ -212,7 +202,6 @@ Feature: MCP protocol conformance
       | stdio     |
       | http      |
 
-  # Specification Links:
   # - [Progress](specification/2025-06-18/basic/utilities/progress.mdx)
   Scenario Outline: MCP progress specification conformance
     Given a running MCP server using <transport> transport
@@ -229,7 +218,6 @@ Feature: MCP protocol conformance
       | stdio     |
       | http      |
 
-  # Specification Links:
   # - [Pagination](specification/2025-06-18/server/utilities/pagination.mdx)
   Scenario Outline: MCP pagination specification conformance
     Given a running MCP server using <transport> transport
@@ -244,7 +232,6 @@ Feature: MCP protocol conformance
       | stdio     |
       | http      |
 
-  # Specification Links:
   # - [Roots](specification/2025-06-18/client/roots.mdx)
   Scenario Outline: MCP roots specification conformance
     Given a running MCP server using <transport> transport
@@ -263,7 +250,6 @@ Feature: MCP protocol conformance
       | stdio     |
       | http      |
 
-  # Specification Links:
   # - [Authorization](specification/2025-06-18/basic/authorization.mdx)
   Scenario Outline: MCP authorization specification conformance
     Given a running MCP server using <transport> transport
@@ -279,7 +265,6 @@ Feature: MCP protocol conformance
       | transport |
       | http      |
 
-  # Specification Links:
   # - [Subscriptions](specification/2025-06-18/server/subscriptions.mdx)
   # - [Notifications](specification/2025-06-18/server/notifications.mdx)
   Scenario Outline: MCP notification and subscription specification conformance
@@ -318,7 +303,6 @@ Feature: MCP protocol conformance
       | stdio     |
       | http      |
 
-  # Specification Links:
   # - [Notifications](specification/2025-06-18/server/notifications.mdx)
   Scenario Outline: MCP notification timing and delivery conformance
     Given a running MCP server using <transport> transport
@@ -344,7 +328,6 @@ Feature: MCP protocol conformance
       | stdio     |
       | http      |
 
-  # Specification Links:
   # - [Authorization](specification/2025-06-18/basic/authorization.mdx)
   Scenario Outline: MCP authorization metadata specification conformance
     Given a running MCP server using <transport> transport
