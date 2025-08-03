@@ -472,7 +472,7 @@ public final class McpServer implements AutoCloseable {
             return invalidParams(req, "Missing params");
         }
         try {
-            logLevel = valid(() -> LoggingCodec.toSetLevelRequest(params)).level();
+            logLevel = valid(() -> SetLevelRequest.CODEC.fromJson(params)).level();
             return new JsonRpcResponse(req.id(), JsonValue.EMPTY_JSON_OBJECT);
         } catch (InvalidParams e) {
             return invalidParams(req, e.getMessage());
@@ -484,7 +484,7 @@ public final class McpServer implements AutoCloseable {
                 note.level().ordinal() < logLevel.ordinal()) return;
         requireServerCapability(ServerCapability.LOGGING);
         send(new JsonRpcNotification(NotificationMethod.MESSAGE.method(),
-                LoggingCodec.toJsonObject(note)));
+                LoggingMessageNotification.CODEC.toJson(note)));
     }
 
     private void sendLog(LoggingLevel level, String logger, JsonValue data) throws IOException {
