@@ -164,7 +164,6 @@ public final class StreamableHttpClientTransport implements Transport {
         }
 
         @Override
-        // Minimal SSE parser; recognises id and data fields
         public void run() {
             try (BufferedReader br = new BufferedReader(new InputStreamReader(input, StandardCharsets.UTF_8))) {
                 String line;
