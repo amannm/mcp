@@ -170,7 +170,10 @@ public record McpConfiguration(SystemConfig system,
         if (c.performance().pagination().defaultPageSize() <= 0 ||
                 c.performance().pagination().maxCompletionValues() <= 0 ||
                 c.performance().pagination().responseQueueCapacity() <= 0) throw new IllegalArgumentException("pagination");
+        if (c.performance().runtime().rateLimiterWindowMs() <= 0 ||
+                c.performance().runtime().initialRequestId() < 0) throw new IllegalArgumentException("runtime");
         if (c.server().transport().port() < 0 || c.server().transport().port() > 65_535) throw new IllegalArgumentException("port");
+        if (c.server().messaging().errorCodes().rateLimit() >= 0) throw new IllegalArgumentException("errorCodes.rateLimit must be negative");
     }
 
 
@@ -216,7 +219,7 @@ public record McpConfiguration(SystemConfig system,
     public record TimeoutsConfig(long defaultMs, long pingMs, int processWaitSeconds) {
     }
 
-    public record PerformanceConfig(RateLimitsConfig rateLimits, PaginationConfig pagination) {
+    public record PerformanceConfig(RateLimitsConfig rateLimits, PaginationConfig pagination, RuntimeConfig runtime) {
     }
 
     public record RateLimitsConfig(int toolsPerSecond, int completionsPerSecond, int logsPerSecond, int progressPerSecond) {
@@ -225,7 +228,10 @@ public record McpConfiguration(SystemConfig system,
     public record PaginationConfig(int defaultPageSize, int maxCompletionValues, int sseHistoryLimit, int responseQueueCapacity) {
     }
 
-    public record ServerConfig(ServerInfoConfig info, TransportConfig transport) {
+    public record RuntimeConfig(long rateLimiterWindowMs, long initialRequestId) {
+    }
+
+    public record ServerConfig(ServerInfoConfig info, TransportConfig transport, MessagingConfig messaging) {
     }
 
     public record ServerInfoConfig(String name, String description, String version) {
@@ -237,10 +243,25 @@ public record McpConfiguration(SystemConfig system,
         }
     }
 
-    public record SecurityConfig(AuthConfig auth) {
+    public record MessagingConfig(ErrorCodesConfig errorCodes, LoggerNamesConfig loggerNames, ErrorMessagesConfig errorMessages) {
+    }
+
+    public record ErrorCodesConfig(int rateLimit) {
+    }
+
+    public record LoggerNamesConfig(String server, String parser, String cancellation) {
+    }
+
+    public record ErrorMessagesConfig(String processing, String notInitialized, String parseError, String invalidRequest, String accessDenied, String timeout) {
+    }
+
+    public record SecurityConfig(AuthConfig auth, PrivacyConfig privacy) {
     }
 
     public record AuthConfig(String jwtSecretEnv, String defaultPrincipal) {
+    }
+
+    public record PrivacyConfig(String defaultBoundary) {
     }
 
     public record ClientConfig(ClientInfoConfig info, List<String> capabilities) {

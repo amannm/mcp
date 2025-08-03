@@ -18,6 +18,9 @@ performance:
     max_completion_values: 100
     sse_history_limit: 100
     response_queue_capacity: 1
+  runtime:
+    rate_limiter_window_ms: 1000
+    initial_request_id: 1
 
 server:
   info:
@@ -30,11 +33,27 @@ server:
     allowed_origins:
       - "http://localhost"
       - "http://127.0.0.1"
+  messaging:
+    error_codes:
+      rate_limit: -32001
+    logger_names:
+      server: "server"
+      parser: "parser"
+      cancellation: "cancellation"
+    error_messages:
+      processing: "Error processing message"
+      not_initialized: "Server not initialized"
+      parse_error: "Parse error"
+      invalid_request: "Invalid request"
+      access_denied: "Access denied"
+      timeout: "Request timed out"
 
 security:
   auth:
     jwt_secret_env: "MCP_JWT_SECRET"
     default_principal: "default"
+  privacy:
+    default_boundary: "default"
 
 client:
   info:

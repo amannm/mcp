@@ -52,7 +52,8 @@ final class McpConfigurationParser {
     private static McpConfiguration.PerformanceConfig parsePerformanceDefaults(JsonObject obj) {
         var rl = parseRateLimitsDefaults(required(obj.getJsonObject("rate_limits"), "rate_limits"));
         var pg = parsePaginationDefaults(required(obj.getJsonObject("pagination"), "pagination"));
-        return new McpConfiguration.PerformanceConfig(rl, pg);
+        var rt = parseRuntimeDefaults(required(obj.getJsonObject("runtime"), "runtime"));
+        return new McpConfiguration.PerformanceConfig(rl, pg, rt);
     }
 
     private static McpConfiguration.RateLimitsConfig parseRateLimitsDefaults(JsonObject obj) {
@@ -71,10 +72,17 @@ final class McpConfigurationParser {
                 obj.getInt("response_queue_capacity"));
     }
 
+    private static McpConfiguration.RuntimeConfig parseRuntimeDefaults(JsonObject obj) {
+        return new McpConfiguration.RuntimeConfig(
+                obj.getJsonNumber("rate_limiter_window_ms").longValue(),
+                obj.getJsonNumber("initial_request_id").longValue());
+    }
+
     private static McpConfiguration.ServerConfig parseServerDefaults(JsonObject obj) {
         var info = parseServerInfoDefaults(required(obj.getJsonObject("info"), "server info"));
         var transport = parseTransportDefaults(required(obj.getJsonObject("transport"), "transport"));
-        return new McpConfiguration.ServerConfig(info, transport);
+        var messaging = parseMessagingDefaults(required(obj.getJsonObject("messaging"), "messaging"));
+        return new McpConfiguration.ServerConfig(info, transport, messaging);
     }
 
     private static McpConfiguration.ServerInfoConfig parseServerInfoDefaults(JsonObject obj) {
@@ -93,15 +101,48 @@ final class McpConfigurationParser {
                 origins);
     }
 
+    private static McpConfiguration.MessagingConfig parseMessagingDefaults(JsonObject obj) {
+        var errorCodes = parseErrorCodesDefaults(required(obj.getJsonObject("error_codes"), "error_codes"));
+        var loggerNames = parseLoggerNamesDefaults(required(obj.getJsonObject("logger_names"), "logger_names"));
+        var errorMessages = parseErrorMessagesDefaults(required(obj.getJsonObject("error_messages"), "error_messages"));
+        return new McpConfiguration.MessagingConfig(errorCodes, loggerNames, errorMessages);
+    }
+
+    private static McpConfiguration.ErrorCodesConfig parseErrorCodesDefaults(JsonObject obj) {
+        return new McpConfiguration.ErrorCodesConfig(obj.getInt("rate_limit"));
+    }
+
+    private static McpConfiguration.LoggerNamesConfig parseLoggerNamesDefaults(JsonObject obj) {
+        return new McpConfiguration.LoggerNamesConfig(
+                obj.getString("server"),
+                obj.getString("parser"),
+                obj.getString("cancellation"));
+    }
+
+    private static McpConfiguration.ErrorMessagesConfig parseErrorMessagesDefaults(JsonObject obj) {
+        return new McpConfiguration.ErrorMessagesConfig(
+                obj.getString("processing"),
+                obj.getString("not_initialized"),
+                obj.getString("parse_error"),
+                obj.getString("invalid_request"),
+                obj.getString("access_denied"),
+                obj.getString("timeout"));
+    }
+
     private static McpConfiguration.SecurityConfig parseSecurityDefaults(JsonObject obj) {
         var auth = parseAuthDefaults(required(obj.getJsonObject("auth"), "auth"));
-        return new McpConfiguration.SecurityConfig(auth);
+        var privacy = parsePrivacyDefaults(required(obj.getJsonObject("privacy"), "privacy"));
+        return new McpConfiguration.SecurityConfig(auth, privacy);
     }
 
     private static McpConfiguration.AuthConfig parseAuthDefaults(JsonObject obj) {
         return new McpConfiguration.AuthConfig(
                 obj.getString("jwt_secret_env"),
                 obj.getString("default_principal"));
+    }
+
+    private static McpConfiguration.PrivacyConfig parsePrivacyDefaults(JsonObject obj) {
+        return new McpConfiguration.PrivacyConfig(obj.getString("default_boundary"));
     }
 
     private static McpConfiguration.ClientConfig parseClientDefaults(JsonObject obj) {
@@ -149,7 +190,8 @@ final class McpConfigurationParser {
         if (obj == null) return def;
         var rl = parseRateLimits(obj.getJsonObject("rate_limits"), def.rateLimits());
         var pg = parsePagination(obj.getJsonObject("pagination"), def.pagination());
-        return new McpConfiguration.PerformanceConfig(rl, pg);
+        var rt = parseRuntime(obj.getJsonObject("runtime"), def.runtime());
+        return new McpConfiguration.PerformanceConfig(rl, pg, rt);
     }
 
     private static McpConfiguration.RateLimitsConfig parseRateLimits(JsonObject obj, McpConfiguration.RateLimitsConfig def) {
@@ -170,11 +212,19 @@ final class McpConfigurationParser {
                 obj.getInt("response_queue_capacity", def.responseQueueCapacity()));
     }
 
+    private static McpConfiguration.RuntimeConfig parseRuntime(JsonObject obj, McpConfiguration.RuntimeConfig def) {
+        if (obj == null) return def;
+        long windowMs = obj.containsKey("rate_limiter_window_ms") ? obj.getJsonNumber("rate_limiter_window_ms").longValue() : def.rateLimiterWindowMs();
+        long requestId = obj.containsKey("initial_request_id") ? obj.getJsonNumber("initial_request_id").longValue() : def.initialRequestId();
+        return new McpConfiguration.RuntimeConfig(windowMs, requestId);
+    }
+
     private static McpConfiguration.ServerConfig parseServer(JsonObject obj, McpConfiguration.ServerConfig def) {
         if (obj == null) return def;
         var info = parseServerInfo(obj.getJsonObject("info"), def.info());
         var transport = parseTransport(obj.getJsonObject("transport"), def.transport());
-        return new McpConfiguration.ServerConfig(info, transport);
+        var messaging = parseMessaging(obj.getJsonObject("messaging"), def.messaging());
+        return new McpConfiguration.ServerConfig(info, transport, messaging);
     }
 
     private static McpConfiguration.ServerInfoConfig parseServerInfo(JsonObject obj, McpConfiguration.ServerInfoConfig def) {
@@ -196,10 +246,43 @@ final class McpConfigurationParser {
                 origins);
     }
 
+    private static McpConfiguration.MessagingConfig parseMessaging(JsonObject obj, McpConfiguration.MessagingConfig def) {
+        if (obj == null) return def;
+        var errorCodes = parseErrorCodes(obj.getJsonObject("error_codes"), def.errorCodes());
+        var loggerNames = parseLoggerNames(obj.getJsonObject("logger_names"), def.loggerNames());
+        var errorMessages = parseErrorMessages(obj.getJsonObject("error_messages"), def.errorMessages());
+        return new McpConfiguration.MessagingConfig(errorCodes, loggerNames, errorMessages);
+    }
+
+    private static McpConfiguration.ErrorCodesConfig parseErrorCodes(JsonObject obj, McpConfiguration.ErrorCodesConfig def) {
+        if (obj == null) return def;
+        return new McpConfiguration.ErrorCodesConfig(obj.getInt("rate_limit", def.rateLimit()));
+    }
+
+    private static McpConfiguration.LoggerNamesConfig parseLoggerNames(JsonObject obj, McpConfiguration.LoggerNamesConfig def) {
+        if (obj == null) return def;
+        return new McpConfiguration.LoggerNamesConfig(
+                obj.getString("server", def.server()),
+                obj.getString("parser", def.parser()),
+                obj.getString("cancellation", def.cancellation()));
+    }
+
+    private static McpConfiguration.ErrorMessagesConfig parseErrorMessages(JsonObject obj, McpConfiguration.ErrorMessagesConfig def) {
+        if (obj == null) return def;
+        return new McpConfiguration.ErrorMessagesConfig(
+                obj.getString("processing", def.processing()),
+                obj.getString("not_initialized", def.notInitialized()),
+                obj.getString("parse_error", def.parseError()),
+                obj.getString("invalid_request", def.invalidRequest()),
+                obj.getString("access_denied", def.accessDenied()),
+                obj.getString("timeout", def.timeout()));
+    }
+
     private static McpConfiguration.SecurityConfig parseSecurity(JsonObject obj, McpConfiguration.SecurityConfig def) {
         if (obj == null) return def;
         var auth = parseAuth(obj.getJsonObject("auth"), def.auth());
-        return new McpConfiguration.SecurityConfig(auth);
+        var privacy = parsePrivacy(obj.getJsonObject("privacy"), def.privacy());
+        return new McpConfiguration.SecurityConfig(auth, privacy);
     }
 
     private static McpConfiguration.AuthConfig parseAuth(JsonObject obj, McpConfiguration.AuthConfig def) {
@@ -207,6 +290,11 @@ final class McpConfigurationParser {
         return new McpConfiguration.AuthConfig(
                 obj.getString("jwt_secret_env", def.jwtSecretEnv()),
                 obj.getString("default_principal", def.defaultPrincipal()));
+    }
+
+    private static McpConfiguration.PrivacyConfig parsePrivacy(JsonObject obj, McpConfiguration.PrivacyConfig def) {
+        if (obj == null) return def;
+        return new McpConfiguration.PrivacyConfig(obj.getString("default_boundary", def.defaultBoundary()));
     }
 
     private static McpConfiguration.ClientConfig parseClient(JsonObject obj, McpConfiguration.ClientConfig def) {
