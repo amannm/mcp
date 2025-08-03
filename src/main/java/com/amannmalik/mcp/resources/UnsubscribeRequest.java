@@ -2,7 +2,6 @@ package com.amannmalik.mcp.resources;
 
 import com.amannmalik.mcp.core.AbstractEntityCodec;
 import com.amannmalik.mcp.core.JsonCodec;
-import com.amannmalik.mcp.util.JsonUtil;
 import com.amannmalik.mcp.validation.MetaValidator;
 import com.amannmalik.mcp.validation.UriValidator;
 import jakarta.json.*;
@@ -21,7 +20,7 @@ public record UnsubscribeRequest(String uri, JsonObject _meta) {
         @Override
         public UnsubscribeRequest fromJson(JsonObject obj) {
             if (obj == null) throw new IllegalArgumentException("object required");
-            JsonUtil.requireOnlyKeys(obj, Set.of("uri", "_meta"));
+            requireOnlyKeys(obj, Set.of("uri", "_meta"));
             String uri = requireString(obj, "uri");
             JsonObject meta = obj.getJsonObject("_meta");
             return new UnsubscribeRequest(uri, meta);

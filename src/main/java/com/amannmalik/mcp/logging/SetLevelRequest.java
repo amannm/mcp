@@ -1,7 +1,7 @@
 package com.amannmalik.mcp.logging;
 
 import com.amannmalik.mcp.core.JsonCodec;
-import com.amannmalik.mcp.util.JsonUtil;
+import com.amannmalik.mcp.core.AbstractEntityCodec;
 import com.amannmalik.mcp.validation.MetaValidator;
 import jakarta.json.*;
 
@@ -19,7 +19,7 @@ public record SetLevelRequest(LoggingLevel level, JsonObject _meta) {
         @Override
         public SetLevelRequest fromJson(JsonObject obj) {
             if (obj == null) throw new IllegalArgumentException("object required");
-            JsonUtil.requireOnlyKeys(obj, Set.of("level", "_meta"));
+            AbstractEntityCodec.requireOnlyKeys(obj, Set.of("level", "_meta"));
             String raw = obj.getString("level", null);
             if (raw == null) throw new IllegalArgumentException("level required");
             LoggingLevel level = LoggingLevel.fromString(raw);

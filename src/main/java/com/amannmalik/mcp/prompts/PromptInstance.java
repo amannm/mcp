@@ -1,7 +1,7 @@
 package com.amannmalik.mcp.prompts;
 
 import com.amannmalik.mcp.core.JsonCodec;
-import com.amannmalik.mcp.util.JsonUtil;
+import com.amannmalik.mcp.core.AbstractEntityCodec;
 import jakarta.json.*;
 
 import java.util.ArrayList;
@@ -22,7 +22,7 @@ public record PromptInstance(String description, List<PromptMessage> messages) {
         @Override
         public PromptInstance fromJson(JsonObject obj) {
             if (obj == null) throw new IllegalArgumentException("object required");
-            JsonUtil.requireOnlyKeys(obj, Set.of("messages", "description"));
+            AbstractEntityCodec.requireOnlyKeys(obj, Set.of("messages", "description"));
             JsonArray arr = obj.getJsonArray("messages");
             if (arr == null) throw new IllegalArgumentException("messages required");
             List<PromptMessage> msgs = new ArrayList<>();

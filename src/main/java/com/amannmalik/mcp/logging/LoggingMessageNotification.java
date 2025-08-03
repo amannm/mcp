@@ -1,7 +1,7 @@
 package com.amannmalik.mcp.logging;
 
 import com.amannmalik.mcp.core.JsonCodec;
-import com.amannmalik.mcp.util.JsonUtil;
+import com.amannmalik.mcp.core.AbstractEntityCodec;
 import com.amannmalik.mcp.validation.InputSanitizer;
 import jakarta.json.*;
 
@@ -21,7 +21,7 @@ public record LoggingMessageNotification(LoggingLevel level, String logger, Json
         @Override
         public LoggingMessageNotification fromJson(JsonObject obj) {
             if (obj == null) throw new IllegalArgumentException("object required");
-            JsonUtil.requireOnlyKeys(obj, Set.of("level", "logger", "data"));
+            AbstractEntityCodec.requireOnlyKeys(obj, Set.of("level", "logger", "data"));
             String raw = obj.getString("level", null);
             if (raw == null) throw new IllegalArgumentException("level required");
             LoggingLevel level = LoggingLevel.fromString(raw);

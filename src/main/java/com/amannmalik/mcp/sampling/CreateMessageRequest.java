@@ -1,7 +1,7 @@
 package com.amannmalik.mcp.sampling;
 
 import com.amannmalik.mcp.core.JsonCodec;
-import com.amannmalik.mcp.util.JsonUtil;
+import com.amannmalik.mcp.core.AbstractEntityCodec;
 import com.amannmalik.mcp.validation.InputSanitizer;
 import com.amannmalik.mcp.validation.MetaValidator;
 import jakarta.json.*;
@@ -48,7 +48,7 @@ public record CreateMessageRequest(
         @Override
         public CreateMessageRequest fromJson(JsonObject obj) {
             if (obj == null) throw new IllegalArgumentException("object required");
-            JsonUtil.requireOnlyKeys(obj, Set.of("messages", "modelPreferences", "systemPrompt", "includeContext", "temperature", "maxTokens", "stopSequences", "metadata", "_meta"));
+            AbstractEntityCodec.requireOnlyKeys(obj, Set.of("messages", "modelPreferences", "systemPrompt", "includeContext", "temperature", "maxTokens", "stopSequences", "metadata", "_meta"));
             List<SamplingMessage> messages = obj.getJsonArray("messages").stream()
                     .map(v -> SamplingMessage.CODEC.fromJson(v.asJsonObject()))
                     .toList();
