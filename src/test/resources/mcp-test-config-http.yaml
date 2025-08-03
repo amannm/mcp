@@ -14,7 +14,7 @@ performance:
     logs_per_second: 100
     progress_per_second: 100
   pagination:
-    default_page_size: 10
+    default_page_size: 2
     max_completion_values: 10
     sse_history_limit: 10
     response_queue_capacity: 10
