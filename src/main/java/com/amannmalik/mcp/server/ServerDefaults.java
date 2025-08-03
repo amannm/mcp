@@ -1,5 +1,6 @@
 package com.amannmalik.mcp.server;
 
+import com.amannmalik.mcp.annotations.Annotations;
 import com.amannmalik.mcp.content.ContentBlock;
 import com.amannmalik.mcp.prompts.*;
 import com.amannmalik.mcp.resources.*;
@@ -8,15 +9,18 @@ import com.amannmalik.mcp.server.completion.*;
 import com.amannmalik.mcp.server.tools.*;
 import jakarta.json.Json;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 public final class ServerDefaults {
     private ServerDefaults() {
     }
 
     public static ResourceProvider resources() {
-        Resource r = new Resource("test://example", "example", null, null, "text/plain", 5L, null, null);
+        Annotations ann = new Annotations(Set.of(Role.USER), 0.5, Instant.parse("2024-01-01T00:00:00Z"));
+        Resource r = new Resource("test://example", "example", null, null, "text/plain", 5L, ann, null);
         ResourceBlock.Text block = new ResourceBlock.Text("test://example", "text/plain", "hello", null);
         ResourceTemplate t = new ResourceTemplate("test://template", "example_template", null, null, "text/plain", null, null);
         return new InMemoryResourceProvider(List.of(r), Map.of(r.uri(), block), List.of(t));
@@ -30,7 +34,8 @@ public final class ServerDefaults {
                         .add("message", Json.createObjectBuilder().add("type", "string")))
                 .add("required", Json.createArrayBuilder().add("message"))
                 .build();
-        Tool tool = new Tool("test_tool", "Test Tool", null, schema, outSchema, null, null);
+        Tool tool = new Tool("test_tool", "Test Tool", null, schema, outSchema,
+                new ToolAnnotations("Annotated Tool", true, null, null, null), null);
         Tool errorTool = new Tool("error_tool", "Error Tool", null, schema, null, null, null);
         var eschema = Json.createObjectBuilder()
                 .add("type", "object")
