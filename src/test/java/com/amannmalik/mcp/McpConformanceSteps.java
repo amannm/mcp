@@ -24,10 +24,15 @@ import jakarta.json.JsonValue;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.StringReader;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
+
+import java.net.http.HttpResponse;
+
 import java.net.http.HttpResponse.BodyHandlers;
+
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -450,6 +455,37 @@ public final class McpConformanceSteps {
                     yield JsonRpcError.of(RequestId.NullId.INSTANCE, JsonRpcErrorCode.INTERNAL_ERROR, e.getMessage());
                 }
             }
+            case "unauthorized_request" -> {
+                var http = HttpClient.newHttpClient();
+                var req = HttpRequest.newBuilder(
+                                URI.create("http://127.0.0.1:" + serverTransport.port() + "/"))
+                        .header("Content-Type", "application/json")
+                        .POST(HttpRequest.BodyPublishers.ofString("{}"))
+                        .build();
+                var resp = http.send(req, HttpResponse.BodyHandlers.discarding());
+                yield new JsonRpcResponse(RequestId.NullId.INSTANCE,
+                        Json.createObjectBuilder()
+                                .add("status", resp.statusCode())
+                                .add("www_authenticate",
+                                        resp.headers().firstValue("WWW-Authenticate").orElse(""))
+                                .build());
+            }
+            case "resource_metadata_auth_server" -> {
+                var http = HttpClient.newHttpClient();
+                var uri = URI.create("http://127.0.0.1:" + serverTransport.port()
+                        + "/.well-known/oauth-protected-resource");
+                var resp = http.send(HttpRequest.newBuilder(uri).GET().build(),
+                        HttpResponse.BodyHandlers.ofString());
+                try (var reader = Json.createReader(new StringReader(resp.body()))) {
+                    var body = reader.readObject();
+                    yield new JsonRpcResponse(RequestId.NullId.INSTANCE,
+                            Json.createObjectBuilder()
+                                    .add("status", resp.statusCode())
+                                    .add("authorization_server",
+                                            body.getJsonArray("authorization_servers").getString(0))
+                                    .build());
+                }
+            }
             case "ping_invalid" -> client.request("ping",
                     Json.createObjectBuilder().add("extra", parameter).build());
             case "roots_listed" -> {
@@ -824,6 +860,14 @@ public final class McpConformanceSteps {
                 assertEquals(expected, content.getString("text"));
                 assertEquals("mock-model", result.getString("model"));
                 assertEquals("endTurn", result.getString("stopReason"));
+            }
+            case "unauthorized_request" -> {
+                assertEquals(401, result.getInt("status"));
+                assertEquals(expected, result.getString("www_authenticate"));
+            }
+            case "resource_metadata_auth_server" -> {
+                assertEquals(200, result.getInt("status"));
+                assertEquals(expected, result.getString("authorization_server"));
             }
             case "roots_listed" -> {
                 int c = result.getInt("count");
