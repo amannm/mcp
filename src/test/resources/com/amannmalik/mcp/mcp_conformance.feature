@@ -48,6 +48,7 @@ Feature: MCP protocol conformance
     And testing error conditions
       | operation         | parameter | expected_error_code |
       | call_unknown_tool | nope      | -32602              |
+      | list_tools_invalid_cursor | notacursor | -32602              |
     When the client disconnects
     Then the server terminates cleanly
 
@@ -71,6 +72,7 @@ Feature: MCP protocol conformance
       | operation              | parameter   | expected_error_code |
       | get_prompt_invalid     | nope        | -32602              |
       | get_prompt_missing_arg | test_prompt | -32602              |
+      | list_prompts_invalid_cursor | notacursor | -32602              |
     When the client disconnects
     Then the server terminates cleanly
 
@@ -134,6 +136,27 @@ Feature: MCP protocol conformance
       | http      |
 
   # Specification Links:
+  # - [Completion](specification/2025-06-18/server/utilities/completion.mdx)
+  Scenario Outline: MCP completion specification conformance
+    Given a running MCP server using <transport> transport
+    Then capabilities should be advertised and ping succeeds
+    When testing core functionality
+      | operation          | parameter | expected_result |
+      | request_completion |           | test_completion |
+    And testing error conditions
+      | operation                      | parameter | expected_error_code |
+      | request_completion_invalid     |           | -32602              |
+      | request_completion_missing_arg |           | -32602              |
+      | request_completion_missing_ref |           | -32602              |
+    When the client disconnects
+    Then the server terminates cleanly
+
+    Examples:
+      | transport |
+      | stdio     |
+      | http      |
+
+  # Specification Links:
   # - [Elicitation](specification/2025-06-18/client/elicitation.mdx)
   Scenario Outline: MCP elicitation specification conformance
     Given a running MCP server using <transport> transport
@@ -174,12 +197,30 @@ Feature: MCP protocol conformance
       | http      |
 
   # Specification Links:
+  # - [Ping](specification/2025-06-18/basic/utilities/ping.mdx)
+  Scenario Outline: MCP ping error handling specification conformance
+    Given a running MCP server using <transport> transport
+    Then capabilities should be advertised and ping succeeds
+    When testing error conditions
+      | operation    | parameter | expected_error_code |
+      | ping_invalid | oops      | -32602              |
+    When the client disconnects
+    Then the server terminates cleanly
+
+    Examples:
+      | transport |
+      | stdio     |
+      | http      |
+
+  # Specification Links:
   # - [Progress](specification/2025-06-18/basic/utilities/progress.mdx)
   Scenario Outline: MCP progress specification conformance
     Given a running MCP server using <transport> transport
     Then capabilities should be advertised and ping succeeds
     When requesting resource list with progress tracking
     Then progress updates are received
+    And progress completes to 1.0
+    And progress message is provided
     When the client disconnects
     Then the server terminates cleanly
 
@@ -268,6 +309,7 @@ Feature: MCP protocol conformance
       | operation                  | parameter  | expected_error_code |
       | subscribe_invalid_resource | bad://uri  | -32002              |
       | unsubscribe_nonexistent    | fake://uri | -32602              |
+      | subscribe_duplicate_resource | test://example | -32602 |
     When the client disconnects
     Then the server terminates cleanly
 
@@ -300,5 +342,20 @@ Feature: MCP protocol conformance
     Examples:
       | transport |
       | stdio     |
+      | http      |
+
+  # Specification Links:
+  # - [Authorization](specification/2025-06-18/basic/authorization.mdx)
+  Scenario Outline: MCP authorization metadata specification conformance
+    Given a running MCP server using <transport> transport
+    Then capabilities should be advertised and ping succeeds
+    When fetching authorization metadata
+    Then authorization metadata uses server base URL
+    And authorization servers are advertised
+    When the client disconnects
+    Then the server terminates cleanly
+
+    Examples:
+      | transport |
       | http      |
 

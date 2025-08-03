@@ -19,6 +19,7 @@ import io.cucumber.datatable.DataTable;
 import io.cucumber.java.After;
 import io.cucumber.java.en.*;
 import jakarta.json.Json;
+import jakarta.json.JsonObject;
 import jakarta.json.JsonValue;
 
 import java.io.File;
@@ -27,7 +28,11 @@ import java.io.StringReader;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
+
 import java.net.http.HttpResponse;
+
+import java.net.http.HttpResponse.BodyHandlers;
+
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -60,7 +65,10 @@ public final class McpConformanceSteps {
     private final Set<String> receivedNotifications = ConcurrentHashMap.newKeySet();
     private final BlockingQueue<ResourceUpdate> resourceUpdates = new LinkedBlockingQueue<>();
     private final BlockingQueue<ProgressNotification> progressUpdates = new LinkedBlockingQueue<>();
+    private ProgressNotification firstProgressUpdate;
+    private ProgressNotification lastProgressUpdate;
     private final List<String> paginatedTools = new ArrayList<>();
+    private JsonObject authorizationMetadata = JsonValue.EMPTY_JSON_OBJECT;
 
     private void setupTestConfiguration(String transport) {
         String configFile = "http".equals(transport) ? "/mcp-test-config-http.yaml" : "/mcp-test-config.yaml";
@@ -126,6 +134,11 @@ public final class McpConformanceSteps {
         assertEquals(expected, client.serverCapabilities());
         assertTrue(client.toolsListChangedSupported());
         assertDoesNotThrow(() -> client.ping());
+        assertTrue(Set.of(Protocol.LATEST_VERSION, Protocol.PREVIOUS_VERSION)
+                .contains(client.protocolVersion()));
+        var info = client.serverInfo();
+        assertFalse(info.name().isBlank());
+        assertFalse(info.version().isBlank());
     }
 
     @When("requesting resource list with progress tracking")
@@ -137,9 +150,31 @@ public final class McpConformanceSteps {
 
     @Then("progress updates are received")
     public void verifyProgressUpdates() throws Exception {
-        ProgressNotification note = progressUpdates.poll(2, TimeUnit.SECONDS);
-        assertNotNull(note);
-        assertEquals("tok", note.token().asString());
+        firstProgressUpdate = progressUpdates.poll(2, TimeUnit.SECONDS);
+        assertNotNull(firstProgressUpdate);
+        assertEquals("tok", firstProgressUpdate.token().asString());
+        lastProgressUpdate = firstProgressUpdate;
+    }
+
+    @And("progress completes to {double}")
+    public void progressCompletes(double expected) throws Exception {
+        double last = firstProgressUpdate.progress();
+        boolean complete = last >= expected;
+        lastProgressUpdate = firstProgressUpdate;
+        ProgressNotification note;
+        while ((note = progressUpdates.poll(2, TimeUnit.SECONDS)) != null) {
+            double current = note.progress();
+            assertTrue(current >= last);
+            last = current;
+            lastProgressUpdate = note;
+            if (current >= expected) complete = true;
+        }
+        assertTrue(complete);
+    }
+
+    @And("progress message is provided")
+    public void progressMessageProvided() {
+        assertNotNull(lastProgressUpdate.message());
     }
 
     @When("listing tools with pagination")
@@ -319,6 +354,7 @@ public final class McpConformanceSteps {
                     Json.createObjectBuilder().add("cursor", parameter).build());
             case "list_templates" -> client.request("resources/templates/list", Json.createObjectBuilder().build());
             case "list_tools", "list_tools_schema", "list_tools_output_schema", "list_tools_annotations" -> client.request("tools/list", Json.createObjectBuilder().build());
+            case "list_tools_invalid_cursor" -> client.request("tools/list", Json.createObjectBuilder().add("cursor", parameter).build());
             case "call_tool" -> client.request("tools/call",
                     Json.createObjectBuilder().add("name", parameter).build());
             case "call_tool_structured" -> client.request("tools/call",
@@ -348,6 +384,7 @@ public final class McpConformanceSteps {
                         Json.createObjectBuilder().add("name", parameter).build());
             }
             case "list_prompts" -> client.request("prompts/list", Json.createObjectBuilder().build());
+            case "list_prompts_invalid_cursor" -> client.request("prompts/list", Json.createObjectBuilder().add("cursor", parameter).build());
             case "get_prompt" -> client.request("prompts/get",
                     Json.createObjectBuilder().add("name", parameter)
                             .add("arguments", Json.createObjectBuilder().add("test_arg", "v")).build());
@@ -366,6 +403,16 @@ public final class McpConformanceSteps {
             case "request_completion" -> client.request("completion/complete",
                     Json.createObjectBuilder()
                             .add("ref", Json.createObjectBuilder().add("type", "ref/prompt").add("name", "test_prompt"))
+                            .add("argument", Json.createObjectBuilder().add("name", "test_arg").add("value", "")).build());
+            case "request_completion_invalid" -> client.request("completion/complete",
+                    Json.createObjectBuilder()
+                            .add("ref", Json.createObjectBuilder().add("type", "ref/prompt").add("name", "nope"))
+                            .add("argument", Json.createObjectBuilder().add("name", "test_arg").add("value", "")).build());
+            case "request_completion_missing_arg" -> client.request("completion/complete",
+                    Json.createObjectBuilder()
+                            .add("ref", Json.createObjectBuilder().add("type", "ref/prompt").add("name", "test_prompt")).build());
+            case "request_completion_missing_ref" -> client.request("completion/complete",
+                    Json.createObjectBuilder()
                             .add("argument", Json.createObjectBuilder().add("name", "test_arg").add("value", "")).build());
             case "request_sampling" -> {
                 var req = new CreateMessageRequest(
@@ -389,6 +436,8 @@ public final class McpConformanceSteps {
                     Json.createObjectBuilder().add("level", parameter).build());
             case "set_log_level_missing" -> client.request("logging/setLevel",
                     Json.createObjectBuilder().build());
+            case "set_log_level_extra" -> client.request("logging/setLevel",
+                    Json.createObjectBuilder().add("level", parameter).add("extra", true).build());
             case "subscribe_resource" -> client.request("resources/subscribe",
                     Json.createObjectBuilder().add("uri", parameter).build());
             case "unsubscribe_resource" -> client.request("resources/unsubscribe",
@@ -437,6 +486,8 @@ public final class McpConformanceSteps {
                                     .build());
                 }
             }
+            case "ping_invalid" -> client.request("ping",
+                    Json.createObjectBuilder().add("extra", parameter).build());
             case "roots_listed" -> {
                 for (int i = 0; i < 50 && rootsProvider.listCount() == 0; i++) Thread.sleep(100);
                 yield new JsonRpcResponse(RequestId.NullId.INSTANCE,
@@ -578,6 +629,13 @@ public final class McpConformanceSteps {
                         Json.createObjectBuilder().add("uri", parameter).build());
                 case "unsubscribe_nonexistent" -> client.request("resources/unsubscribe",
                         Json.createObjectBuilder().add("uri", parameter).build());
+                case "subscribe_duplicate_resource" -> {
+                    JsonRpcMessage first = client.request("resources/subscribe",
+                            Json.createObjectBuilder().add("uri", parameter).build());
+                    assertInstanceOf(JsonRpcResponse.class, first);
+                    yield client.request("resources/subscribe",
+                            Json.createObjectBuilder().add("uri", parameter).build());
+                }
                 default -> throw new IllegalArgumentException("Unknown notification error operation: " + operation);
             };
             if (response instanceof JsonRpcError error) {
@@ -790,8 +848,10 @@ public final class McpConformanceSteps {
                 assertEquals(expected, messages.getJsonObject(0).getString("role"));
             }
             case "request_completion" -> {
-                var values = result.getJsonObject("completion").getJsonArray("values");
+                var completion = result.getJsonObject("completion");
+                var values = completion.getJsonArray("values");
                 assertEquals(expected, values.getJsonString(0).getString());
+                assertTrue(completion.containsKey("hasMore"));
             }
 
             case "request_sampling" -> {
@@ -815,6 +875,36 @@ public final class McpConformanceSteps {
             }
             case "set_log_level", "subscribe_resource", "unsubscribe_resource" -> assertTrue(true);
         }
+    }
+
+    @When("fetching authorization metadata")
+    public void fetchAuthorizationMetadata() throws Exception {
+        if (serverTransport instanceof StreamableHttpTransport http) {
+            var url = URI.create("http://127.0.0.1:" + http.port() + "/.well-known/oauth-protected-resource");
+            var request = HttpRequest.newBuilder(url).header("Accept", "application/json").build();
+            var response = HttpClient.newHttpClient().send(request, BodyHandlers.ofInputStream());
+            try (var reader = Json.createReader(response.body())) {
+                authorizationMetadata = reader.readObject();
+            }
+        } else {
+            fail("HTTP transport required");
+        }
+    }
+
+    @Then("authorization metadata uses server base URL")
+    public void verifyAuthorizationMetadataResource() {
+        if (serverTransport instanceof StreamableHttpTransport http) {
+            var expected = "http://127.0.0.1:" + http.port();
+            assertEquals(expected, authorizationMetadata.getString("resource"));
+        } else {
+            fail("HTTP transport required");
+        }
+    }
+
+    @Then("authorization servers are advertised")
+    public void verifyAuthorizationServers() {
+        var servers = authorizationMetadata.getJsonArray("authorization_servers");
+        assertFalse(servers.isEmpty());
     }
 
     private static final class CountingRootsProvider implements RootsProvider {
