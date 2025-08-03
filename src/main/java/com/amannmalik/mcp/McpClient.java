@@ -578,13 +578,6 @@ public final class McpClient implements AutoCloseable {
         try {
             ElicitRequest er = ElicitCodec.toRequest(params);
             ElicitResult resp = elicitation.elicit(er);
-            if (resp.action() == ElicitationAction.ACCEPT) {
-                try {
-                    SchemaValidator.validate(er.requestedSchema(), resp.content());
-                } catch (IllegalArgumentException ve) {
-                    return JsonRpcError.of(req.id(), JsonRpcErrorCode.INVALID_PARAMS, ve.getMessage());
-                }
-            }
             return new JsonRpcResponse(req.id(), ElicitCodec.toJsonObject(resp));
         } catch (IllegalArgumentException e) {
             return JsonRpcError.of(req.id(), JsonRpcErrorCode.INVALID_PARAMS, e.getMessage());
