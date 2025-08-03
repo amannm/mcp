@@ -313,7 +313,7 @@ public final class McpClient implements AutoCloseable {
     public void setLogLevel(LoggingLevel level) throws IOException {
         if (level == null) throw new IllegalArgumentException("level required");
         JsonRpc.expectResponse(request(RequestMethod.LOGGING_SET_LEVEL,
-                LoggingCodec.toJsonObject(new SetLevelRequest(level, null))));
+                SetLevelRequest.CODEC.toJson(new SetLevelRequest(level, null))));
     }
 
     public void setAccessToken(String token) {
@@ -631,7 +631,7 @@ public final class McpClient implements AutoCloseable {
     private void handleMessage(JsonRpcNotification note) {
         if (note.params() == null) return;
         try {
-            listener.onMessage(LoggingCodec.toLoggingMessageNotification(note.params()));
+            listener.onMessage(LoggingMessageNotification.CODEC.fromJson(note.params()));
         } catch (IllegalArgumentException ignore) {
         }
     }
