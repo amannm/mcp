@@ -288,3 +288,18 @@ Feature: MCP protocol conformance
       | stdio     |
       | http      |
 
+  # Specification Links:
+  # - [Authorization](specification/2025-06-18/basic/authorization.mdx)
+  Scenario Outline: MCP authorization metadata specification conformance
+    Given a running MCP server using <transport> transport
+    Then capabilities should be advertised and ping succeeds
+    When fetching authorization metadata
+    Then authorization metadata uses server base URL
+    And authorization servers are advertised
+    When the client disconnects
+    Then the server terminates cleanly
+
+    Examples:
+      | transport |
+      | http      |
+
