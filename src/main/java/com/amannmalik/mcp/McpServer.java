@@ -69,13 +69,13 @@ public final class McpServer implements AutoCloseable {
     private final Map<RequestId, CompletableFuture<JsonRpcMessage>> pending = new ConcurrentHashMap<>();
 
     public McpServer(Transport transport, String instructions) {
-        this(ServerDefaults.resources(),
-                ServerDefaults.tools(),
-                ServerDefaults.prompts(),
-                ServerDefaults.completions(),
-                ServerDefaults.privacyBoundary(McpConfiguration.current().security().privacy().defaultBoundary()),
-                ServerDefaults.toolAccess(),
-                ServerDefaults.samplingAccess(),
+        this(Locator.resources(),
+                Locator.tools(),
+                Locator.prompts(),
+                Locator.completions(),
+                Locator.privacyBoundary(McpConfiguration.current().security().privacy().defaultBoundary()),
+                Locator.toolAccess(),
+                Locator.samplingAccess(),
                 new Principal(McpConfiguration.current().security().auth().defaultPrincipal(), Set.of()),
                 instructions,
                 transport);

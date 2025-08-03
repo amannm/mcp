@@ -13,8 +13,8 @@ import jakarta.json.Json;
 import java.time.Instant;
 import java.util.*;
 
-public final class ServerDefaults {
-    private ServerDefaults() {
+public final class Locator {
+    private Locator() {
     }
 
     public static ResourceProvider resources() {
