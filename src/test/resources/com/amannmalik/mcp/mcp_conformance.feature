@@ -47,6 +47,7 @@ Feature: MCP protocol conformance
     Examples:
       | transport |
       | stdio     |
+      | http      |
 
   Scenario Outline: MCP prompts specification conformance
     Given a running MCP server using <transport> transport
@@ -67,6 +68,7 @@ Feature: MCP protocol conformance
     Examples:
       | transport |
       | stdio     |
+      | http      |
 
   Scenario Outline: MCP Resource metadata conforms to specification
     Given a running MCP server using <transport> transport
