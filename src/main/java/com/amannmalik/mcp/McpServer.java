@@ -129,7 +129,7 @@ public final class McpServer implements AutoCloseable {
             promptsSubscription = subscribeListChanges(
                     l -> prompts.subscribe(() -> l.listChanged()),
                     NotificationMethod.PROMPTS_LIST_CHANGED,
-                    PromptCodec.toJsonObject(new PromptListChangedNotification()));
+                    PromptListChangedNotification.CODEC.toJson(new PromptListChangedNotification()));
         }
 
         handlers.register(RequestMethod.INITIALIZE, this::initialize);
@@ -445,10 +445,11 @@ public final class McpServer implements AutoCloseable {
     private JsonRpcMessage listPrompts(JsonRpcRequest req) {
         requireServerCapability(ServerCapability.PROMPTS);
         try {
-            ListPromptsRequest lpr = valid(() -> PromptCodec.toListPromptsRequest(req.params()));
+            ListPromptsRequest lpr = valid(() -> ListPromptsRequest.CODEC.fromJson(req.params()));
             String cursor = valid(() -> sanitizeCursor(lpr.cursor()));
             Pagination.Page<Prompt> page = valid(() -> prompts.list(cursor));
-            return new JsonRpcResponse(req.id(), PromptCodec.toJsonObject(page, null));
+            JsonObject json = ListPromptsResult.CODEC.toJson(new ListPromptsResult(page.items(), page.nextCursor(), null));
+            return new JsonRpcResponse(req.id(), json);
         } catch (InvalidParams e) {
             return invalidParams(req, e.getMessage());
         }
@@ -457,9 +458,9 @@ public final class McpServer implements AutoCloseable {
     private JsonRpcMessage getPrompt(JsonRpcRequest req) {
         requireServerCapability(ServerCapability.PROMPTS);
         try {
-            GetPromptRequest getRequest = valid(() -> PromptCodec.toGetPromptRequest(req.params()));
+            GetPromptRequest getRequest = valid(() -> GetPromptRequest.CODEC.fromJson(req.params()));
             PromptInstance inst = valid(() -> prompts.get(getRequest.name(), getRequest.arguments()));
-            return new JsonRpcResponse(req.id(), PromptCodec.toJsonObject(inst));
+            return new JsonRpcResponse(req.id(), PromptInstance.CODEC.toJson(inst));
         } catch (InvalidParams e) {
             return invalidParams(req, e.getMessage());
         }
