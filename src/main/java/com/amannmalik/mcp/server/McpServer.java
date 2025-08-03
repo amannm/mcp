@@ -12,13 +12,12 @@ import com.amannmalik.mcp.lifecycle.*;
 import com.amannmalik.mcp.ping.PingCodec;
 import com.amannmalik.mcp.ping.PingRequest;
 import com.amannmalik.mcp.prompts.*;
-import com.amannmalik.mcp.resources.*;
+import com.amannmalik.mcp.resources.ResourceProvider;
 import com.amannmalik.mcp.security.*;
 import com.amannmalik.mcp.server.completion.*;
 import com.amannmalik.mcp.server.logging.*;
 import com.amannmalik.mcp.server.resources.ResourceFeature;
 import com.amannmalik.mcp.server.roots.RootsManager;
-import com.amannmalik.mcp.resources.ResourceProvider;
 import com.amannmalik.mcp.server.tools.*;
 import com.amannmalik.mcp.transport.Transport;
 import com.amannmalik.mcp.util.*;
@@ -34,6 +33,7 @@ import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicLong;
+
 import static com.amannmalik.mcp.util.InvalidParams.valid;
 
 public final class McpServer implements AutoCloseable {

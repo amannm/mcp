@@ -1,12 +1,14 @@
 package com.amannmalik.mcp.config;
 
-import jakarta.json.*;
+import jakarta.json.JsonObject;
+import jakarta.json.JsonString;
 
 import java.util.List;
 import java.util.Objects;
 
 final class McpConfigurationParser {
-    private McpConfigurationParser() {}
+    private McpConfigurationParser() {
+    }
 
     static McpConfiguration parseDefaults(JsonObject obj) {
         var system = parseSystemDefaults(required(obj.getJsonObject("system"), "system"));
