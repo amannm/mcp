@@ -112,7 +112,7 @@ public abstract class AbstractEntityCodec<T> implements JsonCodec<T> {
             @Override
             public T fromJson(JsonObject obj) {
                 if (obj == null) return from.apply(null);
-                JsonUtil.requireOnlyKeys(obj, META_KEYS);
+                AbstractEntityCodec.requireOnlyKeys(obj, META_KEYS);
                 return from.apply(obj.getJsonObject("_meta"));
             }
         };
