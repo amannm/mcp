@@ -315,6 +315,7 @@ public final class McpConformanceSteps {
                     Json.createObjectBuilder().add("cursor", parameter).build());
             case "list_templates" -> client.request("resources/templates/list", Json.createObjectBuilder().build());
             case "list_tools", "list_tools_schema", "list_tools_output_schema", "list_tools_annotations" -> client.request("tools/list", Json.createObjectBuilder().build());
+            case "list_tools_invalid_cursor" -> client.request("tools/list", Json.createObjectBuilder().add("cursor", parameter).build());
             case "call_tool" -> client.request("tools/call",
                     Json.createObjectBuilder().add("name", parameter).build());
             case "call_tool_structured" -> client.request("tools/call",
@@ -344,6 +345,7 @@ public final class McpConformanceSteps {
                         Json.createObjectBuilder().add("name", parameter).build());
             }
             case "list_prompts" -> client.request("prompts/list", Json.createObjectBuilder().build());
+            case "list_prompts_invalid_cursor" -> client.request("prompts/list", Json.createObjectBuilder().add("cursor", parameter).build());
             case "get_prompt" -> client.request("prompts/get",
                     Json.createObjectBuilder().add("name", parameter)
                             .add("arguments", Json.createObjectBuilder().add("test_arg", "v")).build());
