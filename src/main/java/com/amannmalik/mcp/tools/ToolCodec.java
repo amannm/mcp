@@ -59,7 +59,6 @@ public final class ToolCodec {
         return EmptyJsonObjectCodec.toJsonObject();
     }
 
-
     private static JsonObject toJsonObject(ToolAnnotations ann) {
         JsonObjectBuilder b = Json.createObjectBuilder();
         if (ann.title() != null) b.add("title", ann.title());

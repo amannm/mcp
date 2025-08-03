@@ -4,7 +4,6 @@ import com.amannmalik.mcp.config.McpConfiguration;
 
 import java.util.List;
 
-
 /// - [Pagination](specification/2025-06-18/server/utilities/pagination.mdx)
 public final class Pagination {
     private Pagination() {

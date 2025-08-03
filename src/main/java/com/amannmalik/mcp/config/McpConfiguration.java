@@ -28,7 +28,6 @@ public record McpConfiguration(SystemConfig system,
         addChangeListener(c -> System.err.println("Configuration reloaded"));
     }
 
-
     public static McpConfiguration current() {
         return CURRENT;
     }
@@ -102,7 +101,6 @@ public record McpConfiguration(SystemConfig system,
         }
     }
 
-
     private static JsonObject applyEnvironment(JsonObject obj, String env) {
         JsonObject base = withoutEnvironments(obj);
         if (env == null || env.isBlank()) return base;
@@ -175,7 +173,6 @@ public record McpConfiguration(SystemConfig system,
         if (c.server().transport().port() < 0 || c.server().transport().port() > 65_535) throw new IllegalArgumentException("port");
         if (c.server().messaging().errorCodes().rateLimit() >= 0) throw new IllegalArgumentException("errorCodes.rateLimit must be negative");
     }
-
 
     private static JsonValue toJsonValue(Object value) {
         return switch (value) {

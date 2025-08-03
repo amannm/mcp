@@ -128,7 +128,6 @@ public final class StreamableHttpTransport implements Transport {
         }
     }
 
-
     private static final Principal DEFAULT_PRINCIPAL = new Principal(
             McpConfiguration.current().security().auth().defaultPrincipal(), Set.of());
 

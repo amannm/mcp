@@ -1,6 +1,5 @@
 package com.amannmalik.mcp.elicitation;
 
-
 /// - [Elicitation](specification/2025-06-18/client/elicitation.mdx)
 /// - [MCP elicitation specification conformance](src/test/resources/com/amannmalik/mcp/mcp_conformance.feature:116-131)
 public interface ElicitationProvider {

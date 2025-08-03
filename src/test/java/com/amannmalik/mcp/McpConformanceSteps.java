@@ -1,6 +1,7 @@
 package com.amannmalik.mcp;
 
 import com.amannmalik.mcp.annotations.AnnotationsCodec;
+import com.amannmalik.mcp.auth.*;
 import com.amannmalik.mcp.content.ContentBlock;
 import com.amannmalik.mcp.elicitation.*;
 import com.amannmalik.mcp.jsonrpc.*;
@@ -15,27 +16,15 @@ import com.amannmalik.mcp.sampling.*;
 import com.amannmalik.mcp.transport.*;
 import com.amannmalik.mcp.util.ListChangeSubscription;
 import com.amannmalik.mcp.util.ProgressNotification;
-import com.amannmalik.mcp.auth.AuthorizationManager;
-import com.amannmalik.mcp.auth.BearerTokenAuthorizationStrategy;
-import com.amannmalik.mcp.auth.Principal;
 import io.cucumber.datatable.DataTable;
 import io.cucumber.java.After;
 import io.cucumber.java.en.*;
-import jakarta.json.Json;
-import jakarta.json.JsonObject;
-import jakarta.json.JsonValue;
+import jakarta.json.*;
 
-import java.io.File;
-import java.io.IOException;
-import java.io.StringReader;
+import java.io.*;
 import java.net.URI;
-import java.net.http.HttpClient;
-import java.net.http.HttpRequest;
-
-import java.net.http.HttpResponse;
-
+import java.net.http.*;
 import java.net.http.HttpResponse.BodyHandlers;
-
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;

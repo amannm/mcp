@@ -7,7 +7,6 @@ import java.util.Objects;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-
 /// - [Prompts](specification/2025-06-18/basic/utilities/ping.mdx)
 public final class PingScheduler implements AutoCloseable {
     private final McpClient client;

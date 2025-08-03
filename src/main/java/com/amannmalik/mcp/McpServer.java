@@ -611,7 +611,6 @@ public final class McpServer implements AutoCloseable {
         }
     }
 
-
     @Override
     public void close() throws IOException {
         lifecycle.shutdown();

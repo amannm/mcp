@@ -19,11 +19,11 @@ Feature: MCP protocol conformance
       | subscribe_resource   | test://example | success         |
       | unsubscribe_resource | test://example | success         |
     And testing error conditions
-      | operation         | parameter | expected_error_code |
-      | read_invalid_uri  | bad://uri | -32002              |
+      | operation                     | parameter  | expected_error_code |
+      | read_invalid_uri              | bad://uri  | -32002              |
       | list_resources_invalid_cursor | notacursor | -32602              |
-      | call_unknown_tool | nope      | -32602              |
-      | cancel_tool_call  | slow_tool | -32603              |
+      | call_unknown_tool             | nope       | -32602              |
+      | cancel_tool_call              | slow_tool  | -32603              |
     And a cancellation log message is received
     When the client disconnects
     Then the server terminates cleanly
@@ -44,8 +44,8 @@ Feature: MCP protocol conformance
       | call_tool_structured     | test_tool  | ok              |
       | call_tool_error          | error_tool | fail            |
     And testing error conditions
-      | operation         | parameter | expected_error_code |
-      | call_unknown_tool | nope      | -32602              |
+      | operation                 | parameter  | expected_error_code |
+      | call_unknown_tool         | nope       | -32602              |
       | list_tools_invalid_cursor | notacursor | -32602              |
     When the client disconnects
     Then the server terminates cleanly
@@ -66,10 +66,10 @@ Feature: MCP protocol conformance
       | get_prompt_text          | test_prompt | hello           |
       | get_prompt_role          | test_prompt | user            |
     And testing error conditions
-      | operation              | parameter   | expected_error_code |
-      | get_prompt_invalid     | nope        | -32602              |
-      | get_prompt_missing_arg | test_prompt | -32602              |
-      | list_prompts_invalid_cursor | notacursor | -32602              |
+      | operation                   | parameter   | expected_error_code |
+      | get_prompt_invalid          | nope        | -32602              |
+      | get_prompt_missing_arg      | test_prompt | -32602              |
+      | list_prompts_invalid_cursor | notacursor  | -32602              |
     When the client disconnects
     Then the server terminates cleanly
 
@@ -157,10 +157,10 @@ Feature: MCP protocol conformance
       | operation        | parameter | expected_result |
       | call_tool_elicit | echo_tool | ping            |
     And testing error conditions
-      | operation                      | parameter | expected_error_code |
-      | call_tool_elicit_cancel        | echo_tool | -32602              |
-      | call_tool_elicit_decline       | echo_tool | -32602              |
-      | call_tool_elicit_invalid       | echo_tool | -32602              |
+      | operation                | parameter | expected_error_code |
+      | call_tool_elicit_cancel  | echo_tool | -32602              |
+      | call_tool_elicit_decline | echo_tool | -32602              |
+      | call_tool_elicit_invalid | echo_tool | -32602              |
     When the client disconnects
     Then the server terminates cleanly
 
@@ -255,9 +255,9 @@ Feature: MCP protocol conformance
     Given a running MCP server using <transport> transport
     Then capabilities should be advertised and ping succeeds
     When testing core functionality
-      | operation                    | parameter | expected_result                                                                 |
-      | unauthorized_request        |           | Bearer resource_metadata="https://example.com/.well-known/oauth-protected-resource" |
-      | resource_metadata_auth_server |           | https://auth.example.com                                                         |
+      | operation                     | parameter | expected_result                                                                     |
+      | unauthorized_request          |           | Bearer resource_metadata="https://example.com/.well-known/oauth-protected-resource" |
+      | resource_metadata_auth_server |           | https://auth.example.com                                                            |
     When the client disconnects
     Then the server terminates cleanly
 
@@ -291,10 +291,10 @@ Feature: MCP protocol conformance
       | unsubscribe_resource        | test://example | success         |
       | no_further_notifications    | test://example | success         |
     And testing notification error conditions
-      | operation                  | parameter  | expected_error_code |
-      | subscribe_invalid_resource | bad://uri  | -32002              |
-      | unsubscribe_nonexistent    | fake://uri | -32602              |
-      | subscribe_duplicate_resource | test://example | -32602 |
+      | operation                    | parameter      | expected_error_code |
+      | subscribe_invalid_resource   | bad://uri      | -32002              |
+      | unsubscribe_nonexistent      | fake://uri     | -32602              |
+      | subscribe_duplicate_resource | test://example | -32602              |
     When the client disconnects
     Then the server terminates cleanly
 

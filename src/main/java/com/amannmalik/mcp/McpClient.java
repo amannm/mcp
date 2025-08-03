@@ -12,7 +12,6 @@ import com.amannmalik.mcp.roots.*;
 import com.amannmalik.mcp.sampling.*;
 import com.amannmalik.mcp.transport.*;
 import com.amannmalik.mcp.util.*;
-import com.amannmalik.mcp.validation.SchemaValidator;
 import com.amannmalik.mcp.wire.NotificationMethod;
 import com.amannmalik.mcp.wire.RequestMethod;
 import jakarta.json.*;
@@ -619,7 +618,6 @@ public final class McpClient implements AutoCloseable {
                 });
     }
 
-
     private void handleProgress(JsonRpcNotification note) {
         if (note.params() == null) return;
         try {
@@ -675,7 +673,6 @@ public final class McpClient implements AutoCloseable {
             System.err.println("Request " + cn.requestId() + " cancelled: " + reason);
         }
     }
-
 
     public interface McpClientListener {
         default void onProgress(ProgressNotification notification) {
