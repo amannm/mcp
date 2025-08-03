@@ -343,6 +343,10 @@ public final class McpConformanceSteps {
             }
             case "set_log_level" -> client.request("logging/setLevel",
                     Json.createObjectBuilder().add("level", parameter).build());
+            case "set_log_level_invalid" -> client.request("logging/setLevel",
+                    Json.createObjectBuilder().add("level", parameter).build());
+            case "set_log_level_missing" -> client.request("logging/setLevel",
+                    Json.createObjectBuilder().build());
             case "subscribe_resource" -> client.request("resources/subscribe",
                     Json.createObjectBuilder().add("uri", parameter).build());
             case "unsubscribe_resource" -> client.request("resources/unsubscribe",

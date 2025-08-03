@@ -113,6 +113,26 @@ Feature: MCP protocol conformance
       | http      |
 
   # Specification Links:
+  # - [Logging](specification/2025-06-18/server/utilities/logging.mdx)
+  Scenario Outline: MCP logging specification conformance
+    Given a running MCP server using <transport> transport
+    Then capabilities should be advertised and ping succeeds
+    When testing core functionality
+      | operation     | parameter | expected_result |
+      | set_log_level | warning   | success         |
+    And testing error conditions
+      | operation             | parameter | expected_error_code |
+      | set_log_level_invalid | verbose   | -32602              |
+      | set_log_level_missing |           | -32602              |
+    When the client disconnects
+    Then the server terminates cleanly
+
+    Examples:
+      | transport |
+      | stdio     |
+      | http      |
+
+  # Specification Links:
   # - [Elicitation](specification/2025-06-18/client/elicitation.mdx)
   Scenario Outline: MCP elicitation specification conformance
     Given a running MCP server using <transport> transport
