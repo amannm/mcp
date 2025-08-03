@@ -386,21 +386,16 @@ public final class McpConformanceSteps {
             String notificationType = row.get("notification_type");
             String triggerAction = row.get("trigger_action");
             String expectedNotification = row.get("expected_notification");
-
-            // Test that the server can handle operations without throwing errors
             switch (triggerAction) {
                 case "modify_resource_list" -> {
                     JsonRpcMessage response = client.request("resources/list", Json.createObjectBuilder().build());
                     assertInstanceOf(JsonRpcResponse.class, response);
                 }
                 case "update_subscribed" -> {
-                    // Test subscription works without errors
                     if (client.resourcesSubscribeSupported()) {
                         JsonRpcMessage response = client.request("resources/subscribe",
                                 Json.createObjectBuilder().add("uri", "test://example").build());
                         assertInstanceOf(JsonRpcResponse.class, response);
-
-                        // Test reading the subscribed resource
                         response = client.request("resources/read",
                                 Json.createObjectBuilder().add("uri", "test://example").build());
                         assertInstanceOf(JsonRpcResponse.class, response);
@@ -415,15 +410,12 @@ public final class McpConformanceSteps {
                     assertInstanceOf(JsonRpcResponse.class, response);
                 }
                 case "modify_root_list" -> {
-                    // Test that roots functionality works
                     assertNotNull(rootsProvider);
                     if (rootsProvider.supportsListChanged()) {
                         assertNotNull(rootsProvider.list());
                     }
                 }
             }
-
-            // Mark test as successful if we got this far without exceptions
             if ("received".equals(expectedNotification)) {
                 receivedNotifications.add(notificationType);
             }
@@ -445,10 +437,8 @@ public final class McpConformanceSteps {
                         activeSubscription = client.subscribeResource(parameter, resourceUpdates::add);
                         assertNotNull(activeSubscription);
                     }
-                    // Test passes whether subscription is supported or not
                 }
                 case "receive_update_notification" -> {
-                    // Test that reading the resource works
                     JsonRpcMessage response = client.request("resources/read",
                             Json.createObjectBuilder().add("uri", parameter).build());
                     if ("success".equals(expectedResult)) {
@@ -460,15 +450,12 @@ public final class McpConformanceSteps {
                         activeSubscription.close();
                         activeSubscription = null;
                     } else {
-                        // Test direct unsubscribe request
                         JsonRpcMessage response = client.request("resources/unsubscribe",
                                 Json.createObjectBuilder().add("uri", parameter).build());
-                        // May return error if not subscribed, which is valid
                         assertTrue(response instanceof JsonRpcResponse || response instanceof JsonRpcError);
                     }
                 }
                 case "no_further_notifications" -> {
-                    // Test that operations still work after unsubscribe
                     JsonRpcMessage response = client.request("resources/read",
                             Json.createObjectBuilder().add("uri", parameter).build());
                     if ("success".equals(expectedResult)) {
@@ -493,12 +480,9 @@ public final class McpConformanceSteps {
                         Json.createObjectBuilder().add("uri", parameter).build());
                 default -> throw new IllegalArgumentException("Unknown notification error operation: " + operation);
             };
-
-            // Test may pass with either error or success response depending on server implementation
             if (response instanceof JsonRpcError error) {
                 assertEquals(expectedCode, error.error().code());
             } else {
-                // Server may choose to handle these gracefully
                 assertInstanceOf(JsonRpcResponse.class, response);
             }
         }
@@ -514,39 +498,31 @@ public final class McpConformanceSteps {
             switch (patternType) {
                 case "immediate_notification" -> {
                     if ("subscribe_then_update".equals(setupAction)) {
-                        // Test subscription and resource reading
                         if (client.resourcesSubscribeSupported()) {
                             try {
                                 ResourceSubscription sub = client.subscribeResource("test://example", resourceUpdates::add);
                                 assertNotNull(sub);
-
                                 JsonRpcMessage response = client.request("resources/read",
                                         Json.createObjectBuilder().add("uri", "test://example").build());
-                                // Response may be success or error, both are valid
                                 assertTrue(response instanceof JsonRpcResponse || response instanceof JsonRpcError);
-
                                 sub.close();
                             } catch (IOException e) {
-                                // Subscription may fail if resource doesn't exist, which is acceptable for test
+                                fail(e);
                             }
                         }
-                        // Test passes regardless of notification delivery
                     }
                 }
                 case "batch_notifications" -> {
                     if ("multiple_updates".equals(setupAction)) {
-                        // Test multiple resource operations work
                         for (int i = 0; i < 3; i++) {
                             JsonRpcMessage response = client.request("resources/read",
                                     Json.createObjectBuilder().add("uri", "test://example").build());
                             assertInstanceOf(JsonRpcResponse.class, response);
                         }
-                        // Test passes if operations complete successfully
                     }
                 }
                 case "unsubscribe_cleanup" -> {
                     if ("unsubscribe_all".equals(setupAction)) {
-                        // Test subscription and cleanup work properly
                         if (client.resourcesSubscribeSupported()) {
                             try {
                                 List<ResourceSubscription> subs = new ArrayList<>();
@@ -556,22 +532,19 @@ public final class McpConformanceSteps {
                                 for (ResourceSubscription sub : subs) {
                                     sub.close();
                                 }
-                                // Test passes if cleanup completes without errors
                             } catch (IOException e) {
-                                // Subscription operations may fail, which is acceptable for test
+                                fail(e);
                             }
                         }
                     }
                 }
                 case "capability_negotiation" -> {
                     if ("check_listChanged".equals(setupAction)) {
-                        // Test that we can check capabilities without errors
                         boolean resourcesListChanged = client.resourcesListChangedSupported();
                         boolean resourcesSubscribe = client.resourcesSubscribeSupported();
                         boolean toolsListChanged = client.toolsListChangedSupported();
                         boolean promptsListChanged = client.promptsListChangedSupported();
-                        // All capability checks should complete without throwing exceptions
-                        assertTrue(true); // Test passes if we reach this point
+                        assertTrue(true);
                     }
                 }
             }
