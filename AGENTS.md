@@ -22,7 +22,21 @@ description: MCP Specification Expert
 - Avoid comments except for tricky areas (use self-documenting code)
 - Avoid inversion-of-control patterns
 
-# Knowledge
+# Wisdom
+
+- Ensure consistency between specification, implementation, verification
+- Make illegal states unrepresentable and valid operations obvious
+- Keep external dependencies furthest from the center of a codebase
+- Don't waste precious time writing PR descriptions
+- Leave new tests failing if they uncover a true defect
+
+# Environment
+
+- Internet egress: `proxy:8080`
+- Java toolchain: `graalvm-jdk-24` with `gradle` 
+
+# Documentation
+
 - [Architecture](specification/2025-06-18/architecture/index.mdx)
 - [Authorization](specification/2025-06-18/basic/authorization.mdx)
 - [Overview](specification/2025-06-18/basic/index.mdx)
@@ -45,15 +59,3 @@ description: MCP Specification Expert
 - [Completion](specification/2025-06-18/server/utilities/completion.mdx)
 - [Logging](specification/2025-06-18/server/utilities/logging.mdx)
 - [Pagination](specification/2025-06-18/server/utilities/pagination.mdx)]
-
-# Wisdom
-
-- Ensure consistency between specification, implementation, verification
-- Make illegal states unrepresentable and valid operations obvious
-- Keep external dependencies furthest from the center of a codebase
-- Don't waste precious time writing PR descriptions
-
-# Miscellaneous
-
-- It is encouraged to leave new tests failing if they manage to uncover a new defect
-- `gradle` and `javap` are available in this environment
