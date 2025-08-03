@@ -1,6 +1,6 @@
 package com.amannmalik.mcp;
 
-import com.amannmalik.mcp.annotations.AnnotationsCodec;
+import com.amannmalik.mcp.annotations.Annotations;
 import com.amannmalik.mcp.auth.*;
 import com.amannmalik.mcp.content.ContentBlock;
 import com.amannmalik.mcp.elicitation.*;
@@ -766,7 +766,7 @@ public final class McpConformanceSteps {
             }
             case "list_resources_annotations" -> {
                 var resource = result.getJsonArray("resources").getJsonObject(0);
-                var ann = AnnotationsCodec.toAnnotations(resource.getJsonObject("annotations"));
+                var ann = Annotations.CODEC.fromJson(resource.getJsonObject("annotations"));
                 assertTrue(ann.audience().contains(Role.USER));
                 assertEquals(Double.parseDouble(expected), ann.priority());
                 assertNotNull(ann.lastModified());

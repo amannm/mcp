@@ -1,7 +1,6 @@
 package com.amannmalik.mcp.content;
 
 import com.amannmalik.mcp.annotations.Annotations;
-import com.amannmalik.mcp.annotations.AnnotationsCodec;
 import com.amannmalik.mcp.resources.ResourcesCodec;
 import com.amannmalik.mcp.util.Base64Util;
 import com.amannmalik.mcp.util.JsonUtil;
@@ -16,7 +15,7 @@ public final class ContentCodec {
     public static JsonObject toJsonObject(ContentBlock content) {
         JsonObjectBuilder b = Json.createObjectBuilder().add("type", content.type());
         if (content.annotations() != null && content.annotations() != Annotations.EMPTY) {
-            b.add("annotations", AnnotationsCodec.toJsonObject(content.annotations()));
+            b.add("annotations", Annotations.CODEC.toJson(content.annotations()));
         }
         if (content._meta() != null) b.add("_meta", content._meta());
         switch (content) {
@@ -50,19 +49,19 @@ public final class ContentCodec {
         });
         return switch (type) {
             case "text" -> new ContentBlock.Text(obj.getString("text"),
-                    obj.containsKey("annotations") ? AnnotationsCodec.toAnnotations(obj.getJsonObject("annotations")) : null,
+                    obj.containsKey("annotations") ? Annotations.CODEC.fromJson(obj.getJsonObject("annotations")) : null,
                     obj.getJsonObject("_meta"));
             case "image" -> new ContentBlock.Image(Base64Util.decode(obj.getString("data")),
                     obj.getString("mimeType"),
-                    obj.containsKey("annotations") ? AnnotationsCodec.toAnnotations(obj.getJsonObject("annotations")) : null,
+                    obj.containsKey("annotations") ? Annotations.CODEC.fromJson(obj.getJsonObject("annotations")) : null,
                     obj.getJsonObject("_meta"));
             case "audio" -> new ContentBlock.Audio(Base64Util.decode(obj.getString("data")),
                     obj.getString("mimeType"),
-                    obj.containsKey("annotations") ? AnnotationsCodec.toAnnotations(obj.getJsonObject("annotations")) : null,
+                    obj.containsKey("annotations") ? Annotations.CODEC.fromJson(obj.getJsonObject("annotations")) : null,
                     obj.getJsonObject("_meta"));
             case "resource" -> new ContentBlock.EmbeddedResource(
                     ResourcesCodec.toResourceBlock(obj.getJsonObject("resource")),
-                    obj.containsKey("annotations") ? AnnotationsCodec.toAnnotations(obj.getJsonObject("annotations")) : null,
+                    obj.containsKey("annotations") ? Annotations.CODEC.fromJson(obj.getJsonObject("annotations")) : null,
                     obj.getJsonObject("_meta"));
             case "resource_link" -> new ContentBlock.ResourceLink(ResourcesCodec.toResource(obj));
             default -> throw new IllegalArgumentException("unknown content type: " + type);
