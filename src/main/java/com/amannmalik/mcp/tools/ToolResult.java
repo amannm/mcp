@@ -2,6 +2,7 @@ package com.amannmalik.mcp.tools;
 
 import com.amannmalik.mcp.content.ContentBlock;
 import com.amannmalik.mcp.content.ContentCodec;
+import com.amannmalik.mcp.core.JsonCodec;
 import com.amannmalik.mcp.validation.MetaValidator;
 import jakarta.json.*;
 
@@ -9,6 +10,29 @@ public record ToolResult(JsonArray content,
                          JsonObject structuredContent,
                          Boolean isError,
                          JsonObject _meta) {
+    public static final JsonCodec<ToolResult> CODEC = new JsonCodec<>() {
+        @Override
+        public JsonObject toJson(ToolResult r) {
+            JsonObjectBuilder b = Json.createObjectBuilder()
+                    .add("content", r.content());
+            if (r.isError()) b.add("isError", true);
+            if (r.structuredContent() != null) b.add("structuredContent", r.structuredContent());
+            if (r._meta() != null) b.add("_meta", r._meta());
+            return b.build();
+        }
+
+        @Override
+        public ToolResult fromJson(JsonObject obj) {
+            if (obj == null) throw new IllegalArgumentException("object required");
+            JsonArray content = obj.getJsonArray("content");
+            if (content == null) throw new IllegalArgumentException("content required");
+            JsonObject structured = obj.getJsonObject("structuredContent");
+            boolean isError = obj.getBoolean("isError", false);
+            JsonObject meta = obj.getJsonObject("_meta");
+            return new ToolResult(content, structured, isError, meta);
+        }
+    };
+
     public ToolResult {
         content = sanitize(content == null ? JsonValue.EMPTY_JSON_ARRAY : content);
         if (isError == null) isError = Boolean.FALSE;
