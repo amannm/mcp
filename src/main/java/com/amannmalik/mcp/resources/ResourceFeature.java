@@ -133,10 +133,6 @@ public final class ResourceFeature implements AutoCloseable {
         }
         String uri = sr.uri();
         if (!canAccessResource(uri)) {
-            return JsonRpcError.of(req.id(), JsonRpcErrorCode.INTERNAL_ERROR, "Access denied");
-        }
-        ResourceBlock existing = resources.read(uri);
-        if (existing == null) {
             return JsonRpcError.of(req.id(), -32002, "Resource not found",
                     Json.createObjectBuilder().add("uri", uri).build());
         }

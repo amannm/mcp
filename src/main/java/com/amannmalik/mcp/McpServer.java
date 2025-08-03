@@ -47,6 +47,7 @@ public final class McpServer implements AutoCloseable {
     private final ToolProvider tools;
     private final PromptProvider prompts;
     private final CompletionProvider completions;
+    private final SamplingProvider sampling;
     private ListChangeSubscription toolListSubscription;
     private ListChangeSubscription promptsSubscription;
     private final RootsManager rootsManager;
@@ -73,6 +74,7 @@ public final class McpServer implements AutoCloseable {
                 Locator.tools(),
                 Locator.prompts(),
                 Locator.completions(),
+                Locator.sampling(),
                 Locator.privacyBoundary(McpConfiguration.current().security().privacy().defaultBoundary()),
                 Locator.toolAccess(),
                 Locator.samplingAccess(),
@@ -85,6 +87,7 @@ public final class McpServer implements AutoCloseable {
               ToolProvider tools,
               PromptProvider prompts,
               CompletionProvider completions,
+              SamplingProvider sampling,
               ResourceAccessController resourceAccess,
               ToolAccessPolicy toolAccess,
               SamplingAccessPolicy samplingAccess,
@@ -105,6 +108,7 @@ public final class McpServer implements AutoCloseable {
         this.tools = tools;
         this.prompts = prompts;
         this.completions = completions;
+        this.sampling = sampling;
         this.resourceAccess = resourceAccess;
         this.toolAccess = toolAccess == null ? ToolAccessPolicy.PERMISSIVE : toolAccess;
         this.samplingAccess = samplingAccess == null ? SamplingAccessPolicy.PERMISSIVE : samplingAccess;
@@ -578,11 +582,11 @@ public final class McpServer implements AutoCloseable {
     public CreateMessageResponse createMessage(CreateMessageRequest req) throws IOException {
         requireClientCapability(ClientCapability.SAMPLING);
         samplingAccess.requireAllowed(principal);
-        JsonRpcMessage msg = sendRequest(RequestMethod.SAMPLING_CREATE_MESSAGE, SamplingCodec.toJsonObject(req));
-        if (msg instanceof JsonRpcResponse resp) {
-            return SamplingCodec.toCreateMessageResponse(resp.result());
+        try {
+            return sampling.createMessage(req, Timeouts.DEFAULT_TIMEOUT_MS);
+        } catch (InterruptedException e) {
+            throw new IOException(e);
         }
-        throw new IOException(((JsonRpcError) msg).error().message());
     }
 
     private JsonRpcMessage handleCreateMessage(JsonRpcRequest req) {
@@ -595,7 +599,7 @@ public final class McpServer implements AutoCloseable {
             CreateMessageResponse resp = createMessage(cmr);
             return new JsonRpcResponse(req.id(), SamplingCodec.toJsonObject(resp));
         } catch (IllegalArgumentException e) {
-            return invalidParams(req, e);
+            return invalidParams(req, e.getMessage());
         } catch (Exception e) {
             return JsonRpcError.of(req.id(), JsonRpcErrorCode.INTERNAL_ERROR, e.getMessage());
         }
@@ -615,6 +619,7 @@ public final class McpServer implements AutoCloseable {
             promptsSubscription = null;
         }
         if (completions != null) completions.close();
+        if (sampling != null) sampling.close();
         transport.close();
     }
 }

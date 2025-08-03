@@ -6,7 +6,7 @@ import com.amannmalik.mcp.content.ContentBlock;
 import com.amannmalik.mcp.host.PrivacyBoundaryEnforcer;
 import com.amannmalik.mcp.prompts.*;
 import com.amannmalik.mcp.resources.*;
-import com.amannmalik.mcp.sampling.SamplingAccessPolicy;
+import com.amannmalik.mcp.sampling.*;
 import com.amannmalik.mcp.tools.*;
 import jakarta.json.Json;
 
@@ -101,6 +101,10 @@ public final class Locator {
         InMemoryCompletionProvider provider = new InMemoryCompletionProvider();
         provider.add(new CompleteRequest.Ref.PromptRef("test_prompt", null, null), "test_arg", Map.of(), List.of("test_completion"));
         return provider;
+    }
+
+    public static SamplingProvider sampling() {
+        return new InteractiveSamplingProvider(true);
     }
 
     public static ToolAccessPolicy toolAccess() {
