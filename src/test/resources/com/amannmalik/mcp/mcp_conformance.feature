@@ -176,6 +176,22 @@ Feature: MCP protocol conformance
       | http      |
 
   # Specification Links:
+  # - [Ping](specification/2025-06-18/basic/utilities/ping.mdx)
+  Scenario Outline: MCP ping error handling specification conformance
+    Given a running MCP server using <transport> transport
+    Then capabilities should be advertised and ping succeeds
+    When testing error conditions
+      | operation    | parameter | expected_error_code |
+      | ping_invalid | oops      | -32602              |
+    When the client disconnects
+    Then the server terminates cleanly
+
+    Examples:
+      | transport |
+      | stdio     |
+      | http      |
+
+  # Specification Links:
   # - [Progress](specification/2025-06-18/basic/utilities/progress.mdx)
   Scenario Outline: MCP progress specification conformance
     Given a running MCP server using <transport> transport
