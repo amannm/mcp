@@ -284,6 +284,8 @@ public final class McpConformanceSteps {
             case "resource_metadata", "list_resources_annotations" -> client.request("resources/list", Json.createObjectBuilder().build());
             case "read_resource" -> client.request("resources/read",
                     Json.createObjectBuilder().add("uri", parameter).build());
+            case "list_resources_invalid_cursor" -> client.request("resources/list",
+                    Json.createObjectBuilder().add("cursor", parameter).build());
             case "list_templates" -> client.request("resources/templates/list", Json.createObjectBuilder().build());
             case "list_tools", "list_tools_schema", "list_tools_output_schema", "list_tools_annotations" -> client.request("tools/list", Json.createObjectBuilder().build());
             case "call_tool" -> client.request("tools/call",
