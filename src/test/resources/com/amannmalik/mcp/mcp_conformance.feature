@@ -223,6 +223,22 @@ Feature: MCP protocol conformance
       | http      |
 
   # Specification Links:
+  # - [Authorization](specification/2025-06-18/basic/authorization.mdx)
+  Scenario Outline: MCP authorization specification conformance
+    Given a running MCP server using <transport> transport
+    Then capabilities should be advertised and ping succeeds
+    When testing core functionality
+      | operation                    | parameter | expected_result                                                                 |
+      | unauthorized_request        |           | Bearer resource_metadata="https://example.com/.well-known/oauth-protected-resource" |
+      | resource_metadata_auth_server |           | https://auth.example.com                                                         |
+    When the client disconnects
+    Then the server terminates cleanly
+
+    Examples:
+      | transport |
+      | http      |
+
+  # Specification Links:
   # - [Subscriptions](specification/2025-06-18/server/subscriptions.mdx)
   # - [Notifications](specification/2025-06-18/server/notifications.mdx)
   Scenario Outline: MCP notification and subscription specification conformance
