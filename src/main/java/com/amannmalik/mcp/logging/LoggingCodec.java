@@ -53,7 +53,7 @@ public final class LoggingCodec {
     }
 
     public static SetLevelRequest toSetLevelRequest(JsonObject obj) {
-        if (obj == null) throw new IllegalArgumentException("level required");
+        if (obj == null) throw new IllegalArgumentException("object required");
         JsonUtil.requireOnlyKeys(obj, Set.of("level", "_meta"));
         String raw;
         try {
