@@ -180,6 +180,8 @@ Feature: MCP protocol conformance
     Then capabilities should be advertised and ping succeeds
     When requesting resource list with progress tracking
     Then progress updates are received
+    And progress completes to 1.0
+    And progress message is provided
     When the client disconnects
     Then the server terminates cleanly
 
@@ -252,6 +254,7 @@ Feature: MCP protocol conformance
       | operation                  | parameter  | expected_error_code |
       | subscribe_invalid_resource | bad://uri  | -32002              |
       | unsubscribe_nonexistent    | fake://uri | -32602              |
+      | subscribe_duplicate_resource | test://example | -32602 |
     When the client disconnects
     Then the server terminates cleanly
 

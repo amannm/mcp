@@ -56,6 +56,8 @@ public final class McpConformanceSteps {
     private final Set<String> receivedNotifications = ConcurrentHashMap.newKeySet();
     private final BlockingQueue<ResourceUpdate> resourceUpdates = new LinkedBlockingQueue<>();
     private final BlockingQueue<ProgressNotification> progressUpdates = new LinkedBlockingQueue<>();
+    private ProgressNotification firstProgressUpdate;
+    private ProgressNotification lastProgressUpdate;
     private final List<String> paginatedTools = new ArrayList<>();
 
     private void setupTestConfiguration(String transport) {
@@ -133,9 +135,31 @@ public final class McpConformanceSteps {
 
     @Then("progress updates are received")
     public void verifyProgressUpdates() throws Exception {
-        ProgressNotification note = progressUpdates.poll(2, TimeUnit.SECONDS);
-        assertNotNull(note);
-        assertEquals("tok", note.token().asString());
+        firstProgressUpdate = progressUpdates.poll(2, TimeUnit.SECONDS);
+        assertNotNull(firstProgressUpdate);
+        assertEquals("tok", firstProgressUpdate.token().asString());
+        lastProgressUpdate = firstProgressUpdate;
+    }
+
+    @And("progress completes to {double}")
+    public void progressCompletes(double expected) throws Exception {
+        double last = firstProgressUpdate.progress();
+        boolean complete = last >= expected;
+        lastProgressUpdate = firstProgressUpdate;
+        ProgressNotification note;
+        while ((note = progressUpdates.poll(2, TimeUnit.SECONDS)) != null) {
+            double current = note.progress();
+            assertTrue(current >= last);
+            last = current;
+            lastProgressUpdate = note;
+            if (current >= expected) complete = true;
+        }
+        assertTrue(complete);
+    }
+
+    @And("progress message is provided")
+    public void progressMessageProvided() {
+        assertNotNull(lastProgressUpdate.message());
     }
 
     @When("listing tools with pagination")
@@ -385,6 +409,8 @@ public final class McpConformanceSteps {
                     Json.createObjectBuilder().add("level", parameter).build());
             case "set_log_level_missing" -> client.request("logging/setLevel",
                     Json.createObjectBuilder().build());
+            case "set_log_level_extra" -> client.request("logging/setLevel",
+                    Json.createObjectBuilder().add("level", parameter).add("extra", "x").build());
             case "subscribe_resource" -> client.request("resources/subscribe",
                     Json.createObjectBuilder().add("uri", parameter).build());
             case "unsubscribe_resource" -> client.request("resources/unsubscribe",
@@ -543,6 +569,13 @@ public final class McpConformanceSteps {
                         Json.createObjectBuilder().add("uri", parameter).build());
                 case "unsubscribe_nonexistent" -> client.request("resources/unsubscribe",
                         Json.createObjectBuilder().add("uri", parameter).build());
+                case "subscribe_duplicate_resource" -> {
+                    JsonRpcMessage first = client.request("resources/subscribe",
+                            Json.createObjectBuilder().add("uri", parameter).build());
+                    assertInstanceOf(JsonRpcResponse.class, first);
+                    yield client.request("resources/subscribe",
+                            Json.createObjectBuilder().add("uri", parameter).build());
+                }
                 default -> throw new IllegalArgumentException("Unknown notification error operation: " + operation);
             };
             if (response instanceof JsonRpcError error) {
