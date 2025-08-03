@@ -141,8 +141,10 @@ Feature: MCP protocol conformance
       | operation        | parameter | expected_result |
       | call_tool_elicit | echo_tool | ping            |
     And testing error conditions
-      | operation               | parameter | expected_error_code |
-      | call_tool_elicit_cancel | echo_tool | -32602              |
+      | operation                      | parameter | expected_error_code |
+      | call_tool_elicit_cancel        | echo_tool | -32602              |
+      | call_tool_elicit_decline       | echo_tool | -32602              |
+      | call_tool_elicit_invalid       | echo_tool | -32602              |
     When the client disconnects
     Then the server terminates cleanly
 
