@@ -19,6 +19,7 @@ import io.cucumber.java.en.*;
 import jakarta.json.*;
 
 import java.io.File;
+import java.io.IOException;
 import java.net.URI;
 import java.util.*;
 import java.util.concurrent.*;
@@ -294,6 +295,15 @@ public final class McpConformanceSteps {
                     Json.createObjectBuilder().add("uri", parameter).build());
             case "call_unknown_tool" -> client.request("tools/call",
                     Json.createObjectBuilder().add("name", parameter).build());
+            case "cancel_tool_call" -> {
+                try {
+                    client.request("tools/call",
+                            Json.createObjectBuilder().add("name", parameter).build(), 100);
+                    yield new JsonRpcResponse(RequestId.NullId.INSTANCE, Json.createObjectBuilder().build());
+                } catch (IOException e) {
+                    yield JsonRpcError.of(RequestId.NullId.INSTANCE, JsonRpcErrorCode.INTERNAL_ERROR, e.getMessage());
+                }
+            }
             case "roots_listed" -> {
                 for (int i = 0; i < 50 && rootsProvider.listCount() == 0; i++) Thread.sleep(100);
                 yield new JsonRpcResponse(RequestId.NullId.INSTANCE,

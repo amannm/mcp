@@ -20,6 +20,7 @@ Feature: MCP protocol conformance
       | operation         | parameter | expected_error_code |
       | read_invalid_uri  | bad://uri | -32002              |
       | call_unknown_tool | nope      | -32602              |
+      | cancel_tool_call  | slow_tool | -32603              |
     When the client disconnects
     Then the server terminates cleanly
 
