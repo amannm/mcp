@@ -45,7 +45,7 @@ public final class ResourceFeature implements AutoCloseable {
                 subscribeListChanges(
                         l -> resources.subscribeList(() -> l.listChanged()),
                         NotificationMethod.RESOURCES_LIST_CHANGED,
-                        ResourcesCodec.toJsonObject(new ResourceListChangedNotification())) : null;
+                        ResourceListChangedNotification.CODEC.toJson(new ResourceListChangedNotification())) : null;
     }
 
     public void register(RpcHandlerRegistry handlers) {
@@ -75,14 +75,14 @@ public final class ResourceFeature implements AutoCloseable {
 
     private JsonRpcMessage listResources(JsonRpcRequest req) {
         try {
-            ListResourcesRequest lr = valid(() -> ResourcesCodec.toListResourcesRequest(req.params()));
+            ListResourcesRequest lr = valid(() -> ListResourcesRequest.CODEC.fromJson(req.params()));
             String cursor = valid(() -> sanitizeCursor(lr.cursor()));
             Pagination.Page<Resource> list = valid(() -> resources.list(cursor));
             List<Resource> filtered = list.items().stream()
                     .filter(r -> allowed(r.annotations()) && withinRoots(r.uri()))
                     .toList();
             ListResourcesResult result = new ListResourcesResult(filtered, list.nextCursor(), null);
-            return new JsonRpcResponse(req.id(), ResourcesCodec.toJsonObject(result));
+            return new JsonRpcResponse(req.id(), ListResourcesResult.CODEC.toJson(result));
         } catch (InvalidParams e) {
             return invalidParams(req, e.getMessage());
         }
@@ -91,7 +91,7 @@ public final class ResourceFeature implements AutoCloseable {
     private JsonRpcMessage readResource(JsonRpcRequest req) {
         ReadResourceRequest rrr;
         try {
-            rrr = valid(() -> ResourcesCodec.toReadResourceRequest(req.params()));
+            rrr = valid(() -> ReadResourceRequest.CODEC.fromJson(req.params()));
         } catch (InvalidParams e) {
             return invalidParams(req, e.getMessage());
         }
@@ -105,20 +105,20 @@ public final class ResourceFeature implements AutoCloseable {
                     Json.createObjectBuilder().add("uri", uri).build());
         }
         ReadResourceResult result = new ReadResourceResult(List.of(block), null);
-        return new JsonRpcResponse(req.id(), ResourcesCodec.toJsonObject(result));
+        return new JsonRpcResponse(req.id(), ReadResourceResult.CODEC.toJson(result));
     }
 
     private JsonRpcMessage listTemplates(JsonRpcRequest req) {
         try {
             ListResourceTemplatesRequest request =
-                    valid(() -> ResourcesCodec.toListResourceTemplatesRequest(req.params()));
+                    valid(() -> ListResourceTemplatesRequest.CODEC.fromJson(req.params()));
             String cursor = valid(() -> sanitizeCursor(request.cursor()));
             Pagination.Page<ResourceTemplate> page = valid(() -> resources.listTemplates(cursor));
             List<ResourceTemplate> filtered = page.items().stream()
                     .filter(t -> allowed(t.annotations()))
                     .toList();
             ListResourceTemplatesResult result = new ListResourceTemplatesResult(filtered, page.nextCursor(), null);
-            return new JsonRpcResponse(req.id(), ResourcesCodec.toJsonObject(result));
+            return new JsonRpcResponse(req.id(), ListResourceTemplatesResult.CODEC.toJson(result));
         } catch (InvalidParams e) {
             return invalidParams(req, e.getMessage());
         }
@@ -127,7 +127,7 @@ public final class ResourceFeature implements AutoCloseable {
     private JsonRpcMessage subscribeResource(JsonRpcRequest req) {
         SubscribeRequest sr;
         try {
-            sr = valid(() -> ResourcesCodec.toSubscribeRequest(req.params()));
+            sr = valid(() -> SubscribeRequest.CODEC.fromJson(req.params()));
         } catch (InvalidParams e) {
             return invalidParams(req, e.getMessage());
         }
@@ -146,7 +146,7 @@ public final class ResourceFeature implements AutoCloseable {
                     ResourceUpdatedNotification n = new ResourceUpdatedNotification(update.uri(), update.title());
                     sender.send(new JsonRpcNotification(
                             NotificationMethod.RESOURCES_UPDATED.method(),
-                            ResourcesCodec.toJsonObject(n)));
+                            ResourceUpdatedNotification.CODEC.toJson(n)));
                 } catch (IOException ignore) {
                 }
             });
@@ -161,7 +161,7 @@ public final class ResourceFeature implements AutoCloseable {
     private JsonRpcMessage unsubscribeResource(JsonRpcRequest req) {
         UnsubscribeRequest ur;
         try {
-            ur = valid(() -> ResourcesCodec.toUnsubscribeRequest(req.params()));
+            ur = valid(() -> UnsubscribeRequest.CODEC.fromJson(req.params()));
         } catch (InvalidParams e) {
             return invalidParams(req, e.getMessage());
         }

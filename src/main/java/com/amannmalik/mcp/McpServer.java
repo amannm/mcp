@@ -272,7 +272,7 @@ public final class McpServer implements AutoCloseable {
     }
 
     private JsonRpcMessage initialize(JsonRpcRequest req) {
-        InitializeRequest init = LifecycleCodec.toInitializeRequest(req.params());
+        InitializeRequest init = InitializeRequest.CODEC.fromJson(req.params());
         InitializeResponse baseResp;
         try {
             baseResp = lifecycle.initialize(init);
@@ -296,7 +296,7 @@ public final class McpServer implements AutoCloseable {
                 baseResp.instructions(),
                 serverFeatures()
         );
-        var json = LifecycleCodec.toJsonObject(resp);
+        var json = InitializeResponse.CODEC.toJson(resp);
         return new JsonRpcResponse(req.id(), json);
     }
 

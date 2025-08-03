@@ -168,7 +168,7 @@ public final class McpClient implements AutoCloseable {
                 info,
                 new ClientFeatures(rootsListChangedSupported)
         );
-        var initJson = LifecycleCodec.toJsonObject(init);
+        var initJson = InitializeRequest.CODEC.toJson(init);
         RequestId reqId = new RequestId.NumericId(id.getAndIncrement());
         JsonRpcRequest request = new JsonRpcRequest(reqId, RequestMethod.INITIALIZE.method(), initJson);
         try {
@@ -209,7 +209,7 @@ public final class McpClient implements AutoCloseable {
         } catch (IOException e) {
             throw new IOException("Initialization failed: " + e.getMessage(), e);
         }
-        InitializeResponse ir = LifecycleCodec.toInitializeResponse(resp.result());
+        InitializeResponse ir = InitializeResponse.CODEC.fromJson(resp.result());
         String serverVersion = ir.protocolVersion();
         if (!Protocol.LATEST_VERSION.equals(serverVersion) && !Protocol.PREVIOUS_VERSION.equals(serverVersion)) {
             try {
@@ -427,17 +427,17 @@ public final class McpClient implements AutoCloseable {
     public ListResourcesResult listResources(String cursor) throws IOException {
         JsonRpcResponse resp = JsonRpc.expectResponse(request(
                 RequestMethod.RESOURCES_LIST,
-                ResourcesCodec.toJsonObject(new ListResourcesRequest(cursor, null))
+                ListResourcesRequest.CODEC.toJson(new ListResourcesRequest(cursor, null))
         ));
-        return ResourcesCodec.toListResourcesResult(resp.result());
+        return ListResourcesResult.CODEC.fromJson(resp.result());
     }
 
     public ListResourceTemplatesResult listResourceTemplates(String cursor) throws IOException {
         JsonRpcResponse resp = JsonRpc.expectResponse(request(
                 RequestMethod.RESOURCES_TEMPLATES_LIST,
-                ResourcesCodec.toJsonObject(new ListResourceTemplatesRequest(cursor, null))
+                ListResourceTemplatesRequest.CODEC.toJson(new ListResourceTemplatesRequest(cursor, null))
         ));
-        return ResourcesCodec.toListResourceTemplatesResult(resp.result());
+        return ListResourceTemplatesResult.CODEC.fromJson(resp.result());
     }
 
     public ResourceSubscription subscribeResource(String uri, ResourceListener listener) throws IOException {
@@ -449,7 +449,7 @@ public final class McpClient implements AutoCloseable {
         }
         JsonRpc.expectResponse(request(
                 RequestMethod.RESOURCES_SUBSCRIBE,
-                ResourcesCodec.toJsonObject(new SubscribeRequest(uri, null))
+                SubscribeRequest.CODEC.toJson(new SubscribeRequest(uri, null))
         ));
         resourceListeners.put(uri, listener);
         return () -> {
@@ -457,7 +457,7 @@ public final class McpClient implements AutoCloseable {
             try {
                 request(
                         RequestMethod.RESOURCES_UNSUBSCRIBE,
-                        ResourcesCodec.toJsonObject(new UnsubscribeRequest(uri, null))
+                        UnsubscribeRequest.CODEC.toJson(new UnsubscribeRequest(uri, null))
                 );
             } catch (IOException ignore) {
             }
@@ -639,7 +639,7 @@ public final class McpClient implements AutoCloseable {
 
     private void handleResourcesListChanged(JsonRpcNotification note) {
         try {
-            ResourcesCodec.requireListChangedNotification(note.params());
+            ResourceListChangedNotification.CODEC.fromJson(note.params());
             listener.onResourceListChanged();
         } catch (IllegalArgumentException ignore) {
         }
@@ -648,7 +648,7 @@ public final class McpClient implements AutoCloseable {
     private void handleResourceUpdated(JsonRpcNotification note) {
         if (note.params() == null) return;
         try {
-            ResourceUpdatedNotification run = ResourcesCodec.toResourceUpdatedNotification(note.params());
+            ResourceUpdatedNotification run = ResourceUpdatedNotification.CODEC.fromJson(note.params());
             ResourceListener listener = resourceListeners.get(run.uri());
             if (listener != null) {
                 listener.updated(new ResourceUpdate(run.uri(), run.title()));
