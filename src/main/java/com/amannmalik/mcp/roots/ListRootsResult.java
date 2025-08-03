@@ -1,7 +1,6 @@
 package com.amannmalik.mcp.roots;
 
 import com.amannmalik.mcp.core.*;
-import com.amannmalik.mcp.util.JsonUtil;
 import com.amannmalik.mcp.validation.MetaValidator;
 import jakarta.json.*;
 
@@ -21,7 +20,7 @@ public record ListRootsResult(List<Root> roots, JsonObject _meta) {
         @Override
         public ListRootsResult fromJson(JsonObject obj) {
             if (obj == null) throw new IllegalArgumentException("object required");
-            JsonUtil.requireOnlyKeys(obj, Set.of("roots", "_meta"));
+            requireOnlyKeys(obj, Set.of("roots", "_meta"));
             JsonArray arr = obj.getJsonArray("roots");
             List<Root> roots = arr == null || arr.isEmpty()
                     ? List.of()

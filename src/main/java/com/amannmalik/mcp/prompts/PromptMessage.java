@@ -2,7 +2,7 @@ package com.amannmalik.mcp.prompts;
 
 import com.amannmalik.mcp.content.ContentBlock;
 import com.amannmalik.mcp.core.JsonCodec;
-import com.amannmalik.mcp.util.JsonUtil;
+import com.amannmalik.mcp.core.AbstractEntityCodec;
 import jakarta.json.*;
 
 import java.util.Set;
@@ -20,7 +20,7 @@ public record PromptMessage(Role role, PromptContent content) {
         @Override
         public PromptMessage fromJson(JsonObject obj) {
             if (obj == null) throw new IllegalArgumentException("object required");
-            JsonUtil.requireOnlyKeys(obj, Set.of("role", "content"));
+            AbstractEntityCodec.requireOnlyKeys(obj, Set.of("role", "content"));
             String raw = obj.getString("role", null);
             if (raw == null) throw new IllegalArgumentException("role required");
             Role role = Role.valueOf(raw.toUpperCase());

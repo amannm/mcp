@@ -1,7 +1,7 @@
 package com.amannmalik.mcp.ping;
 
 import com.amannmalik.mcp.core.JsonCodec;
-import com.amannmalik.mcp.util.JsonUtil;
+import com.amannmalik.mcp.core.AbstractEntityCodec;
 import com.amannmalik.mcp.validation.MetaValidator;
 import jakarta.json.*;
 
@@ -18,7 +18,7 @@ public record PingRequest(JsonObject _meta) {
 
         @Override
         public PingRequest fromJson(JsonObject obj) {
-            if (obj != null) JsonUtil.requireOnlyKeys(obj, Set.of("_meta"));
+            if (obj != null) AbstractEntityCodec.requireOnlyKeys(obj, Set.of("_meta"));
             return new PingRequest(obj == null ? null : obj.getJsonObject("_meta"));
         }
     };

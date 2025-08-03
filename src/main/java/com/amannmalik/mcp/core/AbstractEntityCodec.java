@@ -5,6 +5,7 @@ import jakarta.json.*;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 import java.util.function.BiFunction;
 import java.util.function.Function;
@@ -22,7 +23,7 @@ public abstract class AbstractEntityCodec<T> implements JsonCodec<T> {
 
     public static PaginatedRequest fromPaginatedRequest(JsonObject obj) {
         if (obj == null) return new PaginatedRequest(null, null);
-        JsonUtil.requireOnlyKeys(obj, REQUEST_KEYS);
+        requireOnlyKeys(obj, REQUEST_KEYS);
         return new PaginatedRequest(obj.getString("cursor", null), obj.getJsonObject("_meta"));
     }
 
@@ -35,7 +36,7 @@ public abstract class AbstractEntityCodec<T> implements JsonCodec<T> {
 
     public static PaginatedResult fromPaginatedResult(JsonObject obj) {
         if (obj == null) return new PaginatedResult(null, null);
-        JsonUtil.requireOnlyKeys(obj, RESULT_KEYS);
+        requireOnlyKeys(obj, RESULT_KEYS);
         return new PaginatedResult(obj.getString("nextCursor", null), obj.getJsonObject("_meta"));
     }
 
@@ -102,5 +103,13 @@ public abstract class AbstractEntityCodec<T> implements JsonCodec<T> {
 
     protected static JsonObject getObject(JsonObject obj, String key) {
         return obj.getJsonObject(key);
+    }
+
+    public static void requireOnlyKeys(JsonObject obj, Set<String> allowed) {
+        Objects.requireNonNull(obj);
+        Objects.requireNonNull(allowed);
+        for (String key : obj.keySet()) {
+            if (!allowed.contains(key)) throw new IllegalArgumentException("unexpected field: " + key);
+        }
     }
 }

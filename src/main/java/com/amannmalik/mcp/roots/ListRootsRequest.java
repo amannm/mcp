@@ -1,7 +1,6 @@
 package com.amannmalik.mcp.roots;
 
 import com.amannmalik.mcp.core.*;
-import com.amannmalik.mcp.util.JsonUtil;
 import com.amannmalik.mcp.validation.MetaValidator;
 import jakarta.json.*;
 
@@ -19,7 +18,7 @@ public record ListRootsRequest(JsonObject _meta) {
         @Override
         public ListRootsRequest fromJson(JsonObject obj) {
             if (obj != null) {
-                JsonUtil.requireOnlyKeys(obj, Set.of("_meta"));
+                requireOnlyKeys(obj, Set.of("_meta"));
                 return new ListRootsRequest(getObject(obj, "_meta"));
             }
             return new ListRootsRequest(null);

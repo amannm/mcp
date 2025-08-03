@@ -1,7 +1,7 @@
 package com.amannmalik.mcp.sampling;
 
 import com.amannmalik.mcp.core.JsonCodec;
-import com.amannmalik.mcp.util.JsonUtil;
+import com.amannmalik.mcp.core.AbstractEntityCodec;
 import jakarta.json.*;
 
 import java.util.List;
@@ -31,7 +31,7 @@ public record ModelPreferences(
         @Override
         public ModelPreferences fromJson(JsonObject obj) {
             if (obj == null) throw new IllegalArgumentException("object required");
-            JsonUtil.requireOnlyKeys(obj, Set.of("hints", "costPriority", "speedPriority", "intelligencePriority"));
+            AbstractEntityCodec.requireOnlyKeys(obj, Set.of("hints", "costPriority", "speedPriority", "intelligencePriority"));
             List<ModelHint> hints = obj.containsKey("hints")
                     ? obj.getJsonArray("hints").stream()
                     .map(v -> ModelHint.CODEC.fromJson(v.asJsonObject()))

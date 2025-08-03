@@ -2,13 +2,12 @@ package com.amannmalik.mcp.content;
 
 import com.amannmalik.mcp.annotations.Annotations;
 import com.amannmalik.mcp.core.JsonCodec;
+import com.amannmalik.mcp.core.AbstractEntityCodec;
 import com.amannmalik.mcp.prompts.PromptContent;
 import com.amannmalik.mcp.resources.Resource;
 import com.amannmalik.mcp.resources.ResourceBlock;
-import com.amannmalik.mcp.resources.Resource;
 import com.amannmalik.mcp.sampling.MessageContent;
 import com.amannmalik.mcp.util.Base64Util;
-import com.amannmalik.mcp.util.JsonUtil;
 import com.amannmalik.mcp.validation.InputSanitizer;
 import com.amannmalik.mcp.validation.MetaValidator;
 import jakarta.json.*;
@@ -55,7 +54,7 @@ public sealed interface ContentBlock
             if (obj == null) throw new IllegalArgumentException("object required");
             String type = obj.getString("type", null);
             if (type == null) throw new IllegalArgumentException("type required");
-            JsonUtil.requireOnlyKeys(obj, switch (type) {
+            AbstractEntityCodec.requireOnlyKeys(obj, switch (type) {
                 case "text" -> Set.of("type", "text", "annotations", "_meta");
                 case "image", "audio" -> Set.of("type", "data", "mimeType", "annotations", "_meta");
                 case "resource" -> Set.of("type", "resource", "annotations", "_meta");

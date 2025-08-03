@@ -1,8 +1,8 @@
 package com.amannmalik.mcp.resources;
 
 import com.amannmalik.mcp.core.JsonCodec;
+import com.amannmalik.mcp.core.AbstractEntityCodec;
 import com.amannmalik.mcp.util.Base64Util;
-import com.amannmalik.mcp.util.JsonUtil;
 import com.amannmalik.mcp.validation.*;
 import jakarta.json.*;
 
@@ -33,7 +33,7 @@ public sealed interface ResourceBlock permits ResourceBlock.Text, ResourceBlock.
             if (hasText == hasBlob) {
                 throw new IllegalArgumentException("exactly one of text or blob must be present");
             }
-            JsonUtil.requireOnlyKeys(obj, Set.of("uri", "mimeType", "_meta", "text", "blob"));
+            AbstractEntityCodec.requireOnlyKeys(obj, Set.of("uri", "mimeType", "_meta", "text", "blob"));
             if (hasText) {
                 return new Text(uri, mime, obj.getString("text"), meta);
             }

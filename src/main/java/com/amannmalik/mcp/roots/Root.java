@@ -1,7 +1,6 @@
 package com.amannmalik.mcp.roots;
 
 import com.amannmalik.mcp.core.*;
-import com.amannmalik.mcp.util.JsonUtil;
 import com.amannmalik.mcp.validation.*;
 import jakarta.json.*;
 
@@ -20,7 +19,7 @@ public record Root(String uri, String name, JsonObject _meta) {
         @Override
         public Root fromJson(JsonObject obj) {
             if (obj == null) throw new IllegalArgumentException("object required");
-            JsonUtil.requireOnlyKeys(obj, Set.of("uri", "name", "_meta"));
+            requireOnlyKeys(obj, Set.of("uri", "name", "_meta"));
             String uri = requireString(obj, "uri");
             String name = obj.getString("name", null);
             return new Root(uri, name, getObject(obj, "_meta"));

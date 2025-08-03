@@ -1,8 +1,8 @@
 package com.amannmalik.mcp.prompts;
 
 import com.amannmalik.mcp.core.JsonCodec;
+import com.amannmalik.mcp.core.AbstractEntityCodec;
 import com.amannmalik.mcp.util.DisplayNameProvider;
-import com.amannmalik.mcp.util.JsonUtil;
 import com.amannmalik.mcp.validation.InputSanitizer;
 import com.amannmalik.mcp.validation.MetaValidator;
 import jakarta.json.*;
@@ -36,7 +36,7 @@ public record Prompt(
         @Override
         public Prompt fromJson(JsonObject obj) {
             if (obj == null) throw new IllegalArgumentException("object required");
-            JsonUtil.requireOnlyKeys(obj, Set.of("name", "title", "description", "arguments", "_meta"));
+            AbstractEntityCodec.requireOnlyKeys(obj, Set.of("name", "title", "description", "arguments", "_meta"));
             String name = obj.getString("name", null);
             if (name == null) throw new IllegalArgumentException("name required");
             String title = obj.getString("title", null);

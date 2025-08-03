@@ -2,8 +2,8 @@ package com.amannmalik.mcp.sampling;
 
 import com.amannmalik.mcp.content.ContentBlock;
 import com.amannmalik.mcp.core.JsonCodec;
+import com.amannmalik.mcp.core.AbstractEntityCodec;
 import com.amannmalik.mcp.prompts.Role;
-import com.amannmalik.mcp.util.JsonUtil;
 import com.amannmalik.mcp.validation.MetaValidator;
 import jakarta.json.*;
 
@@ -31,7 +31,7 @@ public record CreateMessageResponse(
         @Override
         public CreateMessageResponse fromJson(JsonObject obj) {
             if (obj == null) throw new IllegalArgumentException("object required");
-            JsonUtil.requireOnlyKeys(obj, Set.of("role", "content", "model", "stopReason", "_meta"));
+            AbstractEntityCodec.requireOnlyKeys(obj, Set.of("role", "content", "model", "stopReason", "_meta"));
             String raw = obj.getString("role", null);
             if (raw == null) throw new IllegalArgumentException("role required");
             Role role = Role.valueOf(raw.toUpperCase());

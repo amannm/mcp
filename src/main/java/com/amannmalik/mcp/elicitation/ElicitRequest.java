@@ -1,7 +1,7 @@
 package com.amannmalik.mcp.elicitation;
 
 import com.amannmalik.mcp.core.JsonCodec;
-import com.amannmalik.mcp.util.JsonUtil;
+import com.amannmalik.mcp.core.AbstractEntityCodec;
 import com.amannmalik.mcp.validation.*;
 import jakarta.json.*;
 
@@ -21,7 +21,7 @@ public record ElicitRequest(String message, JsonObject requestedSchema, JsonObje
         @Override
         public ElicitRequest fromJson(JsonObject obj) {
             if (obj == null) throw new IllegalArgumentException("object required");
-            JsonUtil.requireOnlyKeys(obj, Set.of("message", "requestedSchema", "_meta"));
+            AbstractEntityCodec.requireOnlyKeys(obj, Set.of("message", "requestedSchema", "_meta"));
             String message = obj.getString("message", null);
             if (message == null) throw new IllegalArgumentException("message required");
             JsonValue schemaVal = obj.get("requestedSchema");

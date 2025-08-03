@@ -1,7 +1,7 @@
 package com.amannmalik.mcp.elicitation;
 
 import com.amannmalik.mcp.core.JsonCodec;
-import com.amannmalik.mcp.util.JsonUtil;
+import com.amannmalik.mcp.core.AbstractEntityCodec;
 import com.amannmalik.mcp.validation.InputSanitizer;
 import com.amannmalik.mcp.validation.MetaValidator;
 import jakarta.json.*;
@@ -22,7 +22,7 @@ public record ElicitResult(ElicitationAction action, JsonObject content, JsonObj
         @Override
         public ElicitResult fromJson(JsonObject obj) {
             if (obj == null) throw new IllegalArgumentException("action required");
-            JsonUtil.requireOnlyKeys(obj, Set.of("action", "content", "_meta"));
+            AbstractEntityCodec.requireOnlyKeys(obj, Set.of("action", "content", "_meta"));
             String raw = obj.getString("action", null);
             if (raw == null) throw new IllegalArgumentException("action required");
             ElicitationAction action;

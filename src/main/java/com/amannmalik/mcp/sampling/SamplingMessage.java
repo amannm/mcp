@@ -2,8 +2,8 @@ package com.amannmalik.mcp.sampling;
 
 import com.amannmalik.mcp.content.ContentBlock;
 import com.amannmalik.mcp.core.JsonCodec;
+import com.amannmalik.mcp.core.AbstractEntityCodec;
 import com.amannmalik.mcp.prompts.Role;
-import com.amannmalik.mcp.util.JsonUtil;
 import jakarta.json.*;
 
 import java.util.Set;
@@ -21,7 +21,7 @@ public record SamplingMessage(Role role, MessageContent content) {
         @Override
         public SamplingMessage fromJson(JsonObject obj) {
             if (obj == null) throw new IllegalArgumentException("object required");
-            JsonUtil.requireOnlyKeys(obj, Set.of("role", "content"));
+            AbstractEntityCodec.requireOnlyKeys(obj, Set.of("role", "content"));
             String raw = obj.getString("role", null);
             if (raw == null) throw new IllegalArgumentException("role required");
             Role role = Role.valueOf(raw.toUpperCase());

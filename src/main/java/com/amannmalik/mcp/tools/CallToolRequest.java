@@ -2,7 +2,6 @@ package com.amannmalik.mcp.tools;
 
 import com.amannmalik.mcp.core.AbstractEntityCodec;
 import com.amannmalik.mcp.core.JsonCodec;
-import com.amannmalik.mcp.util.JsonUtil;
 import com.amannmalik.mcp.validation.InputSanitizer;
 import com.amannmalik.mcp.validation.MetaValidator;
 import jakarta.json.*;
@@ -25,7 +24,7 @@ public record CallToolRequest(String name,
         @Override
         public CallToolRequest fromJson(JsonObject obj) {
             if (obj == null) throw new IllegalArgumentException("object required");
-            JsonUtil.requireOnlyKeys(obj, Set.of("name", "arguments", "_meta"));
+            requireOnlyKeys(obj, Set.of("name", "arguments", "_meta"));
             String name = requireString(obj, "name");
             JsonObject arguments = obj.getJsonObject("arguments");
             JsonObject meta = obj.getJsonObject("_meta");
