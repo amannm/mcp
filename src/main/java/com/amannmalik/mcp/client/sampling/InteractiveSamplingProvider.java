@@ -25,7 +25,19 @@ public final class InteractiveSamplingProvider implements SamplingProvider {
     @Override
     public CreateMessageResponse createMessage(CreateMessageRequest request, long timeoutMillis) throws InterruptedException {
         if (autoApprove) {
-            return generateResponse(request, timeoutMillis);
+            boolean reject = request.messages().stream()
+                    .map(SamplingMessage::content)
+                    .filter(ContentBlock.Text.class::isInstance)
+                    .map(ContentBlock.Text.class::cast)
+                    .map(ContentBlock.Text::text)
+                    .anyMatch(t -> t.equalsIgnoreCase("reject"));
+            if (reject) throw new InterruptedException("User rejected sampling request");
+            return new CreateMessageResponse(
+                    Role.ASSISTANT,
+                    new ContentBlock.Text("ok", null, null),
+                    "mock-model",
+                    "endTurn",
+                    null);
         }
 
         try {
