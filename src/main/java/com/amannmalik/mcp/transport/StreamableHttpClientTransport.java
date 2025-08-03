@@ -1,7 +1,7 @@
 package com.amannmalik.mcp.transport;
 
 import com.amannmalik.mcp.lifecycle.Protocol;
-import com.amannmalik.mcp.server.roots.validation.InputSanitizer;
+import com.amannmalik.mcp.validation.InputSanitizer;
 import jakarta.json.*;
 
 import java.io.*;

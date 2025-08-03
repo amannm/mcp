@@ -16,7 +16,7 @@ import com.amannmalik.mcp.server.logging.*;
 import com.amannmalik.mcp.server.tools.ToolListListener;
 import com.amannmalik.mcp.transport.*;
 import com.amannmalik.mcp.util.*;
-import com.amannmalik.mcp.server.roots.validation.SchemaValidator;
+import com.amannmalik.mcp.validation.SchemaValidator;
 import com.amannmalik.mcp.wire.NotificationMethod;
 import com.amannmalik.mcp.wire.RequestMethod;
 import jakarta.json.*;

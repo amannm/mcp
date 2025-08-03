@@ -1,7 +1,7 @@
 package com.amannmalik.mcp.server.tools;
 
 import com.amannmalik.mcp.util.*;
-import com.amannmalik.mcp.server.roots.validation.SchemaValidator;
+import com.amannmalik.mcp.validation.SchemaValidator;
 import jakarta.json.*;
 
 import java.util.*;

@@ -9,7 +9,7 @@ import com.amannmalik.mcp.resources.*;
 import com.amannmalik.mcp.security.ResourceAccessController;
 import com.amannmalik.mcp.server.roots.RootsManager;
 import com.amannmalik.mcp.util.*;
-import com.amannmalik.mcp.server.roots.validation.InputSanitizer;
+import com.amannmalik.mcp.validation.InputSanitizer;
 import com.amannmalik.mcp.wire.NotificationMethod;
 import com.amannmalik.mcp.wire.RequestMethod;
 import jakarta.json.*;

@@ -1,6 +1,6 @@
 package com.amannmalik.mcp.util;
 
-import com.amannmalik.mcp.server.roots.validation.InputSanitizer;
+import com.amannmalik.mcp.validation.InputSanitizer;
 
 public sealed interface ProgressToken permits ProgressToken.StringToken, ProgressToken.NumericToken {
     String asString();

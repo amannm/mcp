@@ -1,6 +1,6 @@
 package com.amannmalik.mcp.client.roots;
 
-import com.amannmalik.mcp.server.roots.validation.MetaValidator;
+import com.amannmalik.mcp.validation.MetaValidator;
 import jakarta.json.JsonObject;
 
 import java.util.List;

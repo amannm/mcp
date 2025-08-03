@@ -1,7 +1,7 @@
 package com.amannmalik.mcp.util;
 
 import com.amannmalik.mcp.jsonrpc.RequestId;
-import com.amannmalik.mcp.server.roots.validation.InputSanitizer;
+import com.amannmalik.mcp.validation.InputSanitizer;
 
 public record CancelledNotification(RequestId requestId, String reason) {
     public CancelledNotification {

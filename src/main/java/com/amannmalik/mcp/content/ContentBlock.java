@@ -5,8 +5,8 @@ import com.amannmalik.mcp.client.sampling.MessageContent;
 import com.amannmalik.mcp.prompts.PromptContent;
 import com.amannmalik.mcp.resources.Resource;
 import com.amannmalik.mcp.resources.ResourceBlock;
-import com.amannmalik.mcp.server.roots.validation.InputSanitizer;
-import com.amannmalik.mcp.server.roots.validation.MetaValidator;
+import com.amannmalik.mcp.validation.InputSanitizer;
+import com.amannmalik.mcp.validation.MetaValidator;
 import jakarta.json.JsonObject;
 
 public sealed interface ContentBlock

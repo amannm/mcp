@@ -1,6 +1,6 @@
 package com.amannmalik.mcp.server.completion;
 
-import com.amannmalik.mcp.server.roots.validation.InputSanitizer;
+import com.amannmalik.mcp.validation.InputSanitizer;
 import jakarta.json.*;
 
 import java.util.HashMap;

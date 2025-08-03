@@ -1,7 +1,7 @@
 package com.amannmalik.mcp.server.completion;
 
 import com.amannmalik.mcp.util.StringMetrics;
-import com.amannmalik.mcp.server.roots.validation.InputSanitizer;
+import com.amannmalik.mcp.validation.InputSanitizer;
 
 import java.util.*;
 import java.util.concurrent.CopyOnWriteArrayList;

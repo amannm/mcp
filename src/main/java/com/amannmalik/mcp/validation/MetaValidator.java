@@ -1,4 +1,4 @@
-package com.amannmalik.mcp.server.roots.validation;
+package com.amannmalik.mcp.validation;
 
 import jakarta.json.JsonObject;
 

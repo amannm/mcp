@@ -1,6 +1,6 @@
 package com.amannmalik.mcp.lifecycle;
 
-import com.amannmalik.mcp.server.roots.validation.InputSanitizer;
+import com.amannmalik.mcp.validation.InputSanitizer;
 
 public record ServerInfo(String name, String title, String version) {
     public ServerInfo {

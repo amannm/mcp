@@ -1,7 +1,7 @@
 package com.amannmalik.mcp.util;
 
-import com.amannmalik.mcp.server.roots.validation.InputSanitizer;
-import com.amannmalik.mcp.server.roots.validation.MetaValidator;
+import com.amannmalik.mcp.validation.InputSanitizer;
+import com.amannmalik.mcp.validation.MetaValidator;
 import jakarta.json.*;
 
 import java.util.Optional;

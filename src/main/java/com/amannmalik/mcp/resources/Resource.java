@@ -1,8 +1,8 @@
 package com.amannmalik.mcp.resources;
 
 import com.amannmalik.mcp.annotations.Annotations;
-import com.amannmalik.mcp.server.roots.validation.*;
 import com.amannmalik.mcp.util.DisplayNameProvider;
+import com.amannmalik.mcp.validation.*;
 import jakarta.json.JsonObject;
 
 public record Resource(

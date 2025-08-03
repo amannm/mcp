@@ -2,7 +2,7 @@ package com.amannmalik.mcp.transport;
 
 import com.amannmalik.mcp.auth.Principal;
 import com.amannmalik.mcp.util.Base64Util;
-import com.amannmalik.mcp.server.roots.validation.InputSanitizer;
+import com.amannmalik.mcp.validation.InputSanitizer;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 

@@ -3,7 +3,7 @@ package com.amannmalik.mcp.prompts;
 import com.amannmalik.mcp.content.ContentBlock;
 import com.amannmalik.mcp.content.ContentCodec;
 import com.amannmalik.mcp.util.*;
-import com.amannmalik.mcp.server.roots.validation.InputSanitizer;
+import com.amannmalik.mcp.validation.InputSanitizer;
 import jakarta.json.*;
 
 import java.util.*;
