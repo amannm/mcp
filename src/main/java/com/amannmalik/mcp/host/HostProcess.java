@@ -147,9 +147,9 @@ public final class HostProcess implements AutoCloseable {
         requireCapability(client, ServerCapability.TOOLS);
         JsonRpcResponse resp = JsonRpc.expectResponse(client.request(
                 RequestMethod.TOOLS_LIST,
-                ToolCodec.toJsonObject(new ListToolsRequest(cursor, null))
+                ListToolsRequest.CODEC.toJson(new ListToolsRequest(cursor, null))
         ));
-        return ToolCodec.toListToolsResult(resp.result());
+        return ListToolsResult.CODEC.fromJson(resp.result());
     }
 
     public ToolResult callTool(String clientId, String name, JsonObject args) throws IOException {
@@ -160,9 +160,9 @@ public final class HostProcess implements AutoCloseable {
         toolAccess.requireAllowed(principal, name);
         JsonRpcResponse resp = JsonRpc.expectResponse(client.request(
                 RequestMethod.TOOLS_CALL,
-                ToolCodec.toJsonObject(new CallToolRequest(name, args, null))
+                CallToolRequest.CODEC.toJson(new CallToolRequest(name, args, null))
         ));
-        return ToolCodec.toToolResult(resp.result());
+        return ToolResult.CODEC.fromJson(resp.result());
     }
 
     public JsonObject createMessage(String clientId, JsonObject params) throws IOException {

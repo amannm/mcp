@@ -8,8 +8,7 @@ import com.amannmalik.mcp.lifecycle.ClientCapability;
 import com.amannmalik.mcp.lifecycle.ClientInfo;
 import com.amannmalik.mcp.prompts.Role;
 import com.amannmalik.mcp.sampling.SamplingAccessController;
-import com.amannmalik.mcp.tools.ToolAccessController;
-import com.amannmalik.mcp.tools.ToolCodec;
+import com.amannmalik.mcp.tools.*;
 import com.amannmalik.mcp.transport.StdioTransport;
 import jakarta.json.Json;
 import jakarta.json.JsonValue;
@@ -160,7 +159,7 @@ public final class HostCommand {
                         } else {
                             String cursor = parts.length > 2 ? parts[2] : null;
                             var page = host.listTools(parts[1], cursor);
-                            System.out.println(ToolCodec.toJsonObject(page));
+                            System.out.println(ListToolsResult.CODEC.toJson(page));
                         }
                     }
                     case "call-tool" -> {
@@ -171,7 +170,7 @@ public final class HostCommand {
                                     Json.createReader(new StringReader(parts[3])).readObject() :
                                     null;
                             var result = host.callTool(parts[1], parts[2], args);
-                            System.out.println(ToolCodec.toJsonObject(result));
+                            System.out.println(ToolResult.CODEC.toJson(result));
                         }
                     }
                     case "create-message" -> {

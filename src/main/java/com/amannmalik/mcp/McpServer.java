@@ -123,7 +123,7 @@ public final class McpServer implements AutoCloseable {
             toolListSubscription = subscribeListChanges(
                     l -> tools.subscribeList(() -> l.listChanged()),
                     NotificationMethod.TOOLS_LIST_CHANGED,
-                    ToolCodec.toJsonObject(new ToolListChangedNotification()));
+                    ToolListChangedNotification.CODEC.toJson(new ToolListChangedNotification()));
         }
 
         if (prompts != null && prompts.supportsListChanged()) {
@@ -381,10 +381,11 @@ public final class McpServer implements AutoCloseable {
     private JsonRpcMessage listTools(JsonRpcRequest req) {
         requireServerCapability(ServerCapability.TOOLS);
         try {
-            ListToolsRequest ltr = valid(() -> ToolCodec.toListToolsRequest(req.params()));
+            ListToolsRequest ltr = valid(() -> ListToolsRequest.CODEC.fromJson(req.params()));
             String cursor = valid(() -> sanitizeCursor(ltr.cursor()));
             Pagination.Page<Tool> page = valid(() -> tools.list(cursor));
-            return new JsonRpcResponse(req.id(), ToolCodec.toJsonObject(page, null));
+            JsonObject json = ListToolsResult.CODEC.toJson(new ListToolsResult(page.items(), page.nextCursor(), null));
+            return new JsonRpcResponse(req.id(), json);
         } catch (InvalidParams e) {
             return invalidParams(req, e.getMessage());
         }
@@ -394,7 +395,7 @@ public final class McpServer implements AutoCloseable {
         requireServerCapability(ServerCapability.TOOLS);
         CallToolRequest callRequest;
         try {
-            callRequest = ToolCodec.toCallToolRequest(req.params());
+            callRequest = CallToolRequest.CODEC.fromJson(req.params());
         } catch (IllegalArgumentException e) {
             return invalidParams(req, e);
         }
@@ -409,7 +410,7 @@ public final class McpServer implements AutoCloseable {
         }
         try {
             ToolResult result = tools.call(callRequest.name(), callRequest.arguments());
-            return new JsonRpcResponse(req.id(), ToolCodec.toJsonObject(result));
+            return new JsonRpcResponse(req.id(), ToolResult.CODEC.toJson(result));
         } catch (IllegalArgumentException e) {
             return handleToolCallFailure(req, callRequest, e);
         }
@@ -427,7 +428,7 @@ public final class McpServer implements AutoCloseable {
                 if (res.action() == ElicitationAction.ACCEPT) {
                     try {
                         ToolResult result = tools.call(callRequest.name(), res.content());
-                        return new JsonRpcResponse(req.id(), ToolCodec.toJsonObject(result));
+                        return new JsonRpcResponse(req.id(), ToolResult.CODEC.toJson(result));
                     } catch (IllegalArgumentException ex) {
                         return invalidParams(req, ex);
                     }
