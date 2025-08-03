@@ -48,6 +48,7 @@ Feature: MCP protocol conformance
     And testing error conditions
       | operation         | parameter | expected_error_code |
       | call_unknown_tool | nope      | -32602              |
+      | list_tools_invalid_cursor | notacursor | -32602              |
     When the client disconnects
     Then the server terminates cleanly
 
@@ -71,6 +72,7 @@ Feature: MCP protocol conformance
       | operation              | parameter   | expected_error_code |
       | get_prompt_invalid     | nope        | -32602              |
       | get_prompt_missing_arg | test_prompt | -32602              |
+      | list_prompts_invalid_cursor | notacursor | -32602              |
     When the client disconnects
     Then the server terminates cleanly
 
@@ -287,5 +289,20 @@ Feature: MCP protocol conformance
     Examples:
       | transport |
       | stdio     |
+      | http      |
+
+  # Specification Links:
+  # - [Authorization](specification/2025-06-18/basic/authorization.mdx)
+  Scenario Outline: MCP authorization metadata specification conformance
+    Given a running MCP server using <transport> transport
+    Then capabilities should be advertised and ping succeeds
+    When fetching authorization metadata
+    Then authorization metadata uses server base URL
+    And authorization servers are advertised
+    When the client disconnects
+    Then the server terminates cleanly
+
+    Examples:
+      | transport |
       | http      |
 

@@ -19,11 +19,15 @@ import io.cucumber.datatable.DataTable;
 import io.cucumber.java.After;
 import io.cucumber.java.en.*;
 import jakarta.json.Json;
+import jakarta.json.JsonObject;
 import jakarta.json.JsonValue;
 
 import java.io.File;
 import java.io.IOException;
 import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse.BodyHandlers;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -59,6 +63,7 @@ public final class McpConformanceSteps {
     private ProgressNotification firstProgressUpdate;
     private ProgressNotification lastProgressUpdate;
     private final List<String> paginatedTools = new ArrayList<>();
+    private JsonObject authorizationMetadata = JsonValue.EMPTY_JSON_OBJECT;
 
     private void setupTestConfiguration(String transport) {
         String configFile = "http".equals(transport) ? "/mcp-test-config-http.yaml" : "/mcp-test-config.yaml";
@@ -124,6 +129,11 @@ public final class McpConformanceSteps {
         assertEquals(expected, client.serverCapabilities());
         assertTrue(client.toolsListChangedSupported());
         assertDoesNotThrow(() -> client.ping());
+        assertTrue(Set.of(Protocol.LATEST_VERSION, Protocol.PREVIOUS_VERSION)
+                .contains(client.protocolVersion()));
+        var info = client.serverInfo();
+        assertFalse(info.name().isBlank());
+        assertFalse(info.version().isBlank());
     }
 
     @When("requesting resource list with progress tracking")
@@ -339,6 +349,7 @@ public final class McpConformanceSteps {
                     Json.createObjectBuilder().add("cursor", parameter).build());
             case "list_templates" -> client.request("resources/templates/list", Json.createObjectBuilder().build());
             case "list_tools", "list_tools_schema", "list_tools_output_schema", "list_tools_annotations" -> client.request("tools/list", Json.createObjectBuilder().build());
+            case "list_tools_invalid_cursor" -> client.request("tools/list", Json.createObjectBuilder().add("cursor", parameter).build());
             case "call_tool" -> client.request("tools/call",
                     Json.createObjectBuilder().add("name", parameter).build());
             case "call_tool_structured" -> client.request("tools/call",
@@ -368,6 +379,7 @@ public final class McpConformanceSteps {
                         Json.createObjectBuilder().add("name", parameter).build());
             }
             case "list_prompts" -> client.request("prompts/list", Json.createObjectBuilder().build());
+            case "list_prompts_invalid_cursor" -> client.request("prompts/list", Json.createObjectBuilder().add("cursor", parameter).build());
             case "get_prompt" -> client.request("prompts/get",
                     Json.createObjectBuilder().add("name", parameter)
                             .add("arguments", Json.createObjectBuilder().add("test_arg", "v")).build());
@@ -805,6 +817,36 @@ public final class McpConformanceSteps {
             }
             case "set_log_level", "subscribe_resource", "unsubscribe_resource" -> assertTrue(true);
         }
+    }
+
+    @When("fetching authorization metadata")
+    public void fetchAuthorizationMetadata() throws Exception {
+        if (serverTransport instanceof StreamableHttpTransport http) {
+            var url = URI.create("http://127.0.0.1:" + http.port() + "/.well-known/oauth-protected-resource");
+            var request = HttpRequest.newBuilder(url).header("Accept", "application/json").build();
+            var response = HttpClient.newHttpClient().send(request, BodyHandlers.ofInputStream());
+            try (var reader = Json.createReader(response.body())) {
+                authorizationMetadata = reader.readObject();
+            }
+        } else {
+            fail("HTTP transport required");
+        }
+    }
+
+    @Then("authorization metadata uses server base URL")
+    public void verifyAuthorizationMetadataResource() {
+        if (serverTransport instanceof StreamableHttpTransport http) {
+            var expected = "http://127.0.0.1:" + http.port();
+            assertEquals(expected, authorizationMetadata.getString("resource"));
+        } else {
+            fail("HTTP transport required");
+        }
+    }
+
+    @Then("authorization servers are advertised")
+    public void verifyAuthorizationServers() {
+        var servers = authorizationMetadata.getJsonArray("authorization_servers");
+        assertFalse(servers.isEmpty());
     }
 
     private static final class CountingRootsProvider implements RootsProvider {
