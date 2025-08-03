@@ -189,6 +189,21 @@ Feature: MCP protocol conformance
       | http      |
 
   # Specification Links:
+  # - [Pagination](specification/2025-06-18/server/utilities/pagination.mdx)
+  Scenario Outline: MCP pagination specification conformance
+    Given a running MCP server using <transport> transport
+    Then capabilities should be advertised and ping succeeds
+    When listing tools with pagination
+    Then pagination covers all tools
+    When the client disconnects
+    Then the server terminates cleanly
+
+    Examples:
+      | transport |
+      | stdio     |
+      | http      |
+
+  # Specification Links:
   # - [Roots](specification/2025-06-18/client/roots.mdx)
   Scenario Outline: MCP roots specification conformance
     Given a running MCP server using <transport> transport

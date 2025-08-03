@@ -56,6 +56,7 @@ public final class McpConformanceSteps {
     private final Set<String> receivedNotifications = ConcurrentHashMap.newKeySet();
     private final BlockingQueue<ResourceUpdate> resourceUpdates = new LinkedBlockingQueue<>();
     private final BlockingQueue<ProgressNotification> progressUpdates = new LinkedBlockingQueue<>();
+    private final List<String> paginatedTools = new ArrayList<>();
 
     private void setupTestConfiguration(String transport) {
         String configFile = "http".equals(transport) ? "/mcp-test-config-http.yaml" : "/mcp-test-config.yaml";
@@ -135,6 +136,32 @@ public final class McpConformanceSteps {
         ProgressNotification note = progressUpdates.poll(2, TimeUnit.SECONDS);
         assertNotNull(note);
         assertEquals("tok", note.token().asString());
+    }
+
+    @When("listing tools with pagination")
+    public void listToolsWithPagination() throws Exception {
+        paginatedTools.clear();
+        Optional<String> cursor = Optional.empty();
+        do {
+            var req = Json.createObjectBuilder();
+            cursor.ifPresent(c -> req.add("cursor", c));
+            JsonRpcMessage response = client.request("tools/list", req.build());
+            assertInstanceOf(JsonRpcResponse.class, response);
+            var result = ((JsonRpcResponse) response).result();
+            result.getJsonArray("tools").stream()
+                    .map(JsonValue::asJsonObject)
+                    .map(t -> t.getString("name"))
+                    .forEach(paginatedTools::add);
+            cursor = result.containsKey("nextCursor")
+                    ? Optional.of(result.getString("nextCursor"))
+                    : Optional.empty();
+        } while (cursor.isPresent());
+    }
+
+    @Then("pagination covers all tools")
+    public void paginationCoversAllTools() {
+        assertEquals(Set.of("test_tool", "error_tool", "echo_tool", "slow_tool"),
+                Set.copyOf(paginatedTools));
     }
 
     @When("testing core functionality")
