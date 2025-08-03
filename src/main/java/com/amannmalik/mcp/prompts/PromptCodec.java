@@ -2,6 +2,7 @@ package com.amannmalik.mcp.prompts;
 
 import com.amannmalik.mcp.content.ContentBlock;
 import com.amannmalik.mcp.content.ContentCodec;
+import com.amannmalik.mcp.core.AbstractEntityCodec;
 import com.amannmalik.mcp.util.*;
 import com.amannmalik.mcp.validation.InputSanitizer;
 import jakarta.json.*;
@@ -47,12 +48,12 @@ public final class PromptCodec {
     }
 
     public static JsonObject toJsonObject(Pagination.Page<Prompt> page, JsonObject meta) {
-        return PaginationJson.toJson("prompts", page, PromptCodec::toJsonObject, meta);
+        return AbstractEntityCodec.paginated("prompts", page, PromptCodec::toJsonObject, meta);
     }
 
     public static JsonObject toJsonObject(ListPromptsRequest req) {
         if (req == null) throw new IllegalArgumentException("request required");
-        return PaginationCodec.toJsonObject(new PaginatedRequest(req.cursor(), req._meta()));
+        return AbstractEntityCodec.toJson(new PaginatedRequest(req.cursor(), req._meta()));
     }
 
     public static JsonObject toJsonObject(ListPromptsResult page) {
@@ -141,18 +142,18 @@ public final class PromptCodec {
             }
             prompts.add(toPrompt(v.asJsonObject()));
         }
-        String cursor = PaginationCodec.toPaginatedResult(obj).nextCursor();
+        String cursor = AbstractEntityCodec.fromPaginatedResult(obj).nextCursor();
         return new Pagination.Page<>(prompts, cursor);
     }
 
     public static ListPromptsResult toListPromptsResult(JsonObject obj) {
         Pagination.Page<Prompt> page = toPromptPage(obj);
-        PaginatedResult pr = PaginationCodec.toPaginatedResult(obj);
+        PaginatedResult pr = AbstractEntityCodec.fromPaginatedResult(obj);
         return new ListPromptsResult(page.items(), page.nextCursor(), pr._meta());
     }
 
     public static ListPromptsRequest toListPromptsRequest(JsonObject obj) {
-        PaginatedRequest pr = PaginationCodec.toPaginatedRequest(obj);
+        PaginatedRequest pr = AbstractEntityCodec.fromPaginatedRequest(obj);
         return new ListPromptsRequest(pr.cursor(), pr._meta());
     }
 
