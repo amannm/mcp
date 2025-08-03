@@ -1,56 +1,82 @@
 package com.amannmalik.mcp.core;
 
-import com.amannmalik.mcp.util.*;
+import com.amannmalik.mcp.util.PaginatedRequest;
+import com.amannmalik.mcp.util.PaginatedResult;
+import com.amannmalik.mcp.util.Pagination;
 import jakarta.json.*;
 
-import java.util.Set;
-import java.util.function.Function;
-
 public abstract class AbstractEntityCodec<T> implements JsonCodec<T> {
-    private static final Set<String> REQUEST_KEYS = Set.of("cursor", "_meta");
-    private static final Set<String> RESULT_KEYS = Set.of("nextCursor", "_meta");
+    protected IllegalArgumentException error(String message) {
+        return new IllegalArgumentException(message);
+    }
+
+    protected JsonObjectBuilder object() {
+        return Json.createObjectBuilder();
+    }
+
+    protected JsonArrayBuilder array() {
+        return Json.createArrayBuilder();
+    }
+
+    protected String requireString(JsonObject obj, String key) {
+        if (!obj.containsKey(key)) throw error(key + " required");
+        return obj.getString(key);
+    }
+
+    protected String getString(JsonObject obj, String key) {
+        return obj.getString(key, null);
+    }
+
+    protected JsonObject requireObject(JsonObject obj, String key) {
+        if (!obj.containsKey(key)) throw error(key + " required");
+        return obj.getJsonObject(key);
+    }
+
+    protected JsonObject getObject(JsonObject obj, String key) {
+        return obj.containsKey(key) ? obj.getJsonObject(key) : null;
+    }
+
+    protected JsonArray requireArray(JsonObject obj, String key) {
+        if (!obj.containsKey(key)) throw error(key + " required");
+        return obj.getJsonArray(key);
+    }
+
+    protected int requireInt(JsonObject obj, String key) {
+        if (!obj.containsKey(key)) throw error(key + " required");
+        return obj.getInt(key);
+    }
+
+    protected Double getDouble(JsonObject obj, String key) {
+        return obj.containsKey(key) ? obj.getJsonNumber(key).doubleValue() : null;
+    }
 
     public static JsonObject toJson(PaginatedRequest req) {
-        JsonObjectBuilder b = Json.createObjectBuilder();
+        var b = Json.createObjectBuilder();
         if (req.cursor() != null) b.add("cursor", req.cursor());
         if (req._meta() != null) b.add("_meta", req._meta());
         return b.build();
     }
 
     public static PaginatedRequest fromPaginatedRequest(JsonObject obj) {
-        if (obj == null) return new PaginatedRequest(null, null);
-        JsonUtil.requireOnlyKeys(obj, REQUEST_KEYS);
-        return new PaginatedRequest(obj.getString("cursor", null), obj.getJsonObject("_meta"));
-    }
-
-    public static JsonObject toJson(PaginatedResult result) {
-        JsonObjectBuilder b = Json.createObjectBuilder();
-        if (result.nextCursor() != null) b.add("nextCursor", result.nextCursor());
-        if (result._meta() != null) b.add("_meta", result._meta());
-        return b.build();
+        if (obj == null) throw new IllegalArgumentException("object required");
+        String cursor = obj.getString("cursor", null);
+        JsonObject meta = obj.containsKey("_meta") ? obj.getJsonObject("_meta") : null;
+        return new PaginatedRequest(cursor, meta);
     }
 
     public static PaginatedResult fromPaginatedResult(JsonObject obj) {
-        if (obj == null) return new PaginatedResult(null, null);
-        JsonUtil.requireOnlyKeys(obj, RESULT_KEYS);
-        return new PaginatedResult(obj.getString("nextCursor", null), obj.getJsonObject("_meta"));
+        if (obj == null) throw new IllegalArgumentException("object required");
+        String cursor = obj.getString("nextCursor", null);
+        JsonObject meta = obj.containsKey("_meta") ? obj.getJsonObject("_meta") : null;
+        return new PaginatedResult(cursor, meta);
     }
 
-    public static <T> JsonObject paginated(String field, Pagination.Page<T> page, Function<T, JsonValue> encoder, JsonObject meta) {
+    public static <T> JsonObject paginated(String key, Pagination.Page<T> page, java.util.function.Function<T, JsonObject> map, JsonObject meta) {
         JsonArrayBuilder arr = Json.createArrayBuilder();
-        page.items().forEach(item -> arr.add(encoder.apply(item)));
-        JsonObjectBuilder b = Json.createObjectBuilder().add(field, arr.build());
-        toJson(new PaginatedResult(page.nextCursor(), meta)).forEach(b::add);
+        page.items().forEach(t -> arr.add(map.apply(t)));
+        JsonObjectBuilder b = Json.createObjectBuilder().add(key, arr.build());
+        if (page.nextCursor() != null) b.add("nextCursor", page.nextCursor());
+        if (meta != null) b.add("_meta", meta);
         return b.build();
-    }
-
-    protected static String requireString(JsonObject obj, String key) {
-        String val = obj.getString(key, null);
-        if (val == null) throw new IllegalArgumentException(key + " required");
-        return val;
-    }
-
-    protected static JsonObject getObject(JsonObject obj, String key) {
-        return obj.getJsonObject(key);
     }
 }

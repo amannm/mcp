@@ -424,7 +424,7 @@ public final class McpConformanceSteps {
                                 new ContentBlock.Text("hi", null, null))),
                         new ModelPreferences(List.of(new ModelHint("claude-3-sonnet")), null, 0.5, 0.8),
                         "You are a helpful assistant.", null, null, 10, List.of(), null, null);
-                yield client.request("sampling/createMessage", SamplingCodec.toJsonObject(req));
+                yield client.request("sampling/createMessage", CreateMessageRequest.JSON.toJson(req));
             }
             case "request_sampling_reject" -> {
                 var req = new CreateMessageRequest(
@@ -432,7 +432,7 @@ public final class McpConformanceSteps {
                                 new ContentBlock.Text("reject", null, null))),
                         new ModelPreferences(List.of(new ModelHint("claude-3-sonnet")), null, 0.5, 0.8),
                         "You are a helpful assistant.", null, null, 10, List.of(), null, null);
-                yield client.request("sampling/createMessage", SamplingCodec.toJsonObject(req));
+                yield client.request("sampling/createMessage", CreateMessageRequest.JSON.toJson(req));
             }
             case "set_log_level" -> client.request("logging/setLevel",
                     Json.createObjectBuilder().add("level", parameter).build());
