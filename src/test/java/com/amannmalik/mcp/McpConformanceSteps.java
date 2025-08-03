@@ -4,6 +4,7 @@ import com.amannmalik.mcp.client.McpClient;
 import com.amannmalik.mcp.client.elicitation.*;
 import com.amannmalik.mcp.client.roots.*;
 import com.amannmalik.mcp.client.sampling.*;
+import com.amannmalik.mcp.annotations.AnnotationsCodec;
 import com.amannmalik.mcp.content.ContentBlock;
 import com.amannmalik.mcp.jsonrpc.*;
 import com.amannmalik.mcp.lifecycle.*;
@@ -254,13 +255,13 @@ public final class McpConformanceSteps {
             case "list_resources" -> client.request("resources/list",
                     Json.createObjectBuilder().add("_meta",
                             Json.createObjectBuilder().add("progressToken", "tok")).build());
-            case "resource_metadata" -> client.request("resources/list", Json.createObjectBuilder().build());
+            case "resource_metadata", "list_resources_annotations" ->
+                    client.request("resources/list", Json.createObjectBuilder().build());
             case "read_resource" -> client.request("resources/read",
                     Json.createObjectBuilder().add("uri", parameter).build());
             case "list_templates" -> client.request("resources/templates/list", Json.createObjectBuilder().build());
-            case "list_tools" -> client.request("tools/list", Json.createObjectBuilder().build());
-            case "list_tools_schema" -> client.request("tools/list", Json.createObjectBuilder().build());
-            case "list_tools_output_schema" -> client.request("tools/list", Json.createObjectBuilder().build());
+            case "list_tools", "list_tools_schema", "list_tools_output_schema", "list_tools_annotations" ->
+                    client.request("tools/list", Json.createObjectBuilder().build());
             case "call_tool" -> client.request("tools/call",
                     Json.createObjectBuilder().add("name", parameter).build());
             case "call_tool_structured" -> client.request("tools/call",
@@ -625,6 +626,13 @@ public final class McpConformanceSteps {
                 assertEquals(parameter, resource.getString("name"));
                 assertEquals(expected, resource.getString("mimeType"));
             }
+            case "list_resources_annotations" -> {
+                var resource = result.getJsonArray("resources").getJsonObject(0);
+                var ann = AnnotationsCodec.toAnnotations(resource.getJsonObject("annotations"));
+                assertTrue(ann.audience().contains(Role.USER));
+                assertEquals(Double.parseDouble(expected), ann.priority());
+                assertNotNull(ann.lastModified());
+            }
             case "read_resource" -> {
                 var content = result.getJsonArray("contents").getJsonObject(0);
                 assertEquals(expected, content.getString("text"));
@@ -654,6 +662,16 @@ public final class McpConformanceSteps {
                         .filter(t -> expected.equals(t.getString("name")))
                         .findFirst().orElseThrow();
                 assertEquals("object", tool.getJsonObject("outputSchema").getString("type"));
+            }
+            case "list_tools_annotations" -> {
+                var tools = result.getJsonArray("tools");
+                var tool = tools.stream()
+                        .map(JsonValue::asJsonObject)
+                        .filter(t -> parameter.equals(t.getString("name")))
+                        .findFirst().orElseThrow();
+                var ann = tool.getJsonObject("annotations");
+                assertNotNull(ann);
+                assertEquals(Boolean.parseBoolean(expected), ann.getBoolean("readOnlyHint"));
             }
             case "call_tool", "call_tool_elicit" -> {
                 var content = result.getJsonArray("content").getJsonObject(0);

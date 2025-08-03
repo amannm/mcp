@@ -80,6 +80,21 @@ Feature: MCP protocol conformance
     When the client disconnects
     Then the server terminates cleanly
 
+  Examples:
+    | transport |
+    | stdio     |
+    | http      |
+
+  Scenario Outline: MCP annotations specification conformance
+    Given a running MCP server using <transport> transport
+    Then capabilities should be advertised and ping succeeds
+    When testing core functionality
+      | operation                  | parameter | expected_result |
+      | list_resources_annotations | example   | 0.5             |
+      | list_tools_annotations     | test_tool | true            |
+    When the client disconnects
+    Then the server terminates cleanly
+
     Examples:
       | transport |
       | stdio     |
