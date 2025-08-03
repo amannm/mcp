@@ -588,9 +588,9 @@ public final class McpClient implements AutoCloseable {
             return JsonRpcError.of(req.id(), JsonRpcErrorCode.INVALID_PARAMS, "Missing params");
         }
         try {
-            ElicitRequest er = ElicitCodec.toRequest(params);
+            ElicitRequest er = ElicitRequest.CODEC.fromJson(params);
             ElicitResult resp = elicitation.elicit(er);
-            return new JsonRpcResponse(req.id(), ElicitCodec.toJsonObject(resp));
+            return new JsonRpcResponse(req.id(), ElicitResult.CODEC.toJson(resp));
         } catch (IllegalArgumentException e) {
             return JsonRpcError.of(req.id(), JsonRpcErrorCode.INVALID_PARAMS, e.getMessage());
         } catch (Exception e) {
