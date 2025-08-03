@@ -72,19 +72,19 @@ public final class ServerDefaults {
                                                 .build())
                                         .build(), null, false, null),
                         "slow_tool", a -> {
-                                try {
-                                    Thread.sleep(1000);
-                                } catch (InterruptedException ie) {
-                                    Thread.currentThread().interrupt();
-                                }
-                                return new ToolResult(
-                                        Json.createArrayBuilder()
-                                                .add(Json.createObjectBuilder()
-                                                        .add("type", "text")
-                                                        .add("text", "ok")
-                                                        .build())
-                                                .build(),
-                                        null, false, null);
+                            try {
+                                Thread.sleep(1000);
+                            } catch (InterruptedException ie) {
+                                Thread.currentThread().interrupt();
+                            }
+                            return new ToolResult(
+                                    Json.createArrayBuilder()
+                                            .add(Json.createObjectBuilder()
+                                                    .add("type", "text")
+                                                    .add("text", "ok")
+                                                    .build())
+                                            .build(),
+                                    null, false, null);
                         }
                 ));
     }

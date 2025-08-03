@@ -9,6 +9,7 @@ import com.amannmalik.mcp.config.McpConfiguration;
 import com.amannmalik.mcp.lifecycle.ClientCapability;
 import com.amannmalik.mcp.lifecycle.ClientInfo;
 import com.amannmalik.mcp.server.logging.LoggingLevel;
+import com.amannmalik.mcp.server.logging.LoggingMessageNotification;
 import com.amannmalik.mcp.transport.StdioTransport;
 import picocli.CommandLine;
 import picocli.CommandLine.Model.CommandSpec;
@@ -65,19 +66,24 @@ public final class ClientCommand {
                     .map(ClientCapability::valueOf)
                     .collect(() -> EnumSet.noneOf(ClientCapability.class), EnumSet::add, EnumSet::addAll);
 
+            McpClient.McpClientListener listener = verbose ? new McpClient.McpClientListener() {
+                @Override
+                public void onMessage(LoggingMessageNotification notification) {
+                    String logger = notification.logger() == null ? "" : ":" + notification.logger();
+                    System.err.println(notification.level().name().toLowerCase() + logger + " " + notification.data());
+                }
+            } : null;
+
             McpClient client = new McpClient(
                     info,
                     caps,
                     transport,
                     samplingProvider,
                     rootsProvider,
-                    null);
+                    null,
+                    listener);
             client.connect();
             if (verbose) {
-                client.setLoggingListener(n -> {
-                    String logger = n.logger() == null ? "" : ":" + n.logger();
-                    System.err.println(n.level().name().toLowerCase() + logger + " " + n.data());
-                });
                 try {
                     client.setLogLevel(LoggingLevel.DEBUG);
                 } catch (IOException e) {

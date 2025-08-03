@@ -3,7 +3,8 @@ package com.amannmalik.mcp.server.resources;
 import com.amannmalik.mcp.annotations.Annotations;
 import com.amannmalik.mcp.auth.Principal;
 import com.amannmalik.mcp.jsonrpc.*;
-import com.amannmalik.mcp.lifecycle.*;
+import com.amannmalik.mcp.lifecycle.LifecycleState;
+import com.amannmalik.mcp.lifecycle.ProtocolLifecycle;
 import com.amannmalik.mcp.resources.*;
 import com.amannmalik.mcp.security.ResourceAccessController;
 import com.amannmalik.mcp.server.roots.RootsManager;
@@ -14,8 +15,10 @@ import com.amannmalik.mcp.wire.RequestMethod;
 import jakarta.json.*;
 
 import java.io.IOException;
-import java.util.*;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+
 import static com.amannmalik.mcp.util.InvalidParams.valid;
 
 public final class ResourceFeature implements AutoCloseable {

@@ -8,12 +8,10 @@ import com.amannmalik.mcp.config.McpConfiguration;
 import com.amannmalik.mcp.jsonrpc.*;
 import com.amannmalik.mcp.lifecycle.*;
 import com.amannmalik.mcp.ping.*;
-import com.amannmalik.mcp.prompts.PromptsListener;
 import com.amannmalik.mcp.resources.*;
 import com.amannmalik.mcp.security.RateLimiter;
 import com.amannmalik.mcp.security.SamplingAccessPolicy;
 import com.amannmalik.mcp.server.logging.*;
-import com.amannmalik.mcp.server.tools.ToolListListener;
 import com.amannmalik.mcp.transport.*;
 import com.amannmalik.mcp.util.*;
 import com.amannmalik.mcp.validation.SchemaValidator;
@@ -54,16 +52,7 @@ public final class McpClient implements AutoCloseable {
     private Set<ServerCapability> serverCapabilities = Set.of();
     private String instructions;
     private ServerFeatures serverFeatures = new ServerFeatures(false, false, false, false);
-    private ProgressListener progressListener = n -> {
-    };
-    private LoggingListener loggingListener = n -> {
-    };
-    private ResourceListListener resourceListListener = () -> {
-    };
-    private ToolListListener toolListListener = () -> {
-    };
-    private PromptsListener promptsListener = () -> {
-    };
+    private final McpClientListener listener;
     private volatile ResourceMetadata resourceMetadata;
     private final Map<String, ResourceListener> resourceListeners = new ConcurrentHashMap<>();
 
@@ -94,6 +83,17 @@ public final class McpClient implements AutoCloseable {
                      SamplingProvider sampling,
                      RootsProvider roots,
                      ElicitationProvider elicitation) {
+        this(info, capabilities, transport, sampling, roots, elicitation, new McpClientListener() {
+        });
+    }
+
+    public McpClient(ClientInfo info,
+                     Set<ClientCapability> capabilities,
+                     Transport transport,
+                     SamplingProvider sampling,
+                     RootsProvider roots,
+                     ElicitationProvider elicitation,
+                     McpClientListener listener) {
         this.info = info;
         this.capabilities = capabilities.isEmpty() ? Set.of() : EnumSet.copyOf(capabilities);
         this.transport = transport;
@@ -101,6 +101,8 @@ public final class McpClient implements AutoCloseable {
         this.roots = roots;
         this.rootsListChangedSupported = roots != null && roots.supportsListChanged();
         this.elicitation = elicitation;
+        this.listener = listener == null ? new McpClientListener() {
+        } : listener;
         if (this.capabilities.contains(ClientCapability.SAMPLING) && this.sampling == null) {
             throw new IllegalArgumentException("sampling capability requires provider");
         }
@@ -127,7 +129,7 @@ public final class McpClient implements AutoCloseable {
         handlers.register(NotificationMethod.RESOURCES_LIST_CHANGED, this::handleResourcesListChanged);
         handlers.register(NotificationMethod.RESOURCES_UPDATED, this::handleResourceUpdated);
         handlers.register(NotificationMethod.TOOLS_LIST_CHANGED, this::handleToolsListChanged);
-        handlers.register(NotificationMethod.PROMPTS_LIST_CHANGED, n -> promptsListener.listChanged());
+        handlers.register(NotificationMethod.PROMPTS_LIST_CHANGED, n -> listener.onPromptsListChanged());
     }
 
     public ClientInfo info() {
@@ -614,37 +616,13 @@ public final class McpClient implements AutoCloseable {
                 });
     }
 
-    public void setProgressListener(ProgressListener listener) {
-        progressListener = listener == null ? n -> {
-        } : listener;
-    }
-
-    public void setLoggingListener(LoggingListener listener) {
-        loggingListener = listener == null ? n -> {
-        } : listener;
-    }
-
-    public void setResourceListListener(ResourceListListener listener) {
-        resourceListListener = listener == null ? () -> {
-        } : listener;
-    }
-
-    public void setToolListListener(ToolListListener listener) {
-        toolListListener = listener == null ? () -> {
-        } : listener;
-    }
-
-    public void setPromptsListener(PromptsListener listener) {
-        promptsListener = listener == null ? () -> {
-        } : listener;
-    }
 
     private void handleProgress(JsonRpcNotification note) {
         if (note.params() == null) return;
         try {
             ProgressNotification pn = ProgressCodec.toProgressNotification(note.params());
             progressManager.record(pn);
-            progressListener.onProgress(pn);
+            listener.onProgress(pn);
         } catch (IllegalArgumentException | IllegalStateException ignore) {
         }
     }
@@ -652,7 +630,7 @@ public final class McpClient implements AutoCloseable {
     private void handleMessage(JsonRpcNotification note) {
         if (note.params() == null) return;
         try {
-            loggingListener.onMessage(LoggingCodec.toLoggingMessageNotification(note.params()));
+            listener.onMessage(LoggingCodec.toLoggingMessageNotification(note.params()));
         } catch (IllegalArgumentException ignore) {
         }
     }
@@ -660,7 +638,7 @@ public final class McpClient implements AutoCloseable {
     private void handleResourcesListChanged(JsonRpcNotification note) {
         try {
             ResourcesCodec.requireListChangedNotification(note.params());
-            resourceListListener.listChanged();
+            listener.onResourceListChanged();
         } catch (IllegalArgumentException ignore) {
         }
     }
@@ -680,7 +658,7 @@ public final class McpClient implements AutoCloseable {
     private void handleToolsListChanged(JsonRpcNotification note) {
         try {
             EmptyJsonObjectCodec.requireEmpty(note.params());
-            toolListListener.listChanged();
+            listener.onToolListChanged();
         } catch (IllegalArgumentException ignore) {
         }
     }
@@ -692,6 +670,24 @@ public final class McpClient implements AutoCloseable {
         String reason = cancellationTracker.reason(cn.requestId());
         if (reason != null) {
             System.err.println("Request " + cn.requestId() + " cancelled: " + reason);
+        }
+    }
+
+
+    public interface McpClientListener {
+        default void onProgress(ProgressNotification notification) {
+        }
+
+        default void onMessage(LoggingMessageNotification notification) {
+        }
+
+        default void onResourceListChanged() {
+        }
+
+        default void onToolListChanged() {
+        }
+
+        default void onPromptsListChanged() {
         }
     }
 
