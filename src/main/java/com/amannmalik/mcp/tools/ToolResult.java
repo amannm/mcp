@@ -1,7 +1,6 @@
 package com.amannmalik.mcp.tools;
 
 import com.amannmalik.mcp.content.ContentBlock;
-import com.amannmalik.mcp.content.ContentCodec;
 import com.amannmalik.mcp.core.JsonCodec;
 import com.amannmalik.mcp.validation.MetaValidator;
 import jakarta.json.*;
@@ -44,8 +43,8 @@ public record ToolResult(JsonArray content,
         for (JsonValue v : arr) {
             if (v.getValueType() == JsonValue.ValueType.OBJECT) {
                 try {
-                    ContentBlock c = ContentCodec.toContentBlock(v.asJsonObject());
-                    b.add(ContentCodec.toJsonObject(c));
+                    ContentBlock c = ContentBlock.CODEC.fromJson(v.asJsonObject());
+                    b.add(ContentBlock.CODEC.toJson(c));
                     continue;
                 } catch (IllegalArgumentException ignore) {
                 }

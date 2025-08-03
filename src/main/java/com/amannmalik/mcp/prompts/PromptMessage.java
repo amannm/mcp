@@ -1,7 +1,6 @@
 package com.amannmalik.mcp.prompts;
 
 import com.amannmalik.mcp.content.ContentBlock;
-import com.amannmalik.mcp.content.ContentCodec;
 import com.amannmalik.mcp.core.JsonCodec;
 import jakarta.json.*;
 
@@ -11,7 +10,7 @@ public record PromptMessage(Role role, PromptContent content) {
         public JsonObject toJson(PromptMessage m) {
             return Json.createObjectBuilder()
                     .add("role", m.role().name().toLowerCase())
-                    .add("content", ContentCodec.toJsonObject((ContentBlock) m.content()))
+                    .add("content", ContentBlock.CODEC.toJson((ContentBlock) m.content()))
                     .build();
         }
 
@@ -23,8 +22,11 @@ public record PromptMessage(Role role, PromptContent content) {
             Role role = Role.valueOf(roleStr.toUpperCase());
             JsonObject contentObj = obj.getJsonObject("content");
             if (contentObj == null) throw new IllegalArgumentException("content required");
-            PromptContent content = (PromptContent) ContentCodec.toContentBlock(contentObj);
-            return new PromptMessage(role, content);
+            ContentBlock block = ContentBlock.CODEC.fromJson(contentObj);
+            if (!(block instanceof PromptContent pc)) {
+                throw new IllegalArgumentException("content type unsupported");
+            }
+            return new PromptMessage(role, pc);
         }
     };
 
