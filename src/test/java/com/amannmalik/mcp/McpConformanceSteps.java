@@ -15,6 +15,9 @@ import com.amannmalik.mcp.sampling.*;
 import com.amannmalik.mcp.transport.*;
 import com.amannmalik.mcp.util.ListChangeSubscription;
 import com.amannmalik.mcp.util.ProgressNotification;
+import com.amannmalik.mcp.auth.AuthorizationManager;
+import com.amannmalik.mcp.auth.BearerTokenAuthorizationStrategy;
+import com.amannmalik.mcp.auth.Principal;
 import io.cucumber.datatable.DataTable;
 import io.cucumber.java.After;
 import io.cucumber.java.en.*;
@@ -246,7 +249,14 @@ public final class McpConformanceSteps {
         if (serverProcess != null) {
             if (serverProcess.isAlive()) {
                 serverProcess.waitFor(2, TimeUnit.SECONDS);
-                if (serverProcess.isAlive()) serverProcess.destroy();
+            }
+            if (serverProcess.isAlive()) {
+                serverProcess.destroy();
+                serverProcess.waitFor(2, TimeUnit.SECONDS);
+            }
+            if (serverProcess.isAlive()) {
+                serverProcess.destroyForcibly();
+                serverProcess.waitFor(2, TimeUnit.SECONDS);
             }
             assertFalse(serverProcess.isAlive());
         } else if (serverTask != null) {
@@ -261,7 +271,11 @@ public final class McpConformanceSteps {
         System.out.println("DEBUG: createTransport called with type: " + type);
         if ("http".equals(type)) {
             System.out.println("DEBUG: Creating HTTP transport");
-            return createHttpTransport();
+            Transport t = createHttpTransport();
+            if (t instanceof StreamableHttpClientTransport s) {
+                s.setAuthorization("token");
+            }
+            return t;
         } else {
             System.out.println("DEBUG: Creating stdio transport");
             return createStdioTransport();
@@ -272,7 +286,8 @@ public final class McpConformanceSteps {
         System.out.println("DEBUG: Starting StreamableHttpTransport server...");
         serverTransport = new StreamableHttpTransport(0,
                 new OriginValidator(Set.of("http://localhost", "http://127.0.0.1")),
-                null,
+                new AuthorizationManager(List.of(new BearerTokenAuthorizationStrategy(
+                        token -> new Principal("test", Set.of())))),
                 "https://example.com/.well-known/oauth-protected-resource",
                 List.of("https://auth.example.com"));
         System.out.println("DEBUG: StreamableHttpTransport server started on port: " + serverTransport.port());
