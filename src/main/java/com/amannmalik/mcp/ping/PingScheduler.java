@@ -20,13 +20,6 @@ public final class PingScheduler implements AutoCloseable {
     public PingScheduler(McpClient client,
                          long intervalMillis,
                          long timeoutMillis,
-                         Runnable onFailure) {
-        this(client, intervalMillis, timeoutMillis, onFailure, 1);
-    }
-
-    public PingScheduler(McpClient client,
-                         long intervalMillis,
-                         long timeoutMillis,
                          Runnable onFailure,
                          int maxFailures) {
         Objects.requireNonNull(client, "client");
