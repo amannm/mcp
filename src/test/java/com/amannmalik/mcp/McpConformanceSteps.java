@@ -59,13 +59,11 @@ public final class McpConformanceSteps {
     @After
     public void cleanup() throws Exception {
         if (client != null) client.disconnect();
-        if (serverProcess != null && serverProcess.isAlive()) {
-            serverProcess.destroyForcibly();
+        if (serverProcess != null) {
+            if (serverProcess.isAlive()) serverProcess.destroyForcibly();
             serverProcess.waitFor(2, TimeUnit.SECONDS);
         }
-        if (serverTask != null && !serverTask.isDone()) {
-            serverTask.cancel(true);
-        }
+        if (serverTask != null && !serverTask.isDone()) serverTask.cancel(true);
         if (serverTransport != null) serverTransport.close();
     }
 
