@@ -137,3 +137,62 @@ Feature: MCP protocol conformance
       | stdio     |
       | http      |
 
+  Scenario Outline: MCP notification and subscription specification conformance
+    Given a running MCP server using <transport> transport
+    Then capabilities should be advertised and ping succeeds
+    When testing subscription capabilities
+      | capability_type | feature       | expected_support |
+      | resources       | subscribe     | true             |
+      | resources       | listChanged   | true             |
+      | prompts         | listChanged   | true             |
+      | tools           | listChanged   | true             |
+      | roots           | listChanged   | true             |
+    And testing notification behaviors
+      | notification_type                     | trigger_action        | expected_notification |
+      | notifications/resources/list_changed | modify_resource_list  | received              |
+      | notifications/resources/updated       | update_subscribed     | received              |
+      | notifications/prompts/list_changed   | modify_prompt_list    | received              |
+      | notifications/tools/list_changed     | modify_tool_list      | received              |
+      | notifications/roots/list_changed     | modify_root_list      | received              |
+    And testing subscription lifecycle
+      | operation                    | parameter      | expected_result |
+      | subscribe_resource           | test://example | success         |
+      | receive_update_notification  | test://example | success         |
+      | unsubscribe_resource         | test://example | success         |
+      | no_further_notifications     | test://example | success         |
+    And testing notification error conditions
+      | operation                     | parameter   | expected_error_code |
+      | subscribe_invalid_resource    | bad://uri   | -32002              |
+      | unsubscribe_nonexistent       | fake://uri  | -32602              |
+    When the client disconnects
+    Then the server terminates cleanly
+
+    Examples:
+      | transport |
+      | stdio     |
+      | http      |
+
+  Scenario Outline: MCP notification timing and delivery conformance
+    Given a running MCP server using <transport> transport
+    Then capabilities should be advertised and ping succeeds
+    When testing notification delivery patterns
+      | pattern_type              | setup_action           | expected_behavior      |
+      | immediate_notification    | subscribe_then_update  | notification_received  |
+      | batch_notifications       | multiple_updates       | single_notification    |
+      | unsubscribe_cleanup       | unsubscribe_all        | notifications_stopped  |
+      | capability_negotiation    | check_listChanged      | notifications_enabled  |
+    And testing notification content validation
+      | notification_type                     | required_field | validation_result |
+      | notifications/resources/updated       | uri            | present           |
+      | notifications/resources/list_changed | method         | correct           |
+      | notifications/prompts/list_changed   | method         | correct           |
+      | notifications/tools/list_changed     | method         | correct           |
+      | notifications/roots/list_changed     | method         | correct           |
+    When the client disconnects
+    Then the server terminates cleanly
+
+    Examples:
+      | transport |
+      | stdio     |
+      | http      |
+
