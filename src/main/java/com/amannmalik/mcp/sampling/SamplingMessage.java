@@ -1,7 +1,6 @@
 package com.amannmalik.mcp.sampling;
 
 import com.amannmalik.mcp.content.ContentBlock;
-import com.amannmalik.mcp.content.ContentCodec;
 import com.amannmalik.mcp.core.JsonCodec;
 import com.amannmalik.mcp.prompts.Role;
 import com.amannmalik.mcp.util.JsonUtil;
@@ -15,7 +14,7 @@ public record SamplingMessage(Role role, MessageContent content) {
         public JsonObject toJson(SamplingMessage m) {
             return Json.createObjectBuilder()
                     .add("role", m.role().name().toLowerCase())
-                    .add("content", ContentCodec.toJsonObject((ContentBlock) m.content()))
+                    .add("content", ContentBlock.CODEC.toJson((ContentBlock) m.content()))
                     .build();
         }
 
@@ -28,7 +27,7 @@ public record SamplingMessage(Role role, MessageContent content) {
             Role role = Role.valueOf(raw.toUpperCase());
             JsonObject c = obj.getJsonObject("content");
             if (c == null) throw new IllegalArgumentException("content required");
-            MessageContent content = (MessageContent) ContentCodec.toContentBlock(c);
+            MessageContent content = (MessageContent) ContentBlock.CODEC.fromJson(c);
             return new SamplingMessage(role, content);
         }
     };

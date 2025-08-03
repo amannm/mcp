@@ -1,7 +1,6 @@
 package com.amannmalik.mcp.sampling;
 
 import com.amannmalik.mcp.content.ContentBlock;
-import com.amannmalik.mcp.content.ContentCodec;
 import com.amannmalik.mcp.core.JsonCodec;
 import com.amannmalik.mcp.prompts.Role;
 import com.amannmalik.mcp.util.JsonUtil;
@@ -22,7 +21,7 @@ public record CreateMessageResponse(
         public JsonObject toJson(CreateMessageResponse resp) {
             JsonObjectBuilder b = Json.createObjectBuilder()
                     .add("role", resp.role().name().toLowerCase())
-                    .add("content", ContentCodec.toJsonObject((ContentBlock) resp.content()))
+                    .add("content", ContentBlock.CODEC.toJson((ContentBlock) resp.content()))
                     .add("model", resp.model());
             if (resp.stopReason() != null) b.add("stopReason", resp.stopReason());
             if (resp._meta() != null) b.add("_meta", resp._meta());
@@ -38,7 +37,7 @@ public record CreateMessageResponse(
             Role role = Role.valueOf(raw.toUpperCase());
             JsonObject c = obj.getJsonObject("content");
             if (c == null) throw new IllegalArgumentException("content required");
-            MessageContent content = (MessageContent) ContentCodec.toContentBlock(c);
+            MessageContent content = (MessageContent) ContentBlock.CODEC.fromJson(c);
             String model = obj.getString("model", null);
             if (model == null) throw new IllegalArgumentException("model required");
             String stop = obj.getString("stopReason", null);
