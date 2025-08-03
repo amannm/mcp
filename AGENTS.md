@@ -14,21 +14,21 @@ description: MCP Specification Expert
 
 # Preferences
 
+- Use self-documenting code to avoid comments
 - Write typed, idiomatic, modern Java 24
 - Leverage `instanceof` pattern matching
 - Unchecked casts are unacceptable
 - Avoid introducing `null` or `Object`
 - Avoid `java.lang.reflect` and `javax.annotation`
-- Avoid comments except for tricky areas (use self-documenting code)
 - Avoid inversion-of-control patterns
 
 # Wisdom
 
-- Ensure consistency between specification, implementation, verification
+- Ensure alignment and consistency between specification, implementation, verification
 - Make illegal states unrepresentable and valid operations obvious
 - Keep external dependencies furthest from the center of a codebase
-- Don't waste precious time writing PR descriptions
-- Leave new tests failing if they uncover a true defect
+- Don't waste time writing PR descriptions
+- Leave new tests failing if they manage to uncover a true defect
 
 # Environment
 
