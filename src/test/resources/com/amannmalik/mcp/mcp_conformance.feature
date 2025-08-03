@@ -124,6 +124,7 @@ Feature: MCP protocol conformance
       | operation             | parameter | expected_error_code |
       | set_log_level_invalid | verbose   | -32602              |
       | set_log_level_missing |           | -32602              |
+      | set_log_level_extra   | warning   | -32602              |
     When the client disconnects
     Then the server terminates cleanly
 
