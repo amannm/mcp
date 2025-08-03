@@ -168,7 +168,7 @@ public final class McpClient implements AutoCloseable {
                 info,
                 new ClientFeatures(rootsListChangedSupported)
         );
-        var initJson = LifecycleCodec.toJsonObject(init);
+        var initJson = InitializeRequest.CODEC.toJson(init);
         RequestId reqId = new RequestId.NumericId(id.getAndIncrement());
         JsonRpcRequest request = new JsonRpcRequest(reqId, RequestMethod.INITIALIZE.method(), initJson);
         try {
@@ -209,7 +209,7 @@ public final class McpClient implements AutoCloseable {
         } catch (IOException e) {
             throw new IOException("Initialization failed: " + e.getMessage(), e);
         }
-        InitializeResponse ir = LifecycleCodec.toInitializeResponse(resp.result());
+        InitializeResponse ir = InitializeResponse.CODEC.fromJson(resp.result());
         String serverVersion = ir.protocolVersion();
         if (!Protocol.LATEST_VERSION.equals(serverVersion) && !Protocol.PREVIOUS_VERSION.equals(serverVersion)) {
             try {
