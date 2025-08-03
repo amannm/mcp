@@ -11,32 +11,14 @@ import java.util.*;
 public record ListPromptsResult(List<Prompt> prompts,
                                 String nextCursor,
                                 JsonObject _meta) {
-    public static final JsonCodec<ListPromptsResult> CODEC = new JsonCodec<>() {
-        @Override
-        public JsonObject toJson(ListPromptsResult r) {
-            return AbstractEntityCodec.paginated(
+    public static final JsonCodec<ListPromptsResult> CODEC =
+            AbstractEntityCodec.paginatedResult(
                     "prompts",
-                    new Pagination.Page<>(r.prompts(), r.nextCursor()),
-                    Prompt.CODEC::toJson,
-                    r._meta());
-        }
-
-        @Override
-        public ListPromptsResult fromJson(JsonObject obj) {
-            if (obj == null) throw new IllegalArgumentException("object required");
-            JsonArray arr = obj.getJsonArray("prompts");
-            if (arr == null) throw new IllegalArgumentException("prompts required");
-            List<Prompt> prompts = new ArrayList<>();
-            for (JsonValue v : arr) {
-                if (v.getValueType() != JsonValue.ValueType.OBJECT) {
-                    throw new IllegalArgumentException("prompt must be object");
-                }
-                prompts.add(Prompt.CODEC.fromJson(v.asJsonObject()));
-            }
-            PaginatedResult pr = AbstractEntityCodec.fromPaginatedResult(obj);
-            return new ListPromptsResult(prompts, pr.nextCursor(), pr._meta());
-        }
-    };
+                    "prompt",
+                    r -> new Pagination.Page<>(r.prompts(), r.nextCursor()),
+                    ListPromptsResult::_meta,
+                    Prompt.CODEC,
+                    (items, pr) -> new ListPromptsResult(items, pr.nextCursor(), pr._meta()));
 
     public ListPromptsResult {
         prompts = Immutable.list(prompts);

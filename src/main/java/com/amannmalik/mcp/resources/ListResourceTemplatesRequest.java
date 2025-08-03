@@ -7,18 +7,10 @@ import com.amannmalik.mcp.validation.MetaValidator;
 import jakarta.json.JsonObject;
 
 public record ListResourceTemplatesRequest(String cursor, JsonObject _meta) {
-    public static final JsonCodec<ListResourceTemplatesRequest> CODEC = new JsonCodec<>() {
-        @Override
-        public JsonObject toJson(ListResourceTemplatesRequest req) {
-            return AbstractEntityCodec.toJson(new PaginatedRequest(req.cursor(), req._meta()));
-        }
-
-        @Override
-        public ListResourceTemplatesRequest fromJson(JsonObject obj) {
-            PaginatedRequest pr = AbstractEntityCodec.fromPaginatedRequest(obj);
-            return new ListResourceTemplatesRequest(pr.cursor(), pr._meta());
-        }
-    };
+    public static final JsonCodec<ListResourceTemplatesRequest> CODEC =
+            AbstractEntityCodec.paginatedRequest(
+                    r -> new PaginatedRequest(r.cursor(), r._meta()),
+                    pr -> new ListResourceTemplatesRequest(pr.cursor(), pr._meta()));
 
     public ListResourceTemplatesRequest {
         MetaValidator.requireValid(_meta);

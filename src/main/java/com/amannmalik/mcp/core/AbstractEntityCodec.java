@@ -3,7 +3,10 @@ package com.amannmalik.mcp.core;
 import com.amannmalik.mcp.util.*;
 import jakarta.json.*;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Set;
+import java.util.function.BiFunction;
 import java.util.function.Function;
 
 public abstract class AbstractEntityCodec<T> implements JsonCodec<T> {
@@ -42,6 +45,53 @@ public abstract class AbstractEntityCodec<T> implements JsonCodec<T> {
         JsonObjectBuilder b = Json.createObjectBuilder().add(field, arr.build());
         toJson(new PaginatedResult(page.nextCursor(), meta)).forEach(b::add);
         return b.build();
+    }
+
+    public static <T> JsonCodec<T> paginatedRequest(
+            Function<T, PaginatedRequest> to,
+            Function<PaginatedRequest, T> from) {
+        return new AbstractEntityCodec<>() {
+            @Override
+            public JsonObject toJson(T value) {
+                return AbstractEntityCodec.toJson(to.apply(value));
+            }
+
+            @Override
+            public T fromJson(JsonObject obj) {
+                return from.apply(fromPaginatedRequest(obj));
+            }
+        };
+    }
+
+    public static <I, R> JsonCodec<R> paginatedResult(
+            String field,
+            String itemName,
+            Function<R, Pagination.Page<I>> toPage,
+            Function<R, JsonObject> meta,
+            JsonCodec<I> itemCodec,
+            BiFunction<List<I>, PaginatedResult, R> from) {
+        return new AbstractEntityCodec<>() {
+            @Override
+            public JsonObject toJson(R value) {
+                return paginated(field, toPage.apply(value), itemCodec::toJson, meta.apply(value));
+            }
+
+            @Override
+            public R fromJson(JsonObject obj) {
+                if (obj == null) throw new IllegalArgumentException("object required");
+                JsonArray arr = obj.getJsonArray(field);
+                if (arr == null) throw new IllegalArgumentException(field + " required");
+                List<I> items = new ArrayList<>();
+                for (JsonValue v : arr) {
+                    if (v.getValueType() != JsonValue.ValueType.OBJECT) {
+                        throw new IllegalArgumentException(itemName + " must be object");
+                    }
+                    items.add(itemCodec.fromJson(v.asJsonObject()));
+                }
+                PaginatedResult pr = fromPaginatedResult(obj);
+                return from.apply(items, pr);
+            }
+        };
     }
 
     protected static String requireString(JsonObject obj, String key) {

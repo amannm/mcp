@@ -7,18 +7,10 @@ import com.amannmalik.mcp.validation.MetaValidator;
 import jakarta.json.JsonObject;
 
 public record ListToolsRequest(String cursor, JsonObject _meta) {
-    public static final JsonCodec<ListToolsRequest> CODEC = new JsonCodec<>() {
-        @Override
-        public JsonObject toJson(ListToolsRequest req) {
-            return AbstractEntityCodec.toJson(new PaginatedRequest(req.cursor(), req._meta()));
-        }
-
-        @Override
-        public ListToolsRequest fromJson(JsonObject obj) {
-            PaginatedRequest pr = AbstractEntityCodec.fromPaginatedRequest(obj);
-            return new ListToolsRequest(pr.cursor(), pr._meta());
-        }
-    };
+    public static final JsonCodec<ListToolsRequest> CODEC =
+            AbstractEntityCodec.paginatedRequest(
+                    r -> new PaginatedRequest(r.cursor(), r._meta()),
+                    pr -> new ListToolsRequest(pr.cursor(), pr._meta()));
 
     public ListToolsRequest {
         MetaValidator.requireValid(_meta);
