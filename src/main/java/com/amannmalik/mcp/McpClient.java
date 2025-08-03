@@ -307,7 +307,7 @@ public final class McpClient implements AutoCloseable {
 
     public PingResponse ping(long timeoutMillis) throws IOException {
         JsonRpcResponse resp = JsonRpc.expectResponse(request(RequestMethod.PING, null, timeoutMillis));
-        return PingCodec.toPingResponse(resp);
+        return PingResponse.CODEC.fromJson(resp.result());
     }
 
     public void setLogLevel(LoggingLevel level) throws IOException {
@@ -599,8 +599,8 @@ public final class McpClient implements AutoCloseable {
 
     private JsonRpcMessage handlePing(JsonRpcRequest req) {
         try {
-            PingCodec.toPingRequest(req);
-            return PingCodec.toResponse(req.id());
+            PingRequest.CODEC.fromJson(req.params());
+            return new JsonRpcResponse(req.id(), PingResponse.CODEC.toJson(new PingResponse()));
         } catch (IllegalArgumentException e) {
             return JsonRpcError.of(req.id(), JsonRpcErrorCode.INVALID_PARAMS, e.getMessage());
         }
