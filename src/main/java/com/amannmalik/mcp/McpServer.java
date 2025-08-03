@@ -602,9 +602,9 @@ public final class McpServer implements AutoCloseable {
             return invalidParams(req, "Missing params");
         }
         try {
-            CreateMessageRequest cmr = SamplingCodec.toCreateMessageRequest(params);
+            CreateMessageRequest cmr = CreateMessageRequest.CODEC.fromJson(params);
             CreateMessageResponse resp = createMessage(cmr);
-            return new JsonRpcResponse(req.id(), SamplingCodec.toJsonObject(resp));
+            return new JsonRpcResponse(req.id(), CreateMessageResponse.CODEC.toJson(resp));
         } catch (IllegalArgumentException e) {
             return invalidParams(req, e.getMessage());
         } catch (Exception e) {
