@@ -13,6 +13,7 @@ import com.amannmalik.mcp.resources.ResourceUpdate;
 import com.amannmalik.mcp.roots.*;
 import com.amannmalik.mcp.sampling.*;
 import com.amannmalik.mcp.transport.*;
+import com.amannmalik.mcp.auth.*;
 import com.amannmalik.mcp.util.ListChangeSubscription;
 import com.amannmalik.mcp.util.ProgressNotification;
 import io.cucumber.datatable.DataTable;
@@ -120,6 +121,7 @@ public final class McpConformanceSteps {
             }
         };
         client = createClient(createTransport(transport), testListener);
+        if ("http".equals(transport)) client.setAccessToken("tkn");
         client.connect();
         System.out.println("DEBUG: Client connected successfully with " + transport + " transport");
     }
@@ -270,9 +272,11 @@ public final class McpConformanceSteps {
 
     private Transport createHttpTransport() throws Exception {
         System.out.println("DEBUG: Starting StreamableHttpTransport server...");
+        var auth = new AuthorizationManager(
+                List.of(new BearerTokenAuthorizationStrategy(t -> new Principal("test", Set.of()))));
         serverTransport = new StreamableHttpTransport(0,
                 new OriginValidator(Set.of("http://localhost", "http://127.0.0.1")),
-                null,
+                auth,
                 "https://example.com/.well-known/oauth-protected-resource",
                 List.of("https://auth.example.com"));
         System.out.println("DEBUG: StreamableHttpTransport server started on port: " + serverTransport.port());

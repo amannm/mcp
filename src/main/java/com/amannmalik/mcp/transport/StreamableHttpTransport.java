@@ -64,12 +64,7 @@ public final class StreamableHttpTransport implements Transport {
         } else {
             this.resourceMetadataUrl = resourceMetadataUrl;
         }
-        int idx = this.resourceMetadataUrl.indexOf("/.well-known/oauth-protected-resource");
-        if (idx >= 0) {
-            this.canonicalResource = this.resourceMetadataUrl.substring(0, idx);
-        } else {
-            this.canonicalResource = "http://127.0.0.1:" + this.port;
-        }
+        this.canonicalResource = "http://127.0.0.1:" + this.port;
         if (authorizationServers == null || authorizationServers.isEmpty()) {
             this.authorizationServers = List.of();
         } else {

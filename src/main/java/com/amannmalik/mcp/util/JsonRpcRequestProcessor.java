@@ -100,7 +100,7 @@ public final class JsonRpcRequestProcessor {
 
     private void sendProgress(ProgressToken token, double current) {
         try {
-            progressManager.send(new ProgressNotification(token, current, 1.0, null), sender);
+            progressManager.send(new ProgressNotification(token, current, 1.0, Double.toString(current)), sender);
         } catch (IOException ignore) {
         }
     }
