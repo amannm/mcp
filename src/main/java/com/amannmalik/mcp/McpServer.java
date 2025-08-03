@@ -425,10 +425,16 @@ public final class McpServer implements AutoCloseable {
                         null);
                 ElicitResult res = elicit(er);
                 if (res.action() == ElicitationAction.ACCEPT) {
-                    ToolResult result = tools.call(callRequest.name(), res.content());
-                    return new JsonRpcResponse(req.id(), ToolCodec.toJsonObject(result));
+                    try {
+                        ToolResult result = tools.call(callRequest.name(), res.content());
+                        return new JsonRpcResponse(req.id(), ToolCodec.toJsonObject(result));
+                    } catch (IllegalArgumentException ex) {
+                        return invalidParams(req, ex);
+                    }
                 }
                 return invalidParams(req, "Tool invocation cancelled");
+            } catch (IllegalArgumentException ex) {
+                return invalidParams(req, ex);
             } catch (Exception ex) {
                 return JsonRpcError.of(req.id(), JsonRpcErrorCode.INTERNAL_ERROR, ex.getMessage());
             }
