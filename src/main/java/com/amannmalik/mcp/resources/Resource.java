@@ -52,7 +52,7 @@ public record Resource(
     };
 
     public Resource {
-        uri = UriValidator.requireAbsolute(uri);
+        uri = ValidationUtil.requireAbsoluteUri(uri);
         name = InputSanitizer.requireClean(name);
         title = InputSanitizer.cleanNullable(title);
         description = InputSanitizer.cleanNullable(description);
@@ -61,6 +61,6 @@ public record Resource(
             throw new IllegalArgumentException("size must be >= 0");
         }
         annotations = annotations == null ? Annotations.EMPTY : annotations;
-        MetaValidator.requireValid(_meta);
+        ValidationUtil.requireMeta(_meta);
     }
 }

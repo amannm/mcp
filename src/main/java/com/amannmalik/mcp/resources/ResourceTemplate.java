@@ -49,12 +49,12 @@ public record ResourceTemplate(
     };
 
     public ResourceTemplate {
-        uriTemplate = UriTemplateValidator.requireAbsoluteTemplate(uriTemplate);
+        uriTemplate = ValidationUtil.requireAbsoluteTemplate(uriTemplate);
         name = InputSanitizer.requireClean(name);
         title = InputSanitizer.cleanNullable(title);
         description = InputSanitizer.cleanNullable(description);
         mimeType = InputSanitizer.cleanNullable(mimeType);
         annotations = annotations == null ? Annotations.EMPTY : annotations;
-        MetaValidator.requireValid(_meta);
+        ValidationUtil.requireMeta(_meta);
     }
 }

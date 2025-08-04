@@ -2,7 +2,7 @@ package com.amannmalik.mcp.util;
 
 import com.amannmalik.mcp.core.JsonCodec;
 import com.amannmalik.mcp.validation.InputSanitizer;
-import com.amannmalik.mcp.validation.MetaValidator;
+import com.amannmalik.mcp.validation.ValidationUtil;
 import jakarta.json.*;
 
 import java.util.Optional;
@@ -44,7 +44,7 @@ public record ProgressNotification(
     public static Optional<ProgressToken> fromMeta(JsonObject params) {
         if (params == null || !params.containsKey("_meta")) return Optional.empty();
         JsonObject meta = params.getJsonObject("_meta");
-        MetaValidator.requireValid(meta);
+        ValidationUtil.requireMeta(meta);
         if (!meta.containsKey("progressToken")) return Optional.empty();
         JsonValue val = meta.get("progressToken");
         ProgressToken token = switch (val.getValueType()) {

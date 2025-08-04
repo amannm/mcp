@@ -3,7 +3,7 @@ package com.amannmalik.mcp.resources;
 import com.amannmalik.mcp.core.AbstractEntityCodec;
 import com.amannmalik.mcp.core.JsonCodec;
 import com.amannmalik.mcp.validation.InputSanitizer;
-import com.amannmalik.mcp.validation.UriValidator;
+import com.amannmalik.mcp.validation.ValidationUtil;
 import jakarta.json.*;
 
 public record ResourceUpdatedNotification(String uri, String title) {
@@ -24,7 +24,7 @@ public record ResourceUpdatedNotification(String uri, String title) {
     };
 
     public ResourceUpdatedNotification {
-        uri = UriValidator.requireAbsolute(uri);
+        uri = ValidationUtil.requireAbsoluteUri(uri);
         title = InputSanitizer.cleanNullable(title);
     }
 }

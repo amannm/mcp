@@ -2,7 +2,7 @@ package com.amannmalik.mcp.resources;
 
 import com.amannmalik.mcp.core.AbstractEntityCodec;
 import com.amannmalik.mcp.core.JsonCodec;
-import com.amannmalik.mcp.validation.MetaValidator;
+import com.amannmalik.mcp.validation.ValidationUtil;
 import jakarta.json.JsonObject;
 
 public record ListResourcesRequest(String cursor, JsonObject _meta) {
@@ -13,6 +13,6 @@ public record ListResourcesRequest(String cursor, JsonObject _meta) {
                     ListResourcesRequest::new);
 
     public ListResourcesRequest {
-        MetaValidator.requireValid(_meta);
+        ValidationUtil.requireMeta(_meta);
     }
 }

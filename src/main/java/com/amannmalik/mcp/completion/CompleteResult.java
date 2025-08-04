@@ -4,7 +4,7 @@ import com.amannmalik.mcp.config.McpConfiguration;
 import com.amannmalik.mcp.core.JsonCodec;
 import com.amannmalik.mcp.util.Immutable;
 import com.amannmalik.mcp.validation.InputSanitizer;
-import com.amannmalik.mcp.validation.MetaValidator;
+import com.amannmalik.mcp.validation.ValidationUtil;
 import jakarta.json.*;
 
 import java.util.List;
@@ -34,7 +34,7 @@ public record CompleteResult(Completion completion, JsonObject _meta) {
 
     public CompleteResult {
         if (completion == null) throw new IllegalArgumentException("completion required");
-        MetaValidator.requireValid(_meta);
+        ValidationUtil.requireMeta(_meta);
     }
 
     public record Completion(List<String> values, Integer total, Boolean hasMore) {

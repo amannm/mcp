@@ -2,7 +2,7 @@ package com.amannmalik.mcp.logging;
 
 import com.amannmalik.mcp.core.AbstractEntityCodec;
 import com.amannmalik.mcp.core.JsonCodec;
-import com.amannmalik.mcp.validation.MetaValidator;
+import com.amannmalik.mcp.validation.ValidationUtil;
 import jakarta.json.*;
 
 import java.util.Set;
@@ -28,6 +28,6 @@ public record SetLevelRequest(LoggingLevel level, JsonObject _meta) {
 
     public SetLevelRequest {
         if (level == null) throw new IllegalArgumentException("level is required");
-        MetaValidator.requireValid(_meta);
+        ValidationUtil.requireMeta(_meta);
     }
 }

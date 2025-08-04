@@ -1,7 +1,7 @@
 package com.amannmalik.mcp.roots;
 
 import com.amannmalik.mcp.core.*;
-import com.amannmalik.mcp.validation.MetaValidator;
+import com.amannmalik.mcp.validation.ValidationUtil;
 import jakarta.json.*;
 
 import java.util.*;
@@ -31,6 +31,6 @@ public record ListRootsResult(List<Root> roots, JsonObject _meta) {
 
     public ListRootsResult {
         roots = roots == null || roots.isEmpty() ? List.of() : List.copyOf(roots);
-        MetaValidator.requireValid(_meta);
+        ValidationUtil.requireMeta(_meta);
     }
 }

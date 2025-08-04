@@ -27,10 +27,10 @@ public record Root(String uri, String name, JsonObject _meta) {
     };
 
     public Root {
-        uri = UriValidator.requireFileUri(uri);
+        uri = ValidationUtil.requireFileUri(uri);
         if (name != null) {
             name = InputSanitizer.requireClean(name);
         }
-        MetaValidator.requireValid(_meta);
+        ValidationUtil.requireMeta(_meta);
     }
 }

@@ -9,7 +9,7 @@ import com.amannmalik.mcp.resources.ResourceBlock;
 import com.amannmalik.mcp.sampling.MessageContent;
 import com.amannmalik.mcp.util.Base64Util;
 import com.amannmalik.mcp.validation.InputSanitizer;
-import com.amannmalik.mcp.validation.MetaValidator;
+import com.amannmalik.mcp.validation.ValidationUtil;
 import jakarta.json.*;
 
 import java.util.Set;
@@ -91,7 +91,7 @@ public sealed interface ContentBlock
     }
 
     private static void validateMeta(JsonObject meta) {
-        MetaValidator.requireValid(meta);
+        ValidationUtil.requireMeta(meta);
     }
 
     private static byte[] requireData(byte[] data) {
