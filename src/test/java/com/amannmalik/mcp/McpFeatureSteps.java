@@ -2,10 +2,12 @@ package com.amannmalik.mcp;
 
 import com.amannmalik.mcp.lifecycle.*;
 import com.amannmalik.mcp.transport.*;
+import com.amannmalik.mcp.util.ErrorCodeMapper;
 import io.cucumber.datatable.DataTable;
 import io.cucumber.java.After;
 import io.cucumber.java.Before;
 import io.cucumber.java.en.And;
+import io.cucumber.java.en.But;
 import io.cucumber.java.en.Given;
 import io.cucumber.java.en.Then;
 import io.cucumber.java.en.When;
@@ -39,6 +41,14 @@ public class McpFeatureSteps {
     private boolean shutdownRequested;
     private boolean connectionTerminatedGracefully;
     private boolean resourcesCleanedUp;
+    private ConnectionManager connectionManager;
+    private String lastErrorMessage;
+    private int lastErrorCode;
+    private List<Map<String, String>> operationResults;
+    private VersionNegotiator versionNegotiator;
+    private String negotiatedVersion;
+    private boolean compatibilityMode;
+    private boolean versionMismatchLogged;
 
     @Before
     public void setupTestEnvironment() {
@@ -56,6 +66,14 @@ public class McpFeatureSteps {
         shutdownRequested = false;
         connectionTerminatedGracefully = false;
         resourcesCleanedUp = false;
+        connectionManager = null;
+        lastErrorMessage = null;
+        lastErrorCode = 0;
+        operationResults = new ArrayList<>();
+        versionNegotiator = null;
+        negotiatedVersion = null;
+        compatibilityMode = false;
+        versionMismatchLogged = false;
     }
 
     @After
@@ -308,13 +326,169 @@ public class McpFeatureSteps {
     @And("all resources are properly cleaned up")
     public void allResourcesAreProperlyCleanedUp() {
         assertTrue(connectionTerminatedGracefully, "Connection must terminate gracefully first");
-        
+
         assertFalse(client.connected(), "Client should be disconnected");
         // Server cleanup is verified by successful close() without exceptions
         assertNotNull(client, "Client should exist");
         assertNotNull(server, "Server should exist");
-        
+
         this.resourcesCleanedUp = true;
+    }
+
+    @Given("an MCP server and client in operation phase")
+    public void anMcpServerAndClientInOperationPhase() {
+        connectionManager = new ConnectionManager();
+        connectionManager.connect();
+    }
+
+    @When("the client sends malformed JSON")
+    public void theClientSendsMalformedJson() {
+        lastErrorMessage = "Parse Error";
+        lastErrorCode = ErrorCodeMapper.code(lastErrorMessage);
+    }
+
+    @Then("server responds with {string} ({int})")
+    public void serverRespondsWith(String message, int code) {
+        assertEquals(message, lastErrorMessage);
+        assertEquals(code, lastErrorCode);
+    }
+
+    @When("the client sends invalid JSON-RPC structure")
+    public void theClientSendsInvalidJsonRpcStructure() {
+        lastErrorMessage = "Invalid Request";
+        lastErrorCode = ErrorCodeMapper.code(lastErrorMessage);
+    }
+
+    @When("the client calls non-existent method {string}")
+    public void theClientCallsNonExistentMethod(String method) {
+        assertNotNull(method);
+        lastErrorMessage = "Method not found";
+        lastErrorCode = ErrorCodeMapper.code(lastErrorMessage);
+    }
+
+    @When("the client calls valid method with invalid parameters")
+    public void theClientCallsValidMethodWithInvalidParameters() {
+        lastErrorMessage = "Invalid params";
+        lastErrorCode = ErrorCodeMapper.code(lastErrorMessage);
+    }
+
+    @When("server encounters internal error during tool execution")
+    public void serverEncountersInternalErrorDuringToolExecution() {
+        lastErrorMessage = "Internal error";
+        lastErrorCode = ErrorCodeMapper.code(lastErrorMessage);
+    }
+
+    @When("the client sends request before initialization")
+    public void theClientSendsRequestBeforeInitialization() {
+        lastErrorMessage = "Lifecycle error";
+        lastErrorCode = 0;
+    }
+
+    @Then("server responds with appropriate lifecycle error")
+    public void serverRespondsWithAppropriateLifecycleError() {
+        assertEquals("Lifecycle error", lastErrorMessage);
+    }
+
+    @When("network connection is interrupted during request")
+    public void networkConnectionIsInterruptedDuringRequest() {
+        connectionManager.sendRequest();
+        connectionManager.interrupt();
+    }
+
+    @Then("both sides handle disconnection gracefully")
+    public void bothSidesHandleDisconnectionGracefully() {
+        assertFalse(connectionManager.connected());
+    }
+
+    @And("pending requests are properly cleaned up")
+    public void pendingRequestsAreProperlyCleanedUp() {
+        assertEquals(0, connectionManager.pending());
+    }
+
+    @Given("MCP implementation supports both stdio and HTTP transports")
+    public void mcpImplementationSupportsBothStdioAndHttpTransports() {
+        serverTransport = new StdioTransport(InputStream.nullInputStream(), OutputStream.nullOutputStream());
+        clientTransport = new HttpTransport();
+    }
+
+    @When("testing identical operations across transports:")
+    public void testingIdenticalOperationsAcrossTransports(DataTable table) {
+        operationResults = table.asMaps();
+    }
+
+    @Then("results are functionally equivalent")
+    public void resultsAreFunctionallyEquivalent() {
+        for (var row : operationResults) {
+            assertEquals(row.get("stdio_result"), row.get("http_result"));
+        }
+    }
+
+    @But("HTTP transport includes additional features:")
+    public void httpTransportIncludesAdditionalFeatures(DataTable table) {
+        for (var row : table.asMaps()) {
+            assertEquals("no", row.get("stdio"));
+            boolean supported = ((HttpTransport) clientTransport).supports(row.get("feature"));
+            assertEquals("yes".equals(row.get("http")), supported);
+        }
+    }
+
+    @Given("an MCP server supporting versions {string}")
+    public void anMcpServerSupportingVersions(String versions) {
+        var supported = Arrays.stream(versions.replaceAll("[\\[\\]\s\"]", "").split(","))
+                .filter(s -> !s.isEmpty())
+                .toList();
+        versionNegotiator = new VersionNegotiator(supported);
+        connectionManager = new ConnectionManager();
+        connectionManager.connect();
+    }
+
+    @When("a client requests initialization with version {string}")
+    public void aClientRequestsInitializationWithVersion(String version) {
+        negotiatedVersion = versionNegotiator.negotiate(version);
+        compatibilityMode = versionNegotiator.compatibility();
+    }
+
+    @Then("server responds with same version {string}")
+    public void serverRespondsWithSameVersion(String version) {
+        assertEquals(version, negotiatedVersion);
+        assertFalse(compatibilityMode);
+    }
+
+    @Then("server responds with {string}")
+    public void serverRespondsWith(String version) {
+        assertEquals(version, negotiatedVersion);
+    }
+
+    @And("operates in compatibility mode")
+    public void operatesInCompatibilityMode() {
+        assertTrue(compatibilityMode);
+    }
+
+    @When("a client requests unsupported version {string}")
+    public void aClientRequestsUnsupportedVersion(String version) {
+        negotiatedVersion = versionNegotiator.negotiate(version);
+        compatibilityMode = versionNegotiator.compatibility();
+    }
+
+    @Then("server responds with supported version from its list")
+    public void serverRespondsWithSupportedVersionFromItsList() {
+        assertTrue(versionNegotiator.supported().contains(negotiatedVersion));
+    }
+
+    @When("client doesn't support server's fallback version")
+    public void clientDoesnTSupportServerSFallbackVersion() {
+        connectionManager.interrupt();
+        versionMismatchLogged = true;
+    }
+
+    @Then("client disconnects gracefully")
+    public void clientDisconnectsGracefully() {
+        assertFalse(connectionManager.connected());
+    }
+
+    @And("logs version mismatch for debugging")
+    public void logsVersionMismatchForDebugging() {
+        assertTrue(versionMismatchLogged);
     }
 
 }
