@@ -38,7 +38,6 @@ public final class McpServer implements AutoCloseable {
     private final ProgressManager progress = new ProgressManager(
             new RateLimiter(McpConfiguration.current().progressPerSecond(),
                     McpConfiguration.current().rateLimiterWindowMs()));
-    private final IdTracker idTracker = new IdTracker();
     private final ResourceFeature resourceFeature;
     private final ToolProvider tools;
     private final PromptProvider prompts;
@@ -108,7 +107,7 @@ public final class McpServer implements AutoCloseable {
         this.resourceAccess = resourceAccess;
         this.toolAccess = toolAccess == null ? ToolAccessPolicy.PERMISSIVE : toolAccess;
         this.samplingAccess = samplingAccess == null ? SamplingAccessPolicy.PERMISSIVE : samplingAccess;
-        var requestProcessor = new JsonRpcRequestProcessor(progress, this::send, idTracker);
+        var requestProcessor = new JsonRpcRequestProcessor(progress, this::send);
         this.processor = requestProcessor;
         this.principal = principal;
         this.rootsManager = new RootsManager(lifecycle, this::sendRequest);
