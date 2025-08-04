@@ -644,7 +644,7 @@ public final class McpConformanceSteps {
 
     private Transport createHttpTransport() throws Exception {
         serverTransport = new StreamableHttpTransport(0,
-            new OriginValidator(Set.of("http://localhost", "http://127.0.0.1")),
+            Set.of("http://localhost", "http://127.0.0.1"),
             new AuthorizationManager(List.of(new BearerTokenAuthorizationStrategy(token -> new Principal("test", Set.of())))),
             "https://example.com/.well-known/oauth-protected-resource",
             List.of("https://auth.example.com"));
