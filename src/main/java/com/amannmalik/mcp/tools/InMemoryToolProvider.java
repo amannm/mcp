@@ -1,33 +1,26 @@
 package com.amannmalik.mcp.tools;
 
+import com.amannmalik.mcp.core.InMemoryProvider;
 import com.amannmalik.mcp.util.*;
 import com.amannmalik.mcp.validation.ValidationUtil;
 import jakarta.json.*;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.function.Function;
 
-public final class InMemoryToolProvider implements ToolProvider {
-    private final List<Tool> tools;
+public final class InMemoryToolProvider extends InMemoryProvider<Tool> implements ToolProvider {
     private final Map<String, Function<JsonObject, ToolResult>> handlers;
-    private final ChangeSupport<Change> listChangeSupport = new ChangeSupport<>();
 
     public InMemoryToolProvider(List<Tool> tools, Map<String, Function<JsonObject, ToolResult>> handlers) {
-        this.tools = tools == null ? new CopyOnWriteArrayList<>() : new CopyOnWriteArrayList<>(tools);
+        super(tools);
         this.handlers = handlers == null ? new ConcurrentHashMap<>() : new ConcurrentHashMap<>(handlers);
-    }
-
-    @Override
-    public Pagination.Page<Tool> list(String cursor) {
-        return Pagination.page(tools, cursor, Pagination.DEFAULT_PAGE_SIZE);
     }
 
     @Override
     public Optional<Tool> find(String name) {
         if (name == null) throw new IllegalArgumentException("name required");
-        for (Tool t : tools) {
+        for (Tool t : items) {
             if (t.name().equals(name)) return Optional.of(t);
         }
         return Optional.empty();
@@ -37,7 +30,7 @@ public final class InMemoryToolProvider implements ToolProvider {
     public ToolResult call(String name, JsonObject arguments) {
         var f = handlers.get(name);
         if (f == null) throw new IllegalArgumentException("Unknown tool");
-        Tool tool = tools.stream()
+        Tool tool = items.stream()
                 .filter(t -> t.name().equals(name))
                 .findFirst()
                 .orElseThrow(() -> new IllegalArgumentException("Unknown tool"));
@@ -54,34 +47,20 @@ public final class InMemoryToolProvider implements ToolProvider {
         return result;
     }
 
-    @Override
-    public ChangeSubscription subscribe(ChangeListener<Change> listener) {
-        return listChangeSupport.subscribe(listener);
-    }
-
-    @Override
-    public boolean supportsListChanged() {
-        return true;
-    }
-
     public void addTool(Tool tool, Function<JsonObject, ToolResult> handler) {
         if (tool == null) throw new IllegalArgumentException("tool required");
-        if (tools.stream().anyMatch(t -> t.name().equals(tool.name()))) {
+        if (items.stream().anyMatch(t -> t.name().equals(tool.name()))) {
             throw new IllegalArgumentException("Duplicate tool name: " + tool.name());
         }
-        tools.add(tool);
+        items.add(tool);
         if (handler != null) handlers.put(tool.name(), handler);
         notifyListeners();
     }
 
     public void removeTool(String name) {
-        tools.removeIf(t -> t.name().equals(name));
+        items.removeIf(t -> t.name().equals(name));
         handlers.remove(name);
         notifyListeners();
-    }
-
-    private void notifyListeners() {
-        listChangeSupport.notifyListeners(Change.INSTANCE);
     }
 
     private static ToolResult withStructuredText(ToolResult result) {

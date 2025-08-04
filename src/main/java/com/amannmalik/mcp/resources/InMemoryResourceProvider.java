@@ -1,27 +1,23 @@
 package com.amannmalik.mcp.resources;
 
+import com.amannmalik.mcp.core.InMemoryProvider;
 import com.amannmalik.mcp.util.*;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 
-public final class InMemoryResourceProvider implements ResourceProvider {
-    private final List<Resource> resources;
+public final class InMemoryResourceProvider extends InMemoryProvider<Resource> implements ResourceProvider {
     private final Map<String, ResourceBlock> contents;
     private final List<ResourceTemplate> templates;
     private final Map<String, List<ChangeListener<ResourceUpdate>>> listeners = new ConcurrentHashMap<>();
-    private final ChangeSupport<Change> listChangeSupport = new ChangeSupport<>();
 
-    public InMemoryResourceProvider(List<Resource> resources, Map<String, ResourceBlock> contents, List<ResourceTemplate> templates) {
-        this.resources = resources == null ? new CopyOnWriteArrayList<>() : new CopyOnWriteArrayList<>(resources);
+    public InMemoryResourceProvider(List<Resource> resources,
+                                    Map<String, ResourceBlock> contents,
+                                    List<ResourceTemplate> templates) {
+        super(resources);
         this.contents = contents == null ? new ConcurrentHashMap<>() : new ConcurrentHashMap<>(contents);
         this.templates = templates == null ? new CopyOnWriteArrayList<>() : new CopyOnWriteArrayList<>(templates);
-    }
-
-    @Override
-    public Pagination.Page<Resource> list(String cursor) {
-        return Pagination.page(resources, cursor, Pagination.DEFAULT_PAGE_SIZE);
     }
 
     @Override
@@ -42,7 +38,7 @@ public final class InMemoryResourceProvider implements ResourceProvider {
 
     @Override
     public Optional<Resource> get(String uri) {
-        for (Resource r : resources) {
+        for (Resource r : items) {
             if (r.uri().equals(uri)) {
                 return Optional.of(r);
             }
@@ -51,23 +47,13 @@ public final class InMemoryResourceProvider implements ResourceProvider {
     }
 
     @Override
-    public ChangeSubscription subscribe(ChangeListener<Change> listener) {
-        return listChangeSupport.subscribe(listener);
-    }
-
-    @Override
     public boolean supportsSubscribe() {
-        return true;
-    }
-
-    @Override
-    public boolean supportsListChanged() {
         return true;
     }
 
     public void notifyUpdate(String uri) {
         String title = null;
-        for (Resource r : resources) {
+        for (Resource r : items) {
             if (r.uri().equals(uri)) {
                 title = r.title();
                 break;
@@ -81,20 +67,20 @@ public final class InMemoryResourceProvider implements ResourceProvider {
         if (resource == null) {
             throw new IllegalArgumentException("resource required");
         }
-        for (Resource r : resources) {
+        for (Resource r : items) {
             if (r.uri().equals(resource.uri())) {
                 throw new IllegalArgumentException("duplicate resource uri: " + resource.uri());
             }
         }
-        resources.add(resource);
+        items.add(resource);
         if (content != null) contents.put(resource.uri(), content);
-        notifyListListeners();
+        notifyListeners();
     }
 
     public void removeResource(String uri) {
-        resources.removeIf(r -> r.uri().equals(uri));
+        items.removeIf(r -> r.uri().equals(uri));
         contents.remove(uri);
-        notifyListListeners();
+        notifyListeners();
     }
 
     public void addTemplate(ResourceTemplate template) {
@@ -107,15 +93,11 @@ public final class InMemoryResourceProvider implements ResourceProvider {
             }
         }
         templates.add(template);
-        notifyListListeners();
+        notifyListeners();
     }
 
     public void removeTemplate(String name) {
         templates.removeIf(t -> t.name().equals(name));
-        notifyListListeners();
-    }
-
-    private void notifyListListeners() {
-        listChangeSupport.notifyListeners(Change.INSTANCE);
+        notifyListeners();
     }
 }
