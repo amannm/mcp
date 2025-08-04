@@ -18,6 +18,7 @@ public final class HttpTransport implements Transport {
 
     @Override
     public void send(JsonObject message) {
+        if (closed) throw new IllegalStateException("closed");
         inbox.add(message);
     }
 

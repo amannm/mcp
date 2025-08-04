@@ -1,33 +1,36 @@
 package com.amannmalik.mcp.transport;
 
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
+
 public final class ConnectionManager {
-    private boolean connected;
-    private int pending;
+    private final AtomicBoolean connected = new AtomicBoolean();
+    private final AtomicInteger pending = new AtomicInteger();
 
     public void connect() {
-        connected = true;
+        connected.set(true);
     }
 
     public void sendRequest() {
-        if (!connected) throw new IllegalStateException("not connected");
-        pending++;
+        if (!connected.get()) throw new IllegalStateException("not connected");
+        pending.incrementAndGet();
     }
 
     public void completeRequest() {
-        if (pending > 0) pending--;
+        pending.getAndUpdate(p -> p > 0 ? p - 1 : 0);
     }
 
     public void interrupt() {
-        connected = false;
-        pending = 0;
+        connected.set(false);
+        pending.set(0);
     }
 
     public boolean connected() {
-        return connected;
+        return connected.get();
     }
 
     public int pending() {
-        return pending;
+        return pending.get();
     }
 }
 
