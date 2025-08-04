@@ -1,6 +1,8 @@
 package com.amannmalik.mcp.resources;
 
 import com.amannmalik.mcp.core.Provider;
+import com.amannmalik.mcp.util.ChangeListener;
+import com.amannmalik.mcp.util.ChangeSubscription;
 import com.amannmalik.mcp.util.Pagination;
 
 import java.util.Optional;
@@ -16,7 +18,7 @@ public interface ResourceProvider extends Provider<Resource> {
 
     Pagination.Page<ResourceTemplate> listTemplates(String cursor);
 
-    ResourceSubscription subscribe(String uri, ResourceListener listener);
+    ChangeSubscription subscribe(String uri, ChangeListener<ResourceUpdate> listener);
 
     default boolean supportsSubscribe() {
         return false;

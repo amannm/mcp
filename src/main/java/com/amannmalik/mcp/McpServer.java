@@ -115,19 +115,19 @@ public final class McpServer implements AutoCloseable {
         this.resourceFeature = resources == null ? null :
                 new ResourceFeature(resources, resourceAccess, principal, rootsManager, lifecycle, this::send, progress);
 
-        if (tools != null && tools.supportsListChanged()) {
-            toolListSubscription = subscribeListChanges(
-                    (ChangeListener<Tool> l) -> tools.subscribe(l),
-                    NotificationMethod.TOOLS_LIST_CHANGED,
-                    ToolListChangedNotification.CODEC.toJson(new ToolListChangedNotification()));
-        }
+          if (tools != null && tools.supportsListChanged()) {
+              toolListSubscription = subscribeListChanges(
+                      l -> tools.subscribe(l),
+                      NotificationMethod.TOOLS_LIST_CHANGED,
+                      ToolListChangedNotification.CODEC.toJson(new ToolListChangedNotification()));
+          }
 
-        if (prompts != null && prompts.supportsListChanged()) {
-            promptsSubscription = subscribeListChanges(
-                    (ChangeListener<Prompt> l) -> prompts.subscribe(l),
-                    NotificationMethod.PROMPTS_LIST_CHANGED,
-                    PromptListChangedNotification.CODEC.toJson(new PromptListChangedNotification()));
-        }
+          if (prompts != null && prompts.supportsListChanged()) {
+              promptsSubscription = subscribeListChanges(
+                      l -> prompts.subscribe(l),
+                      NotificationMethod.PROMPTS_LIST_CHANGED,
+                      PromptListChangedNotification.CODEC.toJson(new PromptListChangedNotification()));
+          }
 
         processor.registerRequest(RequestMethod.INITIALIZE.method(), this::initialize);
         processor.registerNotification(NotificationMethod.INITIALIZED.method(), this::initialized);
@@ -158,27 +158,27 @@ public final class McpServer implements AutoCloseable {
         processor.registerRequest(RequestMethod.SAMPLING_CREATE_MESSAGE.method(), this::handleCreateMessage);
     }
 
-    private <S extends ChangeSubscription, T> S subscribeListChanges(
-            SubscriptionFactory<S, T> factory,
-            NotificationMethod method,
-            JsonObject payload) {
-        try {
-            return factory.subscribe(() -> {
-                if (lifecycle.state() != LifecycleState.OPERATION) return;
-                try {
-                    send(new JsonRpcNotification(method.method(), payload));
-                } catch (IOException ignore) {
-                }
-            });
-        } catch (RuntimeException ignore) {
-            return null;
-        }
-    }
+      private <S extends ChangeSubscription> S subscribeListChanges(
+              SubscriptionFactory<S> factory,
+              NotificationMethod method,
+              JsonObject payload) {
+          try {
+              return factory.subscribe(ignored -> {
+                  if (lifecycle.state() != LifecycleState.OPERATION) return;
+                  try {
+                      send(new JsonRpcNotification(method.method(), payload));
+                  } catch (IOException ignore) {
+                  }
+              });
+          } catch (RuntimeException ignore) {
+              return null;
+          }
+      }
 
-    @FunctionalInterface
-    private interface SubscriptionFactory<S extends ChangeSubscription, T> {
-        S subscribe(ChangeListener<T> listener);
-    }
+      @FunctionalInterface
+      private interface SubscriptionFactory<S extends ChangeSubscription> {
+          S subscribe(ChangeListener<Change> listener);
+      }
 
     public void serve() throws IOException {
         while (lifecycle.state() != LifecycleState.SHUTDOWN) {
@@ -553,7 +553,7 @@ public final class McpServer implements AutoCloseable {
         return rootsManager.listRoots();
     }
 
-    public ChangeSubscription subscribeRoots(ChangeListener<Root> listener) {
+    public ChangeSubscription subscribeRoots(ChangeListener<Change> listener) {
         return rootsManager.subscribe(listener);
     }
 

@@ -25,7 +25,7 @@ public final class ResourceFeature implements AutoCloseable {
     private final ProtocolLifecycle lifecycle;
     private final Sender sender;
     private final ProgressManager progress;
-    private final Map<String, ResourceSubscription> subscriptions = new ConcurrentHashMap<>();
+    private final Map<String, ChangeSubscription> subscriptions = new ConcurrentHashMap<>();
     private final ChangeSubscription listSubscription;
 
     public ResourceFeature(ResourceProvider resources,
@@ -44,7 +44,7 @@ public final class ResourceFeature implements AutoCloseable {
         this.progress = progress;
         this.listSubscription = resources.supportsListChanged() ?
                 subscribeListChanges(
-                        (ChangeListener<Resource> l) -> resources.subscribe(l),
+                        l -> resources.subscribe(l),
                         NotificationMethod.RESOURCES_LIST_CHANGED,
                         ResourceListChangedNotification.CODEC.toJson(new ResourceListChangedNotification())) : null;
     }
@@ -165,7 +165,7 @@ public final class ResourceFeature implements AutoCloseable {
                     Json.createObjectBuilder().add("uri", uri).build());
         }
         try {
-            ResourceSubscription sub = resources.subscribe(uri, update -> {
+            ChangeSubscription sub = resources.subscribe(uri, update -> {
                 try {
                     ResourceUpdatedNotification n = new ResourceUpdatedNotification(update.uri(), update.title());
                     sender.send(new JsonRpcNotification(
@@ -196,7 +196,7 @@ public final class ResourceFeature implements AutoCloseable {
             return JsonRpcError.of(req.id(), -32602, "No active subscription for resource",
                     Json.createObjectBuilder().add("uri", uri).build());
         }
-        ResourceSubscription sub = subscriptions.remove(uri);
+        ChangeSubscription sub = subscriptions.remove(uri);
         CloseUtil.closeQuietly(sub);
         return new JsonRpcResponse(req.id(), JsonValue.EMPTY_JSON_OBJECT);
     }
@@ -226,12 +226,12 @@ public final class ResourceFeature implements AutoCloseable {
         return cursor == null ? null : Pagination.sanitize(ValidationUtil.cleanNullable(cursor));
     }
 
-    private <S extends ChangeSubscription, T> S subscribeListChanges(
-            SubscriptionFactory<S, T> factory,
+    private <S extends ChangeSubscription> S subscribeListChanges(
+            SubscriptionFactory<S> factory,
             NotificationMethod method,
             JsonObject payload) {
         try {
-            return factory.subscribe(() -> {
+            return factory.subscribe(ignored -> {
                 if (lifecycle.state() != LifecycleState.OPERATION) return;
                 try {
                     sender.send(new JsonRpcNotification(method.method(), payload));
@@ -244,8 +244,8 @@ public final class ResourceFeature implements AutoCloseable {
     }
 
     @FunctionalInterface
-    private interface SubscriptionFactory<S extends ChangeSubscription, T> {
-        S subscribe(ChangeListener<T> listener);
+    private interface SubscriptionFactory<S extends ChangeSubscription> {
+        S subscribe(ChangeListener<Change> listener);
     }
 
     @FunctionalInterface
