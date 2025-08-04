@@ -18,7 +18,7 @@ public record ListPromptsResult(List<Prompt> prompts,
                     r -> new Pagination.Page<>(r.prompts(), r.nextCursor()),
                     ListPromptsResult::_meta,
                     Prompt.CODEC,
-                    (items, pr) -> new ListPromptsResult(items, pr.nextCursor(), pr._meta()));
+                    (page, meta) -> new ListPromptsResult(page.items(), page.nextCursor(), meta));
 
     public ListPromptsResult {
         prompts = Immutable.list(prompts);
