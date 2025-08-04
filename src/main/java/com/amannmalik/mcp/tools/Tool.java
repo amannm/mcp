@@ -4,7 +4,7 @@ import com.amannmalik.mcp.core.AbstractEntityCodec;
 import com.amannmalik.mcp.core.JsonCodec;
 import com.amannmalik.mcp.util.DisplayNameProvider;
 import com.amannmalik.mcp.validation.InputSanitizer;
-import com.amannmalik.mcp.validation.MetaValidator;
+import com.amannmalik.mcp.validation.ValidationUtil;
 import jakarta.json.*;
 
 import java.util.Set;
@@ -61,7 +61,7 @@ public record Tool(String name,
                         annotations.idempotentHint() == null &&
                         annotations.openWorldHint() == null
         ) ? null : annotations;
-        MetaValidator.requireValid(_meta);
+        ValidationUtil.requireMeta(_meta);
     }
 
     @Override

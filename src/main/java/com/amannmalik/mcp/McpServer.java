@@ -17,7 +17,7 @@ import com.amannmalik.mcp.tools.*;
 import com.amannmalik.mcp.transport.Transport;
 import com.amannmalik.mcp.util.*;
 import com.amannmalik.mcp.validation.InputSanitizer;
-import com.amannmalik.mcp.validation.SchemaValidator;
+import com.amannmalik.mcp.validation.ValidationUtil;
 import com.amannmalik.mcp.wire.NotificationMethod;
 import com.amannmalik.mcp.wire.RequestMethod;
 import jakarta.json.*;
@@ -29,7 +29,6 @@ import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicLong;
 
-import static com.amannmalik.mcp.util.InvalidParams.valid;
 
 /// - [Server](specification/2025-06-18/server/index.mdx)
 /// - [MCP server conformance test](src/test/resources/com/amannmalik/mcp/mcp_conformance.feature:6-34)
@@ -380,12 +379,12 @@ public final class McpServer implements AutoCloseable {
     private JsonRpcMessage listTools(JsonRpcRequest req) {
         requireServerCapability(ServerCapability.TOOLS);
         try {
-            ListToolsRequest ltr = valid(() -> ListToolsRequest.CODEC.fromJson(req.params()));
-            String cursor = valid(() -> sanitizeCursor(ltr.cursor()));
-            Pagination.Page<Tool> page = valid(() -> tools.list(cursor));
+            ListToolsRequest ltr = ListToolsRequest.CODEC.fromJson(req.params());
+            String cursor = sanitizeCursor(ltr.cursor());
+            Pagination.Page<Tool> page = tools.list(cursor);
             JsonObject json = ListToolsResult.CODEC.toJson(new ListToolsResult(page.items(), page.nextCursor(), null));
             return new JsonRpcResponse(req.id(), json);
-        } catch (InvalidParams e) {
+        } catch (IllegalArgumentException e) {
             return invalidParams(req, e.getMessage());
         }
     }
@@ -445,11 +444,11 @@ public final class McpServer implements AutoCloseable {
     private JsonRpcMessage listPrompts(JsonRpcRequest req) {
         requireServerCapability(ServerCapability.PROMPTS);
         try {
-            ListPromptsRequest lpr = valid(() -> ListPromptsRequest.CODEC.fromJson(req.params()));
-            String cursor = valid(() -> sanitizeCursor(lpr.cursor()));
-            Pagination.Page<Prompt> page = valid(() -> prompts.list(cursor));
+            ListPromptsRequest lpr = ListPromptsRequest.CODEC.fromJson(req.params());
+            String cursor = sanitizeCursor(lpr.cursor());
+            Pagination.Page<Prompt> page = prompts.list(cursor);
             return new JsonRpcResponse(req.id(), ListPromptsResult.CODEC.toJson(new ListPromptsResult(page.items(), page.nextCursor(), null)));
-        } catch (InvalidParams e) {
+        } catch (IllegalArgumentException e) {
             return invalidParams(req, e.getMessage());
         }
     }
@@ -457,10 +456,10 @@ public final class McpServer implements AutoCloseable {
     private JsonRpcMessage getPrompt(JsonRpcRequest req) {
         requireServerCapability(ServerCapability.PROMPTS);
         try {
-            GetPromptRequest getRequest = valid(() -> GetPromptRequest.CODEC.fromJson(req.params()));
-            PromptInstance inst = valid(() -> prompts.get(getRequest.name(), getRequest.arguments()));
+            GetPromptRequest getRequest = GetPromptRequest.CODEC.fromJson(req.params());
+            PromptInstance inst = prompts.get(getRequest.name(), getRequest.arguments());
             return new JsonRpcResponse(req.id(), PromptInstance.CODEC.toJson(inst));
-        } catch (InvalidParams e) {
+        } catch (IllegalArgumentException e) {
             return invalidParams(req, e.getMessage());
         }
     }
@@ -472,9 +471,9 @@ public final class McpServer implements AutoCloseable {
             return invalidParams(req, "Missing params");
         }
         try {
-            logLevel = valid(() -> SetLevelRequest.CODEC.fromJson(params)).level();
+            logLevel = SetLevelRequest.CODEC.fromJson(params).level();
             return new JsonRpcResponse(req.id(), JsonValue.EMPTY_JSON_OBJECT);
-        } catch (InvalidParams e) {
+        } catch (IllegalArgumentException e) {
             return invalidParams(req, e.getMessage());
         }
     }
@@ -501,14 +500,14 @@ public final class McpServer implements AutoCloseable {
             return invalidParams(req, "Missing params");
         }
         try {
-            CompleteRequest request = valid(() -> CompleteRequest.CODEC.fromJson(params));
+            CompleteRequest request = CompleteRequest.CODEC.fromJson(params);
             Optional<String> limit = rateLimit(completionLimiter, request.ref().toString());
             if (limit.isPresent()) {
                 return JsonRpcError.of(req.id(), RATE_LIMIT_CODE, limit.get());
             }
-            CompleteResult result = valid(() -> completions.complete(request));
+            CompleteResult result = completions.complete(request);
             return new JsonRpcResponse(req.id(), CompleteResult.CODEC.toJson(result));
-        } catch (InvalidParams e) {
+        } catch (IllegalArgumentException e) {
             return invalidParams(req, e.getMessage());
         } catch (Exception e) {
             return JsonRpcError.of(req.id(), JsonRpcErrorCode.INTERNAL_ERROR, e.getMessage());
@@ -578,7 +577,7 @@ public final class McpServer implements AutoCloseable {
         if (msg instanceof JsonRpcResponse resp) {
             ElicitResult er = ElicitResult.CODEC.fromJson(resp.result());
             if (er.action() == ElicitationAction.ACCEPT) {
-                SchemaValidator.validate(req.requestedSchema(), er.content());
+                ValidationUtil.validateSchema(req.requestedSchema(), er.content());
             }
             return er;
         }

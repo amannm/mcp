@@ -3,7 +3,7 @@ package com.amannmalik.mcp.tools;
 import com.amannmalik.mcp.core.AbstractEntityCodec;
 import com.amannmalik.mcp.core.JsonCodec;
 import com.amannmalik.mcp.util.*;
-import com.amannmalik.mcp.validation.MetaValidator;
+import com.amannmalik.mcp.validation.ValidationUtil;
 import jakarta.json.*;
 
 import java.util.*;
@@ -22,6 +22,6 @@ public record ListToolsResult(List<Tool> tools,
 
     public ListToolsResult {
         tools = Immutable.list(tools);
-        MetaValidator.requireValid(_meta);
+        ValidationUtil.requireMeta(_meta);
     }
 }

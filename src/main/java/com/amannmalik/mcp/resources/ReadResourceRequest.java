@@ -2,8 +2,7 @@ package com.amannmalik.mcp.resources;
 
 import com.amannmalik.mcp.core.AbstractEntityCodec;
 import com.amannmalik.mcp.core.JsonCodec;
-import com.amannmalik.mcp.validation.MetaValidator;
-import com.amannmalik.mcp.validation.UriValidator;
+import com.amannmalik.mcp.validation.ValidationUtil;
 import jakarta.json.*;
 
 import java.util.Set;
@@ -28,7 +27,7 @@ public record ReadResourceRequest(String uri, JsonObject _meta) {
     };
 
     public ReadResourceRequest {
-        uri = UriValidator.requireAbsolute(uri);
-        MetaValidator.requireValid(_meta);
+        uri = ValidationUtil.requireAbsoluteUri(uri);
+        ValidationUtil.requireMeta(_meta);
     }
 }

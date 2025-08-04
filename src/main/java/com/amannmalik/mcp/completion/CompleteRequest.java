@@ -45,7 +45,7 @@ public record CompleteRequest(
         if (ref == null || argument == null) {
             throw new IllegalArgumentException("ref and argument are required");
         }
-        MetaValidator.requireValid(_meta);
+        ValidationUtil.requireMeta(_meta);
     }
 
     public record Argument(String name, String value) {
@@ -156,7 +156,7 @@ public record CompleteRequest(
                 if (name == null) throw new IllegalArgumentException("name required");
                 this.name = InputSanitizer.requireClean(name);
                 this.title = InputSanitizer.cleanNullable(title);
-                MetaValidator.requireValid(_meta);
+                ValidationUtil.requireMeta(_meta);
                 this._meta = _meta;
             }
 
@@ -169,7 +169,7 @@ public record CompleteRequest(
         record ResourceRef(String uri) implements Ref {
             public ResourceRef(String uri) {
                 if (uri == null) throw new IllegalArgumentException("uri required");
-                this.uri = UriTemplateValidator.requireAbsoluteTemplate(uri);
+                this.uri = ValidationUtil.requireAbsoluteTemplate(uri);
             }
 
             @Override

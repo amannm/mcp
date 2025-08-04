@@ -4,7 +4,7 @@ import com.amannmalik.mcp.content.ContentBlock;
 import com.amannmalik.mcp.core.JsonCodec;
 import com.amannmalik.mcp.core.AbstractEntityCodec;
 import com.amannmalik.mcp.prompts.Role;
-import com.amannmalik.mcp.validation.MetaValidator;
+import com.amannmalik.mcp.validation.ValidationUtil;
 import jakarta.json.*;
 
 import java.util.Set;
@@ -50,6 +50,6 @@ public record CreateMessageResponse(
         if (role == null || content == null || model == null) {
             throw new IllegalArgumentException("role, content, and model are required");
         }
-        MetaValidator.requireValid(_meta);
+        ValidationUtil.requireMeta(_meta);
     }
 }

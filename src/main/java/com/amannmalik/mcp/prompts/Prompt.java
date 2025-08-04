@@ -4,7 +4,7 @@ import com.amannmalik.mcp.core.AbstractEntityCodec;
 import com.amannmalik.mcp.core.JsonCodec;
 import com.amannmalik.mcp.util.DisplayNameProvider;
 import com.amannmalik.mcp.validation.InputSanitizer;
-import com.amannmalik.mcp.validation.MetaValidator;
+import com.amannmalik.mcp.validation.ValidationUtil;
 import jakarta.json.*;
 
 import java.util.ArrayList;
@@ -61,7 +61,7 @@ public record Prompt(
         arguments = arguments == null || arguments.isEmpty() ? List.of() : List.copyOf(arguments);
         title = InputSanitizer.cleanNullable(title);
         description = InputSanitizer.cleanNullable(description);
-        MetaValidator.requireValid(_meta);
+        ValidationUtil.requireMeta(_meta);
     }
 
 }

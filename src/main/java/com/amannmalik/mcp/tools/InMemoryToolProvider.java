@@ -1,7 +1,7 @@
 package com.amannmalik.mcp.tools;
 
 import com.amannmalik.mcp.util.*;
-import com.amannmalik.mcp.validation.SchemaValidator;
+import com.amannmalik.mcp.validation.ValidationUtil;
 import jakarta.json.*;
 
 import java.util.*;
@@ -42,13 +42,13 @@ public final class InMemoryToolProvider implements ToolProvider {
                 .findFirst()
                 .orElseThrow(() -> new IllegalArgumentException("Unknown tool"));
         JsonObject args = arguments == null ? JsonValue.EMPTY_JSON_OBJECT : arguments;
-        SchemaValidator.validate(tool.inputSchema(), args);
+        ValidationUtil.validateSchema(tool.inputSchema(), args);
         ToolResult result = f.apply(args);
         if (tool.outputSchema() != null) {
             if (result.structuredContent() == null) {
                 throw new IllegalStateException("structured result required");
             }
-            SchemaValidator.validate(tool.outputSchema(), result.structuredContent());
+            ValidationUtil.validateSchema(tool.outputSchema(), result.structuredContent());
         }
         if (result.structuredContent() != null) result = withStructuredText(result);
         return result;

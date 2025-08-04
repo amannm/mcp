@@ -3,7 +3,7 @@ package com.amannmalik.mcp.sampling;
 import com.amannmalik.mcp.core.JsonCodec;
 import com.amannmalik.mcp.core.AbstractEntityCodec;
 import com.amannmalik.mcp.validation.InputSanitizer;
-import com.amannmalik.mcp.validation.MetaValidator;
+import com.amannmalik.mcp.validation.ValidationUtil;
 import jakarta.json.*;
 
 import java.util.List;
@@ -88,6 +88,6 @@ public record CreateMessageRequest(
             stopSequences = stopSequences.stream().map(InputSanitizer::requireClean).toList();
         }
         if (maxTokens <= 0) throw new IllegalArgumentException("maxTokens must be > 0");
-        MetaValidator.requireValid(_meta);
+        ValidationUtil.requireMeta(_meta);
     }
 }

@@ -2,7 +2,7 @@ package com.amannmalik.mcp.resources;
 
 import com.amannmalik.mcp.core.JsonCodec;
 import com.amannmalik.mcp.util.Immutable;
-import com.amannmalik.mcp.validation.MetaValidator;
+import com.amannmalik.mcp.validation.ValidationUtil;
 import jakarta.json.*;
 
 import java.util.*;
@@ -37,6 +37,6 @@ public record ReadResourceResult(List<ResourceBlock> contents, JsonObject _meta)
 
     public ReadResourceResult {
         contents = Immutable.list(contents);
-        MetaValidator.requireValid(_meta);
+        ValidationUtil.requireMeta(_meta);
     }
 }

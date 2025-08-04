@@ -3,7 +3,7 @@ package com.amannmalik.mcp.prompts;
 import com.amannmalik.mcp.core.AbstractEntityCodec;
 import com.amannmalik.mcp.core.JsonCodec;
 import com.amannmalik.mcp.validation.InputSanitizer;
-import com.amannmalik.mcp.validation.MetaValidator;
+import com.amannmalik.mcp.validation.ValidationUtil;
 import jakarta.json.*;
 
 import java.util.HashMap;
@@ -53,6 +53,6 @@ public record GetPromptRequest(String name,
         if (name == null) throw new IllegalArgumentException("name required");
         name = InputSanitizer.requireClean(name);
         arguments = InputSanitizer.requireCleanMap(arguments);
-        MetaValidator.requireValid(_meta);
+        ValidationUtil.requireMeta(_meta);
     }
 }

@@ -3,7 +3,7 @@ package com.amannmalik.mcp.tools;
 import com.amannmalik.mcp.content.ContentBlock;
 import com.amannmalik.mcp.core.AbstractEntityCodec;
 import com.amannmalik.mcp.core.JsonCodec;
-import com.amannmalik.mcp.validation.MetaValidator;
+import com.amannmalik.mcp.validation.ValidationUtil;
 import jakarta.json.*;
 
 import java.util.Set;
@@ -39,7 +39,7 @@ public record ToolResult(JsonArray content,
     public ToolResult {
         content = sanitize(content == null ? JsonValue.EMPTY_JSON_ARRAY : content);
         if (isError == null) isError = Boolean.FALSE;
-        MetaValidator.requireValid(_meta);
+        ValidationUtil.requireMeta(_meta);
     }
 
     private static JsonArray sanitize(JsonArray arr) {
