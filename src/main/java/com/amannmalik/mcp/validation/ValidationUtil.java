@@ -1,10 +1,15 @@
 package com.amannmalik.mcp.validation;
 
+import com.amannmalik.mcp.roots.Root;
 import jakarta.json.*;
 
 import java.net.URI;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
+import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.regex.Pattern;
 
@@ -106,6 +111,38 @@ public final class ValidationUtil {
             if (depth < 0) throw new IllegalArgumentException("Unmatched braces in URI template: " + template);
         }
         if (depth != 0) throw new IllegalArgumentException("Unmatched braces in URI template: " + template);
+    }
+
+    public static boolean withinRoots(String uri, List<Root> roots) {
+        if (roots == null) throw new IllegalArgumentException("roots required");
+        if (uri == null) return false;
+        final URI target;
+        try {
+            target = URI.create(uri);
+        } catch (IllegalArgumentException e) {
+            return false;
+        }
+        if (!"file".equalsIgnoreCase(target.getScheme()) || roots.isEmpty()) return true;
+        final Path targetPath;
+        try {
+            targetPath = Paths.get(target).toRealPath();
+        } catch (Exception e) {
+            return false;
+        }
+        return roots.stream()
+                .map(Root::uri)
+                .map(u -> {
+                    try {
+                        URI base = URI.create(u);
+                        if ("file".equalsIgnoreCase(base.getScheme())) {
+                            return Optional.of(Paths.get(base).toRealPath());
+                        }
+                    } catch (Exception ignore) {
+                    }
+                    return Optional.<Path>empty();
+                })
+                .flatMap(Optional::stream)
+                .anyMatch(targetPath::startsWith);
     }
 
     public static void validateSchema(JsonObject schema, JsonObject value) {
