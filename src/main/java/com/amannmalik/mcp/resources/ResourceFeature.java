@@ -27,7 +27,7 @@ public final class ResourceFeature implements AutoCloseable {
     private final RootsManager roots;
     private final ProtocolLifecycle lifecycle;
     private final Sender sender;
-    private final ProgressManager progressManager;
+    private final ProgressTracker tracker;
     private final Map<String, ResourceSubscription> subscriptions = new ConcurrentHashMap<>();
     private final ListChangeSubscription listSubscription;
 
@@ -37,14 +37,14 @@ public final class ResourceFeature implements AutoCloseable {
                            RootsManager roots,
                            ProtocolLifecycle lifecycle,
                            Sender sender,
-                           ProgressManager progressManager) {
+                           ProgressTracker tracker) {
         this.resources = resources;
         this.access = access;
         this.principal = principal;
         this.roots = roots;
         this.lifecycle = lifecycle;
         this.sender = sender;
-        this.progressManager = progressManager;
+        this.tracker = tracker;
         this.listSubscription = resources.supportsListChanged() ?
                 subscribeListChanges(
                         l -> resources.subscribeList(() -> l.listChanged()),
@@ -52,13 +52,13 @@ public final class ResourceFeature implements AutoCloseable {
                         ResourceListChangedNotification.CODEC.toJson(new ResourceListChangedNotification())) : null;
     }
 
-    public void register(RpcHandlerRegistry handlers) {
-        handlers.register(RequestMethod.RESOURCES_LIST, this::listResources);
-        handlers.register(RequestMethod.RESOURCES_READ, this::readResource);
-        handlers.register(RequestMethod.RESOURCES_TEMPLATES_LIST, this::listTemplates);
+    public void register(JsonRpcRequestProcessor processor) {
+        processor.register(RequestMethod.RESOURCES_LIST, this::listResources);
+        processor.register(RequestMethod.RESOURCES_READ, this::readResource);
+        processor.register(RequestMethod.RESOURCES_TEMPLATES_LIST, this::listTemplates);
         if (resources.supportsSubscribe()) {
-            handlers.register(RequestMethod.RESOURCES_SUBSCRIBE, this::subscribeResource);
-            handlers.register(RequestMethod.RESOURCES_UNSUBSCRIBE, this::unsubscribeResource);
+            processor.register(RequestMethod.RESOURCES_SUBSCRIBE, this::subscribeResource);
+            processor.register(RequestMethod.RESOURCES_UNSUBSCRIBE, this::unsubscribeResource);
         }
     }
 
@@ -84,14 +84,14 @@ public final class ResourceFeature implements AutoCloseable {
             String cursor = valid(() -> sanitizeCursor(lr.cursor()));
             progressToken.ifPresent(t -> {
                 try {
-                    progressManager.send(new ProgressNotification(t, 0.0, null, "Starting resource list"), sender::send);
+                    tracker.send(new ProgressNotification(t, 0.0, null, "Starting resource list"), sender::send);
                 } catch (IOException ignore) {
                 }
             });
             Pagination.Page<Resource> list = valid(() -> resources.list(cursor));
             progressToken.ifPresent(t -> {
                 try {
-                    progressManager.send(new ProgressNotification(t, 0.5, null, "Filtering resources"), sender::send);
+                    tracker.send(new ProgressNotification(t, 0.5, null, "Filtering resources"), sender::send);
                 } catch (IOException ignore) {
                 }
             });
@@ -100,7 +100,7 @@ public final class ResourceFeature implements AutoCloseable {
                     .toList();
             progressToken.ifPresent(t -> {
                 try {
-                    progressManager.send(new ProgressNotification(t, 1.0, null, "Completed resource list"), sender::send);
+                    tracker.send(new ProgressNotification(t, 1.0, null, "Completed resource list"), sender::send);
                 } catch (IOException ignore) {
                 }
             });
