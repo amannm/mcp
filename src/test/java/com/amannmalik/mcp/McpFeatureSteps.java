@@ -6,6 +6,7 @@ import io.cucumber.java.After;
 import io.cucumber.java.Before;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 public class McpFeatureSteps {
 
@@ -1271,75 +1272,86 @@ public class McpFeatureSteps {
     // HELPER METHODS FOR DATA TABLE PARSING
     // ========================================
 
-    /**
-     * Parse capabilities table into structured format.
-     * Expected columns: capability, feature, enabled
-     */
-    private Map<String, Map<String, Boolean>> parseCapabilitiesTable(DataTable table) {
-        // TODO: Implement table parsing logic
-        // Convert Cucumber DataTable to structured capability configuration
-        return new HashMap<>();
+    /** Parse capabilities table into structured format. */
+    private List<Capability> parseCapabilitiesTable(DataTable table) {
+        return table.asMaps().stream()
+                .map(row -> new Capability(
+                        Objects.requireNonNull(row.get("capability")),
+                        row.getOrDefault("feature", ""),
+                        Boolean.parseBoolean(row.getOrDefault("enabled", "false"))))
+                .toList();
     }
 
-    /**
-     * Parse resource templates table into template definitions.
-     * Expected columns: template, description, mime_type
-     */
-    private List<Object> parseResourceTemplates(DataTable table) {
-        // TODO: Implement resource template parsing
-        // Convert table rows to ResourceTemplate objects
-        return new ArrayList<>();
+    /** Parse resource templates table into template definitions. */
+    private List<ResourceTemplateRow> parseResourceTemplates(DataTable table) {
+        return table.asMaps().stream()
+                .map(row -> new ResourceTemplateRow(
+                        Objects.requireNonNull(row.get("template")),
+                        Objects.requireNonNull(row.get("description")),
+                        Objects.requireNonNull(row.get("mime_type"))))
+                .toList();
     }
 
-    /**
-     * Parse tool definitions table.
-     * Expected columns: name, description, requires_confirmation
-     */
-    private List<Object> parseToolDefinitions(DataTable table) {
-        // TODO: Implement tool definition parsing
-        // Convert table rows to ToolDefinition objects
-        return new ArrayList<>();
+    /** Parse tool definitions table. */
+    private List<ToolDefinition> parseToolDefinitions(DataTable table) {
+        return table.asMaps().stream()
+                .map(row -> new ToolDefinition(
+                        Objects.requireNonNull(row.get("name")),
+                        Objects.requireNonNull(row.get("description")),
+                        Boolean.parseBoolean(row.getOrDefault("requires_confirmation", "false"))))
+                .toList();
     }
 
-    /**
-     * Parse input schema table for tool parameters.
-     * Expected columns: field, type, required, description
-     */
-    private Object parseInputSchema(DataTable table) {
-        // TODO: Implement schema parsing
-        // Convert table to JSON schema object
-        return new Object();
+    /** Parse input schema table for tool parameters. */
+    private List<InputField> parseInputSchema(DataTable table) {
+        return table.asMaps().stream()
+                .map(row -> new InputField(
+                        Objects.requireNonNull(row.get("field")),
+                        Objects.requireNonNull(row.get("type")),
+                        Boolean.parseBoolean(row.getOrDefault("required", "false")),
+                        Objects.requireNonNull(row.get("description"))))
+                .toList();
     }
 
-    /**
-     * Parse arguments table for tool calls.
-     * Expected columns: field, value
-     */
-    private Map<String, Object> parseArguments(DataTable table) {
-        // TODO: Implement argument parsing
-        // Convert table to argument map
-        return new HashMap<>();
+    /** Parse arguments table for tool calls. */
+    private Map<String, String> parseArguments(DataTable table) {
+        return table.asMaps().stream()
+                .collect(Collectors.toMap(
+                        row -> Objects.requireNonNull(row.get("field")),
+                        row -> Objects.requireNonNull(row.get("value"))));
     }
 
-    /**
-     * Parse model preferences table.
-     * Expected columns: preference, value, description
-     */
-    private Object parseModelPreferences(DataTable table) {
-        // TODO: Implement preference parsing
-        // Convert table to model preference configuration
-        return new Object();
+    /** Parse model preferences table. */
+    private List<ModelPreference> parseModelPreferences(DataTable table) {
+        return table.asMaps().stream()
+                .map(row -> new ModelPreference(
+                        Objects.requireNonNull(row.get("preference")),
+                        Objects.requireNonNull(row.get("value")),
+                        Objects.requireNonNull(row.get("description"))))
+                .toList();
     }
 
-    /**
-     * Parse log messages table for testing.
-     * Expected columns: level, logger, message
-     */
-    private List<Object> parseLogMessages(DataTable table) {
-        // TODO: Implement log message parsing
-        // Convert table to LogMessage objects
-        return new ArrayList<>();
+    /** Parse log messages table for testing. */
+    private List<LogMessage> parseLogMessages(DataTable table) {
+        return table.asMaps().stream()
+                .map(row -> new LogMessage(
+                        Objects.requireNonNull(row.get("level")),
+                        Objects.requireNonNull(row.get("logger")),
+                        Objects.requireNonNull(row.get("message"))))
+                .toList();
     }
+
+    private record Capability(String capability, String feature, boolean enabled) {}
+
+    private record ResourceTemplateRow(String template, String description, String mimeType) {}
+
+    private record ToolDefinition(String name, String description, boolean requiresConfirmation) {}
+
+    private record InputField(String field, String type, boolean required, String description) {}
+
+    private record ModelPreference(String preference, String value, String description) {}
+
+    private record LogMessage(String level, String logger, String message) {}
 
     @Then("the server rejects the token with {string}")
     public void theServerRejectsTheTokenWith(String arg0) {
