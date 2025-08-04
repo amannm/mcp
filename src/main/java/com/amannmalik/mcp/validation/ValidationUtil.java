@@ -1,5 +1,6 @@
 package com.amannmalik.mcp.validation;
 
+import com.amannmalik.mcp.util.Pagination;
 import jakarta.json.*;
 
 import java.net.URI;
@@ -51,6 +52,15 @@ public final class ValidationUtil {
     public static void requireMeta(JsonObject obj) {
         if (obj == null) return;
         for (String key : obj.keySet()) requireMeta(key);
+    }
+
+    public static JsonObject requireParams(JsonObject params) {
+        if (params == null) throw new IllegalArgumentException("Missing params");
+        return params;
+    }
+
+    public static String sanitizeCursor(String cursor) {
+        return cursor == null ? null : Pagination.sanitize(InputSanitizer.cleanNullable(cursor));
     }
 
     public static String requireAbsoluteUri(String uri) {

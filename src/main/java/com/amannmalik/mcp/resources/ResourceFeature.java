@@ -7,7 +7,7 @@ import com.amannmalik.mcp.lifecycle.LifecycleState;
 import com.amannmalik.mcp.lifecycle.ProtocolLifecycle;
 import com.amannmalik.mcp.roots.RootsManager;
 import com.amannmalik.mcp.util.*;
-import com.amannmalik.mcp.validation.InputSanitizer;
+import com.amannmalik.mcp.validation.ValidationUtil;
 import com.amannmalik.mcp.wire.NotificationMethod;
 import com.amannmalik.mcp.wire.RequestMethod;
 import jakarta.json.*;
@@ -78,45 +78,36 @@ public final class ResourceFeature implements AutoCloseable {
 
     private JsonRpcMessage listResources(JsonRpcRequest req) {
         Optional<ProgressToken> progressToken = ProgressNotification.fromMeta(req.params());
-        try {
-            ListResourcesRequest lr = ListResourcesRequest.CODEC.fromJson(req.params());
-            String cursor = sanitizeCursor(lr.cursor());
-            progressToken.ifPresent(t -> {
-                try {
-                    tracker.send(new ProgressNotification(t, 0.0, null, "Starting resource list"), sender::send);
-                } catch (IOException ignore) {
-                }
-            });
-            Pagination.Page<Resource> list = resources.list(cursor);
-            progressToken.ifPresent(t -> {
-                try {
-                    tracker.send(new ProgressNotification(t, 0.5, null, "Filtering resources"), sender::send);
-                } catch (IOException ignore) {
-                }
-            });
-            List<Resource> filtered = list.items().stream()
-                    .filter(r -> allowed(r.annotations()) && withinRoots(r.uri()))
-                    .toList();
-            progressToken.ifPresent(t -> {
-                try {
-                    tracker.send(new ProgressNotification(t, 1.0, null, "Completed resource list"), sender::send);
-                } catch (IOException ignore) {
-                }
-            });
-            ListResourcesResult result = new ListResourcesResult(filtered, list.nextCursor(), null);
-            return new JsonRpcResponse(req.id(), ListResourcesResult.CODEC.toJson(result));
-        } catch (IllegalArgumentException e) {
-            return invalidParams(req, e.getMessage());
-        }
+        ListResourcesRequest lr = ListResourcesRequest.CODEC.fromJson(req.params());
+        String cursor = ValidationUtil.sanitizeCursor(lr.cursor());
+        progressToken.ifPresent(t -> {
+            try {
+                tracker.send(new ProgressNotification(t, 0.0, null, "Starting resource list"), sender::send);
+            } catch (IOException ignore) {
+            }
+        });
+        Pagination.Page<Resource> list = resources.list(cursor);
+        progressToken.ifPresent(t -> {
+            try {
+                tracker.send(new ProgressNotification(t, 0.5, null, "Filtering resources"), sender::send);
+            } catch (IOException ignore) {
+            }
+        });
+        List<Resource> filtered = list.items().stream()
+                .filter(r -> allowed(r.annotations()) && withinRoots(r.uri()))
+                .toList();
+        progressToken.ifPresent(t -> {
+            try {
+                tracker.send(new ProgressNotification(t, 1.0, null, "Completed resource list"), sender::send);
+            } catch (IOException ignore) {
+            }
+        });
+        ListResourcesResult result = new ListResourcesResult(filtered, list.nextCursor(), null);
+        return new JsonRpcResponse(req.id(), ListResourcesResult.CODEC.toJson(result));
     }
 
     private JsonRpcMessage readResource(JsonRpcRequest req) {
-        ReadResourceRequest rrr;
-        try {
-            rrr = ReadResourceRequest.CODEC.fromJson(req.params());
-        } catch (IllegalArgumentException e) {
-            return invalidParams(req, e.getMessage());
-        }
+        ReadResourceRequest rrr = ReadResourceRequest.CODEC.fromJson(req.params());
         String uri = rrr.uri();
         if (!canAccessResource(uri)) {
             return JsonRpcError.of(req.id(), JsonRpcErrorCode.INTERNAL_ERROR, "Access denied");
@@ -131,28 +122,19 @@ public final class ResourceFeature implements AutoCloseable {
     }
 
     private JsonRpcMessage listTemplates(JsonRpcRequest req) {
-        try {
-            ListResourceTemplatesRequest request =
-                    ListResourceTemplatesRequest.CODEC.fromJson(req.params());
-            String cursor = sanitizeCursor(request.cursor());
-            Pagination.Page<ResourceTemplate> page = resources.listTemplates(cursor);
-            List<ResourceTemplate> filtered = page.items().stream()
-                    .filter(t -> allowed(t.annotations()))
-                    .toList();
-            ListResourceTemplatesResult result = new ListResourceTemplatesResult(filtered, page.nextCursor(), null);
-            return new JsonRpcResponse(req.id(), ListResourceTemplatesResult.CODEC.toJson(result));
-        } catch (IllegalArgumentException e) {
-            return invalidParams(req, e.getMessage());
-        }
+        ListResourceTemplatesRequest request =
+                ListResourceTemplatesRequest.CODEC.fromJson(req.params());
+        String cursor = ValidationUtil.sanitizeCursor(request.cursor());
+        Pagination.Page<ResourceTemplate> page = resources.listTemplates(cursor);
+        List<ResourceTemplate> filtered = page.items().stream()
+                .filter(t -> allowed(t.annotations()))
+                .toList();
+        ListResourceTemplatesResult result = new ListResourceTemplatesResult(filtered, page.nextCursor(), null);
+        return new JsonRpcResponse(req.id(), ListResourceTemplatesResult.CODEC.toJson(result));
     }
 
     private JsonRpcMessage subscribeResource(JsonRpcRequest req) {
-        SubscribeRequest sr;
-        try {
-            sr = SubscribeRequest.CODEC.fromJson(req.params());
-        } catch (IllegalArgumentException e) {
-            return invalidParams(req, e.getMessage());
-        }
+        SubscribeRequest sr = SubscribeRequest.CODEC.fromJson(req.params());
         String uri = sr.uri();
         if (!canAccessResource(uri)) {
             return JsonRpcError.of(req.id(), JsonRpcErrorCode.INTERNAL_ERROR, "Access denied");
@@ -184,12 +166,7 @@ public final class ResourceFeature implements AutoCloseable {
     }
 
     private JsonRpcMessage unsubscribeResource(JsonRpcRequest req) {
-        UnsubscribeRequest ur;
-        try {
-            ur = UnsubscribeRequest.CODEC.fromJson(req.params());
-        } catch (IllegalArgumentException e) {
-            return invalidParams(req, e.getMessage());
-        }
+        UnsubscribeRequest ur = UnsubscribeRequest.CODEC.fromJson(req.params());
         String uri = ur.uri();
         if (!canAccessResource(uri)) {
             return JsonRpcError.of(req.id(), JsonRpcErrorCode.INTERNAL_ERROR, "Access denied");
@@ -224,13 +201,7 @@ public final class ResourceFeature implements AutoCloseable {
                 .orElse(true);
     }
 
-    private String sanitizeCursor(String cursor) {
-        return cursor == null ? null : Pagination.sanitize(InputSanitizer.cleanNullable(cursor));
-    }
-
-    private JsonRpcError invalidParams(JsonRpcRequest req, String message) {
-        return JsonRpcError.invalidParams(req.id(), message);
-    }
+    
 
     private <S extends ListChangeSubscription> S subscribeListChanges(
             SubscriptionFactory<S> factory,

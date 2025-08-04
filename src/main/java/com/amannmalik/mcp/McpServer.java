@@ -16,7 +16,6 @@ import com.amannmalik.mcp.sampling.*;
 import com.amannmalik.mcp.tools.*;
 import com.amannmalik.mcp.transport.Transport;
 import com.amannmalik.mcp.util.*;
-import com.amannmalik.mcp.validation.InputSanitizer;
 import com.amannmalik.mcp.validation.ValidationUtil;
 import com.amannmalik.mcp.wire.NotificationMethod;
 import com.amannmalik.mcp.wire.RequestMethod;
@@ -342,13 +341,6 @@ public final class McpServer implements AutoCloseable {
         }
     }
 
-    private JsonRpcError invalidParams(JsonRpcRequest req, String message) {
-        return JsonRpcError.invalidParams(req.id(), message);
-    }
-
-    private JsonRpcError invalidParams(JsonRpcRequest req, IllegalArgumentException e) {
-        return invalidParams(req, e.getMessage());
-    }
 
     private Optional<String> rateLimit(RateLimiter limiter, String key) {
         try {
@@ -371,31 +363,18 @@ public final class McpServer implements AutoCloseable {
         }
     }
 
-    private String sanitizeCursor(String cursor) {
-        return cursor == null ? null : Pagination.sanitize(InputSanitizer.cleanNullable(cursor));
-    }
-
     private JsonRpcMessage listTools(JsonRpcRequest req) {
         requireServerCapability(ServerCapability.TOOLS);
-        try {
-            ListToolsRequest ltr = ListToolsRequest.CODEC.fromJson(req.params());
-            String cursor = sanitizeCursor(ltr.cursor());
-            Pagination.Page<Tool> page = tools.list(cursor);
-            JsonObject json = ListToolsResult.CODEC.toJson(new ListToolsResult(page.items(), page.nextCursor(), null));
-            return new JsonRpcResponse(req.id(), json);
-        } catch (IllegalArgumentException e) {
-            return invalidParams(req, e.getMessage());
-        }
+        ListToolsRequest ltr = ListToolsRequest.CODEC.fromJson(req.params());
+        String cursor = ValidationUtil.sanitizeCursor(ltr.cursor());
+        Pagination.Page<Tool> page = tools.list(cursor);
+        JsonObject json = ListToolsResult.CODEC.toJson(new ListToolsResult(page.items(), page.nextCursor(), null));
+        return new JsonRpcResponse(req.id(), json);
     }
 
     private JsonRpcMessage callTool(JsonRpcRequest req) {
         requireServerCapability(ServerCapability.TOOLS);
-        CallToolRequest callRequest;
-        try {
-            callRequest = CallToolRequest.CODEC.fromJson(req.params());
-        } catch (IllegalArgumentException e) {
-            return invalidParams(req, e);
-        }
+        CallToolRequest callRequest = CallToolRequest.CODEC.fromJson(req.params());
         Optional<String> limit = rateLimit(toolLimiter, callRequest.name());
         if (limit.isPresent()) {
             return JsonRpcError.of(req.id(), RATE_LIMIT_CODE, limit.get());
@@ -427,54 +406,39 @@ public final class McpServer implements AutoCloseable {
                         ToolResult result = tools.call(callRequest.name(), res.content());
                         return new JsonRpcResponse(req.id(), ToolResult.CODEC.toJson(result));
                     } catch (IllegalArgumentException ex) {
-                        return invalidParams(req, ex);
+                        throw ex;
                     }
                 }
-                return invalidParams(req, "Tool invocation cancelled");
+                throw new IllegalArgumentException("Tool invocation cancelled");
             } catch (IllegalArgumentException ex) {
-                return invalidParams(req, ex);
+                throw ex;
             } catch (Exception ex) {
                 return JsonRpcError.of(req.id(), JsonRpcErrorCode.INTERNAL_ERROR, ex.getMessage());
             }
         }
-        return invalidParams(req, e);
+        throw e;
     }
 
     private JsonRpcMessage listPrompts(JsonRpcRequest req) {
         requireServerCapability(ServerCapability.PROMPTS);
-        try {
-            ListPromptsRequest lpr = ListPromptsRequest.CODEC.fromJson(req.params());
-            String cursor = sanitizeCursor(lpr.cursor());
-            Pagination.Page<Prompt> page = prompts.list(cursor);
-            return new JsonRpcResponse(req.id(), ListPromptsResult.CODEC.toJson(new ListPromptsResult(page.items(), page.nextCursor(), null)));
-        } catch (IllegalArgumentException e) {
-            return invalidParams(req, e.getMessage());
-        }
+        ListPromptsRequest lpr = ListPromptsRequest.CODEC.fromJson(req.params());
+        String cursor = ValidationUtil.sanitizeCursor(lpr.cursor());
+        Pagination.Page<Prompt> page = prompts.list(cursor);
+        return new JsonRpcResponse(req.id(), ListPromptsResult.CODEC.toJson(new ListPromptsResult(page.items(), page.nextCursor(), null)));
     }
 
     private JsonRpcMessage getPrompt(JsonRpcRequest req) {
         requireServerCapability(ServerCapability.PROMPTS);
-        try {
-            GetPromptRequest getRequest = GetPromptRequest.CODEC.fromJson(req.params());
-            PromptInstance inst = prompts.get(getRequest.name(), getRequest.arguments());
-            return new JsonRpcResponse(req.id(), PromptInstance.CODEC.toJson(inst));
-        } catch (IllegalArgumentException e) {
-            return invalidParams(req, e.getMessage());
-        }
+        GetPromptRequest getRequest = GetPromptRequest.CODEC.fromJson(ValidationUtil.requireParams(req.params()));
+        PromptInstance inst = prompts.get(getRequest.name(), getRequest.arguments());
+        return new JsonRpcResponse(req.id(), PromptInstance.CODEC.toJson(inst));
     }
 
     private JsonRpcMessage setLogLevel(JsonRpcRequest req) {
         requireServerCapability(ServerCapability.LOGGING);
-        JsonObject params = req.params();
-        if (params == null) {
-            return invalidParams(req, "Missing params");
-        }
-        try {
-            logLevel = SetLevelRequest.CODEC.fromJson(params).level();
-            return new JsonRpcResponse(req.id(), JsonValue.EMPTY_JSON_OBJECT);
-        } catch (IllegalArgumentException e) {
-            return invalidParams(req, e.getMessage());
-        }
+        JsonObject params = ValidationUtil.requireParams(req.params());
+        logLevel = SetLevelRequest.CODEC.fromJson(params).level();
+        return new JsonRpcResponse(req.id(), JsonValue.EMPTY_JSON_OBJECT);
     }
 
     private void sendLog(LoggingMessageNotification note) throws IOException {
@@ -494,23 +458,14 @@ public final class McpServer implements AutoCloseable {
             return JsonRpcError.of(req.id(), JsonRpcErrorCode.METHOD_NOT_FOUND, "Capability not supported");
         }
         requireServerCapability(ServerCapability.COMPLETIONS);
-        JsonObject params = req.params();
-        if (params == null) {
-            return invalidParams(req, "Missing params");
+        JsonObject params = ValidationUtil.requireParams(req.params());
+        CompleteRequest request = CompleteRequest.CODEC.fromJson(params);
+        Optional<String> limit = rateLimit(completionLimiter, request.ref().toString());
+        if (limit.isPresent()) {
+            return JsonRpcError.of(req.id(), RATE_LIMIT_CODE, limit.get());
         }
-        try {
-            CompleteRequest request = CompleteRequest.CODEC.fromJson(params);
-            Optional<String> limit = rateLimit(completionLimiter, request.ref().toString());
-            if (limit.isPresent()) {
-                return JsonRpcError.of(req.id(), RATE_LIMIT_CODE, limit.get());
-            }
-            CompleteResult result = completions.complete(request);
-            return new JsonRpcResponse(req.id(), CompleteResult.CODEC.toJson(result));
-        } catch (IllegalArgumentException e) {
-            return invalidParams(req, e.getMessage());
-        } catch (Exception e) {
-            return JsonRpcError.of(req.id(), JsonRpcErrorCode.INTERNAL_ERROR, e.getMessage());
-        }
+        CompleteResult result = completions.complete(request);
+        return new JsonRpcResponse(req.id(), CompleteResult.CODEC.toJson(result));
     }
 
     private JsonRpcMessage sendRequest(RequestMethod method, JsonObject params) throws IOException {
@@ -594,17 +549,12 @@ public final class McpServer implements AutoCloseable {
     }
 
     private JsonRpcMessage handleCreateMessage(JsonRpcRequest req) {
-        JsonObject params = req.params();
-        if (params == null) {
-            return invalidParams(req, "Missing params");
-        }
+        JsonObject params = ValidationUtil.requireParams(req.params());
+        CreateMessageRequest cmr = CreateMessageRequest.CODEC.fromJson(params);
         try {
-            CreateMessageRequest cmr = CreateMessageRequest.CODEC.fromJson(params);
             CreateMessageResponse resp = createMessage(cmr);
             return new JsonRpcResponse(req.id(), CreateMessageResponse.CODEC.toJson(resp));
-        } catch (IllegalArgumentException e) {
-            return invalidParams(req, e.getMessage());
-        } catch (Exception e) {
+        } catch (IOException e) {
             return JsonRpcError.of(req.id(), JsonRpcErrorCode.INTERNAL_ERROR, e.getMessage());
         }
     }
