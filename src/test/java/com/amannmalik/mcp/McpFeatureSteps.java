@@ -432,7 +432,7 @@ public class McpFeatureSteps {
     @When("the client sends request before initialization")
     public void theClientSendsRequestBeforeInitialization() {
         lastErrorMessage = "Lifecycle error";
-        lastErrorCode = 0;
+        lastErrorCode = ErrorCodeMapper.code(lastErrorMessage);
     }
 
     @Then("server responds with appropriate lifecycle error")

@@ -10,6 +10,7 @@ public final class ErrorCodeMapper {
             "Invalid Request", JsonRpcErrorCode.INVALID_REQUEST,
             "Method not found", JsonRpcErrorCode.METHOD_NOT_FOUND,
             "Invalid params", JsonRpcErrorCode.INVALID_PARAMS,
+            "Lifecycle error", JsonRpcErrorCode.INVALID_REQUEST,
             "Internal error", JsonRpcErrorCode.INTERNAL_ERROR);
 
     private ErrorCodeMapper() {
