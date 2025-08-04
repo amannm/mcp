@@ -1,7 +1,7 @@
 package com.amannmalik.mcp.prompts;
 
-import com.amannmalik.mcp.core.JsonCodec;
 import com.amannmalik.mcp.core.AbstractEntityCodec;
+import com.amannmalik.mcp.core.JsonCodec;
 import com.amannmalik.mcp.util.DisplayNameProvider;
 import com.amannmalik.mcp.validation.InputSanitizer;
 import com.amannmalik.mcp.validation.MetaValidator;
@@ -18,7 +18,7 @@ public record Prompt(
         List<PromptArgument> arguments,
         JsonObject _meta
 ) implements DisplayNameProvider {
-    public static final JsonCodec<Prompt> CODEC = new JsonCodec<>() {
+    public static final JsonCodec<Prompt> CODEC = new AbstractEntityCodec<>() {
         @Override
         public JsonObject toJson(Prompt prompt) {
             JsonObjectBuilder b = Json.createObjectBuilder().add("name", prompt.name());
@@ -36,9 +36,8 @@ public record Prompt(
         @Override
         public Prompt fromJson(JsonObject obj) {
             if (obj == null) throw new IllegalArgumentException("object required");
-            AbstractEntityCodec.requireOnlyKeys(obj, Set.of("name", "title", "description", "arguments", "_meta"));
-            String name = obj.getString("name", null);
-            if (name == null) throw new IllegalArgumentException("name required");
+            requireOnlyKeys(obj, Set.of("name", "title", "description", "arguments", "_meta"));
+            String name = requireString(obj, "name");
             String title = obj.getString("title", null);
             String description = obj.getString("description", null);
             JsonObject meta = obj.getJsonObject("_meta");

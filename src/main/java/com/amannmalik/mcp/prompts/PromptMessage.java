@@ -1,14 +1,14 @@
 package com.amannmalik.mcp.prompts;
 
 import com.amannmalik.mcp.content.ContentBlock;
-import com.amannmalik.mcp.core.JsonCodec;
 import com.amannmalik.mcp.core.AbstractEntityCodec;
+import com.amannmalik.mcp.core.JsonCodec;
 import jakarta.json.*;
 
 import java.util.Set;
 
 public record PromptMessage(Role role, PromptContent content) {
-    public static final JsonCodec<PromptMessage> CODEC = new JsonCodec<>() {
+    public static final JsonCodec<PromptMessage> CODEC = new AbstractEntityCodec<>() {
         @Override
         public JsonObject toJson(PromptMessage m) {
             return Json.createObjectBuilder()
@@ -20,11 +20,10 @@ public record PromptMessage(Role role, PromptContent content) {
         @Override
         public PromptMessage fromJson(JsonObject obj) {
             if (obj == null) throw new IllegalArgumentException("object required");
-            AbstractEntityCodec.requireOnlyKeys(obj, Set.of("role", "content"));
-            String raw = obj.getString("role", null);
-            if (raw == null) throw new IllegalArgumentException("role required");
+            requireOnlyKeys(obj, Set.of("role", "content"));
+            String raw = requireString(obj, "role");
             Role role = Role.valueOf(raw.toUpperCase());
-            JsonObject c = obj.getJsonObject("content");
+            JsonObject c = getObject(obj, "content");
             if (c == null) throw new IllegalArgumentException("content required");
             PromptContent content = (PromptContent) ContentBlock.CODEC.fromJson(c);
             return new PromptMessage(role, content);

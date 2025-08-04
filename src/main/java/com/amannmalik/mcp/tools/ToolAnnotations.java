@@ -1,8 +1,11 @@
 package com.amannmalik.mcp.tools;
 
+import com.amannmalik.mcp.core.AbstractEntityCodec;
 import com.amannmalik.mcp.core.JsonCodec;
 import com.amannmalik.mcp.validation.InputSanitizer;
 import jakarta.json.*;
+
+import java.util.Set;
 
 public record ToolAnnotations(
         String title,
@@ -11,7 +14,7 @@ public record ToolAnnotations(
         Boolean idempotentHint,
         Boolean openWorldHint
 ) {
-    public static final JsonCodec<ToolAnnotations> CODEC = new JsonCodec<>() {
+    public static final JsonCodec<ToolAnnotations> CODEC = new AbstractEntityCodec<>() {
         @Override
         public JsonObject toJson(ToolAnnotations ann) {
             JsonObjectBuilder b = Json.createObjectBuilder();
@@ -26,6 +29,7 @@ public record ToolAnnotations(
         @Override
         public ToolAnnotations fromJson(JsonObject obj) {
             if (obj == null) throw new IllegalArgumentException("object required");
+            requireOnlyKeys(obj, Set.of("title", "readOnlyHint", "destructiveHint", "idempotentHint", "openWorldHint"));
             String title = obj.getString("title", null);
             Boolean readOnly = obj.containsKey("readOnlyHint") ? obj.getBoolean("readOnlyHint") : null;
             Boolean destructive = obj.containsKey("destructiveHint") ? obj.getBoolean("destructiveHint") : null;
