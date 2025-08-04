@@ -36,7 +36,7 @@ public final class McpServer implements AutoCloseable {
     private final Transport transport;
     private final ProtocolLifecycle lifecycle;
     private final JsonRpcRequestProcessor processor;
-    private final ProgressTracker tracker = new ProgressTracker(
+    private final ProgressManager progress = new ProgressManager(
             new RateLimiter(McpConfiguration.current().performance().rateLimits().progressPerSecond(),
                     McpConfiguration.current().performance().runtime().rateLimiterWindowMs()));
     private final IdTracker idTracker = new IdTracker();
@@ -109,12 +109,12 @@ public final class McpServer implements AutoCloseable {
         this.resourceAccess = resourceAccess;
         this.toolAccess = toolAccess == null ? ToolAccessPolicy.PERMISSIVE : toolAccess;
         this.samplingAccess = samplingAccess == null ? SamplingAccessPolicy.PERMISSIVE : samplingAccess;
-        var requestProcessor = new JsonRpcRequestProcessor(tracker, this::send, idTracker);
+        var requestProcessor = new JsonRpcRequestProcessor(progress, this::send, idTracker);
         this.processor = requestProcessor;
         this.principal = principal;
         this.rootsManager = new RootsManager(lifecycle, this::sendRequest);
         this.resourceFeature = resources == null ? null :
-                new ResourceFeature(resources, resourceAccess, principal, rootsManager, lifecycle, this::send, tracker);
+                new ResourceFeature(resources, resourceAccess, principal, rootsManager, lifecycle, this::send, progress);
 
         if (tools != null && tools.supportsListChanged()) {
             toolListSubscription = subscribeListChanges(
@@ -130,33 +130,33 @@ public final class McpServer implements AutoCloseable {
                     PromptListChangedNotification.CODEC.toJson(new PromptListChangedNotification()));
         }
 
-        processor.register(RequestMethod.INITIALIZE, this::initialize);
-        processor.register(NotificationMethod.INITIALIZED, this::initialized);
-        processor.register(RequestMethod.PING, this::ping);
-        processor.register(NotificationMethod.CANCELLED, this::cancelled);
-        processor.register(NotificationMethod.ROOTS_LIST_CHANGED, n -> rootsManager.listChangedNotification());
+        processor.registerRequest(RequestMethod.INITIALIZE.method(), this::initialize);
+        processor.registerNotification(NotificationMethod.INITIALIZED.method(), this::initialized);
+        processor.registerRequest(RequestMethod.PING.method(), this::ping);
+        processor.registerNotification(NotificationMethod.CANCELLED.method(), this::cancelled);
+        processor.registerNotification(NotificationMethod.ROOTS_LIST_CHANGED.method(), n -> rootsManager.listChangedNotification());
 
         if (resourceFeature != null) {
             resourceFeature.register(processor);
         }
 
         if (tools != null) {
-            processor.register(RequestMethod.TOOLS_LIST, this::listTools);
-            processor.register(RequestMethod.TOOLS_CALL, this::callTool);
+            processor.registerRequest(RequestMethod.TOOLS_LIST.method(), this::listTools);
+            processor.registerRequest(RequestMethod.TOOLS_CALL.method(), this::callTool);
         }
 
         if (prompts != null) {
-            processor.register(RequestMethod.PROMPTS_LIST, this::listPrompts);
-            processor.register(RequestMethod.PROMPTS_GET, this::getPrompt);
+            processor.registerRequest(RequestMethod.PROMPTS_LIST.method(), this::listPrompts);
+            processor.registerRequest(RequestMethod.PROMPTS_GET.method(), this::getPrompt);
         }
 
-        processor.register(RequestMethod.LOGGING_SET_LEVEL, this::setLogLevel);
+        processor.registerRequest(RequestMethod.LOGGING_SET_LEVEL.method(), this::setLogLevel);
 
         if (completions != null) {
-            processor.register(RequestMethod.COMPLETION_COMPLETE, this::complete);
+            processor.registerRequest(RequestMethod.COMPLETION_COMPLETE.method(), this::complete);
         }
 
-        processor.register(RequestMethod.SAMPLING_CREATE_MESSAGE, this::handleCreateMessage);
+        processor.registerRequest(RequestMethod.SAMPLING_CREATE_MESSAGE.method(), this::handleCreateMessage);
     }
 
     private <S extends ListChangeSubscription> S subscribeListChanges(
@@ -361,10 +361,10 @@ public final class McpServer implements AutoCloseable {
 
     private void cancelled(JsonRpcNotification note) {
         CancelledNotification cn = CancelledNotification.CODEC.fromJson(note.params());
-        tracker.cancel(cn.requestId(), cn.reason());
-        tracker.release(cn.requestId());
+        progress.cancel(cn.requestId(), cn.reason());
+        progress.release(cn.requestId());
         try {
-            String reason = tracker.reason(cn.requestId());
+            String reason = progress.reason(cn.requestId());
             sendLog(LoggingLevel.INFO, McpConfiguration.current().server().messaging().loggerNames().cancellation(),
                     reason == null ? JsonValue.NULL : Json.createValue(reason));
         } catch (IOException ignore) {

@@ -1,35 +1,37 @@
 package com.amannmalik.mcp.util;
 
 import com.amannmalik.mcp.jsonrpc.*;
-import com.amannmalik.mcp.wire.NotificationMethod;
-import com.amannmalik.mcp.wire.RequestMethod;
 
 import java.io.IOException;
-import java.util.*;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Optional;
+import java.util.function.Consumer;
+import java.util.function.Function;
 
 public final class JsonRpcRequestProcessor {
-    private final ProgressTracker tracker;
+    private final ProgressManager progress;
     private final NotificationSender sender;
     private final IdTracker idTracker;
-    private final Map<RequestMethod, RequestHandler> requests = new EnumMap<>(RequestMethod.class);
-    private final Map<NotificationMethod, NotificationHandler> notifications = new EnumMap<>(NotificationMethod.class);
+    private final Map<String, Function<JsonRpcRequest, JsonRpcMessage>> requests = new HashMap<>();
+    private final Map<String, Consumer<JsonRpcNotification>> notifications = new HashMap<>();
 
-    public JsonRpcRequestProcessor(ProgressTracker tracker, NotificationSender sender, IdTracker idTracker) {
-        if (tracker == null || sender == null) throw new IllegalArgumentException("tracker and sender required");
-        this.tracker = tracker;
+    public JsonRpcRequestProcessor(ProgressManager progress, NotificationSender sender, IdTracker idTracker) {
+        if (progress == null || sender == null) throw new IllegalArgumentException("progress and sender required");
+        this.progress = progress;
         this.sender = sender;
         this.idTracker = idTracker;
     }
 
-    public JsonRpcRequestProcessor(ProgressTracker tracker, NotificationSender sender) {
-        this(tracker, sender, null);
+    public JsonRpcRequestProcessor(ProgressManager progress, NotificationSender sender) {
+        this(progress, sender, null);
     }
 
-    public void register(RequestMethod method, RequestHandler handler) {
+    public void registerRequest(String method, Function<JsonRpcRequest, JsonRpcMessage> handler) {
         requests.put(method, handler);
     }
 
-    public void register(NotificationMethod method, NotificationHandler handler) {
+    public void registerNotification(String method, Consumer<JsonRpcNotification> handler) {
         notifications.put(method, handler);
     }
 
@@ -41,7 +43,7 @@ public final class JsonRpcRequestProcessor {
 
         final Optional<ProgressToken> token;
         try {
-            token = tracker.register(req.id(), req.params());
+            token = progress.register(req.id(), req.params());
         } catch (IllegalArgumentException e) {
             cleanup(req.id());
             return Optional.of(JsonRpcError.invalidParams(req.id(), e.getMessage()));
@@ -49,9 +51,9 @@ public final class JsonRpcRequestProcessor {
 
         try {
             token.ifPresent(t -> sendProgress(t, 0.0));
-            if (cancellable && tracker.isCancelled(req.id())) return Optional.empty();
+            if (cancellable && progress.isCancelled(req.id())) return Optional.empty();
             JsonRpcMessage resp = dispatch(req);
-            if (cancellable && tracker.isCancelled(req.id())) return Optional.empty();
+            if (cancellable && progress.isCancelled(req.id())) return Optional.empty();
             token.ifPresent(t -> sendProgress(t, 1.0));
             return Optional.of(resp);
         } finally {
@@ -71,15 +73,11 @@ public final class JsonRpcRequestProcessor {
 
     private JsonRpcMessage dispatch(JsonRpcRequest req) {
         try {
-            var method = RequestMethod.from(req.method());
-            if (method.isEmpty()) {
-                return JsonRpcError.of(req.id(), JsonRpcErrorCode.METHOD_NOT_FOUND, "Unknown method: " + req.method());
-            }
-            var handler = requests.get(method.get());
+            var handler = requests.get(req.method());
             if (handler == null) {
                 return JsonRpcError.of(req.id(), JsonRpcErrorCode.METHOD_NOT_FOUND, "Unknown method: " + req.method());
             }
-            var resp = handler.handle(req);
+            var resp = handler.apply(req);
             if (resp == null) throw new IllegalStateException("handler returned null");
             return resp;
         } catch (IllegalArgumentException e) {
@@ -90,31 +88,20 @@ public final class JsonRpcRequestProcessor {
     }
 
     public void handle(JsonRpcNotification note) {
-        var method = NotificationMethod.from(note.method());
-        if (method.isEmpty()) return;
-        var handler = notifications.get(method.get());
-        if (handler != null) handler.handle(note);
+        var handler = notifications.get(note.method());
+        if (handler != null) handler.accept(note);
     }
 
     private void cleanup(RequestId id) {
-        tracker.release(id);
+        progress.release(id);
         if (idTracker != null) idTracker.release(id);
     }
 
     private void sendProgress(ProgressToken token, double current) {
         String msg = current >= 1.0 ? "completed" : "in progress";
         try {
-            tracker.send(new ProgressNotification(token, current, 1.0, msg), sender);
+            progress.send(new ProgressNotification(token, current, 1.0, msg), sender);
         } catch (IOException ignore) {
         }
-    }
-    @FunctionalInterface
-    public interface RequestHandler {
-        JsonRpcMessage handle(JsonRpcRequest request);
-    }
-
-    @FunctionalInterface
-    public interface NotificationHandler {
-        void handle(JsonRpcNotification notification);
     }
 }
