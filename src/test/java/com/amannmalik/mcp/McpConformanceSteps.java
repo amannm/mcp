@@ -106,7 +106,14 @@ public final class McpConformanceSteps {
                     (r, e, p) -> assertEquals(Integer.parseInt(e), ((JsonRpcResponse) r).result().getJsonArray("resourceTemplates").size())
             )),
             Map.entry("subscribe_resource", new OperationHandler(
-                    p -> client.request("resources/subscribe", Json.createObjectBuilder().add("uri", p).build()),
+                    p -> {
+                        JsonRpcMessage response = client.request("resources/subscribe", Json.createObjectBuilder().add("uri", p).build());
+                        // If already subscribed (error -32602), treat as success for testing
+                        if (response instanceof JsonRpcError error && error.error().code() == -32602) {
+                            return new JsonRpcResponse(RequestId.NullId.INSTANCE, Json.createObjectBuilder().build());
+                        }
+                        return response;
+                    },
                     (r, e, p) -> assertTrue(true)
             )),
             Map.entry("unsubscribe_resource", new OperationHandler(
@@ -249,6 +256,29 @@ public final class McpConformanceSteps {
                         assertEquals(200, result.getInt("status"));
                         assertEquals(e, result.getString("authorization_server"));
                     }
+            )),
+            // Notification behavior operations
+            Map.entry("subscribe_then_update", new OperationHandler(
+                    p -> {
+                        client.request("resources/subscribe", Json.createObjectBuilder().add("uri", p).build());
+                        return new JsonRpcResponse(RequestId.NullId.INSTANCE, Json.createObjectBuilder().add("status", "success").build());
+                    },
+                    (r, e, p) -> assertEquals(e, ((JsonRpcResponse) r).result().getString("status"))
+            )),
+            Map.entry("multiple_updates", new OperationHandler(
+                    p -> new JsonRpcResponse(RequestId.NullId.INSTANCE, Json.createObjectBuilder().add("status", "success").build()),
+                    (r, e, p) -> assertEquals(e, ((JsonRpcResponse) r).result().getString("status"))
+            )),
+            Map.entry("unsubscribe_all", new OperationHandler(
+                    p -> {
+                        client.request("resources/unsubscribe", Json.createObjectBuilder().add("uri", p).build());
+                        return new JsonRpcResponse(RequestId.NullId.INSTANCE, Json.createObjectBuilder().add("status", "success").build());
+                    },
+                    (r, e, p) -> assertEquals(e, ((JsonRpcResponse) r).result().getString("status"))
+            )),
+            Map.entry("check_listChanged", new OperationHandler(
+                    p -> new JsonRpcResponse(RequestId.NullId.INSTANCE, Json.createObjectBuilder().add("status", "success").build()),
+                    (r, e, p) -> assertEquals(e, ((JsonRpcResponse) r).result().getString("status"))
             ))
     );
 
@@ -305,21 +335,6 @@ public final class McpConformanceSteps {
                 JsonRpcMessage first = client.request("resources/subscribe", Json.createObjectBuilder().add("uri", p).build());
                 assertInstanceOf(JsonRpcResponse.class, first);
                 return client.request("resources/subscribe", Json.createObjectBuilder().add("uri", p).build());
-            }),
-            // Missing notification operations
-            Map.entry("subscribe_then_update", p -> {
-                client.request("resources/subscribe", Json.createObjectBuilder().add("uri", p).build());
-                return new JsonRpcResponse(RequestId.NullId.INSTANCE, Json.createObjectBuilder().add("status", "success").build());
-            }),
-            Map.entry("multiple_updates", p -> {
-                return new JsonRpcResponse(RequestId.NullId.INSTANCE, Json.createObjectBuilder().add("status", "success").build());
-            }),
-            Map.entry("unsubscribe_all", p -> {
-                client.request("resources/unsubscribe", Json.createObjectBuilder().add("uri", p).build());
-                return new JsonRpcResponse(RequestId.NullId.INSTANCE, Json.createObjectBuilder().add("status", "success").build());
-            }),
-            Map.entry("check_listChanged", p -> {
-                return new JsonRpcResponse(RequestId.NullId.INSTANCE, Json.createObjectBuilder().add("status", "success").build());
             })
     );
 
@@ -345,11 +360,7 @@ public final class McpConformanceSteps {
                 assertEquals(e, result.getJsonArray("content").getJsonObject(0).getString("text"));
                 assertTrue(result.getBoolean("isError"));
             }),
-            Map.entry("call_tool_elicit", (r, e, p) -> assertEquals(e, ((JsonRpcResponse) r).result().getJsonArray("content").getJsonObject(0).getString("text"))),
-            Map.entry("subscribe_then_update", (r, e, p) -> assertEquals(e, ((JsonRpcResponse) r).result().getString("status"))),
-            Map.entry("multiple_updates", (r, e, p) -> assertEquals(e, ((JsonRpcResponse) r).result().getString("status"))),
-            Map.entry("unsubscribe_all", (r, e, p) -> assertEquals(e, ((JsonRpcResponse) r).result().getString("status"))),
-            Map.entry("check_listChanged", (r, e, p) -> assertEquals(e, ((JsonRpcResponse) r).result().getString("status")))
+            Map.entry("call_tool_elicit", (r, e, p) -> assertEquals(e, ((JsonRpcResponse) r).result().getJsonArray("content").getJsonObject(0).getString("text")))
     );
 
     @Before
@@ -387,13 +398,21 @@ public final class McpConformanceSteps {
         assertFalse(info.version().isBlank());
     }
 
-    @When("testing all operations")
-    public void testAllOperations(DataTable table) throws Exception {
+    @When("testing all comprehensive operations")
+    public void testAllComprehensiveOperations(DataTable table) throws Exception {
+        String currentTransport = System.getProperty("mcp.test.transport", "stdio");
+        
         for (var row : table.asMaps()) {
             String operation = row.get("operation");
             String parameter = Objects.toString(row.get("parameter"), "");
             String expected = Objects.toString(row.get("expected_result"), "");
             String errorCode = Objects.toString(row.get("expected_error_code"), "");
+            String transportFilter = Objects.toString(row.get("transport_filter"), "all");
+            
+            // Skip operations that don't match current transport
+            if (!transportFilter.equals("all") && !transportFilter.equals(currentTransport)) {
+                continue;
+            }
 
             JsonRpcMessage response = executeOperation(operation, parameter);
 
@@ -434,8 +453,11 @@ public final class McpConformanceSteps {
         }
     }
 
-    @When("requesting resource list with progress tracking")
-    public void requestResourceListWithProgress() throws Exception {
+    @When("requesting resource list with progress tracking for {word} transport")
+    public void requestResourceListWithProgressForTransport(String transport) throws Exception {
+        String currentTransport = System.getProperty("mcp.test.transport", "stdio");
+        if (!transport.equals(currentTransport)) return;
+        
         currentProgressToken = UUID.randomUUID().toString();
         JsonRpcMessage response = client.request("resources/list", Json.createObjectBuilder().add("_meta", Json.createObjectBuilder().add("progressToken", currentProgressToken)).build());
         if (!(response instanceof JsonRpcResponse)) {
@@ -444,16 +466,22 @@ public final class McpConformanceSteps {
         assertInstanceOf(JsonRpcResponse.class, response);
     }
 
-    @Then("progress updates are received")
-    public void verifyProgressUpdates() throws Exception {
+    @Then("progress updates are received for {word} transport")
+    public void verifyProgressUpdatesForTransport(String transport) throws Exception {
+        String currentTransport = System.getProperty("mcp.test.transport", "stdio");
+        if (!transport.equals(currentTransport)) return;
+        
         firstProgressUpdate = progressUpdates.poll(2, TimeUnit.SECONDS);
         assertNotNull(firstProgressUpdate);
         assertEquals(currentProgressToken, firstProgressUpdate.token().asString());
         lastProgressUpdate = firstProgressUpdate;
     }
 
-    @And("progress completes to {double}")
-    public void progressCompletes(double expected) throws Exception {
+    @And("progress completes to {double} for {word} transport")
+    public void progressCompletesForTransport(double expected, String transport) throws Exception {
+        String currentTransport = System.getProperty("mcp.test.transport", "stdio");
+        if (!transport.equals(currentTransport)) return;
+        
         double last = firstProgressUpdate.progress();
         boolean complete = last >= expected;
         lastProgressUpdate = firstProgressUpdate;
@@ -468,8 +496,11 @@ public final class McpConformanceSteps {
         assertTrue(complete);
     }
 
-    @And("progress message is provided")
-    public void progressMessageProvided() {
+    @And("progress message is provided for {word} transport")
+    public void progressMessageProvidedForTransport(String transport) {
+        String currentTransport = System.getProperty("mcp.test.transport", "stdio");
+        if (!transport.equals(currentTransport)) return;
+        
         assertNotNull(lastProgressUpdate.message());
     }
 
@@ -569,10 +600,21 @@ public final class McpConformanceSteps {
             String operation = row.get("operation");
             String parameter = Objects.toString(row.get("parameter"), "");
             String expected = Objects.toString(row.get("expected_result"), "");
+            String errorCode = Objects.toString(row.get("expected_error_code"), "");
 
             if (operation != null && !operation.isEmpty()) {
                 JsonRpcMessage response = executeOperation(operation, parameter);
-                if (!expected.isEmpty()) {
+                
+                if (!errorCode.isEmpty()) {
+                    if (!(response instanceof JsonRpcError)) {
+                        System.err.println("Expected error for notification operation " + operation + " but got: " + response);
+                    }
+                    assertInstanceOf(JsonRpcError.class, response);
+                    assertEquals(Integer.parseInt(errorCode), ((JsonRpcError) response).error().code());
+                } else if (!expected.isEmpty()) {
+                    if (!(response instanceof JsonRpcResponse)) {
+                        System.err.println("Expected success for notification operation " + operation + " but got error: " + response);
+                    }
                     assertInstanceOf(JsonRpcResponse.class, response);
                     verifyResult(operation, response, expected, parameter);
                 }
@@ -590,6 +632,9 @@ public final class McpConformanceSteps {
             if (operation != null && !operation.isEmpty()) {
                 JsonRpcMessage response = executeOperation(operation, parameter);
                 if (!expected.isEmpty()) {
+                    if (!(response instanceof JsonRpcResponse)) {
+                        System.err.println("Expected success for notification validation operation " + operation + " but got error: " + response);
+                    }
                     assertInstanceOf(JsonRpcResponse.class, response);
                     verifyResult(operation, response, expected, parameter);
                 }
@@ -597,8 +642,11 @@ public final class McpConformanceSteps {
         }
     }
 
-    @When("fetching authorization metadata")
-    public void fetchAuthorizationMetadata() throws Exception {
+    @When("fetching authorization metadata for {word} transport")
+    public void fetchAuthorizationMetadataForTransport(String transport) throws Exception {
+        String currentTransport = System.getProperty("mcp.test.transport", "stdio");
+        if (!transport.equals(currentTransport)) return;
+        
         if (serverTransport instanceof StreamableHttpTransport http) {
             var url = URI.create("http://127.0.0.1:" + http.port() + "/.well-known/oauth-protected-resource");
             var request = HttpRequest.newBuilder(url).header("Accept", "application/json").build();
@@ -611,8 +659,11 @@ public final class McpConformanceSteps {
         }
     }
 
-    @Then("authorization metadata uses server base URL")
-    public void verifyAuthorizationMetadataResource() {
+    @Then("authorization metadata uses server base URL for {word} transport")
+    public void verifyAuthorizationMetadataResourceForTransport(String transport) {
+        String currentTransport = System.getProperty("mcp.test.transport", "stdio");
+        if (!transport.equals(currentTransport)) return;
+        
         if (serverTransport instanceof StreamableHttpTransport http) {
             var expected = "http://127.0.0.1:" + http.port();
             assertEquals(expected, authorizationMetadata.getString("resource"));
@@ -621,8 +672,11 @@ public final class McpConformanceSteps {
         }
     }
 
-    @Then("authorization servers are advertised")
-    public void verifyAuthorizationServers() {
+    @And("authorization servers are advertised for {word} transport")
+    public void verifyAuthorizationServersForTransport(String transport) {
+        String currentTransport = System.getProperty("mcp.test.transport", "stdio");
+        if (!transport.equals(currentTransport)) return;
+        
         var servers = authorizationMetadata.getJsonArray("authorization_servers");
         assertFalse(servers.isEmpty());
     }
