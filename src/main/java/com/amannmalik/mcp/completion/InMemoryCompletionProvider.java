@@ -1,12 +1,14 @@
 package com.amannmalik.mcp.completion;
 
+import com.amannmalik.mcp.core.InMemoryProvider;
 import com.amannmalik.mcp.util.StringMetrics;
 import com.amannmalik.mcp.validation.ValidationUtil;
+import jakarta.json.JsonObject;
 
 import java.util.*;
 import java.util.concurrent.CopyOnWriteArrayList;
 
-public final class InMemoryCompletionProvider implements CompletionProvider {
+public final class InMemoryCompletionProvider extends InMemoryProvider<CompleteRequest.Ref> implements CompletionProvider {
     private final List<Entry> entries = new CopyOnWriteArrayList<>();
 
     public void add(CompleteRequest.Ref ref,
@@ -19,6 +21,20 @@ public final class InMemoryCompletionProvider implements CompletionProvider {
                 .map(ValidationUtil::requireClean)
                 .toList();
         entries.add(new Entry(ref, argumentName, ctx, vals));
+        if (items.stream().noneMatch(r -> refEquals(r, ref))) {
+            items.add(ref);
+            notifyListeners();
+        }
+    }
+
+    @Override
+    public CompleteResult execute(String name, JsonObject args) {
+        CompleteRequest.Ref ref = CompletionProvider.decode(name);
+        var arg = CompleteRequest.Argument.CODEC.fromJson(args.getJsonObject("argument"));
+        CompleteRequest.Context ctx = args.containsKey("context")
+                ? CompleteRequest.Context.CODEC.fromJson(args.getJsonObject("context"))
+                : null;
+        return complete(new CompleteRequest(ref, arg, ctx, null));
     }
 
     @Override

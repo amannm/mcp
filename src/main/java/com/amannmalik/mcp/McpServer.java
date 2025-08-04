@@ -499,6 +499,9 @@ public final class McpServer implements AutoCloseable {
             return new JsonRpcResponse(req.id(), CompleteResult.CODEC.toJson(result));
         } catch (IllegalArgumentException e) {
             return JsonRpcError.of(req.id(), JsonRpcErrorCode.INVALID_PARAMS, e.getMessage());
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            return JsonRpcError.of(req.id(), JsonRpcErrorCode.INTERNAL_ERROR, e.getMessage());
         } catch (Exception e) {
             return JsonRpcError.of(req.id(), JsonRpcErrorCode.INTERNAL_ERROR, e.getMessage());
         }
