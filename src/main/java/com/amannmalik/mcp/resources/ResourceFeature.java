@@ -26,7 +26,7 @@ public final class ResourceFeature implements AutoCloseable {
     private final RootsManager roots;
     private final ProtocolLifecycle lifecycle;
     private final Sender sender;
-    private final ProgressManager progress;
+    private final ProgressTracker progress;
     private final Map<String, ResourceSubscription> subscriptions = new ConcurrentHashMap<>();
     private final ListChangeSubscription listSubscription;
 
@@ -36,7 +36,7 @@ public final class ResourceFeature implements AutoCloseable {
                            RootsManager roots,
                            ProtocolLifecycle lifecycle,
                            Sender sender,
-                           ProgressManager progress) {
+                           ProgressTracker progress) {
         this.resources = resources;
         this.access = access;
         this.principal = principal;
@@ -52,12 +52,12 @@ public final class ResourceFeature implements AutoCloseable {
     }
 
     public void register(JsonRpcRequestProcessor processor) {
-        processor.registerRequest(RequestMethod.RESOURCES_LIST.method(), this::listResources);
-        processor.registerRequest(RequestMethod.RESOURCES_READ.method(), this::readResource);
-        processor.registerRequest(RequestMethod.RESOURCES_TEMPLATES_LIST.method(), this::listTemplates);
+        processor.registerRequest(RequestMethod.RESOURCES_LIST.method(), this::listResources, true);
+        processor.registerRequest(RequestMethod.RESOURCES_READ.method(), this::readResource, true);
+        processor.registerRequest(RequestMethod.RESOURCES_TEMPLATES_LIST.method(), this::listTemplates, true);
         if (resources.supportsSubscribe()) {
-            processor.registerRequest(RequestMethod.RESOURCES_SUBSCRIBE.method(), this::subscribeResource);
-            processor.registerRequest(RequestMethod.RESOURCES_UNSUBSCRIBE.method(), this::unsubscribeResource);
+            processor.registerRequest(RequestMethod.RESOURCES_SUBSCRIBE.method(), this::subscribeResource, true);
+            processor.registerRequest(RequestMethod.RESOURCES_UNSUBSCRIBE.method(), this::unsubscribeResource, true);
         }
     }
 
@@ -81,28 +81,31 @@ public final class ResourceFeature implements AutoCloseable {
         try {
             ListResourcesRequest lr = ListResourcesRequest.CODEC.fromJson(req.params());
             String cursor = sanitizeCursor(lr.cursor());
-            progressToken.ifPresent(t -> {
-                try {
-                    progress.send(new ProgressNotification(t, 0.0, null, "Starting resource list"), sender::send);
-                } catch (IOException ignore) {
-                }
-            });
+            progressToken.ifPresent(t ->
+                    progress.send(new ProgressNotification(t, 0.0, null, "Starting resource list"), n -> {
+                        try {
+                            sender.send(n);
+                        } catch (IOException ignore) {
+                        }
+                    }));
             Pagination.Page<Resource> list = resources.list(cursor);
-            progressToken.ifPresent(t -> {
-                try {
-                    progress.send(new ProgressNotification(t, 0.5, null, "Filtering resources"), sender::send);
-                } catch (IOException ignore) {
-                }
-            });
+            progressToken.ifPresent(t ->
+                    progress.send(new ProgressNotification(t, 0.5, null, "Filtering resources"), n -> {
+                        try {
+                            sender.send(n);
+                        } catch (IOException ignore) {
+                        }
+                    }));
             List<Resource> filtered = list.items().stream()
                     .filter(r -> allowed(r.annotations()) && withinRoots(r.uri()))
                     .toList();
-            progressToken.ifPresent(t -> {
-                try {
-                    progress.send(new ProgressNotification(t, 1.0, null, "Completed resource list"), sender::send);
-                } catch (IOException ignore) {
-                }
-            });
+            progressToken.ifPresent(t ->
+                    progress.send(new ProgressNotification(t, 1.0, null, "Completed resource list"), n -> {
+                        try {
+                            sender.send(n);
+                        } catch (IOException ignore) {
+                        }
+                    }));
             ListResourcesResult result = new ListResourcesResult(filtered, list.nextCursor(), null);
             return new JsonRpcResponse(req.id(), ListResourcesResult.CODEC.toJson(result));
         } catch (IllegalArgumentException e) {

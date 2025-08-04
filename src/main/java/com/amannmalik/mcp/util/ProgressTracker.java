@@ -3,28 +3,30 @@ package com.amannmalik.mcp.util;
 import com.amannmalik.mcp.jsonrpc.JsonRpcNotification;
 import com.amannmalik.mcp.jsonrpc.RequestId;
 import com.amannmalik.mcp.wire.NotificationMethod;
+import java.util.function.Consumer;
 import jakarta.json.JsonObject;
 
-import java.io.IOException;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
-public final class ProgressManager {
+public final class ProgressTracker {
     private final Map<ProgressToken, Double> progress = new ConcurrentHashMap<>();
     private final Map<RequestId, ProgressToken> tokens = new ConcurrentHashMap<>();
     private final Set<RequestId> active = ConcurrentHashMap.newKeySet();
+    private final Set<RequestId> cancellable = ConcurrentHashMap.newKeySet();
     private final Map<RequestId, String> cancelled = new ConcurrentHashMap<>();
     private final RateLimiter limiter;
 
-    public ProgressManager(RateLimiter limiter) {
+    public ProgressTracker(RateLimiter limiter) {
         if (limiter == null) throw new IllegalArgumentException("limiter required");
         this.limiter = limiter;
     }
 
-    public Optional<ProgressToken> register(RequestId id, JsonObject params) {
+    public Optional<ProgressToken> register(RequestId id, JsonObject params, boolean canCancel) {
         if (!active.add(id)) throw new IllegalArgumentException("Duplicate request: " + id);
+        if (canCancel) cancellable.add(id);
         Optional<ProgressToken> token = ProgressNotification.fromMeta(params);
         token.ifPresent(t -> {
             Double prev = progress.putIfAbsent(t, Double.NEGATIVE_INFINITY);
@@ -37,12 +39,13 @@ public final class ProgressManager {
     public void release(RequestId id) {
         active.remove(id);
         cancelled.remove(id);
+        cancellable.remove(id);
         ProgressToken t = tokens.remove(id);
         if (t != null) progress.remove(t);
     }
 
     public void cancel(RequestId id, String reason) {
-        if (active.contains(id)) cancelled.put(id, reason);
+        if (cancellable.contains(id) && active.contains(id)) cancelled.put(id, reason);
     }
 
     public boolean isCancelled(RequestId id) {
@@ -78,17 +81,15 @@ public final class ProgressManager {
         return p != null && p > Double.NEGATIVE_INFINITY;
     }
 
-    public void send(ProgressNotification note, NotificationSender sender) throws IOException {
+    public void send(ProgressNotification note, Consumer<JsonRpcNotification> sender) {
         if (!isActive(note.token())) return;
         try {
             limiter.requireAllowance(note.token().asString());
             update(note);
+            sender.accept(new JsonRpcNotification(
+                    NotificationMethod.PROGRESS.method(),
+                    ProgressNotification.CODEC.toJson(note)));
         } catch (IllegalArgumentException | IllegalStateException | SecurityException ignore) {
-            return;
         }
-        sender.send(new JsonRpcNotification(
-                NotificationMethod.PROGRESS.method(),
-                ProgressNotification.CODEC.toJson(note)
-        ));
     }
 }

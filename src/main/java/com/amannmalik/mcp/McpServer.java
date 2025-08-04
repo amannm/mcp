@@ -36,10 +36,9 @@ public final class McpServer implements AutoCloseable {
     private final Transport transport;
     private final ProtocolLifecycle lifecycle;
     private final JsonRpcRequestProcessor processor;
-    private final ProgressManager progress = new ProgressManager(
+    private final ProgressTracker progress = new ProgressTracker(
             new RateLimiter(McpConfiguration.current().performance().progressPerSecond(),
                     McpConfiguration.current().performance().rateLimiterWindowMs()));
-    private final IdTracker idTracker = new IdTracker();
     private final ResourceFeature resourceFeature;
     private final ToolProvider tools;
     private final PromptProvider prompts;
@@ -109,7 +108,12 @@ public final class McpServer implements AutoCloseable {
         this.resourceAccess = resourceAccess;
         this.toolAccess = toolAccess == null ? ToolAccessPolicy.PERMISSIVE : toolAccess;
         this.samplingAccess = samplingAccess == null ? SamplingAccessPolicy.PERMISSIVE : samplingAccess;
-        var requestProcessor = new JsonRpcRequestProcessor(progress, this::send, idTracker);
+        var requestProcessor = new JsonRpcRequestProcessor(progress, n -> {
+            try {
+                send(n);
+            } catch (IOException ignore) {
+            }
+        });
         this.processor = requestProcessor;
         this.principal = principal;
         this.rootsManager = new RootsManager(lifecycle, this::sendRequest);
@@ -130,9 +134,9 @@ public final class McpServer implements AutoCloseable {
                     PromptListChangedNotification.CODEC.toJson(new PromptListChangedNotification()));
         }
 
-        processor.registerRequest(RequestMethod.INITIALIZE.method(), this::initialize);
+        processor.registerRequest(RequestMethod.INITIALIZE.method(), this::initialize, false);
         processor.registerNotification(NotificationMethod.INITIALIZED.method(), this::initialized);
-        processor.registerRequest(RequestMethod.PING.method(), this::ping);
+        processor.registerRequest(RequestMethod.PING.method(), this::ping, true);
         processor.registerNotification(NotificationMethod.CANCELLED.method(), this::cancelled);
         processor.registerNotification(NotificationMethod.ROOTS_LIST_CHANGED.method(), n -> rootsManager.listChangedNotification());
 
@@ -141,22 +145,22 @@ public final class McpServer implements AutoCloseable {
         }
 
         if (tools != null) {
-            processor.registerRequest(RequestMethod.TOOLS_LIST.method(), this::listTools);
-            processor.registerRequest(RequestMethod.TOOLS_CALL.method(), this::callTool);
+            processor.registerRequest(RequestMethod.TOOLS_LIST.method(), this::listTools, true);
+            processor.registerRequest(RequestMethod.TOOLS_CALL.method(), this::callTool, true);
         }
 
         if (prompts != null) {
-            processor.registerRequest(RequestMethod.PROMPTS_LIST.method(), this::listPrompts);
-            processor.registerRequest(RequestMethod.PROMPTS_GET.method(), this::getPrompt);
+            processor.registerRequest(RequestMethod.PROMPTS_LIST.method(), this::listPrompts, true);
+            processor.registerRequest(RequestMethod.PROMPTS_GET.method(), this::getPrompt, true);
         }
 
-        processor.registerRequest(RequestMethod.LOGGING_SET_LEVEL.method(), this::setLogLevel);
+        processor.registerRequest(RequestMethod.LOGGING_SET_LEVEL.method(), this::setLogLevel, true);
 
         if (completions != null) {
-            processor.registerRequest(RequestMethod.COMPLETION_COMPLETE.method(), this::complete);
+            processor.registerRequest(RequestMethod.COMPLETION_COMPLETE.method(), this::complete, true);
         }
 
-        processor.registerRequest(RequestMethod.SAMPLING_CREATE_MESSAGE.method(), this::handleCreateMessage);
+        processor.registerRequest(RequestMethod.SAMPLING_CREATE_MESSAGE.method(), this::handleCreateMessage, true);
     }
 
     private <S extends ListChangeSubscription> S subscribeListChanges(
@@ -260,8 +264,7 @@ public final class McpServer implements AutoCloseable {
             return;
         }
 
-        boolean cancellable = RequestMethod.from(req.method()).map(m -> m != RequestMethod.INITIALIZE).orElse(true);
-        var resp = processor.handle(req, cancellable);
+        var resp = processor.handle(req);
         if (resp.isPresent()) send(resp.get());
     }
 

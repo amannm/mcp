@@ -42,7 +42,7 @@ public final class McpClient implements AutoCloseable {
             McpConfiguration.current().security().defaultPrincipal(), Set.of());
     private final AtomicLong id = new AtomicLong(1);
     private final Map<RequestId, CompletableFuture<JsonRpcMessage>> pending = new ConcurrentHashMap<>();
-    private final ProgressManager progress = new ProgressManager(
+    private final ProgressTracker progress = new ProgressTracker(
             new RateLimiter(McpConfiguration.current().performance().progressPerSecond(), 1000));
     private Thread reader;
     private PingScheduler pinger;
@@ -116,13 +116,18 @@ public final class McpClient implements AutoCloseable {
 
         var requestProcessor = new JsonRpcRequestProcessor(
                 progress,
-                n -> notify(n.method(), n.params()));
+                n -> {
+                    try {
+                        notify(n.method(), n.params());
+                    } catch (IOException ignore) {
+                    }
+                });
         this.processor = requestProcessor;
 
-        processor.registerRequest(RequestMethod.SAMPLING_CREATE_MESSAGE.method(), this::handleCreateMessage);
-        processor.registerRequest(RequestMethod.ROOTS_LIST.method(), this::handleListRoots);
-        processor.registerRequest(RequestMethod.ELICITATION_CREATE.method(), this::handleElicit);
-        processor.registerRequest(RequestMethod.PING.method(), this::handlePing);
+        processor.registerRequest(RequestMethod.SAMPLING_CREATE_MESSAGE.method(), this::handleCreateMessage, true);
+        processor.registerRequest(RequestMethod.ROOTS_LIST.method(), this::handleListRoots, true);
+        processor.registerRequest(RequestMethod.ELICITATION_CREATE.method(), this::handleElicit, true);
+        processor.registerRequest(RequestMethod.PING.method(), this::handlePing, true);
 
         processor.registerNotification(NotificationMethod.PROGRESS.method(), this::handleProgress);
         processor.registerNotification(NotificationMethod.MESSAGE.method(), this::handleMessage);
@@ -350,7 +355,7 @@ public final class McpClient implements AutoCloseable {
     public JsonRpcMessage request(String method, JsonObject params, long timeoutMillis) throws IOException {
         if (!connected) throw new IllegalStateException("not connected");
         var reqId = new RequestId.NumericId(id.getAndIncrement());
-        progress.register(reqId, params);
+        progress.register(reqId, params, true);
         var future = new CompletableFuture<JsonRpcMessage>();
         pending.put(reqId, future);
         try {
@@ -523,7 +528,7 @@ public final class McpClient implements AutoCloseable {
     }
 
     private void handleRequest(JsonRpcRequest req) {
-        Optional<JsonRpcMessage> resp = processor.handle(req, true);
+        Optional<JsonRpcMessage> resp = processor.handle(req);
         resp.ifPresent(r -> {
             try {
                 send(r);
