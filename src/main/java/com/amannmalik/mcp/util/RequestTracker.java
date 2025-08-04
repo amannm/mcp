@@ -11,14 +11,14 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
-public final class ProgressManager {
+public final class RequestTracker {
     private final Map<ProgressToken, Double> progress = new ConcurrentHashMap<>();
     private final Map<RequestId, ProgressToken> tokens = new ConcurrentHashMap<>();
     private final Set<RequestId> active = ConcurrentHashMap.newKeySet();
     private final Map<RequestId, String> cancelled = new ConcurrentHashMap<>();
     private final RateLimiter limiter;
 
-    public ProgressManager(RateLimiter limiter) {
+    public RequestTracker(RateLimiter limiter) {
         if (limiter == null) throw new IllegalArgumentException("limiter required");
         this.limiter = limiter;
     }

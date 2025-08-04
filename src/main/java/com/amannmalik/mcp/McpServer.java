@@ -36,10 +36,9 @@ public final class McpServer implements AutoCloseable {
     private final Transport transport;
     private final ProtocolLifecycle lifecycle;
     private final JsonRpcRequestProcessor processor;
-    private final ProgressManager progress = new ProgressManager(
+    private final RequestTracker tracker = new RequestTracker(
             new RateLimiter(McpConfiguration.current().performance().rateLimits().progressPerSecond(),
                     McpConfiguration.current().performance().runtime().rateLimiterWindowMs()));
-    private final IdTracker idTracker = new IdTracker();
     private final ResourceFeature resourceFeature;
     private final ToolProvider tools;
     private final PromptProvider prompts;
@@ -109,12 +108,12 @@ public final class McpServer implements AutoCloseable {
         this.resourceAccess = resourceAccess;
         this.toolAccess = toolAccess == null ? ToolAccessPolicy.PERMISSIVE : toolAccess;
         this.samplingAccess = samplingAccess == null ? SamplingAccessPolicy.PERMISSIVE : samplingAccess;
-        var requestProcessor = new JsonRpcRequestProcessor(progress, this::send, idTracker);
+        var requestProcessor = new JsonRpcRequestProcessor(tracker, this::send);
         this.processor = requestProcessor;
         this.principal = principal;
         this.rootsManager = new RootsManager(lifecycle, this::sendRequest);
         this.resourceFeature = resources == null ? null :
-                new ResourceFeature(resources, resourceAccess, principal, rootsManager, lifecycle, this::send, progress);
+                new ResourceFeature(resources, resourceAccess, principal, rootsManager, lifecycle, this::send, tracker);
 
         if (tools != null && tools.supportsListChanged()) {
             toolListSubscription = subscribeListChanges(
@@ -361,10 +360,10 @@ public final class McpServer implements AutoCloseable {
 
     private void cancelled(JsonRpcNotification note) {
         CancelledNotification cn = CancelledNotification.CODEC.fromJson(note.params());
-        progress.cancel(cn.requestId(), cn.reason());
-        progress.release(cn.requestId());
+        tracker.cancel(cn.requestId(), cn.reason());
+        tracker.release(cn.requestId());
         try {
-            String reason = progress.reason(cn.requestId());
+            String reason = tracker.reason(cn.requestId());
             sendLog(LoggingLevel.INFO, McpConfiguration.current().server().messaging().loggerNames().cancellation(),
                     reason == null ? JsonValue.NULL : Json.createValue(reason));
         } catch (IOException ignore) {

@@ -26,7 +26,7 @@ public final class ResourceFeature implements AutoCloseable {
     private final RootsManager roots;
     private final ProtocolLifecycle lifecycle;
     private final Sender sender;
-    private final ProgressManager progress;
+    private final RequestTracker tracker;
     private final Map<String, ResourceSubscription> subscriptions = new ConcurrentHashMap<>();
     private final ListChangeSubscription listSubscription;
 
@@ -36,14 +36,14 @@ public final class ResourceFeature implements AutoCloseable {
                            RootsManager roots,
                            ProtocolLifecycle lifecycle,
                            Sender sender,
-                           ProgressManager progress) {
+                           RequestTracker tracker) {
         this.resources = resources;
         this.access = access;
         this.principal = principal;
         this.roots = roots;
         this.lifecycle = lifecycle;
         this.sender = sender;
-        this.progress = progress;
+        this.tracker = tracker;
         this.listSubscription = resources.supportsListChanged() ?
                 subscribeListChanges(
                         l -> resources.subscribeList(() -> l.listChanged()),
@@ -83,14 +83,14 @@ public final class ResourceFeature implements AutoCloseable {
             String cursor = sanitizeCursor(lr.cursor());
             progressToken.ifPresent(t -> {
                 try {
-                    progress.send(new ProgressNotification(t, 0.0, null, "Starting resource list"), sender::send);
+                    tracker.send(new ProgressNotification(t, 0.0, null, "Starting resource list"), sender::send);
                 } catch (IOException ignore) {
                 }
             });
             Pagination.Page<Resource> list = resources.list(cursor);
             progressToken.ifPresent(t -> {
                 try {
-                    progress.send(new ProgressNotification(t, 0.5, null, "Filtering resources"), sender::send);
+                    tracker.send(new ProgressNotification(t, 0.5, null, "Filtering resources"), sender::send);
                 } catch (IOException ignore) {
                 }
             });
@@ -99,7 +99,7 @@ public final class ResourceFeature implements AutoCloseable {
                     .toList();
             progressToken.ifPresent(t -> {
                 try {
-                    progress.send(new ProgressNotification(t, 1.0, null, "Completed resource list"), sender::send);
+                    tracker.send(new ProgressNotification(t, 1.0, null, "Completed resource list"), sender::send);
                 } catch (IOException ignore) {
                 }
             });
