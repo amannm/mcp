@@ -2,7 +2,8 @@ package com.amannmalik.mcp.core;
 
 import com.amannmalik.mcp.util.*;
 
-import java.util.*;
+import java.util.Collection;
+import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 public class InMemoryProvider<T> implements Provider<T> {

@@ -3,7 +3,8 @@ package com.amannmalik.mcp.prompts;
 import com.amannmalik.mcp.core.InMemoryProvider;
 import com.amannmalik.mcp.util.Pagination;
 
-import java.util.*;
+import java.util.Comparator;
+import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 public final class InMemoryPromptProvider extends InMemoryProvider<Prompt> implements PromptProvider {
