@@ -29,6 +29,7 @@ description: MCP Specification Expert
 - Keep external dependencies furthest from the center of a codebase
 - Don't waste time writing PR descriptions
 - Leave new tests failing if they manage to uncover a true defect
+- Use Markdown links within source files to acquire additional context
 
 # Environment
 

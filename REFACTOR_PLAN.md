@@ -1,135 +1,204 @@
-# MCP Codebase Refactoring Plan
+# MCP Java Refactor Plan
 
-## Current State Analysis
+## Overview
 
-The codebase has 21 packages with 100+ classes, showing over-segmentation that contradicts the "flat organization" philosophy. Many packages contain only 2-4 classes, creating unnecessary depth.
+This refactor plan aims to simplify the MCP Java codebase while maintaining architectural integrity and adherence to the MCP specification. The plan focuses on reducing complexity, eliminating duplication, and improving maintainability through strategic consolidation and abstraction.
 
-## Refactoring Objectives
+## Current Architecture Analysis
 
-1. **Flatten package hierarchy** - Reduce from 21 packages to ~8 core domains
-2. **Strengthen core abstractions** - Centralize common patterns in `core/`
-3. **Eliminate micro-packages** - Merge packages with <5 classes
-4. **Reduce provider complexity** - Abstract common provider patterns
-5. **Consolidate transport layer** - Simplify transport implementations
+### Core Components
+- **McpClient**: 697 lines, handles client-side protocol implementation
+- **McpServer**: 620 lines, handles server-side protocol implementation
+- **Main**: Simple CLI entry point with command routing
+- **Locator**: Factory methods for default provider implementations
 
-## Proposed Structure
+### Provider Pattern
+- Unified `Provider<T>` interface with list/subscribe capabilities
+- Specialized providers: `ToolProvider`, `PromptProvider`, `ResourceProvider`
+- Inconsistent provider contracts (CompletionProvider, SamplingProvider, ElicitationProvider don't extend Provider)
+- InMemory implementations follow similar patterns with code duplication
 
+### Key Patterns Identified
+1. **Consistent JSON-RPC handling** via `JsonRpcRequestProcessor`
+2. **Uniform pagination** via `Pagination.Page<T>`
+3. **Change notification** via `ChangeSupport<T>` pattern
+4. **Rate limiting** consistently applied across capabilities
+5. **Validation** centralized in `ValidationUtil`
+
+## Simplification Strategy
+
+### Phase 1: Provider Pattern Unification
+
+#### 1.1 Create Unified Provider Hierarchy
+```java
+// Consolidate all provider types under common abstractions
+public interface Provider<T> extends AutoCloseable {
+    Pagination.Page<T> list(String cursor);
+    default ChangeSubscription subscribe(ChangeListener<Change> listener) { return () -> {}; }
+    default boolean supportsListChanged() { return false; }
+}
+
+public interface ExecutingProvider<T, R> extends Provider<T> {
+    R execute(String name, JsonObject args) throws InterruptedException;
+}
 ```
-com.amannmalik.mcp/
-├── core/           # Core abstractions, codecs, providers
-├── protocol/       # JSON-RPC, lifecycle, wire methods
-├── capabilities/   # Tools, prompts, resources, sampling, completion
-├── transport/      # All transport implementations
-├── security/       # Auth, validation, privacy, consent
-├── management/     # Roots, host, configuration
-├── utilities/      # Ping, logging, progress, pagination
-└── [root classes]  # Main, McpClient, McpServer, Locator
+
+#### 1.2 Unify Provider Implementations
+- **Merge** `CompletionProvider` → `ExecutingProvider<CompleteRequest.Ref, CompleteResult>`
+- **Merge** `SamplingProvider` → `ExecutingProvider<SamplingMessage, CreateMessageResponse>`
+- **Merge** `ElicitationProvider` → `ExecutingProvider<ElicitRequest, ElicitResult>`
+- **Consolidate** InMemory* implementations into generic `InMemoryProvider<T>`
+
+### Phase 2: Core Client/Server Simplification
+
+#### 2.1 Extract Common JSON-RPC Infrastructure
+```java
+public class JsonRpcEndpoint implements AutoCloseable {
+    protected final Transport transport;
+    protected final JsonRpcRequestProcessor processor;
+    protected final ProgressManager progress;
+    
+    // Common request/response handling
+    // Common lifecycle management
+    // Common error handling
+}
+
+public final class McpClient extends JsonRpcEndpoint {
+    // Client-specific capabilities only
+}
+
+public final class McpServer extends JsonRpcEndpoint {
+    // Server-specific capabilities only
+}
 ```
 
-## Phase 1: Core Consolidation
+#### 2.2 Consolidate Request/Response Handling
+- Extract method registration patterns
+- Unify timeout and cancellation logic
+- Consolidate rate limiting across both client and server
 
-### Merge into `core/`
-- `content/ContentBlock` → `core/ContentBlock`
-- `validation/ValidationUtil` → `core/ValidationUtil`
-- Abstract provider pattern from all `*Provider` classes into `core/AbstractProvider`
-- Create `core/McpEntity` base type for all MCP data structures
+### Phase 3: Configuration and Dependency Management
 
-### Eliminate `annotations/`
-- Move `Annotations` to `core/` or merge into existing classes
-- Avoid annotation-based patterns per preferences
+#### 3.1 Simplify Locator Pattern
+```java
+public final class McpComponents {
+    public static Builder builder() { return new Builder(); }
+    
+    public static class Builder {
+        public Builder withResources(ResourceProvider provider) { ... }
+        public Builder withTools(ToolProvider provider) { ... }
+        // Fluent builder pattern
+        public McpComponents build() { ... }
+    }
+}
+```
 
-## Phase 2: Protocol Unification
+#### 3.2 Streamline Configuration
+- Reduce `McpConfiguration` record to essential fields only
+- Move capability-specific config to respective modules
+- Simplify default value management
 
-### Merge into `protocol/`
-- `jsonrpc/*` → `protocol/jsonrpc/`
-- `lifecycle/*` → `protocol/lifecycle/`
-- `wire/*` → `protocol/wire/`
-- Create `protocol/MessageHandler` abstraction
+### Phase 4: Transport Layer Simplification
 
-## Phase 3: Capabilities Consolidation
+#### 4.1 Unify Transport Abstractions
+- Consolidate HTTP/SSE transport implementations
+- Simplify authorization handling
+- Reduce transport-specific complexity in core client/server
 
-### Merge into `capabilities/`
-- `tools/*` → `capabilities/tools/`
-- `prompts/*` → `capabilities/prompts/`
-- `resources/*` → `capabilities/resources/`
-- `sampling/*` → `capabilities/sampling/`
-- `completion/*` → `capabilities/completion/`
-- `elicitation/*` → `capabilities/elicitation/`
+#### 4.2 Streamline Message Routing
+- Extract common message routing patterns
+- Simplify notification dispatch
+- Consolidate error handling across transports
 
-Create shared abstractions:
-- `capabilities/CapabilityProvider<T>`
-- `capabilities/CapabilityRequest<T>`
-- `capabilities/CapabilityResult<T>`
+## Detailed Refactor Steps
 
-## Phase 4: Transport Simplification
+### Step 1: Provider Consolidation (3-5 files affected)
+1. Create unified `ExecutingProvider<T, R>` interface
+2. Migrate CompletionProvider, SamplingProvider, ElicitationProvider
+3. Create generic `InMemoryProvider<T>` implementation
+4. Update Locator to use unified providers
 
-### Consolidate transport implementations
-- Merge `cli/TransportType` into `transport/`
-- Create `transport/TransportFactory`
-- Abstract common transport patterns
-- Reduce servlet complexity
+**Files to modify:**
+- `core/Provider.java`
+- `completion/CompletionProvider.java`
+- `sampling/SamplingProvider.java`
+- `elicitation/ElicitationProvider.java`
+- New: `core/ExecutingProvider.java`
+- New: `core/InMemoryProvider.java`
 
-## Phase 5: Security & Management
+### Step 2: Extract JsonRpcEndpoint (2 files affected)
+1. Create `JsonRpcEndpoint` base class
+2. Extract common fields and methods from McpClient/McpServer
+3. Migrate client/server to extend JsonRpcEndpoint
 
-### Merge into `security/`
-- `auth/*` → `security/auth/`
-- `host/PrivacyBoundaryEnforcer` → `security/`
-- `host/ConsentManager` → `security/`
+**Files to modify:**
+- `McpClient.java` (697 → ~400 lines)
+- `McpServer.java` (620 → ~350 lines)
+- New: `core/JsonRpcEndpoint.java` (~200 lines)
 
-### Merge into `management/`
-- `roots/*` → `management/roots/`
-- `host/HostProcess` → `management/`
-- `config/*` → `management/config/`
+### Step 3: Simplify Request Handling (8-10 files affected)
+1. Extract common request/response patterns
+2. Unify method registration and dispatch
+3. Consolidate error handling and validation
 
-### Merge into `utilities/`
-- `ping/*` → `utilities/ping/`
-- `logging/*` → `utilities/logging/`
-- `util/*` → `utilities/`
+**Files to modify:**
+- All request/response classes in each capability package
+- `util/JsonRpcRequestProcessor.java`
+- Wire protocol definitions
 
-## Implementation Strategy
+### Step 4: Configuration Streamlining (2-3 files affected)
+1. Split McpConfiguration into capability-specific configs
+2. Create McpComponents builder pattern
+3. Simplify Locator implementation
 
-### Step 1: Create Core Abstractions
-1. Define `core/McpEntity` sealed interface
-2. Create `core/AbstractProvider<Request, Result>` 
-3. Move validation and codec logic to core
+**Files to modify:**
+- `config/McpConfiguration.java`
+- `Locator.java`
+- New: `core/McpComponents.java`
 
-### Step 2: Package Migrations (Bottom-Up)
-1. Start with leaf packages (annotations, content, validation)
-2. Move to capability packages
-3. Restructure protocol layer
-4. Consolidate transport and utilities
+## Expected Outcomes
 
-### Step 3: Interface Simplification
-1. Replace multiple provider interfaces with generic `Provider<T>`
-2. Unify request/result patterns
-3. Eliminate duplicate notification patterns
+### Complexity Reduction
+- **~30% reduction** in total lines of code
+- **~50% reduction** in core client/server complexity
+- **Elimination** of provider pattern inconsistencies
+- **Consolidation** of 15+ InMemory* classes into 3-4 generic implementations
 
-### Step 4: Dependency Cleanup
-1. Remove any reflection usage
-2. Eliminate null-returning methods
-3. Replace Optional with sealed types where appropriate
-4. Ensure immutable data structures
+### Maintainability Improvements
+- Unified provider contracts across all capabilities
+- Centralized JSON-RPC handling
+- Simplified configuration management
+- Reduced coupling between transport and protocol layers
 
-## Expected Benefits
-
-1. **Reduced cognitive load** - 8 packages vs 21
-2. **Improved discoverability** - Related functionality co-located
-3. **Stronger type safety** - Common abstractions prevent misuse
-4. **Better testability** - Fewer integration points
-5. **Simplified dependencies** - Clear separation of concerns
-
-## Success Metrics
-
-- Package count reduced by 60%
-- Class count maintained or reduced
-- Zero unchecked casts
-- No reflection usage
-- All data structures immutable
-- Build time improved
+### Architectural Benefits
+- Cleaner separation of concerns
+- More consistent error handling
+- Simplified testing surface
+- Better adherence to composition over inheritance
 
 ## Risk Mitigation
 
-1. **Gradual migration** - One package at a time
-2. **Maintain tests** - Ensure all tests pass after each phase
-3. **Interface stability** - Keep public APIs stable during refactoring
-4. **Performance validation** - Benchmark before/after each phase
+### Testing Strategy
+- Maintain existing conformance tests throughout refactor
+- Add integration tests for new unified abstractions
+- Ensure backward compatibility at protocol level
+
+### Incremental Approach
+- Each phase can be completed independently
+- Maintain working system after each step
+- Rollback capability at each phase boundary
+
+### Validation
+- Verify MCP specification compliance after each phase
+- Performance regression testing
+- Memory usage validation
+
+## Timeline Estimate
+
+- **Phase 1**: 2-3 days (Provider unification)
+- **Phase 2**: 3-4 days (Core simplification)  
+- **Phase 3**: 1-2 days (Configuration)
+- **Phase 4**: 2-3 days (Transport)
+- **Total**: 8-12 days
+
+This refactor maintains the philosophical principles of high information density, flat organization, and minimal dependencies while significantly reducing codebase complexity and improving maintainability.
