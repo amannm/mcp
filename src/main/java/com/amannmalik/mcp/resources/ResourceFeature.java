@@ -15,6 +15,7 @@ import jakarta.json.*;
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 
 import static com.amannmalik.mcp.util.InvalidParams.valid;
@@ -26,6 +27,7 @@ public final class ResourceFeature implements AutoCloseable {
     private final RootsManager roots;
     private final ProtocolLifecycle lifecycle;
     private final Sender sender;
+    private final ProgressManager progressManager;
     private final Map<String, ResourceSubscription> subscriptions = new ConcurrentHashMap<>();
     private final ListChangeSubscription listSubscription;
 
@@ -34,13 +36,15 @@ public final class ResourceFeature implements AutoCloseable {
                            Principal principal,
                            RootsManager roots,
                            ProtocolLifecycle lifecycle,
-                           Sender sender) {
+                           Sender sender,
+                           ProgressManager progressManager) {
         this.resources = resources;
         this.access = access;
         this.principal = principal;
         this.roots = roots;
         this.lifecycle = lifecycle;
         this.sender = sender;
+        this.progressManager = progressManager;
         this.listSubscription = resources.supportsListChanged() ?
                 subscribeListChanges(
                         l -> resources.subscribeList(() -> l.listChanged()),
@@ -74,17 +78,35 @@ public final class ResourceFeature implements AutoCloseable {
     }
 
     private JsonRpcMessage listResources(JsonRpcRequest req) {
+        Optional<ProgressToken> progressToken = progressManager.register(req.id(), req.params());
         try {
             ListResourcesRequest lr = valid(() -> ListResourcesRequest.CODEC.fromJson(req.params()));
             String cursor = valid(() -> sanitizeCursor(lr.cursor()));
+            if (progressToken.isPresent()) {
+                try {
+                    progressManager.send(new ProgressNotification(progressToken.get(), 0.0, null, "Starting resource list"), sender::send);
+                } catch (IOException ignore) {}
+            }
             Pagination.Page<Resource> list = valid(() -> resources.list(cursor));
+            if (progressToken.isPresent()) {
+                try {
+                    progressManager.send(new ProgressNotification(progressToken.get(), 0.5, null, "Filtering resources"), sender::send);
+                } catch (IOException ignore) {}
+            }
             List<Resource> filtered = list.items().stream()
                     .filter(r -> allowed(r.annotations()) && withinRoots(r.uri()))
                     .toList();
+            if (progressToken.isPresent()) {
+                try {
+                    progressManager.send(new ProgressNotification(progressToken.get(), 1.0, null, "Completed resource list"), sender::send);
+                } catch (IOException ignore) {}
+            }
             ListResourcesResult result = new ListResourcesResult(filtered, list.nextCursor(), null);
             return new JsonRpcResponse(req.id(), ListResourcesResult.CODEC.toJson(result));
         } catch (InvalidParams e) {
             return invalidParams(req, e.getMessage());
+        } finally {
+            progressManager.release(req.id());
         }
     }
 
@@ -140,6 +162,10 @@ public final class ResourceFeature implements AutoCloseable {
             return JsonRpcError.of(req.id(), -32002, "Resource not found",
                     Json.createObjectBuilder().add("uri", uri).build());
         }
+        if (subscriptions.containsKey(uri)) {
+            return JsonRpcError.of(req.id(), -32602, "Already subscribed to resource",
+                    Json.createObjectBuilder().add("uri", uri).build());
+        }
         try {
             ResourceSubscription sub = resources.subscribe(uri, update -> {
                 try {
@@ -150,8 +176,7 @@ public final class ResourceFeature implements AutoCloseable {
                 } catch (IOException ignore) {
                 }
             });
-            ResourceSubscription prev = subscriptions.put(uri, sub);
-            CloseUtil.closeQuietly(prev);
+            subscriptions.put(uri, sub);
         } catch (Exception e) {
             return JsonRpcError.of(req.id(), JsonRpcErrorCode.INTERNAL_ERROR, e.getMessage());
         }
@@ -168,6 +193,10 @@ public final class ResourceFeature implements AutoCloseable {
         String uri = ur.uri();
         if (!canAccessResource(uri)) {
             return JsonRpcError.of(req.id(), JsonRpcErrorCode.INTERNAL_ERROR, "Access denied");
+        }
+        if (!subscriptions.containsKey(uri)) {
+            return JsonRpcError.of(req.id(), -32602, "No active subscription for resource",
+                    Json.createObjectBuilder().add("uri", uri).build());
         }
         ResourceSubscription sub = subscriptions.remove(uri);
         CloseUtil.closeQuietly(sub);

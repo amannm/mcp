@@ -116,7 +116,7 @@ public final class McpServer implements AutoCloseable {
         this.principal = principal;
         this.rootsManager = new RootsManager(lifecycle, this::sendRequest);
         this.resourceFeature = resources == null ? null :
-                new ResourceFeature(resources, resourceAccess, principal, rootsManager, lifecycle, this::send);
+                new ResourceFeature(resources, resourceAccess, principal, rootsManager, lifecycle, this::send, progressManager);
 
         if (tools != null && tools.supportsListChanged()) {
             toolListSubscription = subscribeListChanges(
