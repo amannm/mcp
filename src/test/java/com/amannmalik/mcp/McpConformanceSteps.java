@@ -13,8 +13,7 @@ import com.amannmalik.mcp.resources.ResourceUpdate;
 import com.amannmalik.mcp.roots.*;
 import com.amannmalik.mcp.sampling.*;
 import com.amannmalik.mcp.transport.*;
-import com.amannmalik.mcp.util.ListChangeSubscription;
-import com.amannmalik.mcp.util.ProgressNotification;
+import com.amannmalik.mcp.util.*;
 import io.cucumber.datatable.DataTable;
 import io.cucumber.java.After;
 import io.cucumber.java.Before;
@@ -743,13 +742,13 @@ public final class McpConformanceSteps {
         }
 
         @Override
-        public List<Root> list() {
+        public Pagination.Page<Root> list(String cursor) {
             count.incrementAndGet();
-            return delegate.list();
+            return delegate.list(cursor);
         }
 
         @Override
-        public ListChangeSubscription subscribe(RootsListener listener) {
+        public ChangeSubscription subscribe(ChangeListener<Root> listener) {
             return delegate.subscribe(listener);
         }
 

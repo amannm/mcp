@@ -11,7 +11,7 @@ public final class InMemoryResourceProvider implements ResourceProvider {
     private final Map<String, ResourceBlock> contents;
     private final List<ResourceTemplate> templates;
     private final Map<String, List<ResourceListener>> listeners = new ConcurrentHashMap<>();
-    private final ListChangeSupport<ResourceListListener> listChangeSupport = new ListChangeSupport<>();
+    private final ChangeSupport<Resource> listChangeSupport = new ChangeSupport<>();
 
     public InMemoryResourceProvider(List<Resource> resources, Map<String, ResourceBlock> contents, List<ResourceTemplate> templates) {
         this.resources = resources == null ? new CopyOnWriteArrayList<>() : new CopyOnWriteArrayList<>(resources);
@@ -51,7 +51,7 @@ public final class InMemoryResourceProvider implements ResourceProvider {
     }
 
     @Override
-    public ListChangeSubscription subscribeList(ResourceListListener listener) {
+    public ChangeSubscription subscribe(ChangeListener<Resource> listener) {
         return listChangeSupport.subscribe(listener);
     }
 
