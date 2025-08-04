@@ -3,6 +3,7 @@ package com.amannmalik.mcp.transport;
 import com.amannmalik.mcp.auth.*;
 import com.amannmalik.mcp.config.McpConfiguration;
 import com.amannmalik.mcp.lifecycle.Protocol;
+import com.amannmalik.mcp.validation.ValidationUtil;
 import jakarta.json.Json;
 import jakarta.json.JsonObject;
 import jakarta.servlet.http.HttpServletRequest;
@@ -21,7 +22,7 @@ import java.util.concurrent.*;
 public final class StreamableHttpTransport implements Transport {
     private final Server server;
     private final int port;
-    private final OriginValidator originValidator;
+    private final Set<String> allowedOrigins;
     final AuthorizationManager authManager;
     private final String resourceMetadataUrl;
     final String canonicalResource;
@@ -45,7 +46,7 @@ public final class StreamableHttpTransport implements Transport {
     }
 
     public StreamableHttpTransport(int port,
-                                   OriginValidator validator,
+                                   Set<String> allowedOrigins,
                                    AuthorizationManager auth,
                                    String resourceMetadataUrl,
                                    List<String> authorizationServers) throws Exception {
@@ -56,7 +57,7 @@ public final class StreamableHttpTransport implements Transport {
         server.setHandler(ctx);
         server.start();
         this.port = ((ServerConnector) server.getConnectors()[0]).getLocalPort();
-        this.originValidator = validator;
+        this.allowedOrigins = ValidationUtil.requireAllowedOrigins(allowedOrigins);
         this.authManager = auth;
         if (resourceMetadataUrl == null || resourceMetadataUrl.isBlank()) {
             this.resourceMetadataUrl = "http://127.0.0.1:" + this.port
@@ -142,7 +143,7 @@ public final class StreamableHttpTransport implements Transport {
     }
 
     boolean verifyOrigin(HttpServletRequest req, HttpServletResponse resp) throws IOException {
-        if (!originValidator.isValid(req.getHeader("Origin"))) {
+        if (!ValidationUtil.isAllowedOrigin(req.getHeader("Origin"), allowedOrigins)) {
             resp.sendError(HttpServletResponse.SC_FORBIDDEN);
             return false;
         }

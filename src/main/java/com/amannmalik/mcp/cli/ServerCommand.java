@@ -87,8 +87,6 @@ public final class ServerCommand {
             switch (type) {
                 case STDIO -> t = new StdioTransport(System.in, System.out);
                 case HTTP -> {
-                    OriginValidator originValidator = new OriginValidator(
-                            Set.copyOf(McpConfiguration.current().allowedOrigins()));
                     AuthorizationManager authManager = null;
                     if (expectedAudience != null && !expectedAudience.isBlank()) {
                         String secretEnv = System.getenv("MCP_JWT_SECRET");
@@ -98,7 +96,7 @@ public final class ServerCommand {
                         authManager = new AuthorizationManager(List.of(new BearerTokenAuthorizationStrategy(tokenValidator)));
                     }
                     StreamableHttpTransport ht = new StreamableHttpTransport(
-                            port, originValidator, authManager,
+                            port, Set.copyOf(McpConfiguration.current().allowedOrigins()), authManager,
                             resourceMetadataUrl, auth);
                     if (verbose) System.err.println("Listening on http://127.0.0.1:" + ht.port());
                     t = ht;

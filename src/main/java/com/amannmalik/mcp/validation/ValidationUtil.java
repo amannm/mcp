@@ -118,6 +118,31 @@ public final class ValidationUtil {
         return normalized;
     }
 
+    public static Set<String> requireAllowedOrigins(Set<String> origins) {
+        if (origins == null || origins.isEmpty()) {
+            throw new IllegalArgumentException("allowedOrigins required");
+        }
+        return Set.copyOf(origins);
+    }
+
+    public static boolean isAllowedOrigin(String origin, Set<String> allowedOrigins) {
+        if (origin == null || origin.isBlank()) return false;
+        URI parsed;
+        try {
+            parsed = URI.create(origin).normalize();
+        } catch (Exception e) {
+            return false;
+        }
+        String norm = parsed.getScheme() + "://" + parsed.getAuthority();
+        return allowedOrigins.contains(norm);
+    }
+
+    public static void requireAllowedOrigin(String origin, Set<String> allowedOrigins) {
+        if (!isAllowedOrigin(origin, allowedOrigins)) {
+            throw new SecurityException("Invalid origin: " + origin);
+        }
+    }
+
     public static String requireAbsoluteTemplate(String template) {
         if (template == null) throw new IllegalArgumentException("uriTemplate is required");
         checkBraces(template);
