@@ -1,7 +1,7 @@
 package com.amannmalik.mcp.transport;
 
 import com.amannmalik.mcp.lifecycle.Protocol;
-import com.amannmalik.mcp.validation.InputSanitizer;
+import com.amannmalik.mcp.validation.ValidationUtil;
 import jakarta.json.*;
 
 import java.io.*;
@@ -28,11 +28,11 @@ public final class StreamableHttpClientTransport implements Transport {
     }
 
     public void setProtocolVersion(String version) {
-        protocolVersion.set(InputSanitizer.requireNonBlank(version));
+        protocolVersion.set(ValidationUtil.requireNonBlank(version));
     }
 
     public void setAuthorization(String token) {
-        authorization.set(InputSanitizer.requireNonBlank(token));
+        authorization.set(ValidationUtil.requireNonBlank(token));
     }
 
     public void clearAuthorization() {

@@ -1,13 +1,13 @@
 package com.amannmalik.mcp.util;
 
-import com.amannmalik.mcp.validation.InputSanitizer;
+import com.amannmalik.mcp.validation.ValidationUtil;
 
 public sealed interface ProgressToken permits ProgressToken.StringToken, ProgressToken.NumericToken {
     String asString();
 
     record StringToken(String value) implements ProgressToken {
         public StringToken {
-            value = InputSanitizer.requireClean(value);
+            value = ValidationUtil.requireClean(value);
         }
 
         @Override

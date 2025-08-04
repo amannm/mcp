@@ -2,7 +2,6 @@ package com.amannmalik.mcp.sampling;
 
 import com.amannmalik.mcp.core.JsonCodec;
 import com.amannmalik.mcp.core.AbstractEntityCodec;
-import com.amannmalik.mcp.validation.InputSanitizer;
 import com.amannmalik.mcp.validation.ValidationUtil;
 import jakarta.json.*;
 
@@ -81,11 +80,11 @@ public record CreateMessageRequest(
 
     public CreateMessageRequest {
         messages = messages == null || messages.isEmpty() ? List.of() : List.copyOf(messages);
-        systemPrompt = InputSanitizer.cleanNullable(systemPrompt);
+        systemPrompt = ValidationUtil.cleanNullable(systemPrompt);
         if (stopSequences == null || stopSequences.isEmpty()) {
             stopSequences = List.of();
         } else {
-            stopSequences = stopSequences.stream().map(InputSanitizer::requireClean).toList();
+            stopSequences = stopSequences.stream().map(ValidationUtil::requireClean).toList();
         }
         maxTokens = ValidationUtil.requirePositive(maxTokens, "maxTokens");
         ValidationUtil.requireMeta(_meta);

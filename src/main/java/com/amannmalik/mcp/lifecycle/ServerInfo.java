@@ -2,7 +2,7 @@ package com.amannmalik.mcp.lifecycle;
 
 import com.amannmalik.mcp.core.AbstractEntityCodec;
 import com.amannmalik.mcp.core.JsonCodec;
-import com.amannmalik.mcp.validation.InputSanitizer;
+import com.amannmalik.mcp.validation.ValidationUtil;
 import jakarta.json.*;
 
 public record ServerInfo(String name, String title, String version) {
@@ -30,8 +30,8 @@ public record ServerInfo(String name, String title, String version) {
         if (name == null || version == null) {
             throw new IllegalArgumentException("name and version required");
         }
-        name = InputSanitizer.requireClean(name);
-        version = InputSanitizer.requireClean(version);
-        title = InputSanitizer.cleanNullable(title);
+        name = ValidationUtil.requireClean(name);
+        version = ValidationUtil.requireClean(version);
+        title = ValidationUtil.cleanNullable(title);
     }
 }

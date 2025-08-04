@@ -36,7 +36,7 @@ public record ElicitRequest(String message, JsonObject requestedSchema, JsonObje
         if (message == null || requestedSchema == null) {
             throw new IllegalArgumentException("message and requestedSchema are required");
         }
-        this.message = InputSanitizer.requireClean(message);
+        this.message = ValidationUtil.requireClean(message);
         ValidationUtil.requireElicitSchema(requestedSchema);
         this.requestedSchema = requestedSchema;
         ValidationUtil.requireMeta(_meta);

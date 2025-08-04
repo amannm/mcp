@@ -73,8 +73,8 @@ public record CompleteRequest(
             if (name == null || value == null) {
                 throw new IllegalArgumentException("name and value are required");
             }
-            this.name = InputSanitizer.requireClean(name);
-            this.value = InputSanitizer.requireClean(value);
+            this.name = ValidationUtil.requireClean(name);
+            this.value = ValidationUtil.requireClean(value);
         }
     }
 
@@ -99,12 +99,12 @@ public record CompleteRequest(
                         map.put(k, ((JsonString) v).getString());
                     });
                 }
-                return new Context(InputSanitizer.requireCleanMap(map));
+                return new Context(ValidationUtil.requireCleanMap(map));
             }
         };
 
         public Context(Map<String, String> arguments) {
-            this.arguments = InputSanitizer.requireCleanMap(arguments);
+            this.arguments = ValidationUtil.requireCleanMap(arguments);
         }
 
         @Override
@@ -154,8 +154,8 @@ public record CompleteRequest(
         record PromptRef(String name, String title, JsonObject _meta) implements Ref {
             public PromptRef(String name, String title, JsonObject _meta) {
                 if (name == null) throw new IllegalArgumentException("name required");
-                this.name = InputSanitizer.requireClean(name);
-                this.title = InputSanitizer.cleanNullable(title);
+                this.name = ValidationUtil.requireClean(name);
+                this.title = ValidationUtil.cleanNullable(title);
                 ValidationUtil.requireMeta(_meta);
                 this._meta = _meta;
             }
