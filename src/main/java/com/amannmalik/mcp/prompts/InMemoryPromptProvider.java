@@ -7,7 +7,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public final class InMemoryPromptProvider implements PromptProvider {
     private final Map<String, PromptTemplate> templates = new ConcurrentHashMap<>();
-    private final ListChangeSupport<PromptsListener> listChangeSupport = new ListChangeSupport<>();
+    private final ChangeSupport<Prompt> listChangeSupport = new ChangeSupport<>();
 
     public void add(PromptTemplate template) {
         String name = template.prompt().name();
@@ -40,7 +40,7 @@ public final class InMemoryPromptProvider implements PromptProvider {
     }
 
     @Override
-    public ListChangeSubscription subscribe(PromptsListener listener) {
+    public ChangeSubscription subscribe(ChangeListener<Prompt> listener) {
         return listChangeSupport.subscribe(listener);
     }
 

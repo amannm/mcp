@@ -26,7 +26,7 @@ public final class ResourceFeature implements AutoCloseable {
     private final Sender sender;
     private final ProgressManager progress;
     private final Map<String, ResourceSubscription> subscriptions = new ConcurrentHashMap<>();
-    private final ListChangeSubscription listSubscription;
+    private final ChangeSubscription listSubscription;
 
     public ResourceFeature(ResourceProvider resources,
                            ResourceAccessController access,
@@ -44,7 +44,7 @@ public final class ResourceFeature implements AutoCloseable {
         this.progress = progress;
         this.listSubscription = resources.supportsListChanged() ?
                 subscribeListChanges(
-                        l -> resources.subscribeList(l::listChanged),
+                        (ChangeListener<Resource> l) -> resources.subscribe(l),
                         NotificationMethod.RESOURCES_LIST_CHANGED,
                         ResourceListChangedNotification.CODEC.toJson(new ResourceListChangedNotification())) : null;
     }
@@ -226,8 +226,8 @@ public final class ResourceFeature implements AutoCloseable {
         return cursor == null ? null : Pagination.sanitize(ValidationUtil.cleanNullable(cursor));
     }
 
-    private <S extends ListChangeSubscription> S subscribeListChanges(
-            SubscriptionFactory<S> factory,
+    private <S extends ChangeSubscription, T> S subscribeListChanges(
+            SubscriptionFactory<S, T> factory,
             NotificationMethod method,
             JsonObject payload) {
         try {
@@ -244,8 +244,8 @@ public final class ResourceFeature implements AutoCloseable {
     }
 
     @FunctionalInterface
-    private interface SubscriptionFactory<S extends ListChangeSubscription> {
-        S subscribe(ListChangeListener listener);
+    private interface SubscriptionFactory<S extends ChangeSubscription, T> {
+        S subscribe(ChangeListener<T> listener);
     }
 
     @FunctionalInterface

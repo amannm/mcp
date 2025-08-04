@@ -3,7 +3,7 @@ package com.amannmalik.mcp.roots;
 import com.amannmalik.mcp.jsonrpc.*;
 import com.amannmalik.mcp.lifecycle.ClientCapability;
 import com.amannmalik.mcp.lifecycle.ProtocolLifecycle;
-import com.amannmalik.mcp.util.ListChangeSubscription;
+import com.amannmalik.mcp.util.*;
 import com.amannmalik.mcp.wire.RequestMethod;
 
 import java.io.IOException;
@@ -15,7 +15,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
 public final class RootsManager {
     private final ProtocolLifecycle lifecycle;
     private final RequestSender requester;
-    private final List<RootsListener> listeners = new CopyOnWriteArrayList<>();
+    private final ChangeSupport<Root> listChangeSupport = new ChangeSupport<>();
     private final List<Root> roots = new CopyOnWriteArrayList<>();
 
     public RootsManager(ProtocolLifecycle lifecycle, RequestSender requester) {
@@ -28,13 +28,12 @@ public final class RootsManager {
         boolean changed = !roots.equals(fetched);
         roots.clear();
         roots.addAll(fetched);
-        if (changed) listeners.forEach(RootsListener::listChanged);
+        if (changed) listChangeSupport.notifyListeners();
         return List.copyOf(fetched);
     }
 
-    public ListChangeSubscription subscribe(RootsListener listener) {
-        listeners.add(listener);
-        return () -> listeners.remove(listener);
+    public ChangeSubscription subscribe(ChangeListener<Root> listener) {
+        return listChangeSupport.subscribe(listener);
     }
 
     public List<Root> roots() {

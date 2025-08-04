@@ -34,7 +34,7 @@ public final class McpClient implements AutoCloseable {
     private final Transport transport;
     private final SamplingProvider sampling;
     private final RootsProvider roots;
-    private ListChangeSubscription rootsSubscription;
+    private ChangeSubscription rootsSubscription;
     private final boolean rootsListChangedSupported;
     private final ElicitationProvider elicitation;
     private SamplingAccessPolicy samplingAccess = SamplingAccessPolicy.PERMISSIVE;
@@ -573,9 +573,9 @@ public final class McpClient implements AutoCloseable {
             return JsonRpcError.of(req.id(), JsonRpcErrorCode.METHOD_NOT_FOUND, "Roots not supported");
         }
         try {
-            var list = roots.list();
+            var page = roots.list(null);
             return new JsonRpcResponse(req.id(),
-                    ListRootsResult.CODEC.toJson(new ListRootsResult(list, null)));
+                    ListRootsResult.CODEC.toJson(new ListRootsResult(page.items(), null)));
         } catch (Exception e) {
             return JsonRpcError.of(req.id(), JsonRpcErrorCode.INTERNAL_ERROR, e.getMessage());
         }

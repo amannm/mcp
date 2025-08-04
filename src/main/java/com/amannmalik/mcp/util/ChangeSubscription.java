@@ -1,6 +1,6 @@
 package com.amannmalik.mcp.util;
 
-public interface ListChangeSubscription extends AutoCloseable {
+public interface ChangeSubscription extends AutoCloseable {
     @Override
     void close();
 }
