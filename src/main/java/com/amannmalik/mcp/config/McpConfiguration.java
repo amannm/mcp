@@ -33,7 +33,6 @@ public record McpConfiguration(String version,
                                String errorInvalidRequest,
                                String errorAccessDenied,
                                String errorTimeout,
-                               String jwtSecretEnv,
                                String defaultPrincipal,
                                String defaultBoundary,
                                String clientName,
@@ -54,7 +53,7 @@ public record McpConfiguration(String version,
             "Invalid request",
             "Access denied",
             "Request timed out",
-            "MCP_JWT_SECRET", "default", "default",
+            "default", "default",
             "cli", "CLI", "0", List.of("SAMPLING", "ROOTS"), "user");
 
     public McpConfiguration {

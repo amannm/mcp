@@ -2,7 +2,9 @@ package com.amannmalik.mcp;
 
 import com.amannmalik.mcp.annotations.Annotations;
 import com.amannmalik.mcp.completion.*;
+import com.amannmalik.mcp.config.McpConfiguration;
 import com.amannmalik.mcp.content.ContentBlock;
+import com.amannmalik.mcp.core.McpComponents;
 import com.amannmalik.mcp.host.PrivacyBoundaryEnforcer;
 import com.amannmalik.mcp.prompts.*;
 import com.amannmalik.mcp.resources.*;
@@ -14,10 +16,11 @@ import java.time.Instant;
 import java.util.*;
 
 public final class Locator {
+    private static final McpComponents COMPONENTS = init();
     private Locator() {
     }
 
-    public static ResourceProvider resources() {
+    private static McpComponents init() {
         Annotations ann = new Annotations(Set.of(Role.USER), 0.5, Instant.parse("2024-01-01T00:00:00Z"));
         Resource r0 = new Resource("test://example", "example", null, null, "text/plain", 5L, ann, null);
         Resource r1 = new Resource("test://example1", "example1", null, null, "text/plain", 5L, ann, null);
@@ -28,10 +31,8 @@ public final class Locator {
                 r2.uri(), new ResourceBlock.Text(r2.uri(), "text/plain", "hello", null)
         );
         ResourceTemplate t = new ResourceTemplate("test://template", "example_template", null, null, "text/plain", null, null);
-        return new InMemoryResourceProvider(List.of(r0), c, List.of(t));
-    }
+        ResourceProvider res = new InMemoryResourceProvider(List.of(r0), c, List.of(t));
 
-    public static ToolProvider tools() {
         var schema = Json.createObjectBuilder().add("type", "object").build();
         var outSchema = Json.createObjectBuilder()
                 .add("type", "object")
@@ -50,7 +51,7 @@ public final class Locator {
                 .build();
         Tool eliciting = new Tool("echo_tool", "Echo Tool", null, eschema, null, null, null);
         Tool slow = new Tool("slow_tool", "Slow Tool", null, schema, null, null, null);
-        return new InMemoryToolProvider(
+        ToolProvider tp = new InMemoryToolProvider(
                 List.of(tool, errorTool, eliciting, slow),
                 Map.of(
                         "test_tool", a -> new ToolResult(
@@ -92,34 +93,37 @@ public final class Locator {
                                     null, false, null);
                         }
                 ));
-    }
 
-    public static PromptProvider prompts() {
         InMemoryPromptProvider p = new InMemoryPromptProvider();
         PromptArgument arg = new PromptArgument("test_arg", null, null, true, null);
         Prompt prompt = new Prompt("test_prompt", "Test Prompt", null, List.of(arg), null);
         PromptMessageTemplate msg = new PromptMessageTemplate(Role.USER, new ContentBlock.Text("hello", null, null));
         p.add(new PromptTemplate(prompt, List.of(msg)));
-        return p;
+
+        InMemoryCompletionProvider cp = new InMemoryCompletionProvider();
+        cp.add(new CompleteRequest.Ref.PromptRef("test_prompt", null, null), "test_arg", Map.of(), List.of("test_completion"));
+
+        SamplingProvider sp = new InteractiveSamplingProvider(true);
+
+        return McpComponents.builder()
+                .withResources(res)
+                .withTools(tp)
+                .withPrompts(p)
+                .withCompletions(cp)
+                .withSampling(sp)
+                .withToolAccess(ToolAccessPolicy.PERMISSIVE)
+                .withSamplingAccess(SamplingAccessPolicy.PERMISSIVE)
+                .withPrivacyBoundary(privacyBoundary(McpConfiguration.current().defaultBoundary()))
+                .build();
     }
 
-    public static CompletionProvider completions() {
-        InMemoryCompletionProvider provider = new InMemoryCompletionProvider();
-        provider.add(new CompleteRequest.Ref.PromptRef("test_prompt", null, null), "test_arg", Map.of(), List.of("test_completion"));
-        return provider;
-    }
-
-    public static SamplingProvider sampling() {
-        return new InteractiveSamplingProvider(true);
-    }
-
-    public static ToolAccessPolicy toolAccess() {
-        return ToolAccessPolicy.PERMISSIVE;
-    }
-
-    public static SamplingAccessPolicy samplingAccess() {
-        return SamplingAccessPolicy.PERMISSIVE;
-    }
+    public static ResourceProvider resources() { return COMPONENTS.resources(); }
+    public static ToolProvider tools() { return COMPONENTS.tools(); }
+    public static PromptProvider prompts() { return COMPONENTS.prompts(); }
+    public static CompletionProvider completions() { return COMPONENTS.completions(); }
+    public static SamplingProvider sampling() { return COMPONENTS.sampling(); }
+    public static ToolAccessPolicy toolAccess() { return COMPONENTS.toolAccess(); }
+    public static SamplingAccessPolicy samplingAccess() { return COMPONENTS.samplingAccess(); }
 
     public static ResourceAccessController privacyBoundary(String principalId) {
         var p = new PrivacyBoundaryEnforcer();
