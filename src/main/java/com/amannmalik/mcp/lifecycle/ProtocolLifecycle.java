@@ -3,7 +3,7 @@ package com.amannmalik.mcp.lifecycle;
 import java.util.*;
 
 /// - [Lifecycle](specification/2025-06-18/basic/lifecycle.mdx)
-/// - [MCP Conformance](src/test/resources/com/amannmalik/mcp/mcp_conformance.feature:6-34)
+/// - [Conformance Suite](src/test/resources/com/amannmalik/mcp/mcp.feature)
 public class ProtocolLifecycle {
 
     private final Set<ServerCapability> serverCapabilities;

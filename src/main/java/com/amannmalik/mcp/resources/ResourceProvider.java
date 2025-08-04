@@ -6,7 +6,7 @@ import com.amannmalik.mcp.util.*;
 import java.util.Optional;
 
 /// - [Resources](specification/2025-06-18/server/resources.mdx)
-/// - [MCP Conformance](src/test/resources/com/amannmalik/mcp/mcp_conformance.feature:83-95)
+/// - [Conformance Suite](src/test/resources/com/amannmalik/mcp/mcp.feature)
 public interface ResourceProvider extends Provider<Resource> {
     ResourceBlock read(String uri);
 

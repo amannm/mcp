@@ -15,7 +15,7 @@ import java.nio.file.Path;
 import java.util.*;
 
 /// - [Server](specification/2025-06-18/server/index.mdx)
-/// - [MCP Conformance](src/test/resources/com/amannmalik/mcp/mcp_conformance.feature:6-34)
+/// - [Conformance Suite](src/test/resources/com/amannmalik/mcp/mcp.feature)
 public final class ServerCommand {
     public static CommandSpec createCommandSpec() {
         CommandSpec spec = CommandSpec.create()

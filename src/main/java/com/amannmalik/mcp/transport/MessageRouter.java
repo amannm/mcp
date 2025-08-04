@@ -9,7 +9,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiConsumer;
 
 /// - [Base Protocol](specification/2025-06-18/basic/index.mdx)
-/// - [MCP Conformance](src/test/resources/com/amannmalik/mcp/mcp_conformance.feature:6-34)
+/// - [Conformance Suite](src/test/resources/com/amannmalik/mcp/mcp.feature)
 final class MessageRouter {
     private final ConcurrentHashMap<String, SseClient> requestStreams;
     private final ConcurrentHashMap<String, BlockingQueue<JsonObject>> responseQueues;
