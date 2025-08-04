@@ -57,6 +57,25 @@ public final class HostProcess implements AutoCloseable {
         }
     }
 
+    private McpClient requireClient(String id) {
+        McpClient client = clients.get(id);
+        if (client == null) throw new IllegalArgumentException("Unknown client: " + id);
+        return client;
+    }
+
+    private McpClient requireConnectedClient(String id) {
+        McpClient client = requireClient(id);
+        if (!client.connected()) throw new IllegalStateException("Client not connected: " + id);
+        return client;
+    }
+
+    private McpClient requireClientForMethod(String id, String method) {
+        McpClient client = requireConnectedClient(id);
+        serverCapabilityForMethod(method).ifPresent(cap -> requireCapability(client, cap));
+        clientCapabilityForMethod(method).ifPresent(cap -> requireCapability(client, cap));
+        return client;
+    }
+
     public HostProcess(SecurityPolicy policy,
                        ConsentManager consents,
                        ToolAccessController toolAccess,
@@ -142,8 +161,7 @@ public final class HostProcess implements AutoCloseable {
     }
 
     public ListToolsResult listTools(String clientId, String cursor) throws IOException {
-        McpClient client = clients.get(clientId);
-        if (client == null) throw new IllegalArgumentException("Unknown client: " + clientId);
+        McpClient client = requireClient(clientId);
         requireCapability(client, ServerCapability.TOOLS);
         JsonRpcResponse resp = JsonRpc.expectResponse(client.request(
                 RequestMethod.TOOLS_LIST,
@@ -153,8 +171,7 @@ public final class HostProcess implements AutoCloseable {
     }
 
     public ToolResult callTool(String clientId, String name, JsonObject args) throws IOException {
-        McpClient client = clients.get(clientId);
-        if (client == null) throw new IllegalArgumentException("Unknown client: " + clientId);
+        McpClient client = requireClient(clientId);
         requireCapability(client, ServerCapability.TOOLS);
         consents.requireConsent(principal, "tool:" + name);
         toolAccess.requireAllowed(principal, name);
@@ -166,9 +183,7 @@ public final class HostProcess implements AutoCloseable {
     }
 
     public JsonObject createMessage(String clientId, JsonObject params) throws IOException {
-        McpClient client = clients.get(clientId);
-        if (client == null) throw new IllegalArgumentException("Unknown client: " + clientId);
-        if (!client.connected()) throw new IllegalStateException("Client not connected: " + clientId);
+        McpClient client = requireConnectedClient(clientId);
         requireCapability(client, ClientCapability.SAMPLING);
         consents.requireConsent(principal, "sampling");
         samplingAccess.requireAllowed(principal);
@@ -177,22 +192,11 @@ public final class HostProcess implements AutoCloseable {
     }
 
     public JsonRpcMessage request(String id, String method, JsonObject params) throws IOException {
-        McpClient client = clients.get(id);
-        if (client == null) throw new IllegalArgumentException("Unknown client: " + id);
-        if (!client.connected()) throw new IllegalStateException("Client not connected: " + id);
-        serverCapabilityForMethod(method).ifPresent(it -> requireCapability(client, it));
-        clientCapabilityForMethod(method).ifPresent(it -> requireCapability(client, it));
-        return client.request(method, params);
+        return requireClientForMethod(id, method).request(method, params);
     }
 
     public void notify(String id, String method, JsonObject params) throws IOException {
-        McpClient client = clients.get(id);
-        if (client == null) throw new IllegalArgumentException("Unknown client: " + id);
-        if (!client.connected()) throw new IllegalStateException("Client not connected: " + id);
-        serverCapabilityForMethod(method).ifPresent(it -> requireCapability(client, it));
-        clientCapabilityForMethod(method).ifPresent(it -> requireCapability(client, it));
-
-        client.notify(method, params);
+        requireClientForMethod(id, method).notify(method, params);
     }
 
     @Override
