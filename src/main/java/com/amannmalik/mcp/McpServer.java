@@ -117,14 +117,14 @@ public final class McpServer implements AutoCloseable {
 
         if (tools != null && tools.supportsListChanged()) {
             toolListSubscription = subscribeListChanges(
-                    (ChangeListener<Tool> l) -> tools.subscribe(l),
+                    tools::subscribe,
                     NotificationMethod.TOOLS_LIST_CHANGED,
                     ToolListChangedNotification.CODEC.toJson(new ToolListChangedNotification()));
         }
 
         if (prompts != null && prompts.supportsListChanged()) {
             promptsSubscription = subscribeListChanges(
-                    (ChangeListener<Prompt> l) -> prompts.subscribe(l),
+                    prompts::subscribe,
                     NotificationMethod.PROMPTS_LIST_CHANGED,
                     PromptListChangedNotification.CODEC.toJson(new PromptListChangedNotification()));
         }
@@ -158,12 +158,12 @@ public final class McpServer implements AutoCloseable {
         processor.registerRequest(RequestMethod.SAMPLING_CREATE_MESSAGE.method(), this::handleCreateMessage);
     }
 
-    private <S extends ChangeSubscription, T> S subscribeListChanges(
-            SubscriptionFactory<S, T> factory,
+    private <S extends ChangeSubscription> S subscribeListChanges(
+            SubscriptionFactory<S> factory,
             NotificationMethod method,
             JsonObject payload) {
         try {
-            return factory.subscribe(() -> {
+            return factory.subscribe(c -> {
                 if (lifecycle.state() != LifecycleState.OPERATION) return;
                 try {
                     send(new JsonRpcNotification(method.method(), payload));
@@ -176,8 +176,8 @@ public final class McpServer implements AutoCloseable {
     }
 
     @FunctionalInterface
-    private interface SubscriptionFactory<S extends ChangeSubscription, T> {
-        S subscribe(ChangeListener<T> listener);
+    private interface SubscriptionFactory<S extends ChangeSubscription> {
+        S subscribe(ChangeListener<Change> listener);
     }
 
     public void serve() throws IOException {
@@ -553,7 +553,7 @@ public final class McpServer implements AutoCloseable {
         return rootsManager.listRoots();
     }
 
-    public ChangeSubscription subscribeRoots(ChangeListener<Root> listener) {
+    public ChangeSubscription subscribeRoots(ChangeListener<Change> listener) {
         return rootsManager.subscribe(listener);
     }
 

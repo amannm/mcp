@@ -7,7 +7,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
 
 public final class InMemoryRootsProvider implements RootsProvider {
     private final List<Root> roots = new CopyOnWriteArrayList<>();
-    private final ChangeSupport<Root> listChangeSupport = new ChangeSupport<>();
+    private final ChangeSupport<Change> listChangeSupport = new ChangeSupport<>();
 
     public InMemoryRootsProvider(List<Root> initial) {
         if (initial != null) roots.addAll(initial);
@@ -19,7 +19,7 @@ public final class InMemoryRootsProvider implements RootsProvider {
     }
 
     @Override
-    public ChangeSubscription subscribe(ChangeListener<Root> listener) {
+    public ChangeSubscription subscribe(ChangeListener<Change> listener) {
         return listChangeSupport.subscribe(listener);
     }
 
@@ -39,6 +39,6 @@ public final class InMemoryRootsProvider implements RootsProvider {
     }
 
     private void notifyListeners() {
-        listChangeSupport.notifyListeners();
+        listChangeSupport.notifyListeners(Change.INSTANCE);
     }
 }

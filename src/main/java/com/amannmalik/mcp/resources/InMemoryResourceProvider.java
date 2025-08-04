@@ -10,8 +10,8 @@ public final class InMemoryResourceProvider implements ResourceProvider {
     private final List<Resource> resources;
     private final Map<String, ResourceBlock> contents;
     private final List<ResourceTemplate> templates;
-    private final Map<String, List<ResourceListener>> listeners = new ConcurrentHashMap<>();
-    private final ChangeSupport<Resource> listChangeSupport = new ChangeSupport<>();
+    private final Map<String, List<ChangeListener<ResourceUpdate>>> listeners = new ConcurrentHashMap<>();
+    private final ChangeSupport<Change> listChangeSupport = new ChangeSupport<>();
 
     public InMemoryResourceProvider(List<Resource> resources, Map<String, ResourceBlock> contents, List<ResourceTemplate> templates) {
         this.resources = resources == null ? new CopyOnWriteArrayList<>() : new CopyOnWriteArrayList<>(resources);
@@ -35,7 +35,7 @@ public final class InMemoryResourceProvider implements ResourceProvider {
     }
 
     @Override
-    public ResourceSubscription subscribe(String uri, ResourceListener listener) {
+    public ResourceSubscription subscribe(String uri, ChangeListener<ResourceUpdate> listener) {
         listeners.computeIfAbsent(uri, k -> new CopyOnWriteArrayList<>()).add(listener);
         return () -> listeners.getOrDefault(uri, List.of()).remove(listener);
     }
@@ -51,7 +51,7 @@ public final class InMemoryResourceProvider implements ResourceProvider {
     }
 
     @Override
-    public ChangeSubscription subscribe(ChangeListener<Resource> listener) {
+    public ChangeSubscription subscribe(ChangeListener<Change> listener) {
         return listChangeSupport.subscribe(listener);
     }
 
@@ -74,7 +74,7 @@ public final class InMemoryResourceProvider implements ResourceProvider {
             }
         }
         ResourceUpdate update = new ResourceUpdate(uri, title);
-        listeners.getOrDefault(uri, List.of()).forEach(l -> l.updated(update));
+        listeners.getOrDefault(uri, List.of()).forEach(l -> l.changed(update));
     }
 
     public void addResource(Resource resource, ResourceBlock content) {
@@ -116,6 +116,6 @@ public final class InMemoryResourceProvider implements ResourceProvider {
     }
 
     private void notifyListListeners() {
-        listChangeSupport.notifyListeners();
+        listChangeSupport.notifyListeners(Change.INSTANCE);
     }
 }

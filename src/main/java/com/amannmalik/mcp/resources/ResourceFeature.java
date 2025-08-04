@@ -44,7 +44,7 @@ public final class ResourceFeature implements AutoCloseable {
         this.progress = progress;
         this.listSubscription = resources.supportsListChanged() ?
                 subscribeListChanges(
-                        (ChangeListener<Resource> l) -> resources.subscribe(l),
+                        resources::subscribe,
                         NotificationMethod.RESOURCES_LIST_CHANGED,
                         ResourceListChangedNotification.CODEC.toJson(new ResourceListChangedNotification())) : null;
     }
@@ -226,12 +226,12 @@ public final class ResourceFeature implements AutoCloseable {
         return cursor == null ? null : Pagination.sanitize(ValidationUtil.cleanNullable(cursor));
     }
 
-    private <S extends ChangeSubscription, T> S subscribeListChanges(
-            SubscriptionFactory<S, T> factory,
+    private <S extends ChangeSubscription> S subscribeListChanges(
+            SubscriptionFactory<S> factory,
             NotificationMethod method,
             JsonObject payload) {
         try {
-            return factory.subscribe(() -> {
+            return factory.subscribe(c -> {
                 if (lifecycle.state() != LifecycleState.OPERATION) return;
                 try {
                     sender.send(new JsonRpcNotification(method.method(), payload));
@@ -244,8 +244,8 @@ public final class ResourceFeature implements AutoCloseable {
     }
 
     @FunctionalInterface
-    private interface SubscriptionFactory<S extends ChangeSubscription, T> {
-        S subscribe(ChangeListener<T> listener);
+    private interface SubscriptionFactory<S extends ChangeSubscription> {
+        S subscribe(ChangeListener<Change> listener);
     }
 
     @FunctionalInterface

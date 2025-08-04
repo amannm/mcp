@@ -15,7 +15,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
 public final class RootsManager {
     private final ProtocolLifecycle lifecycle;
     private final RequestSender requester;
-    private final ChangeSupport<Root> listChangeSupport = new ChangeSupport<>();
+    private final ChangeSupport<Change> listChangeSupport = new ChangeSupport<>();
     private final List<Root> roots = new CopyOnWriteArrayList<>();
 
     public RootsManager(ProtocolLifecycle lifecycle, RequestSender requester) {
@@ -28,11 +28,11 @@ public final class RootsManager {
         boolean changed = !roots.equals(fetched);
         roots.clear();
         roots.addAll(fetched);
-        if (changed) listChangeSupport.notifyListeners();
+        if (changed) listChangeSupport.notifyListeners(Change.INSTANCE);
         return List.copyOf(fetched);
     }
 
-    public ChangeSubscription subscribe(ChangeListener<Root> listener) {
+    public ChangeSubscription subscribe(ChangeListener<Change> listener) {
         return listChangeSupport.subscribe(listener);
     }
 
@@ -72,4 +72,3 @@ public final class RootsManager {
         }
     }
 }
-

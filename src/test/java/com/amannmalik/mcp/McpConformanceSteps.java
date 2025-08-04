@@ -748,7 +748,7 @@ public final class McpConformanceSteps {
         }
 
         @Override
-        public ChangeSubscription subscribe(ChangeListener<Root> listener) {
+        public ChangeSubscription subscribe(ChangeListener<Change> listener) {
             return delegate.subscribe(listener);
         }
 

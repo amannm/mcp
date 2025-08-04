@@ -11,7 +11,7 @@ public final class ChangeSupport<T> {
         return () -> listeners.remove(listener);
     }
 
-    public void notifyListeners() {
-        for (var l : listeners) l.changed();
+    public void notifyListeners(T change) {
+        for (var l : listeners) l.changed(change);
     }
 }
