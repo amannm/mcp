@@ -9,14 +9,20 @@ import io.cucumber.java.en.And;
 import io.cucumber.java.en.Given;
 import io.cucumber.java.en.Then;
 import io.cucumber.java.en.When;
+import org.junit.platform.suite.api.*;
 
 import java.io.*;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.stream.Collectors;
 
+import static io.cucumber.junit.platform.engine.Constants.GLUE_PROPERTY_NAME;
 import static org.junit.jupiter.api.Assertions.*;
 
+@Suite
+@IncludeEngines("cucumber")
+@SelectClasspathResource("com/amannmalik/mcp")
+@ConfigurationParameter(key = GLUE_PROPERTY_NAME, value = "com.amannmalik.mcp")
 public class McpFeatureSteps {
 
     private McpServer server;
