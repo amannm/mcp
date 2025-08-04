@@ -18,6 +18,7 @@ import com.amannmalik.mcp.util.ListChangeSubscription;
 import com.amannmalik.mcp.util.ProgressNotification;
 import io.cucumber.datatable.DataTable;
 import io.cucumber.java.After;
+import io.cucumber.java.Before;
 import io.cucumber.java.en.*;
 import jakarta.json.*;
 
@@ -353,6 +354,11 @@ public final class McpConformanceSteps {
         Map.entry("unsubscribe_all", (r, e, p) -> assertEquals(e, ((JsonRpcResponse) r).result().getString("status"))),
         Map.entry("check_listChanged", (r, e, p) -> assertEquals(e, ((JsonRpcResponse) r).result().getString("status")))
     );
+
+    @Before
+    public void reset() throws Exception {
+        cleanup();
+    }
 
     @After
     public void cleanup() throws Exception {
