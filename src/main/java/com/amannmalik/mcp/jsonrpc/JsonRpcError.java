@@ -22,10 +22,6 @@ public record JsonRpcError(RequestId id, ErrorDetail error) implements JsonRpcMe
         return new JsonRpcError(id, new ErrorDetail(code, message, data));
     }
 
-    public static JsonRpcError invalidParams(RequestId id, String message) {
-        return of(id, JsonRpcErrorCode.INVALID_PARAMS, message);
-    }
-
     public JsonRpcError {
         if (id == null || error == null) {
             throw new IllegalArgumentException("id and error are required");

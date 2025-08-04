@@ -106,7 +106,7 @@ public final class ResourceFeature implements AutoCloseable {
             ListResourcesResult result = new ListResourcesResult(filtered, list.nextCursor(), null);
             return new JsonRpcResponse(req.id(), ListResourcesResult.CODEC.toJson(result));
         } catch (IllegalArgumentException e) {
-            return invalidParams(req, e.getMessage());
+            return JsonRpcError.of(req.id(), JsonRpcErrorCode.INVALID_PARAMS, e.getMessage());
         }
     }
 
@@ -115,7 +115,7 @@ public final class ResourceFeature implements AutoCloseable {
         try {
             rrr = ReadResourceRequest.CODEC.fromJson(req.params());
         } catch (IllegalArgumentException e) {
-            return invalidParams(req, e.getMessage());
+            return JsonRpcError.of(req.id(), JsonRpcErrorCode.INVALID_PARAMS, e.getMessage());
         }
         String uri = rrr.uri();
         if (!canAccessResource(uri)) {
@@ -142,7 +142,7 @@ public final class ResourceFeature implements AutoCloseable {
             ListResourceTemplatesResult result = new ListResourceTemplatesResult(filtered, page.nextCursor(), null);
             return new JsonRpcResponse(req.id(), ListResourceTemplatesResult.CODEC.toJson(result));
         } catch (IllegalArgumentException e) {
-            return invalidParams(req, e.getMessage());
+            return JsonRpcError.of(req.id(), JsonRpcErrorCode.INVALID_PARAMS, e.getMessage());
         }
     }
 
@@ -151,7 +151,7 @@ public final class ResourceFeature implements AutoCloseable {
         try {
             sr = SubscribeRequest.CODEC.fromJson(req.params());
         } catch (IllegalArgumentException e) {
-            return invalidParams(req, e.getMessage());
+            return JsonRpcError.of(req.id(), JsonRpcErrorCode.INVALID_PARAMS, e.getMessage());
         }
         String uri = sr.uri();
         if (!canAccessResource(uri)) {
@@ -188,7 +188,7 @@ public final class ResourceFeature implements AutoCloseable {
         try {
             ur = UnsubscribeRequest.CODEC.fromJson(req.params());
         } catch (IllegalArgumentException e) {
-            return invalidParams(req, e.getMessage());
+            return JsonRpcError.of(req.id(), JsonRpcErrorCode.INVALID_PARAMS, e.getMessage());
         }
         String uri = ur.uri();
         if (!canAccessResource(uri)) {
@@ -226,10 +226,6 @@ public final class ResourceFeature implements AutoCloseable {
 
     private String sanitizeCursor(String cursor) {
         return cursor == null ? null : Pagination.sanitize(InputSanitizer.cleanNullable(cursor));
-    }
-
-    private JsonRpcError invalidParams(JsonRpcRequest req, String message) {
-        return JsonRpcError.invalidParams(req.id(), message);
     }
 
     private <S extends ListChangeSubscription> S subscribeListChanges(

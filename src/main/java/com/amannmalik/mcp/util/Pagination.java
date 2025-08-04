@@ -1,6 +1,7 @@
 package com.amannmalik.mcp.util;
 
 import com.amannmalik.mcp.config.McpConfiguration;
+import com.amannmalik.mcp.validation.ValidationUtil;
 
 import java.util.List;
 
@@ -13,8 +14,8 @@ public final class Pagination {
             McpConfiguration.current().performance().pagination().defaultPageSize();
 
     public static <T> Page<T> page(List<T> items, String cursor, int size) {
-        int start = decode(cursor);
-        if (start < 0 || start > items.size()) throw new IllegalArgumentException("Invalid cursor");
+        int start = ValidationUtil.requireNonNegative(decode(cursor), "cursor");
+        if (start > items.size()) throw new IllegalArgumentException("Invalid cursor");
         int end = Math.min(items.size(), start + size);
         List<T> slice = items.subList(start, end);
         String next = end < items.size() ? encode(end) : null;

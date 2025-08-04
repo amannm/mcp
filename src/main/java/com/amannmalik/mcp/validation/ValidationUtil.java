@@ -108,6 +108,47 @@ public final class ValidationUtil {
         if (depth != 0) throw new IllegalArgumentException("Unmatched braces in URI template: " + template);
     }
 
+    public static int requirePositive(int value, String field) {
+        if (value <= 0) throw new IllegalArgumentException(field + " must be > 0");
+        return value;
+    }
+
+    public static long requirePositive(long value, String field) {
+        if (value <= 0) throw new IllegalArgumentException(field + " must be > 0");
+        return value;
+    }
+
+    public static double requirePositive(double value, String field) {
+        if (Double.isNaN(value) || Double.isInfinite(value) || value <= 0.0) {
+            throw new IllegalArgumentException(field + " must be > 0 and finite");
+        }
+        return value;
+    }
+
+    public static int requireNonNegative(int value, String field) {
+        if (value < 0) throw new IllegalArgumentException(field + " must be >= 0");
+        return value;
+    }
+
+    public static long requireNonNegative(long value, String field) {
+        if (value < 0) throw new IllegalArgumentException(field + " must be >= 0");
+        return value;
+    }
+
+    public static double requireNonNegative(double value, String field) {
+        if (Double.isNaN(value) || Double.isInfinite(value) || value < 0.0) {
+            throw new IllegalArgumentException(field + " must be >= 0 and finite");
+        }
+        return value;
+    }
+
+    public static double requireFraction(double value, String field) {
+        if (Double.isNaN(value) || Double.isInfinite(value) || value < 0.0 || value > 1.0) {
+            throw new IllegalArgumentException(field + " must be between 0.0 and 1.0");
+        }
+        return value;
+    }
+
     public static void validateSchema(JsonObject schema, JsonObject value) {
         if (schema == null) return;
         if (!"object".equals(schema.getString("type", null))) return;

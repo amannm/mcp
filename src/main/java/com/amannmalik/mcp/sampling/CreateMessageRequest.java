@@ -87,7 +87,7 @@ public record CreateMessageRequest(
         } else {
             stopSequences = stopSequences.stream().map(InputSanitizer::requireClean).toList();
         }
-        if (maxTokens <= 0) throw new IllegalArgumentException("maxTokens must be > 0");
+        maxTokens = ValidationUtil.requirePositive(maxTokens, "maxTokens");
         ValidationUtil.requireMeta(_meta);
     }
 }

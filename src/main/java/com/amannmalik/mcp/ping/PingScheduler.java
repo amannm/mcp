@@ -1,6 +1,7 @@
 package com.amannmalik.mcp.ping;
 
 import com.amannmalik.mcp.McpClient;
+import com.amannmalik.mcp.validation.ValidationUtil;
 
 import java.io.IOException;
 import java.util.Objects;
@@ -25,13 +26,11 @@ public final class PingScheduler implements AutoCloseable {
                          int maxFailures) {
         Objects.requireNonNull(client, "client");
         Objects.requireNonNull(onFailure, "onFailure");
-        if (intervalMillis <= 0 || timeoutMillis <= 0) throw new IllegalArgumentException("invalid timing");
-        if (maxFailures <= 0) throw new IllegalArgumentException("maxFailures must be > 0");
         this.client = client;
-        this.interval = intervalMillis;
-        this.timeout = timeoutMillis;
+        this.interval = ValidationUtil.requirePositive(intervalMillis, "intervalMillis");
+        this.timeout = ValidationUtil.requirePositive(timeoutMillis, "timeoutMillis");
         this.onFailure = onFailure;
-        this.maxFailures = maxFailures;
+        this.maxFailures = ValidationUtil.requirePositive(maxFailures, "maxFailures");
     }
 
     public void start() {

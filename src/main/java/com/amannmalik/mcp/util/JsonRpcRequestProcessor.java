@@ -46,7 +46,7 @@ public final class JsonRpcRequestProcessor {
             token = progress.register(req.id(), req.params());
         } catch (IllegalArgumentException e) {
             cleanup(req.id());
-            return Optional.of(JsonRpcError.invalidParams(req.id(), e.getMessage()));
+            return Optional.of(JsonRpcError.of(req.id(), JsonRpcErrorCode.INVALID_PARAMS, e.getMessage()));
         }
 
         try {
@@ -81,7 +81,7 @@ public final class JsonRpcRequestProcessor {
             if (resp == null) throw new IllegalStateException("handler returned null");
             return resp;
         } catch (IllegalArgumentException e) {
-            return JsonRpcError.invalidParams(req.id(), e.getMessage());
+            return JsonRpcError.of(req.id(), JsonRpcErrorCode.INVALID_PARAMS, e.getMessage());
         } catch (Exception e) {
             return JsonRpcError.of(req.id(), JsonRpcErrorCode.INTERNAL_ERROR, e.getMessage());
         }
