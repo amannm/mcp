@@ -1,55 +1,60 @@
 package com.amannmalik.mcp.jsonrpc;
 
+import com.amannmalik.mcp.core.JsonCodec;
 import jakarta.json.*;
 
 public final class JsonRpcCodec {
-    private JsonRpcCodec() {
-    }
+    private JsonRpcCodec() {}
 
-    public static JsonObject toJsonObject(JsonRpcMessage msg) {
-        var builder = Json.createObjectBuilder();
-        builder.add("jsonrpc", JsonRpc.VERSION);
-
-        switch (msg) {
-            case JsonRpcRequest r -> {
-                builder.add("id", RequestId.toJsonValue(r.id()));
-                builder.add("method", r.method());
-                if (r.params() != null) builder.add("params", r.params());
-            }
-            case JsonRpcNotification n -> {
-                builder.add("method", n.method());
-                if (n.params() != null) builder.add("params", n.params());
-            }
-            case JsonRpcResponse r -> {
-                builder.add("id", RequestId.toJsonValue(r.id()));
-                builder.add("result", r.result());
-            }
-            case JsonRpcError e -> {
-                builder.add("id", RequestId.toJsonValue(e.id()));
-                var err = e.error();
-                var errBuilder = Json.createObjectBuilder()
-                        .add("code", err.code())
-                        .add("message", err.message());
-                if (err.data() != null) errBuilder.add("data", err.data());
-                builder.add("error", errBuilder.build());
-            }
+    public static final JsonCodec<JsonRpcMessage> CODEC = new JsonCodec<>() {
+        @Override
+        public JsonObject toJson(JsonRpcMessage msg) {
+            var builder = Json.createObjectBuilder().add("jsonrpc", JsonRpc.VERSION);
+            return switch (msg) {
+                case JsonRpcRequest r -> {
+                    builder.add("id", RequestId.toJsonValue(r.id()));
+                    builder.add("method", r.method());
+                    if (r.params() != null) builder.add("params", r.params());
+                    yield builder.build();
+                }
+                case JsonRpcNotification n -> {
+                    builder.add("method", n.method());
+                    if (n.params() != null) builder.add("params", n.params());
+                    yield builder.build();
+                }
+                case JsonRpcResponse r -> {
+                    builder.add("id", RequestId.toJsonValue(r.id()));
+                    builder.add("result", r.result());
+                    yield builder.build();
+                }
+                case JsonRpcError e -> {
+                    builder.add("id", RequestId.toJsonValue(e.id()));
+                    var err = e.error();
+                    var errBuilder = Json.createObjectBuilder()
+                            .add("code", err.code())
+                            .add("message", err.message());
+                    if (err.data() != null) errBuilder.add("data", err.data());
+                    builder.add("error", errBuilder.build());
+                    yield builder.build();
+                }
+            };
         }
-        return builder.build();
-    }
 
-    public static JsonRpcMessage fromJsonObject(JsonObject obj) {
-        validateVersion(obj);
-        var idValue = obj.get("id");
-        var method = obj.getString("method", null);
-        var params = params(obj.get("params"));
-        var kind = kind(method, idValue, obj.containsKey("result"), obj.containsKey("error"));
-        return switch (kind) {
-            case REQUEST -> new JsonRpcRequest(RequestId.from(idValue), method, params);
-            case NOTIFICATION -> new JsonRpcNotification(method, params);
-            case RESPONSE -> new JsonRpcResponse(requestId(idValue), result(obj.get("result")));
-            case ERROR -> new JsonRpcError(optionalId(idValue), errorDetail(obj.getJsonObject("error")));
-        };
-    }
+        @Override
+        public JsonRpcMessage fromJson(JsonObject obj) {
+            validateVersion(obj);
+            var idValue = obj.get("id");
+            var method = obj.getString("method", null);
+            var params = params(obj.get("params"));
+            var kind = kind(method, idValue, obj.containsKey("result"), obj.containsKey("error"));
+            return switch (kind) {
+                case REQUEST -> new JsonRpcRequest(RequestId.from(idValue), method, params);
+                case NOTIFICATION -> new JsonRpcNotification(method, params);
+                case RESPONSE -> new JsonRpcResponse(requestId(idValue), result(obj.get("result")));
+                case ERROR -> new JsonRpcError(optionalId(idValue), errorDetail(obj.getJsonObject("error")));
+            };
+        }
+    };
 
     private enum Kind {REQUEST, NOTIFICATION, RESPONSE, ERROR}
 
