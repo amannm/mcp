@@ -39,11 +39,11 @@ public final class McpClient implements AutoCloseable {
     private final ElicitationProvider elicitation;
     private SamplingAccessPolicy samplingAccess = SamplingAccessPolicy.PERMISSIVE;
     private Principal principal = new Principal(
-            McpConfiguration.current().security().defaultPrincipal(), Set.of());
+            McpConfiguration.current().defaultPrincipal(), Set.of());
     private final AtomicLong id = new AtomicLong(1);
     private final Map<RequestId, CompletableFuture<JsonRpcMessage>> pending = new ConcurrentHashMap<>();
     private final ProgressManager progress = new ProgressManager(
-            new RateLimiter(McpConfiguration.current().performance().progressPerSecond(), 1000));
+            new RateLimiter(McpConfiguration.current().progressPerSecond(), 1000));
     private Thread reader;
     private PingScheduler pinger;
     private long pingInterval;
@@ -112,7 +112,7 @@ public final class McpClient implements AutoCloseable {
             throw new IllegalArgumentException("elicitation capability requires provider");
         }
         this.pingInterval = 0;
-        this.pingTimeout = McpConfiguration.current().system().pingMs();
+        this.pingTimeout = McpConfiguration.current().pingMs();
 
         var requestProcessor = new JsonRpcRequestProcessor(
                 progress,

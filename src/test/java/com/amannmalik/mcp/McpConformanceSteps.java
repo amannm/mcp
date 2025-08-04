@@ -374,7 +374,6 @@ public final class McpConformanceSteps {
     @Given("a running MCP server using {word} transport")
     public void setupTransport(String transport) throws Exception {
         System.setProperty("mcp.test.transport", transport);
-        setupTestConfiguration(transport);
         client = createClient(createTransport(transport), createTestListener());
         client.connect();
     }
@@ -629,12 +628,6 @@ public final class McpConformanceSteps {
     public void verifyAuthorizationServers() {
         var servers = authorizationMetadata.getJsonArray("authorization_servers");
         assertFalse(servers.isEmpty());
-    }
-
-    private void setupTestConfiguration(String transport) {
-        String configFile = "http".equals(transport) ? "/mcp-test-config-http.yaml" : "/mcp-test-config.yaml";
-        String testConfigPath = getClass().getResource(configFile).getPath();
-        System.setProperty("test.config.path", testConfigPath);
     }
 
     private Transport createTransport(String type) throws Exception {

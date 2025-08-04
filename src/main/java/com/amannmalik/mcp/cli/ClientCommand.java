@@ -59,12 +59,12 @@ public final class ClientCommand {
 
             McpConfiguration cc = McpConfiguration.current();
             ClientInfo info = new ClientInfo(
-                    cc.client().name(),
-                    cc.client().displayName(),
-                    cc.client().version());
-            EnumSet<ClientCapability> caps = cc.client().capabilities().isEmpty()
+                    cc.clientName(),
+                    cc.clientDisplayName(),
+                    cc.clientVersion());
+            EnumSet<ClientCapability> caps = cc.clientCapabilities().isEmpty()
                     ? EnumSet.noneOf(ClientCapability.class)
-                    : cc.client().capabilities().stream()
+                    : cc.clientCapabilities().stream()
                     .map(ClientCapability::valueOf)
                     .collect(() -> EnumSet.noneOf(ClientCapability.class), EnumSet::add, EnumSet::addAll);
 

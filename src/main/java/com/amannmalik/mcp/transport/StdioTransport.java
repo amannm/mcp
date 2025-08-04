@@ -17,7 +17,7 @@ public final class StdioTransport implements Transport {
     private final Process process;
     private final Thread logReader;
     private static final Duration WAIT = Duration.ofSeconds(
-            McpConfiguration.current().system().processWaitSeconds());
+            McpConfiguration.current().processWaitSeconds());
 
     public StdioTransport(InputStream in, OutputStream out) {
         this.in = new BufferedReader(new InputStreamReader(in, StandardCharsets.UTF_8));

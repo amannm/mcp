@@ -65,7 +65,7 @@ public final class HostCommand {
             PrivacyBoundaryEnforcer privacyBoundary = new PrivacyBoundaryEnforcer();
             SamplingAccessController sampling = new SamplingAccessController();
             SecurityPolicy policy = c -> true;
-            Principal principal = new Principal(McpConfiguration.current().host().principal(), Set.of());
+            Principal principal = new Principal(McpConfiguration.current().hostPrincipal(), Set.of());
 
             try (HostProcess host = new HostProcess(policy, consents, tools, privacyBoundary, sampling, principal)) {
                 for (var entry : clients.entrySet()) {
@@ -75,7 +75,7 @@ public final class HostCommand {
                     });
                     McpClient client = new McpClient(
                             new ClientInfo(entry.getKey(), entry.getKey(),
-                                    McpConfiguration.current().client().version()),
+                                    McpConfiguration.current().clientVersion()),
                             EnumSet.noneOf(ClientCapability.class),
                             t);
                     host.register(entry.getKey(), client);
