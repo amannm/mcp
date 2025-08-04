@@ -176,14 +176,14 @@ public final class McpClient implements AutoCloseable {
         RequestId reqId = new RequestId.NumericId(id.getAndIncrement());
         JsonRpcRequest request = new JsonRpcRequest(reqId, RequestMethod.INITIALIZE.method(), initJson);
         try {
-            transport.send(JsonRpcCodec.toJsonObject(request));
+            transport.send(JsonRpcCodec.CODEC.toJson(request));
         } catch (UnauthorizedException e) {
             handleUnauthorized(e);
             throw e;
         }
         CompletableFuture<JsonRpcMessage> future = CompletableFuture.supplyAsync(() -> {
             try {
-                return JsonRpcCodec.fromJsonObject(transport.receive());
+                return JsonRpcCodec.CODEC.fromJson(transport.receive());
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
@@ -237,7 +237,7 @@ public final class McpClient implements AutoCloseable {
 
     private void notifyInitialized() throws IOException {
         JsonRpcNotification note = new JsonRpcNotification(NotificationMethod.INITIALIZED.method(), null);
-        transport.send(JsonRpcCodec.toJsonObject(note));
+        transport.send(JsonRpcCodec.CODEC.toJson(note));
     }
 
     private void subscribeRootsIfNeeded() throws IOException {
@@ -356,7 +356,7 @@ public final class McpClient implements AutoCloseable {
         var future = new CompletableFuture<JsonRpcMessage>();
         pending.put(reqId, future);
         try {
-            transport.send(JsonRpcCodec.toJsonObject(new JsonRpcRequest(reqId, method, params)));
+            transport.send(JsonRpcCodec.CODEC.toJson(new JsonRpcRequest(reqId, method, params)));
             return awaitResponse(reqId, future, timeoutMillis);
         } catch (UnauthorizedException e) {
             handleUnauthorized(e);
@@ -392,7 +392,7 @@ public final class McpClient implements AutoCloseable {
     public void notify(String method, JsonObject params) throws IOException {
         if (!connected) throw new IllegalStateException("not connected");
         JsonRpcNotification notification = new JsonRpcNotification(method, params);
-        transport.send(JsonRpcCodec.toJsonObject(notification));
+        transport.send(JsonRpcCodec.CODEC.toJson(notification));
     }
 
     public void notify(NotificationMethod method, JsonObject params) throws IOException {
@@ -500,7 +500,7 @@ public final class McpClient implements AutoCloseable {
         while (connected) {
             JsonRpcMessage msg;
             try {
-                msg = JsonRpcCodec.fromJsonObject(transport.receive());
+                msg = JsonRpcCodec.CODEC.fromJson(transport.receive());
             } catch (IOException e) {
                 pending.values().forEach(f -> f.completeExceptionally(e));
                 break;
@@ -612,7 +612,7 @@ public final class McpClient implements AutoCloseable {
     }
 
     private void send(JsonRpcMessage msg) throws IOException {
-        transport.send(JsonRpcCodec.toJsonObject(msg));
+        transport.send(JsonRpcCodec.CODEC.toJson(msg));
     }
 
     private void requireCapability(RequestMethod method) {

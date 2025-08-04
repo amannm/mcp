@@ -188,7 +188,7 @@ public final class McpServer implements AutoCloseable {
             var obj = receiveMessage();
             if (obj.isEmpty()) continue;
             try {
-                processMessage(JsonRpcCodec.fromJsonObject(obj.get()));
+                processMessage(JsonRpcCodec.CODEC.fromJson(obj.get()));
             } catch (IllegalArgumentException e) {
                 handleInvalidRequest(e);
             } catch (IOException e) {
@@ -311,7 +311,7 @@ public final class McpServer implements AutoCloseable {
     }
 
     private synchronized void send(JsonRpcMessage msg) throws IOException {
-        transport.send(JsonRpcCodec.toJsonObject(msg));
+        transport.send(JsonRpcCodec.CODEC.toJson(msg));
     }
 
     private void requireClientCapability(ClientCapability cap) {
@@ -553,7 +553,7 @@ public final class McpServer implements AutoCloseable {
             var obj = receiveMessage();
             if (obj.isEmpty()) continue;
             try {
-                processMessage(JsonRpcCodec.fromJsonObject(obj.get()));
+                processMessage(JsonRpcCodec.CODEC.fromJson(obj.get()));
             } catch (IllegalArgumentException ex) {
                 handleInvalidRequest(ex);
             }
