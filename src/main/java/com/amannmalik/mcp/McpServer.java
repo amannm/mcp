@@ -552,7 +552,7 @@ public final class McpServer extends JsonRpcEndpoint implements AutoCloseable {
         requireClientCapability(ClientCapability.SAMPLING);
         samplingAccess.requireAllowed(principal);
         try {
-            return sampling.createMessage(req, McpConfiguration.DEFAULT_TIMEOUT_MS);
+            return sampling.createMessage(req, McpConfiguration.current().defaultMs());
         } catch (InterruptedException e) {
             throw new IOException(e);
         }

@@ -74,7 +74,6 @@ public record McpConfiguration(String version,
             throw new IllegalArgumentException("errorCodes.rateLimit must be negative");
     }
 
-    public static final long DEFAULT_TIMEOUT_MS = 30_000;
 
     public static McpConfiguration current() {
         return CURRENT;
