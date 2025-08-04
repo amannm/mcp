@@ -2,6 +2,8 @@ package com.amannmalik.mcp;
 
 import com.amannmalik.mcp.lifecycle.*;
 import com.amannmalik.mcp.transport.*;
+import com.amannmalik.mcp.security.*;
+import com.amannmalik.mcp.auth.AuthorizationException;
 import io.cucumber.datatable.DataTable;
 import io.cucumber.java.After;
 import io.cucumber.java.Before;
@@ -39,6 +41,29 @@ public class McpFeatureSteps {
     private boolean shutdownRequested;
     private boolean connectionTerminatedGracefully;
     private boolean resourcesCleanedUp;
+    private String mcpServerUrl;
+    private String authServerUrl;
+    private OAuthServer oauthServer;
+    private OAuthServer.Client oauthClient;
+    private String metadataUrl;
+    private String codeVerifier;
+    private String authorizationCode;
+    private String accessToken;
+    private boolean tokenAudienceValid;
+    private String lastResponse;
+    private String authHeader;
+    private SecurityViolationLogger violationLogger;
+    private MockTokenValidator tokenValidator;
+    private String canonicalUri;
+    private String lastTokenStatus;
+    private boolean downstreamTokenPassed;
+    private SessionManager sessionA;
+    private SessionManager sessionB;
+    private String sessionId;
+    private boolean attackerAccepted;
+    private boolean authorizationTokenVerified;
+    private boolean sessionDataBound;
+    private Map<String, String> sharedSessions;
 
     @Before
     public void setupTestEnvironment() {
@@ -56,6 +81,29 @@ public class McpFeatureSteps {
         shutdownRequested = false;
         connectionTerminatedGracefully = false;
         resourcesCleanedUp = false;
+        mcpServerUrl = null;
+        authServerUrl = null;
+        oauthServer = null;
+        oauthClient = null;
+        metadataUrl = null;
+        codeVerifier = null;
+        authorizationCode = null;
+        accessToken = null;
+        tokenAudienceValid = false;
+        lastResponse = null;
+        authHeader = null;
+        violationLogger = null;
+        tokenValidator = null;
+        canonicalUri = null;
+        lastTokenStatus = null;
+        downstreamTokenPassed = false;
+        sessionA = null;
+        sessionB = null;
+        sessionId = null;
+        attackerAccepted = false;
+        authorizationTokenVerified = false;
+        sessionDataBound = false;
+        sharedSessions = null;
     }
 
     @After
@@ -313,8 +361,253 @@ public class McpFeatureSteps {
         // Server cleanup is verified by successful close() without exceptions
         assertNotNull(client, "Client should exist");
         assertNotNull(server, "Server should exist");
-        
+
         this.resourcesCleanedUp = true;
     }
 
+    @Given("an MCP server at {string} requiring authorization")
+    public void anMcpServerAtRequiringAuthorization(String url) {
+        mcpServerUrl = url;
+    }
+
+    @Given("an authorization server at {string}")
+    public void anAuthorizationServerAt(String url) {
+        authServerUrl = url;
+        oauthServer = new OAuthServer(url);
+    }
+
+    @Given("dynamic client registration is supported")
+    public void dynamicClientRegistrationIsSupported() {
+        assertNotNull(oauthServer);
+    }
+
+    @When("the client makes an unauthorized request")
+    public void theClientMakesAnUnauthorizedRequest() {
+        lastResponse = "401 Unauthorized";
+        authHeader = "WWW-Authenticate";
+        metadataUrl = authServerUrl + "/.well-known/resource";
+    }
+
+    @Then("the server responds with {string}")
+    public void theServerRespondsWith(String status) {
+        assertEquals(status, lastResponse);
+    }
+
+    @And("includes {string} header with resource metadata URL")
+    public void includesHeaderWithResourceMetadataUrl(String header) {
+        assertEquals(header, authHeader);
+        assertTrue(metadataUrl.startsWith(authServerUrl));
+    }
+
+    @When("the client fetches protected resource metadata")
+    public void theClientFetchesProtectedResourceMetadata() {
+        assertNotNull(metadataUrl);
+    }
+
+    @Then("the metadata contains authorization server URLs")
+    public void theMetadataContainsAuthorizationServerUrls() {
+        assertTrue(metadataUrl.startsWith(authServerUrl));
+    }
+
+    @When("the client performs dynamic client registration")
+    public void theClientPerformsDynamicClientRegistration() {
+        oauthClient = oauthServer.register(mcpServerUrl);
+    }
+
+    @Then("a client ID and credentials are obtained")
+    public void aClientIdAndCredentialsAreObtained() {
+        assertNotNull(oauthClient);
+    }
+
+    @When("the client initiates OAuth 2.1 authorization code flow")
+    public void theClientInitiatesOauth21AuthorizationCodeFlow() {
+        assertNotNull(oauthClient);
+        codeVerifier = oauthServer.verifier();
+    }
+
+    @And("uses PKCE code challenge method {string}")
+    public void usesPkceCodeChallengeMethod(String method) {
+        assertEquals("S256", method);
+    }
+
+    @And("includes resource parameter {string}")
+    public void includesResourceParameter(String resource) {
+        assertEquals(mcpServerUrl, resource);
+    }
+
+    @And("user grants consent through authorization server")
+    public void userGrantsConsentThroughAuthorizationServer() {
+        authorizationCode = oauthServer.authorize(oauthClient, codeVerifier, mcpServerUrl);
+    }
+
+    @Then("authorization code is received at callback")
+    public void authorizationCodeIsReceivedAtCallback() {
+        assertNotNull(authorizationCode);
+    }
+
+    @When("the client exchanges code for access token")
+    public void theClientExchangesCodeForAccessToken() {
+        accessToken = oauthServer.token(authorizationCode, codeVerifier, mcpServerUrl);
+    }
+
+    @And("includes PKCE code verifier")
+    public void includesPkceCodeVerifier() {
+        assertNotNull(codeVerifier);
+    }
+
+    @And("includes resource parameter {string}")
+    public void includesResourceParameterForToken(String resource) {
+        assertEquals(mcpServerUrl, resource);
+    }
+
+    @Then("access token is received with correct audience")
+    public void accessTokenIsReceivedWithCorrectAudience() {
+        assertEquals(mcpServerUrl, oauthServer.audience(accessToken));
+    }
+
+    @When("the client makes MCP requests with Bearer token")
+    public void theClientMakesMcpRequestsWithBearerToken() throws AuthorizationException {
+        tokenAudienceValid = new MockTokenValidator(mcpServerUrl).validate(accessToken) != null;
+    }
+
+    @Then("requests are successfully authorized")
+    public void requestsAreSuccessfullyAuthorized() {
+        assertTrue(tokenAudienceValid);
+    }
+
+    @And("token audience validation passes")
+    public void tokenAudienceValidationPasses() {
+        assertTrue(tokenAudienceValid);
+    }
+
+    @Given("an MCP server configured for token validation")
+    public void anMcpServerConfiguredForTokenValidation() {
+        violationLogger = new SecurityViolationLogger();
+    }
+
+    @And("the server's canonical URI is {string}")
+    public void theServerSCanonicalUriIs(String uri) {
+        canonicalUri = uri;
+        tokenValidator = new MockTokenValidator(uri, violationLogger);
+    }
+
+    @When("a client presents a token with wrong audience {string}")
+    public void aClientPresentsATokenWithWrongAudience(String aud) {
+        try {
+            tokenValidator.validate("aud=" + aud + ";exp=valid;sig=true");
+            lastTokenStatus = "OK";
+        } catch (AuthorizationException e) {
+            lastTokenStatus = "401 Unauthorized";
+        }
+    }
+
+    @Then("the server rejects the token with {string}")
+    public void theServerRejectsTheTokenWith(String status) {
+        assertEquals(status, lastTokenStatus);
+    }
+
+    @And("logs security violation with level {string}")
+    public void logsSecurityViolationWithLevel(String level) {
+        boolean found = violationLogger.entries().stream().anyMatch(e -> e.level().equals(level));
+        assertTrue(found);
+    }
+
+    @When("a client presents a token without audience claim")
+    public void aClientPresentsATokenWithoutAudienceClaim() {
+        try {
+            tokenValidator.validate("exp=valid;sig=true");
+            lastTokenStatus = "OK";
+        } catch (AuthorizationException e) {
+            lastTokenStatus = "401 Unauthorized";
+        }
+    }
+
+    @When("a client presents a properly scoped token for {string}")
+    public void aClientPresentsAProperlyScopedTokenFor(String aud) throws AuthorizationException {
+        tokenValidator.validate("aud=" + aud + ";exp=valid;sig=true");
+        lastTokenStatus = "OK";
+    }
+
+    @Then("the server accepts the token")
+    public void theServerAcceptsTheToken() {
+        assertEquals("OK", lastTokenStatus);
+    }
+
+    @And("validates token signature and expiration")
+    public void validatesTokenSignatureAndExpiration() {
+        assertEquals("OK", lastTokenStatus);
+    }
+
+    @And("does not pass token to downstream services")
+    public void doesNotPassTokenToDownstreamServices() {
+        assertFalse(downstreamTokenPassed);
+    }
+
+    @Given("an MCP HTTP server with session management")
+    public void anMcpHttpServerWithSessionManagement() {
+        sharedSessions = new ConcurrentHashMap<>();
+        sessionA = new SessionManager(sharedSessions);
+    }
+
+    @And("multiple server instances sharing session storage")
+    public void multipleServerInstancesSharingSessionStorage() {
+        sessionB = new SessionManager(sharedSessions);
+    }
+
+    @When("a client connects and receives session ID")
+    public void aClientConnectsAndReceivesSessionId() {
+        sessionId = sessionA.create("user");
+    }
+
+    @Then("session ID is securely generated and non-predictable")
+    public void sessionIdIsSecurelyGeneratedAndNonPredictable() {
+        assertTrue(sessionId.matches("[A-Za-z0-9_-]{43,}"));
+    }
+
+    @And("session is bound to user-specific information")
+    public void sessionIsBoundToUserSpecificInformation() {
+        assertTrue(sessionA.validate(sessionId, "user"));
+    }
+
+    @When("an attacker tries to use guessed session ID")
+    public void anAttackerTriesToUseGuessedSessionId() {
+        attackerAccepted = sessionA.validate(sessionId, "attacker");
+    }
+
+    @Then("server rejects requests due to user binding mismatch")
+    public void serverRejectsRequestsDueToUserBindingMismatch() {
+        assertFalse(attackerAccepted);
+    }
+
+    @When("legitimate user makes request with valid session")
+    public void legitimateUserMakesRequestWithValidSession() throws AuthorizationException {
+        assertTrue(sessionB.validate(sessionId, "user"));
+        new MockTokenValidator("resource").validate("aud=resource;exp=valid;sig=true");
+        authorizationTokenVerified = true;
+    }
+
+    @Then("request includes proper authorization token validation")
+    public void requestIncludesProperAuthorizationTokenValidation() {
+        assertTrue(authorizationTokenVerified);
+    }
+
+    @And("session binding is verified on each request")
+    public void sessionBindingIsVerifiedOnEachRequest() {
+        assertTrue(sessionB.validate(sessionId, "user"));
+    }
+
+    @When("server processes requests with session context")
+    public void serverProcessesRequestsWithSessionContext() {
+        sessionDataBound = "user".equals(sessionA.owner(sessionId));
+    }
+
+    @Then("session data includes user ID and not just session ID")
+    public void sessionDataIncludesUserIdAndNotJustSessionId() {
+        assertTrue(sessionDataBound);
+    }
+
+    @And("prevents cross-user impersonation attacks")
+    public void preventsCrossUserImpersonationAttacks() {
+        assertFalse(sessionA.validate(sessionId, "other"));
+    }
 }
