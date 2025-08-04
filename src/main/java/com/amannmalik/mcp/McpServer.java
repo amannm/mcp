@@ -16,7 +16,6 @@ import com.amannmalik.mcp.sampling.*;
 import com.amannmalik.mcp.tools.*;
 import com.amannmalik.mcp.transport.Transport;
 import com.amannmalik.mcp.util.*;
-import com.amannmalik.mcp.validation.InputSanitizer;
 import com.amannmalik.mcp.validation.ValidationUtil;
 import com.amannmalik.mcp.wire.NotificationMethod;
 import com.amannmalik.mcp.wire.RequestMethod;
@@ -364,7 +363,7 @@ public final class McpServer implements AutoCloseable {
     }
 
     private String sanitizeCursor(String cursor) {
-        return cursor == null ? null : Pagination.sanitize(InputSanitizer.cleanNullable(cursor));
+        return cursor == null ? null : Pagination.sanitize(ValidationUtil.cleanNullable(cursor));
     }
 
     private JsonRpcMessage listTools(JsonRpcRequest req) {

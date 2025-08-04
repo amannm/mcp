@@ -3,7 +3,6 @@ package com.amannmalik.mcp.completion;
 import com.amannmalik.mcp.config.McpConfiguration;
 import com.amannmalik.mcp.core.JsonCodec;
 import com.amannmalik.mcp.util.Immutable;
-import com.amannmalik.mcp.validation.InputSanitizer;
 import com.amannmalik.mcp.validation.ValidationUtil;
 import jakarta.json.*;
 
@@ -64,7 +63,7 @@ public record CompleteResult(Completion completion, JsonObject _meta) {
 
         public Completion(List<String> values, Integer total, Boolean hasMore) {
             List<String> copy = Immutable.list(values).stream()
-                    .map(InputSanitizer::requireClean)
+                    .map(ValidationUtil::requireClean)
                     .toList();
             this.values = copy;
             this.total = total == null ? null : ValidationUtil.requireNonNegative(total, "total");

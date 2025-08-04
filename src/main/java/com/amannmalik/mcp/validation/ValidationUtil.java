@@ -5,6 +5,8 @@ import jakarta.json.*;
 import java.net.URI;
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Set;
 import java.util.regex.Pattern;
 
@@ -16,6 +18,44 @@ public final class ValidationUtil {
             Pattern.compile("[A-Za-z](?:[A-Za-z0-9-]*[A-Za-z0-9])?");
     private static final Pattern NAME =
             Pattern.compile("(?:[A-Za-z0-9](?:[A-Za-z0-9._-]*[A-Za-z0-9])?)?");
+
+    public static boolean containsNonVisibleAscii(String value) {
+        if (value == null) return true;
+        for (int i = 0; i < value.length(); i++) {
+            char c = value.charAt(i);
+            if (c < 0x21 || c > 0x7E) return true;
+        }
+        return false;
+    }
+
+    public static String requireClean(String value) {
+        if (value == null) throw new IllegalArgumentException("value is required");
+        for (int i = 0; i < value.length(); i++) {
+            char c = value.charAt(i);
+            if (c < 0x20 && c != '\n' && c != '\r' && c != '\t') {
+                throw new IllegalArgumentException("Control characters not allowed");
+            }
+        }
+        return value;
+    }
+
+    public static String cleanNullable(String value) {
+        return value == null ? null : requireClean(value);
+    }
+
+    public static String requireNonBlank(String value) {
+        if (value == null || value.isBlank()) {
+            throw new IllegalArgumentException("value required");
+        }
+        return requireClean(value);
+    }
+
+    public static Map<String, String> requireCleanMap(Map<String, String> map) {
+        if (map == null || map.isEmpty()) return Map.of();
+        Map<String, String> copy = new HashMap<>();
+        map.forEach((k, v) -> copy.put(requireClean(k), requireClean(v)));
+        return Map.copyOf(copy);
+    }
 
     public static void requireMeta(String key) {
         if (key == null) throw new IllegalArgumentException("key required");
@@ -302,7 +342,7 @@ public final class ValidationUtil {
         }
         for (var entry : props.entrySet()) {
             String name = entry.getKey();
-            InputSanitizer.requireClean(name);
+            requireClean(name);
             JsonObject prop = entry.getValue().asJsonObject();
             String type = prop.getString("type", null);
             if (type == null) {
@@ -393,8 +433,8 @@ public final class ValidationUtil {
     }
 
     private static void validateCommonFields(JsonObject prop) {
-        if (prop.containsKey("title")) InputSanitizer.requireClean(prop.getString("title"));
-        if (prop.containsKey("description")) InputSanitizer.requireClean(prop.getString("description"));
+        if (prop.containsKey("title")) requireClean(prop.getString("title"));
+        if (prop.containsKey("description")) requireClean(prop.getString("description"));
     }
 
     private static void ensureNumber(JsonValue v, String field, String type) {

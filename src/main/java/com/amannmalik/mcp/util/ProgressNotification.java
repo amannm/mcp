@@ -1,7 +1,6 @@
 package com.amannmalik.mcp.util;
 
 import com.amannmalik.mcp.core.JsonCodec;
-import com.amannmalik.mcp.validation.InputSanitizer;
 import com.amannmalik.mcp.validation.ValidationUtil;
 import jakarta.json.*;
 
@@ -30,7 +29,7 @@ public record ProgressNotification(
         @Override
         public ProgressNotification fromJson(JsonObject obj) {
             ProgressToken token = switch (obj.get("progressToken").getValueType()) {
-                case STRING -> new ProgressToken.StringToken(InputSanitizer.requireClean(obj.getString("progressToken")));
+                case STRING -> new ProgressToken.StringToken(ValidationUtil.requireClean(obj.getString("progressToken")));
                 case NUMBER -> new ProgressToken.NumericToken(obj.getJsonNumber("progressToken").longValue());
                 default -> throw new IllegalArgumentException("progressToken must be string or number");
             };
@@ -48,7 +47,7 @@ public record ProgressNotification(
         if (!meta.containsKey("progressToken")) return Optional.empty();
         JsonValue val = meta.get("progressToken");
         ProgressToken token = switch (val.getValueType()) {
-            case STRING -> new ProgressToken.StringToken(InputSanitizer.requireClean(meta.getString("progressToken")));
+            case STRING -> new ProgressToken.StringToken(ValidationUtil.requireClean(meta.getString("progressToken")));
             case NUMBER -> new ProgressToken.NumericToken(meta.getJsonNumber("progressToken").longValue());
             default -> throw new IllegalArgumentException("progressToken must be a string or number");
         };
@@ -64,6 +63,6 @@ public record ProgressNotification(
                 throw new IllegalArgumentException("progress must not exceed total");
             }
         }
-        message = InputSanitizer.cleanNullable(message);
+        message = ValidationUtil.cleanNullable(message);
     }
 }

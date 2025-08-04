@@ -2,7 +2,7 @@ package com.amannmalik.mcp.logging;
 
 import com.amannmalik.mcp.core.AbstractEntityCodec;
 import com.amannmalik.mcp.core.JsonCodec;
-import com.amannmalik.mcp.validation.InputSanitizer;
+import com.amannmalik.mcp.validation.ValidationUtil;
 import jakarta.json.*;
 
 import java.util.Set;
@@ -33,6 +33,6 @@ public record LoggingMessageNotification(LoggingLevel level, String logger, Json
 
     public LoggingMessageNotification {
         if (level == null || data == null) throw new IllegalArgumentException("level and data are required");
-        logger = InputSanitizer.cleanNullable(logger);
+        logger = ValidationUtil.cleanNullable(logger);
     }
 }

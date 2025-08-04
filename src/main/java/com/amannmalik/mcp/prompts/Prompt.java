@@ -3,7 +3,6 @@ package com.amannmalik.mcp.prompts;
 import com.amannmalik.mcp.core.AbstractEntityCodec;
 import com.amannmalik.mcp.core.JsonCodec;
 import com.amannmalik.mcp.util.DisplayNameProvider;
-import com.amannmalik.mcp.validation.InputSanitizer;
 import com.amannmalik.mcp.validation.ValidationUtil;
 import jakarta.json.*;
 
@@ -57,10 +56,10 @@ public record Prompt(
         }
     };
     public Prompt {
-        name = InputSanitizer.requireClean(name);
+        name = ValidationUtil.requireClean(name);
         arguments = arguments == null || arguments.isEmpty() ? List.of() : List.copyOf(arguments);
-        title = InputSanitizer.cleanNullable(title);
-        description = InputSanitizer.cleanNullable(description);
+        title = ValidationUtil.cleanNullable(title);
+        description = ValidationUtil.cleanNullable(description);
         ValidationUtil.requireMeta(_meta);
     }
 

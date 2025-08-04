@@ -1,7 +1,7 @@
 package com.amannmalik.mcp.completion;
 
 import com.amannmalik.mcp.util.StringMetrics;
-import com.amannmalik.mcp.validation.InputSanitizer;
+import com.amannmalik.mcp.validation.ValidationUtil;
 
 import java.util.*;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -13,10 +13,10 @@ public final class InMemoryCompletionProvider implements CompletionProvider {
                     String argumentName,
                     Map<String, String> context,
                     List<String> values) {
-        argumentName = InputSanitizer.requireClean(argumentName);
-        Map<String, String> ctx = InputSanitizer.requireCleanMap(context);
+        argumentName = ValidationUtil.requireClean(argumentName);
+        Map<String, String> ctx = ValidationUtil.requireCleanMap(context);
         List<String> vals = values == null ? List.of() : values.stream()
-                .map(InputSanitizer::requireClean)
+                .map(ValidationUtil::requireClean)
                 .toList();
         entries.add(new Entry(ref, argumentName, ctx, vals));
     }

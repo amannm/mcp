@@ -8,7 +8,6 @@ import com.amannmalik.mcp.resources.Resource;
 import com.amannmalik.mcp.resources.ResourceBlock;
 import com.amannmalik.mcp.sampling.MessageContent;
 import com.amannmalik.mcp.util.Base64Util;
-import com.amannmalik.mcp.validation.InputSanitizer;
 import com.amannmalik.mcp.validation.ValidationUtil;
 import jakarta.json.*;
 
@@ -101,14 +100,14 @@ public sealed interface ContentBlock
 
     private static String requireMimeType(String mimeType) {
         if (mimeType == null) throw new IllegalArgumentException("mimeType is required");
-        return InputSanitizer.requireClean(mimeType);
+        return ValidationUtil.requireClean(mimeType);
     }
 
     record Text(String text, Annotations annotations, JsonObject _meta)
             implements ContentBlock, PromptContent, MessageContent {
         public Text {
             if (text == null) throw new IllegalArgumentException("text is required");
-            text = InputSanitizer.requireClean(text);
+            text = ValidationUtil.requireClean(text);
             validateMeta(_meta);
             annotations = orEmpty(annotations);
         }

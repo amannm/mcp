@@ -2,7 +2,7 @@ package com.amannmalik.mcp.transport;
 
 import com.amannmalik.mcp.auth.Principal;
 import com.amannmalik.mcp.util.Base64Util;
-import com.amannmalik.mcp.validation.InputSanitizer;
+import com.amannmalik.mcp.validation.ValidationUtil;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
@@ -54,11 +54,11 @@ final class SessionManager {
     private boolean sanitizeHeaders(String sessionHeader,
                                     String versionHeader,
                                     HttpServletResponse resp) throws IOException {
-        if (sessionHeader != null && InputSanitizer.containsNonVisibleAscii(sessionHeader)) {
+        if (sessionHeader != null && ValidationUtil.containsNonVisibleAscii(sessionHeader)) {
             resp.sendError(HttpServletResponse.SC_BAD_REQUEST);
             return false;
         }
-        if (versionHeader != null && InputSanitizer.containsNonVisibleAscii(versionHeader)) {
+        if (versionHeader != null && ValidationUtil.containsNonVisibleAscii(versionHeader)) {
             resp.sendError(HttpServletResponse.SC_BAD_REQUEST);
             return false;
         }

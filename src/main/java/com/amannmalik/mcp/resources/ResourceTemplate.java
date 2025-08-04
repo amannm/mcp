@@ -50,10 +50,10 @@ public record ResourceTemplate(
 
     public ResourceTemplate {
         uriTemplate = ValidationUtil.requireAbsoluteTemplate(uriTemplate);
-        name = InputSanitizer.requireClean(name);
-        title = InputSanitizer.cleanNullable(title);
-        description = InputSanitizer.cleanNullable(description);
-        mimeType = InputSanitizer.cleanNullable(mimeType);
+        name = ValidationUtil.requireClean(name);
+        title = ValidationUtil.cleanNullable(title);
+        description = ValidationUtil.cleanNullable(description);
+        mimeType = ValidationUtil.cleanNullable(mimeType);
         annotations = annotations == null ? Annotations.EMPTY : annotations;
         ValidationUtil.requireMeta(_meta);
     }

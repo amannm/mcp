@@ -7,7 +7,7 @@ import com.amannmalik.mcp.lifecycle.LifecycleState;
 import com.amannmalik.mcp.lifecycle.ProtocolLifecycle;
 import com.amannmalik.mcp.roots.RootsManager;
 import com.amannmalik.mcp.util.*;
-import com.amannmalik.mcp.validation.InputSanitizer;
+import com.amannmalik.mcp.validation.ValidationUtil;
 import com.amannmalik.mcp.wire.NotificationMethod;
 import com.amannmalik.mcp.wire.RequestMethod;
 import jakarta.json.*;
@@ -225,7 +225,7 @@ public final class ResourceFeature implements AutoCloseable {
     }
 
     private String sanitizeCursor(String cursor) {
-        return cursor == null ? null : Pagination.sanitize(InputSanitizer.cleanNullable(cursor));
+        return cursor == null ? null : Pagination.sanitize(ValidationUtil.cleanNullable(cursor));
     }
 
     private <S extends ListChangeSubscription> S subscribeListChanges(

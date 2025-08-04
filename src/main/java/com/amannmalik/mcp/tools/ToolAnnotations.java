@@ -2,7 +2,7 @@ package com.amannmalik.mcp.tools;
 
 import com.amannmalik.mcp.core.AbstractEntityCodec;
 import com.amannmalik.mcp.core.JsonCodec;
-import com.amannmalik.mcp.validation.InputSanitizer;
+import com.amannmalik.mcp.validation.ValidationUtil;
 import jakarta.json.*;
 
 import java.util.Set;
@@ -40,6 +40,6 @@ public record ToolAnnotations(
     };
 
     public ToolAnnotations {
-        title = InputSanitizer.cleanNullable(title);
+        title = ValidationUtil.cleanNullable(title);
     }
 }

@@ -2,7 +2,6 @@ package com.amannmalik.mcp.prompts;
 
 import com.amannmalik.mcp.core.AbstractEntityCodec;
 import com.amannmalik.mcp.core.JsonCodec;
-import com.amannmalik.mcp.validation.InputSanitizer;
 import com.amannmalik.mcp.validation.ValidationUtil;
 import jakarta.json.*;
 
@@ -39,8 +38,8 @@ public record GetPromptRequest(String name,
                     if (v.getValueType() != JsonValue.ValueType.STRING) {
                         throw new IllegalArgumentException("argument values must be strings");
                     }
-                    String key = InputSanitizer.requireClean(k);
-                    String value = InputSanitizer.requireClean(((JsonString) v).getString());
+                    String key = ValidationUtil.requireClean(k);
+                    String value = ValidationUtil.requireClean(((JsonString) v).getString());
                     tmp.put(key, value);
                 });
                 args = Map.copyOf(tmp);
@@ -51,8 +50,8 @@ public record GetPromptRequest(String name,
     };
     public GetPromptRequest {
         if (name == null) throw new IllegalArgumentException("name required");
-        name = InputSanitizer.requireClean(name);
-        arguments = InputSanitizer.requireCleanMap(arguments);
+        name = ValidationUtil.requireClean(name);
+        arguments = ValidationUtil.requireCleanMap(arguments);
         ValidationUtil.requireMeta(_meta);
     }
 }

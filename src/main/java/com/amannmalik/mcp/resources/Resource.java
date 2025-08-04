@@ -53,10 +53,10 @@ public record Resource(
 
     public Resource {
         uri = ValidationUtil.requireAbsoluteUri(uri);
-        name = InputSanitizer.requireClean(name);
-        title = InputSanitizer.cleanNullable(title);
-        description = InputSanitizer.cleanNullable(description);
-        mimeType = InputSanitizer.cleanNullable(mimeType);
+        name = ValidationUtil.requireClean(name);
+        title = ValidationUtil.cleanNullable(title);
+        description = ValidationUtil.cleanNullable(description);
+        mimeType = ValidationUtil.cleanNullable(mimeType);
         if (size != null) size = ValidationUtil.requireNonNegative(size, "size");
         annotations = annotations == null ? Annotations.EMPTY : annotations;
         ValidationUtil.requireMeta(_meta);

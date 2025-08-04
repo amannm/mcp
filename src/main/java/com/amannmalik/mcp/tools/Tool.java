@@ -3,7 +3,6 @@ package com.amannmalik.mcp.tools;
 import com.amannmalik.mcp.core.AbstractEntityCodec;
 import com.amannmalik.mcp.core.JsonCodec;
 import com.amannmalik.mcp.util.DisplayNameProvider;
-import com.amannmalik.mcp.validation.InputSanitizer;
 import com.amannmalik.mcp.validation.ValidationUtil;
 import jakarta.json.*;
 
@@ -48,12 +47,12 @@ public record Tool(String name,
     };
 
     public Tool {
-        name = InputSanitizer.requireClean(name);
+        name = ValidationUtil.requireClean(name);
         if (inputSchema == null) {
             throw new IllegalArgumentException("inputSchema is required");
         }
-        title = InputSanitizer.cleanNullable(title);
-        description = InputSanitizer.cleanNullable(description);
+        title = ValidationUtil.cleanNullable(title);
+        description = ValidationUtil.cleanNullable(description);
         annotations = annotations == null || (
                 annotations.title() == null &&
                         annotations.readOnlyHint() == null &&
