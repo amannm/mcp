@@ -57,13 +57,9 @@ public record ProgressNotification(
 
     public ProgressNotification {
         if (token == null) throw new IllegalArgumentException("token is required");
-        if (Double.isNaN(progress) || Double.isInfinite(progress) || progress < 0.0) {
-            throw new IllegalArgumentException("progress must be >= 0 and finite");
-        }
+        progress = ValidationUtil.requireNonNegative(progress, "progress");
         if (total != null) {
-            if (Double.isNaN(total) || Double.isInfinite(total) || total <= 0.0) {
-                throw new IllegalArgumentException("total must be > 0 and finite");
-            }
+            total = ValidationUtil.requirePositive(total, "total");
             if (progress > total) {
                 throw new IllegalArgumentException("progress must not exceed total");
             }

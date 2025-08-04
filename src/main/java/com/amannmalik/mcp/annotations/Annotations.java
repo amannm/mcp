@@ -2,6 +2,7 @@ package com.amannmalik.mcp.annotations;
 
 import com.amannmalik.mcp.core.JsonCodec;
 import com.amannmalik.mcp.prompts.Role;
+import com.amannmalik.mcp.validation.ValidationUtil;
 import jakarta.json.Json;
 import jakarta.json.JsonArrayBuilder;
 import jakarta.json.JsonObject;
@@ -57,9 +58,7 @@ public record Annotations(Set<Role> audience, Double priority, Instant lastModif
 
     public Annotations {
         audience = audience == null || audience.isEmpty() ? Set.of() : EnumSet.copyOf(audience);
-        if (priority != null && (priority < 0.0 || priority > 1.0)) {
-            throw new IllegalArgumentException("priority must be between 0.0 and 1.0");
-        }
+        if (priority != null) priority = ValidationUtil.requireFraction(priority, "priority");
     }
 
     @Override

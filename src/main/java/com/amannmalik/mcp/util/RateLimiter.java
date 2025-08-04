@@ -1,5 +1,6 @@
 package com.amannmalik.mcp.util;
 
+import com.amannmalik.mcp.validation.ValidationUtil;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -9,10 +10,8 @@ public final class RateLimiter {
     private final long windowMs;
 
     public RateLimiter(int limit, long windowMs) {
-        if (limit <= 0) throw new IllegalArgumentException("limit must be positive");
-        if (windowMs <= 0) throw new IllegalArgumentException("windowMs must be positive");
-        this.limit = limit;
-        this.windowMs = windowMs;
+        this.limit = ValidationUtil.requirePositive(limit, "limit");
+        this.windowMs = ValidationUtil.requirePositive(windowMs, "windowMs");
     }
 
     public void requireAllowance(String key) {

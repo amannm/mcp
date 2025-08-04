@@ -57,9 +57,7 @@ public record Resource(
         title = InputSanitizer.cleanNullable(title);
         description = InputSanitizer.cleanNullable(description);
         mimeType = InputSanitizer.cleanNullable(mimeType);
-        if (size != null && size < 0) {
-            throw new IllegalArgumentException("size must be >= 0");
-        }
+        if (size != null) size = ValidationUtil.requireNonNegative(size, "size");
         annotations = annotations == null ? Annotations.EMPTY : annotations;
         ValidationUtil.requireMeta(_meta);
     }

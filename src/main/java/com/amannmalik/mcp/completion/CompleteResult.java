@@ -67,16 +67,13 @@ public record CompleteResult(Completion completion, JsonObject _meta) {
                     .map(InputSanitizer::requireClean)
                     .toList();
             this.values = copy;
-            this.total = total;
+            this.total = total == null ? null : ValidationUtil.requireNonNegative(total, "total");
             this.hasMore = hasMore;
             if (this.values.size() > MAX_VALUES) {
                 throw new IllegalArgumentException("values must not exceed " + MAX_VALUES + " items");
             }
-            if (this.total != null) {
-                if (this.total < 0) throw new IllegalArgumentException("total must be non-negative");
-                if (this.total < this.values.size()) {
-                    throw new IllegalArgumentException("total must be >= values length");
-                }
+            if (this.total != null && this.total < this.values.size()) {
+                throw new IllegalArgumentException("total must be >= values length");
             }
         }
     }
