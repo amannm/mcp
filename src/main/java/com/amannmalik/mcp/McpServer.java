@@ -5,6 +5,7 @@ import com.amannmalik.mcp.auth.Principal;
 import com.amannmalik.mcp.completion.*;
 import com.amannmalik.mcp.config.McpConfiguration;
 import com.amannmalik.mcp.elicitation.*;
+import com.amannmalik.mcp.core.JsonRpcEndpoint;
 import com.amannmalik.mcp.jsonrpc.*;
 import com.amannmalik.mcp.lifecycle.*;
 import com.amannmalik.mcp.logging.*;
@@ -28,18 +29,12 @@ import java.io.EOFException;
 import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.*;
-import java.util.concurrent.atomic.AtomicLong;
 
 
 /// - [Server](specification/2025-06-18/server/index.mdx)
 /// - [MCP server conformance test](src/test/resources/com/amannmalik/mcp/mcp_conformance.feature:6-34)
-public final class McpServer implements AutoCloseable {
-    private final Transport transport;
+public final class McpServer extends JsonRpcEndpoint implements AutoCloseable {
     private final ProtocolLifecycle lifecycle;
-    private final JsonRpcRequestProcessor processor;
-    private final ProgressManager progress = new ProgressManager(
-            new RateLimiter(McpConfiguration.current().progressPerSecond(),
-                    McpConfiguration.current().rateLimiterWindowMs()));
     private final ResourceFeature resourceFeature;
     private final ToolProvider tools;
     private final PromptProvider prompts;
@@ -63,8 +58,6 @@ public final class McpServer implements AutoCloseable {
     private final RateLimiter logLimiter = new RateLimiter(
             McpConfiguration.current().logsPerSecond(),
             McpConfiguration.current().rateLimiterWindowMs());
-    private final AtomicLong requestCounter = new AtomicLong(McpConfiguration.current().initialRequestId());
-    private final Map<RequestId, CompletableFuture<JsonRpcMessage>> pending = new ConcurrentHashMap<>();
 
     public McpServer(Transport transport, String instructions) {
         this(Locator.resources(),
@@ -80,7 +73,7 @@ public final class McpServer implements AutoCloseable {
                 transport);
     }
 
-    McpServer(ResourceProvider resources,
+McpServer(ResourceProvider resources,
               ToolProvider tools,
               PromptProvider prompts,
               CompletionProvider completions,
@@ -91,7 +84,10 @@ public final class McpServer implements AutoCloseable {
               Principal principal,
               String instructions,
               Transport transport) {
-        this.transport = transport;
+        super(transport,
+                new ProgressManager(new RateLimiter(McpConfiguration.current().progressPerSecond(),
+                        McpConfiguration.current().rateLimiterWindowMs())),
+                McpConfiguration.current().initialRequestId());
         EnumSet<ServerCapability> caps = EnumSet.noneOf(ServerCapability.class);
         if (resources != null) caps.add(ServerCapability.RESOURCES);
         if (tools != null) caps.add(ServerCapability.TOOLS);
@@ -109,9 +105,8 @@ public final class McpServer implements AutoCloseable {
         this.resourceAccess = resourceAccess;
         this.toolAccess = toolAccess == null ? ToolAccessPolicy.PERMISSIVE : toolAccess;
         this.samplingAccess = samplingAccess == null ? SamplingAccessPolicy.PERMISSIVE : samplingAccess;
-        this.processor = new JsonRpcRequestProcessor(progress, this::send);
         this.principal = principal;
-        this.rootsManager = new RootsManager(lifecycle, this::sendRequest);
+        this.rootsManager = new RootsManager(lifecycle, this::request);
         this.resourceFeature = resources == null ? null :
                 new ResourceFeature(resources, resourceAccess, principal, rootsManager, lifecycle, this::send, progress);
 
@@ -185,7 +180,7 @@ public final class McpServer implements AutoCloseable {
             var obj = receiveMessage();
             if (obj.isEmpty()) continue;
             try {
-                processMessage(JsonRpcCodec.CODEC.fromJson(obj.get()));
+                process(JsonRpcCodec.CODEC.fromJson(obj.get()));
             } catch (IllegalArgumentException e) {
                 handleInvalidRequest(e);
             } catch (IOException e) {
@@ -217,23 +212,6 @@ public final class McpServer implements AutoCloseable {
             send(JsonRpcError.of(RequestId.NullId.INSTANCE, JsonRpcErrorCode.PARSE_ERROR, e.getMessage()));
         } catch (IOException ioe) {
             System.err.println("Failed to send error: " + ioe.getMessage());
-        }
-    }
-
-    private void processMessage(JsonRpcMessage msg) throws IOException {
-        switch (msg) {
-            case JsonRpcRequest req -> onRequest(req);
-            case JsonRpcNotification note -> onNotification(note);
-            case JsonRpcResponse resp -> {
-                var f = pending.remove(resp.id());
-                if (f != null) f.complete(resp);
-            }
-            case JsonRpcError err -> {
-                var f = pending.remove(err.id());
-                if (f != null) f.complete(err);
-            }
-            default -> {
-            }
         }
     }
 
@@ -305,10 +283,6 @@ public final class McpServer implements AutoCloseable {
     private JsonRpcMessage ping(JsonRpcRequest req) {
         PingRequest.CODEC.fromJson(req.params());
         return new JsonRpcResponse(req.id(), PingResponse.CODEC.toJson(new PingResponse()));
-    }
-
-    private synchronized void send(JsonRpcMessage msg) throws IOException {
-        transport.send(JsonRpcCodec.CODEC.toJson(msg));
     }
 
     private void requireClientCapability(ClientCapability cap) {
@@ -507,12 +481,9 @@ public final class McpServer implements AutoCloseable {
         }
     }
 
-    private JsonRpcMessage sendRequest(RequestMethod method, JsonObject params) throws IOException {
-        return sendRequest(method.method(), params, Timeouts.DEFAULT_TIMEOUT_MS);
-    }
-
-    private JsonRpcMessage sendRequest(String method, JsonObject params, long timeoutMillis) throws IOException {
-        RequestId id = new RequestId.NumericId(requestCounter.getAndIncrement());
+    @Override
+    protected JsonRpcMessage doRequest(String method, JsonObject params, long timeoutMillis) throws IOException {
+        RequestId id = nextId();
         CompletableFuture<JsonRpcMessage> future = new CompletableFuture<>();
         pending.put(id, future);
         send(new JsonRpcRequest(id, method, params));
@@ -527,7 +498,7 @@ public final class McpServer implements AutoCloseable {
                     throw new IOException(e);
                 } catch (ExecutionException e) {
                     pending.remove(id);
-                    Throwable cause = e.getCause();
+                    var cause = e.getCause();
                     if (cause instanceof IOException io) throw io;
                     throw new IOException(cause);
                 }
@@ -545,7 +516,7 @@ public final class McpServer implements AutoCloseable {
             var obj = receiveMessage();
             if (obj.isEmpty()) continue;
             try {
-                processMessage(JsonRpcCodec.CODEC.fromJson(obj.get()));
+                process(JsonRpcCodec.CODEC.fromJson(obj.get()));
             } catch (IllegalArgumentException ex) {
                 handleInvalidRequest(ex);
             }
@@ -566,7 +537,7 @@ public final class McpServer implements AutoCloseable {
 
     public ElicitResult elicit(ElicitRequest req) throws IOException {
         requireClientCapability(ClientCapability.ELICITATION);
-        JsonRpcMessage msg = sendRequest(RequestMethod.ELICITATION_CREATE, ElicitRequest.CODEC.toJson(req));
+        JsonRpcMessage msg = request(RequestMethod.ELICITATION_CREATE, ElicitRequest.CODEC.toJson(req));
         if (msg instanceof JsonRpcResponse resp) {
             ElicitResult er = ElicitResult.CODEC.fromJson(resp.result());
             if (er.action() == ElicitationAction.ACCEPT) {
