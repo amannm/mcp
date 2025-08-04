@@ -83,8 +83,8 @@ public final class HostProcess implements AutoCloseable {
             client.setPrincipal(principal);
             client.setSamplingAccessPolicy(samplingAccess);
             client.configurePing(
-                    McpConfiguration.current().system().timeouts().defaultMs(),
-                    McpConfiguration.current().system().timeouts().pingMs());
+                    McpConfiguration.current().system().defaultMs(),
+                    McpConfiguration.current().system().pingMs());
             client.connect();
         } catch (IOException e) {
             clients.remove(id);
