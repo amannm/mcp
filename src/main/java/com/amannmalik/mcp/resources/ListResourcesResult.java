@@ -18,7 +18,7 @@ public record ListResourcesResult(List<Resource> resources,
                     r -> new Pagination.Page<>(r.resources(), r.nextCursor()),
                     ListResourcesResult::_meta,
                     Resource.CODEC,
-                    (items, pr) -> new ListResourcesResult(items, pr.nextCursor(), pr._meta()));
+                    (page, meta) -> new ListResourcesResult(page.items(), page.nextCursor(), meta));
 
     public ListResourcesResult {
         resources = Immutable.list(resources);

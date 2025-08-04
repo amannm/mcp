@@ -18,7 +18,7 @@ public record ListToolsResult(List<Tool> tools,
                     r -> new Pagination.Page<>(r.tools(), r.nextCursor()),
                     ListToolsResult::_meta,
                     Tool.CODEC,
-                    (items, pr) -> new ListToolsResult(items, pr.nextCursor(), pr._meta()));
+                    (page, meta) -> new ListToolsResult(page.items(), page.nextCursor(), meta));
 
     public ListToolsResult {
         tools = Immutable.list(tools);

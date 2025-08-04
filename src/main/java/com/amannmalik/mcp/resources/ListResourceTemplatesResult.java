@@ -18,7 +18,7 @@ public record ListResourceTemplatesResult(List<ResourceTemplate> resourceTemplat
                     r -> new Pagination.Page<>(r.resourceTemplates(), r.nextCursor()),
                     ListResourceTemplatesResult::_meta,
                     ResourceTemplate.CODEC,
-                    (items, pr) -> new ListResourceTemplatesResult(items, pr.nextCursor(), pr._meta()));
+                    (page, meta) -> new ListResourceTemplatesResult(page.items(), page.nextCursor(), meta));
 
     public ListResourceTemplatesResult {
         resourceTemplates = Immutable.list(resourceTemplates);

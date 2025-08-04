@@ -2,15 +2,15 @@ package com.amannmalik.mcp.prompts;
 
 import com.amannmalik.mcp.core.AbstractEntityCodec;
 import com.amannmalik.mcp.core.JsonCodec;
-import com.amannmalik.mcp.util.PaginatedRequest;
 import com.amannmalik.mcp.validation.MetaValidator;
 import jakarta.json.JsonObject;
 
 public record ListPromptsRequest(String cursor, JsonObject _meta) {
     public static final JsonCodec<ListPromptsRequest> CODEC =
             AbstractEntityCodec.paginatedRequest(
-                    r -> new PaginatedRequest(r.cursor(), r._meta()),
-                    pr -> new ListPromptsRequest(pr.cursor(), pr._meta()));
+                    ListPromptsRequest::cursor,
+                    ListPromptsRequest::_meta,
+                    ListPromptsRequest::new);
 
     public ListPromptsRequest {
         MetaValidator.requireValid(_meta);

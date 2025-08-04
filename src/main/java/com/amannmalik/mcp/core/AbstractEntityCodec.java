@@ -13,55 +13,37 @@ import java.util.function.Supplier;
 
 public abstract class AbstractEntityCodec<T> implements JsonCodec<T> {
     private static final Set<String> REQUEST_KEYS = Set.of("cursor", "_meta");
-    private static final Set<String> RESULT_KEYS = Set.of("nextCursor", "_meta");
     private static final Set<String> META_KEYS = Set.of("_meta");
-
-    public static JsonObject toJson(PaginatedRequest req) {
-        JsonObjectBuilder b = Json.createObjectBuilder();
-        if (req.cursor() != null) b.add("cursor", req.cursor());
-        if (req._meta() != null) b.add("_meta", req._meta());
-        return b.build();
-    }
-
-    public static PaginatedRequest fromPaginatedRequest(JsonObject obj) {
-        if (obj == null) return new PaginatedRequest(null, null);
-        requireOnlyKeys(obj, REQUEST_KEYS);
-        return new PaginatedRequest(obj.getString("cursor", null), obj.getJsonObject("_meta"));
-    }
-
-    public static JsonObject toJson(PaginatedResult result) {
-        JsonObjectBuilder b = Json.createObjectBuilder();
-        if (result.nextCursor() != null) b.add("nextCursor", result.nextCursor());
-        if (result._meta() != null) b.add("_meta", result._meta());
-        return b.build();
-    }
-
-    public static PaginatedResult fromPaginatedResult(JsonObject obj) {
-        if (obj == null) return new PaginatedResult(null, null);
-        requireOnlyKeys(obj, RESULT_KEYS);
-        return new PaginatedResult(obj.getString("nextCursor", null), obj.getJsonObject("_meta"));
-    }
 
     public static <T> JsonObject paginated(String field, Pagination.Page<T> page, Function<T, JsonValue> encoder, JsonObject meta) {
         JsonArrayBuilder arr = Json.createArrayBuilder();
         page.items().forEach(item -> arr.add(encoder.apply(item)));
         JsonObjectBuilder b = Json.createObjectBuilder().add(field, arr.build());
-        toJson(new PaginatedResult(page.nextCursor(), meta)).forEach(b::add);
+        if (page.nextCursor() != null) b.add("nextCursor", page.nextCursor());
+        if (meta != null) b.add("_meta", meta);
         return b.build();
     }
 
     public static <T> JsonCodec<T> paginatedRequest(
-            Function<T, PaginatedRequest> to,
-            Function<PaginatedRequest, T> from) {
+            Function<T, String> cursor,
+            Function<T, JsonObject> meta,
+            BiFunction<String, JsonObject, T> from) {
         return new AbstractEntityCodec<>() {
             @Override
             public JsonObject toJson(T value) {
-                return AbstractEntityCodec.toJson(to.apply(value));
+                JsonObjectBuilder b = Json.createObjectBuilder();
+                String c = cursor.apply(value);
+                if (c != null) b.add("cursor", c);
+                JsonObject m = meta.apply(value);
+                if (m != null) b.add("_meta", m);
+                return b.build();
             }
 
             @Override
             public T fromJson(JsonObject obj) {
-                return from.apply(fromPaginatedRequest(obj));
+                if (obj == null) return from.apply(null, null);
+                requireOnlyKeys(obj, REQUEST_KEYS);
+                return from.apply(obj.getString("cursor", null), obj.getJsonObject("_meta"));
             }
         };
     }
@@ -72,7 +54,7 @@ public abstract class AbstractEntityCodec<T> implements JsonCodec<T> {
             Function<R, Pagination.Page<I>> toPage,
             Function<R, JsonObject> meta,
             JsonCodec<I> itemCodec,
-            BiFunction<List<I>, PaginatedResult, R> from) {
+            BiFunction<Pagination.Page<I>, JsonObject, R> from) {
         return new AbstractEntityCodec<>() {
             @Override
             public JsonObject toJson(R value) {
@@ -91,8 +73,10 @@ public abstract class AbstractEntityCodec<T> implements JsonCodec<T> {
                     }
                     items.add(itemCodec.fromJson(v.asJsonObject()));
                 }
-                PaginatedResult pr = fromPaginatedResult(obj);
-                return from.apply(items, pr);
+                String next = obj.getString("nextCursor", null);
+                JsonObject m = obj.getJsonObject("_meta");
+                requireOnlyKeys(obj, Set.of(field, "nextCursor", "_meta"));
+                return from.apply(new Pagination.Page<>(items, next), m);
             }
         };
     }
