@@ -1,6 +1,6 @@
 Feature: MCP protocol conformance
 
-  Scenario Outline: MCP Complete Protocol Conformance
+  Scenario Outline: MCP Protocol Conformance
     Given a running MCP server using <transport> transport
     Then capabilities should be advertised and ping succeeds
     When testing all comprehensive operations

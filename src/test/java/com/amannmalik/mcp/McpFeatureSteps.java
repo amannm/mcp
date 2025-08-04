@@ -30,15 +30,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-/// - [ToolProvider](src/main/java/com/amannmalik/mcp/tools/ToolProvider.java) - Tools conformance testing
-/// - [PromptProvider](src/main/java/com/amannmalik/mcp/prompts/PromptProvider.java) - Prompts conformance testing
-/// - [ResourceProvider](src/main/java/com/amannmalik/mcp/resources/ResourceProvider.java) - Resources conformance testing
-/// - [ElicitationProvider](src/main/java/com/amannmalik/mcp/elicitation/ElicitationProvider.java) - Elicitation conformance testing
-/// - [SamplingProvider](src/main/java/com/amannmalik/mcp/sampling/SamplingProvider.java) - Sampling conformance testing
-/// - [RootsManager](src/main/java/com/amannmalik/mcp/roots/RootsManager.java) - Roots conformance testing
-/// - [McpServer](src/main/java/com/amannmalik/mcp/McpServer.java) - Core server functionality testing
-/// - [JsonRpc](src/main/java/com/amannmalik/mcp/jsonrpc/JsonRpc.java) - Base protocol testing
-public final class McpConformanceSteps {
+public final class McpFeatureSteps {
     private static final String JAVA_BIN = System.getProperty("java.home") + File.separator + "bin" + File.separator + "java";
 
     private Process serverProcess;
