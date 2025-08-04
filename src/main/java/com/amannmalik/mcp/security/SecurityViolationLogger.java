@@ -1,12 +1,14 @@
 package com.amannmalik.mcp.security;
 
-import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 public final class SecurityViolationLogger {
-    private final List<Entry> entries = new ArrayList<>();
+    public enum Level { INFO, WARNING, ERROR }
 
-    public void log(String level, String message) {
+    private final List<Entry> entries = new CopyOnWriteArrayList<>();
+
+    public void log(Level level, String message) {
         entries.add(new Entry(level, message));
     }
 
@@ -14,5 +16,5 @@ public final class SecurityViolationLogger {
         return List.copyOf(entries);
     }
 
-    public record Entry(String level, String message) {}
+    public record Entry(Level level, String message) {}
 }

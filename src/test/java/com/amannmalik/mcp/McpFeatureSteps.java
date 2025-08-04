@@ -685,7 +685,7 @@ public class McpFeatureSteps {
 
     @And("logs security violation with level {string}")
     public void logsSecurityViolationWithLevel(String level) {
-        boolean found = violationLogger.entries().stream().anyMatch(e -> e.level().equals(level));
+        boolean found = violationLogger.entries().stream().anyMatch(e -> e.level().name().equals(level));
         assertTrue(found);
     }
 
