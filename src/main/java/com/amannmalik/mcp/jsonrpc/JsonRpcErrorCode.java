@@ -8,7 +8,8 @@ public enum JsonRpcErrorCode {
     INVALID_REQUEST(-32600),
     METHOD_NOT_FOUND(-32601),
     INVALID_PARAMS(-32602),
-    INTERNAL_ERROR(-32603);
+    INTERNAL_ERROR(-32603),
+    LIFECYCLE_ERROR(0);
 
     private static final Map<Integer, JsonRpcErrorCode> BY_CODE;
     private final int code;
