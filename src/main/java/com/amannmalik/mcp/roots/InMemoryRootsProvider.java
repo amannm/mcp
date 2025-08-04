@@ -1,26 +1,25 @@
 package com.amannmalik.mcp.roots;
 
-import com.amannmalik.mcp.util.ListChangeSubscription;
-import com.amannmalik.mcp.util.ListChangeSupport;
+import com.amannmalik.mcp.util.*;
 
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 public final class InMemoryRootsProvider implements RootsProvider {
     private final List<Root> roots = new CopyOnWriteArrayList<>();
-    private final ListChangeSupport<RootsListener> listChangeSupport = new ListChangeSupport<>();
+    private final ChangeSupport<Void> listChangeSupport = new ChangeSupport<>();
 
     public InMemoryRootsProvider(List<Root> initial) {
         if (initial != null) roots.addAll(initial);
     }
 
     @Override
-    public List<Root> list() {
-        return List.copyOf(roots);
+    public Pagination.Page<Root> list(String cursor) {
+        return Pagination.page(List.copyOf(roots), cursor, Pagination.DEFAULT_PAGE_SIZE);
     }
 
     @Override
-    public ListChangeSubscription subscribe(RootsListener listener) {
+    public ChangeSubscription subscribeList(ChangeListener<Void> listener) {
         return listChangeSupport.subscribe(listener);
     }
 
@@ -40,6 +39,6 @@ public final class InMemoryRootsProvider implements RootsProvider {
     }
 
     private void notifyListeners() {
-        listChangeSupport.notifyListeners();
+        listChangeSupport.notifyListeners(null);
     }
 }

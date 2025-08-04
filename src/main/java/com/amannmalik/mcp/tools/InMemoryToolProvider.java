@@ -12,7 +12,7 @@ import java.util.function.Function;
 public final class InMemoryToolProvider implements ToolProvider {
     private final List<Tool> tools;
     private final Map<String, Function<JsonObject, ToolResult>> handlers;
-    private final ListChangeSupport<ToolListListener> listChangeSupport = new ListChangeSupport<>();
+    private final ChangeSupport<Void> listChangeSupport = new ChangeSupport<>();
 
     public InMemoryToolProvider(List<Tool> tools, Map<String, Function<JsonObject, ToolResult>> handlers) {
         this.tools = tools == null ? new CopyOnWriteArrayList<>() : new CopyOnWriteArrayList<>(tools);
@@ -55,7 +55,7 @@ public final class InMemoryToolProvider implements ToolProvider {
     }
 
     @Override
-    public ListChangeSubscription subscribeList(ToolListListener listener) {
+    public ChangeSubscription subscribeList(ChangeListener<Void> listener) {
         return listChangeSupport.subscribe(listener);
     }
 
@@ -81,7 +81,7 @@ public final class InMemoryToolProvider implements ToolProvider {
     }
 
     private void notifyListeners() {
-        listChangeSupport.notifyListeners();
+        listChangeSupport.notifyListeners(null);
     }
 
     private static ToolResult withStructuredText(ToolResult result) {

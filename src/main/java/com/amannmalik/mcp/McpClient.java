@@ -34,7 +34,7 @@ public final class McpClient implements AutoCloseable {
     private final Transport transport;
     private final SamplingProvider sampling;
     private final RootsProvider roots;
-    private ListChangeSubscription rootsSubscription;
+    private ChangeSubscription rootsSubscription;
     private final boolean rootsListChangedSupported;
     private final ElicitationProvider elicitation;
     private SamplingAccessPolicy samplingAccess = SamplingAccessPolicy.PERMISSIVE;
@@ -56,7 +56,7 @@ public final class McpClient implements AutoCloseable {
     private ServerInfo serverInfo;
     private final McpClientListener listener;
     private volatile ResourceMetadata resourceMetadata;
-    private final Map<String, ResourceListener> resourceListeners = new ConcurrentHashMap<>();
+    private final Map<String, ChangeListener<ResourceUpdate>> resourceListeners = new ConcurrentHashMap<>();
 
     private final JsonRpcRequestProcessor processor;
 
@@ -241,7 +241,7 @@ public final class McpClient implements AutoCloseable {
     private void subscribeRootsIfNeeded() throws IOException {
         if (roots == null || !capabilities.contains(ClientCapability.ROOTS) || !rootsListChangedSupported) return;
         try {
-            rootsSubscription = roots.subscribe(() -> {
+            rootsSubscription = roots.subscribeList(v -> {
                 try {
                     notify(NotificationMethod.ROOTS_LIST_CHANGED,
                             RootsListChangedNotification.CODEC.toJson(new RootsListChangedNotification()));
@@ -442,7 +442,7 @@ public final class McpClient implements AutoCloseable {
         return ListResourceTemplatesResult.CODEC.fromJson(resp.result());
     }
 
-    public ResourceSubscription subscribeResource(String uri, ResourceListener listener) throws IOException {
+    public ChangeSubscription subscribeResource(String uri, ChangeListener<ResourceUpdate> listener) throws IOException {
         if (!serverFeatures.resourcesSubscribe()) {
             throw new IllegalStateException("resource subscribe not supported");
         }
@@ -573,9 +573,9 @@ public final class McpClient implements AutoCloseable {
             return JsonRpcError.of(req.id(), JsonRpcErrorCode.METHOD_NOT_FOUND, "Roots not supported");
         }
         try {
-            var list = roots.list();
+            var page = roots.list(null);
             return new JsonRpcResponse(req.id(),
-                    ListRootsResult.CODEC.toJson(new ListRootsResult(list, null)));
+                    ListRootsResult.CODEC.toJson(new ListRootsResult(page.items(), null)));
         } catch (Exception e) {
             return JsonRpcError.of(req.id(), JsonRpcErrorCode.INTERNAL_ERROR, e.getMessage());
         }
@@ -651,9 +651,9 @@ public final class McpClient implements AutoCloseable {
         if (note.params() == null) return;
         try {
             ResourceUpdatedNotification run = ResourceUpdatedNotification.CODEC.fromJson(note.params());
-            ResourceListener listener = resourceListeners.get(run.uri());
+            var listener = resourceListeners.get(run.uri());
             if (listener != null) {
-                listener.updated(new ResourceUpdate(run.uri(), run.title()));
+                listener.changed(new ResourceUpdate(run.uri(), run.title()));
             }
         } catch (IllegalArgumentException ignore) {
         }

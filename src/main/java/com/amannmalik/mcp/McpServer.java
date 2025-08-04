@@ -43,8 +43,8 @@ public final class McpServer implements AutoCloseable {
     private final PromptProvider prompts;
     private final CompletionProvider completions;
     private final SamplingProvider sampling;
-    private ListChangeSubscription toolListSubscription;
-    private ListChangeSubscription promptsSubscription;
+    private ChangeSubscription toolListSubscription;
+    private ChangeSubscription promptsSubscription;
     private final RootsManager rootsManager;
     private final ResourceAccessController resourceAccess;
     private final ToolAccessPolicy toolAccess;
@@ -116,14 +116,14 @@ public final class McpServer implements AutoCloseable {
 
         if (tools != null && tools.supportsListChanged()) {
             toolListSubscription = subscribeListChanges(
-                    l -> tools.subscribeList(() -> l.listChanged()),
+                    tools::subscribeList,
                     NotificationMethod.TOOLS_LIST_CHANGED,
                     ToolListChangedNotification.CODEC.toJson(new ToolListChangedNotification()));
         }
 
         if (prompts != null && prompts.supportsListChanged()) {
-                    promptsSubscription = subscribeListChanges(
-                    l -> prompts.subscribe(() -> l.listChanged()),
+            promptsSubscription = subscribeListChanges(
+                    prompts::subscribeList,
                     NotificationMethod.PROMPTS_LIST_CHANGED,
                     PromptListChangedNotification.CODEC.toJson(new PromptListChangedNotification()));
         }
@@ -157,12 +157,12 @@ public final class McpServer implements AutoCloseable {
         processor.registerRequest(RequestMethod.SAMPLING_CREATE_MESSAGE.method(), this::handleCreateMessage);
     }
 
-    private <S extends ListChangeSubscription> S subscribeListChanges(
+    private <S extends ChangeSubscription> S subscribeListChanges(
             SubscriptionFactory<S> factory,
             NotificationMethod method,
             JsonObject payload) {
         try {
-            return factory.subscribe(() -> {
+            return factory.subscribe(v -> {
                 if (lifecycle.state() != LifecycleState.OPERATION) return;
                 try {
                     send(new JsonRpcNotification(method.method(), payload));
@@ -175,8 +175,8 @@ public final class McpServer implements AutoCloseable {
     }
 
     @FunctionalInterface
-    private interface SubscriptionFactory<S extends ListChangeSubscription> {
-        S subscribe(ListChangeListener listener);
+    private interface SubscriptionFactory<S extends ChangeSubscription> {
+        S subscribe(ChangeListener<Void> listener);
     }
 
     public void serve() throws IOException {
@@ -552,7 +552,7 @@ public final class McpServer implements AutoCloseable {
         return rootsManager.listRoots();
     }
 
-    public ListChangeSubscription subscribeRoots(RootsListener listener) {
+    public ChangeSubscription subscribeRoots(ChangeListener<Void> listener) {
         return rootsManager.subscribe(listener);
     }
 
