@@ -42,7 +42,7 @@ public final class McpClient implements AutoCloseable {
             McpConfiguration.current().security().auth().defaultPrincipal(), Set.of());
     private final AtomicLong id = new AtomicLong(1);
     private final Map<RequestId, CompletableFuture<JsonRpcMessage>> pending = new ConcurrentHashMap<>();
-    private final ProgressTracker tracker = new ProgressTracker(
+    private final ProgressManager progress = new ProgressManager(
             new RateLimiter(McpConfiguration.current().performance().rateLimits().progressPerSecond(), 1000));
     private Thread reader;
     private PingScheduler pinger;
@@ -115,22 +115,22 @@ public final class McpClient implements AutoCloseable {
         this.pingTimeout = McpConfiguration.current().system().timeouts().pingMs();
 
         var requestProcessor = new JsonRpcRequestProcessor(
-                tracker,
+                progress,
                 n -> notify(n.method(), n.params()));
         this.processor = requestProcessor;
 
-        processor.register(RequestMethod.SAMPLING_CREATE_MESSAGE, this::handleCreateMessage);
-        processor.register(RequestMethod.ROOTS_LIST, this::handleListRoots);
-        processor.register(RequestMethod.ELICITATION_CREATE, this::handleElicit);
-        processor.register(RequestMethod.PING, this::handlePing);
+        processor.registerRequest(RequestMethod.SAMPLING_CREATE_MESSAGE.method(), this::handleCreateMessage);
+        processor.registerRequest(RequestMethod.ROOTS_LIST.method(), this::handleListRoots);
+        processor.registerRequest(RequestMethod.ELICITATION_CREATE.method(), this::handleElicit);
+        processor.registerRequest(RequestMethod.PING.method(), this::handlePing);
 
-        processor.register(NotificationMethod.PROGRESS, this::handleProgress);
-        processor.register(NotificationMethod.MESSAGE, this::handleMessage);
-        processor.register(NotificationMethod.CANCELLED, this::cancelled);
-        processor.register(NotificationMethod.RESOURCES_LIST_CHANGED, this::handleResourcesListChanged);
-        processor.register(NotificationMethod.RESOURCES_UPDATED, this::handleResourceUpdated);
-        processor.register(NotificationMethod.TOOLS_LIST_CHANGED, this::handleToolsListChanged);
-        processor.register(NotificationMethod.PROMPTS_LIST_CHANGED, n -> listener.onPromptsListChanged());
+        processor.registerNotification(NotificationMethod.PROGRESS.method(), this::handleProgress);
+        processor.registerNotification(NotificationMethod.MESSAGE.method(), this::handleMessage);
+        processor.registerNotification(NotificationMethod.CANCELLED.method(), this::cancelled);
+        processor.registerNotification(NotificationMethod.RESOURCES_LIST_CHANGED.method(), this::handleResourcesListChanged);
+        processor.registerNotification(NotificationMethod.RESOURCES_UPDATED.method(), this::handleResourceUpdated);
+        processor.registerNotification(NotificationMethod.TOOLS_LIST_CHANGED.method(), this::handleToolsListChanged);
+        processor.registerNotification(NotificationMethod.PROMPTS_LIST_CHANGED.method(), n -> listener.onPromptsListChanged());
     }
 
     public ClientInfo info() {
@@ -350,7 +350,7 @@ public final class McpClient implements AutoCloseable {
     public JsonRpcMessage request(String method, JsonObject params, long timeoutMillis) throws IOException {
         if (!connected) throw new IllegalStateException("not connected");
         var reqId = new RequestId.NumericId(id.getAndIncrement());
-        tracker.register(reqId, params);
+        progress.register(reqId, params);
         var future = new CompletableFuture<JsonRpcMessage>();
         pending.put(reqId, future);
         try {
@@ -361,7 +361,7 @@ public final class McpClient implements AutoCloseable {
             throw e;
         } finally {
             pending.remove(reqId);
-            tracker.release(reqId);
+            progress.release(reqId);
         }
     }
 
@@ -625,7 +625,7 @@ public final class McpClient implements AutoCloseable {
         if (note.params() == null) return;
         try {
             ProgressNotification pn = ProgressNotification.CODEC.fromJson(note.params());
-            tracker.record(pn);
+            progress.record(pn);
             listener.onProgress(pn);
         } catch (IllegalArgumentException | IllegalStateException ignore) {
         }
@@ -669,9 +669,9 @@ public final class McpClient implements AutoCloseable {
 
     private void cancelled(JsonRpcNotification note) {
         CancelledNotification cn = CancelledNotification.CODEC.fromJson(note.params());
-        tracker.cancel(cn.requestId(), cn.reason());
-        tracker.release(cn.requestId());
-        String reason = tracker.reason(cn.requestId());
+        progress.cancel(cn.requestId(), cn.reason());
+        progress.release(cn.requestId());
+        String reason = progress.reason(cn.requestId());
         if (reason != null) {
             System.err.println("Request " + cn.requestId() + " cancelled: " + reason);
         }
