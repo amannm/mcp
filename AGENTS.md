@@ -19,8 +19,8 @@ description: MCP Specification Expert
 - Leverage `instanceof` pattern matching
 - Unchecked casts are unacceptable
 - Avoid introducing `null` or `Object`
-- Avoid `java.lang.reflect` and `javax.annotation`
-- Avoid inversion-of-control patterns
+- Avoid `java.lang.reflect`
+- Avoid overwrought design patterns
 
 # Wisdom
 
