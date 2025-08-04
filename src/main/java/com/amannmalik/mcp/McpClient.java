@@ -177,13 +177,13 @@ public final class McpClient extends JsonRpcEndpoint implements AutoCloseable {
             }
         });
         try {
-            return future.get(Timeouts.DEFAULT_TIMEOUT_MS, TimeUnit.MILLISECONDS);
+            return future.get(McpConfiguration.DEFAULT_TIMEOUT_MS, TimeUnit.MILLISECONDS);
         } catch (TimeoutException e) {
             try {
                 transport.close();
             } catch (IOException ignore) {
             }
-            throw new IOException("Initialization timed out after " + Timeouts.DEFAULT_TIMEOUT_MS + " ms");
+            throw new IOException("Initialization timed out after " + McpConfiguration.DEFAULT_TIMEOUT_MS + " ms");
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             throw new IOException(e);
@@ -293,7 +293,7 @@ public final class McpClient extends JsonRpcEndpoint implements AutoCloseable {
     }
 
     public PingResponse ping() throws IOException {
-        return ping(Timeouts.DEFAULT_TIMEOUT_MS);
+        return ping(McpConfiguration.DEFAULT_TIMEOUT_MS);
     }
 
     public PingResponse ping(long timeoutMillis) throws IOException {
@@ -324,7 +324,7 @@ public final class McpClient extends JsonRpcEndpoint implements AutoCloseable {
     }
 
     public JsonRpcMessage request(String method, JsonObject params) throws IOException {
-        return request(method, params, Timeouts.DEFAULT_TIMEOUT_MS);
+        return request(method, params, McpConfiguration.DEFAULT_TIMEOUT_MS);
     }
 
     public JsonRpcMessage request(RequestMethod method, JsonObject params) throws IOException {

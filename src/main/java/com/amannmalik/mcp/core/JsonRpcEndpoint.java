@@ -38,11 +38,11 @@ public class JsonRpcEndpoint implements AutoCloseable {
     }
 
     public JsonRpcMessage request(RequestMethod method, JsonObject params) throws IOException {
-        return request(method.method(), params, Timeouts.DEFAULT_TIMEOUT_MS);
+        return request(method.method(), params, McpConfiguration.DEFAULT_TIMEOUT_MS);
     }
 
     public JsonRpcMessage request(String method, JsonObject params) throws IOException {
-        return request(method, params, Timeouts.DEFAULT_TIMEOUT_MS);
+        return request(method, params, McpConfiguration.DEFAULT_TIMEOUT_MS);
     }
 
     public JsonRpcMessage request(RequestMethod method, JsonObject params, long timeoutMillis) throws IOException {
