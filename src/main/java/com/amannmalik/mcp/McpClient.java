@@ -42,8 +42,7 @@ public final class McpClient implements AutoCloseable {
             McpConfiguration.current().security().auth().defaultPrincipal(), Set.of());
     private final AtomicLong id = new AtomicLong(1);
     private final Map<RequestId, CompletableFuture<JsonRpcMessage>> pending = new ConcurrentHashMap<>();
-    private final CancellationTracker cancellationTracker = new CancellationTracker();
-    private final ProgressManager progressManager = new ProgressManager(
+    private final ProgressTracker tracker = new ProgressTracker(
             new RateLimiter(McpConfiguration.current().performance().rateLimits().progressPerSecond(), 1000));
     private Thread reader;
     private PingScheduler pinger;
@@ -59,7 +58,7 @@ public final class McpClient implements AutoCloseable {
     private volatile ResourceMetadata resourceMetadata;
     private final Map<String, ResourceListener> resourceListeners = new ConcurrentHashMap<>();
 
-    private final RpcHandlerRegistry handlers;
+    private final JsonRpcRequestProcessor processor;
 
     public void configurePing(long intervalMillis, long timeoutMillis) {
         if (connected) throw new IllegalStateException("already connected");
@@ -116,23 +115,22 @@ public final class McpClient implements AutoCloseable {
         this.pingTimeout = McpConfiguration.current().system().timeouts().pingMs();
 
         var requestProcessor = new JsonRpcRequestProcessor(
-                progressManager,
-                cancellationTracker,
+                tracker,
                 n -> notify(n.method(), n.params()));
-        this.handlers = new RpcHandlerRegistry(requestProcessor);
+        this.processor = requestProcessor;
 
-        handlers.register(RequestMethod.SAMPLING_CREATE_MESSAGE, this::handleCreateMessage);
-        handlers.register(RequestMethod.ROOTS_LIST, this::handleListRoots);
-        handlers.register(RequestMethod.ELICITATION_CREATE, this::handleElicit);
-        handlers.register(RequestMethod.PING, this::handlePing);
+        processor.register(RequestMethod.SAMPLING_CREATE_MESSAGE, this::handleCreateMessage);
+        processor.register(RequestMethod.ROOTS_LIST, this::handleListRoots);
+        processor.register(RequestMethod.ELICITATION_CREATE, this::handleElicit);
+        processor.register(RequestMethod.PING, this::handlePing);
 
-        handlers.register(NotificationMethod.PROGRESS, this::handleProgress);
-        handlers.register(NotificationMethod.MESSAGE, this::handleMessage);
-        handlers.register(NotificationMethod.CANCELLED, this::cancelled);
-        handlers.register(NotificationMethod.RESOURCES_LIST_CHANGED, this::handleResourcesListChanged);
-        handlers.register(NotificationMethod.RESOURCES_UPDATED, this::handleResourceUpdated);
-        handlers.register(NotificationMethod.TOOLS_LIST_CHANGED, this::handleToolsListChanged);
-        handlers.register(NotificationMethod.PROMPTS_LIST_CHANGED, n -> listener.onPromptsListChanged());
+        processor.register(NotificationMethod.PROGRESS, this::handleProgress);
+        processor.register(NotificationMethod.MESSAGE, this::handleMessage);
+        processor.register(NotificationMethod.CANCELLED, this::cancelled);
+        processor.register(NotificationMethod.RESOURCES_LIST_CHANGED, this::handleResourcesListChanged);
+        processor.register(NotificationMethod.RESOURCES_UPDATED, this::handleResourceUpdated);
+        processor.register(NotificationMethod.TOOLS_LIST_CHANGED, this::handleToolsListChanged);
+        processor.register(NotificationMethod.PROMPTS_LIST_CHANGED, n -> listener.onPromptsListChanged());
     }
 
     public ClientInfo info() {
@@ -352,7 +350,7 @@ public final class McpClient implements AutoCloseable {
     public JsonRpcMessage request(String method, JsonObject params, long timeoutMillis) throws IOException {
         if (!connected) throw new IllegalStateException("not connected");
         var reqId = new RequestId.NumericId(id.getAndIncrement());
-        progressManager.register(reqId, params);
+        tracker.register(reqId, params);
         var future = new CompletableFuture<JsonRpcMessage>();
         pending.put(reqId, future);
         try {
@@ -363,7 +361,7 @@ public final class McpClient implements AutoCloseable {
             throw e;
         } finally {
             pending.remove(reqId);
-            progressManager.release(reqId);
+            tracker.release(reqId);
         }
     }
 
@@ -525,7 +523,7 @@ public final class McpClient implements AutoCloseable {
     }
 
     private void handleRequest(JsonRpcRequest req) {
-        Optional<JsonRpcMessage> resp = handlers.handle(req, true);
+        Optional<JsonRpcMessage> resp = processor.handle(req, true);
         resp.ifPresent(r -> {
             try {
                 send(r);
@@ -535,7 +533,7 @@ public final class McpClient implements AutoCloseable {
     }
 
     private void handleNotification(JsonRpcNotification note) {
-        handlers.handle(note);
+        processor.handle(note);
     }
 
     private void completePending(RequestId id, JsonRpcMessage msg) {
@@ -627,7 +625,7 @@ public final class McpClient implements AutoCloseable {
         if (note.params() == null) return;
         try {
             ProgressNotification pn = ProgressNotification.CODEC.fromJson(note.params());
-            progressManager.record(pn);
+            tracker.record(pn);
             listener.onProgress(pn);
         } catch (IllegalArgumentException | IllegalStateException ignore) {
         }
@@ -671,9 +669,9 @@ public final class McpClient implements AutoCloseable {
 
     private void cancelled(JsonRpcNotification note) {
         CancelledNotification cn = CancelledNotification.CODEC.fromJson(note.params());
-        cancellationTracker.cancel(cn.requestId(), cn.reason());
-        progressManager.release(cn.requestId());
-        String reason = cancellationTracker.reason(cn.requestId());
+        tracker.cancel(cn.requestId(), cn.reason());
+        tracker.release(cn.requestId());
+        String reason = tracker.reason(cn.requestId());
         if (reason != null) {
             System.err.println("Request " + cn.requestId() + " cancelled: " + reason);
         }
