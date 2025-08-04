@@ -78,35 +78,36 @@ public final class ResourceFeature implements AutoCloseable {
     }
 
     private JsonRpcMessage listResources(JsonRpcRequest req) {
-        Optional<ProgressToken> progressToken = progressManager.register(req.id(), req.params());
+        Optional<ProgressToken> progressToken = ProgressNotification.fromMeta(req.params());
         try {
             ListResourcesRequest lr = valid(() -> ListResourcesRequest.CODEC.fromJson(req.params()));
             String cursor = valid(() -> sanitizeCursor(lr.cursor()));
-            if (progressToken.isPresent()) {
+            progressToken.ifPresent(t -> {
                 try {
-                    progressManager.send(new ProgressNotification(progressToken.get(), 0.0, null, "Starting resource list"), sender::send);
-                } catch (IOException ignore) {}
-            }
+                    progressManager.send(new ProgressNotification(t, 0.0, null, "Starting resource list"), sender::send);
+                } catch (IOException ignore) {
+                }
+            });
             Pagination.Page<Resource> list = valid(() -> resources.list(cursor));
-            if (progressToken.isPresent()) {
+            progressToken.ifPresent(t -> {
                 try {
-                    progressManager.send(new ProgressNotification(progressToken.get(), 0.5, null, "Filtering resources"), sender::send);
-                } catch (IOException ignore) {}
-            }
+                    progressManager.send(new ProgressNotification(t, 0.5, null, "Filtering resources"), sender::send);
+                } catch (IOException ignore) {
+                }
+            });
             List<Resource> filtered = list.items().stream()
                     .filter(r -> allowed(r.annotations()) && withinRoots(r.uri()))
                     .toList();
-            if (progressToken.isPresent()) {
+            progressToken.ifPresent(t -> {
                 try {
-                    progressManager.send(new ProgressNotification(progressToken.get(), 1.0, null, "Completed resource list"), sender::send);
-                } catch (IOException ignore) {}
-            }
+                    progressManager.send(new ProgressNotification(t, 1.0, null, "Completed resource list"), sender::send);
+                } catch (IOException ignore) {
+                }
+            });
             ListResourcesResult result = new ListResourcesResult(filtered, list.nextCursor(), null);
             return new JsonRpcResponse(req.id(), ListResourcesResult.CODEC.toJson(result));
         } catch (InvalidParams e) {
             return invalidParams(req, e.getMessage());
-        } finally {
-            progressManager.release(req.id());
         }
     }
 
