@@ -11,7 +11,7 @@ public final class Pagination {
     }
 
     public static final int DEFAULT_PAGE_SIZE =
-            McpConfiguration.current().performance().pagination().defaultPageSize();
+            McpConfiguration.current().performance().defaultPageSize();
 
     public static <T> Page<T> page(List<T> items, String cursor, int size) {
         int start = ValidationUtil.requireNonNegative(decode(cursor), "cursor");

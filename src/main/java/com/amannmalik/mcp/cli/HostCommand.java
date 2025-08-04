@@ -75,7 +75,7 @@ public final class HostCommand {
                     });
                     McpClient client = new McpClient(
                             new ClientInfo(entry.getKey(), entry.getKey(),
-                                    McpConfiguration.current().client().info().version()),
+                                    McpConfiguration.current().client().version()),
                             EnumSet.noneOf(ClientCapability.class),
                             t);
                     host.register(entry.getKey(), client);

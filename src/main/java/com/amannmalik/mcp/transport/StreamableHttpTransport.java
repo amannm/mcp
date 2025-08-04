@@ -129,7 +129,7 @@ public final class StreamableHttpTransport implements Transport {
     }
 
     private static final Principal DEFAULT_PRINCIPAL = new Principal(
-            McpConfiguration.current().security().auth().defaultPrincipal(), Set.of());
+            McpConfiguration.current().security().defaultPrincipal(), Set.of());
 
     Optional<Principal> authorize(HttpServletRequest req, HttpServletResponse resp) throws IOException {
         if (authManager == null) return Optional.of(DEFAULT_PRINCIPAL);

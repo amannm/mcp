@@ -59,9 +59,9 @@ public final class ClientCommand {
 
             McpConfiguration cc = McpConfiguration.current();
             ClientInfo info = new ClientInfo(
-                    cc.client().info().name(),
-                    cc.client().info().displayName(),
-                    cc.client().info().version());
+                    cc.client().name(),
+                    cc.client().displayName(),
+                    cc.client().version());
             EnumSet<ClientCapability> caps = cc.client().capabilities().isEmpty()
                     ? EnumSet.noneOf(ClientCapability.class)
                     : cc.client().capabilities().stream()

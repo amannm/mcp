@@ -72,9 +72,9 @@ public final class ServerCommand {
             List<String> authServers = parseResult.matchedOptionValue("--auth-server", Collections.emptyList());
             boolean testMode = parseResult.matchedOptionValue("--test-mode", false);
 
-            TransportType defType = parseTransport(McpConfiguration.current().server().transport().type());
+            TransportType defType = parseTransport(McpConfiguration.current().server().transportType());
             TransportType type = httpPort == null ? defType : TransportType.HTTP;
-            int port = httpPort == null ? McpConfiguration.current().server().transport().port() : httpPort;
+            int port = httpPort == null ? McpConfiguration.current().server().port() : httpPort;
             if (stdio) type = TransportType.STDIO;
             List<String> auth = authServers;
             if (!testMode) {
@@ -88,7 +88,7 @@ public final class ServerCommand {
                 case STDIO -> t = new StdioTransport(System.in, System.out);
                 case HTTP -> {
                     OriginValidator originValidator = new OriginValidator(
-                            Set.copyOf(McpConfiguration.current().server().transport().allowedOrigins()));
+                            Set.copyOf(McpConfiguration.current().server().allowedOrigins()));
                     AuthorizationManager authManager = null;
                     if (expectedAudience != null && !expectedAudience.isBlank()) {
                         String secretEnv = System.getenv("MCP_JWT_SECRET");
