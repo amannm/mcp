@@ -4,8 +4,8 @@ import com.amannmalik.mcp.annotations.Annotations;
 import com.amannmalik.mcp.auth.Principal;
 import com.amannmalik.mcp.completion.*;
 import com.amannmalik.mcp.config.McpConfiguration;
-import com.amannmalik.mcp.elicitation.*;
 import com.amannmalik.mcp.core.JsonRpcEndpoint;
+import com.amannmalik.mcp.elicitation.*;
 import com.amannmalik.mcp.jsonrpc.*;
 import com.amannmalik.mcp.lifecycle.*;
 import com.amannmalik.mcp.logging.*;
@@ -28,7 +28,8 @@ import jakarta.json.stream.JsonParsingException;
 import java.io.EOFException;
 import java.io.IOException;
 import java.util.*;
-import java.util.concurrent.*;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
 
 
 /// - [Server](specification/2025-06-18/server/index.mdx)
@@ -73,7 +74,7 @@ public final class McpServer extends JsonRpcEndpoint implements AutoCloseable {
                 transport);
     }
 
-McpServer(ResourceProvider resources,
+    McpServer(ResourceProvider resources,
               ToolProvider tools,
               PromptProvider prompts,
               CompletionProvider completions,

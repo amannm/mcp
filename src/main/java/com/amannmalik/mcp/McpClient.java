@@ -2,10 +2,10 @@ package com.amannmalik.mcp;
 
 import com.amannmalik.mcp.auth.Principal;
 import com.amannmalik.mcp.config.McpConfiguration;
+import com.amannmalik.mcp.core.JsonRpcEndpoint;
 import com.amannmalik.mcp.elicitation.*;
 import com.amannmalik.mcp.jsonrpc.*;
 import com.amannmalik.mcp.lifecycle.*;
-import com.amannmalik.mcp.core.JsonRpcEndpoint;
 import com.amannmalik.mcp.logging.*;
 import com.amannmalik.mcp.ping.*;
 import com.amannmalik.mcp.resources.*;
