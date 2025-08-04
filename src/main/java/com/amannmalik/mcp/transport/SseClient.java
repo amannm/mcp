@@ -15,7 +15,7 @@ import java.util.concurrent.atomic.AtomicLong;
 final class SseClient implements AutoCloseable {
     private static final SecureRandom RANDOM = new SecureRandom();
     private static final int HISTORY_LIMIT =
-            McpConfiguration.current().performance().sseHistoryLimit();
+            McpConfiguration.current().sseHistoryLimit();
 
     private AsyncContext context;
     private PrintWriter out;

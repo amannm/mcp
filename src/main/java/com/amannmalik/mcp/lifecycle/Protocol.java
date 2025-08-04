@@ -8,9 +8,9 @@ public final class Protocol {
     }
 
     public static final String LATEST_VERSION =
-            McpConfiguration.current().system().version();
+            McpConfiguration.current().version();
 
     public static final String PREVIOUS_VERSION =
-            McpConfiguration.current().system().compatibilityVersion();
+            McpConfiguration.current().compatibilityVersion();
 }
 

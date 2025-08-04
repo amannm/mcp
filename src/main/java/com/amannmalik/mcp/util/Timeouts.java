@@ -7,5 +7,5 @@ public final class Timeouts {
     }
 
     public static final long DEFAULT_TIMEOUT_MS =
-            McpConfiguration.current().system().defaultMs();
+            McpConfiguration.current().defaultMs();
 }

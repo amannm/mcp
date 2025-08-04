@@ -30,7 +30,7 @@ public record CompleteResult(Completion completion, JsonObject _meta) {
     };
 
     public static final int MAX_VALUES =
-            McpConfiguration.current().performance().maxCompletionValues();
+            McpConfiguration.current().maxCompletionValues();
 
     public CompleteResult {
         if (completion == null) throw new IllegalArgumentException("completion required");
