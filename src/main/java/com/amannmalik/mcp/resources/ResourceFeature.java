@@ -15,6 +15,8 @@ import jakarta.json.*;
 import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Function;
+import java.util.function.Supplier;
 
 
 public final class ResourceFeature implements AutoCloseable {
@@ -115,17 +117,10 @@ public final class ResourceFeature implements AutoCloseable {
         } catch (IllegalArgumentException e) {
             return JsonRpcError.of(req.id(), JsonRpcErrorCode.INVALID_PARAMS, e.getMessage());
         }
-        String uri = rrr.uri();
-        if (!canAccessResource(uri)) {
-            return JsonRpcError.of(req.id(), JsonRpcErrorCode.INTERNAL_ERROR, "Access denied");
-        }
-        ResourceBlock block = resources.read(uri);
-        if (block == null) {
-            return JsonRpcError.of(req.id(), -32002, "Resource not found",
-                    Json.createObjectBuilder().add("uri", uri).build());
-        }
-        ReadResourceResult result = new ReadResourceResult(List.of(block), null);
-        return new JsonRpcResponse(req.id(), ReadResourceResult.CODEC.toJson(result));
+        return withExistingResource(req, rrr.uri(), block -> {
+            ReadResourceResult result = new ReadResourceResult(List.of(block), null);
+            return new JsonRpcResponse(req.id(), ReadResourceResult.CODEC.toJson(result));
+        });
     }
 
     private JsonRpcMessage listTemplates(JsonRpcRequest req) {
@@ -152,33 +147,27 @@ public final class ResourceFeature implements AutoCloseable {
             return JsonRpcError.of(req.id(), JsonRpcErrorCode.INVALID_PARAMS, e.getMessage());
         }
         String uri = sr.uri();
-        if (!canAccessResource(uri)) {
-            return JsonRpcError.of(req.id(), JsonRpcErrorCode.INTERNAL_ERROR, "Access denied");
-        }
-        ResourceBlock existing = resources.read(uri);
-        if (existing == null) {
-            return JsonRpcError.of(req.id(), -32002, "Resource not found",
-                    Json.createObjectBuilder().add("uri", uri).build());
-        }
-        if (subscriptions.containsKey(uri)) {
-            return JsonRpcError.of(req.id(), -32602, "Already subscribed to resource",
-                    Json.createObjectBuilder().add("uri", uri).build());
-        }
-        try {
-            ChangeSubscription sub = resources.subscribe(uri, update -> {
-                try {
-                    ResourceUpdatedNotification n = new ResourceUpdatedNotification(update.uri(), update.title());
-                    sender.send(new JsonRpcNotification(
-                            NotificationMethod.RESOURCES_UPDATED.method(),
-                            ResourceUpdatedNotification.CODEC.toJson(n)));
-                } catch (IOException ignore) {
-                }
-            });
-            subscriptions.put(uri, sub);
-        } catch (Exception e) {
-            return JsonRpcError.of(req.id(), JsonRpcErrorCode.INTERNAL_ERROR, e.getMessage());
-        }
-        return new JsonRpcResponse(req.id(), JsonValue.EMPTY_JSON_OBJECT);
+        return withExistingResource(req, uri, block -> {
+            if (subscriptions.containsKey(uri)) {
+                return JsonRpcError.of(req.id(), -32602, "Already subscribed to resource",
+                        Json.createObjectBuilder().add("uri", uri).build());
+            }
+            try {
+                ChangeSubscription sub = resources.subscribe(uri, update -> {
+                    try {
+                        ResourceUpdatedNotification n = new ResourceUpdatedNotification(update.uri(), update.title());
+                        sender.send(new JsonRpcNotification(
+                                NotificationMethod.RESOURCES_UPDATED.method(),
+                                ResourceUpdatedNotification.CODEC.toJson(n)));
+                    } catch (IOException ignore) {
+                    }
+                });
+                subscriptions.put(uri, sub);
+            } catch (Exception e) {
+                return JsonRpcError.of(req.id(), JsonRpcErrorCode.INTERNAL_ERROR, e.getMessage());
+            }
+            return new JsonRpcResponse(req.id(), JsonValue.EMPTY_JSON_OBJECT);
+        });
     }
 
     private JsonRpcMessage unsubscribeResource(JsonRpcRequest req) {
@@ -189,16 +178,15 @@ public final class ResourceFeature implements AutoCloseable {
             return JsonRpcError.of(req.id(), JsonRpcErrorCode.INVALID_PARAMS, e.getMessage());
         }
         String uri = ur.uri();
-        if (!canAccessResource(uri)) {
-            return JsonRpcError.of(req.id(), JsonRpcErrorCode.INTERNAL_ERROR, "Access denied");
-        }
-        if (!subscriptions.containsKey(uri)) {
-            return JsonRpcError.of(req.id(), -32602, "No active subscription for resource",
-                    Json.createObjectBuilder().add("uri", uri).build());
-        }
-        ChangeSubscription sub = subscriptions.remove(uri);
-        CloseUtil.closeQuietly(sub);
-        return new JsonRpcResponse(req.id(), JsonValue.EMPTY_JSON_OBJECT);
+        return withAccessibleUri(req, uri, () -> {
+            if (!subscriptions.containsKey(uri)) {
+                return JsonRpcError.of(req.id(), -32602, "No active subscription for resource",
+                        Json.createObjectBuilder().add("uri", uri).build());
+            }
+            ChangeSubscription sub = subscriptions.remove(uri);
+            CloseUtil.closeQuietly(sub);
+            return new JsonRpcResponse(req.id(), JsonValue.EMPTY_JSON_OBJECT);
+        });
     }
 
     private boolean allowed(Annotations ann) {
@@ -224,6 +212,24 @@ public final class ResourceFeature implements AutoCloseable {
 
     private String sanitizeCursor(String cursor) {
         return cursor == null ? null : Pagination.sanitize(ValidationUtil.cleanNullable(cursor));
+    }
+
+    private JsonRpcMessage withAccessibleUri(JsonRpcRequest req, String uri, Supplier<JsonRpcMessage> action) {
+        if (!canAccessResource(uri)) {
+            return JsonRpcError.of(req.id(), JsonRpcErrorCode.INTERNAL_ERROR, "Access denied");
+        }
+        return action.get();
+    }
+
+    private JsonRpcMessage withExistingResource(JsonRpcRequest req, String uri, Function<ResourceBlock, JsonRpcMessage> action) {
+        return withAccessibleUri(req, uri, () -> {
+            ResourceBlock block = resources.read(uri);
+            if (block == null) {
+                return JsonRpcError.of(req.id(), -32002, "Resource not found",
+                        Json.createObjectBuilder().add("uri", uri).build());
+            }
+            return action.apply(block);
+        });
     }
 
     private <S extends ChangeSubscription> S subscribeListChanges(
