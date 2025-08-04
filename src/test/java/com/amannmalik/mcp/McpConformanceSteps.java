@@ -9,7 +9,6 @@ import com.amannmalik.mcp.lifecycle.*;
 import com.amannmalik.mcp.logging.LoggingLevel;
 import com.amannmalik.mcp.logging.LoggingMessageNotification;
 import com.amannmalik.mcp.prompts.Role;
-import com.amannmalik.mcp.resources.ResourceSubscription;
 import com.amannmalik.mcp.resources.ResourceUpdate;
 import com.amannmalik.mcp.roots.*;
 import com.amannmalik.mcp.sampling.*;
@@ -29,8 +28,6 @@ import java.net.http.HttpResponse.BodyHandlers;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.function.Function;
-
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -74,285 +71,286 @@ public final class McpConformanceSteps {
         void verify(JsonRpcMessage response, String expected, String parameter);
     }
 
-    private record OperationHandler(OperationExecutor executor, ResultVerifier verifier) {}
+    private record OperationHandler(OperationExecutor executor, ResultVerifier verifier) {
+    }
 
     private final Map<String, OperationHandler> operations = Map.ofEntries(
-        // Resources operations
-        Map.entry("list_resources", new OperationHandler(
-            p -> client.request("resources/list", Json.createObjectBuilder().build()),
-            (r, e, p) -> assertEquals(e, ((JsonRpcResponse) r).result().getJsonArray("resources").getJsonObject(0).getString("uri"))
-        )),
-        Map.entry("read_resource", new OperationHandler(
-            p -> client.request("resources/read", Json.createObjectBuilder().add("uri", p).build()),
-            (r, e, p) -> assertEquals(e, ((JsonRpcResponse) r).result().getJsonArray("contents").getJsonObject(0).getString("text"))
-        )),
-        Map.entry("resource_metadata", new OperationHandler(
-            p -> client.request("resources/list", Json.createObjectBuilder().build()),
-            (r, e, p) -> {
-                var resource = ((JsonRpcResponse) r).result().getJsonArray("resources").getJsonObject(0);
-                assertEquals(p, resource.getString("name"));
-                assertEquals(e, resource.getString("mimeType"));
-            }
-        )),
-        Map.entry("list_resources_annotations", new OperationHandler(
-            p -> client.request("resources/list", Json.createObjectBuilder().build()),
-            (r, e, p) -> {
-                var resource = ((JsonRpcResponse) r).result().getJsonArray("resources").getJsonObject(0);
-                var ann = Annotations.CODEC.fromJson(resource.getJsonObject("annotations"));
-                assertTrue(ann.audience().contains(Role.USER));
-                assertEquals(Double.parseDouble(e), ann.priority());
-                assertNotNull(ann.lastModified());
-            }
-        )),
-        Map.entry("list_templates", new OperationHandler(
-            p -> client.request("resources/templates/list", Json.createObjectBuilder().build()),
-            (r, e, p) -> assertEquals(Integer.parseInt(e), ((JsonRpcResponse) r).result().getJsonArray("resourceTemplates").size())
-        )),
-        Map.entry("subscribe_resource", new OperationHandler(
-            p -> client.request("resources/subscribe", Json.createObjectBuilder().add("uri", p).build()),
-            (r, e, p) -> assertTrue(true)
-        )),
-        Map.entry("unsubscribe_resource", new OperationHandler(
-            p -> client.request("resources/unsubscribe", Json.createObjectBuilder().add("uri", p).build()),
-            (r, e, p) -> assertTrue(true)
-        )),
-        // Tools operations
-        Map.entry("list_tools", new OperationHandler(
-            p -> client.request("tools/list", Json.createObjectBuilder().build()),
-            (r, e, p) -> {
-                var tools = ((JsonRpcResponse) r).result().getJsonArray("tools");
-                assertTrue(tools.stream().map(JsonValue::asJsonObject).anyMatch(t -> e.equals(t.getString("name"))));
-            }
-        )),
-        Map.entry("list_tools_schema", new OperationHandler(
-            p -> client.request("tools/list", Json.createObjectBuilder().build()),
-            (r, e, p) -> {
-                var tools = ((JsonRpcResponse) r).result().getJsonArray("tools");
-                var tool = tools.stream().map(JsonValue::asJsonObject).filter(t -> e.equals(t.getString("name"))).findFirst().orElseThrow();
-                assertEquals("object", tool.getJsonObject("inputSchema").getString("type"));
-            }
-        )),
-        Map.entry("list_tools_output_schema", new OperationHandler(
-            p -> client.request("tools/list", Json.createObjectBuilder().build()),
-            (r, e, p) -> {
-                var tools = ((JsonRpcResponse) r).result().getJsonArray("tools");
-                var tool = tools.stream().map(JsonValue::asJsonObject).filter(t -> e.equals(t.getString("name"))).findFirst().orElseThrow();
-                assertEquals("object", tool.getJsonObject("outputSchema").getString("type"));
-            }
-        )),
-        Map.entry("list_tools_annotations", new OperationHandler(
-            p -> client.request("tools/list", Json.createObjectBuilder().build()),
-            (r, e, p) -> {
-                var tools = ((JsonRpcResponse) r).result().getJsonArray("tools");
-                var tool = tools.stream().map(JsonValue::asJsonObject).filter(t -> p.equals(t.getString("name"))).findFirst().orElseThrow();
-                assertEquals(Boolean.parseBoolean(e), tool.getJsonObject("annotations").getBoolean("readOnlyHint"));
-            }
-        )),
-        // Prompts operations
-        Map.entry("list_prompts", new OperationHandler(
-            p -> client.request("prompts/list", Json.createObjectBuilder().build()),
-            (r, e, p) -> assertEquals(Integer.parseInt(e), ((JsonRpcResponse) r).result().getJsonArray("prompts").size())
-        )),
-        Map.entry("list_prompt_name", new OperationHandler(
-            p -> client.request("prompts/list", Json.createObjectBuilder().build()),
-            (r, e, p) -> assertEquals(e, ((JsonRpcResponse) r).result().getJsonArray("prompts").getJsonObject(0).getString("name"))
-        )),
-        Map.entry("list_prompt_arg_required", new OperationHandler(
-            p -> client.request("prompts/list", Json.createObjectBuilder().build()),
-            (r, e, p) -> {
-                var prompts = ((JsonRpcResponse) r).result().getJsonArray("prompts");
-                var args = prompts.getJsonObject(0).getJsonArray("arguments");
-                assertEquals(Boolean.parseBoolean(e), args.getJsonObject(0).getBoolean("required"));
-            }
-        )),
-        Map.entry("get_prompt", new OperationHandler(
-            p -> client.request("prompts/get", Json.createObjectBuilder().add("name", p).add("arguments", Json.createObjectBuilder().add("test_arg", "v")).build()),
-            (r, e, p) -> assertEquals(e, ((JsonRpcResponse) r).result().getJsonArray("messages").getJsonObject(0).getJsonObject("content").getString("text"))
-        )),
-        Map.entry("get_prompt_text", new OperationHandler(
-            p -> client.request("prompts/get", Json.createObjectBuilder().add("name", p).add("arguments", Json.createObjectBuilder().add("test_arg", "v")).build()),
-            (r, e, p) -> assertEquals(e, ((JsonRpcResponse) r).result().getJsonArray("messages").getJsonObject(0).getJsonObject("content").getString("text"))
-        )),
-        Map.entry("get_prompt_role", new OperationHandler(
-            p -> client.request("prompts/get", Json.createObjectBuilder().add("name", p).add("arguments", Json.createObjectBuilder().add("test_arg", "v")).build()),
-            (r, e, p) -> assertEquals(e, ((JsonRpcResponse) r).result().getJsonArray("messages").getJsonObject(0).getString("role"))
-        )),
-        // Completion operations
-        Map.entry("request_completion", new OperationHandler(
-            p -> client.request("completion/complete", Json.createObjectBuilder()
-                .add("ref", Json.createObjectBuilder().add("type", "ref/prompt").add("name", "test_prompt"))
-                .add("argument", Json.createObjectBuilder().add("name", "test_arg").add("value", "")).build()),
-            (r, e, p) -> {
-                var completion = ((JsonRpcResponse) r).result().getJsonObject("completion");
-                assertEquals(e, completion.getJsonArray("values").getJsonString(0).getString());
-                assertTrue(completion.containsKey("hasMore"));
-            }
-        )),
-        // Logging operations  
-        Map.entry("set_log_level", new OperationHandler(
-            p -> client.request("logging/setLevel", Json.createObjectBuilder().add("level", p).build()),
-            (r, e, p) -> assertTrue(true)
-        )),
-        // Sampling operations
-        Map.entry("request_sampling", new OperationHandler(
-            p -> {
-                var req = new CreateMessageRequest(
-                    List.of(new SamplingMessage(Role.USER, new ContentBlock.Text("hi", null, null))),
-                    new ModelPreferences(List.of(new ModelHint("claude-3-sonnet")), null, 0.5, 0.8),
-                    "You are a helpful assistant.", null, null, 10, List.of(), null, null);
-                return client.request("sampling/createMessage", CreateMessageRequest.CODEC.toJson(req));
-            },
-            (r, e, p) -> {
-                var result = ((JsonRpcResponse) r).result();
-                assertEquals("assistant", result.getString("role"));
-                assertEquals(e, result.getJsonObject("content").getString("text"));
-                assertEquals("mock-model", result.getString("model"));
-                assertEquals("endTurn", result.getString("stopReason"));
-            }
-        )),
-        // Roots operations
-        Map.entry("roots_listed", new OperationHandler(
-            p -> {
-                for (int i = 0; i < 50 && rootsProvider.listCount() == 0; i++) Thread.sleep(100);
-                return new JsonRpcResponse(RequestId.NullId.INSTANCE, Json.createObjectBuilder().add("count", rootsProvider.listCount()).build());
-            },
-            (r, e, p) -> assertTrue(((JsonRpcResponse) r).result().getInt("count") >= Integer.parseInt(e))
-        )),
-        // Authorization operations
-        Map.entry("unauthorized_request", new OperationHandler(
-            p -> {
-                var http = HttpClient.newHttpClient();
-                var req = HttpRequest.newBuilder(URI.create("http://127.0.0.1:" + serverTransport.port() + "/"))
-                    .header("Content-Type", "application/json").POST(HttpRequest.BodyPublishers.ofString("{}")).build();
-                var resp = http.send(req, HttpResponse.BodyHandlers.discarding());
-                return new JsonRpcResponse(RequestId.NullId.INSTANCE, Json.createObjectBuilder()
-                    .add("status", resp.statusCode())
-                    .add("www_authenticate", resp.headers().firstValue("WWW-Authenticate").orElse("")).build());
-            },
-            (r, e, p) -> {
-                var result = ((JsonRpcResponse) r).result();
-                assertEquals(401, result.getInt("status"));
-                assertEquals(e, result.getString("www_authenticate"));
-            }
-        )),
-        Map.entry("resource_metadata_auth_server", new OperationHandler(
-            p -> {
-                var http = HttpClient.newHttpClient();
-                var uri = URI.create("http://127.0.0.1:" + serverTransport.port() + "/.well-known/oauth-protected-resource");
-                var resp = http.send(HttpRequest.newBuilder(uri).GET().build(), HttpResponse.BodyHandlers.ofString());
-                try (var reader = Json.createReader(new StringReader(resp.body()))) {
-                    var body = reader.readObject();
-                    return new JsonRpcResponse(RequestId.NullId.INSTANCE, Json.createObjectBuilder()
-                        .add("status", resp.statusCode())
-                        .add("authorization_server", body.getJsonArray("authorization_servers").getString(0)).build());
-                }
-            },
-            (r, e, p) -> {
-                var result = ((JsonRpcResponse) r).result();
-                assertEquals(200, result.getInt("status"));
-                assertEquals(e, result.getString("authorization_server"));
-            }
-        ))
+            // Resources operations
+            Map.entry("list_resources", new OperationHandler(
+                    p -> client.request("resources/list", Json.createObjectBuilder().build()),
+                    (r, e, p) -> assertEquals(e, ((JsonRpcResponse) r).result().getJsonArray("resources").getJsonObject(0).getString("uri"))
+            )),
+            Map.entry("read_resource", new OperationHandler(
+                    p -> client.request("resources/read", Json.createObjectBuilder().add("uri", p).build()),
+                    (r, e, p) -> assertEquals(e, ((JsonRpcResponse) r).result().getJsonArray("contents").getJsonObject(0).getString("text"))
+            )),
+            Map.entry("resource_metadata", new OperationHandler(
+                    p -> client.request("resources/list", Json.createObjectBuilder().build()),
+                    (r, e, p) -> {
+                        var resource = ((JsonRpcResponse) r).result().getJsonArray("resources").getJsonObject(0);
+                        assertEquals(p, resource.getString("name"));
+                        assertEquals(e, resource.getString("mimeType"));
+                    }
+            )),
+            Map.entry("list_resources_annotations", new OperationHandler(
+                    p -> client.request("resources/list", Json.createObjectBuilder().build()),
+                    (r, e, p) -> {
+                        var resource = ((JsonRpcResponse) r).result().getJsonArray("resources").getJsonObject(0);
+                        var ann = Annotations.CODEC.fromJson(resource.getJsonObject("annotations"));
+                        assertTrue(ann.audience().contains(Role.USER));
+                        assertEquals(Double.parseDouble(e), ann.priority());
+                        assertNotNull(ann.lastModified());
+                    }
+            )),
+            Map.entry("list_templates", new OperationHandler(
+                    p -> client.request("resources/templates/list", Json.createObjectBuilder().build()),
+                    (r, e, p) -> assertEquals(Integer.parseInt(e), ((JsonRpcResponse) r).result().getJsonArray("resourceTemplates").size())
+            )),
+            Map.entry("subscribe_resource", new OperationHandler(
+                    p -> client.request("resources/subscribe", Json.createObjectBuilder().add("uri", p).build()),
+                    (r, e, p) -> assertTrue(true)
+            )),
+            Map.entry("unsubscribe_resource", new OperationHandler(
+                    p -> client.request("resources/unsubscribe", Json.createObjectBuilder().add("uri", p).build()),
+                    (r, e, p) -> assertTrue(true)
+            )),
+            // Tools operations
+            Map.entry("list_tools", new OperationHandler(
+                    p -> client.request("tools/list", Json.createObjectBuilder().build()),
+                    (r, e, p) -> {
+                        var tools = ((JsonRpcResponse) r).result().getJsonArray("tools");
+                        assertTrue(tools.stream().map(JsonValue::asJsonObject).anyMatch(t -> e.equals(t.getString("name"))));
+                    }
+            )),
+            Map.entry("list_tools_schema", new OperationHandler(
+                    p -> client.request("tools/list", Json.createObjectBuilder().build()),
+                    (r, e, p) -> {
+                        var tools = ((JsonRpcResponse) r).result().getJsonArray("tools");
+                        var tool = tools.stream().map(JsonValue::asJsonObject).filter(t -> e.equals(t.getString("name"))).findFirst().orElseThrow();
+                        assertEquals("object", tool.getJsonObject("inputSchema").getString("type"));
+                    }
+            )),
+            Map.entry("list_tools_output_schema", new OperationHandler(
+                    p -> client.request("tools/list", Json.createObjectBuilder().build()),
+                    (r, e, p) -> {
+                        var tools = ((JsonRpcResponse) r).result().getJsonArray("tools");
+                        var tool = tools.stream().map(JsonValue::asJsonObject).filter(t -> e.equals(t.getString("name"))).findFirst().orElseThrow();
+                        assertEquals("object", tool.getJsonObject("outputSchema").getString("type"));
+                    }
+            )),
+            Map.entry("list_tools_annotations", new OperationHandler(
+                    p -> client.request("tools/list", Json.createObjectBuilder().build()),
+                    (r, e, p) -> {
+                        var tools = ((JsonRpcResponse) r).result().getJsonArray("tools");
+                        var tool = tools.stream().map(JsonValue::asJsonObject).filter(t -> p.equals(t.getString("name"))).findFirst().orElseThrow();
+                        assertEquals(Boolean.parseBoolean(e), tool.getJsonObject("annotations").getBoolean("readOnlyHint"));
+                    }
+            )),
+            // Prompts operations
+            Map.entry("list_prompts", new OperationHandler(
+                    p -> client.request("prompts/list", Json.createObjectBuilder().build()),
+                    (r, e, p) -> assertEquals(Integer.parseInt(e), ((JsonRpcResponse) r).result().getJsonArray("prompts").size())
+            )),
+            Map.entry("list_prompt_name", new OperationHandler(
+                    p -> client.request("prompts/list", Json.createObjectBuilder().build()),
+                    (r, e, p) -> assertEquals(e, ((JsonRpcResponse) r).result().getJsonArray("prompts").getJsonObject(0).getString("name"))
+            )),
+            Map.entry("list_prompt_arg_required", new OperationHandler(
+                    p -> client.request("prompts/list", Json.createObjectBuilder().build()),
+                    (r, e, p) -> {
+                        var prompts = ((JsonRpcResponse) r).result().getJsonArray("prompts");
+                        var args = prompts.getJsonObject(0).getJsonArray("arguments");
+                        assertEquals(Boolean.parseBoolean(e), args.getJsonObject(0).getBoolean("required"));
+                    }
+            )),
+            Map.entry("get_prompt", new OperationHandler(
+                    p -> client.request("prompts/get", Json.createObjectBuilder().add("name", p).add("arguments", Json.createObjectBuilder().add("test_arg", "v")).build()),
+                    (r, e, p) -> assertEquals(e, ((JsonRpcResponse) r).result().getJsonArray("messages").getJsonObject(0).getJsonObject("content").getString("text"))
+            )),
+            Map.entry("get_prompt_text", new OperationHandler(
+                    p -> client.request("prompts/get", Json.createObjectBuilder().add("name", p).add("arguments", Json.createObjectBuilder().add("test_arg", "v")).build()),
+                    (r, e, p) -> assertEquals(e, ((JsonRpcResponse) r).result().getJsonArray("messages").getJsonObject(0).getJsonObject("content").getString("text"))
+            )),
+            Map.entry("get_prompt_role", new OperationHandler(
+                    p -> client.request("prompts/get", Json.createObjectBuilder().add("name", p).add("arguments", Json.createObjectBuilder().add("test_arg", "v")).build()),
+                    (r, e, p) -> assertEquals(e, ((JsonRpcResponse) r).result().getJsonArray("messages").getJsonObject(0).getString("role"))
+            )),
+            // Completion operations
+            Map.entry("request_completion", new OperationHandler(
+                    p -> client.request("completion/complete", Json.createObjectBuilder()
+                            .add("ref", Json.createObjectBuilder().add("type", "ref/prompt").add("name", "test_prompt"))
+                            .add("argument", Json.createObjectBuilder().add("name", "test_arg").add("value", "")).build()),
+                    (r, e, p) -> {
+                        var completion = ((JsonRpcResponse) r).result().getJsonObject("completion");
+                        assertEquals(e, completion.getJsonArray("values").getJsonString(0).getString());
+                        assertTrue(completion.containsKey("hasMore"));
+                    }
+            )),
+            // Logging operations
+            Map.entry("set_log_level", new OperationHandler(
+                    p -> client.request("logging/setLevel", Json.createObjectBuilder().add("level", p).build()),
+                    (r, e, p) -> assertTrue(true)
+            )),
+            // Sampling operations
+            Map.entry("request_sampling", new OperationHandler(
+                    p -> {
+                        var req = new CreateMessageRequest(
+                                List.of(new SamplingMessage(Role.USER, new ContentBlock.Text("hi", null, null))),
+                                new ModelPreferences(List.of(new ModelHint("claude-3-sonnet")), null, 0.5, 0.8),
+                                "You are a helpful assistant.", null, null, 10, List.of(), null, null);
+                        return client.request("sampling/createMessage", CreateMessageRequest.CODEC.toJson(req));
+                    },
+                    (r, e, p) -> {
+                        var result = ((JsonRpcResponse) r).result();
+                        assertEquals("assistant", result.getString("role"));
+                        assertEquals(e, result.getJsonObject("content").getString("text"));
+                        assertEquals("mock-model", result.getString("model"));
+                        assertEquals("endTurn", result.getString("stopReason"));
+                    }
+            )),
+            // Roots operations
+            Map.entry("roots_listed", new OperationHandler(
+                    p -> {
+                        for (int i = 0; i < 50 && rootsProvider.listCount() == 0; i++) Thread.sleep(100);
+                        return new JsonRpcResponse(RequestId.NullId.INSTANCE, Json.createObjectBuilder().add("count", rootsProvider.listCount()).build());
+                    },
+                    (r, e, p) -> assertTrue(((JsonRpcResponse) r).result().getInt("count") >= Integer.parseInt(e))
+            )),
+            // Authorization operations
+            Map.entry("unauthorized_request", new OperationHandler(
+                    p -> {
+                        var http = HttpClient.newHttpClient();
+                        var req = HttpRequest.newBuilder(URI.create("http://127.0.0.1:" + serverTransport.port() + "/"))
+                                .header("Content-Type", "application/json").POST(HttpRequest.BodyPublishers.ofString("{}")).build();
+                        var resp = http.send(req, HttpResponse.BodyHandlers.discarding());
+                        return new JsonRpcResponse(RequestId.NullId.INSTANCE, Json.createObjectBuilder()
+                                .add("status", resp.statusCode())
+                                .add("www_authenticate", resp.headers().firstValue("WWW-Authenticate").orElse("")).build());
+                    },
+                    (r, e, p) -> {
+                        var result = ((JsonRpcResponse) r).result();
+                        assertEquals(401, result.getInt("status"));
+                        assertEquals(e, result.getString("www_authenticate"));
+                    }
+            )),
+            Map.entry("resource_metadata_auth_server", new OperationHandler(
+                    p -> {
+                        var http = HttpClient.newHttpClient();
+                        var uri = URI.create("http://127.0.0.1:" + serverTransport.port() + "/.well-known/oauth-protected-resource");
+                        var resp = http.send(HttpRequest.newBuilder(uri).GET().build(), HttpResponse.BodyHandlers.ofString());
+                        try (var reader = Json.createReader(new StringReader(resp.body()))) {
+                            var body = reader.readObject();
+                            return new JsonRpcResponse(RequestId.NullId.INSTANCE, Json.createObjectBuilder()
+                                    .add("status", resp.statusCode())
+                                    .add("authorization_server", body.getJsonArray("authorization_servers").getString(0)).build());
+                        }
+                    },
+                    (r, e, p) -> {
+                        var result = ((JsonRpcResponse) r).result();
+                        assertEquals(200, result.getInt("status"));
+                        assertEquals(e, result.getString("authorization_server"));
+                    }
+            ))
     );
 
     private final Map<String, OperationExecutor> errorOperations = Map.ofEntries(
-        Map.entry("read_invalid_uri", p -> client.request("resources/read", Json.createObjectBuilder().add("uri", p).build())),
-        Map.entry("list_resources_invalid_cursor", p -> client.request("resources/list", Json.createObjectBuilder().add("cursor", p).build())),
-        Map.entry("call_unknown_tool", p -> client.request("tools/call", Json.createObjectBuilder().add("name", p).build())),
-        Map.entry("cancel_tool_call", p -> {
-            try {
-                client.request("tools/call", Json.createObjectBuilder().add("name", p).build(), 100);
-                return new JsonRpcResponse(RequestId.NullId.INSTANCE, Json.createObjectBuilder().build());
-            } catch (IOException e) {
-                return JsonRpcError.of(RequestId.NullId.INSTANCE, JsonRpcErrorCode.INTERNAL_ERROR, e.getMessage());
-            }
-        }),
-        Map.entry("call_tool_elicit_cancel", p -> {
-            elicitation.respond(new ElicitResult(ElicitationAction.CANCEL, null, null));
-            return client.request("tools/call", Json.createObjectBuilder().add("name", p).build());
-        }),
-        Map.entry("call_tool_elicit_decline", p -> {
-            elicitation.respond(new ElicitResult(ElicitationAction.DECLINE, null, null));
-            return client.request("tools/call", Json.createObjectBuilder().add("name", p).build());
-        }),
-        Map.entry("call_tool_elicit_invalid", p -> {
-            elicitation.respond(new ElicitResult(ElicitationAction.ACCEPT, Json.createObjectBuilder().add("msg", 1).build(), null));
-            return client.request("tools/call", Json.createObjectBuilder().add("name", p).build());
-        }),
-        Map.entry("get_prompt_invalid", p -> client.request("prompts/get", Json.createObjectBuilder().add("name", p).build())),
-        Map.entry("get_prompt_missing_arg", p -> client.request("prompts/get", Json.createObjectBuilder().add("name", p).build())),
-        Map.entry("list_prompts_invalid_cursor", p -> client.request("prompts/list", Json.createObjectBuilder().add("cursor", p).build())),
-        Map.entry("request_completion_invalid", p -> client.request("completion/complete", Json.createObjectBuilder()
-            .add("ref", Json.createObjectBuilder().add("type", "ref/prompt").add("name", "nope"))
-            .add("argument", Json.createObjectBuilder().add("name", "test_arg").add("value", "")).build())),
-        Map.entry("request_completion_missing_arg", p -> client.request("completion/complete", Json.createObjectBuilder()
-            .add("ref", Json.createObjectBuilder().add("type", "ref/prompt").add("name", "test_prompt")).build())),
-        Map.entry("request_completion_missing_ref", p -> client.request("completion/complete", Json.createObjectBuilder()
-            .add("argument", Json.createObjectBuilder().add("name", "test_arg").add("value", "")).build())),
-        Map.entry("set_log_level_invalid", p -> client.request("logging/setLevel", Json.createObjectBuilder().add("level", p).build())),
-        Map.entry("set_log_level_missing", p -> client.request("logging/setLevel", Json.createObjectBuilder().build())),
-        Map.entry("set_log_level_extra", p -> client.request("logging/setLevel", Json.createObjectBuilder().add("level", p).add("extra", true).build())),
-        Map.entry("request_sampling_reject", p -> {
-            var req = new CreateMessageRequest(
-                List.of(new SamplingMessage(Role.USER, new ContentBlock.Text("reject", null, null))),
-                new ModelPreferences(List.of(new ModelHint("claude-3-sonnet")), null, 0.5, 0.8),
-                "You are a helpful assistant.", null, null, 10, List.of(), null, null);
-            return client.request("sampling/createMessage", CreateMessageRequest.CODEC.toJson(req));
-        }),
-        Map.entry("ping_invalid", p -> client.request("ping", Json.createObjectBuilder().add("extra", p).build())),
-        Map.entry("roots_invalid", p -> client.request("roots/list", Json.createObjectBuilder().build())),
-        Map.entry("list_tools_invalid_cursor", p -> client.request("tools/list", Json.createObjectBuilder().add("cursor", p).build())),
-        Map.entry("subscribe_invalid_resource", p -> client.request("resources/subscribe", Json.createObjectBuilder().add("uri", p).build())),
-        Map.entry("unsubscribe_nonexistent", p -> client.request("resources/unsubscribe", Json.createObjectBuilder().add("uri", p).build())),
-        Map.entry("subscribe_duplicate_resource", p -> {
-            JsonRpcMessage first = client.request("resources/subscribe", Json.createObjectBuilder().add("uri", p).build());
-            assertInstanceOf(JsonRpcResponse.class, first);
-            return client.request("resources/subscribe", Json.createObjectBuilder().add("uri", p).build());
-        }),
-        // Missing notification operations
-        Map.entry("subscribe_then_update", p -> {
-            client.request("resources/subscribe", Json.createObjectBuilder().add("uri", p).build());
-            return new JsonRpcResponse(RequestId.NullId.INSTANCE, Json.createObjectBuilder().add("status", "success").build());
-        }),
-        Map.entry("multiple_updates", p -> {
-            return new JsonRpcResponse(RequestId.NullId.INSTANCE, Json.createObjectBuilder().add("status", "success").build());
-        }),
-        Map.entry("unsubscribe_all", p -> {
-            client.request("resources/unsubscribe", Json.createObjectBuilder().add("uri", p).build());
-            return new JsonRpcResponse(RequestId.NullId.INSTANCE, Json.createObjectBuilder().add("status", "success").build());
-        }),
-        Map.entry("check_listChanged", p -> {
-            return new JsonRpcResponse(RequestId.NullId.INSTANCE, Json.createObjectBuilder().add("status", "success").build());
-        })
+            Map.entry("read_invalid_uri", p -> client.request("resources/read", Json.createObjectBuilder().add("uri", p).build())),
+            Map.entry("list_resources_invalid_cursor", p -> client.request("resources/list", Json.createObjectBuilder().add("cursor", p).build())),
+            Map.entry("call_unknown_tool", p -> client.request("tools/call", Json.createObjectBuilder().add("name", p).build())),
+            Map.entry("cancel_tool_call", p -> {
+                try {
+                    client.request("tools/call", Json.createObjectBuilder().add("name", p).build(), 100);
+                    return new JsonRpcResponse(RequestId.NullId.INSTANCE, Json.createObjectBuilder().build());
+                } catch (IOException e) {
+                    return JsonRpcError.of(RequestId.NullId.INSTANCE, JsonRpcErrorCode.INTERNAL_ERROR, e.getMessage());
+                }
+            }),
+            Map.entry("call_tool_elicit_cancel", p -> {
+                elicitation.respond(new ElicitResult(ElicitationAction.CANCEL, null, null));
+                return client.request("tools/call", Json.createObjectBuilder().add("name", p).build());
+            }),
+            Map.entry("call_tool_elicit_decline", p -> {
+                elicitation.respond(new ElicitResult(ElicitationAction.DECLINE, null, null));
+                return client.request("tools/call", Json.createObjectBuilder().add("name", p).build());
+            }),
+            Map.entry("call_tool_elicit_invalid", p -> {
+                elicitation.respond(new ElicitResult(ElicitationAction.ACCEPT, Json.createObjectBuilder().add("msg", 1).build(), null));
+                return client.request("tools/call", Json.createObjectBuilder().add("name", p).build());
+            }),
+            Map.entry("get_prompt_invalid", p -> client.request("prompts/get", Json.createObjectBuilder().add("name", p).build())),
+            Map.entry("get_prompt_missing_arg", p -> client.request("prompts/get", Json.createObjectBuilder().add("name", p).build())),
+            Map.entry("list_prompts_invalid_cursor", p -> client.request("prompts/list", Json.createObjectBuilder().add("cursor", p).build())),
+            Map.entry("request_completion_invalid", p -> client.request("completion/complete", Json.createObjectBuilder()
+                    .add("ref", Json.createObjectBuilder().add("type", "ref/prompt").add("name", "nope"))
+                    .add("argument", Json.createObjectBuilder().add("name", "test_arg").add("value", "")).build())),
+            Map.entry("request_completion_missing_arg", p -> client.request("completion/complete", Json.createObjectBuilder()
+                    .add("ref", Json.createObjectBuilder().add("type", "ref/prompt").add("name", "test_prompt")).build())),
+            Map.entry("request_completion_missing_ref", p -> client.request("completion/complete", Json.createObjectBuilder()
+                    .add("argument", Json.createObjectBuilder().add("name", "test_arg").add("value", "")).build())),
+            Map.entry("set_log_level_invalid", p -> client.request("logging/setLevel", Json.createObjectBuilder().add("level", p).build())),
+            Map.entry("set_log_level_missing", p -> client.request("logging/setLevel", Json.createObjectBuilder().build())),
+            Map.entry("set_log_level_extra", p -> client.request("logging/setLevel", Json.createObjectBuilder().add("level", p).add("extra", true).build())),
+            Map.entry("request_sampling_reject", p -> {
+                var req = new CreateMessageRequest(
+                        List.of(new SamplingMessage(Role.USER, new ContentBlock.Text("reject", null, null))),
+                        new ModelPreferences(List.of(new ModelHint("claude-3-sonnet")), null, 0.5, 0.8),
+                        "You are a helpful assistant.", null, null, 10, List.of(), null, null);
+                return client.request("sampling/createMessage", CreateMessageRequest.CODEC.toJson(req));
+            }),
+            Map.entry("ping_invalid", p -> client.request("ping", Json.createObjectBuilder().add("extra", p).build())),
+            Map.entry("roots_invalid", p -> client.request("roots/list", Json.createObjectBuilder().build())),
+            Map.entry("list_tools_invalid_cursor", p -> client.request("tools/list", Json.createObjectBuilder().add("cursor", p).build())),
+            Map.entry("subscribe_invalid_resource", p -> client.request("resources/subscribe", Json.createObjectBuilder().add("uri", p).build())),
+            Map.entry("unsubscribe_nonexistent", p -> client.request("resources/unsubscribe", Json.createObjectBuilder().add("uri", p).build())),
+            Map.entry("subscribe_duplicate_resource", p -> {
+                JsonRpcMessage first = client.request("resources/subscribe", Json.createObjectBuilder().add("uri", p).build());
+                assertInstanceOf(JsonRpcResponse.class, first);
+                return client.request("resources/subscribe", Json.createObjectBuilder().add("uri", p).build());
+            }),
+            // Missing notification operations
+            Map.entry("subscribe_then_update", p -> {
+                client.request("resources/subscribe", Json.createObjectBuilder().add("uri", p).build());
+                return new JsonRpcResponse(RequestId.NullId.INSTANCE, Json.createObjectBuilder().add("status", "success").build());
+            }),
+            Map.entry("multiple_updates", p -> {
+                return new JsonRpcResponse(RequestId.NullId.INSTANCE, Json.createObjectBuilder().add("status", "success").build());
+            }),
+            Map.entry("unsubscribe_all", p -> {
+                client.request("resources/unsubscribe", Json.createObjectBuilder().add("uri", p).build());
+                return new JsonRpcResponse(RequestId.NullId.INSTANCE, Json.createObjectBuilder().add("status", "success").build());
+            }),
+            Map.entry("check_listChanged", p -> {
+                return new JsonRpcResponse(RequestId.NullId.INSTANCE, Json.createObjectBuilder().add("status", "success").build());
+            })
     );
 
     private final Map<String, OperationExecutor> specialOperations = Map.ofEntries(
-        Map.entry("call_tool", p -> client.request("tools/call", Json.createObjectBuilder().add("name", p).build())),
-        Map.entry("call_tool_structured", p -> client.request("tools/call", Json.createObjectBuilder().add("name", p).build())),
-        Map.entry("call_tool_error", p -> client.request("tools/call", Json.createObjectBuilder().add("name", p).build())),
-        Map.entry("call_tool_elicit", p -> {
-            elicitation.respond(new ElicitResult(ElicitationAction.ACCEPT, Json.createObjectBuilder().add("msg", "ping").build(), null));
-            return client.request("tools/call", Json.createObjectBuilder().add("name", p).build());
-        })
+            Map.entry("call_tool", p -> client.request("tools/call", Json.createObjectBuilder().add("name", p).build())),
+            Map.entry("call_tool_structured", p -> client.request("tools/call", Json.createObjectBuilder().add("name", p).build())),
+            Map.entry("call_tool_error", p -> client.request("tools/call", Json.createObjectBuilder().add("name", p).build())),
+            Map.entry("call_tool_elicit", p -> {
+                elicitation.respond(new ElicitResult(ElicitationAction.ACCEPT, Json.createObjectBuilder().add("msg", "ping").build(), null));
+                return client.request("tools/call", Json.createObjectBuilder().add("name", p).build());
+            })
     );
 
     private final Map<String, ResultVerifier> specialVerifiers = Map.ofEntries(
-        Map.entry("call_tool", (r, e, p) -> assertEquals(e, ((JsonRpcResponse) r).result().getJsonArray("content").getJsonObject(0).getString("text"))),
-        Map.entry("call_tool_structured", (r, e, p) -> {
-            var result = ((JsonRpcResponse) r).result();
-            assertEquals(e, result.getJsonArray("content").getJsonObject(0).getString("text"));
-            assertEquals(e, result.getJsonObject("structuredContent").getString("message"));
-        }),
-        Map.entry("call_tool_error", (r, e, p) -> {
-            var result = ((JsonRpcResponse) r).result();
-            assertEquals(e, result.getJsonArray("content").getJsonObject(0).getString("text"));
-            assertTrue(result.getBoolean("isError"));
-        }),
-        Map.entry("call_tool_elicit", (r, e, p) -> assertEquals(e, ((JsonRpcResponse) r).result().getJsonArray("content").getJsonObject(0).getString("text"))),
-        Map.entry("subscribe_then_update", (r, e, p) -> assertEquals(e, ((JsonRpcResponse) r).result().getString("status"))),
-        Map.entry("multiple_updates", (r, e, p) -> assertEquals(e, ((JsonRpcResponse) r).result().getString("status"))),
-        Map.entry("unsubscribe_all", (r, e, p) -> assertEquals(e, ((JsonRpcResponse) r).result().getString("status"))),
-        Map.entry("check_listChanged", (r, e, p) -> assertEquals(e, ((JsonRpcResponse) r).result().getString("status")))
+            Map.entry("call_tool", (r, e, p) -> assertEquals(e, ((JsonRpcResponse) r).result().getJsonArray("content").getJsonObject(0).getString("text"))),
+            Map.entry("call_tool_structured", (r, e, p) -> {
+                var result = ((JsonRpcResponse) r).result();
+                assertEquals(e, result.getJsonArray("content").getJsonObject(0).getString("text"));
+                assertEquals(e, result.getJsonObject("structuredContent").getString("message"));
+            }),
+            Map.entry("call_tool_error", (r, e, p) -> {
+                var result = ((JsonRpcResponse) r).result();
+                assertEquals(e, result.getJsonArray("content").getJsonObject(0).getString("text"));
+                assertTrue(result.getBoolean("isError"));
+            }),
+            Map.entry("call_tool_elicit", (r, e, p) -> assertEquals(e, ((JsonRpcResponse) r).result().getJsonArray("content").getJsonObject(0).getString("text"))),
+            Map.entry("subscribe_then_update", (r, e, p) -> assertEquals(e, ((JsonRpcResponse) r).result().getString("status"))),
+            Map.entry("multiple_updates", (r, e, p) -> assertEquals(e, ((JsonRpcResponse) r).result().getString("status"))),
+            Map.entry("unsubscribe_all", (r, e, p) -> assertEquals(e, ((JsonRpcResponse) r).result().getString("status"))),
+            Map.entry("check_listChanged", (r, e, p) -> assertEquals(e, ((JsonRpcResponse) r).result().getString("status")))
     );
 
     @Before
@@ -587,7 +585,7 @@ public final class McpConformanceSteps {
     public void testComprehensiveNotificationValidation(DataTable table) throws Exception {
         for (var row : table.asMaps()) {
             String operation = row.get("operation");
-            String parameter = Objects.toString(row.get("parameter"), "");  
+            String parameter = Objects.toString(row.get("parameter"), "");
             String expected = Objects.toString(row.get("expected_result"), "");
 
             if (operation != null && !operation.isEmpty()) {
@@ -644,11 +642,11 @@ public final class McpConformanceSteps {
 
     private Transport createHttpTransport() throws Exception {
         serverTransport = new StreamableHttpTransport(0,
-            Set.of("http://localhost", "http://127.0.0.1"),
-            new AuthorizationManager(List.of(new BearerTokenAuthorizationStrategy(token -> new Principal("test", Set.of())))),
-            "https://example.com/.well-known/oauth-protected-resource",
-            List.of("https://auth.example.com"));
-        
+                Set.of("http://localhost", "http://127.0.0.1"),
+                new AuthorizationManager(List.of(new BearerTokenAuthorizationStrategy(token -> new Principal("test", Set.of())))),
+                "https://example.com/.well-known/oauth-protected-resource",
+                List.of("https://auth.example.com"));
+
         serverTask = CompletableFuture.runAsync(() -> {
             try (var server = new McpServer(serverTransport, null)) {
                 server.serve();
@@ -656,7 +654,7 @@ public final class McpConformanceSteps {
                 throw new RuntimeException(e);
             }
         }, runnable -> Thread.ofVirtual().start(runnable));
-        
+
         String clientUrl = "http://127.0.0.1:" + serverTransport.port() + "/";
         return new StreamableHttpClientTransport(URI.create(clientUrl));
     }

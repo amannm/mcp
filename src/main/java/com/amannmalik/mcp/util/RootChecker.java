@@ -33,7 +33,7 @@ public final class RootChecker {
                 .map(Root::uri)
                 .map(RootChecker::toRealPath)
                 .flatMap(Optional::stream)
-                .anyMatch(base -> targetPath.startsWith(base));
+                .anyMatch(targetPath::startsWith);
     }
 
     private static Optional<Path> toRealPath(String uri) {

@@ -8,7 +8,8 @@ import com.amannmalik.mcp.elicitation.*;
 import com.amannmalik.mcp.jsonrpc.*;
 import com.amannmalik.mcp.lifecycle.*;
 import com.amannmalik.mcp.logging.*;
-import com.amannmalik.mcp.ping.*;
+import com.amannmalik.mcp.ping.PingRequest;
+import com.amannmalik.mcp.ping.PingResponse;
 import com.amannmalik.mcp.prompts.*;
 import com.amannmalik.mcp.resources.*;
 import com.amannmalik.mcp.roots.*;
@@ -116,14 +117,14 @@ public final class McpServer implements AutoCloseable {
 
         if (tools != null && tools.supportsListChanged()) {
             toolListSubscription = subscribeListChanges(
-                    l -> tools.subscribeList(() -> l.listChanged()),
+                    l -> tools.subscribeList(l::listChanged),
                     NotificationMethod.TOOLS_LIST_CHANGED,
                     ToolListChangedNotification.CODEC.toJson(new ToolListChangedNotification()));
         }
 
         if (prompts != null && prompts.supportsListChanged()) {
-                    promptsSubscription = subscribeListChanges(
-                    l -> prompts.subscribe(() -> l.listChanged()),
+            promptsSubscription = subscribeListChanges(
+                    l -> prompts.subscribe(l::listChanged),
                     NotificationMethod.PROMPTS_LIST_CHANGED,
                     PromptListChangedNotification.CODEC.toJson(new PromptListChangedNotification()));
         }

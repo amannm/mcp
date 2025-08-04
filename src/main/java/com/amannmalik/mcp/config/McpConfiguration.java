@@ -74,6 +74,8 @@ public record McpConfiguration(String version,
             throw new IllegalArgumentException("errorCodes.rateLimit must be negative");
     }
 
-    public static McpConfiguration current() { return CURRENT; }
+    public static McpConfiguration current() {
+        return CURRENT;
+    }
 }
 

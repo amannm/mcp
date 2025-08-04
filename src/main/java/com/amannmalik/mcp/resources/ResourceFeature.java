@@ -13,9 +13,7 @@ import com.amannmalik.mcp.wire.RequestMethod;
 import jakarta.json.*;
 
 import java.io.IOException;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
 
@@ -46,7 +44,7 @@ public final class ResourceFeature implements AutoCloseable {
         this.progress = progress;
         this.listSubscription = resources.supportsListChanged() ?
                 subscribeListChanges(
-                        l -> resources.subscribeList(() -> l.listChanged()),
+                        l -> resources.subscribeList(l::listChanged),
                         NotificationMethod.RESOURCES_LIST_CHANGED,
                         ResourceListChangedNotification.CODEC.toJson(new ResourceListChangedNotification())) : null;
     }

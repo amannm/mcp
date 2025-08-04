@@ -6,9 +6,7 @@ import com.amannmalik.mcp.wire.NotificationMethod;
 import jakarta.json.JsonObject;
 
 import java.io.IOException;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
 public final class ProgressManager {

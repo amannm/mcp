@@ -1,8 +1,8 @@
 package com.amannmalik.mcp.sampling;
 
 import com.amannmalik.mcp.content.ContentBlock;
-import com.amannmalik.mcp.core.JsonCodec;
 import com.amannmalik.mcp.core.AbstractEntityCodec;
+import com.amannmalik.mcp.core.JsonCodec;
 import com.amannmalik.mcp.prompts.Role;
 import com.amannmalik.mcp.validation.ValidationUtil;
 import jakarta.json.*;

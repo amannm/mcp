@@ -5,9 +5,7 @@ import com.amannmalik.mcp.core.JsonCodec;
 import com.amannmalik.mcp.validation.ValidationUtil;
 import jakarta.json.*;
 
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 public record GetPromptRequest(String name,
                                Map<String, String> arguments,
@@ -48,6 +46,7 @@ public record GetPromptRequest(String name,
             return new GetPromptRequest(name, args, meta);
         }
     };
+
     public GetPromptRequest {
         if (name == null) throw new IllegalArgumentException("name required");
         name = ValidationUtil.requireClean(name);

@@ -1,10 +1,12 @@
 package com.amannmalik.mcp.roots;
 
-import com.amannmalik.mcp.core.*;
+import com.amannmalik.mcp.core.AbstractEntityCodec;
+import com.amannmalik.mcp.core.JsonCodec;
 import com.amannmalik.mcp.validation.ValidationUtil;
 import jakarta.json.*;
 
-import java.util.*;
+import java.util.List;
+import java.util.Set;
 
 public record ListRootsResult(List<Root> roots, JsonObject _meta) {
     public static final JsonCodec<ListRootsResult> CODEC = new AbstractEntityCodec<>() {

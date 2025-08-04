@@ -38,6 +38,7 @@ public record PromptArgument(
             return new PromptArgument(name, title, description, required, meta);
         }
     };
+
     public PromptArgument {
         name = ValidationUtil.requireClean(name);
         title = ValidationUtil.cleanNullable(title);

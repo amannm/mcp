@@ -3,9 +3,7 @@ package com.amannmalik.mcp.util;
 import com.amannmalik.mcp.jsonrpc.*;
 
 import java.io.IOException;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 import java.util.function.Consumer;
 import java.util.function.Function;
 

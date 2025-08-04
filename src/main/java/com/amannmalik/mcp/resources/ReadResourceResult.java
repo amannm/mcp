@@ -5,7 +5,8 @@ import com.amannmalik.mcp.util.Immutable;
 import com.amannmalik.mcp.validation.ValidationUtil;
 import jakarta.json.*;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
 
 public record ReadResourceResult(List<ResourceBlock> contents, JsonObject _meta) {
     public static final JsonCodec<ReadResourceResult> CODEC = new JsonCodec<>() {

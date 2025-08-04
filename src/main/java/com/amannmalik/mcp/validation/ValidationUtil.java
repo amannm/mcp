@@ -5,9 +5,7 @@ import jakarta.json.*;
 import java.net.URI;
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.regex.Pattern;
 
 public final class ValidationUtil {

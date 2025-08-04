@@ -3,7 +3,8 @@ package com.amannmalik.mcp.prompts;
 import com.amannmalik.mcp.content.ContentBlock;
 import com.amannmalik.mcp.core.AbstractEntityCodec;
 import com.amannmalik.mcp.core.JsonCodec;
-import jakarta.json.*;
+import jakarta.json.Json;
+import jakarta.json.JsonObject;
 
 import java.util.Set;
 

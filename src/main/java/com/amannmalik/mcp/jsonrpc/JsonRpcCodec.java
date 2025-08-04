@@ -4,7 +4,8 @@ import com.amannmalik.mcp.core.JsonCodec;
 import jakarta.json.*;
 
 public final class JsonRpcCodec {
-    private JsonRpcCodec() {}
+    private JsonRpcCodec() {
+    }
 
     public static final JsonCodec<JsonRpcMessage> CODEC = new JsonCodec<>() {
         @Override

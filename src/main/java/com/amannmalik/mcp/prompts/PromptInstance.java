@@ -4,9 +4,7 @@ import com.amannmalik.mcp.core.AbstractEntityCodec;
 import com.amannmalik.mcp.core.JsonCodec;
 import jakarta.json.*;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 public record PromptInstance(String description, List<PromptMessage> messages) {
     public static final JsonCodec<PromptInstance> CODEC = new AbstractEntityCodec<>() {

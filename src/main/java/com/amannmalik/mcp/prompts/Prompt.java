@@ -6,9 +6,7 @@ import com.amannmalik.mcp.util.DisplayNameProvider;
 import com.amannmalik.mcp.validation.ValidationUtil;
 import jakarta.json.*;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 public record Prompt(
         String name,
@@ -55,6 +53,7 @@ public record Prompt(
             return new Prompt(name, title, description, args, meta);
         }
     };
+
     public Prompt {
         name = ValidationUtil.requireClean(name);
         arguments = arguments == null || arguments.isEmpty() ? List.of() : List.copyOf(arguments);

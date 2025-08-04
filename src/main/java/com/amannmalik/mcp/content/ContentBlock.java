@@ -1,8 +1,8 @@
 package com.amannmalik.mcp.content;
 
 import com.amannmalik.mcp.annotations.Annotations;
-import com.amannmalik.mcp.core.JsonCodec;
 import com.amannmalik.mcp.core.AbstractEntityCodec;
+import com.amannmalik.mcp.core.JsonCodec;
 import com.amannmalik.mcp.prompts.PromptContent;
 import com.amannmalik.mcp.resources.Resource;
 import com.amannmalik.mcp.resources.ResourceBlock;
