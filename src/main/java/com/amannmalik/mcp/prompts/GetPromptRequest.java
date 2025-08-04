@@ -1,7 +1,6 @@
 package com.amannmalik.mcp.prompts;
 
-import com.amannmalik.mcp.core.JsonCodec;
-import com.amannmalik.mcp.core.AbstractEntityCodec;
+import com.amannmalik.mcp.core.*;
 import com.amannmalik.mcp.validation.InputSanitizer;
 import com.amannmalik.mcp.validation.MetaValidator;
 import jakarta.json.*;
@@ -13,7 +12,7 @@ import java.util.Set;
 public record GetPromptRequest(String name,
                                Map<String, String> arguments,
                                JsonObject _meta) {
-    public static final JsonCodec<GetPromptRequest> CODEC = new JsonCodec<>() {
+    public static final JsonCodec<GetPromptRequest> CODEC = new AbstractEntityCodec<>() {
         @Override
         public JsonObject toJson(GetPromptRequest req) {
             JsonObjectBuilder b = Json.createObjectBuilder().add("name", req.name());
@@ -29,7 +28,7 @@ public record GetPromptRequest(String name,
         @Override
         public GetPromptRequest fromJson(JsonObject obj) {
             if (obj == null) throw new IllegalArgumentException("params required");
-            AbstractEntityCodec.requireOnlyKeys(obj, Set.of("name", "arguments", "_meta"));
+            requireOnlyKeys(obj, Set.of("name", "arguments", "_meta"));
             String name = obj.getString("name", null);
             if (name == null) throw new IllegalArgumentException("name required");
             JsonObject argsObj = obj.getJsonObject("arguments");

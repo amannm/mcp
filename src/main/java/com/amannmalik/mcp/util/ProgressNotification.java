@@ -1,11 +1,11 @@
 package com.amannmalik.mcp.util;
 
-import com.amannmalik.mcp.core.JsonCodec;
+import com.amannmalik.mcp.core.*;
 import com.amannmalik.mcp.validation.InputSanitizer;
 import com.amannmalik.mcp.validation.MetaValidator;
 import jakarta.json.*;
 
-import java.util.Optional;
+import java.util.*;
 
 public record ProgressNotification(
         ProgressToken token,
@@ -13,7 +13,7 @@ public record ProgressNotification(
         Double total,
         String message
 ) {
-    public static final JsonCodec<ProgressNotification> CODEC = new JsonCodec<>() {
+    public static final JsonCodec<ProgressNotification> CODEC = new AbstractEntityCodec<>() {
         @Override
         public JsonObject toJson(ProgressNotification note) {
             JsonObjectBuilder b = Json.createObjectBuilder();
@@ -29,6 +29,8 @@ public record ProgressNotification(
 
         @Override
         public ProgressNotification fromJson(JsonObject obj) {
+            if (obj == null) throw new IllegalArgumentException("object required");
+            requireOnlyKeys(obj, Set.of("progressToken", "progress", "total", "message"));
             ProgressToken token = switch (obj.get("progressToken").getValueType()) {
                 case STRING -> new ProgressToken.StringToken(InputSanitizer.requireClean(obj.getString("progressToken")));
                 case NUMBER -> new ProgressToken.NumericToken(obj.getJsonNumber("progressToken").longValue());
