@@ -10,13 +10,16 @@ public final class ErrorCodeMapper {
             "Invalid Request", JsonRpcErrorCode.INVALID_REQUEST,
             "Method not found", JsonRpcErrorCode.METHOD_NOT_FOUND,
             "Invalid params", JsonRpcErrorCode.INVALID_PARAMS,
-            "Internal error", JsonRpcErrorCode.INTERNAL_ERROR);
+            "Internal error", JsonRpcErrorCode.INTERNAL_ERROR,
+            "Lifecycle error", JsonRpcErrorCode.LIFECYCLE_ERROR);
 
     private ErrorCodeMapper() {
     }
 
     public static int code(String message) {
-        return MAP.getOrDefault(message, JsonRpcErrorCode.INVALID_REQUEST).code();
+        JsonRpcErrorCode code = MAP.get(message);
+        if (code == null) throw new IllegalArgumentException(message);
+        return code.code();
     }
 }
 
