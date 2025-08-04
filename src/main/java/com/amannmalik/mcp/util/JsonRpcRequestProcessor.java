@@ -12,19 +12,13 @@ import java.util.function.Function;
 public final class JsonRpcRequestProcessor {
     private final ProgressManager progress;
     private final NotificationSender sender;
-    private final IdTracker idTracker;
     private final Map<String, Function<JsonRpcRequest, JsonRpcMessage>> requests = new HashMap<>();
     private final Map<String, Consumer<JsonRpcNotification>> notifications = new HashMap<>();
 
-    public JsonRpcRequestProcessor(ProgressManager progress, NotificationSender sender, IdTracker idTracker) {
+    public JsonRpcRequestProcessor(ProgressManager progress, NotificationSender sender) {
         if (progress == null || sender == null) throw new IllegalArgumentException("progress and sender required");
         this.progress = progress;
         this.sender = sender;
-        this.idTracker = idTracker;
-    }
-
-    public JsonRpcRequestProcessor(ProgressManager progress, NotificationSender sender) {
-        this(progress, sender, null);
     }
 
     public void registerRequest(String method, Function<JsonRpcRequest, JsonRpcMessage> handler) {
@@ -38,14 +32,11 @@ public final class JsonRpcRequestProcessor {
     public Optional<JsonRpcMessage> handle(JsonRpcRequest req, boolean cancellable) {
         if (req == null) throw new IllegalArgumentException("request required");
 
-        Optional<JsonRpcMessage> idError = registerId(req.id());
-        if (idError.isPresent()) return idError;
-
         final Optional<ProgressToken> token;
         try {
             token = progress.register(req.id(), req.params());
         } catch (IllegalArgumentException e) {
-            cleanup(req.id());
+            progress.release(req.id());
             return Optional.of(JsonRpcError.of(req.id(), JsonRpcErrorCode.INVALID_PARAMS, e.getMessage()));
         }
 
@@ -57,17 +48,7 @@ public final class JsonRpcRequestProcessor {
             token.ifPresent(t -> sendProgress(t, 1.0));
             return Optional.of(resp);
         } finally {
-            cleanup(req.id());
-        }
-    }
-
-    private Optional<JsonRpcMessage> registerId(RequestId id) {
-        if (idTracker == null) return Optional.empty();
-        try {
-            idTracker.register(id);
-            return Optional.empty();
-        } catch (IllegalArgumentException e) {
-            return Optional.of(JsonRpcError.of(id, JsonRpcErrorCode.INVALID_REQUEST, e.getMessage()));
+            progress.release(req.id());
         }
     }
 
@@ -90,11 +71,6 @@ public final class JsonRpcRequestProcessor {
     public void handle(JsonRpcNotification note) {
         var handler = notifications.get(note.method());
         if (handler != null) handler.accept(note);
-    }
-
-    private void cleanup(RequestId id) {
-        progress.release(id);
-        if (idTracker != null) idTracker.release(id);
     }
 
     private void sendProgress(ProgressToken token, double current) {
