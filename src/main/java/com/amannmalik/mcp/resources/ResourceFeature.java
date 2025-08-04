@@ -44,7 +44,7 @@ public final class ResourceFeature implements AutoCloseable {
         this.progress = progress;
         this.listSubscription = resources.supportsListChanged() ?
                 subscribeListChanges(
-                        l -> resources.subscribe(l),
+                        resources::subscribe,
                         NotificationMethod.RESOURCES_LIST_CHANGED,
                         ResourceListChangedNotification.CODEC.toJson(new ResourceListChangedNotification())) : null;
     }

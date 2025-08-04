@@ -62,10 +62,9 @@ public record CompleteResult(Completion completion, JsonObject _meta) {
         };
 
         public Completion(List<String> values, Integer total, Boolean hasMore) {
-            List<String> copy = Immutable.list(values).stream()
+            this.values = Immutable.list(values).stream()
                     .map(ValidationUtil::requireClean)
                     .toList();
-            this.values = copy;
             this.total = total == null ? null : ValidationUtil.requireNonNegative(total, "total");
             this.hasMore = hasMore;
             if (this.values.size() > MAX_VALUES) {

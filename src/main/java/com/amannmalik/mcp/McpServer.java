@@ -109,8 +109,7 @@ public final class McpServer implements AutoCloseable {
         this.resourceAccess = resourceAccess;
         this.toolAccess = toolAccess == null ? ToolAccessPolicy.PERMISSIVE : toolAccess;
         this.samplingAccess = samplingAccess == null ? SamplingAccessPolicy.PERMISSIVE : samplingAccess;
-        var requestProcessor = new JsonRpcRequestProcessor(progress, this::send);
-        this.processor = requestProcessor;
+        this.processor = new JsonRpcRequestProcessor(progress, this::send);
         this.principal = principal;
         this.rootsManager = new RootsManager(lifecycle, this::sendRequest);
         this.resourceFeature = resources == null ? null :
@@ -118,14 +117,14 @@ public final class McpServer implements AutoCloseable {
 
         if (tools != null && tools.supportsListChanged()) {
             toolListSubscription = subscribeListChanges(
-                    l -> tools.subscribe(l),
+                    tools::subscribe,
                     NotificationMethod.TOOLS_LIST_CHANGED,
                     ToolListChangedNotification.CODEC.toJson(new ToolListChangedNotification()));
         }
 
         if (prompts != null && prompts.supportsListChanged()) {
             promptsSubscription = subscribeListChanges(
-                    l -> prompts.subscribe(l),
+                    prompts::subscribe,
                     NotificationMethod.PROMPTS_LIST_CHANGED,
                     PromptListChangedNotification.CODEC.toJson(new PromptListChangedNotification()));
         }

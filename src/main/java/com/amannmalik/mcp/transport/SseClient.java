@@ -61,7 +61,7 @@ final class SseClient implements AutoCloseable {
         }
     }
 
-    private void sendHistory(long lastId) throws IOException {
+    private void sendHistory(long lastId) {
         if (context == null) {
             return;
         }

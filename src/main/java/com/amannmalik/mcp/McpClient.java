@@ -114,10 +114,9 @@ public final class McpClient implements AutoCloseable {
         this.pingInterval = 0;
         this.pingTimeout = McpConfiguration.current().pingMs();
 
-        var requestProcessor = new JsonRpcRequestProcessor(
+        this.processor = new JsonRpcRequestProcessor(
                 progress,
-                n -> notify(n.method(), n.params()));
-        this.processor = requestProcessor;
+                n1 -> notify(n1.method(), n1.params()));
 
         processor.registerRequest(RequestMethod.SAMPLING_CREATE_MESSAGE.method(), this::handleCreateMessage);
         processor.registerRequest(RequestMethod.ROOTS_LIST.method(), this::handleListRoots);
