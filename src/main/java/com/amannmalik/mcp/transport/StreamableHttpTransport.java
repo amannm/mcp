@@ -35,15 +35,7 @@ public final class StreamableHttpTransport implements Transport {
     private volatile boolean closed;
     final SseClients clients = new SseClients();
     final SessionManager sessions = new SessionManager(COMPATIBILITY_VERSION);
-    private final MessageRouter router;
-    private final Queue<JsonObject> backlog = new ConcurrentLinkedQueue<>();
-
-    private void unauthorized(HttpServletResponse resp) throws IOException {
-        if (resourceMetadataUrl != null) {
-            resp.setHeader("WWW-Authenticate", "Bearer resource_metadata=\"" + resourceMetadataUrl + "\"");
-        }
-        resp.sendError(HttpServletResponse.SC_UNAUTHORIZED);
-    }
+    private final MessageDispatcher dispatcher;
 
     public StreamableHttpTransport(int port,
                                    Set<String> allowedOrigins,
@@ -71,7 +63,13 @@ public final class StreamableHttpTransport implements Transport {
         } else {
             this.authorizationServers = List.copyOf(authorizationServers);
         }
-        this.router = new MessageRouter(clients.request, clients.responses, clients.general, clients.lastGeneral, clients::removeRequest);
+        var router = new MessageRouter(
+                clients.request,
+                clients.responses,
+                clients.general,
+                clients.lastGeneral,
+                clients::removeRequest);
+        this.dispatcher = new MessageDispatcher(router);
     }
 
     public int port() {
@@ -80,23 +78,11 @@ public final class StreamableHttpTransport implements Transport {
 
     @Override
     public void send(JsonObject message) {
-        if (router.route(message)) {
-            flushBacklog();
-        } else {
-            backlog.add(message);
-        }
+        dispatcher.dispatch(message);
     }
 
     void flushBacklog() {
-        while (true) {
-            JsonObject msg = backlog.peek();
-            if (msg == null) return;
-            if (router.route(msg)) {
-                backlog.poll();
-            } else {
-                return;
-            }
-        }
+        dispatcher.flush();
     }
 
     @Override
@@ -133,13 +119,12 @@ public final class StreamableHttpTransport implements Transport {
             McpConfiguration.current().defaultPrincipal(), Set.of());
 
     Optional<Principal> authorize(HttpServletRequest req, HttpServletResponse resp) throws IOException {
-        if (authManager == null) return Optional.of(DEFAULT_PRINCIPAL);
-        try {
-            return Optional.of(authManager.authorize(req.getHeader("Authorization")));
-        } catch (AuthorizationException e) {
-            unauthorized(resp);
-            return Optional.empty();
-        }
+        return AuthorizationUtil.authorize(
+                authManager,
+                req,
+                resp,
+                resourceMetadataUrl,
+                DEFAULT_PRINCIPAL);
     }
 
     boolean verifyOrigin(HttpServletRequest req, HttpServletResponse resp) throws IOException {
