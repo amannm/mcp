@@ -60,25 +60,20 @@ public record McpConfiguration(String version,
     public McpConfiguration {
         allowedOrigins = List.copyOf(allowedOrigins);
         clientCapabilities = List.copyOf(clientCapabilities);
-    }
-
-    static { validate(CURRENT); }
-
-    public static McpConfiguration current() { return CURRENT; }
-
-    private static void validate(McpConfiguration c) {
-        if (c.defaultMs <= 0 || c.pingMs <= 0 || c.processWaitSeconds <= 0)
+        if (defaultMs <= 0 || pingMs <= 0 || processWaitSeconds <= 0)
             throw new IllegalArgumentException("system");
-        if (c.toolsPerSecond < 0 || c.completionsPerSecond < 0 || c.logsPerSecond < 0 || c.progressPerSecond < 0)
+        if (toolsPerSecond < 0 || completionsPerSecond < 0 || logsPerSecond < 0 || progressPerSecond < 0)
             throw new IllegalArgumentException("rateLimits");
-        if (c.defaultPageSize <= 0 || c.maxCompletionValues <= 0 || c.responseQueueCapacity <= 0)
+        if (defaultPageSize <= 0 || maxCompletionValues <= 0 || responseQueueCapacity <= 0)
             throw new IllegalArgumentException("pagination");
-        if (c.rateLimiterWindowMs <= 0 || c.initialRequestId < 0)
+        if (rateLimiterWindowMs <= 0 || initialRequestId < 0)
             throw new IllegalArgumentException("runtime");
-        if (c.port < 0 || c.port > 65_535)
+        if (port < 0 || port > 65_535)
             throw new IllegalArgumentException("port");
-        if (c.rateLimit >= 0)
+        if (rateLimit >= 0)
             throw new IllegalArgumentException("errorCodes.rateLimit must be negative");
     }
+
+    public static McpConfiguration current() { return CURRENT; }
 }
 

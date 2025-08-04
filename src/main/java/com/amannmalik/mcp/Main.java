@@ -16,7 +16,6 @@ public final class Main {
         commandLine.addSubcommand("server", ServerCommand.createCommandSpec());
         commandLine.addSubcommand("client", ClientCommand.createCommandSpec());
         commandLine.addSubcommand("host", HostCommand.createCommandSpec());
-        commandLine.addSubcommand("config", ConfigCommand.createCommandSpec());
 
         try {
             ParseResult parseResult = commandLine.parseArgs(args);
@@ -42,7 +41,6 @@ public final class Main {
                 case "server" -> ServerCommand.execute(subResult);
                 case "client" -> ClientCommand.execute(subResult);
                 case "host" -> HostCommand.execute(subResult);
-                case "config" -> ConfigCommand.execute(subResult);
                 default -> throw new IllegalStateException("Unknown subcommand: " + name);
             };
         }
