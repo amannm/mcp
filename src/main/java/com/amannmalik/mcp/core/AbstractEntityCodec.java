@@ -1,5 +1,7 @@
 package com.amannmalik.mcp.core;
 
+import com.amannmalik.mcp.content.ContentBlock;
+import com.amannmalik.mcp.prompts.Role;
 import com.amannmalik.mcp.util.Pagination;
 import jakarta.json.*;
 
@@ -120,6 +122,16 @@ public abstract class AbstractEntityCodec<T> implements JsonCodec<T> {
 
     protected static JsonObject getObject(JsonObject obj, String key) {
         return obj.getJsonObject(key);
+    }
+
+    protected static Role requireRole(JsonObject obj) {
+        return Role.valueOf(requireString(obj, "role").toUpperCase());
+    }
+
+    protected static ContentBlock requireContent(JsonObject obj) {
+        JsonObject c = getObject(obj, "content");
+        if (c == null) throw new IllegalArgumentException("content required");
+        return ContentBlock.CODEC.fromJson(c);
     }
 
     public static void requireOnlyKeys(JsonObject obj, Set<String> allowed) {

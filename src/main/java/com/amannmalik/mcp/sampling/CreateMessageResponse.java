@@ -16,7 +16,7 @@ public record CreateMessageResponse(
         String stopReason,
         JsonObject _meta
 ) {
-    public static final JsonCodec<CreateMessageResponse> CODEC = new JsonCodec<>() {
+    public static final JsonCodec<CreateMessageResponse> CODEC = new AbstractEntityCodec<>() {
         @Override
         public JsonObject toJson(CreateMessageResponse resp) {
             JsonObjectBuilder b = Json.createObjectBuilder()
@@ -31,18 +31,16 @@ public record CreateMessageResponse(
         @Override
         public CreateMessageResponse fromJson(JsonObject obj) {
             if (obj == null) throw new IllegalArgumentException("object required");
-            AbstractEntityCodec.requireOnlyKeys(obj, Set.of("role", "content", "model", "stopReason", "_meta"));
-            String raw = obj.getString("role", null);
-            if (raw == null) throw new IllegalArgumentException("role required");
-            Role role = Role.valueOf(raw.toUpperCase());
-            JsonObject c = obj.getJsonObject("content");
-            if (c == null) throw new IllegalArgumentException("content required");
-            MessageContent content = (MessageContent) ContentBlock.CODEC.fromJson(c);
-            String model = obj.getString("model", null);
-            if (model == null) throw new IllegalArgumentException("model required");
+            requireOnlyKeys(obj, Set.of("role", "content", "model", "stopReason", "_meta"));
+            Role role = requireRole(obj);
+            ContentBlock block = requireContent(obj);
+            if (!(block instanceof MessageContent mc)) {
+                throw new IllegalArgumentException("content must be message-capable");
+            }
+            String model = requireString(obj, "model");
             String stop = obj.getString("stopReason", null);
             JsonObject meta = obj.getJsonObject("_meta");
-            return new CreateMessageResponse(role, content, model, stop, meta);
+            return new CreateMessageResponse(role, mc, model, stop, meta);
         }
     };
 

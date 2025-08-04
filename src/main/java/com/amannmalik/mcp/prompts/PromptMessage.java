@@ -22,12 +22,12 @@ public record PromptMessage(Role role, PromptContent content) {
         public PromptMessage fromJson(JsonObject obj) {
             if (obj == null) throw new IllegalArgumentException("object required");
             requireOnlyKeys(obj, Set.of("role", "content"));
-            String raw = requireString(obj, "role");
-            Role role = Role.valueOf(raw.toUpperCase());
-            JsonObject c = getObject(obj, "content");
-            if (c == null) throw new IllegalArgumentException("content required");
-            PromptContent content = (PromptContent) ContentBlock.CODEC.fromJson(c);
-            return new PromptMessage(role, content);
+            Role role = requireRole(obj);
+            ContentBlock block = requireContent(obj);
+            if (!(block instanceof PromptContent pc)) {
+                throw new IllegalArgumentException("content must be prompt-capable");
+            }
+            return new PromptMessage(role, pc);
         }
     };
 
