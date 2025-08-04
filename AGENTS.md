@@ -19,6 +19,7 @@ description: MCP Specification Expert
 - Leverage `instanceof` pattern matching
 - Unchecked casts are unacceptable
 - Avoid introducing `null` or `Object`
+- Avoid `Optional<T>` in fields or collections
 - Avoid `java.lang.reflect`
 - Avoid overwrought design patterns
 
