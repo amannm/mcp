@@ -45,7 +45,7 @@ public final class StreamableHttpClientTransport implements Transport {
                 .GET()
                 .build();
         var response = exchange(request);
-        checkUnauthorized(response);
+        AuthorizationUtil.checkUnauthorized(response);
         int status = response.statusCode();
         String ct = response.headers().firstValue("Content-Type").orElse("");
         if (status != 200 || !ct.startsWith("text/event-stream")) {
@@ -63,7 +63,7 @@ public final class StreamableHttpClientTransport implements Transport {
                 .POST(HttpRequest.BodyPublishers.ofString(message.toString()))
                 .build();
         var response = exchange(request);
-        checkUnauthorized(response);
+        AuthorizationUtil.checkUnauthorized(response);
         int status = response.statusCode();
         String ct = response.headers().firstValue("Content-Type").orElse("");
         if (status == 202) {
@@ -116,13 +116,6 @@ public final class StreamableHttpClientTransport implements Transport {
         t.start();
     }
 
-    private void checkUnauthorized(HttpResponse<InputStream> response) throws IOException {
-        if (response.statusCode() == 401) {
-            String header = response.headers().firstValue("WWW-Authenticate").orElse("");
-            response.body().close();
-            throw new UnauthorizedException(header);
-        }
-    }
 
     private HttpRequest.Builder builder() {
         var b = HttpRequest.newBuilder(endpoint)
