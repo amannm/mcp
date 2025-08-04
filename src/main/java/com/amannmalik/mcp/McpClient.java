@@ -53,7 +53,6 @@ public final class McpClient extends JsonRpcEndpoint implements AutoCloseable {
     private volatile ResourceMetadata resourceMetadata;
     private final Map<String, ChangeListener<ResourceUpdate>> resourceListeners = new ConcurrentHashMap<>();
 
-
     public void configurePing(long intervalMillis, long timeoutMillis) {
         if (connected) throw new IllegalStateException("already connected");
         if (intervalMillis < 0 || timeoutMillis <= 0) throw new IllegalArgumentException("invalid ping settings");
@@ -532,7 +531,6 @@ public final class McpClient extends JsonRpcEndpoint implements AutoCloseable {
             return JsonRpcError.of(req.id(), JsonRpcErrorCode.INVALID_PARAMS, e.getMessage());
         }
     }
-
 
     private void requireCapability(RequestMethod method) {
         CapabilityRequirements.forMethod(method)

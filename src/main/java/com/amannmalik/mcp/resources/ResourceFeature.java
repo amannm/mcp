@@ -18,7 +18,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
-
 public final class ResourceFeature implements AutoCloseable {
     private final ResourceProvider resources;
     private final ResourceAccessController access;

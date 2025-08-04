@@ -31,7 +31,6 @@ import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 
-
 /// - [Server](specification/2025-06-18/server/index.mdx)
 /// - [MCP server conformance test](src/test/resources/com/amannmalik/mcp/mcp_conformance.feature:6-34)
 public final class McpServer extends JsonRpcEndpoint implements AutoCloseable {
