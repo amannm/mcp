@@ -1,9 +1,7 @@
 package com.amannmalik.mcp.resources;
 
 import com.amannmalik.mcp.core.Provider;
-import com.amannmalik.mcp.util.ChangeListener;
-import com.amannmalik.mcp.util.ChangeSubscription;
-import com.amannmalik.mcp.util.Pagination;
+import com.amannmalik.mcp.util.*;
 
 import java.util.Optional;
 

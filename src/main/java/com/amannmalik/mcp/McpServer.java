@@ -12,7 +12,8 @@ import com.amannmalik.mcp.ping.PingRequest;
 import com.amannmalik.mcp.ping.PingResponse;
 import com.amannmalik.mcp.prompts.*;
 import com.amannmalik.mcp.resources.*;
-import com.amannmalik.mcp.roots.*;
+import com.amannmalik.mcp.roots.Root;
+import com.amannmalik.mcp.roots.RootsManager;
 import com.amannmalik.mcp.sampling.*;
 import com.amannmalik.mcp.tools.*;
 import com.amannmalik.mcp.transport.Transport;
@@ -115,19 +116,19 @@ public final class McpServer implements AutoCloseable {
         this.resourceFeature = resources == null ? null :
                 new ResourceFeature(resources, resourceAccess, principal, rootsManager, lifecycle, this::send, progress);
 
-          if (tools != null && tools.supportsListChanged()) {
-              toolListSubscription = subscribeListChanges(
-                      l -> tools.subscribe(l),
-                      NotificationMethod.TOOLS_LIST_CHANGED,
-                      ToolListChangedNotification.CODEC.toJson(new ToolListChangedNotification()));
-          }
+        if (tools != null && tools.supportsListChanged()) {
+            toolListSubscription = subscribeListChanges(
+                    l -> tools.subscribe(l),
+                    NotificationMethod.TOOLS_LIST_CHANGED,
+                    ToolListChangedNotification.CODEC.toJson(new ToolListChangedNotification()));
+        }
 
-          if (prompts != null && prompts.supportsListChanged()) {
-              promptsSubscription = subscribeListChanges(
-                      l -> prompts.subscribe(l),
-                      NotificationMethod.PROMPTS_LIST_CHANGED,
-                      PromptListChangedNotification.CODEC.toJson(new PromptListChangedNotification()));
-          }
+        if (prompts != null && prompts.supportsListChanged()) {
+            promptsSubscription = subscribeListChanges(
+                    l -> prompts.subscribe(l),
+                    NotificationMethod.PROMPTS_LIST_CHANGED,
+                    PromptListChangedNotification.CODEC.toJson(new PromptListChangedNotification()));
+        }
 
         processor.registerRequest(RequestMethod.INITIALIZE.method(), this::initialize);
         processor.registerNotification(NotificationMethod.INITIALIZED.method(), this::initialized);
@@ -158,27 +159,27 @@ public final class McpServer implements AutoCloseable {
         processor.registerRequest(RequestMethod.SAMPLING_CREATE_MESSAGE.method(), this::handleCreateMessage);
     }
 
-      private <S extends ChangeSubscription> S subscribeListChanges(
-              SubscriptionFactory<S> factory,
-              NotificationMethod method,
-              JsonObject payload) {
-          try {
-              return factory.subscribe(ignored -> {
-                  if (lifecycle.state() != LifecycleState.OPERATION) return;
-                  try {
-                      send(new JsonRpcNotification(method.method(), payload));
-                  } catch (IOException ignore) {
-                  }
-              });
-          } catch (RuntimeException ignore) {
-              return null;
-          }
-      }
+    private <S extends ChangeSubscription> S subscribeListChanges(
+            SubscriptionFactory<S> factory,
+            NotificationMethod method,
+            JsonObject payload) {
+        try {
+            return factory.subscribe(ignored -> {
+                if (lifecycle.state() != LifecycleState.OPERATION) return;
+                try {
+                    send(new JsonRpcNotification(method.method(), payload));
+                } catch (IOException ignore) {
+                }
+            });
+        } catch (RuntimeException ignore) {
+            return null;
+        }
+    }
 
-      @FunctionalInterface
-      private interface SubscriptionFactory<S extends ChangeSubscription> {
-          S subscribe(ChangeListener<Change> listener);
-      }
+    @FunctionalInterface
+    private interface SubscriptionFactory<S extends ChangeSubscription> {
+        S subscribe(ChangeListener<Change> listener);
+    }
 
     public void serve() throws IOException {
         while (lifecycle.state() != LifecycleState.SHUTDOWN) {
