@@ -5,6 +5,7 @@ import com.amannmalik.mcp.config.McpConfiguration;
 import com.amannmalik.mcp.elicitation.*;
 import com.amannmalik.mcp.jsonrpc.*;
 import com.amannmalik.mcp.lifecycle.*;
+import com.amannmalik.mcp.core.JsonRpcEndpoint;
 import com.amannmalik.mcp.logging.*;
 import com.amannmalik.mcp.ping.*;
 import com.amannmalik.mcp.resources.*;
@@ -23,15 +24,13 @@ import java.net.URI;
 import java.net.http.*;
 import java.util.*;
 import java.util.concurrent.*;
-import java.util.concurrent.atomic.AtomicLong;
 
 /// - [Client Features](specification/2025-06-18/client/index.mdx)
 /// - [Sampling](specification/2025-06-18/client/sampling.mdx)
 /// - [Elicitation](specification/2025-06-18/client/elicitation.mdx)
-public final class McpClient implements AutoCloseable {
+public final class McpClient extends JsonRpcEndpoint implements AutoCloseable {
     private final ClientInfo info;
     private final Set<ClientCapability> capabilities;
-    private final Transport transport;
     private final SamplingProvider sampling;
     private final RootsProvider roots;
     private ChangeSubscription rootsSubscription;
@@ -40,10 +39,6 @@ public final class McpClient implements AutoCloseable {
     private SamplingAccessPolicy samplingAccess = SamplingAccessPolicy.PERMISSIVE;
     private Principal principal = new Principal(
             McpConfiguration.current().defaultPrincipal(), Set.of());
-    private final AtomicLong id = new AtomicLong(1);
-    private final Map<RequestId, CompletableFuture<JsonRpcMessage>> pending = new ConcurrentHashMap<>();
-    private final ProgressManager progress = new ProgressManager(
-            new RateLimiter(McpConfiguration.current().progressPerSecond(), 1000));
     private Thread reader;
     private PingScheduler pinger;
     private long pingInterval;
@@ -58,7 +53,6 @@ public final class McpClient implements AutoCloseable {
     private volatile ResourceMetadata resourceMetadata;
     private final Map<String, ChangeListener<ResourceUpdate>> resourceListeners = new ConcurrentHashMap<>();
 
-    private final JsonRpcRequestProcessor processor;
 
     public void configurePing(long intervalMillis, long timeoutMillis) {
         if (connected) throw new IllegalStateException("already connected");
@@ -96,9 +90,11 @@ public final class McpClient implements AutoCloseable {
                      RootsProvider roots,
                      ElicitationProvider elicitation,
                      McpClientListener listener) {
+        super(transport,
+                new ProgressManager(new RateLimiter(McpConfiguration.current().progressPerSecond(), 1000)),
+                1);
         this.info = info;
         this.capabilities = capabilities.isEmpty() ? Set.of() : EnumSet.copyOf(capabilities);
-        this.transport = transport;
         this.sampling = sampling;
         this.roots = roots;
         this.rootsListChangedSupported = roots != null && roots.supportsListChanged();
@@ -113,10 +109,6 @@ public final class McpClient implements AutoCloseable {
         }
         this.pingInterval = 0;
         this.pingTimeout = McpConfiguration.current().pingMs();
-
-        this.processor = new JsonRpcRequestProcessor(
-                progress,
-                n1 -> notify(n1.method(), n1.params()));
 
         processor.registerRequest(RequestMethod.SAMPLING_CREATE_MESSAGE.method(), this::handleCreateMessage);
         processor.registerRequest(RequestMethod.ROOTS_LIST.method(), this::handleListRoots);
@@ -170,10 +162,10 @@ public final class McpClient implements AutoCloseable {
                 new ClientFeatures(rootsListChangedSupported)
         );
         var initJson = InitializeRequest.CODEC.toJson(init);
-        RequestId reqId = new RequestId.NumericId(id.getAndIncrement());
+        RequestId reqId = nextId();
         JsonRpcRequest request = new JsonRpcRequest(reqId, RequestMethod.INITIALIZE.method(), initJson);
         try {
-            transport.send(JsonRpcCodec.CODEC.toJson(request));
+            send(request);
         } catch (UnauthorizedException e) {
             handleUnauthorized(e);
             throw e;
@@ -233,8 +225,7 @@ public final class McpClient implements AutoCloseable {
     }
 
     private void notifyInitialized() throws IOException {
-        JsonRpcNotification note = new JsonRpcNotification(NotificationMethod.INITIALIZED.method(), null);
-        transport.send(JsonRpcCodec.CODEC.toJson(note));
+        send(new JsonRpcNotification(NotificationMethod.INITIALIZED.method(), null));
     }
 
     private void subscribeRootsIfNeeded() throws IOException {
@@ -338,58 +329,27 @@ public final class McpClient implements AutoCloseable {
     }
 
     public JsonRpcMessage request(RequestMethod method, JsonObject params) throws IOException {
-        return request(method.method(), params, Timeouts.DEFAULT_TIMEOUT_MS);
+        return super.request(method, params);
     }
 
     public JsonRpcMessage request(RequestMethod method, JsonObject params, long timeoutMillis) throws IOException {
         requireCapability(method);
-        return request(method.method(), params, timeoutMillis);
+        return super.request(method, params, timeoutMillis);
     }
 
     public JsonRpcMessage request(String method, JsonObject params, long timeoutMillis) throws IOException {
         if (!connected) throw new IllegalStateException("not connected");
-        var reqId = new RequestId.NumericId(id.getAndIncrement());
-        progress.register(reqId, params);
-        var future = new CompletableFuture<JsonRpcMessage>();
-        pending.put(reqId, future);
         try {
-            transport.send(JsonRpcCodec.CODEC.toJson(new JsonRpcRequest(reqId, method, params)));
-            return awaitResponse(reqId, future, timeoutMillis);
+            return super.request(method, params, timeoutMillis);
         } catch (UnauthorizedException e) {
             handleUnauthorized(e);
             throw e;
-        } finally {
-            pending.remove(reqId);
-            progress.release(reqId);
-        }
-    }
-
-    private JsonRpcMessage awaitResponse(RequestId reqId,
-                                         CompletableFuture<JsonRpcMessage> future,
-                                         long timeoutMillis) throws IOException {
-        try {
-            return future.get(timeoutMillis, TimeUnit.MILLISECONDS);
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            throw new IOException(e);
-        } catch (TimeoutException e) {
-            try {
-                notify(NotificationMethod.CANCELLED,
-                        CancelledNotification.CODEC.toJson(new CancelledNotification(reqId, "timeout")));
-            } catch (IOException ignore) {
-            }
-            throw new IOException("Request timed out after " + timeoutMillis + " ms", e);
-        } catch (ExecutionException e) {
-            var cause = e.getCause();
-            if (cause instanceof IOException io) throw io;
-            throw new IOException(cause);
         }
     }
 
     public void notify(String method, JsonObject params) throws IOException {
         if (!connected) throw new IllegalStateException("not connected");
-        JsonRpcNotification notification = new JsonRpcNotification(method, params);
-        transport.send(JsonRpcCodec.CODEC.toJson(notification));
+        super.notify(method, params);
     }
 
     public void notify(NotificationMethod method, JsonObject params) throws IOException {
@@ -495,49 +455,14 @@ public final class McpClient implements AutoCloseable {
 
     private void readLoop() {
         while (connected) {
-            JsonRpcMessage msg;
             try {
-                msg = JsonRpcCodec.CODEC.fromJson(transport.receive());
+                JsonRpcMessage msg = JsonRpcCodec.CODEC.fromJson(transport.receive());
+                process(msg);
             } catch (IOException e) {
                 pending.values().forEach(f -> f.completeExceptionally(e));
                 break;
             }
-            switch (msg) {
-                case JsonRpcResponse resp -> handleResponse(resp);
-                case JsonRpcError err -> handleError(err);
-                case JsonRpcRequest req -> handleRequest(req);
-                case JsonRpcNotification note -> handleNotification(note);
-                default -> {
-                }
-            }
         }
-    }
-
-    private void handleResponse(JsonRpcResponse resp) {
-        completePending(resp.id(), resp);
-    }
-
-    private void handleError(JsonRpcError err) {
-        completePending(err.id(), err);
-    }
-
-    private void handleRequest(JsonRpcRequest req) {
-        Optional<JsonRpcMessage> resp = processor.handle(req, true);
-        resp.ifPresent(r -> {
-            try {
-                send(r);
-            } catch (IOException ignore) {
-            }
-        });
-    }
-
-    private void handleNotification(JsonRpcNotification note) {
-        processor.handle(note);
-    }
-
-    private void completePending(RequestId id, JsonRpcMessage msg) {
-        CompletableFuture<JsonRpcMessage> f = pending.remove(id);
-        if (f != null) f.complete(msg);
     }
 
     private JsonRpcMessage handleCreateMessage(JsonRpcRequest req) {
@@ -608,9 +533,6 @@ public final class McpClient implements AutoCloseable {
         }
     }
 
-    private void send(JsonRpcMessage msg) throws IOException {
-        transport.send(JsonRpcCodec.CODEC.toJson(msg));
-    }
 
     private void requireCapability(RequestMethod method) {
         CapabilityRequirements.forMethod(method)
