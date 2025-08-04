@@ -1,10 +1,13 @@
 package com.amannmalik.mcp.tools;
 
+import com.amannmalik.mcp.core.AbstractEntityCodec;
 import com.amannmalik.mcp.core.JsonCodec;
 import com.amannmalik.mcp.util.DisplayNameProvider;
 import com.amannmalik.mcp.validation.InputSanitizer;
 import com.amannmalik.mcp.validation.MetaValidator;
 import jakarta.json.*;
+
+import java.util.Set;
 
 public record Tool(String name,
                    String title,
@@ -13,7 +16,7 @@ public record Tool(String name,
                    JsonObject outputSchema,
                    ToolAnnotations annotations,
                    JsonObject _meta) implements DisplayNameProvider {
-    public static final JsonCodec<Tool> CODEC = new JsonCodec<>() {
+    public static final JsonCodec<Tool> CODEC = new AbstractEntityCodec<>() {
         @Override
         public JsonObject toJson(Tool tool) {
             JsonObjectBuilder b = Json.createObjectBuilder()
@@ -30,15 +33,15 @@ public record Tool(String name,
         @Override
         public Tool fromJson(JsonObject obj) {
             if (obj == null) throw new IllegalArgumentException("object required");
-            String name = obj.getString("name", null);
-            if (name == null) throw new IllegalArgumentException("name required");
+            requireOnlyKeys(obj, Set.of("name", "title", "description", "inputSchema", "outputSchema", "annotations", "_meta"));
+            String name = requireString(obj, "name");
+            JsonObject inputSchema = getObject(obj, "inputSchema");
+            if (inputSchema == null) throw new IllegalArgumentException("inputSchema required");
             String title = obj.getString("title", null);
             String description = obj.getString("description", null);
-            JsonObject inputSchema = obj.getJsonObject("inputSchema");
-            if (inputSchema == null) throw new IllegalArgumentException("inputSchema required");
             JsonObject outputSchema = obj.getJsonObject("outputSchema");
             ToolAnnotations ann = obj.containsKey("annotations") ?
-                    ToolAnnotations.CODEC.fromJson(obj.getJsonObject("annotations")) : null;
+                    ToolAnnotations.CODEC.fromJson(getObject(obj, "annotations")) : null;
             JsonObject meta = obj.getJsonObject("_meta");
             return new Tool(name, title, description, inputSchema, outputSchema, ann, meta);
         }
