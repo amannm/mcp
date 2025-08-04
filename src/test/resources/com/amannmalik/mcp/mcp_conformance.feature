@@ -1,7 +1,5 @@
 Feature: MCP protocol conformance
 
-  # Comprehensive MCP specification conformance testing
-  # Covers all specification sections with maximum test density
   Scenario Outline: MCP comprehensive conformance test
     Given a running MCP server using <transport> transport
     Then capabilities should be advertised and ping succeeds
@@ -75,7 +73,6 @@ Feature: MCP protocol conformance
       | stdio     |
       | http      |
 
-  # Progress tracking test - single instance to avoid token conflicts
   Scenario: MCP progress tracking conformance
     Given a running MCP server using stdio transport
     Then capabilities should be advertised and ping succeeds
@@ -86,8 +83,6 @@ Feature: MCP protocol conformance
     When the client disconnects
     Then the server terminates cleanly
 
-  # Authorization testing - HTTP transport only
-  # specification/2025-06-18/basic/authorization.mdx
   Scenario: MCP authorization specification conformance
     Given a running MCP server using http transport
     Then capabilities should be advertised and ping succeeds
@@ -101,8 +96,6 @@ Feature: MCP protocol conformance
     When the client disconnects
     Then the server terminates cleanly
 
-  # Comprehensive notification and subscription testing
-  # specification/2025-06-18/server/subscriptions.mdx & notifications.mdx
   Scenario Outline: MCP notification and subscription conformance
     Given a running MCP server using <transport> transport
     Then capabilities should be advertised and ping succeeds
