@@ -4,6 +4,7 @@ import java.util.concurrent.*;
 
 public final class BlockingElicitationProvider implements ElicitationProvider {
     private final BlockingQueue<ElicitResult> responses = new LinkedBlockingQueue<>();
+    private volatile ElicitRequest lastRequest;
 
     public void respond(ElicitResult response) {
         if (response == null) throw new IllegalArgumentException("response is required");
@@ -12,8 +13,13 @@ public final class BlockingElicitationProvider implements ElicitationProvider {
         }
     }
 
+    public ElicitRequest lastRequest() {
+        return lastRequest;
+    }
+
     @Override
     public ElicitResult elicit(ElicitRequest request, long timeoutMillis) throws InterruptedException {
+        lastRequest = request;
         ElicitResult resp = timeoutMillis <= 0
                 ? responses.take()
                 : responses.poll(timeoutMillis, TimeUnit.MILLISECONDS);

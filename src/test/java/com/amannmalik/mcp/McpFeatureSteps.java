@@ -101,11 +101,9 @@ public class McpFeatureSteps {
     private BlockingElicitationProvider elicitationProvider;
     private Map<String, JsonObject> toolInputSchemas;
     private Map<String, JsonObject> toolOutputSchemas;
-    private Map<String, String> toolCallArgs;
-    private String missingArgument;
-    private boolean elicitationInitiated;
     private ElicitResult elicitationResult;
     private ToolResult toolResult;
+    private Future<ToolResult> toolFuture;
 
     private InMemoryPromptProvider promptProvider;
     private PromptTemplateEngine promptEngine;
@@ -182,11 +180,9 @@ public class McpFeatureSteps {
         elicitationProvider = null;
         toolInputSchemas = null;
         toolOutputSchemas = null;
-        toolCallArgs = null;
-        missingArgument = null;
-        elicitationInitiated = false;
         elicitationResult = null;
         toolResult = null;
+        toolFuture = null;
         promptProvider = null;
         promptEngine = null;
         promptTemplates = null;
@@ -1011,8 +1007,8 @@ public class McpFeatureSteps {
     @Given("an MCP server with tools:")
     public void anMcpServerWithTools(DataTable table) {
         toolProvider = new InMemoryToolProvider(new ArrayList<>(), new ConcurrentHashMap<>());
-        toolExecutor = new ToolExecutor(toolProvider);
         elicitationProvider = new BlockingElicitationProvider();
+        toolExecutor = new ToolExecutor(toolProvider, elicitationProvider);
         toolInputSchemas = new HashMap<>();
         toolOutputSchemas = new HashMap<>();
         for (ToolDefinition def : parseToolDefinitions(table)) {
@@ -1070,43 +1066,47 @@ public class McpFeatureSteps {
 
     @When("the client calls tool {string} with incomplete arguments:")
     public void theClientCallsToolWithIncompleteArguments(String name, DataTable table) {
-        toolCallArgs = parseArguments(table);
-        JsonArray req = toolInputSchemas.get(name).getJsonArray("required");
-        if (req != null) {
-            for (JsonValue v : req) {
-                String f = ((JsonString) v).getString();
-                if (!toolCallArgs.containsKey(f)) {
-                    missingArgument = f;
-                    elicitationInitiated = true;
-                    break;
-                }
-            }
-        }
+        JsonObjectBuilder b = Json.createObjectBuilder();
+        parseArguments(table).forEach((k, v) -> b.add(k, parseJson(v)));
+        ExecutorService exec = Executors.newSingleThreadExecutor();
+        toolFuture = exec.submit(() -> toolExecutor.execute(name, b.build()));
+        exec.shutdown();
     }
 
     @Then("the server detects missing required argument {string}")
     public void theServerDetectsMissingRequiredArgument(String field) {
-        assertEquals(field, missingArgument);
+        ElicitRequest req = elicitationProvider.lastRequest();
+        assertNotNull(req);
+        JsonArray arr = req.requestedSchema().getJsonArray("required");
+        boolean found = arr.getValuesAs(JsonString.class).stream()
+                .map(JsonString::getString)
+                .anyMatch(f -> f.equals(field));
+        assertTrue(found);
     }
 
     @And("initiates elicitation request for missing parameters")
     public void initiatesElicitationRequestForMissingParameters() {
-        assertTrue(elicitationInitiated);
+        assertNotNull(elicitationProvider.lastRequest());
     }
 
     @When("the client's elicitation provider prompts user")
     public void theClientSElicitationProviderPromptsUser() {
+        assertNotNull(toolFuture);
+        assertFalse(toolFuture.isDone());
     }
 
     @And("user provides:")
     public void userProvides(DataTable table) {
         Map<String, String> provided = parseArguments(table);
         JsonObjectBuilder b = Json.createObjectBuilder();
-        provided.forEach((k, v) -> {
-            toolCallArgs.put(k, v);
-            b.add(k, parseJson(v));
-        });
+        provided.forEach((k, v) -> b.add(k, parseJson(v)));
         elicitationResult = new ElicitResult(ElicitationAction.ACCEPT, b.build(), null);
+        elicitationProvider.respond(elicitationResult);
+        try {
+            toolResult = toolFuture.get(5, TimeUnit.SECONDS);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
     }
 
     @Then("elicitation completes with action {string}")
@@ -1116,9 +1116,7 @@ public class McpFeatureSteps {
 
     @When("the server retries tool execution with complete arguments")
     public void theServerRetriesToolExecutionWithCompleteArguments() {
-        JsonObjectBuilder b = Json.createObjectBuilder();
-        toolCallArgs.forEach((k, v) -> b.add(k, parseJson(v)));
-        toolResult = toolExecutor.execute("data_processor", b.build());
+        assertNotNull(toolResult);
     }
 
     @Then("tool execution succeeds")
