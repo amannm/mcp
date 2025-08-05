@@ -5,6 +5,12 @@ import com.amannmalik.mcp.transport.*;
 import com.amannmalik.mcp.util.ErrorCodeMapper;
 import com.amannmalik.mcp.security.*;
 import com.amannmalik.mcp.auth.AuthorizationException;
+
+import com.amannmalik.mcp.sampling.*;
+import com.amannmalik.mcp.roots.*;
+import com.amannmalik.mcp.progress.*;
+import com.amannmalik.mcp.logging.*;
+
 import com.amannmalik.mcp.resources.*;
 import com.amannmalik.mcp.tools.*;
 import com.amannmalik.mcp.prompts.*;
@@ -14,6 +20,7 @@ import com.amannmalik.mcp.content.*;
 import com.amannmalik.mcp.annotations.Annotations;
 import jakarta.json.*;
 import java.time.Instant;
+
 import io.cucumber.datatable.DataTable;
 import io.cucumber.java.After;
 import io.cucumber.java.Before;
@@ -86,6 +93,23 @@ public class McpFeatureSteps {
     private boolean sessionDataBound;
     private Map<String, String> sharedSessions;
 
+
+    private SamplingManager samplingManager;
+    private ModelSelector modelSelector;
+    private Map<String, String> modelPreferences;
+    private List<ModelSelector.Hint> modelHints;
+
+    private RootSecurityManager rootSecurityManager;
+    private List<RootSecurityManager.RootConfig> roots;
+    private boolean lastAccessAllowed;
+    private String rootNotification;
+
+    private ProgressTracker progressTracker;
+    private String progressToken;
+    private boolean cancelRequested;
+
+    private LogLevelManager logLevelManager;
+
     private InMemoryResourceProvider resourceProvider;
     private Map<String, ResourceBlock> resourceContents;
     private List<ResourceTemplateRow> resourceTemplateRows;
@@ -119,6 +143,7 @@ public class McpFeatureSteps {
     private CompleteRequest.Ref completionRef;
     private CompleteResult completionResult;
     private Map<String, String> completionEntries;
+
 
 
     @Before
@@ -168,6 +193,23 @@ public class McpFeatureSteps {
         authorizationTokenVerified = false;
         sessionDataBound = false;
         sharedSessions = null;
+
+        samplingManager = null;
+        modelSelector = null;
+        modelPreferences = null;
+        modelHints = null;
+
+        rootSecurityManager = null;
+        roots = null;
+        lastAccessAllowed = false;
+        rootNotification = null;
+
+        progressTracker = null;
+        progressToken = null;
+        cancelRequested = false;
+
+        logLevelManager = null;
+
         resourceProvider = null;
         resourceContents = null;
         resourceTemplateRows = null;
@@ -198,6 +240,7 @@ public class McpFeatureSteps {
         completionRef = null;
         completionResult = null;
         completionEntries = null;
+
     }
 
     @After
@@ -277,6 +320,32 @@ public class McpFeatureSteps {
                 .toList();
     }
 
+    private List<ModelSelector.Hint> parseModelHints(DataTable table) {
+        return table.asMaps().stream()
+                .map(row -> new ModelSelector.Hint(
+                        Objects.requireNonNull(row.get("hint")),
+                        Integer.parseInt(Objects.requireNonNull(row.get("preference_order")))))
+                .toList();
+    }
+
+    private List<RootSecurityManager.RootConfig> parseRoots(DataTable table) {
+        return table.asMaps().stream()
+                .map(row -> new RootSecurityManager.RootConfig(
+                        Objects.requireNonNull(row.get("uri")),
+                        Objects.requireNonNull(row.get("name")),
+                        Objects.requireNonNull(row.get("permissions"))))
+                .toList();
+    }
+
+    private List<ProgressRow> parseProgressRows(DataTable table) {
+        return table.asMaps().stream()
+                .map(row -> new ProgressRow(
+                        Double.parseDouble(Objects.requireNonNull(row.get("progress"))),
+                        Integer.parseInt(Objects.requireNonNull(row.get("total"))),
+                        Objects.requireNonNull(row.get("message"))))
+                .toList();
+    }
+
     /** Parse log messages table for testing. */
     private List<LogMessage> parseLogMessages(DataTable table) {
         return table.asMaps().stream()
@@ -346,6 +415,8 @@ public class McpFeatureSteps {
     private record LogMessage(String level, String logger, String message) {}
     private record PromptTemplateDef(String name, String description, List<String> arguments) {}
     private record PromptArg(String name, String type, boolean required, String description) {}
+
+    private record ProgressRow(double progress, int total, String message) {}
 
     @Given("a clean MCP environment")
     public void aCleanMcpEnvironment() {
@@ -909,6 +980,279 @@ public class McpFeatureSteps {
         assertFalse(sessionA.validate(sessionId, "other"));
     }
 
+
+    @Given("an MCP client with sampling capability")
+    public void anMcpClientWithSamplingCapability() {
+        samplingManager = new SamplingManager();
+        modelSelector = new ModelSelector();
+    }
+
+    @And("model preferences are configured:")
+    public void modelPreferencesAreConfigured(DataTable table) {
+        modelPreferences = parseModelPreferences(table).stream()
+                .collect(Collectors.toMap(ModelPreference::preference, ModelPreference::value));
+    }
+
+    @And("model hints are configured:")
+    public void modelHintsAreConfigured(DataTable table) {
+        modelHints = parseModelHints(table);
+        samplingManager.configure(modelPreferences, modelHints);
+    }
+
+    @When("the server requests LLM sampling with message:")
+    public void theServerRequestsLlmSamplingWithMessage(String message) {
+        samplingManager.request(message.trim());
+    }
+
+    @And("includes model preferences and hints")
+    public void includesModelPreferencesAndHints() {
+        assertFalse(samplingManager.preferences().isEmpty());
+        assertFalse(samplingManager.hints().isEmpty());
+    }
+
+    @Then("the client presents sampling request to user for approval")
+    public void theClientPresentsSamplingRequestToUserForApproval() {
+        assertTrue(samplingManager.pending());
+    }
+
+    @When("user approves the sampling request")
+    public void userApprovesTheSamplingRequest() {
+        samplingManager.approveRequest(modelSelector);
+    }
+
+    @Then("the client selects appropriate model based on preferences")
+    public void theClientSelectsAppropriateModelBasedOnPreferences() {
+        assertEquals(modelHints.getFirst().hint(), samplingManager.selectedModel());
+    }
+
+    @And("sends request to LLM with system prompt")
+    public void sendsRequestToLlmWithSystemPrompt() {
+        samplingManager.sendToLlm("system");
+    }
+
+    @When("LLM responds with analysis")
+    public void llmRespondsWithAnalysis() {
+        samplingManager.receiveResponse("analysis", "stop");
+    }
+
+    @Then("the client presents response to user for review")
+    public void theClientPresentsResponseToUserForReview() {
+        assertEquals("analysis", samplingManager.response());
+    }
+
+    @When("user approves the response")
+    public void userApprovesTheResponse() { }
+
+    @Then("the response is returned to the server")
+    public void theResponseIsReturnedToTheServer() {
+        assertNotNull(samplingManager.response());
+    }
+
+    @And("includes metadata about selected model and stop reason")
+    public void includesMetadataAboutSelectedModelAndStopReason() {
+        assertNotNull(samplingManager.selectedModel());
+        assertEquals("stop", samplingManager.stopReason());
+    }
+
+    @Given("an MCP client with root management capability")
+    public void anMcpClientWithRootManagementCapability() {
+        rootSecurityManager = new RootSecurityManager();
+    }
+
+    @And("configured roots:")
+    public void configuredRoots(DataTable table) {
+        roots = parseRoots(table);
+        rootSecurityManager.configure(roots);
+    }
+
+    @When("the server requests root list")
+    public void theServerRequestsRootList() {
+        roots = rootSecurityManager.list();
+    }
+
+    @Then("the client returns available roots with proper URIs")
+    public void theClientReturnsAvailableRootsWithProperUris() {
+        assertFalse(roots.isEmpty());
+        assertTrue(roots.stream().allMatch(r -> r.uri().startsWith("file://")));
+    }
+
+    @And("each root includes human-readable names")
+    public void eachRootIncludesHumanReadableNames() {
+        assertTrue(roots.stream().allMatch(r -> !r.name().isBlank()));
+    }
+
+    @When("the server attempts to access {string}")
+    public void theServerAttemptsToAccess(String path) {
+        lastAccessAllowed = rootSecurityManager.checkAccess(path);
+    }
+
+    @Then("access is granted as path is within allowed root")
+    public void accessIsGrantedAsPathIsWithinAllowedRoot() {
+        assertTrue(lastAccessAllowed);
+    }
+
+    @Then("access is denied as path is outside allowed roots")
+    public void accessIsDeniedAsPathIsOutsideAllowedRoots() {
+        assertFalse(lastAccessAllowed);
+    }
+
+    @And("security violation is logged")
+    public void securityViolationIsLogged() {
+        assertTrue(rootSecurityManager.violationLogged());
+    }
+
+    @When("root configuration changes (new project added)")
+    public void rootConfigurationChangesNewProjectAdded() {
+        rootSecurityManager.addRoot(new RootSecurityManager.RootConfig("file:///home/user/project3","New Project","read"));
+        rootNotification = rootSecurityManager.lastNotification();
+    }
+
+    @Then("{string} is sent to server")
+    public void isSentToServer(String expected) {
+        assertEquals(expected, rootNotification);
+    }
+
+    @When("server refreshes root list")
+    public void serverRefreshesRootList() {
+        roots = rootSecurityManager.list();
+    }
+
+    @Then("updated roots are returned")
+    public void updatedRootsAreReturned() {
+        assertEquals(4, roots.size());
+    }
+
+    @Given("an MCP server with long-running operations")
+    public void anMcpServerWithLongRunningOperations() {
+        progressTracker = new ProgressTracker();
+    }
+
+    @When("the client initiates a large resource listing operation")
+    public void theClientInitiatesALargeResourceListingOperation() {
+        progressToken = progressTracker.start("progress_token_123");
+    }
+
+    @Then("progress token is assigned to the request")
+    public void progressTokenIsAssignedToTheRequest() {
+        assertEquals("progress_token_123", progressToken);
+    }
+
+    @And("initial progress notification is sent:")
+    public void initialProgressNotificationIsSent(DataTable table) {
+        Map<String, String> row = table.asMaps().getFirst();
+        progressTracker.notify(row.get("token"),
+                Double.parseDouble(row.get("progress")),
+                Integer.parseInt(row.get("total")),
+                row.get("message"));
+    }
+
+    @And("the operation proceeds")
+    public void theOperationProceeds() { }
+
+    @Then("progress notifications are sent periodically:")
+    public void progressNotificationsAreSentPeriodically(DataTable table) {
+        for (ProgressRow r : parseProgressRows(table)) {
+            progressTracker.notify(progressToken, r.progress(), r.total(), r.message());
+        }
+        assertEquals(4, progressTracker.progress(progressToken).size());
+    }
+
+    @When("the client decides to cancel the operation")
+    public void theClientDecidesToCancelTheOperation() {
+        cancelRequested = true;
+    }
+
+    @And("sends cancellation notification with reason {string}")
+    public void sendsCancellationNotificationWithReason(String reason) {
+        assertTrue(cancelRequested);
+        progressTracker.cancel(progressToken, reason);
+    }
+
+    @Then("the server stops the operation")
+    public void theServerStopsTheOperation() {
+        assertTrue(progressTracker.cancelled(progressToken));
+    }
+
+    @And("sends final progress notification:")
+    public void sendsFinalProgressNotification(DataTable table) {
+        ProgressRow row = parseProgressRows(table).getFirst();
+        progressTracker.notify(progressToken, row.progress(), row.total(), row.message());
+    }
+
+    @And("releases the progress token")
+    public void releasesTheProgressToken() {
+        progressTracker.release(progressToken);
+        assertFalse(progressTracker.active(progressToken));
+    }
+
+    @Given("an MCP server with logging capability")
+    public void anMcpServerWithLoggingCapability() {
+        logLevelManager = new LogLevelManager(LoggingLevel.INFO, 5);
+    }
+
+    @And("default log level is {string}")
+    public void defaultLogLevelIs(String level) {
+        assertEquals(level, logLevelManager.level().name());
+    }
+
+    @When("the client sets log level to {string}")
+    public void theClientSetsLogLevelTo(String level) {
+        logLevelManager.setLevel(LoggingLevel.fromString(level));
+    }
+
+    @Then("server confirms level change")
+    public void serverConfirmsLevelChange() {
+        assertEquals(LoggingLevel.DEBUG, logLevelManager.level());
+    }
+
+    @When("server operations generate log messages:")
+    public void serverOperationsGenerateLogMessages(DataTable table) {
+        for (LogMessage m : parseLogMessages(table)) {
+            logLevelManager.log(LoggingLevel.fromString(m.level()), m.logger(), m.message());
+        }
+    }
+
+    @Then("all messages are sent to client as they meet threshold")
+    public void allMessagesAreSentToClientAsTheyMeetThreshold() {
+        assertEquals(4, logLevelManager.messages().size());
+    }
+
+    @When("the client sets log level to {string}")
+    public void theClientSetsLogLevelToWarning(String level) {
+        logLevelManager.setLevel(LoggingLevel.fromString(level));
+        logLevelManager.clear();
+    }
+
+    @And("server generates DEBUG and INFO messages")
+    public void serverGeneratesDebugAndInfoMessages() {
+        logLevelManager.log(LoggingLevel.DEBUG, "test", "d");
+        logLevelManager.log(LoggingLevel.INFO, "test", "i");
+    }
+
+    @Then("only WARNING and ERROR messages are sent")
+    public void onlyWarningAndErrorMessagesAreSent() {
+        assertTrue(logLevelManager.messages().isEmpty());
+    }
+
+    @When("server generates excessive log messages rapidly")
+    public void serverGeneratesExcessiveLogMessagesRapidly() {
+        logLevelManager.clear();
+        for (int i = 0; i < 10; i++) {
+            logLevelManager.log(LoggingLevel.ERROR, "spam", "m" + i);
+        }
+    }
+
+    @Then("rate limiting kicks in after configured threshold")
+    public void rateLimitingKicksInAfterConfiguredThreshold() {
+        assertTrue(logLevelManager.rateLimited());
+    }
+
+    @And("some messages are dropped to prevent flooding")
+    public void someMessagesAreDroppedToPreventFlooding() {
+        assertTrue(logLevelManager.messages().size() < 10);
+    }
+}
+
     @Given("an MCP server with file system resources")
     public void anMcpServerWithFileSystemResources() {
         resourceContents = new ConcurrentHashMap<>();
@@ -1277,3 +1621,4 @@ public class McpFeatureSteps {
         assertNotNull(completionResult);
     }
 }
+
