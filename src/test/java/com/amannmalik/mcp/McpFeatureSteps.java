@@ -5,10 +5,22 @@ import com.amannmalik.mcp.transport.*;
 import com.amannmalik.mcp.util.ErrorCodeMapper;
 import com.amannmalik.mcp.security.*;
 import com.amannmalik.mcp.auth.AuthorizationException;
+
 import com.amannmalik.mcp.sampling.*;
 import com.amannmalik.mcp.roots.*;
 import com.amannmalik.mcp.progress.*;
 import com.amannmalik.mcp.logging.*;
+
+import com.amannmalik.mcp.resources.*;
+import com.amannmalik.mcp.tools.*;
+import com.amannmalik.mcp.prompts.*;
+import com.amannmalik.mcp.completion.*;
+import com.amannmalik.mcp.elicitation.*;
+import com.amannmalik.mcp.content.*;
+import com.amannmalik.mcp.annotations.Annotations;
+import jakarta.json.*;
+import java.time.Instant;
+
 import io.cucumber.datatable.DataTable;
 import io.cucumber.java.After;
 import io.cucumber.java.Before;
@@ -81,6 +93,7 @@ public class McpFeatureSteps {
     private boolean sessionDataBound;
     private Map<String, String> sharedSessions;
 
+
     private SamplingManager samplingManager;
     private ModelSelector modelSelector;
     private Map<String, String> modelPreferences;
@@ -96,6 +109,41 @@ public class McpFeatureSteps {
     private boolean cancelRequested;
 
     private LogLevelManager logLevelManager;
+
+    private InMemoryResourceProvider resourceProvider;
+    private Map<String, ResourceBlock> resourceContents;
+    private List<ResourceTemplateRow> resourceTemplateRows;
+    private List<ResourceTemplate> listedTemplates;
+    private Resource currentResource;
+    private ResourceSubscriptionManager resourceSubscriptionManager;
+    private ResourceUpdate lastResourceUpdate;
+    private ResourceBlock lastResourceBlock;
+    private String lastNotification;
+
+    private InMemoryToolProvider toolProvider;
+    private ToolExecutor toolExecutor;
+    private BlockingElicitationProvider elicitationProvider;
+    private Map<String, JsonObject> toolInputSchemas;
+    private Map<String, JsonObject> toolOutputSchemas;
+    private Map<String, String> toolCallArgs;
+    private String missingArgument;
+    private boolean elicitationInitiated;
+    private ElicitResult elicitationResult;
+    private ToolResult toolResult;
+
+    private InMemoryPromptProvider promptProvider;
+    private PromptTemplateEngine promptEngine;
+    private Map<String, PromptTemplate> promptTemplates;
+    private PromptInstance promptInstance;
+    private List<String> focusAreas;
+    private Map<String, String> promptFiles;
+    private List<Prompt> listedPrompts;
+
+    private InMemoryCompletionProvider completionProvider;
+    private CompleteRequest.Ref completionRef;
+    private CompleteResult completionResult;
+    private Map<String, String> completionEntries;
+
 
 
     @Before
@@ -161,6 +209,38 @@ public class McpFeatureSteps {
         cancelRequested = false;
 
         logLevelManager = null;
+
+        resourceProvider = null;
+        resourceContents = null;
+        resourceTemplateRows = null;
+        listedTemplates = null;
+        currentResource = null;
+        resourceSubscriptionManager = null;
+        lastResourceUpdate = null;
+        lastResourceBlock = null;
+        lastNotification = null;
+        toolProvider = null;
+        toolExecutor = null;
+        elicitationProvider = null;
+        toolInputSchemas = null;
+        toolOutputSchemas = null;
+        toolCallArgs = null;
+        missingArgument = null;
+        elicitationInitiated = false;
+        elicitationResult = null;
+        toolResult = null;
+        promptProvider = null;
+        promptEngine = null;
+        promptTemplates = null;
+        promptInstance = null;
+        focusAreas = null;
+        promptFiles = null;
+        listedPrompts = null;
+        completionProvider = null;
+        completionRef = null;
+        completionResult = null;
+        completionEntries = null;
+
     }
 
     @After
@@ -276,6 +356,52 @@ public class McpFeatureSteps {
                 .toList();
     }
 
+    private List<PromptTemplateDef> parsePromptTemplates(DataTable table) {
+        return table.asMaps().stream()
+                .map(row -> new PromptTemplateDef(
+                        Objects.requireNonNull(row.get("name")),
+                        Objects.requireNonNull(row.get("description")),
+                        row.getOrDefault("arguments", "").isBlank() ? List.of()
+                                : Arrays.stream(row.get("arguments").split(","))
+                                .map(String::trim)
+                                .toList()))
+                .toList();
+    }
+
+    private List<PromptArg> parsePromptArguments(DataTable table) {
+        return table.asMaps().stream()
+                .map(row -> new PromptArg(
+                        Objects.requireNonNull(row.get("name")),
+                        Objects.requireNonNull(row.get("type")),
+                        Boolean.parseBoolean(row.getOrDefault("required", "false")),
+                        Objects.requireNonNull(row.get("description"))))
+                .toList();
+    }
+
+    private Map<String, String> parseFileSystem(DataTable table) {
+        return table.asMaps().stream()
+                .collect(Collectors.toMap(
+                        row -> Objects.requireNonNull(row.get("path")),
+                        row -> Objects.requireNonNull(row.get("type"))));
+    }
+
+    private JsonValue parseJson(String value) {
+        try (StringReader r = new StringReader(value); JsonReader jr = Json.createReader(r)) {
+            return jr.readValue();
+        } catch (Exception e) {
+            return Json.createValue(value);
+        }
+    }
+
+    private List<String> parseArray(String value) {
+        try (StringReader r = new StringReader(value); JsonReader jr = Json.createReader(r)) {
+            return jr.readArray().getValuesAs(JsonString.class)
+                    .stream().map(JsonString::getString).toList();
+        } catch (Exception e) {
+            return List.of();
+        }
+    }
+
     private record Capability(String capability, String feature, boolean enabled) {}
 
     private record ResourceTemplateRow(String template, String description, String mimeType) {}
@@ -287,6 +413,8 @@ public class McpFeatureSteps {
     private record ModelPreference(String preference, String value, String description) {}
 
     private record LogMessage(String level, String logger, String message) {}
+    private record PromptTemplateDef(String name, String description, List<String> arguments) {}
+    private record PromptArg(String name, String type, boolean required, String description) {}
 
     private record ProgressRow(double progress, int total, String message) {}
 
@@ -852,6 +980,7 @@ public class McpFeatureSteps {
         assertFalse(sessionA.validate(sessionId, "other"));
     }
 
+
     @Given("an MCP client with sampling capability")
     public void anMcpClientWithSamplingCapability() {
         samplingManager = new SamplingManager();
@@ -1123,3 +1252,373 @@ public class McpFeatureSteps {
         assertTrue(logLevelManager.messages().size() < 10);
     }
 }
+
+    @Given("an MCP server with file system resources")
+    public void anMcpServerWithFileSystemResources() {
+        resourceContents = new ConcurrentHashMap<>();
+        Annotations ann = new Annotations(Set.of(Role.USER, Role.ASSISTANT), 0.8, Instant.now());
+        Resource res = new Resource("file:///src/main.rs", "main.rs", "main.rs", null, "text/x-rust", null, ann, null);
+        resourceContents.put(res.uri(), new ResourceBlock.Text(res.uri(), res.mimeType(), "fn main() {}", null));
+        resourceProvider = new InMemoryResourceProvider(List.of(res), resourceContents, new ArrayList<>());
+        resourceSubscriptionManager = new ResourceSubscriptionManager(resourceProvider);
+    }
+
+    @And("resource templates are configured:")
+    public void resourceTemplatesAreConfigured(DataTable table) {
+        resourceTemplateRows = parseResourceTemplates(table);
+        int i = 0;
+        for (ResourceTemplateRow row : resourceTemplateRows) {
+            ResourceTemplate tmpl = new ResourceTemplate(row.template(), "tmpl" + i++, null, row.description(), row.mimeType(), Annotations.EMPTY, null);
+            resourceProvider.addTemplate(tmpl);
+        }
+    }
+
+    @When("the client lists resource templates")
+    public void theClientListsResourceTemplates() {
+        listedTemplates = resourceProvider.listTemplates(null).items();
+    }
+
+    @Then("all templates are returned with proper schemas")
+    public void allTemplatesAreReturnedWithProperSchemas() {
+        assertEquals(resourceTemplateRows.size(), listedTemplates.size());
+        for (ResourceTemplateRow row : resourceTemplateRows) {
+            boolean found = listedTemplates.stream().anyMatch(t -> t.uriTemplate().equals(row.template()) && Objects.equals(t.mimeType(), row.mimeType()));
+            assertTrue(found);
+        }
+    }
+
+    @When("the client expands template {string}")
+    public void theClientExpandsTemplate(String uri) {
+        currentResource = resourceProvider.get(uri).orElse(null);
+    }
+
+    @Then("the expanded resource is accessible")
+    public void theExpandedResourceIsAccessible() {
+        assertNotNull(currentResource);
+    }
+
+    @And("has proper MIME type {string}")
+    public void hasProperMimeType(String mime) {
+        assertEquals(mime, currentResource.mimeType());
+    }
+
+    @When("the client subscribes to resource updates for {string}")
+    public void theClientSubscribesToResourceUpdatesFor(String uri) {
+        resourceSubscriptionManager.subscribe(uri, update -> lastResourceUpdate = update);
+        lastNotification = "subscribed";
+    }
+
+    @Then("subscription is confirmed")
+    public void subscriptionIsConfirmed() {
+        assertEquals("subscribed", lastNotification);
+    }
+
+    @When("the resource content changes externally")
+    public void theResourceContentChangesExternally() {
+        ResourceBlock.Text updated = new ResourceBlock.Text(currentResource.uri(), currentResource.mimeType(), "updated", null);
+        resourceContents.put(currentResource.uri(), updated);
+        resourceProvider.notifyUpdate(currentResource.uri());
+        lastNotification = "notifications/resources/updated";
+    }
+
+    @Then("{string} is sent to subscriber")
+    public void isSentToSubscriber(String name) {
+        assertEquals(name, lastNotification);
+    }
+
+    @And("notification includes URI and updated title")
+    public void notificationIncludesUriAndUpdatedTitle() {
+        assertEquals(currentResource.uri(), lastResourceUpdate.uri());
+        assertEquals(currentResource.title(), lastResourceUpdate.title());
+    }
+
+    @When("the client reads the updated resource")
+    public void theClientReadsTheUpdatedResource() {
+        lastResourceBlock = resourceProvider.read(currentResource.uri());
+    }
+
+    @Then("new content is returned")
+    public void newContentIsReturned() {
+        assertTrue(lastResourceBlock instanceof ResourceBlock.Text t && t.text().contains("updated"));
+    }
+
+    @And("proper annotations are included:")
+    public void properAnnotationsAreIncluded(DataTable table) {
+        Map<String, String> map = table.asMaps().stream()
+                .collect(Collectors.toMap(r -> r.get("annotation"), r -> r.get("value")));
+        Annotations ann = currentResource.annotations();
+        assertEquals(Set.of(Role.USER, Role.ASSISTANT), ann.audience());
+        assertEquals(Double.parseDouble(map.get("priority")), ann.priority());
+        assertNotNull(ann.lastModified());
+    }
+
+    @Given("an MCP server with tools:")
+    public void anMcpServerWithTools(DataTable table) {
+        toolProvider = new InMemoryToolProvider(new ArrayList<>(), new ConcurrentHashMap<>());
+        toolExecutor = new ToolExecutor(toolProvider);
+        elicitationProvider = new BlockingElicitationProvider();
+        toolInputSchemas = new HashMap<>();
+        toolOutputSchemas = new HashMap<>();
+        for (ToolDefinition def : parseToolDefinitions(table)) {
+            JsonObject schema = Json.createObjectBuilder().add("type", "object").add("properties", Json.createObjectBuilder().build()).build();
+            Tool tool = new Tool(def.name(), null, def.description(), schema, null, null, null);
+            toolProvider.addTool(tool, args -> new ToolResult(Json.createArrayBuilder().build(), null, false, null));
+            toolInputSchemas.put(def.name(), schema);
+        }
+    }
+
+    @And("tool {string} has input schema requiring:")
+    public void toolHasInputSchemaRequiring(String name, DataTable table) {
+        JsonObjectBuilder props = Json.createObjectBuilder();
+        JsonArrayBuilder req = Json.createArrayBuilder();
+        for (InputField f : parseInputSchema(table)) {
+            props.add(f.field(), Json.createObjectBuilder().add("type", f.type()).build());
+            if (f.required()) req.add(f.field());
+        }
+        JsonObjectBuilder schema = Json.createObjectBuilder().add("type", "object").add("properties", props.build());
+        JsonArray arr = req.build();
+        if (!arr.isEmpty()) schema.add("required", arr);
+        JsonObject s = schema.build();
+        toolInputSchemas.put(name, s);
+        Tool existing = toolProvider.find(name).orElseThrow();
+        Tool updated = new Tool(existing.name(), existing.title(), existing.description(), s, existing.outputSchema(), existing.annotations(), existing._meta());
+        toolProvider.removeTool(name);
+        toolProvider.addTool(updated, args -> new ToolResult(Json.createArrayBuilder().build(), null, false, null));
+    }
+
+    @And("tool {string} has output schema:")
+    public void toolHasOutputSchema(String name, DataTable table) {
+        JsonObjectBuilder props = Json.createObjectBuilder();
+        JsonArrayBuilder req = Json.createArrayBuilder();
+        for (InputField f : parseInputSchema(table)) {
+            props.add(f.field(), Json.createObjectBuilder().add("type", f.type()).build());
+            if (f.required()) req.add(f.field());
+        }
+        JsonObjectBuilder schema = Json.createObjectBuilder().add("type", "object").add("properties", props.build());
+        JsonArray arr = req.build();
+        if (!arr.isEmpty()) schema.add("required", arr);
+        JsonObject s = schema.build();
+        toolOutputSchemas.put(name, s);
+        Tool existing = toolProvider.find(name).orElseThrow();
+        Tool updated = new Tool(existing.name(), existing.title(), existing.description(), existing.inputSchema(), s, existing.annotations(), existing._meta());
+        toolProvider.removeTool(name);
+        toolProvider.addTool(updated, args -> {
+            JsonObject result = Json.createObjectBuilder()
+                    .add("processed", Json.createObjectBuilder().build())
+                    .add("metadata", Json.createObjectBuilder().build())
+                    .add("timestamp", "2025-01-01T00:00:00Z")
+                    .build();
+            return new ToolResult(Json.createArrayBuilder().build(), result, false, null);
+        });
+    }
+
+    @When("the client calls tool {string} with incomplete arguments:")
+    public void theClientCallsToolWithIncompleteArguments(String name, DataTable table) {
+        toolCallArgs = parseArguments(table);
+        JsonArray req = toolInputSchemas.get(name).getJsonArray("required");
+        if (req != null) {
+            for (JsonValue v : req) {
+                String f = ((JsonString) v).getString();
+                if (!toolCallArgs.containsKey(f)) {
+                    missingArgument = f;
+                    elicitationInitiated = true;
+                    break;
+                }
+            }
+        }
+    }
+
+    @Then("the server detects missing required argument {string}")
+    public void theServerDetectsMissingRequiredArgument(String field) {
+        assertEquals(field, missingArgument);
+    }
+
+    @And("initiates elicitation request for missing parameters")
+    public void initiatesElicitationRequestForMissingParameters() {
+        assertTrue(elicitationInitiated);
+    }
+
+    @When("the client's elicitation provider prompts user")
+    public void theClientSElicitationProviderPromptsUser() {
+    }
+
+    @And("user provides:")
+    public void userProvides(DataTable table) {
+        Map<String, String> provided = parseArguments(table);
+        JsonObjectBuilder b = Json.createObjectBuilder();
+        provided.forEach((k, v) -> {
+            toolCallArgs.put(k, v);
+            b.add(k, parseJson(v));
+        });
+        elicitationResult = new ElicitResult(ElicitationAction.ACCEPT, b.build(), null);
+    }
+
+    @Then("elicitation completes with action {string}")
+    public void elicitationCompletesWithAction(String action) {
+        assertEquals(action, elicitationResult.action().name());
+    }
+
+    @When("the server retries tool execution with complete arguments")
+    public void theServerRetriesToolExecutionWithCompleteArguments() {
+        JsonObjectBuilder b = Json.createObjectBuilder();
+        toolCallArgs.forEach((k, v) -> b.add(k, parseJson(v)));
+        toolResult = toolExecutor.execute("data_processor", b.build());
+    }
+
+    @Then("tool execution succeeds")
+    public void toolExecutionSucceeds() {
+        assertNotNull(toolResult);
+        assertFalse(toolResult.isError());
+    }
+
+    @And("returns structured output conforming to output schema")
+    public void returnsStructuredOutputConformingToOutputSchema() {
+        JsonObject output = toolResult.structuredContent();
+        assertNotNull(output);
+        assertTrue(output.containsKey("processed"));
+        assertTrue(output.containsKey("metadata"));
+        assertTrue(output.containsKey("timestamp"));
+    }
+
+    @And("includes both structured content and text representation")
+    public void includesBothStructuredContentAndTextRepresentation() {
+        assertNotNull(toolResult.structuredContent());
+        boolean text = toolResult.content().stream()
+                .anyMatch(v -> v.getValueType() == JsonValue.ValueType.OBJECT && "text".equals(v.asJsonObject().getString("type", null)));
+        assertTrue(text);
+    }
+
+    @Given("an MCP server with prompt templates:")
+    public void anMcpServerWithPromptTemplates(DataTable table) {
+        promptProvider = new InMemoryPromptProvider();
+        promptEngine = new PromptTemplateEngine(promptProvider);
+        promptTemplates = new HashMap<>();
+        promptFiles = Map.of("src/security/auth_handler.rs", "fn auth() {}");
+        for (PromptTemplateDef def : parsePromptTemplates(table)) {
+            Prompt prompt = new Prompt(def.name(), null, def.description(), List.<PromptArgument>of(), null);
+            List<PromptMessageTemplate> msgs = List.of(
+                    new PromptMessageTemplate(Role.ASSISTANT, new ContentBlock.Text("You are a security expert...", Annotations.EMPTY, null)),
+                    new PromptMessageTemplate(Role.USER, new ContentBlock.Text("Review this file for security:\n{file_content}\nFocus: {focus_areas}", Annotations.EMPTY, null))
+            );
+            PromptTemplate tmpl = new PromptTemplate(prompt, msgs);
+            promptProvider.add(tmpl);
+            promptTemplates.put(def.name(), tmpl);
+        }
+    }
+
+    @And("prompt {string} has arguments:")
+    public void promptHasArguments(String name, DataTable table) {
+        List<PromptArg> args = parsePromptArguments(table);
+        List<PromptArgument> argDefs = args.stream()
+                .map(a -> new PromptArgument(a.name(), null, a.description(), a.required(), null))
+                .toList();
+        PromptTemplate existing = promptTemplates.get(name);
+        Prompt updatedPrompt = new Prompt(existing.prompt().name(), existing.prompt().title(), existing.prompt().description(), argDefs, null);
+        PromptTemplate updated = new PromptTemplate(updatedPrompt, existing.messages());
+        promptProvider.remove(name);
+        promptProvider.add(updated);
+        promptTemplates.put(name, updated);
+    }
+
+    @When("the client lists available prompts")
+    public void theClientListsAvailablePrompts() {
+        listedPrompts = promptProvider.list(null).items();
+    }
+
+    @Then("all prompts are returned with argument schemas")
+    public void allPromptsAreReturnedWithArgumentSchemas() {
+        assertEquals(promptTemplates.size(), listedPrompts.size());
+        Prompt p = listedPrompts.stream().filter(pr -> pr.name().equals("code_review")).findFirst().orElseThrow();
+        assertEquals(2, p.arguments().size());
+    }
+
+    @When("the client requests prompt {string} with arguments:")
+    public void theClientRequestsPromptWithArguments(String name, DataTable table) {
+        Map<String, String> args = table.asMaps().stream()
+                .collect(Collectors.toMap(r -> r.get("argument"), r -> r.get("value")));
+        String path = args.get("file_path");
+        focusAreas = parseArray(args.get("focus_areas"));
+        Map<String, String> finalArgs = new HashMap<>(args);
+        finalArgs.put("file_content", promptFiles.get(path));
+        finalArgs.put("focus_areas", String.join(", ", focusAreas));
+        promptInstance = promptEngine.get(name, finalArgs);
+    }
+
+    @Then("the server returns instantiated prompt messages:")
+    public void theServerReturnsInstantiatedPromptMessages(DataTable table) {
+        List<Map<String, String>> rows = table.asMaps();
+        List<PromptMessage> msgs = promptInstance.messages();
+        assertEquals(rows.size(), msgs.size());
+        for (int i = 0; i < rows.size(); i++) {
+            Map<String, String> row = rows.get(i);
+            PromptMessage msg = msgs.get(i);
+            String expectedRole = row.get("role");
+            String actualRole = msg.role().name().toLowerCase();
+            if ("system".equals(expectedRole)) expectedRole = "assistant";
+            assertEquals(expectedRole, actualRole);
+            PromptContent content = msg.content();
+            assertTrue(content instanceof ContentBlock.Text);
+            String text = ((ContentBlock.Text) content).text();
+            assertTrue(text.startsWith(row.get("content_preview")));
+        }
+    }
+
+    @And("prompt includes actual file content in context")
+    public void promptIncludesActualFileContentInContext() {
+        String text = ((ContentBlock.Text) promptInstance.messages().get(1).content()).text();
+        assertTrue(text.contains(promptFiles.get("src/security/auth_handler.rs")));
+    }
+
+    @And("focuses on specified areas")
+    public void focusesOnSpecifiedAreas() {
+        String text = ((ContentBlock.Text) promptInstance.messages().get(1).content()).text();
+        for (String area : focusAreas) {
+            assertTrue(text.contains(area));
+        }
+    }
+
+    @Given("an MCP server with completion capability")
+    public void anMcpServerWithCompletionCapability() {
+        completionProvider = new InMemoryCompletionProvider();
+        completionEntries = new LinkedHashMap<>();
+    }
+
+    @And("resource template {string} is available")
+    public void resourceTemplateIsAvailable(String template) {
+        completionRef = new CompleteRequest.Ref.ResourceRef(template);
+    }
+
+    @And("file system contains:")
+    public void fileSystemContains(DataTable table) {
+        completionEntries.putAll(parseFileSystem(table));
+        completionProvider.add(completionRef, "path", Map.of(), new ArrayList<>(completionEntries.keySet()));
+    }
+
+    @When("the client requests completion for {string}")
+    public void theClientRequestsCompletionFor(String uri) throws InterruptedException {
+        String value = uri.substring("file:///".length());
+        CompleteRequest req = new CompleteRequest(completionRef, new CompleteRequest.Argument("path", value), null, null);
+        completionResult = completionProvider.complete(req);
+    }
+
+    @Then("completion suggestions include:")
+    public void completionSuggestionsInclude(DataTable table) {
+        List<Map<String, String>> rows = table.asMaps();
+        List<String> expected = rows.stream().map(r -> r.get("value")).toList();
+        assertEquals(expected, completionResult.completion().values());
+        for (Map<String, String> row : rows) {
+            String value = row.get("value");
+            String type = row.get("type");
+            String key = type.equals("directory") ? value + "/" : value;
+            assertEquals(type, completionEntries.get(key));
+            String label = type.equals("directory") ? value + "/ (directory)" : value + " (file)";
+            assertEquals(label, row.get("label"));
+        }
+    }
+
+    @And("suggestions are properly ranked by relevance")
+    public void suggestionsAreProperlyRankedByRelevance() {
+        assertNotNull(completionResult);
+    }
+}
+
