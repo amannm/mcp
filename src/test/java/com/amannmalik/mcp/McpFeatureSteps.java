@@ -81,6 +81,7 @@ public class McpFeatureSteps {
     private String lastResponse;
     private String authHeader;
     private SecurityViolationLogger violationLogger;
+    private DownstreamService downstreamService;
     private MockTokenValidator tokenValidator;
     private String canonicalUri;
     private String lastTokenStatus;
@@ -180,6 +181,7 @@ public class McpFeatureSteps {
         lastResponse = null;
         authHeader = null;
         violationLogger = null;
+        downstreamService = null;
         tokenValidator = null;
         canonicalUri = null;
         lastTokenStatus = null;
@@ -848,6 +850,7 @@ public class McpFeatureSteps {
     @Given("an MCP server configured for token validation")
     public void anMcpServerConfiguredForTokenValidation() {
         violationLogger = new SecurityViolationLogger();
+        downstreamService = new DownstreamService();
     }
 
     @And("the server's canonical URI is {string}")
@@ -889,7 +892,9 @@ public class McpFeatureSteps {
 
     @When("a client presents a properly scoped token for {string}")
     public void aClientPresentsAProperlyScopedTokenFor(String aud) throws AuthorizationException {
-        tokenValidator.validate("aud=" + aud + ";exp=valid;sig=true");
+        var principal = tokenValidator.validate("aud=" + aud + ";exp=valid;sig=true");
+        downstreamService.process(principal);
+        downstreamTokenPassed = downstreamService.tokenReceived();
         lastTokenStatus = "OK";
     }
 
