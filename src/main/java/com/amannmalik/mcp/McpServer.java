@@ -225,26 +225,6 @@ public final class McpServer extends JsonRpcEndpoint implements AutoCloseable {
         }
     }
 
-    private void onRequest(JsonRpcRequest req) throws IOException {
-        if (lifecycle.state() == LifecycleState.INIT &&
-                RequestMethod.from(req.method())
-                        .filter(m -> m != RequestMethod.INITIALIZE && m != RequestMethod.PING)
-                        .isPresent()) {
-            send(JsonRpcError.of(req.id(),
-                    JsonRpcErrorCode.INTERNAL_ERROR,
-                    McpConfiguration.current().errorNotInitialized(),
-                    null));
-            return;
-        }
-
-        boolean cancellable = RequestMethod.from(req.method()).map(m -> m != RequestMethod.INITIALIZE).orElse(true);
-        var resp = processor.handle(req, cancellable);
-        if (resp.isPresent()) send(resp.get());
-    }
-
-    private void onNotification(JsonRpcNotification note) {
-        processor.handle(note);
-    }
 
     private JsonRpcMessage initialize(JsonRpcRequest req) {
         InitializeRequest init = InitializeRequest.CODEC.fromJson(req.params());
@@ -306,14 +286,6 @@ public final class McpServer extends JsonRpcEndpoint implements AutoCloseable {
         }
     }
 
-    private boolean allowed(Annotations ann) {
-        try {
-            resourceAccess.requireAllowed(principal, ann);
-            return true;
-        } catch (SecurityException e) {
-            return false;
-        }
-    }
 
     private Optional<String> rateLimit(RateLimiter limiter, String key) {
         try {

@@ -1251,7 +1251,6 @@ public class McpFeatureSteps {
     public void someMessagesAreDroppedToPreventFlooding() {
         assertTrue(logLevelManager.messages().size() < 10);
     }
-}
 
     @Given("an MCP server with file system resources")
     public void anMcpServerWithFileSystemResources() {
