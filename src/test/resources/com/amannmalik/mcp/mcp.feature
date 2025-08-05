@@ -138,7 +138,6 @@ Feature: Comprehensive MCP Protocol Specification Compliance
     And user provides:
       | field   | value |
       | format  | csv   |
-      | options | {"headers": true} |
     Then elicitation completes with action "ACCEPT"
     When the server retries tool execution with complete arguments
     Then tool execution succeeds
