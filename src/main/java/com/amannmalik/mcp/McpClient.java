@@ -25,6 +25,7 @@ import java.net.http.*;
 import java.util.*;
 import java.util.concurrent.*;
 
+/// - [Overview](specification/2025-06-18/index.mdx)
 /// - [Client Features](specification/2025-06-18/client/index.mdx)
 /// - [Sampling](specification/2025-06-18/client/sampling.mdx)
 /// - [Elicitation](specification/2025-06-18/client/elicitation.mdx)

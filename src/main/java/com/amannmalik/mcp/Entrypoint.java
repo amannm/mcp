@@ -1,6 +1,7 @@
 package com.amannmalik.mcp;
 
-import com.amannmalik.mcp.cli.*;
+import com.amannmalik.mcp.cli.HostCommand;
+import com.amannmalik.mcp.cli.ServerCommand;
 import picocli.CommandLine;
 import picocli.CommandLine.Model.CommandSpec;
 import picocli.CommandLine.*;
@@ -14,7 +15,6 @@ public final class Entrypoint {
 
         CommandLine commandLine = new CommandLine(mainSpec);
         commandLine.addSubcommand("server", ServerCommand.createCommandSpec());
-        commandLine.addSubcommand("client", ClientCommand.createCommandSpec());
         commandLine.addSubcommand("host", HostCommand.createCommandSpec());
 
         try {
@@ -39,7 +39,6 @@ public final class Entrypoint {
             String name = subResult.commandSpec().name();
             return switch (name) {
                 case "server" -> ServerCommand.execute(subResult);
-                case "client" -> ClientCommand.execute(subResult);
                 case "host" -> HostCommand.execute(subResult);
                 default -> throw new IllegalStateException("Unknown subcommand: " + name);
             };
