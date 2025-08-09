@@ -1,4 +1,4 @@
-package com.amannmalik.mcp;
+package com.amannmalik.mcp.test;
 
 import org.junit.platform.suite.api.*;
 
