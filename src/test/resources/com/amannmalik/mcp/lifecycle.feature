@@ -11,6 +11,8 @@ Feature: MCP connection lifecycle conformance
     And both sides advertise capabilities during initialization
 
   Rule: Initialization must occur first and follow the required message order
+  # Spec: specification/2025-06-18/basic/lifecycle.mdx:40-126 (initialization phase)
+  # Spec: specification/2025-06-18/basic/lifecycle.mdx:119-125 (request ordering restrictions)
 
     @init @happy_path
     Scenario Outline: Successful initialization handshake with capability negotiation
@@ -51,9 +53,12 @@ Feature: MCP connection lifecycle conformance
       Then the Server should respond with an error indicating invalid state or ignore the request
 
   Rule: Version negotiation must converge on a mutually supported protocol version
+  # Spec: specification/2025-06-18/basic/lifecycle.mdx:127-144 (version negotiation)
+  # Spec: specification/2025-06-18/basic/transports.mdx:243-260 (HTTP protocol version header)
 
     @version @negotiate @happy_path
     Scenario: Server counters with its latest supported version and the Client accepts
+      # Spec: specification/2025-06-18/basic/lifecycle.mdx:129-137
       Given the Client supports protocol versions [2024-11-05, 2024-06-10]
       And the Server supports protocol versions [2024-06-10]
       When the Client sends initialize with protocolVersion "2024-11-05"
@@ -63,6 +68,7 @@ Feature: MCP connection lifecycle conformance
 
     @version @mismatch @disconnect @boundary
     Scenario: Client disconnects when Server responds with an unsupported version
+      # Spec: specification/2025-06-18/basic/lifecycle.mdx:136-137
       Given the Client supports protocol versions [2024-11-05]
       And the Server supports protocol versions [2024-06-10]
       When the Client sends initialize with protocolVersion "2024-11-05"
@@ -72,6 +78,7 @@ Feature: MCP connection lifecycle conformance
 
     @version @http @header @boundary
     Scenario: HTTP transport requires MCP-Protocol-Version header after initialization
+      # Spec: specification/2025-06-18/basic/transports.mdx:243-251
       Given the transport is HTTP
       And initialization has successfully completed with protocolVersion "2024-11-05"
       When the Client sends any subsequent HTTP request
@@ -79,15 +86,19 @@ Feature: MCP connection lifecycle conformance
       And the Server rejects the request if the header is missing or has a mismatched version
 
   Rule: Only negotiated capabilities may be used during Operation
+  # Spec: specification/2025-06-18/basic/lifecycle.mdx:146-171 (capability negotiation)
+  # Spec: specification/2025-06-18/basic/lifecycle.mdx:172-181 (operation phase)
 
     @capabilities @negotiated_only @boundary
     Scenario: Using an unnegotiated capability is rejected
+      # Spec: specification/2025-06-18/basic/lifecycle.mdx:177-180
       Given the negotiated server capabilities do not include "resources"
       When the Client sends resources/list
       Then the Server responds with an error indicating the capability is unavailable
 
     @capabilities @sub
     Scenario Outline: Respect sub-capabilities for listChanged and subscribe
+      # Spec: specification/2025-06-18/basic/lifecycle.mdx:166-170
       Given the negotiated server capabilities include resources with <subcaps>
       When the Client attempts to <action>
       Then the Server response is <outcome>
@@ -100,23 +111,29 @@ Feature: MCP connection lifecycle conformance
 
     @capabilities @tools @prompts
     Scenario: listChanged notifications only when supported
+      # Spec: specification/2025-06-18/basic/lifecycle.mdx:168-170
       Given the negotiated server capabilities include tools with listChanged true
       When tools become available or unavailable on the Server
       Then the Server may send a tools/list_changed notification
       And if listChanged is false, the Server must not send tools/list_changed
 
   Rule: Operation phase respects negotiated protocol version and capabilities
+  # Spec: specification/2025-06-18/basic/lifecycle.mdx:172-181
 
     @operation @respect
     Scenario: All requests and notifications conform to the negotiated protocol version
+      # Spec: specification/2025-06-18/basic/lifecycle.mdx:177-180
       Given protocolVersion "2024-11-05" was negotiated
       When the Client issues a request defined in a different protocol revision
       Then the Server rejects the request as unsupported
 
   Rule: Shutdown is transport-specific and should be graceful
+  # Spec: specification/2025-06-18/basic/lifecycle.mdx:182-205 (shutdown phase)
+  # Spec: specification/2025-06-18/basic/transports.mdx:188-204 (transport specifics)
 
     @shutdown @stdio @graceful
     Scenario: Stdio shutdown initiated by Client
+      # Spec: specification/2025-06-18/basic/lifecycle.mdx:188-199
       Given the transport is stdio and the session is operational
       When the Client closes the input stream to the Server process
       Then the Server should exit on its own within a reasonable time
@@ -127,14 +144,20 @@ Feature: MCP connection lifecycle conformance
 
     @shutdown @http @graceful
     Scenario: HTTP shutdown indicated by closing connections
+      # Spec: specification/2025-06-18/basic/lifecycle.mdx:201-204
       Given the transport is HTTP and the session is operational
       When the Client closes the associated HTTP connection(s)
       Then the session is considered shut down
 
   Rule: Timeouts must be enforced and integrated with cancellation and progress
+  # Spec: specification/2025-06-18/basic/lifecycle.mdx:206-222 (timeout enforcement)
+  # Spec: specification/2025-06-18/basic/utilities/cancellation.mdx:15-31 (cancellation)
+  # Spec: specification/2025-06-18/basic/utilities/progress.mdx:15-58 (progress)
 
     @timeouts @cancellation @boundary
     Scenario: Request times out and is cancelled
+      # Spec: specification/2025-06-18/basic/lifecycle.mdx:210-212
+      # Spec: specification/2025-06-18/basic/utilities/cancellation.mdx:15-31
       Given the Client sets a per-request timeout of 2 seconds
       When the Client sends a tools/call request that does not complete within 2 seconds
       Then the Client sends a cancellations/notify for the request
@@ -142,6 +165,8 @@ Feature: MCP connection lifecycle conformance
 
     @timeouts @progress @max_timeout @boundary
     Scenario: Progress notifications may reset timeout clock but maximum timeout is enforced
+      # Spec: specification/2025-06-18/basic/lifecycle.mdx:217-221
+      # Spec: specification/2025-06-18/basic/utilities/progress.mdx:15-58
       Given the Client sets a per-request timeout of 2 seconds and a maximum timeout of 10 seconds
       When the Server emits progress/notify every 1 second for a long-running request
       Then the Client may reset the 2 second timeout after each progress notification
@@ -149,9 +174,12 @@ Feature: MCP connection lifecycle conformance
       Then the Client cancels the request and stops waiting for a response
 
   Rule: Errors must be structured and cover version mismatch, capability failure, and timeouts
+  # Spec: specification/2025-06-18/basic/lifecycle.mdx:223-247 (error handling)
+  # Spec: specification/2025-06-18/basic/index.mdx:76-78 (JSON-RPC error format)
 
     @error @version
     Scenario: Initialization error for unsupported protocol version
+      # Spec: specification/2025-06-18/basic/lifecycle.mdx:233-246
       When the Server rejects initialize due to unsupported protocol version
       Then the error object returned conforms to JSON-RPC with:
         | code              | -32602 |
@@ -161,6 +189,7 @@ Feature: MCP connection lifecycle conformance
 
     @error @capabilities
     Scenario: Failure to negotiate a required capability
+      # Spec: specification/2025-06-18/basic/lifecycle.mdx:223-230
       Given the Client requires the sampling capability
       And the Server does not advertise sampling
       When the Client receives the initialize response
@@ -168,27 +197,36 @@ Feature: MCP connection lifecycle conformance
 
     @error @timeouts
     Scenario: Timeout error surfaced to caller when cancellation is not honored
+      # Spec: specification/2025-06-18/basic/lifecycle.mdx:206-222
       Given the Client times out a request and sends cancellation
       And the Server continues processing and later sends a success response
       Then the Client ignores the late response and returns a timeout error to its caller
 
   Rule: Initialization messages must include implementation information
+  # Spec: specification/2025-06-18/basic/lifecycle.mdx:49-54 (clientInfo requirement)
+  # Spec: specification/2025-06-18/basic/lifecycle.mdx:99-105 (serverInfo requirement)
 
     @init @clientInfo @boundary
     Scenario: Missing clientInfo is rejected
+      # Spec: specification/2025-06-18/basic/lifecycle.mdx:49-54
       When the Client sends initialize without clientInfo
       Then the Server rejects the request or responds with an error indicating missing implementation information
 
   Rule: Pings and logging are the only cross-boundary requests prior to initialized
+  # Spec: specification/2025-06-18/basic/lifecycle.mdx:119-125 (pre-init restrictions)
+  # Spec: specification/2025-06-18/basic/utilities/ping.mdx:19-39 (ping utility)
+  # Spec: specification/2025-06-18/server/utilities/logging.mdx:67-86 (logging utility)
 
     @ping @preinit
     Scenario: Ping is allowed before initialization completes
+      # Spec: specification/2025-06-18/basic/utilities/ping.mdx:19-39
       Given the Client has sent initialize and is waiting for the response
       When the Client sends a utilities/ping request
       Then the Server responds with success
 
     @logging @server @preinit
     Scenario: Server logging allowed before initialized
+      # Spec: specification/2025-06-18/server/utilities/logging.mdx:67-86
       Given the Server has responded to initialize but not yet received notifications/initialized
       When the Server sends a logging/notify message
       Then the Client accepts the notification
