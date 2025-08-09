@@ -2,24 +2,25 @@ package com.amannmalik.mcp.roots;
 
 import com.amannmalik.mcp.jsonrpc.*;
 import com.amannmalik.mcp.lifecycle.ClientCapability;
-import com.amannmalik.mcp.lifecycle.ProtocolLifecycle;
 import com.amannmalik.mcp.protocol.RequestMethod;
 import com.amannmalik.mcp.util.*;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.Set;
+import java.util.function.Supplier;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 /// - [Roots](specification/2025-06-18/client/roots.mdx)
 /// - [MCP roots specification conformance](src/test/resources/com/amannmalik/mcp/mcp_conformance.feature:154-169)
 public final class RootsManager {
-    private final ProtocolLifecycle lifecycle;
+    private final Supplier<Set<ClientCapability>> capabilities;
     private final RequestSender requester;
     private final ChangeSupport<Change> listChangeSupport = new ChangeSupport<>();
     private final List<Root> roots = new CopyOnWriteArrayList<>();
 
-    public RootsManager(ProtocolLifecycle lifecycle, RequestSender requester) {
-        this.lifecycle = lifecycle;
+    public RootsManager(Supplier<Set<ClientCapability>> capabilities, RequestSender requester) {
+        this.capabilities = capabilities;
         this.requester = requester;
     }
 
@@ -41,7 +42,7 @@ public final class RootsManager {
     }
 
     public void refreshAsync() {
-        if (!lifecycle.negotiatedClientCapabilities().contains(ClientCapability.ROOTS)) return;
+        if (!capabilities.get().contains(ClientCapability.ROOTS)) return;
         Thread t = new Thread(() -> {
             try {
                 listRoots();
@@ -67,7 +68,7 @@ public final class RootsManager {
     }
 
     private void requireClientCapability(ClientCapability cap) {
-        if (!lifecycle.negotiatedClientCapabilities().contains(cap)) {
+        if (!capabilities.get().contains(cap)) {
             throw new IllegalStateException("Missing client capability: " + cap);
         }
     }
