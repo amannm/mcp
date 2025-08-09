@@ -9,6 +9,8 @@ import com.amannmalik.mcp.lifecycle.ProtocolLifecycle;
 import com.amannmalik.mcp.protocol.NotificationMethod;
 import com.amannmalik.mcp.protocol.RequestMethod;
 import com.amannmalik.mcp.roots.RootsManager;
+import com.amannmalik.mcp.security.ResourceAccessController;
+import com.amannmalik.mcp.util.RootChecker;
 import com.amannmalik.mcp.util.*;
 import com.amannmalik.mcp.validation.ValidationUtil;
 import jakarta.json.*;

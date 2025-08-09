@@ -3,8 +3,6 @@ package com.amannmalik.mcp.security;
 import com.amannmalik.mcp.annotations.Annotations;
 import com.amannmalik.mcp.auth.Principal;
 import com.amannmalik.mcp.prompts.Role;
-import com.amannmalik.mcp.resources.ResourceAccessController;
-import com.amannmalik.mcp.util.PrincipalPermissions;
 
 public final class PrivacyBoundaryEnforcer implements ResourceAccessController {
     private final PrincipalPermissions<Role> permissions = new PrincipalPermissions<>();

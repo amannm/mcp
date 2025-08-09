@@ -1,4 +1,4 @@
-package com.amannmalik.mcp.sampling;
+package com.amannmalik.mcp.security;
 
 import com.amannmalik.mcp.auth.Principal;
 

@@ -1,4 +1,4 @@
-package com.amannmalik.mcp.util;
+package com.amannmalik.mcp.security;
 
 import java.util.Map;
 import java.util.Set;

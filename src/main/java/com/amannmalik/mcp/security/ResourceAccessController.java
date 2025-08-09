@@ -1,4 +1,4 @@
-package com.amannmalik.mcp.resources;
+package com.amannmalik.mcp.security;
 
 import com.amannmalik.mcp.annotations.Annotations;
 import com.amannmalik.mcp.auth.Principal;
