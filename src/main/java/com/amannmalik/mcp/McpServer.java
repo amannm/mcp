@@ -8,8 +8,6 @@ import com.amannmalik.mcp.elicitation.*;
 import com.amannmalik.mcp.jsonrpc.*;
 import com.amannmalik.mcp.lifecycle.*;
 import com.amannmalik.mcp.logging.*;
-import com.amannmalik.mcp.ping.PingRequest;
-import com.amannmalik.mcp.ping.PingResponse;
 import com.amannmalik.mcp.prompts.*;
 import com.amannmalik.mcp.resources.*;
 import com.amannmalik.mcp.roots.RootsManager;
@@ -259,8 +257,11 @@ public final class McpServer extends JsonRpcEndpoint implements AutoCloseable {
     }
 
     private JsonRpcMessage ping(JsonRpcRequest req) {
-        PingRequest.CODEC.fromJson(req.params());
-        return new JsonRpcResponse(req.id(), PingResponse.CODEC.toJson(new PingResponse()));
+        JsonObject params = req.params();
+        if (params != null && !params.isEmpty()) {
+            ValidationUtil.requireMeta(params);
+        }
+        return new JsonRpcResponse(req.id(), Json.createObjectBuilder().build());
     }
 
     private void requireClientCapability(ClientCapability cap) {

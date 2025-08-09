@@ -7,13 +7,13 @@ import com.amannmalik.mcp.elicitation.*;
 import com.amannmalik.mcp.jsonrpc.*;
 import com.amannmalik.mcp.lifecycle.*;
 import com.amannmalik.mcp.logging.*;
-import com.amannmalik.mcp.ping.*;
 import com.amannmalik.mcp.resources.*;
 import com.amannmalik.mcp.roots.*;
 import com.amannmalik.mcp.sampling.*;
 import com.amannmalik.mcp.tools.ToolListChangedNotification;
 import com.amannmalik.mcp.transport.*;
 import com.amannmalik.mcp.util.*;
+import com.amannmalik.mcp.validation.ValidationUtil;
 import com.amannmalik.mcp.wire.NotificationMethod;
 import com.amannmalik.mcp.wire.RequestMethod;
 import jakarta.json.*;
@@ -40,7 +40,8 @@ public final class McpClient extends JsonRpcEndpoint implements AutoCloseable {
     private Principal principal = new Principal(
             McpConfiguration.current().defaultPrincipal(), Set.of());
     private Thread reader;
-    private PingScheduler pinger;
+    private ScheduledExecutorService pingExec;
+    private int pingFailures;
     private long pingInterval;
     private long pingTimeout;
     private volatile boolean connected;
@@ -252,22 +253,33 @@ public final class McpClient extends JsonRpcEndpoint implements AutoCloseable {
         reader.setDaemon(true);
         reader.start();
         if (pingInterval > 0) {
-            pinger = new PingScheduler(this, pingInterval, pingTimeout, () -> {
+            pingExec = Executors.newSingleThreadScheduledExecutor();
+            pingFailures = 0;
+            pingExec.scheduleAtFixedRate(() -> {
                 try {
-                    disconnect();
-                } catch (IOException ignore) {
+                    ping(pingTimeout);
+                    pingFailures = 0;
+                } catch (IOException | RuntimeException e) {
+                    pingFailures++;
+                    System.err.println("Ping failure: " + e.getMessage());
+                    if (pingFailures >= 3) {
+                        pingFailures = 0;
+                        try {
+                            disconnect();
+                        } catch (IOException ignore) {
+                        }
+                    }
                 }
-            }, 3);
-            pinger.start();
+            }, pingInterval, pingInterval, TimeUnit.MILLISECONDS);
         }
     }
 
     public synchronized void disconnect() throws IOException {
         if (!connected) return;
         connected = false;
-        if (pinger != null) {
-            pinger.close();
-            pinger = null;
+        if (pingExec != null) {
+            pingExec.shutdownNow();
+            pingExec = null;
         }
         transport.close();
         resourceListeners.clear();
@@ -297,13 +309,15 @@ public final class McpClient extends JsonRpcEndpoint implements AutoCloseable {
         return instructions == null ? "" : instructions;
     }
 
-    public PingResponse ping() throws IOException {
-        return ping(McpConfiguration.current().defaultMs());
+    public void ping() throws IOException {
+        ping(McpConfiguration.current().defaultMs());
     }
 
-    public PingResponse ping(long timeoutMillis) throws IOException {
+    public void ping(long timeoutMillis) throws IOException {
         JsonRpcResponse resp = JsonRpc.expectResponse(request(RequestMethod.PING, null, timeoutMillis));
-        return PingResponse.CODEC.fromJson(resp.result());
+        if (!resp.result().isEmpty()) {
+            throw new IOException("Unexpected ping response");
+        }
     }
 
     public void setLogLevel(LoggingLevel level) throws IOException {
@@ -493,12 +507,15 @@ public final class McpClient extends JsonRpcEndpoint implements AutoCloseable {
     }
 
     private JsonRpcMessage handlePing(JsonRpcRequest req) {
-        try {
-            PingRequest.CODEC.fromJson(req.params());
-            return new JsonRpcResponse(req.id(), PingResponse.CODEC.toJson(new PingResponse()));
-        } catch (IllegalArgumentException e) {
-            return JsonRpcError.of(req.id(), JsonRpcErrorCode.INVALID_PARAMS, e.getMessage());
+        JsonObject params = req.params();
+        if (params != null && !params.isEmpty()) {
+            try {
+                ValidationUtil.requireMeta(params);
+            } catch (IllegalArgumentException e) {
+                return JsonRpcError.of(req.id(), JsonRpcErrorCode.INVALID_PARAMS, e.getMessage());
+            }
         }
+        return new JsonRpcResponse(req.id(), Json.createObjectBuilder().build());
     }
 
     private void requireCapability(RequestMethod method) {
