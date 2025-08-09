@@ -507,6 +507,10 @@ public final class McpServer extends JsonRpcEndpoint implements AutoCloseable {
         return rootsManager.roots();
     }
 
+    public ProtocolLifecycle lifecycle() {
+        return lifecycle;
+    }
+
     public ElicitResult elicit(ElicitRequest req) throws IOException {
         requireClientCapability(ClientCapability.ELICITATION);
         JsonRpcMessage msg = request(RequestMethod.ELICITATION_CREATE, ElicitRequest.CODEC.toJson(req));

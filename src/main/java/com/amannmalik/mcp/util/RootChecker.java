@@ -24,27 +24,35 @@ public final class RootChecker {
 
         final Path targetPath;
         try {
-            targetPath = Paths.get(target).toRealPath();
+            Path p = Paths.get(target);
+            targetPath = normalize(p);
         } catch (Exception e) {
             return false;
         }
 
         return roots.stream()
                 .map(Root::uri)
-                .map(RootChecker::toRealPath)
+                .map(RootChecker::toPath)
                 .flatMap(Optional::stream)
                 .anyMatch(targetPath::startsWith);
     }
 
-    private static Optional<Path> toRealPath(String uri) {
+    private static Optional<Path> toPath(String uri) {
         try {
             URI base = URI.create(uri);
             if ("file".equalsIgnoreCase(base.getScheme())) {
-                return Optional.of(Paths.get(base).toRealPath());
+                return Optional.of(normalize(Paths.get(base)));
             }
         } catch (Exception ignore) {
-            // ignore invalid root entries
         }
         return Optional.empty();
+    }
+
+    private static Path normalize(Path p) {
+        try {
+            return p.toRealPath();
+        } catch (Exception e) {
+            return p.toAbsolutePath().normalize();
+        }
     }
 }
