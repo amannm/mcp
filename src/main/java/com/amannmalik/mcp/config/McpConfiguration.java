@@ -54,7 +54,7 @@ public record McpConfiguration(String version,
             "Access denied",
             "Request timed out",
             "default", "default",
-            "cli", "CLI", "0", List.of("SAMPLING", "ROOTS"), "user");
+            "cli", "CLI", "0", List.of("SAMPLING", "ROOTS", "ELICITATION"), "user");
 
     public McpConfiguration {
         allowedOrigins = List.copyOf(allowedOrigins);

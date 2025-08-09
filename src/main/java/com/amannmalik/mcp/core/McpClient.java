@@ -135,7 +135,11 @@ public final class McpClient extends JsonRpcEndpoint implements AutoCloseable {
             }
         } : null;
 
-        return new McpClient(info, caps, transport, samplingProvider, rootsProvider, null, listener);
+        ElicitationProvider elicitationProvider = caps.contains(ClientCapability.ELICITATION)
+                ? new InteractiveElicitationProvider()
+                : null;
+
+        return new McpClient(info, caps, transport, samplingProvider, rootsProvider, elicitationProvider, listener);
     }
 
     public ClientInfo info() {

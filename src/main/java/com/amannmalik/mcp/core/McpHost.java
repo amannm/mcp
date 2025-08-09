@@ -3,6 +3,7 @@ package com.amannmalik.mcp.core;
 import com.amannmalik.mcp.core.McpClient.McpClientListener;
 import com.amannmalik.mcp.auth.Principal;
 import com.amannmalik.mcp.config.McpConfiguration;
+import com.amannmalik.mcp.elicitation.*;
 import com.amannmalik.mcp.jsonrpc.*;
 import com.amannmalik.mcp.lifecycle.*;
 import com.amannmalik.mcp.logging.LoggingMessageNotification;
@@ -91,6 +92,14 @@ public final class McpHost implements AutoCloseable {
     }
 
     public static McpHost forCli(Map<String, String> clientSpecs, boolean verbose) throws IOException {
+        McpHost host = forCliWithoutConnect(clientSpecs, verbose);
+        for (String clientId : clientSpecs.keySet()) {
+            host.connect(clientId);
+        }
+        return host;
+    }
+
+    public static McpHost forCliWithoutConnect(Map<String, String> clientSpecs, boolean verbose) throws IOException {
         SecurityPolicy policy = c -> true;
         Principal principal = new Principal(McpConfiguration.current().hostPrincipal(), Set.of());
         McpHost host = new McpHost(policy, principal);
@@ -111,20 +120,31 @@ public final class McpHost implements AutoCloseable {
                     System.err.println(notification.level().name().toLowerCase() + logger + " " + notification.data());
                 }
             } : null;
+            McpConfiguration cc = McpConfiguration.current();
+            EnumSet<ClientCapability> caps = cc.clientCapabilities().isEmpty()
+                    ? EnumSet.noneOf(ClientCapability.class)
+                    : cc.clientCapabilities().stream()
+                    .map(ClientCapability::valueOf)
+                    .collect(() -> EnumSet.noneOf(ClientCapability.class), EnumSet::add, EnumSet::addAll);
+            
+            ElicitationProvider elicitationProvider = caps.contains(ClientCapability.ELICITATION)
+                    ? new InteractiveElicitationProvider()
+                    : null;
+            
             McpClient client = new McpClient(
-                    new ClientInfo(entry.getKey(), entry.getKey(), McpConfiguration.current().clientVersion()),
-                    EnumSet.noneOf(ClientCapability.class),
+                    new ClientInfo(entry.getKey(), entry.getKey(), cc.clientVersion()),
+                    caps,
                     transport,
                     samplingProvider,
                     rootsProvider,
-                    null,
+                    elicitationProvider,
                     listener);
-            host.register(entry.getKey(), client);
+            host.registerWithoutConnect(entry.getKey(), client);
         }
         return host;
     }
 
-    public void register(String id, McpClient client) throws IOException {
+    public void registerWithoutConnect(String id, McpClient client) throws IOException {
         if (!policy.allow(client)) {
             throw new SecurityException("Client not authorized: " + client.info().name());
         }
@@ -132,17 +152,16 @@ public final class McpHost implements AutoCloseable {
         if (clients.putIfAbsent(id, client) != null) {
             throw new IllegalArgumentException("Client already registered: " + id);
         }
-        try {
-            client.setPrincipal(principal);
-            client.setSamplingAccessPolicy(samplingAccess);
-            client.configurePing(
-                    McpConfiguration.current().defaultMs(),
-                    McpConfiguration.current().pingMs());
-            client.connect();
-        } catch (IOException e) {
-            clients.remove(id);
-            throw e;
-        }
+        client.setPrincipal(principal);
+        client.setSamplingAccessPolicy(samplingAccess);
+        client.configurePing(
+                McpConfiguration.current().defaultMs(),
+                McpConfiguration.current().pingMs());
+    }
+
+    public void connect(String id) throws IOException {
+        McpClient client = requireClient(id);
+        client.connect();
     }
 
     public void unregister(String id) throws IOException {
