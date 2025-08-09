@@ -40,6 +40,12 @@ public class LifecycleSteps {
     private volatile boolean hostInOperationalState = false;
     private volatile boolean initializedNotificationSent = false;
     private String protocolVersion;
+    private ProtocolLifecycle lifecycle;
+    private InitializeResponse initializeResponse;
+    private Exception initializationException;
+    private String requestedProtocolVersion;
+    private Set<String> serverSupportedVersions;
+    private Set<String> clientSupportedVersions;
     
     // Background steps
     
@@ -59,6 +65,12 @@ public class LifecycleSteps {
         hostInOperationalState = false;
         initializedNotificationSent = false;
         protocolVersion = null;
+        lifecycle = null;
+        initializeResponse = null;
+        initializationException = null;
+        requestedProtocolVersion = null;
+        serverSupportedVersions = null;
+        clientSupportedVersions = null;
     }
     
     @Given("protocol version {string} is supported")
@@ -270,6 +282,103 @@ public class LifecycleSteps {
         Exception violation = protocolViolation.get();
         if (violation != null) {
             fail("Protocol violation detected: " + violation.getMessage(), violation);
+        }
+    }
+
+    @Given("a McpServer supporting protocol version {string}")
+    public void serverSupportsVersion(String version) {
+        lifecycle = new ProtocolLifecycle(EnumSet.noneOf(ServerCapability.class), new ServerInfo("TestServer", "Test Server App", "1.0.0"), null);
+        serverSupportedVersions = Set.of(version);
+    }
+
+    @Given("a McpServer supporting protocol versions:")
+    public void serverSupportsVersions(DataTable versions) {
+        Set<String> v = new HashSet<>();
+        for (Map<String, String> row : versions.asMaps()) {
+            v.add(row.get("version"));
+        }
+        serverSupportedVersions = Set.copyOf(v);
+        lifecycle = new ProtocolLifecycle(EnumSet.noneOf(ServerCapability.class), new ServerInfo("TestServer", "Test Server App", "1.0.0"), null);
+    }
+
+    @Given("a McpServer supporting only protocol version {string}")
+    public void serverSupportsOnlyVersion(String version) {
+        serverSupportsVersion(version);
+    }
+
+    @And("a McpHost requesting protocol version {string}")
+    public void hostRequestsVersion(String version) {
+        requestedProtocolVersion = version;
+    }
+
+    @And("a McpHost supporting only versions {string} and newer")
+    public void hostSupportsOnlyNewer(String version) {
+        clientSupportedVersions = Set.of(version);
+    }
+
+    @When("initialization is performed")
+    public void initializationPerformed() {
+        performInitialization();
+    }
+
+    @When("the McpHost attempts initialization with version {string}")
+    public void hostAttemptsInitialization(String version) {
+        requestedProtocolVersion = version;
+        performInitialization();
+    }
+
+    @Then("both parties should agree on protocol version {string}")
+    public void bothAgreeOnVersion(String version) {
+        assertNotNull(initializeResponse, "Initialization response required");
+        assertNull(initializationException, "Initialization should succeed");
+        assertEquals(version, initializeResponse.protocolVersion());
+    }
+
+    @Then("the McpServer should respond with protocol version {string}")
+    public void serverRespondsWithVersion(String version) {
+        if (initializeResponse != null) {
+            assertEquals(version, initializeResponse.protocolVersion());
+        } else if (initializationException instanceof UnsupportedProtocolVersionException e) {
+            assertTrue(e.supported().contains(version));
+        } else {
+            fail("No server response");
+        }
+    }
+
+    @And("the McpHost should accept the downgrade")
+    public void hostAcceptsDowngrade() {
+        assertNotNull(initializeResponse, "Initialization response required");
+        assertNull(initializationException, "Initialization should succeed");
+        assertNotEquals(requestedProtocolVersion, initializeResponse.protocolVersion());
+    }
+
+    @And("initialization should complete successfully")
+    public void initializationCompletesSuccessfully() {
+        assertNotNull(initializeResponse, "Initialization response required");
+        assertNull(initializationException, "Initialization should succeed");
+    }
+
+    @And("the McpHost should disconnect due to version incompatibility")
+    public void hostDisconnectsDueToVersionIncompatibility() {
+        assertTrue(initializationException instanceof UnsupportedProtocolVersionException);
+    }
+
+    @And("no further communication should occur")
+    public void noFurtherCommunication() {
+        assertNull(initializeResponse);
+    }
+
+    private void performInitialization() {
+        InitializeRequest req = new InitializeRequest(
+                requestedProtocolVersion,
+                new Capabilities(Set.of(), Set.of(), Map.of(), Map.of()),
+                new ClientInfo("TestClient", "Test Client", "1.0"),
+                ClientFeatures.EMPTY
+        );
+        try {
+            initializeResponse = lifecycle.initialize(req);
+        } catch (Exception e) {
+            initializationException = e;
         }
     }
     
