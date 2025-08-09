@@ -5,7 +5,6 @@ import com.amannmalik.mcp.auth.Principal;
 import com.amannmalik.mcp.core.JsonRpcEndpoint;
 import com.amannmalik.mcp.jsonrpc.*;
 import com.amannmalik.mcp.lifecycle.LifecycleState;
-import com.amannmalik.mcp.lifecycle.ProtocolLifecycle;
 import com.amannmalik.mcp.protocol.NotificationMethod;
 import com.amannmalik.mcp.protocol.RequestMethod;
 import com.amannmalik.mcp.roots.RootsManager;
@@ -26,7 +25,7 @@ public final class ResourceFeature implements AutoCloseable {
     private final ResourceAccessController access;
     private final Principal principal;
     private final RootsManager roots;
-    private final ProtocolLifecycle lifecycle;
+    private final Supplier<LifecycleState> state;
     private final Sender sender;
     private final ProgressManager progress;
     private final Map<String, ChangeSubscription> subscriptions = new ConcurrentHashMap<>();
@@ -36,14 +35,14 @@ public final class ResourceFeature implements AutoCloseable {
                            ResourceAccessController access,
                            Principal principal,
                            RootsManager roots,
-                           ProtocolLifecycle lifecycle,
+                           Supplier<LifecycleState> state,
                            Sender sender,
                            ProgressManager progress) {
         this.resources = resources;
         this.access = access;
         this.principal = principal;
         this.roots = roots;
-        this.lifecycle = lifecycle;
+        this.state = state;
         this.sender = sender;
         this.progress = progress;
         this.listSubscription = resources.supportsListChanged() ?
@@ -240,7 +239,7 @@ public final class ResourceFeature implements AutoCloseable {
             JsonObject payload) {
         try {
             return factory.subscribe(ignored -> {
-                if (lifecycle.state() != LifecycleState.OPERATION) return;
+                if (state.get() != LifecycleState.OPERATION) return;
                 try {
                     sender.send(new JsonRpcNotification(method.method(), payload));
                 } catch (IOException ignore) {
