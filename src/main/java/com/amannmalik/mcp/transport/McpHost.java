@@ -8,7 +8,6 @@ import com.amannmalik.mcp.jsonrpc.*;
 import com.amannmalik.mcp.lifecycle.*;
 import com.amannmalik.mcp.logging.LoggingMessageNotification;
 import com.amannmalik.mcp.prompts.Role;
-import com.amannmalik.mcp.protocol.RequestMethod;
 import com.amannmalik.mcp.roots.InMemoryRootsProvider;
 import com.amannmalik.mcp.roots.Root;
 import com.amannmalik.mcp.sampling.*;

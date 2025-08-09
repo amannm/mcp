@@ -1,4 +1,4 @@
-package com.amannmalik.mcp.protocol;
+package com.amannmalik.mcp.transport;
 
 import java.util.Optional;
 

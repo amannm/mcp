@@ -2,8 +2,6 @@ package com.amannmalik.mcp.transport;
 
 import com.amannmalik.mcp.config.McpConfiguration;
 import com.amannmalik.mcp.jsonrpc.*;
-import com.amannmalik.mcp.protocol.NotificationMethod;
-import com.amannmalik.mcp.protocol.RequestMethod;
 import com.amannmalik.mcp.util.*;
 import jakarta.json.JsonObject;
 

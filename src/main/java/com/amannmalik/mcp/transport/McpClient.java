@@ -6,8 +6,6 @@ import com.amannmalik.mcp.elicitation.*;
 import com.amannmalik.mcp.jsonrpc.*;
 import com.amannmalik.mcp.lifecycle.*;
 import com.amannmalik.mcp.logging.*;
-import com.amannmalik.mcp.protocol.NotificationMethod;
-import com.amannmalik.mcp.protocol.RequestMethod;
 import com.amannmalik.mcp.resources.*;
 import com.amannmalik.mcp.roots.*;
 import com.amannmalik.mcp.sampling.*;

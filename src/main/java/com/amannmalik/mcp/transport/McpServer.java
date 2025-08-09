@@ -18,8 +18,6 @@ import com.amannmalik.mcp.lifecycle.ServerInfo;
 import com.amannmalik.mcp.lifecycle.UnsupportedProtocolVersionException;
 import com.amannmalik.mcp.logging.*;
 import com.amannmalik.mcp.prompts.*;
-import com.amannmalik.mcp.protocol.NotificationMethod;
-import com.amannmalik.mcp.protocol.RequestMethod;
 import com.amannmalik.mcp.resources.*;
 import com.amannmalik.mcp.roots.RootsManager;
 import com.amannmalik.mcp.sampling.*;
