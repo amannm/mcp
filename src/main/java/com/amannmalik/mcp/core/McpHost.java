@@ -31,57 +31,6 @@ public final class McpHost implements AutoCloseable {
     private final PrivacyBoundaryEnforcer privacyBoundary;
     private final SamplingAccessController samplingAccess;
 
-    private static Optional<ServerCapability> serverCapabilityForMethod(String method) {
-        return RequestMethod.from(method)
-                .flatMap(CapabilityRequirements::forMethod)
-                .or(() -> {
-                    if (method.startsWith("tools/")) return Optional.of(ServerCapability.TOOLS);
-                    if (method.startsWith("resources/")) return Optional.of(ServerCapability.RESOURCES);
-                    if (method.startsWith("prompts/")) return Optional.of(ServerCapability.PROMPTS);
-                    if (method.startsWith("completion/")) return Optional.of(ServerCapability.COMPLETIONS);
-                    if (method.startsWith("logging/")) return Optional.of(ServerCapability.LOGGING);
-                    return Optional.empty();
-                });
-    }
-
-    private static Optional<ClientCapability> clientCapabilityForMethod(String method) {
-        if (method.startsWith("roots/")) return Optional.of(ClientCapability.ROOTS);
-        if (method.startsWith("sampling/")) return Optional.of(ClientCapability.SAMPLING);
-        if (method.startsWith("elicitation/")) return Optional.of(ClientCapability.ELICITATION);
-        return Optional.empty();
-    }
-
-    private static void requireCapability(McpClient client, ServerCapability cap) {
-        if (!client.serverCapabilities().contains(cap)) {
-            throw new IllegalStateException("Server capability not supported: " + cap);
-        }
-    }
-
-    private static void requireCapability(McpClient client, ClientCapability cap) {
-        if (!client.capabilities().contains(cap)) {
-            throw new IllegalStateException("Client capability not supported: " + cap);
-        }
-    }
-
-    private McpClient requireClient(String id) {
-        McpClient client = clients.get(id);
-        if (client == null) throw new IllegalArgumentException("Unknown client: " + id);
-        return client;
-    }
-
-    private McpClient requireConnectedClient(String id) {
-        McpClient client = requireClient(id);
-        if (!client.connected()) throw new IllegalStateException("Client not connected: " + id);
-        return client;
-    }
-
-    private McpClient requireClientForMethod(String id, String method) {
-        McpClient client = requireConnectedClient(id);
-        serverCapabilityForMethod(method).ifPresent(cap -> requireCapability(client, cap));
-        clientCapabilityForMethod(method).ifPresent(cap -> requireCapability(client, cap));
-        return client;
-    }
-
     public McpHost(SecurityPolicy policy, Principal principal) {
         this.policy = policy;
         this.principal = principal;
@@ -89,6 +38,13 @@ public final class McpHost implements AutoCloseable {
         this.toolAccess = new ToolAccessController();
         this.privacyBoundary = new PrivacyBoundaryEnforcer();
         this.samplingAccess = new SamplingAccessController();
+    }
+
+    @Override
+    public void close() throws IOException {
+        for (String id : Set.copyOf(clients.keySet())) {
+            unregister(id);
+        }
     }
 
     public static McpHost forCli(Map<String, String> clientSpecs, boolean verbose) throws IOException {
@@ -104,7 +60,6 @@ public final class McpHost implements AutoCloseable {
             String currentDir = System.getProperty("user.dir");
             InMemoryRootsProvider rootsProvider = new InMemoryRootsProvider(
                     List.of(new Root("file://" + currentDir, "Current Directory", null)));
-
             McpClientListener listener = verbose ? new McpClientListener() {
                 @Override
                 public void onMessage(LoggingMessageNotification notification) {
@@ -118,11 +73,7 @@ public final class McpHost implements AutoCloseable {
                     : cc.clientCapabilities().stream()
                     .map(ClientCapability::valueOf)
                     .collect(() -> EnumSet.noneOf(ClientCapability.class), EnumSet::add, EnumSet::addAll);
-            
-            ElicitationProvider elicitationProvider = caps.contains(ClientCapability.ELICITATION)
-                    ? new InteractiveElicitationProvider()
-                    : null;
-            
+            ElicitationProvider elicitationProvider =  new InteractiveElicitationProvider();
             McpClient client = new McpClient(
                     new ClientInfo(entry.getKey(), entry.getKey(), cc.clientVersion()),
                     caps,
@@ -131,12 +82,12 @@ public final class McpHost implements AutoCloseable {
                     rootsProvider,
                     elicitationProvider,
                     listener);
-            host.registerWithoutConnect(entry.getKey(), client);
+            host.register(entry.getKey(), client);
         }
         return host;
     }
 
-    public void registerWithoutConnect(String id, McpClient client) throws IOException {
+    public void register(String id, McpClient client) {
         if (!policy.allow(client)) {
             throw new SecurityException("Client not authorized: " + client.info().name());
         }
@@ -161,42 +112,6 @@ public final class McpHost implements AutoCloseable {
         if (client != null) {
             client.disconnect();
         }
-    }
-
-    public void grantConsent(String scope) {
-        consents.grant(principal.id(), scope);
-    }
-
-    public void revokeConsent(String scope) {
-        consents.revoke(principal.id(), scope);
-    }
-
-    public void allowTool(String tool) {
-        toolAccess.allow(principal.id(), tool);
-    }
-
-    public void revokeTool(String tool) {
-        toolAccess.revoke(principal.id(), tool);
-    }
-
-    public void allowSampling() {
-        samplingAccess.allow(principal.id());
-    }
-
-    public void revokeSampling() {
-        samplingAccess.revoke(principal.id());
-    }
-
-    public void allowAudience(Role audience) {
-        privacyBoundary.allow(principal.id(), audience);
-    }
-
-    public void revokeAudience(Role audience) {
-        privacyBoundary.revoke(principal.id(), audience);
-    }
-
-    public Set<String> clientIds() {
-        return Collections.unmodifiableSet(clients.keySet());
     }
 
     public String aggregateContext() {
@@ -244,10 +159,91 @@ public final class McpHost implements AutoCloseable {
         requireClientForMethod(id, method).notify(method, params);
     }
 
-    @Override
-    public void close() throws IOException {
-        for (String id : Set.copyOf(clients.keySet())) {
-            unregister(id);
+    public void grantConsent(String scope) {
+        consents.grant(principal.id(), scope);
+    }
+
+    public void revokeConsent(String scope) {
+        consents.revoke(principal.id(), scope);
+    }
+
+    public void allowTool(String tool) {
+        toolAccess.allow(principal.id(), tool);
+    }
+
+    public void revokeTool(String tool) {
+        toolAccess.revoke(principal.id(), tool);
+    }
+
+    public void allowSampling() {
+        samplingAccess.allow(principal.id());
+    }
+
+    public void revokeSampling() {
+        samplingAccess.revoke(principal.id());
+    }
+
+    public void allowAudience(Role audience) {
+        privacyBoundary.allow(principal.id(), audience);
+    }
+
+    public void revokeAudience(Role audience) {
+        privacyBoundary.revoke(principal.id(), audience);
+    }
+
+    public Set<String> clientIds() {
+        return Collections.unmodifiableSet(clients.keySet());
+    }
+
+    private McpClient requireClient(String id) {
+        McpClient client = clients.get(id);
+        if (client == null) throw new IllegalArgumentException("Unknown client: " + id);
+        return client;
+    }
+
+    private McpClient requireConnectedClient(String id) {
+        McpClient client = requireClient(id);
+        if (!client.connected()) throw new IllegalStateException("Client not connected: " + id);
+        return client;
+    }
+
+    private McpClient requireClientForMethod(String id, String method) {
+        McpClient client = requireConnectedClient(id);
+        serverCapabilityForMethod(method).ifPresent(cap -> requireCapability(client, cap));
+        clientCapabilityForMethod(method).ifPresent(cap -> requireCapability(client, cap));
+        return client;
+    }
+
+    private static Optional<ServerCapability> serverCapabilityForMethod(String method) {
+        return RequestMethod.from(method)
+                .flatMap(CapabilityRequirements::forMethod)
+                .or(() -> {
+                    if (method.startsWith("tools/")) return Optional.of(ServerCapability.TOOLS);
+                    if (method.startsWith("resources/")) return Optional.of(ServerCapability.RESOURCES);
+                    if (method.startsWith("prompts/")) return Optional.of(ServerCapability.PROMPTS);
+                    if (method.startsWith("completion/")) return Optional.of(ServerCapability.COMPLETIONS);
+                    if (method.startsWith("logging/")) return Optional.of(ServerCapability.LOGGING);
+                    return Optional.empty();
+                });
+    }
+
+    private static Optional<ClientCapability> clientCapabilityForMethod(String method) {
+        if (method.startsWith("roots/")) return Optional.of(ClientCapability.ROOTS);
+        if (method.startsWith("sampling/")) return Optional.of(ClientCapability.SAMPLING);
+        if (method.startsWith("elicitation/")) return Optional.of(ClientCapability.ELICITATION);
+        return Optional.empty();
+    }
+
+    private static void requireCapability(McpClient client, ServerCapability cap) {
+        if (!client.serverCapabilities().contains(cap)) {
+            throw new IllegalStateException("Server capability not supported: " + cap);
         }
     }
+
+    private static void requireCapability(McpClient client, ClientCapability cap) {
+        if (!client.capabilities().contains(cap)) {
+            throw new IllegalStateException("Client capability not supported: " + cap);
+        }
+    }
+
 }
