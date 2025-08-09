@@ -21,7 +21,7 @@ import java.util.*;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 
-public final class StreamableHttpTransport implements Transport {
+public final class StreamableHttpServerTransport implements Transport {
     private final Server server;
     private final int port;
     private final Set<String> allowedOrigins;
@@ -39,11 +39,11 @@ public final class StreamableHttpTransport implements Transport {
     final SessionManager sessions = new SessionManager(COMPATIBILITY_VERSION);
     private final MessageDispatcher dispatcher;
 
-    public StreamableHttpTransport(int port,
-                                   Set<String> allowedOrigins,
-                                   AuthorizationManager auth,
-                                   String resourceMetadataUrl,
-                                   List<String> authorizationServers) throws Exception {
+    public StreamableHttpServerTransport(int port,
+                                         Set<String> allowedOrigins,
+                                         AuthorizationManager auth,
+                                         String resourceMetadataUrl,
+                                         List<String> authorizationServers) throws Exception {
         server = new Server(new InetSocketAddress("127.0.0.1", port));
         ServletContextHandler ctx = new ServletContextHandler();
         ctx.addServlet(new ServletHolder(new McpServlet(this)), "/");

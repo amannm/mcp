@@ -6,9 +6,9 @@ import jakarta.servlet.http.*;
 import java.io.IOException;
 
 final class MetadataServlet extends HttpServlet {
-    private final StreamableHttpTransport transport;
+    private final StreamableHttpServerTransport transport;
 
-    MetadataServlet(StreamableHttpTransport transport) {
+    MetadataServlet(StreamableHttpServerTransport transport) {
         this.transport = transport;
     }
 

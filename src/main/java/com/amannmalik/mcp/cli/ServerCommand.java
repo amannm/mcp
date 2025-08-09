@@ -110,7 +110,7 @@ public final class ServerCommand {
                             : new JwtTokenValidator(expectedAudience, secretEnv.getBytes(StandardCharsets.UTF_8));
                     authManager = new AuthorizationManager(List.of(new BearerTokenAuthorizationStrategy(tokenValidator)));
                 }
-                StreamableHttpTransport ht = new StreamableHttpTransport(
+                StreamableHttpServerTransport ht = new StreamableHttpServerTransport(
                         port, Set.copyOf(McpConfiguration.current().allowedOrigins()), authManager,
                         resourceMetadataUrl, auth);
                 if (verbose) System.err.println("Listening on http://127.0.0.1:" + ht.port());
