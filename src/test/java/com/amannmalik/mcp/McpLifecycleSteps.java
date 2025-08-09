@@ -14,7 +14,6 @@ import io.cucumber.java.en.And;
 import io.cucumber.java.en.Given;
 import io.cucumber.java.en.Then;
 import io.cucumber.java.en.When;
-import jakarta.json.JsonObject;
 
 import java.io.PipedInputStream;
 import java.io.PipedOutputStream;
@@ -25,7 +24,7 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-public class LifecycleSteps {
+public class McpLifecycleSteps {
     
     private McpServer mcpServer;
     private McpHost mcpHost;
