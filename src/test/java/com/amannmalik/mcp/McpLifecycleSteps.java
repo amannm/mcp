@@ -256,7 +256,7 @@ public class McpLifecycleSteps {
         
         // For real conformance testing, we would need to inspect the actual
         // InitializeResponse captured from the protocol handshake
-        // For now, verify that the connection succeeded, which implies capability negotiation worked
+        // TODO: For now, verify that the connection succeeded, which implies capability negotiation worked
         assertNotNull(serverCapabilities, "Server capabilities should have been configured");
         assertFalse(serverCapabilities.isEmpty(), "Server should have at least one capability");
     }
