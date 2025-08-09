@@ -71,7 +71,7 @@ public final class McpServer extends JsonRpcEndpoint implements AutoCloseable {
                 transport);
     }
 
-    McpServer(ResourceProvider resources,
+    private McpServer(ResourceProvider resources,
               ToolProvider tools,
               PromptProvider prompts,
               CompletionProvider completions,
