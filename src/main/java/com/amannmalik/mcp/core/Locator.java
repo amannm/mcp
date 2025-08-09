@@ -142,8 +142,8 @@ public final class Locator {
         return SAMPLING_ACCESS;
     }
 
-    public static ResourceAccessController privacyBoundary(String principalId) {
-        var p = new PrivacyBoundaryEnforcer();
+    public static ResourceAccessPolicy privacyBoundary(String principalId) {
+        var p = new ResourceAccessController();
         for (Role a : Role.values()) p.allow(principalId, a);
         return p;
     }

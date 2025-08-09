@@ -4,7 +4,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
-public final class PrincipalPermissions<T> {
+final class PrincipalPermissions<T> {
     private final Map<String, Set<T>> map = new ConcurrentHashMap<>();
 
     public void grant(String principalId, T permission) {

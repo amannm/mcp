@@ -25,18 +25,18 @@ import java.util.stream.Collectors;
 public final class McpHost implements AutoCloseable {
     private final Map<String, McpClient> clients = new ConcurrentHashMap<>();
     private final Predicate<McpClient> policy;
-    private final ConsentManager consents;
+    private final ConsentController consents;
     private final Principal principal;
     private final ToolAccessController toolAccess;
-    private final PrivacyBoundaryEnforcer privacyBoundary;
+    private final ResourceAccessController privacyBoundary;
     private final SamplingAccessController samplingAccess;
 
     public McpHost(Predicate<McpClient> policy, Principal principal) {
         this.policy = policy;
         this.principal = principal;
-        this.consents = new ConsentManager();
+        this.consents = new ConsentController();
         this.toolAccess = new ToolAccessController();
-        this.privacyBoundary = new PrivacyBoundaryEnforcer();
+        this.privacyBoundary = new ResourceAccessController();
         this.samplingAccess = new SamplingAccessController();
     }
 

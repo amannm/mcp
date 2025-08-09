@@ -5,7 +5,7 @@ import com.amannmalik.mcp.auth.Principal;
 import com.amannmalik.mcp.jsonrpc.*;
 import com.amannmalik.mcp.resources.*;
 import com.amannmalik.mcp.roots.RootsManager;
-import com.amannmalik.mcp.security.ResourceAccessController;
+import com.amannmalik.mcp.security.ResourceAccessPolicy;
 import com.amannmalik.mcp.util.*;
 import com.amannmalik.mcp.validation.ValidationUtil;
 import jakarta.json.*;
@@ -18,7 +18,7 @@ import java.util.function.Supplier;
 
 public final class ResourceFeature implements AutoCloseable {
     private final ResourceProvider resources;
-    private final ResourceAccessController access;
+    private final ResourceAccessPolicy access;
     private final Principal principal;
     private final RootsManager roots;
     private final Supplier<LifecycleState> state;
@@ -28,7 +28,7 @@ public final class ResourceFeature implements AutoCloseable {
     private final ChangeSubscription listSubscription;
 
     public ResourceFeature(ResourceProvider resources,
-                           ResourceAccessController access,
+                           ResourceAccessPolicy access,
                            Principal principal,
                            RootsManager roots,
                            Supplier<LifecycleState> state,
