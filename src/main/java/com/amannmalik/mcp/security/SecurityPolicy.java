@@ -1,4 +1,4 @@
-package com.amannmalik.mcp.host;
+package com.amannmalik.mcp.security;
 
 import com.amannmalik.mcp.McpClient;
 

@@ -1,6 +1,6 @@
 package com.amannmalik.mcp.cli;
 
-public enum TransportType {
+enum TransportType {
     STDIO,
     HTTP
 }

@@ -1,6 +1,6 @@
 package com.amannmalik.mcp.cli;
 
-import com.amannmalik.mcp.host.*;
+import com.amannmalik.mcp.McpHost;
 import com.amannmalik.mcp.prompts.Role;
 import com.amannmalik.mcp.tools.*;
 import jakarta.json.Json;
@@ -53,7 +53,7 @@ public final class HostCommand {
                 clients.put(spec.substring(0, idx), spec.substring(idx + 1));
             }
 
-            try (HostProcess host = HostProcess.forCli(clients, verbose)) {
+            try (McpHost host = McpHost.forCli(clients, verbose)) {
                 if (verbose) {
                     for (String clientId : clients.keySet()) {
                         System.err.println("Registered client: " + clientId);
@@ -72,7 +72,7 @@ public final class HostCommand {
         }
     }
 
-    private static void runInteractiveMode(HostProcess host) throws IOException {
+    private static void runInteractiveMode(McpHost host) throws IOException {
         BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
         System.out.println("MCP Host Interactive Mode. Type 'help' for commands, 'quit' to exit.");
 

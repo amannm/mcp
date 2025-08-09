@@ -1,6 +1,5 @@
-package com.amannmalik.mcp.host;
+package com.amannmalik.mcp;
 
-import com.amannmalik.mcp.McpClient;
 import com.amannmalik.mcp.McpClient.McpClientListener;
 import com.amannmalik.mcp.auth.Principal;
 import com.amannmalik.mcp.config.McpConfiguration;
@@ -13,6 +12,7 @@ import com.amannmalik.mcp.roots.Root;
 import com.amannmalik.mcp.sampling.InteractiveSamplingProvider;
 import com.amannmalik.mcp.sampling.SamplingAccessController;
 import com.amannmalik.mcp.sampling.SamplingProvider;
+import com.amannmalik.mcp.security.*;
 import com.amannmalik.mcp.tools.*;
 import com.amannmalik.mcp.transport.StdioTransport;
 import com.amannmalik.mcp.wire.RequestMethod;
@@ -23,7 +23,7 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
-public final class HostProcess implements AutoCloseable {
+public final class McpHost implements AutoCloseable {
     private final Map<String, McpClient> clients = new ConcurrentHashMap<>();
     private final SecurityPolicy policy;
     private final ConsentManager consents;
@@ -83,7 +83,7 @@ public final class HostProcess implements AutoCloseable {
         return client;
     }
 
-    public HostProcess(SecurityPolicy policy, Principal principal) {
+    public McpHost(SecurityPolicy policy, Principal principal) {
         this.policy = policy;
         this.principal = principal;
         this.consents = new ConsentManager();
@@ -92,10 +92,10 @@ public final class HostProcess implements AutoCloseable {
         this.samplingAccess = new SamplingAccessController();
     }
 
-    public static HostProcess forCli(Map<String, String> clientSpecs, boolean verbose) throws IOException {
+    public static McpHost forCli(Map<String, String> clientSpecs, boolean verbose) throws IOException {
         SecurityPolicy policy = c -> true;
         Principal principal = new Principal(McpConfiguration.current().hostPrincipal(), Set.of());
-        HostProcess host = new HostProcess(policy, principal);
+        McpHost host = new McpHost(policy, principal);
         for (var entry : clientSpecs.entrySet()) {
             host.grantConsent(entry.getKey());
             var pb = new ProcessBuilder(entry.getValue().split(" "));
