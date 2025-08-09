@@ -1,7 +1,7 @@
 package com.amannmalik.mcp.tools;
 
-import com.amannmalik.mcp.core.AbstractEntityCodec;
-import com.amannmalik.mcp.core.JsonCodec;
+import com.amannmalik.mcp.transport.AbstractEntityCodec;
+import com.amannmalik.mcp.transport.JsonCodec;
 import com.amannmalik.mcp.util.Immutable;
 import com.amannmalik.mcp.util.Pagination;
 import com.amannmalik.mcp.validation.ValidationUtil;

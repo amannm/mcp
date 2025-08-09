@@ -1,7 +1,7 @@
 package com.amannmalik.mcp.roots;
 
-import com.amannmalik.mcp.core.AbstractEntityCodec;
-import com.amannmalik.mcp.core.JsonCodec;
+import com.amannmalik.mcp.transport.AbstractEntityCodec;
+import com.amannmalik.mcp.transport.JsonCodec;
 
 public record RootsListChangedNotification() {
     public static final JsonCodec<RootsListChangedNotification> CODEC =

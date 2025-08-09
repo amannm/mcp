@@ -1,6 +1,6 @@
 package com.amannmalik.mcp.prompts;
 
-import com.amannmalik.mcp.core.InMemoryProvider;
+import com.amannmalik.mcp.transport.InMemoryProvider;
 import com.amannmalik.mcp.util.Pagination;
 
 import java.util.Comparator;

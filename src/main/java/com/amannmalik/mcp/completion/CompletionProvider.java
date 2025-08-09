@@ -1,6 +1,6 @@
 package com.amannmalik.mcp.completion;
 
-import com.amannmalik.mcp.core.ExecutingProvider;
+import com.amannmalik.mcp.transport.ExecutingProvider;
 import com.amannmalik.mcp.util.Pagination;
 import jakarta.json.Json;
 import jakarta.json.JsonObject;

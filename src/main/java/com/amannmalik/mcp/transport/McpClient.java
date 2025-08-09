@@ -1,4 +1,4 @@
-package com.amannmalik.mcp.core;
+package com.amannmalik.mcp.transport;
 
 import com.amannmalik.mcp.auth.Principal;
 import com.amannmalik.mcp.config.McpConfiguration;
@@ -13,7 +13,6 @@ import com.amannmalik.mcp.roots.*;
 import com.amannmalik.mcp.sampling.*;
 import com.amannmalik.mcp.security.SamplingAccessPolicy;
 import com.amannmalik.mcp.tools.ToolListChangedNotification;
-import com.amannmalik.mcp.transport.*;
 import com.amannmalik.mcp.util.*;
 import com.amannmalik.mcp.validation.ValidationUtil;
 import jakarta.json.*;

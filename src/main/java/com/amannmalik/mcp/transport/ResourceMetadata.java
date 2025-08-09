@@ -1,6 +1,5 @@
 package com.amannmalik.mcp.transport;
 
-import com.amannmalik.mcp.core.JsonCodec;
 import jakarta.json.*;
 
 import java.util.List;

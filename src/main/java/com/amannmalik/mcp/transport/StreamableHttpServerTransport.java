@@ -21,7 +21,7 @@ import java.util.*;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 
-public final class StreamableHttpServerTransport implements Transport {
+final class StreamableHttpServerTransport implements Transport {
     private final Server server;
     private final int port;
     private final Set<String> allowedOrigins;

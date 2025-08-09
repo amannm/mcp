@@ -1,7 +1,7 @@
 package com.amannmalik.mcp.completion;
 
 import com.amannmalik.mcp.config.McpConfiguration;
-import com.amannmalik.mcp.core.JsonCodec;
+import com.amannmalik.mcp.transport.JsonCodec;
 import com.amannmalik.mcp.util.Immutable;
 import com.amannmalik.mcp.validation.ValidationUtil;
 import jakarta.json.*;

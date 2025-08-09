@@ -1,4 +1,4 @@
-package com.amannmalik.mcp.cli;
+package com.amannmalik.mcp.transport;
 
 enum TransportType {
     STDIO,

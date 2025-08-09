@@ -1,7 +1,7 @@
 package com.amannmalik.mcp.resources;
 
-import com.amannmalik.mcp.core.AbstractEntityCodec;
-import com.amannmalik.mcp.core.JsonCodec;
+import com.amannmalik.mcp.transport.AbstractEntityCodec;
+import com.amannmalik.mcp.transport.JsonCodec;
 
 public record ResourceListChangedNotification() {
     public static final JsonCodec<ResourceListChangedNotification> CODEC =

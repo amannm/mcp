@@ -1,6 +1,6 @@
 package com.amannmalik.mcp.prompts;
 
-import com.amannmalik.mcp.core.Provider;
+import com.amannmalik.mcp.transport.Provider;
 
 import java.util.Map;
 

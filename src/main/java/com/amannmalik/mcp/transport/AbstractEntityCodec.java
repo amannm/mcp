@@ -1,4 +1,4 @@
-package com.amannmalik.mcp.core;
+package com.amannmalik.mcp.transport;
 
 import com.amannmalik.mcp.content.ContentBlock;
 import com.amannmalik.mcp.prompts.Role;

@@ -2,7 +2,7 @@ package com.amannmalik.mcp.resources;
 
 import com.amannmalik.mcp.annotations.Annotations;
 import com.amannmalik.mcp.auth.Principal;
-import com.amannmalik.mcp.core.JsonRpcEndpoint;
+import com.amannmalik.mcp.transport.JsonRpcEndpoint;
 import com.amannmalik.mcp.jsonrpc.*;
 import com.amannmalik.mcp.lifecycle.LifecycleState;
 import com.amannmalik.mcp.protocol.NotificationMethod;

@@ -1,6 +1,6 @@
 package com.amannmalik.mcp.resources;
 
-import com.amannmalik.mcp.core.InMemoryProvider;
+import com.amannmalik.mcp.transport.InMemoryProvider;
 import com.amannmalik.mcp.util.*;
 
 import java.util.*;

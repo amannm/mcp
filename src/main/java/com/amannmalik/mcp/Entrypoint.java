@@ -1,7 +1,7 @@
 package com.amannmalik.mcp;
 
-import com.amannmalik.mcp.cli.HostCommand;
-import com.amannmalik.mcp.cli.ServerCommand;
+import com.amannmalik.mcp.transport.HostCommand;
+import com.amannmalik.mcp.transport.ServerCommand;
 import picocli.CommandLine;
 import picocli.CommandLine.Model.CommandSpec;
 import picocli.CommandLine.*;

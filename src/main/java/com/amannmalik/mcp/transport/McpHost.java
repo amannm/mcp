@@ -1,6 +1,6 @@
-package com.amannmalik.mcp.core;
+package com.amannmalik.mcp.transport;
 
-import com.amannmalik.mcp.core.McpClient.McpClientListener;
+import com.amannmalik.mcp.transport.McpClient.McpClientListener;
 import com.amannmalik.mcp.auth.Principal;
 import com.amannmalik.mcp.config.McpConfiguration;
 import com.amannmalik.mcp.elicitation.*;
@@ -14,7 +14,6 @@ import com.amannmalik.mcp.roots.Root;
 import com.amannmalik.mcp.sampling.*;
 import com.amannmalik.mcp.security.*;
 import com.amannmalik.mcp.tools.*;
-import com.amannmalik.mcp.transport.StdioTransport;
 import jakarta.json.JsonObject;
 
 import java.io.IOException;

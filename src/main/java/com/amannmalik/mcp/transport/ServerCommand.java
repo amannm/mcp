@@ -1,9 +1,7 @@
-package com.amannmalik.mcp.cli;
+package com.amannmalik.mcp.transport;
 
-import com.amannmalik.mcp.core.McpServer;
 import com.amannmalik.mcp.auth.*;
 import com.amannmalik.mcp.config.McpConfiguration;
-import com.amannmalik.mcp.transport.*;
 import picocli.CommandLine;
 import picocli.CommandLine.Model.CommandSpec;
 import picocli.CommandLine.Model.OptionSpec;

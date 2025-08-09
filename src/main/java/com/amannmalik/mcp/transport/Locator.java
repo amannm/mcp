@@ -1,4 +1,4 @@
-package com.amannmalik.mcp.core;
+package com.amannmalik.mcp.transport;
 
 import com.amannmalik.mcp.annotations.Annotations;
 import com.amannmalik.mcp.completion.*;

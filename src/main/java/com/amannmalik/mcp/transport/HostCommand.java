@@ -1,6 +1,5 @@
-package com.amannmalik.mcp.cli;
+package com.amannmalik.mcp.transport;
 
-import com.amannmalik.mcp.core.McpHost;
 import com.amannmalik.mcp.prompts.Role;
 import com.amannmalik.mcp.tools.ListToolsResult;
 import com.amannmalik.mcp.tools.ToolResult;
