@@ -1,12 +1,18 @@
 package com.amannmalik.mcp.host;
 
 import com.amannmalik.mcp.McpClient;
+import com.amannmalik.mcp.McpClient.McpClientListener;
 import com.amannmalik.mcp.auth.Principal;
 import com.amannmalik.mcp.config.McpConfiguration;
 import com.amannmalik.mcp.jsonrpc.*;
 import com.amannmalik.mcp.lifecycle.*;
+import com.amannmalik.mcp.logging.LoggingMessageNotification;
 import com.amannmalik.mcp.prompts.Role;
+import com.amannmalik.mcp.roots.InMemoryRootsProvider;
+import com.amannmalik.mcp.roots.Root;
+import com.amannmalik.mcp.sampling.InteractiveSamplingProvider;
 import com.amannmalik.mcp.sampling.SamplingAccessController;
+import com.amannmalik.mcp.sampling.SamplingProvider;
 import com.amannmalik.mcp.tools.*;
 import com.amannmalik.mcp.transport.StdioTransport;
 import com.amannmalik.mcp.wire.RequestMethod;
@@ -89,20 +95,33 @@ public final class HostProcess implements AutoCloseable {
     public static HostProcess forCli(Map<String, String> clientSpecs, boolean verbose) throws IOException {
         SecurityPolicy policy = c -> true;
         Principal principal = new Principal(McpConfiguration.current().hostPrincipal(), Set.of());
-        
         HostProcess host = new HostProcess(policy, principal);
-        
         for (var entry : clientSpecs.entrySet()) {
             host.grantConsent(entry.getKey());
             var pb = new ProcessBuilder(entry.getValue().split(" "));
             StdioTransport transport = new StdioTransport(pb, verbose ? System.err::println : s -> {});
+            SamplingProvider samplingProvider = new InteractiveSamplingProvider(false);
+            String currentDir = System.getProperty("user.dir");
+            InMemoryRootsProvider rootsProvider = new InMemoryRootsProvider(
+                    List.of(new Root("file://" + currentDir, "Current Directory", null)));
+            
+            McpClientListener listener = verbose ? new McpClientListener() {
+                @Override
+                public void onMessage(LoggingMessageNotification notification) {
+                    String logger = notification.logger() == null ? "" : ":" + notification.logger();
+                    System.err.println(notification.level().name().toLowerCase() + logger + " " + notification.data());
+                }
+            } : null;
             McpClient client = new McpClient(
                     new ClientInfo(entry.getKey(), entry.getKey(), McpConfiguration.current().clientVersion()),
                     EnumSet.noneOf(ClientCapability.class),
-                    transport);
+                    transport,
+                    samplingProvider,
+                    rootsProvider,
+                    null,
+                    listener);
             host.register(entry.getKey(), client);
         }
-        
         return host;
     }
 

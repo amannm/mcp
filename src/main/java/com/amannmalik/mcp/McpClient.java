@@ -68,20 +68,6 @@ public final class McpClient extends JsonRpcEndpoint implements AutoCloseable {
         if (principal != null) this.principal = principal;
     }
 
-    public McpClient(ClientInfo info, Set<ClientCapability> capabilities, Transport transport) {
-        this(info, capabilities, transport, null, null, null);
-    }
-
-    public McpClient(ClientInfo info,
-                     Set<ClientCapability> capabilities,
-                     Transport transport,
-                     SamplingProvider sampling,
-                     RootsProvider roots,
-                     ElicitationProvider elicitation) {
-        this(info, capabilities, transport, sampling, roots, elicitation, new McpClientListener() {
-        });
-    }
-
     public McpClient(ClientInfo info,
                      Set<ClientCapability> capabilities,
                      Transport transport,
