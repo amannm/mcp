@@ -20,7 +20,7 @@ public final class McpLifecycleSteps {
     private McpHost host;
     private JsonObject capabilities;
     private JsonRpcMessage lastResponse;
-    private final String clientId = "test-server";
+    private final String clientId = "test";
 
     @Given("a clean MCP environment")
     public void cleanMcpEnvironment() throws IOException {
