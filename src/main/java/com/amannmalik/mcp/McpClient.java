@@ -7,6 +7,8 @@ import com.amannmalik.mcp.elicitation.*;
 import com.amannmalik.mcp.jsonrpc.*;
 import com.amannmalik.mcp.lifecycle.*;
 import com.amannmalik.mcp.logging.*;
+import com.amannmalik.mcp.protocol.NotificationMethod;
+import com.amannmalik.mcp.protocol.RequestMethod;
 import com.amannmalik.mcp.resources.*;
 import com.amannmalik.mcp.roots.*;
 import com.amannmalik.mcp.sampling.*;
@@ -14,8 +16,6 @@ import com.amannmalik.mcp.tools.ToolListChangedNotification;
 import com.amannmalik.mcp.transport.*;
 import com.amannmalik.mcp.util.*;
 import com.amannmalik.mcp.validation.ValidationUtil;
-import com.amannmalik.mcp.wire.NotificationMethod;
-import com.amannmalik.mcp.wire.RequestMethod;
 import jakarta.json.*;
 
 import java.io.IOException;
@@ -113,12 +113,13 @@ public final class McpClient extends JsonRpcEndpoint implements AutoCloseable {
 
     public static McpClient forCli(String command, boolean verbose) throws IOException {
         StdioTransport transport = new StdioTransport(new ProcessBuilder(command.split(" ")),
-                verbose ? System.err::println : s -> {});
+                verbose ? System.err::println : s -> {
+                });
         SamplingProvider samplingProvider = new InteractiveSamplingProvider(false);
         String currentDir = System.getProperty("user.dir");
         InMemoryRootsProvider rootsProvider = new InMemoryRootsProvider(
                 List.of(new Root("file://" + currentDir, "Current Directory", null)));
-        
+
         McpConfiguration cc = McpConfiguration.current();
         ClientInfo info = new ClientInfo(cc.clientName(), cc.clientDisplayName(), cc.clientVersion());
         EnumSet<ClientCapability> caps = cc.clientCapabilities().isEmpty()

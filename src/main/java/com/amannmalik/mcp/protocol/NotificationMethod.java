@@ -1,4 +1,4 @@
-package com.amannmalik.mcp.wire;
+package com.amannmalik.mcp.protocol;
 
 import java.util.Optional;
 

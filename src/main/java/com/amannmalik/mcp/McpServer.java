@@ -9,6 +9,8 @@ import com.amannmalik.mcp.jsonrpc.*;
 import com.amannmalik.mcp.lifecycle.*;
 import com.amannmalik.mcp.logging.*;
 import com.amannmalik.mcp.prompts.*;
+import com.amannmalik.mcp.protocol.NotificationMethod;
+import com.amannmalik.mcp.protocol.RequestMethod;
 import com.amannmalik.mcp.resources.*;
 import com.amannmalik.mcp.roots.RootsManager;
 import com.amannmalik.mcp.sampling.*;
@@ -16,8 +18,6 @@ import com.amannmalik.mcp.tools.*;
 import com.amannmalik.mcp.transport.Transport;
 import com.amannmalik.mcp.util.*;
 import com.amannmalik.mcp.validation.ValidationUtil;
-import com.amannmalik.mcp.wire.NotificationMethod;
-import com.amannmalik.mcp.wire.RequestMethod;
 import jakarta.json.*;
 import jakarta.json.stream.JsonParsingException;
 
@@ -70,16 +70,16 @@ public final class McpServer extends JsonRpcEndpoint implements AutoCloseable {
     }
 
     private McpServer(ResourceProvider resources,
-              ToolProvider tools,
-              PromptProvider prompts,
-              CompletionProvider completions,
-              SamplingProvider sampling,
-              ResourceAccessController resourceAccess,
-              ToolAccessPolicy toolAccess,
-              SamplingAccessPolicy samplingAccess,
-              Principal principal,
-              String instructions,
-              Transport transport) {
+                      ToolProvider tools,
+                      PromptProvider prompts,
+                      CompletionProvider completions,
+                      SamplingProvider sampling,
+                      ResourceAccessController resourceAccess,
+                      ToolAccessPolicy toolAccess,
+                      SamplingAccessPolicy samplingAccess,
+                      Principal principal,
+                      String instructions,
+                      Transport transport) {
         super(transport,
                 new ProgressManager(new RateLimiter(McpConfiguration.current().progressPerSecond(),
                         McpConfiguration.current().rateLimiterWindowMs())),

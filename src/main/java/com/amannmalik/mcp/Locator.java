@@ -3,10 +3,10 @@ package com.amannmalik.mcp;
 import com.amannmalik.mcp.annotations.Annotations;
 import com.amannmalik.mcp.completion.*;
 import com.amannmalik.mcp.content.ContentBlock;
-import com.amannmalik.mcp.security.PrivacyBoundaryEnforcer;
 import com.amannmalik.mcp.prompts.*;
 import com.amannmalik.mcp.resources.*;
 import com.amannmalik.mcp.sampling.*;
+import com.amannmalik.mcp.security.PrivacyBoundaryEnforcer;
 import com.amannmalik.mcp.tools.*;
 import jakarta.json.Json;
 

@@ -85,13 +85,13 @@ public final class ServerCommand {
     }
 
     private static Transport createTransport(Integer httpPort, boolean stdio, String expectedAudience,
-                                           String resourceMetadataUrl, List<String> authServers, boolean testMode,
-                                           boolean verbose) throws Exception {
+                                             String resourceMetadataUrl, List<String> authServers, boolean testMode,
+                                             boolean verbose) throws Exception {
         TransportType defType = parseTransport(McpConfiguration.current().transportType());
         TransportType type = httpPort == null ? defType : TransportType.HTTP;
         int port = httpPort == null ? McpConfiguration.current().port() : httpPort;
         if (stdio) type = TransportType.STDIO;
-        
+
         List<String> auth = authServers;
         if (!testMode) {
             if (auth == null || auth.isEmpty()) throw new IllegalArgumentException("--auth-server is required");

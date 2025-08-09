@@ -2,10 +2,10 @@ package com.amannmalik.mcp.core;
 
 import com.amannmalik.mcp.config.McpConfiguration;
 import com.amannmalik.mcp.jsonrpc.*;
+import com.amannmalik.mcp.protocol.NotificationMethod;
+import com.amannmalik.mcp.protocol.RequestMethod;
 import com.amannmalik.mcp.transport.Transport;
 import com.amannmalik.mcp.util.*;
-import com.amannmalik.mcp.wire.NotificationMethod;
-import com.amannmalik.mcp.wire.RequestMethod;
 import jakarta.json.JsonObject;
 
 import java.io.IOException;

@@ -5,11 +5,11 @@ import com.amannmalik.mcp.auth.Principal;
 import com.amannmalik.mcp.jsonrpc.*;
 import com.amannmalik.mcp.lifecycle.LifecycleState;
 import com.amannmalik.mcp.lifecycle.ProtocolLifecycle;
+import com.amannmalik.mcp.protocol.NotificationMethod;
+import com.amannmalik.mcp.protocol.RequestMethod;
 import com.amannmalik.mcp.roots.RootsManager;
 import com.amannmalik.mcp.util.*;
 import com.amannmalik.mcp.validation.ValidationUtil;
-import com.amannmalik.mcp.wire.NotificationMethod;
-import com.amannmalik.mcp.wire.RequestMethod;
 import jakarta.json.*;
 
 import java.io.IOException;

@@ -7,15 +7,13 @@ import com.amannmalik.mcp.jsonrpc.*;
 import com.amannmalik.mcp.lifecycle.*;
 import com.amannmalik.mcp.logging.LoggingMessageNotification;
 import com.amannmalik.mcp.prompts.Role;
+import com.amannmalik.mcp.protocol.RequestMethod;
 import com.amannmalik.mcp.roots.InMemoryRootsProvider;
 import com.amannmalik.mcp.roots.Root;
-import com.amannmalik.mcp.sampling.InteractiveSamplingProvider;
-import com.amannmalik.mcp.sampling.SamplingAccessController;
-import com.amannmalik.mcp.sampling.SamplingProvider;
+import com.amannmalik.mcp.sampling.*;
 import com.amannmalik.mcp.security.*;
 import com.amannmalik.mcp.tools.*;
 import com.amannmalik.mcp.transport.StdioTransport;
-import com.amannmalik.mcp.wire.RequestMethod;
 import jakarta.json.JsonObject;
 
 import java.io.IOException;
@@ -99,12 +97,13 @@ public final class McpHost implements AutoCloseable {
         for (var entry : clientSpecs.entrySet()) {
             host.grantConsent(entry.getKey());
             var pb = new ProcessBuilder(entry.getValue().split(" "));
-            StdioTransport transport = new StdioTransport(pb, verbose ? System.err::println : s -> {});
+            StdioTransport transport = new StdioTransport(pb, verbose ? System.err::println : s -> {
+            });
             SamplingProvider samplingProvider = new InteractiveSamplingProvider(false);
             String currentDir = System.getProperty("user.dir");
             InMemoryRootsProvider rootsProvider = new InMemoryRootsProvider(
                     List.of(new Root("file://" + currentDir, "Current Directory", null)));
-            
+
             McpClientListener listener = verbose ? new McpClientListener() {
                 @Override
                 public void onMessage(LoggingMessageNotification notification) {

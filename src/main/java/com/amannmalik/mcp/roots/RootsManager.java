@@ -3,8 +3,8 @@ package com.amannmalik.mcp.roots;
 import com.amannmalik.mcp.jsonrpc.*;
 import com.amannmalik.mcp.lifecycle.ClientCapability;
 import com.amannmalik.mcp.lifecycle.ProtocolLifecycle;
+import com.amannmalik.mcp.protocol.RequestMethod;
 import com.amannmalik.mcp.util.*;
-import com.amannmalik.mcp.wire.RequestMethod;
 
 import java.io.IOException;
 import java.util.List;
