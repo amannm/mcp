@@ -1,7 +1,5 @@
-package com.amannmalik.mcp.lifecycle;
+package com.amannmalik.mcp.core;
 
-import com.amannmalik.mcp.core.AbstractEntityCodec;
-import com.amannmalik.mcp.core.JsonCodec;
 import jakarta.json.*;
 
 import java.util.*;

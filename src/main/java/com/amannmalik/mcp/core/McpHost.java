@@ -6,7 +6,6 @@ import com.amannmalik.mcp.core.McpClient.McpClientListener;
 import com.amannmalik.mcp.elicitation.ElicitationProvider;
 import com.amannmalik.mcp.elicitation.InteractiveElicitationProvider;
 import com.amannmalik.mcp.jsonrpc.*;
-import com.amannmalik.mcp.lifecycle.*;
 import com.amannmalik.mcp.logging.LoggingMessageNotification;
 import com.amannmalik.mcp.prompts.Role;
 import com.amannmalik.mcp.roots.InMemoryRootsProvider;

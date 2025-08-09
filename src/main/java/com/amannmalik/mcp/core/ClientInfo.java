@@ -1,14 +1,12 @@
-package com.amannmalik.mcp.lifecycle;
+package com.amannmalik.mcp.core;
 
-import com.amannmalik.mcp.core.AbstractEntityCodec;
-import com.amannmalik.mcp.core.JsonCodec;
 import com.amannmalik.mcp.validation.ValidationUtil;
 import jakarta.json.*;
 
-public record ServerInfo(String name, String title, String version) {
-    public static final JsonCodec<ServerInfo> CODEC = new AbstractEntityCodec<>() {
+public record ClientInfo(String name, String title, String version) {
+    public static final JsonCodec<ClientInfo> CODEC = new AbstractEntityCodec<>() {
         @Override
-        public JsonObject toJson(ServerInfo info) {
+        public JsonObject toJson(ClientInfo info) {
             JsonObjectBuilder b = Json.createObjectBuilder()
                     .add("name", info.name())
                     .add("version", info.version());
@@ -17,16 +15,16 @@ public record ServerInfo(String name, String title, String version) {
         }
 
         @Override
-        public ServerInfo fromJson(JsonObject obj) {
+        public ClientInfo fromJson(JsonObject obj) {
             if (obj == null) throw new IllegalArgumentException("object required");
             String name = requireString(obj, "name");
             String version = requireString(obj, "version");
             String title = obj.getString("title", null);
-            return new ServerInfo(name, title, version);
+            return new ClientInfo(name, title, version);
         }
     };
 
-    public ServerInfo {
+    public ClientInfo {
         if (name == null || version == null) {
             throw new IllegalArgumentException("name and version required");
         }

@@ -2,7 +2,7 @@ package com.amannmalik.mcp.roots;
 
 import com.amannmalik.mcp.core.RequestMethod;
 import com.amannmalik.mcp.jsonrpc.*;
-import com.amannmalik.mcp.lifecycle.ClientCapability;
+import com.amannmalik.mcp.core.ClientCapability;
 import com.amannmalik.mcp.util.*;
 
 import java.io.IOException;

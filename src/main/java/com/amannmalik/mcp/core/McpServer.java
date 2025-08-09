@@ -5,7 +5,6 @@ import com.amannmalik.mcp.completion.*;
 import com.amannmalik.mcp.config.McpConfiguration;
 import com.amannmalik.mcp.elicitation.*;
 import com.amannmalik.mcp.jsonrpc.*;
-import com.amannmalik.mcp.lifecycle.*;
 import com.amannmalik.mcp.logging.*;
 import com.amannmalik.mcp.prompts.*;
 import com.amannmalik.mcp.resources.ResourceFeature;

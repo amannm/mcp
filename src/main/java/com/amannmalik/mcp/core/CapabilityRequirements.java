@@ -1,6 +1,4 @@
-package com.amannmalik.mcp.lifecycle;
-
-import com.amannmalik.mcp.core.RequestMethod;
+package com.amannmalik.mcp.core;
 
 import java.util.Map;
 import java.util.Optional;

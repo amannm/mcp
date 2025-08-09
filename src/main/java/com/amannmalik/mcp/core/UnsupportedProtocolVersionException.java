@@ -1,4 +1,4 @@
-package com.amannmalik.mcp.lifecycle;
+package com.amannmalik.mcp.core;
 
 public class UnsupportedProtocolVersionException extends RuntimeException {
     private final String requested;

@@ -1,4 +1,4 @@
-package com.amannmalik.mcp.lifecycle;
+package com.amannmalik.mcp.core;
 
 import com.amannmalik.mcp.config.McpConfiguration;
 
