@@ -286,8 +286,10 @@ public class McpLifecycleSteps {
 
     @Given("a McpServer supporting protocol version {string}")
     public void serverSupportsVersion(String version) {
-        lifecycle = new ProtocolLifecycle(EnumSet.noneOf(ServerCapability.class), new ServerInfo("TestServer", "Test Server App", "1.0.0"), null);
         serverSupportedVersions = Set.of(version);
+        lifecycle = new ProtocolLifecycle(EnumSet.noneOf(ServerCapability.class),
+                new ServerInfo("TestServer", "Test Server App", "1.0.0"),
+                null, serverSupportedVersions);
     }
 
     @Given("a McpServer supporting protocol versions:")
@@ -297,7 +299,9 @@ public class McpLifecycleSteps {
             v.add(row.get("version"));
         }
         serverSupportedVersions = Set.copyOf(v);
-        lifecycle = new ProtocolLifecycle(EnumSet.noneOf(ServerCapability.class), new ServerInfo("TestServer", "Test Server App", "1.0.0"), null);
+        lifecycle = new ProtocolLifecycle(EnumSet.noneOf(ServerCapability.class),
+                new ServerInfo("TestServer", "Test Server App", "1.0.0"),
+                null, serverSupportedVersions);
     }
 
     @Given("a McpServer supporting only protocol version {string}")
@@ -376,8 +380,15 @@ public class McpLifecycleSteps {
         );
         try {
             initializeResponse = lifecycle.initialize(req);
+            if (clientSupportedVersions != null &&
+                    !clientSupportedVersions.contains(initializeResponse.protocolVersion())) {
+                throw new UnsupportedProtocolVersionException(
+                        initializeResponse.protocolVersion(),
+                        String.join(", ", serverSupportedVersions));
+            }
         } catch (Exception e) {
             initializationException = e;
+            initializeResponse = null;
         }
     }
     

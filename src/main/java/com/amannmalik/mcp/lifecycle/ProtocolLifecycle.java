@@ -9,15 +9,25 @@ public class ProtocolLifecycle {
     private final Set<ServerCapability> serverCapabilities;
     private final ServerInfo serverInfo;
     private final String instructions;
-    private String protocolVersion = Protocol.LATEST_VERSION;
+    private final NavigableSet<String> supportedVersions;
+    private String protocolVersion;
     private LifecycleState state = LifecycleState.INIT;
     private Set<ClientCapability> clientCapabilities = Set.of();
     private ClientFeatures clientFeatures = ClientFeatures.EMPTY;
 
     public ProtocolLifecycle(Set<ServerCapability> serverCapabilities, ServerInfo serverInfo, String instructions) {
+        this(serverCapabilities, serverInfo, instructions,
+                Set.of(Protocol.LATEST_VERSION, Protocol.PREVIOUS_VERSION));
+    }
+
+    public ProtocolLifecycle(Set<ServerCapability> serverCapabilities, ServerInfo serverInfo,
+                             String instructions, Set<String> versions) {
         this.serverCapabilities = EnumSet.copyOf(serverCapabilities);
         this.serverInfo = serverInfo;
         this.instructions = instructions;
+        this.supportedVersions = new TreeSet<>(versions);
+        if (this.supportedVersions.isEmpty()) throw new IllegalArgumentException("versions");
+        this.protocolVersion = this.supportedVersions.last();
     }
 
     public InitializeResponse initialize(InitializeRequest request) {
@@ -28,17 +38,20 @@ public class ProtocolLifecycle {
                 : EnumSet.copyOf(requested);
         clientFeatures = request.features() == null ? ClientFeatures.EMPTY : request.features();
 
-        if (request.protocolVersion() != null) {
-            if (request.protocolVersion().equals(Protocol.LATEST_VERSION) ||
-                    request.protocolVersion().equals(Protocol.PREVIOUS_VERSION)) {
-                protocolVersion = request.protocolVersion();
+        String requestedVersion = request.protocolVersion();
+        if (requestedVersion == null) {
+            protocolVersion = supportedVersions.last();
+        } else if (supportedVersions.contains(requestedVersion)) {
+            protocolVersion = requestedVersion;
+        } else {
+            String fallback = supportedVersions.floor(requestedVersion);
+            if (fallback != null) {
+                protocolVersion = fallback;
             } else {
                 throw new UnsupportedProtocolVersionException(
-                        request.protocolVersion(),
-                        Protocol.LATEST_VERSION + " or " + Protocol.PREVIOUS_VERSION);
+                        requestedVersion,
+                        String.join(", ", supportedVersions));
             }
-        } else {
-            protocolVersion = Protocol.LATEST_VERSION;
         }
 
         return new InitializeResponse(

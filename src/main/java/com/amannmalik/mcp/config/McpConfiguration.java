@@ -42,7 +42,7 @@ public record McpConfiguration(String version,
                                String hostPrincipal) {
 
     private static final McpConfiguration CURRENT = new McpConfiguration(
-            "2025-06-18", "2025-03-26", 30_000, 5_000, 2,
+            "2025-06-18", "2024-11-05", 30_000, 5_000, 2,
             5, 10, 20, 20, 100, 100, 100, 1, 1_000, 1,
             "mcp-java", "MCP Java Reference", "0.1.0", "stdio", 0,
             List.of("http://localhost", "http://127.0.0.1"), -32_001,
