@@ -2,7 +2,7 @@ package com.amannmalik.mcp.core;
 
 import com.amannmalik.mcp.annotations.Annotations;
 import com.amannmalik.mcp.completion.*;
-import com.amannmalik.mcp.content.ContentBlock;
+import com.amannmalik.mcp.util.ContentBlock;
 import com.amannmalik.mcp.prompts.*;
 import com.amannmalik.mcp.resources.*;
 import com.amannmalik.mcp.sampling.InteractiveSamplingProvider;

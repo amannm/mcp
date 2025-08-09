@@ -1,4 +1,4 @@
-package com.amannmalik.mcp.content;
+package com.amannmalik.mcp.util;
 
 import com.amannmalik.mcp.annotations.Annotations;
 import com.amannmalik.mcp.core.AbstractEntityCodec;
@@ -7,7 +7,6 @@ import com.amannmalik.mcp.prompts.PromptContent;
 import com.amannmalik.mcp.resources.Resource;
 import com.amannmalik.mcp.resources.ResourceBlock;
 import com.amannmalik.mcp.sampling.MessageContent;
-import com.amannmalik.mcp.util.Base64Util;
 import com.amannmalik.mcp.validation.ValidationUtil;
 import jakarta.json.*;
 

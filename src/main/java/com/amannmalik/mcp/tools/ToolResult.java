@@ -1,6 +1,6 @@
 package com.amannmalik.mcp.tools;
 
-import com.amannmalik.mcp.content.ContentBlock;
+import com.amannmalik.mcp.util.ContentBlock;
 import com.amannmalik.mcp.core.AbstractEntityCodec;
 import com.amannmalik.mcp.core.JsonCodec;
 import com.amannmalik.mcp.validation.ValidationUtil;
