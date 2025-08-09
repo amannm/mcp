@@ -1,6 +1,6 @@
 package com.amannmalik.mcp.cli;
 
-import com.amannmalik.mcp.McpServer;
+import com.amannmalik.mcp.core.McpServer;
 import com.amannmalik.mcp.auth.*;
 import com.amannmalik.mcp.config.McpConfiguration;
 import com.amannmalik.mcp.transport.*;

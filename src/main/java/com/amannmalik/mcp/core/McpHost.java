@@ -1,6 +1,6 @@
-package com.amannmalik.mcp;
+package com.amannmalik.mcp.core;
 
-import com.amannmalik.mcp.McpClient.McpClientListener;
+import com.amannmalik.mcp.core.McpClient.McpClientListener;
 import com.amannmalik.mcp.auth.Principal;
 import com.amannmalik.mcp.config.McpConfiguration;
 import com.amannmalik.mcp.jsonrpc.*;

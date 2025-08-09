@@ -1,6 +1,6 @@
 package com.amannmalik.mcp.cli;
 
-import com.amannmalik.mcp.McpHost;
+import com.amannmalik.mcp.core.McpHost;
 import com.amannmalik.mcp.prompts.Role;
 import com.amannmalik.mcp.tools.ListToolsResult;
 import com.amannmalik.mcp.tools.ToolResult;
