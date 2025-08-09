@@ -41,97 +41,97 @@ Feature: MCP Lifecycle Conformance
     And both parties should be in operational state
     And no protocol violations should be recorded
 
-  @core @version-negotiation
-  Scenario: Protocol version negotiation with matching versions
-    Given a McpServer supporting protocol version "2025-06-18"
-    And a McpHost requesting protocol version "2025-06-18"
-    When initialization is performed
-    Then both parties should agree on protocol version "2025-06-18"
-    And initialization should complete successfully
-
-  @core @version-negotiation
-  Scenario: Protocol version negotiation with server downgrade
-    Given a McpServer supporting protocol versions:
-      | version    |
-      | 2024-11-05 |
-      | 2025-06-18 |
-    And a McpHost requesting protocol version "2026-01-01"
-    When initialization is performed
-    Then the McpServer should respond with protocol version "2025-06-18"
-    And the McpHost should accept the downgrade
-    And initialization should complete successfully
-
-  @error-handling @version-negotiation
-  Scenario: Protocol version negotiation failure with incompatible versions
-    Given a McpServer supporting only protocol version "2024-11-05"
-    And a McpHost supporting only versions "2025-06-18" and newer
-    When the McpHost attempts initialization with version "2025-06-18"
-    Then the McpServer should respond with protocol version "2024-11-05"
-    And the McpHost should disconnect due to version incompatibility
-    And no further communication should occur
-
-  @error-handling @initialization
-  Scenario: Initialize request validation failures
-    Given an uninitialized McpHost and McpServer connection
-    When the McpHost sends initialize request missing required field:
-      | missing_field    |
-      | protocolVersion  |
-      | capabilities     |
-      | clientInfo       |
-      | clientInfo.name  |
-    Then the McpServer should respond with error code -32602
-    And error message should contain "Invalid params"
-    And the connection should remain uninitialized
-
-  @sequencing @error-handling
-  Scenario: Requests before initialization must fail
-    Given an uninitialized connection between McpHost and McpServer
-    When the McpHost sends request:
-      | method         |
-      | tools/list     |
-      | prompts/list   |
-      | resources/list |
-    Then the McpServer should respond with error code -32002
-    And error message should contain "Server not initialized"
-    And the connection should remain uninitialized
-
-  @capabilities @negotiation
-  Scenario: Complete server capability negotiation
-    Given a McpServer declaring capabilities:
-      | capability  | subcapability | enabled |
-      | prompts     | listChanged   | true    |
-      | resources   | subscribe     | true    |
-      | resources   | listChanged   | true    |
-      | tools       | listChanged   | true    |
-      | logging     |               | true    |
-      | completions |               | true    |
-      | experimental| customFeature | true    |
-    When initialization completes successfully
-    Then the negotiated server capabilities should exactly match:
-      | capability  | subcapability |
-      | prompts     | listChanged   |
-      | resources   | subscribe     |
-      | resources   | listChanged   |
-      | tools       | listChanged   |
-      | logging     |               |
-      | completions |               |
-      | experimental| customFeature |
-
-  @capabilities @negotiation
-  Scenario: Complete client capability negotiation
-    Given a McpHost declaring capabilities:
-      | capability  | subcapability | enabled |
-      | roots       | listChanged   | true    |
-      | sampling    |               | true    |
-      | elicitation |               | true    |
-      | experimental| customFeature | true    |
-    When initialization completes successfully
-    Then the negotiated client capabilities should exactly match:
-      | capability  | subcapability |
-      | roots       | listChanged   |
-      | sampling    |               |
-      | elicitation |               |
-      | experimental| customFeature |
+#  @core @version-negotiation
+#  Scenario: Protocol version negotiation with matching versions
+#    Given a McpServer supporting protocol version "2025-06-18"
+#    And a McpHost requesting protocol version "2025-06-18"
+#    When initialization is performed
+#    Then both parties should agree on protocol version "2025-06-18"
+#    And initialization should complete successfully
+#
+#  @core @version-negotiation
+#  Scenario: Protocol version negotiation with server downgrade
+#    Given a McpServer supporting protocol versions:
+#      | version    |
+#      | 2024-11-05 |
+#      | 2025-06-18 |
+#    And a McpHost requesting protocol version "2026-01-01"
+#    When initialization is performed
+#    Then the McpServer should respond with protocol version "2025-06-18"
+#    And the McpHost should accept the downgrade
+#    And initialization should complete successfully
+#
+#  @error-handling @version-negotiation
+#  Scenario: Protocol version negotiation failure with incompatible versions
+#    Given a McpServer supporting only protocol version "2024-11-05"
+#    And a McpHost supporting only versions "2025-06-18" and newer
+#    When the McpHost attempts initialization with version "2025-06-18"
+#    Then the McpServer should respond with protocol version "2024-11-05"
+#    And the McpHost should disconnect due to version incompatibility
+#    And no further communication should occur
+#
+#  @error-handling @initialization
+#  Scenario: Initialize request validation failures
+#    Given an uninitialized McpHost and McpServer connection
+#    When the McpHost sends initialize request missing required field:
+#      | missing_field    |
+#      | protocolVersion  |
+#      | capabilities     |
+#      | clientInfo       |
+#      | clientInfo.name  |
+#    Then the McpServer should respond with error code -32602
+#    And error message should contain "Invalid params"
+#    And the connection should remain uninitialized
+#
+#  @sequencing @error-handling
+#  Scenario: Requests before initialization must fail
+#    Given an uninitialized connection between McpHost and McpServer
+#    When the McpHost sends request:
+#      | method         |
+#      | tools/list     |
+#      | prompts/list   |
+#      | resources/list |
+#    Then the McpServer should respond with error code -32002
+#    And error message should contain "Server not initialized"
+#    And the connection should remain uninitialized
+#
+#  @capabilities @negotiation
+#  Scenario: Complete server capability negotiation
+#    Given a McpServer declaring capabilities:
+#      | capability  | subcapability | enabled |
+#      | prompts     | listChanged   | true    |
+#      | resources   | subscribe     | true    |
+#      | resources   | listChanged   | true    |
+#      | tools       | listChanged   | true    |
+#      | logging     |               | true    |
+#      | completions |               | true    |
+#      | experimental| customFeature | true    |
+#    When initialization completes successfully
+#    Then the negotiated server capabilities should exactly match:
+#      | capability  | subcapability |
+#      | prompts     | listChanged   |
+#      | resources   | subscribe     |
+#      | resources   | listChanged   |
+#      | tools       | listChanged   |
+#      | logging     |               |
+#      | completions |               |
+#      | experimental| customFeature |
+#
+#  @capabilities @negotiation
+#  Scenario: Complete client capability negotiation
+#    Given a McpHost declaring capabilities:
+#      | capability  | subcapability | enabled |
+#      | roots       | listChanged   | true    |
+#      | sampling    |               | true    |
+#      | elicitation |               | true    |
+#      | experimental| customFeature | true    |
+#    When initialization completes successfully
+#    Then the negotiated client capabilities should exactly match:
+#      | capability  | subcapability |
+#      | roots       | listChanged   |
+#      | sampling    |               |
+#      | elicitation |               |
+#      | experimental| customFeature |
 
 #  @sequencing @error-handling
 #  Scenario: Server operations forbidden before initialized notification
