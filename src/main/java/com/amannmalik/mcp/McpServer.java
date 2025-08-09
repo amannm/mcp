@@ -1,6 +1,5 @@
 package com.amannmalik.mcp;
 
-import com.amannmalik.mcp.annotations.Annotations;
 import com.amannmalik.mcp.auth.Principal;
 import com.amannmalik.mcp.completion.*;
 import com.amannmalik.mcp.config.McpConfiguration;
@@ -13,7 +12,6 @@ import com.amannmalik.mcp.ping.PingRequest;
 import com.amannmalik.mcp.ping.PingResponse;
 import com.amannmalik.mcp.prompts.*;
 import com.amannmalik.mcp.resources.*;
-import com.amannmalik.mcp.roots.Root;
 import com.amannmalik.mcp.roots.RootsManager;
 import com.amannmalik.mcp.sampling.*;
 import com.amannmalik.mcp.tools.*;
@@ -495,23 +493,7 @@ public final class McpServer extends JsonRpcEndpoint implements AutoCloseable {
         }
     }
 
-    public List<Root> listRoots() throws IOException {
-        return rootsManager.listRoots();
-    }
-
-    public ChangeSubscription subscribeRoots(ChangeListener<Change> listener) {
-        return rootsManager.subscribe(listener);
-    }
-
-    public List<Root> roots() {
-        return rootsManager.roots();
-    }
-
-    public ProtocolLifecycle lifecycle() {
-        return lifecycle;
-    }
-
-    public ElicitResult elicit(ElicitRequest req) throws IOException {
+    private ElicitResult elicit(ElicitRequest req) throws IOException {
         requireClientCapability(ClientCapability.ELICITATION);
         JsonRpcMessage msg = request(RequestMethod.ELICITATION_CREATE, ElicitRequest.CODEC.toJson(req));
         if (msg instanceof JsonRpcResponse resp) {
@@ -524,7 +506,7 @@ public final class McpServer extends JsonRpcEndpoint implements AutoCloseable {
         throw new IOException(((JsonRpcError) msg).error().message());
     }
 
-    public CreateMessageResponse createMessage(CreateMessageRequest req) throws IOException {
+    private CreateMessageResponse createMessage(CreateMessageRequest req) throws IOException {
         requireClientCapability(ClientCapability.SAMPLING);
         samplingAccess.requireAllowed(principal);
         try {

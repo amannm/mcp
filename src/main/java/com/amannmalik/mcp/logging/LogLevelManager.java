@@ -47,5 +47,6 @@ public final class LogLevelManager {
         limited = false;
     }
 
-    public record LogEntry(LoggingLevel level, String logger, String message) {}
+    public record LogEntry(LoggingLevel level, String logger, String message) {
+    }
 }

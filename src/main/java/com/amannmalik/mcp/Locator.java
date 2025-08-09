@@ -4,7 +4,6 @@ import com.amannmalik.mcp.annotations.Annotations;
 import com.amannmalik.mcp.completion.*;
 import com.amannmalik.mcp.config.McpConfiguration;
 import com.amannmalik.mcp.content.ContentBlock;
-import com.amannmalik.mcp.core.McpComponents;
 import com.amannmalik.mcp.host.PrivacyBoundaryEnforcer;
 import com.amannmalik.mcp.prompts.*;
 import com.amannmalik.mcp.resources.*;
@@ -17,6 +16,7 @@ import java.util.*;
 
 public final class Locator {
     private static final McpComponents COMPONENTS = init();
+
     private Locator() {
     }
 
@@ -117,13 +117,33 @@ public final class Locator {
                 .build();
     }
 
-    public static ResourceProvider resources() { return COMPONENTS.resources(); }
-    public static ToolProvider tools() { return COMPONENTS.tools(); }
-    public static PromptProvider prompts() { return COMPONENTS.prompts(); }
-    public static CompletionProvider completions() { return COMPONENTS.completions(); }
-    public static SamplingProvider sampling() { return COMPONENTS.sampling(); }
-    public static ToolAccessPolicy toolAccess() { return COMPONENTS.toolAccess(); }
-    public static SamplingAccessPolicy samplingAccess() { return COMPONENTS.samplingAccess(); }
+    public static ResourceProvider resources() {
+        return COMPONENTS.resources();
+    }
+
+    public static ToolProvider tools() {
+        return COMPONENTS.tools();
+    }
+
+    public static PromptProvider prompts() {
+        return COMPONENTS.prompts();
+    }
+
+    public static CompletionProvider completions() {
+        return COMPONENTS.completions();
+    }
+
+    public static SamplingProvider sampling() {
+        return COMPONENTS.sampling();
+    }
+
+    public static ToolAccessPolicy toolAccess() {
+        return COMPONENTS.toolAccess();
+    }
+
+    public static SamplingAccessPolicy samplingAccess() {
+        return COMPONENTS.samplingAccess();
+    }
 
     public static ResourceAccessController privacyBoundary(String principalId) {
         var p = new PrivacyBoundaryEnforcer();

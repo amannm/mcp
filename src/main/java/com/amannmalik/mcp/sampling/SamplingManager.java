@@ -1,8 +1,6 @@
 package com.amannmalik.mcp.sampling;
 
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
 
 public final class SamplingManager {
     private Map<String, String> preferences = Map.of();

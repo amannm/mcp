@@ -16,18 +16,18 @@ Feature: MCP Protocol Specification Compliance
     # Reference: specification/2025-06-18/basic/lifecycle.mdx#initialization
     # Tests the initialization → operation → shutdown lifecycle
     Given an MCP server with capabilities:
-      | capability      | feature        | enabled |
-      | resources       | subscribe      | true    |
-      | resources       | listChanged    | true    |
-      | tools           | listChanged    | true    |
-      | prompts         | listChanged    | true    |
-      | logging         |                | true    |
-      | completions     |                | true    |
+      | capability  | feature     | enabled |
+      | resources   | subscribe   | true    |
+      | resources   | listChanged | true    |
+      | tools       | listChanged | true    |
+      | prompts     | listChanged | true    |
+      | logging     |             | true    |
+      | completions |             | true    |
     And an MCP client with capabilities:
-      | capability      | feature        | enabled |
-      | sampling        |                | true    |
-      | roots           | listChanged    | true    |
-      | elicitation     |                | true    |
+      | capability  | feature     | enabled |
+      | sampling    |             | true    |
+      | roots       | listChanged | true    |
+      | elicitation |             | true    |
     When the client initiates connection with protocol version "2025-06-18"
     Then the server responds with supported capabilities
     And capability negotiation completes successfully

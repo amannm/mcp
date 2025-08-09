@@ -127,14 +127,6 @@ public final class McpClient extends JsonRpcEndpoint implements AutoCloseable {
         return info;
     }
 
-    public String protocolVersion() {
-        return protocolVersion;
-    }
-
-    public ServerInfo serverInfo() {
-        return serverInfo;
-    }
-
     public synchronized void connect() throws IOException {
         if (connected) return;
         JsonRpcMessage msg = sendInitialization();
@@ -307,22 +299,6 @@ public final class McpClient extends JsonRpcEndpoint implements AutoCloseable {
                 SetLevelRequest.CODEC.toJson(new SetLevelRequest(level, null))));
     }
 
-    public void setAccessToken(String token) {
-        if (!(transport instanceof StreamableHttpClientTransport http)) {
-            throw new IllegalStateException("HTTP transport required");
-        }
-        if (token == null || token.isBlank()) {
-            throw new IllegalArgumentException("token required");
-        }
-        http.setAuthorization(token);
-    }
-
-    public void clearAccessToken() {
-        if (transport instanceof StreamableHttpClientTransport http) {
-            http.clearAuthorization();
-        }
-    }
-
     public JsonRpcMessage request(String method, JsonObject params) throws IOException {
         return request(method, params, McpConfiguration.current().defaultMs());
     }
@@ -362,26 +338,6 @@ public final class McpClient extends JsonRpcEndpoint implements AutoCloseable {
 
     public Set<ServerCapability> serverCapabilities() {
         return serverCapabilities;
-    }
-
-    public boolean resourcesSubscribeSupported() {
-        return serverFeatures.resourcesSubscribe();
-    }
-
-    public boolean resourcesListChangedSupported() {
-        return serverFeatures.resourcesListChanged();
-    }
-
-    public boolean toolsListChangedSupported() {
-        return serverFeatures.toolsListChanged();
-    }
-
-    public boolean promptsListChangedSupported() {
-        return serverFeatures.promptsListChanged();
-    }
-
-    public Optional<ResourceMetadata> resourceMetadata() {
-        return Optional.ofNullable(resourceMetadata);
     }
 
     public ListResourcesResult listResources(String cursor) throws IOException {

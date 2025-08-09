@@ -4,7 +4,7 @@ import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 public final class SecurityViolationLogger {
-    public enum Level { INFO, WARNING, ERROR }
+    public enum Level {INFO, WARNING, ERROR}
 
     private final List<Entry> entries = new CopyOnWriteArrayList<>();
 
@@ -16,5 +16,6 @@ public final class SecurityViolationLogger {
         return List.copyOf(entries);
     }
 
-    public record Entry(Level level, String message) {}
+    public record Entry(Level level, String message) {
+    }
 }

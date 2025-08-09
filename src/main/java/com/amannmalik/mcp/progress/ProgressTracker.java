@@ -38,5 +38,6 @@ public final class ProgressTracker {
         return active.contains(token);
     }
 
-    public record Progress(double progress, int total, String message) {}
+    public record Progress(double progress, int total, String message) {
+    }
 }

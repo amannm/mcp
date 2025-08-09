@@ -1,4 +1,4 @@
-package com.amannmalik.mcp.core;
+package com.amannmalik.mcp;
 
 import com.amannmalik.mcp.completion.CompletionProvider;
 import com.amannmalik.mcp.prompts.PromptProvider;
@@ -19,7 +19,9 @@ public record McpComponents(ResourceProvider resources,
                             ToolAccessPolicy toolAccess,
                             SamplingAccessPolicy samplingAccess,
                             ResourceAccessController privacyBoundary) {
-    public static Builder builder() { return new Builder(); }
+    public static Builder builder() {
+        return new Builder();
+    }
 
     public static final class Builder {
         private ResourceProvider resources;
