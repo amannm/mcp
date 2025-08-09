@@ -1,8 +1,8 @@
 package com.amannmalik.mcp.util;
 
+import com.amannmalik.mcp.core.NotificationMethod;
 import com.amannmalik.mcp.jsonrpc.JsonRpcNotification;
 import com.amannmalik.mcp.jsonrpc.RequestId;
-import com.amannmalik.mcp.core.NotificationMethod;
 import jakarta.json.JsonObject;
 
 import java.io.IOException;

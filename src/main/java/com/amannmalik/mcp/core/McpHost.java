@@ -1,16 +1,18 @@
 package com.amannmalik.mcp.core;
 
-import com.amannmalik.mcp.core.McpClient.McpClientListener;
 import com.amannmalik.mcp.auth.Principal;
 import com.amannmalik.mcp.config.McpConfiguration;
-import com.amannmalik.mcp.elicitation.*;
+import com.amannmalik.mcp.core.McpClient.McpClientListener;
+import com.amannmalik.mcp.elicitation.ElicitationProvider;
+import com.amannmalik.mcp.elicitation.InteractiveElicitationProvider;
 import com.amannmalik.mcp.jsonrpc.*;
 import com.amannmalik.mcp.lifecycle.*;
 import com.amannmalik.mcp.logging.LoggingMessageNotification;
 import com.amannmalik.mcp.prompts.Role;
 import com.amannmalik.mcp.roots.InMemoryRootsProvider;
 import com.amannmalik.mcp.roots.Root;
-import com.amannmalik.mcp.sampling.*;
+import com.amannmalik.mcp.sampling.InteractiveSamplingProvider;
+import com.amannmalik.mcp.sampling.SamplingProvider;
 import com.amannmalik.mcp.security.*;
 import com.amannmalik.mcp.tools.*;
 import jakarta.json.JsonObject;
@@ -71,7 +73,7 @@ public final class McpHost implements AutoCloseable {
                     : cc.clientCapabilities().stream()
                     .map(ClientCapability::valueOf)
                     .collect(() -> EnumSet.noneOf(ClientCapability.class), EnumSet::add, EnumSet::addAll);
-            ElicitationProvider elicitationProvider =  new InteractiveElicitationProvider();
+            ElicitationProvider elicitationProvider = new InteractiveElicitationProvider();
             McpClient client = new McpClient(
                     new ClientInfo(entry.getKey(), entry.getKey(), cc.clientVersion()),
                     caps,

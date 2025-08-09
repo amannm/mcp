@@ -1,15 +1,15 @@
 package com.amannmalik.mcp.roots;
 
+import com.amannmalik.mcp.core.RequestMethod;
 import com.amannmalik.mcp.jsonrpc.*;
 import com.amannmalik.mcp.lifecycle.ClientCapability;
-import com.amannmalik.mcp.core.RequestMethod;
 import com.amannmalik.mcp.util.*;
 
 import java.io.IOException;
 import java.util.List;
 import java.util.Set;
-import java.util.function.Supplier;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.function.Supplier;
 
 /// - [Roots](specification/2025-06-18/client/roots.mdx)
 /// - [MCP roots specification conformance](src/test/resources/com/amannmalik/mcp/mcp_conformance.feature:154-169)
