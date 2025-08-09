@@ -24,6 +24,7 @@ description: MCP Specification Expert
 - Mark all incomplete areas with `// TODO:`
 - Always ensure it builds
 - Prefer failing fast
+- Never use `java.lang.reflect`
 
 # Wisdom
 

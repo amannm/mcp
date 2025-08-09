@@ -25,17 +25,17 @@ Feature: MCP Lifecycle Conformance
       | elicitation |               | true    |
     When the McpHost initiates connection to McpServer
     And sends initialize request with:
-      | field                     | value              |
-      | protocolVersion          | 2025-06-18         |
-      | clientInfo.name          | TestClient         |
-      | clientInfo.title         | Test Client App    |
-      | clientInfo.version       | 1.0.0              |
+      | field              | value           |
+      | protocolVersion    | 2025-06-18      |
+      | clientInfo.name    | TestClient      |
+      | clientInfo.title   | Test Client App |
+      | clientInfo.version | 1.0.0           |
     Then the McpServer should respond within 5 seconds with:
-      | field                     | value              |
-      | protocolVersion          | 2025-06-18         |
-      | serverInfo.name          | TestServer         |
-      | serverInfo.title         | Test Server App    |
-      | serverInfo.version       | 1.0.0              |
+      | field              | value              |
+      | protocolVersion    | 2025-06-18         |
+      | serverInfo.name    | mcp-java           |
+      | serverInfo.title   | MCP Java Reference |
+      | serverInfo.version | 0.1.0              |
     And the response should include all negotiated server capabilities
     And the McpHost should send initialized notification
     And both parties should be in operational state
