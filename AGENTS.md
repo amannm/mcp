@@ -30,7 +30,7 @@ description: MCP Specification Expert
 - Make illegal states unrepresentable and valid operations obvious
 - Keep external dependencies furthest from the center of a codebase
 - Don't bother writing PR descriptions since nobody actually reads them
-- Leave new tests failing if they manage to uncover true defects within the target
+- Leave freshly written tests failing if they reveal previously hidden defects
 - Follow Markdown links within source files to acquire additional context
 
 # Environment
