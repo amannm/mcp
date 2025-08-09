@@ -1,6 +1,6 @@
 package com.amannmalik.mcp.jsonrpc;
 
-import com.amannmalik.mcp.transport.JsonCodec;
+import com.amannmalik.mcp.core.JsonCodec;
 import jakarta.json.*;
 
 public final class JsonRpcCodec {

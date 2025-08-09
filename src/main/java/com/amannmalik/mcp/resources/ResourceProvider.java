@@ -1,6 +1,6 @@
 package com.amannmalik.mcp.resources;
 
-import com.amannmalik.mcp.transport.Provider;
+import com.amannmalik.mcp.core.Provider;
 import com.amannmalik.mcp.util.*;
 
 import java.util.Optional;

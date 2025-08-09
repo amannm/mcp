@@ -2,11 +2,11 @@ package com.amannmalik.mcp.resources;
 
 import com.amannmalik.mcp.annotations.Annotations;
 import com.amannmalik.mcp.auth.Principal;
-import com.amannmalik.mcp.transport.JsonRpcEndpoint;
+import com.amannmalik.mcp.core.JsonRpcEndpoint;
 import com.amannmalik.mcp.jsonrpc.*;
 import com.amannmalik.mcp.lifecycle.LifecycleState;
-import com.amannmalik.mcp.transport.NotificationMethod;
-import com.amannmalik.mcp.transport.RequestMethod;
+import com.amannmalik.mcp.core.NotificationMethod;
+import com.amannmalik.mcp.core.RequestMethod;
 import com.amannmalik.mcp.roots.RootsManager;
 import com.amannmalik.mcp.security.ResourceAccessController;
 import com.amannmalik.mcp.util.RootChecker;

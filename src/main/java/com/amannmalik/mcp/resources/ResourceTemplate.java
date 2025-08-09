@@ -1,8 +1,8 @@
 package com.amannmalik.mcp.resources;
 
 import com.amannmalik.mcp.annotations.Annotations;
-import com.amannmalik.mcp.transport.AbstractEntityCodec;
-import com.amannmalik.mcp.transport.JsonCodec;
+import com.amannmalik.mcp.core.AbstractEntityCodec;
+import com.amannmalik.mcp.core.JsonCodec;
 import com.amannmalik.mcp.util.DisplayNameProvider;
 import com.amannmalik.mcp.validation.ValidationUtil;
 import jakarta.json.*;

@@ -1,6 +1,6 @@
 package com.amannmalik.mcp.tools;
 
-import com.amannmalik.mcp.transport.Provider;
+import com.amannmalik.mcp.core.Provider;
 import com.amannmalik.mcp.util.Pagination;
 import jakarta.json.JsonObject;
 

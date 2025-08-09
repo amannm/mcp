@@ -1,6 +1,6 @@
 package com.amannmalik.mcp.security;
 
-import com.amannmalik.mcp.transport.McpClient;
+import com.amannmalik.mcp.core.McpClient;
 
 public interface SecurityPolicy {
     boolean allow(McpClient client);

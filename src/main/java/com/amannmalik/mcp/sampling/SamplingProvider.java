@@ -1,6 +1,6 @@
 package com.amannmalik.mcp.sampling;
 
-import com.amannmalik.mcp.transport.ExecutingProvider;
+import com.amannmalik.mcp.core.ExecutingProvider;
 import com.amannmalik.mcp.util.Pagination;
 import jakarta.json.JsonObject;
 
