@@ -119,33 +119,33 @@ public final class McpServer extends JsonRpcEndpoint implements AutoCloseable {
                     PromptListChangedNotification.CODEC.toJson(new PromptListChangedNotification()));
         }
 
-        processor.registerRequest(RequestMethod.INITIALIZE.method(), this::initialize);
-        processor.registerNotification(NotificationMethod.INITIALIZED.method(), this::initialized);
-        processor.registerRequest(RequestMethod.PING.method(), this::ping);
-        processor.registerNotification(NotificationMethod.CANCELLED.method(), this::cancelled);
-        processor.registerNotification(NotificationMethod.ROOTS_LIST_CHANGED.method(), n -> rootsManager.listChangedNotification());
+        registerRequest(RequestMethod.INITIALIZE.method(), this::initialize);
+        registerNotification(NotificationMethod.INITIALIZED.method(), this::initialized);
+        registerRequest(RequestMethod.PING.method(), this::ping);
+        registerNotification(NotificationMethod.CANCELLED.method(), this::cancelled);
+        registerNotification(NotificationMethod.ROOTS_LIST_CHANGED.method(), n -> rootsManager.listChangedNotification());
 
         if (resourceFeature != null) {
-            resourceFeature.register(processor);
+            resourceFeature.register(this);
         }
 
         if (tools != null) {
-            processor.registerRequest(RequestMethod.TOOLS_LIST.method(), this::listTools);
-            processor.registerRequest(RequestMethod.TOOLS_CALL.method(), this::callTool);
+            registerRequest(RequestMethod.TOOLS_LIST.method(), this::listTools);
+            registerRequest(RequestMethod.TOOLS_CALL.method(), this::callTool);
         }
 
         if (prompts != null) {
-            processor.registerRequest(RequestMethod.PROMPTS_LIST.method(), this::listPrompts);
-            processor.registerRequest(RequestMethod.PROMPTS_GET.method(), this::getPrompt);
+            registerRequest(RequestMethod.PROMPTS_LIST.method(), this::listPrompts);
+            registerRequest(RequestMethod.PROMPTS_GET.method(), this::getPrompt);
         }
 
-        processor.registerRequest(RequestMethod.LOGGING_SET_LEVEL.method(), this::setLogLevel);
+        registerRequest(RequestMethod.LOGGING_SET_LEVEL.method(), this::setLogLevel);
 
         if (completions != null) {
-            processor.registerRequest(RequestMethod.COMPLETION_COMPLETE.method(), this::complete);
+            registerRequest(RequestMethod.COMPLETION_COMPLETE.method(), this::complete);
         }
 
-        processor.registerRequest(RequestMethod.SAMPLING_CREATE_MESSAGE.method(), this::handleCreateMessage);
+        registerRequest(RequestMethod.SAMPLING_CREATE_MESSAGE.method(), this::handleCreateMessage);
     }
 
     private <S extends ChangeSubscription> S subscribeListChanges(

@@ -96,18 +96,18 @@ public final class McpClient extends JsonRpcEndpoint implements AutoCloseable {
         this.pingInterval = 0;
         this.pingTimeout = McpConfiguration.current().pingMs();
 
-        processor.registerRequest(RequestMethod.SAMPLING_CREATE_MESSAGE.method(), this::handleCreateMessage);
-        processor.registerRequest(RequestMethod.ROOTS_LIST.method(), this::handleListRoots);
-        processor.registerRequest(RequestMethod.ELICITATION_CREATE.method(), this::handleElicit);
-        processor.registerRequest(RequestMethod.PING.method(), this::handlePing);
+        registerRequest(RequestMethod.SAMPLING_CREATE_MESSAGE.method(), this::handleCreateMessage);
+        registerRequest(RequestMethod.ROOTS_LIST.method(), this::handleListRoots);
+        registerRequest(RequestMethod.ELICITATION_CREATE.method(), this::handleElicit);
+        registerRequest(RequestMethod.PING.method(), this::handlePing);
 
-        processor.registerNotification(NotificationMethod.PROGRESS.method(), this::handleProgress);
-        processor.registerNotification(NotificationMethod.MESSAGE.method(), this::handleMessage);
-        processor.registerNotification(NotificationMethod.CANCELLED.method(), this::cancelled);
-        processor.registerNotification(NotificationMethod.RESOURCES_LIST_CHANGED.method(), this::handleResourcesListChanged);
-        processor.registerNotification(NotificationMethod.RESOURCES_UPDATED.method(), this::handleResourceUpdated);
-        processor.registerNotification(NotificationMethod.TOOLS_LIST_CHANGED.method(), this::handleToolsListChanged);
-        processor.registerNotification(NotificationMethod.PROMPTS_LIST_CHANGED.method(), n -> listener.onPromptsListChanged());
+        registerNotification(NotificationMethod.PROGRESS.method(), this::handleProgress);
+        registerNotification(NotificationMethod.MESSAGE.method(), this::handleMessage);
+        registerNotification(NotificationMethod.CANCELLED.method(), this::cancelled);
+        registerNotification(NotificationMethod.RESOURCES_LIST_CHANGED.method(), this::handleResourcesListChanged);
+        registerNotification(NotificationMethod.RESOURCES_UPDATED.method(), this::handleResourceUpdated);
+        registerNotification(NotificationMethod.TOOLS_LIST_CHANGED.method(), this::handleToolsListChanged);
+        registerNotification(NotificationMethod.PROMPTS_LIST_CHANGED.method(), n -> listener.onPromptsListChanged());
     }
 
     public static McpClient forCli(String command, boolean verbose) throws IOException {

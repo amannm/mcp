@@ -1,5 +1,8 @@
 package com.amannmalik.mcp;
 
+import com.amannmalik.mcp.core.McpHost;
+import com.amannmalik.mcp.jsonrpc.JsonRpcMessage;
+import com.amannmalik.mcp.jsonrpc.JsonRpcResponse;
 import io.cucumber.java.en.*;
 import io.cucumber.java.After;
 import io.cucumber.datatable.DataTable;
@@ -14,18 +17,15 @@ import java.util.Map;
 import java.util.Objects;
 
 public final class McpLifecycleSteps {
-    private Process server;
-    private BufferedWriter toServer;
-    private BufferedReader fromServer;
+    private McpHost host;
     private JsonObject capabilities;
-    private JsonObject lastResponse;
-    private int nextId;
+    private JsonRpcMessage lastResponse;
+    private final String clientId = "test-server";
 
     @Given("a clean MCP environment")
-    public void cleanMcpEnvironment() {
-        if (server != null) server.destroy();
+    public void cleanMcpEnvironment() throws IOException {
+        if (host != null) host.close();
         capabilities = Json.createObjectBuilder().build();
-        nextId = 0;
     }
 
     @Given("protocol version {string} is supported")
@@ -46,95 +46,80 @@ public final class McpLifecycleSteps {
             }
         }
         JsonObjectBuilder caps = Json.createObjectBuilder();
-        temp.forEach((k, v) -> caps.add(k, v.build()));
+        temp.forEach((key, builder) -> caps.add(key, builder.build()));
         capabilities = caps.build();
     }
 
     @When("the client sends an initialize request with:")
     public void theClientSendsAnInitializeRequestWith(DataTable table) throws IOException {
-        startServer();
+        startHost();
         Map<String, String> params = table.asMap();
         JsonObject clientInfo = Json.createObjectBuilder()
                 .add("name", Objects.requireNonNull(params.get("clientInfo.name")))
                 .add("version", Objects.requireNonNull(params.get("clientInfo.version")))
                 .build();
-        JsonObject init = Json.createObjectBuilder()
-                .add("jsonrpc", "2.0")
-                .add("id", ++nextId)
-                .add("method", "initialize")
-                .add("params", Json.createObjectBuilder()
-                        .add("protocolVersion", Objects.requireNonNull(params.get("protocolVersion")))
-                        .add("capabilities", capabilities)
-                        .add("clientInfo", clientInfo)
-                        .build())
+        JsonObject initParams = Json.createObjectBuilder()
+                .add("protocolVersion", Objects.requireNonNull(params.get("protocolVersion")))
+                .add("capabilities", capabilities)
+                .add("clientInfo", clientInfo)
                 .build();
-        toServer.write(init.toString());
-        toServer.write('\n');
-        toServer.flush();
-        String line = fromServer.readLine();
-        lastResponse = Json.createReader(new StringReader(line)).readObject();
+        
+        lastResponse = host.request(clientId, "initialize", initParams);
     }
 
     @Then("the server should respond with:")
     public void theServerShouldRespondWith(DataTable table) {
-        JsonObject result = lastResponse.getJsonObject("result");
-        Map<String, String> expected = table.asMap();
-        Assertions.assertEquals(expected.get("protocolVersion"), result.getString("protocolVersion"));
-        JsonObject serverInfo = result.getJsonObject("serverInfo");
-        Assertions.assertEquals(expected.get("serverInfo.name"), serverInfo.getString("name"));
+        if (lastResponse instanceof JsonRpcResponse response) {
+            JsonObject result = response.result();
+            Map<String, String> expected = table.asMap();
+            Assertions.assertEquals(expected.get("protocolVersion"), result.getString("protocolVersion"));
+            JsonObject serverInfo = result.getJsonObject("serverInfo");
+            Assertions.assertEquals(expected.get("serverInfo.name"), serverInfo.getString("name"));
+        } else {
+            Assertions.fail("Expected successful response, got: " + lastResponse);
+        }
     }
 
     @Then("the response should include server capabilities")
     public void theResponseShouldIncludeServerCapabilities() {
-        JsonObject result = lastResponse.getJsonObject("result");
-        JsonObject caps = result.getJsonObject("capabilities");
-        Assertions.assertTrue(caps.containsKey("server"));
+        if (lastResponse instanceof JsonRpcResponse response) {
+            JsonObject result = response.result();
+            JsonObject caps = result.getJsonObject("capabilities");
+            Assertions.assertTrue(caps.containsKey("server"));
+        } else {
+            Assertions.fail("Expected successful response, got: " + lastResponse);
+        }
     }
 
     @Then("the client should send an initialized notification")
     public void theClientShouldSendAnInitializedNotification() throws IOException {
-        JsonObject note = Json.createObjectBuilder()
-                .add("jsonrpc", "2.0")
-                .add("method", "notifications/initialized")
-                .build();
-        toServer.write(note.toString());
-        toServer.write('\n');
-        toServer.flush();
+        host.notify(clientId, "notifications/initialized", Json.createObjectBuilder().build());
     }
 
     @Then("the connection should be in operational state")
     public void theConnectionShouldBeInOperationalState() throws IOException {
-        JsonObject ping = Json.createObjectBuilder()
-                .add("jsonrpc", "2.0")
-                .add("id", ++nextId)
-                .add("method", "ping")
-                .add("params", Json.createObjectBuilder().build())
-                .build();
-        toServer.write(ping.toString());
-        toServer.write('\n');
-        toServer.flush();
-        String line = fromServer.readLine();
-        JsonObject resp = Json.createReader(new StringReader(line)).readObject();
-        Assertions.assertEquals(nextId, resp.getInt("id"));
+        JsonRpcMessage resp = host.request(clientId, "ping", Json.createObjectBuilder().build());
+        if (resp instanceof JsonRpcResponse response) {
+            Assertions.assertNotNull(response.result());
+        } else {
+            Assertions.fail("Expected successful ping response, got: " + resp);
+        }
     }
 
     @After
     public void tearDown() throws IOException {
-        if (toServer != null) toServer.close();
-        if (fromServer != null) fromServer.close();
-        if (server != null) server.destroy();
+        if (host != null) host.close();
     }
 
-    private void startServer() throws IOException {
-        if (server != null) server.destroy();
+    private void startHost() throws IOException {
+        if (host != null) host.close();
         String classpath = System.getProperty("java.class.path");
-        ProcessBuilder builder = new ProcessBuilder(
-                "java", "-cp", classpath,
-                "com.amannmalik.mcp.Entrypoint", "server", "--stdio", "--test-mode");
-        builder.redirectErrorStream(true);
-        server = builder.start();
-        toServer = new BufferedWriter(new OutputStreamWriter(server.getOutputStream()));
-        fromServer = new BufferedReader(new InputStreamReader(server.getInputStream()));
+        String serverCommand = "java -cp " + classpath + " com.amannmalik.mcp.Entrypoint server --stdio --test-mode";
+        Map<String, String> clientSpecs = Map.of(clientId, serverCommand);
+        host = McpHost.forCli(clientSpecs, false);
+        
+        // Grant necessary consents for testing
+        host.grantConsent(clientId);
     }
 }
 

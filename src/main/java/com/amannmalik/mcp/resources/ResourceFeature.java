@@ -2,6 +2,7 @@ package com.amannmalik.mcp.resources;
 
 import com.amannmalik.mcp.annotations.Annotations;
 import com.amannmalik.mcp.auth.Principal;
+import com.amannmalik.mcp.core.JsonRpcEndpoint;
 import com.amannmalik.mcp.jsonrpc.*;
 import com.amannmalik.mcp.lifecycle.LifecycleState;
 import com.amannmalik.mcp.lifecycle.ProtocolLifecycle;
@@ -50,13 +51,13 @@ public final class ResourceFeature implements AutoCloseable {
                         ResourceListChangedNotification.CODEC.toJson(new ResourceListChangedNotification())) : null;
     }
 
-    public void register(JsonRpcRequestProcessor processor) {
-        processor.registerRequest(RequestMethod.RESOURCES_LIST.method(), this::listResources);
-        processor.registerRequest(RequestMethod.RESOURCES_READ.method(), this::readResource);
-        processor.registerRequest(RequestMethod.RESOURCES_TEMPLATES_LIST.method(), this::listTemplates);
+    public void register(JsonRpcEndpoint endpoint) {
+        endpoint.registerRequest(RequestMethod.RESOURCES_LIST.method(), this::listResources);
+        endpoint.registerRequest(RequestMethod.RESOURCES_READ.method(), this::readResource);
+        endpoint.registerRequest(RequestMethod.RESOURCES_TEMPLATES_LIST.method(), this::listTemplates);
         if (resources.supportsSubscribe()) {
-            processor.registerRequest(RequestMethod.RESOURCES_SUBSCRIBE.method(), this::subscribeResource);
-            processor.registerRequest(RequestMethod.RESOURCES_UNSUBSCRIBE.method(), this::unsubscribeResource);
+            endpoint.registerRequest(RequestMethod.RESOURCES_SUBSCRIBE.method(), this::subscribeResource);
+            endpoint.registerRequest(RequestMethod.RESOURCES_UNSUBSCRIBE.method(), this::unsubscribeResource);
         }
     }
 
