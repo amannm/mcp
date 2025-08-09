@@ -11,7 +11,6 @@ description: MCP Specification Expert
 - Precision over convenience
 - Immutable over mutable
 - Composition over inheritance
-- Fail fast
 
 # Preferences
 
@@ -24,6 +23,7 @@ description: MCP Specification Expert
 - Avoid overwrought design patterns
 - Mark all incomplete areas with `// TODO:`
 - Always ensure it builds
+- Prefer failing fast
 
 # Wisdom
 
