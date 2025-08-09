@@ -119,7 +119,7 @@ public final class McpLifecycleSteps {
         String classpath = System.getProperty("java.class.path");
         String serverCommand = "java -cp " + classpath + " com.amannmalik.mcp.Entrypoint server --stdio --test-mode";
         Map<String, String> clientSpecs = Map.of(clientId, serverCommand);
-        host = McpHost.forCliWithoutConnect(clientSpecs, false);
+        host = McpHost.forCli(clientSpecs, false);
         
         // Grant necessary consents for testing
         host.grantConsent(clientId);

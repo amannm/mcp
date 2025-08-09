@@ -55,12 +55,12 @@ public final class HostCommand {
             }
 
             try (McpHost host = McpHost.forCli(clients, verbose)) {
-                if (verbose) {
-                    for (String clientId : clients.keySet()) {
+                for (String clientId : clients.keySet()) {
+                    host.connect(clientId);
+                    if (verbose) {
                         System.err.println("Registered client: " + clientId);
                     }
                 }
-
                 if (interactive) {
                     runInteractiveMode(host);
                 } else {

@@ -92,14 +92,6 @@ public final class McpHost implements AutoCloseable {
     }
 
     public static McpHost forCli(Map<String, String> clientSpecs, boolean verbose) throws IOException {
-        McpHost host = forCliWithoutConnect(clientSpecs, verbose);
-        for (String clientId : clientSpecs.keySet()) {
-            host.connect(clientId);
-        }
-        return host;
-    }
-
-    public static McpHost forCliWithoutConnect(Map<String, String> clientSpecs, boolean verbose) throws IOException {
         SecurityPolicy policy = c -> true;
         Principal principal = new Principal(McpConfiguration.current().hostPrincipal(), Set.of());
         McpHost host = new McpHost(policy, principal);
