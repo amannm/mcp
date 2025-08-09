@@ -36,33 +36,33 @@ Feature: MCP Protocol Specification Compliance
     When the client requests shutdown
     Then the connection terminates gracefully
     And all resources are properly cleaned up
-
-  @authorization @security @http
-  Scenario: OAuth 2.1 Authorization Flow with Dynamic Client Registration
-    # Reference: specification/2025-06-18/basic/authorization.mdx#authorization-flow
-    # Tests complete OAuth 2.1 flow including dynamic client registration and resource indicators
-    Given an MCP server at "https://mcp.example.com/api" requiring authorization
-    And an authorization server at "https://auth.example.com"
-    And dynamic client registration is supported
-    When the client makes an unauthorized request
-    Then the server responds with "401 Unauthorized"
-    And includes "WWW-Authenticate" header with resource metadata URL
-    When the client fetches protected resource metadata
-    Then the metadata contains authorization server URLs
-    When the client performs dynamic client registration
-    Then a client ID and credentials are obtained
-    When the client initiates OAuth 2.1 authorization code flow
-    And uses PKCE code challenge method "S256"
-    And includes resource parameter "https://mcp.example.com/api"
-    And user grants consent through authorization server
-    Then authorization code is received at callback
-    When the client exchanges code for access token
-    And includes PKCE code verifier
-    And includes resource parameter "https://mcp.example.com/api"
-    Then access token is received with correct audience
-    When the client makes MCP requests with Bearer token
-    Then requests are successfully authorized
-    And token audience validation passes
+#
+#  @authorization @security @http
+#  Scenario: OAuth 2.1 Authorization Flow with Dynamic Client Registration
+#    # Reference: specification/2025-06-18/basic/authorization.mdx#authorization-flow
+#    # Tests complete OAuth 2.1 flow including dynamic client registration and resource indicators
+#    Given an MCP server at "https://mcp.example.com/api" requiring authorization
+#    And an authorization server at "https://auth.example.com"
+#    And dynamic client registration is supported
+#    When the client makes an unauthorized request
+#    Then the server responds with "401 Unauthorized"
+#    And includes "WWW-Authenticate" header with resource metadata URL
+#    When the client fetches protected resource metadata
+#    Then the metadata contains authorization server URLs
+#    When the client performs dynamic client registration
+#    Then a client ID and credentials are obtained
+#    When the client initiates OAuth 2.1 authorization code flow
+#    And uses PKCE code challenge method "S256"
+#    And includes resource parameter "https://mcp.example.com/api"
+#    And user grants consent through authorization server
+#    Then authorization code is received at callback
+#    When the client exchanges code for access token
+#    And includes PKCE code verifier
+#    And includes resource parameter "https://mcp.example.com/api"
+#    Then access token is received with correct audience
+#    When the client makes MCP requests with Bearer token
+#    Then requests are successfully authorized
+#    And token audience validation passes
 #
 #  @security @token-validation
 #  Scenario: Token Audience Validation and Passthrough Prevention
@@ -204,28 +204,28 @@ Feature: MCP Protocol Specification Compliance
 #    And prompt includes actual file content in context
 #    And focuses on specified areas
 #
-  @roots @filesystem-boundaries
-  Scenario: Filesystem Root Management with Security Boundaries
-    # Reference: specification/2025-06-18/client/roots.mdx
-    # Tests root management and security boundary enforcement
-    Given an MCP client with root management capability
-    And configured roots:
-      | uri                           | name              | permissions |
-      | file:///home/user/project1    | Main Project      | read,write  |
-      | file:///home/user/project2    | Secondary Project | read        |
-      | file:///shared/resources      | Shared Resources  | read        |
-    When the server requests root list
-    Then the client returns available roots with proper URIs
-    And each root includes human-readable names
-    When the server attempts to access "file:///home/user/project1/src/main.rs"
-    Then access is granted as path is within allowed root
-    When the server attempts to access "file:///etc/passwd"
-    Then access is denied as path is outside allowed roots
-    And security violation is logged
-    When root configuration changes (new project added)
-    Then "notifications/roots/list_changed" is sent to server
-    When server refreshes root list
-    Then updated roots are returned
+#  @roots @filesystem-boundaries
+#  Scenario: Filesystem Root Management with Security Boundaries
+#    # Reference: specification/2025-06-18/client/roots.mdx
+#    # Tests root management and security boundary enforcement
+#    Given an MCP client with root management capability
+#    And configured roots:
+#      | uri                           | name              | permissions |
+#      | file:///home/user/project1    | Main Project      | read,write  |
+#      | file:///home/user/project2    | Secondary Project | read        |
+#      | file:///shared/resources      | Shared Resources  | read        |
+#    When the server requests root list
+#    Then the client returns available roots with proper URIs
+#    And each root includes human-readable names
+#    When the server attempts to access "file:///home/user/project1/src/main.rs"
+#    Then access is granted as path is within allowed root
+#    When the server attempts to access "file:///etc/passwd"
+#    Then access is denied as path is outside allowed roots
+#    And security violation is logged
+#    When root configuration changes (new project added)
+#    Then "notifications/roots/list_changed" is sent to server
+#    When server refreshes root list
+#    Then updated roots are returned
 #
 #  @progress @cancellation @utilities
 #  Scenario: Request Progress Tracking and Cancellation

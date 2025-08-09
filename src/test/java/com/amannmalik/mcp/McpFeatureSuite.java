@@ -8,5 +8,5 @@ import static io.cucumber.junit.platform.engine.Constants.GLUE_PROPERTY_NAME;
 @IncludeEngines("cucumber")
 @SelectClasspathResource("com/amannmalik/mcp")
 @ConfigurationParameter(key = GLUE_PROPERTY_NAME, value = "com.amannmalik.mcp")
-public class McpFeatureTest {
+public class McpFeatureSuite {
 }
