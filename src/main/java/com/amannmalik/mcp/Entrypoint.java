@@ -33,6 +33,9 @@ public final class Entrypoint {
         }
     }
 
+    public Entrypoint() {
+    }
+
     private static int execute(ParseResult parseResult) {
         if (parseResult.hasSubcommand()) {
             ParseResult subResult = parseResult.subcommand();

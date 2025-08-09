@@ -1,13 +1,10 @@
 package com.amannmalik.mcp.core;
 
-import com.amannmalik.mcp.auth.*;
-import com.amannmalik.mcp.config.McpConfiguration;
 import picocli.CommandLine;
 import picocli.CommandLine.Model.CommandSpec;
 import picocli.CommandLine.Model.OptionSpec;
 import picocli.CommandLine.ParseResult;
 
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.*;
@@ -69,8 +66,7 @@ public final class ServerCommand {
             String resourceMetadataUrl = parseResult.matchedOptionValue("--resource-metadata", null);
             List<String> authServers = parseResult.matchedOptionValue("--auth-server", Collections.emptyList());
             boolean testMode = parseResult.matchedOptionValue("--test-mode", false);
-
-            Transport transport = createTransport(httpPort, stdio, expectedAudience, resourceMetadataUrl, authServers, testMode, verbose);
+            Transport transport = TransportFactory.createTransport(httpPort, stdio, expectedAudience, resourceMetadataUrl, authServers, testMode, verbose);
             String instructions = instructionsFile == null ? null : Files.readString(instructionsFile);
 
             try (McpServer server = new McpServer(transport, instructions)) {
@@ -82,46 +78,4 @@ public final class ServerCommand {
         }
     }
 
-    private static Transport createTransport(Integer httpPort, boolean stdio, String expectedAudience,
-                                             String resourceMetadataUrl, List<String> authServers, boolean testMode,
-                                             boolean verbose) throws Exception {
-        TransportType defType = parseTransport(McpConfiguration.current().transportType());
-        TransportType type = httpPort == null ? defType : TransportType.HTTP;
-        int port = httpPort == null ? McpConfiguration.current().port() : httpPort;
-        if (stdio) type = TransportType.STDIO;
-
-        List<String> auth = authServers;
-        if (!testMode) {
-            if (auth == null || auth.isEmpty()) throw new IllegalArgumentException("--auth-server is required");
-        } else {
-            auth = List.of();
-        }
-
-        return switch (type) {
-            case STDIO -> new StdioTransport(System.in, System.out);
-            case HTTP -> {
-                AuthorizationManager authManager = null;
-                if (expectedAudience != null && !expectedAudience.isBlank()) {
-                    String secretEnv = System.getenv("MCP_JWT_SECRET");
-                    JwtTokenValidator tokenValidator = secretEnv == null || secretEnv.isBlank()
-                            ? new JwtTokenValidator(expectedAudience)
-                            : new JwtTokenValidator(expectedAudience, secretEnv.getBytes(StandardCharsets.UTF_8));
-                    authManager = new AuthorizationManager(List.of(new BearerTokenAuthorizationStrategy(tokenValidator)));
-                }
-                StreamableHttpServerTransport ht = new StreamableHttpServerTransport(
-                        port, Set.copyOf(McpConfiguration.current().allowedOrigins()), authManager,
-                        resourceMetadataUrl, auth);
-                if (verbose) System.err.println("Listening on http://127.0.0.1:" + ht.port());
-                yield ht;
-            }
-        };
-    }
-
-    private static TransportType parseTransport(String name) {
-        return switch (name) {
-            case "stdio" -> TransportType.STDIO;
-            case "http" -> TransportType.HTTP;
-            default -> throw new IllegalArgumentException("unknown transport: " + name);
-        };
-    }
 }
