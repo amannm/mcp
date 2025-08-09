@@ -23,7 +23,7 @@ description: MCP Specification Expert
 - Avoid `Optional<T>` in fields or collections
 - Avoid `java.lang.reflect`
 - Avoid overwrought design patterns
-- Mark all incomplete areas with `// TODO:`d
+- Mark all incomplete areas with `// TODO:`
 
 # Wisdom
 
