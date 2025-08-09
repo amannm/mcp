@@ -9,15 +9,30 @@ public class ProtocolLifecycle {
     private final Set<ServerCapability> serverCapabilities;
     private final ServerInfo serverInfo;
     private final String instructions;
-    private String protocolVersion = Protocol.LATEST_VERSION;
+    private final List<String> supportedVersions;
+    private String protocolVersion;
     private LifecycleState state = LifecycleState.INIT;
     private Set<ClientCapability> clientCapabilities = Set.of();
     private ClientFeatures clientFeatures = ClientFeatures.EMPTY;
 
-    public ProtocolLifecycle(Set<ServerCapability> serverCapabilities, ServerInfo serverInfo, String instructions) {
+    public ProtocolLifecycle(Set<ServerCapability> serverCapabilities,
+                             ServerInfo serverInfo,
+                             String instructions) {
+        this(serverCapabilities, serverInfo, instructions,
+                Set.of(Protocol.LATEST_VERSION, Protocol.PREVIOUS_VERSION));
+    }
+
+    public ProtocolLifecycle(Set<ServerCapability> serverCapabilities,
+                             ServerInfo serverInfo,
+                             String instructions,
+                             Set<String> supportedVersions) {
         this.serverCapabilities = EnumSet.copyOf(serverCapabilities);
         this.serverInfo = serverInfo;
         this.instructions = instructions;
+        List<String> versions = new ArrayList<>(supportedVersions);
+        versions.sort(Comparator.reverseOrder());
+        this.supportedVersions = List.copyOf(versions);
+        this.protocolVersion = this.supportedVersions.getFirst();
     }
 
     public InitializeResponse initialize(InitializeRequest request) {
@@ -28,17 +43,10 @@ public class ProtocolLifecycle {
                 : EnumSet.copyOf(requested);
         clientFeatures = request.features() == null ? ClientFeatures.EMPTY : request.features();
 
-        if (request.protocolVersion() != null) {
-            if (request.protocolVersion().equals(Protocol.LATEST_VERSION) ||
-                    request.protocolVersion().equals(Protocol.PREVIOUS_VERSION)) {
-                protocolVersion = request.protocolVersion();
-            } else {
-                throw new UnsupportedProtocolVersionException(
-                        request.protocolVersion(),
-                        Protocol.LATEST_VERSION + " or " + Protocol.PREVIOUS_VERSION);
-            }
+        if (request.protocolVersion() != null && supportedVersions.contains(request.protocolVersion())) {
+            protocolVersion = request.protocolVersion();
         } else {
-            protocolVersion = Protocol.LATEST_VERSION;
+            protocolVersion = supportedVersions.getFirst();
         }
 
         return new InitializeResponse(
