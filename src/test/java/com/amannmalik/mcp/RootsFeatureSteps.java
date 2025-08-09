@@ -6,6 +6,7 @@ import com.amannmalik.mcp.config.McpConfiguration;
 import com.amannmalik.mcp.roots.*;
 import com.amannmalik.mcp.sampling.*;
 import com.amannmalik.mcp.elicitation.*;
+import com.amannmalik.mcp.util.RootChecker;
 import io.cucumber.datatable.DataTable;
 import io.cucumber.java.After;
 import io.cucumber.java.en.*;
@@ -112,10 +113,7 @@ public class RootsFeatureSteps {
         client.connect();
         Thread.sleep(500);
         
-        // The server needs a RootsManager to properly request roots from the client
-        // For this test, we'll simulate what the server would do by directly getting the roots
-        // from the client's rootsProvider, which now has the configured roots
-        returnedRoots = rootsProvider.list(null).items();
+        returnedRoots = server.listRoots();
         rootListRequested = true;
     }
 
@@ -144,8 +142,7 @@ public class RootsFeatureSteps {
     @When("the server attempts to access {string}")
     public void theServerAttemptsToAccess(String path) {
         this.accessPath = path;
-        // Use test-friendly path checking that doesn't require real filesystem paths
-        boolean withinRoots = testWithinRoots(path, returnedRoots);
+        boolean withinRoots = RootChecker.withinRoots(path, returnedRoots);
         boolean securityAllowed = securityManager.checkAccess(path);
         
         if (withinRoots && securityAllowed) {
@@ -197,7 +194,11 @@ public class RootsFeatureSteps {
 
     @When("server refreshes root list")
     public void serverRefreshesRootList() {
-        returnedRoots = rootsProvider.list(null).items();
+        try {
+            returnedRoots = server.listRoots();
+        } catch (Exception e) {
+            fail(e);
+        }
     }
 
     @Then("updated roots are returned")
@@ -236,12 +237,4 @@ public class RootsFeatureSteps {
         );
     }
 
-    private boolean testWithinRoots(String targetPath, List<Root> roots) {
-        if (targetPath == null || roots == null || roots.isEmpty()) {
-            return false;
-        }
-        return roots.stream()
-                .map(Root::uri)
-                .anyMatch(rootUri -> targetPath.startsWith(rootUri));
-    }
 }
