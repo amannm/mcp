@@ -19,18 +19,19 @@ import jakarta.json.JsonObject;
 import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 public final class McpHost implements AutoCloseable {
     private final Map<String, McpClient> clients = new ConcurrentHashMap<>();
-    private final SecurityPolicy policy;
+    private final Predicate<McpClient> policy;
     private final ConsentManager consents;
     private final Principal principal;
     private final ToolAccessController toolAccess;
     private final PrivacyBoundaryEnforcer privacyBoundary;
     private final SamplingAccessController samplingAccess;
 
-    public McpHost(SecurityPolicy policy, Principal principal) {
+    public McpHost(Predicate<McpClient> policy, Principal principal) {
         this.policy = policy;
         this.principal = principal;
         this.consents = new ConsentManager();
@@ -47,7 +48,7 @@ public final class McpHost implements AutoCloseable {
     }
 
     public static McpHost forCli(Map<String, String> clientSpecs, boolean verbose) throws IOException {
-        SecurityPolicy policy = c -> true;
+        Predicate<McpClient> policy = c -> true;
         Principal principal = new Principal(McpConfiguration.current().hostPrincipal(), Set.of());
         McpHost host = new McpHost(policy, principal);
         for (var entry : clientSpecs.entrySet()) {
@@ -87,7 +88,7 @@ public final class McpHost implements AutoCloseable {
     }
 
     public void register(String id, McpClient client) {
-        if (!policy.allow(client)) {
+        if (!policy.test(client)) {
             throw new SecurityException("Client not authorized: " + client.info().name());
         }
         consents.requireConsent(principal, client.info().name());

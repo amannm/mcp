@@ -2,7 +2,7 @@ package com.amannmalik.mcp.core;
 
 import java.util.Optional;
 
-public enum NotificationMethod implements WireMethod {
+enum NotificationMethod implements WireMethod {
     INITIALIZED("notifications/initialized"),
     CANCELLED("notifications/cancelled"),
     PROGRESS("notifications/progress"),

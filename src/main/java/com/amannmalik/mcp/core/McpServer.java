@@ -7,7 +7,6 @@ import com.amannmalik.mcp.elicitation.*;
 import com.amannmalik.mcp.jsonrpc.*;
 import com.amannmalik.mcp.logging.*;
 import com.amannmalik.mcp.prompts.*;
-import com.amannmalik.mcp.resources.ResourceFeature;
 import com.amannmalik.mcp.resources.ResourceProvider;
 import com.amannmalik.mcp.roots.RootsManager;
 import com.amannmalik.mcp.sampling.*;

@@ -1,6 +1,6 @@
 package com.amannmalik.mcp.core;
 
-public enum ServerCapability {
+enum ServerCapability {
     PROMPTS,
     RESOURCES,
     TOOLS,

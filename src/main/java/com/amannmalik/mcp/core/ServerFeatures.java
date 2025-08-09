@@ -1,6 +1,6 @@
 package com.amannmalik.mcp.core;
 
-public record ServerFeatures(
+record ServerFeatures(
         boolean resourcesSubscribe,
         boolean resourcesListChanged,
         boolean toolsListChanged,

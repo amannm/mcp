@@ -1,6 +1,5 @@
-package com.amannmalik.mcp.util;
+package com.amannmalik.mcp.core;
 
-import com.amannmalik.mcp.core.JsonCodec;
 import com.amannmalik.mcp.validation.ValidationUtil;
 import jakarta.json.*;
 

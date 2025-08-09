@@ -1,6 +1,6 @@
 package com.amannmalik.mcp.core;
 
-public final class TransportHeaders {
+final class TransportHeaders {
     private TransportHeaders() {
     }
 
