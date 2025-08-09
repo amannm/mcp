@@ -2,7 +2,6 @@ package com.amannmalik.mcp;
 
 import com.amannmalik.mcp.annotations.Annotations;
 import com.amannmalik.mcp.completion.*;
-import com.amannmalik.mcp.config.McpConfiguration;
 import com.amannmalik.mcp.content.ContentBlock;
 import com.amannmalik.mcp.host.PrivacyBoundaryEnforcer;
 import com.amannmalik.mcp.prompts.*;
@@ -15,23 +14,26 @@ import java.time.Instant;
 import java.util.*;
 
 public final class Locator {
-    private static final McpComponents COMPONENTS = init();
+    private static final ResourceProvider RESOURCES;
+    private static final ToolProvider TOOLS;
+    private static final PromptProvider PROMPTS;
+    private static final CompletionProvider COMPLETIONS;
+    private static final SamplingProvider SAMPLING;
+    private static final ToolAccessPolicy TOOL_ACCESS = ToolAccessPolicy.PERMISSIVE;
+    private static final SamplingAccessPolicy SAMPLING_ACCESS = SamplingAccessPolicy.PERMISSIVE;
 
-    private Locator() {
-    }
-
-    private static McpComponents init() {
+    static {
         Annotations ann = new Annotations(Set.of(Role.USER), 0.5, Instant.parse("2024-01-01T00:00:00Z"));
         Resource r0 = new Resource("test://example", "example", null, null, "text/plain", 5L, ann, null);
         Resource r1 = new Resource("test://example1", "example1", null, null, "text/plain", 5L, ann, null);
         Resource r2 = new Resource("test://example2", "example2", null, null, "text/plain", 5L, ann, null);
-        Map<String, ResourceBlock> c = Map.of(
+        Map<String, ResourceBlock> content = Map.of(
                 r0.uri(), new ResourceBlock.Text(r0.uri(), "text/plain", "hello", null),
                 r1.uri(), new ResourceBlock.Text(r1.uri(), "text/plain", "hello", null),
                 r2.uri(), new ResourceBlock.Text(r2.uri(), "text/plain", "hello", null)
         );
-        ResourceTemplate t = new ResourceTemplate("test://template", "example_template", null, null, "text/plain", null, null);
-        ResourceProvider res = new InMemoryResourceProvider(List.of(r0), c, List.of(t));
+        ResourceTemplate template = new ResourceTemplate("test://template", "example_template", null, null, "text/plain", null, null);
+        RESOURCES = new InMemoryResourceProvider(List.of(r0), content, List.of(template));
 
         var schema = Json.createObjectBuilder().add("type", "object").build();
         var outSchema = Json.createObjectBuilder()
@@ -51,7 +53,7 @@ public final class Locator {
                 .build();
         Tool eliciting = new Tool("echo_tool", "Echo Tool", null, eschema, null, null, null);
         Tool slow = new Tool("slow_tool", "Slow Tool", null, schema, null, null, null);
-        ToolProvider tp = new InMemoryToolProvider(
+        TOOLS = new InMemoryToolProvider(
                 List.of(tool, errorTool, eliciting, slow),
                 Map.of(
                         "test_tool", a -> new ToolResult(
@@ -94,55 +96,49 @@ public final class Locator {
                         }
                 ));
 
-        InMemoryPromptProvider p = new InMemoryPromptProvider();
+        InMemoryPromptProvider promptProvider = new InMemoryPromptProvider();
         PromptArgument arg = new PromptArgument("test_arg", null, null, true, null);
         Prompt prompt = new Prompt("test_prompt", "Test Prompt", null, List.of(arg), null);
         PromptMessageTemplate msg = new PromptMessageTemplate(Role.USER, new ContentBlock.Text("hello", null, null));
-        p.add(new PromptTemplate(prompt, List.of(msg)));
+        promptProvider.add(new PromptTemplate(prompt, List.of(msg)));
+        PROMPTS = promptProvider;
 
-        InMemoryCompletionProvider cp = new InMemoryCompletionProvider();
-        cp.add(new CompleteRequest.Ref.PromptRef("test_prompt", null, null), "test_arg", Map.of(), List.of("test_completion"));
+        InMemoryCompletionProvider completionProvider = new InMemoryCompletionProvider();
+        completionProvider.add(new CompleteRequest.Ref.PromptRef("test_prompt", null, null), "test_arg", Map.of(), List.of("test_completion"));
+        COMPLETIONS = completionProvider;
 
-        SamplingProvider sp = new InteractiveSamplingProvider(true);
+        SAMPLING = new InteractiveSamplingProvider(true);
+    }
 
-        return McpComponents.builder()
-                .withResources(res)
-                .withTools(tp)
-                .withPrompts(p)
-                .withCompletions(cp)
-                .withSampling(sp)
-                .withToolAccess(ToolAccessPolicy.PERMISSIVE)
-                .withSamplingAccess(SamplingAccessPolicy.PERMISSIVE)
-                .withPrivacyBoundary(privacyBoundary(McpConfiguration.current().defaultBoundary()))
-                .build();
+    private Locator() {
     }
 
     public static ResourceProvider resources() {
-        return COMPONENTS.resources();
+        return RESOURCES;
     }
 
     public static ToolProvider tools() {
-        return COMPONENTS.tools();
+        return TOOLS;
     }
 
     public static PromptProvider prompts() {
-        return COMPONENTS.prompts();
+        return PROMPTS;
     }
 
     public static CompletionProvider completions() {
-        return COMPONENTS.completions();
+        return COMPLETIONS;
     }
 
     public static SamplingProvider sampling() {
-        return COMPONENTS.sampling();
+        return SAMPLING;
     }
 
     public static ToolAccessPolicy toolAccess() {
-        return COMPONENTS.toolAccess();
+        return TOOL_ACCESS;
     }
 
     public static SamplingAccessPolicy samplingAccess() {
-        return COMPONENTS.samplingAccess();
+        return SAMPLING_ACCESS;
     }
 
     public static ResourceAccessController privacyBoundary(String principalId) {
