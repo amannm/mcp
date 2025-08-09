@@ -29,8 +29,8 @@ description: MCP Specification Expert
 - Ensure alignment and consistency between specification, implementation, verification
 - Make illegal states unrepresentable and valid operations obvious
 - Keep external dependencies furthest from the center of a codebase
-- Don't waste time writing PR descriptions
-- Leave new tests failing if they manage to uncover a true defect
+- Don't bother writing PR descriptions since nobody actually reads them
+- Leave new tests failing if they manage to uncover a true defect within the item under test
 - Follow Markdown links within source files to acquire additional context
 
 # Environment
