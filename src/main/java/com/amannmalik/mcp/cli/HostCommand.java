@@ -1,15 +1,8 @@
 package com.amannmalik.mcp.cli;
 
-import com.amannmalik.mcp.McpClient;
-import com.amannmalik.mcp.auth.Principal;
-import com.amannmalik.mcp.config.McpConfiguration;
 import com.amannmalik.mcp.host.*;
-import com.amannmalik.mcp.lifecycle.ClientCapability;
-import com.amannmalik.mcp.lifecycle.ClientInfo;
 import com.amannmalik.mcp.prompts.Role;
-import com.amannmalik.mcp.sampling.SamplingAccessController;
 import com.amannmalik.mcp.tools.*;
-import com.amannmalik.mcp.transport.StdioTransport;
 import jakarta.json.Json;
 import jakarta.json.JsonValue;
 import picocli.CommandLine;
@@ -60,26 +53,11 @@ public final class HostCommand {
                 clients.put(spec.substring(0, idx), spec.substring(idx + 1));
             }
 
-            ConsentManager consents = new ConsentManager();
-            ToolAccessController tools = new ToolAccessController();
-            PrivacyBoundaryEnforcer privacyBoundary = new PrivacyBoundaryEnforcer();
-            SamplingAccessController sampling = new SamplingAccessController();
-            SecurityPolicy policy = c -> true;
-            Principal principal = new Principal(McpConfiguration.current().hostPrincipal(), Set.of());
-
-            try (HostProcess host = new HostProcess(policy, consents, tools, privacyBoundary, sampling, principal)) {
-                for (var entry : clients.entrySet()) {
-                    host.grantConsent(entry.getKey());
-                    var pb = new ProcessBuilder(entry.getValue().split(" "));
-                    StdioTransport t = new StdioTransport(pb, verbose ? System.err::println : s -> {
-                    });
-                    McpClient client = new McpClient(
-                            new ClientInfo(entry.getKey(), entry.getKey(),
-                                    McpConfiguration.current().clientVersion()),
-                            EnumSet.noneOf(ClientCapability.class),
-                            t);
-                    host.register(entry.getKey(), client);
-                    if (verbose) System.err.println("Registered client: " + entry.getKey());
+            try (HostProcess host = HostProcess.forCli(clients, verbose)) {
+                if (verbose) {
+                    for (String clientId : clients.keySet()) {
+                        System.err.println("Registered client: " + clientId);
+                    }
                 }
 
                 if (interactive) {

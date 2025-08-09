@@ -72,47 +72,51 @@ public final class ServerCommand {
             List<String> authServers = parseResult.matchedOptionValue("--auth-server", Collections.emptyList());
             boolean testMode = parseResult.matchedOptionValue("--test-mode", false);
 
-            TransportType defType = parseTransport(McpConfiguration.current().transportType());
-            TransportType type = httpPort == null ? defType : TransportType.HTTP;
-            int port = httpPort == null ? McpConfiguration.current().port() : httpPort;
-            if (stdio) type = TransportType.STDIO;
-            List<String> auth = authServers;
-            if (!testMode) {
-                if (auth == null || auth.isEmpty()) throw new IllegalArgumentException("--auth-server is required");
-            } else {
-                auth = List.of();
-            }
-
-            Transport t;
-            switch (type) {
-                case STDIO -> t = new StdioTransport(System.in, System.out);
-                case HTTP -> {
-                    AuthorizationManager authManager = null;
-                    if (expectedAudience != null && !expectedAudience.isBlank()) {
-                        String secretEnv = System.getenv("MCP_JWT_SECRET");
-                        JwtTokenValidator tokenValidator = secretEnv == null || secretEnv.isBlank()
-                                ? new JwtTokenValidator(expectedAudience)
-                                : new JwtTokenValidator(expectedAudience, secretEnv.getBytes(StandardCharsets.UTF_8));
-                        authManager = new AuthorizationManager(List.of(new BearerTokenAuthorizationStrategy(tokenValidator)));
-                    }
-                    StreamableHttpTransport ht = new StreamableHttpTransport(
-                            port, Set.copyOf(McpConfiguration.current().allowedOrigins()), authManager,
-                            resourceMetadataUrl, auth);
-                    if (verbose) System.err.println("Listening on http://127.0.0.1:" + ht.port());
-                    t = ht;
-                }
-                default -> throw new IllegalStateException();
-            }
-
+            Transport transport = createTransport(httpPort, stdio, expectedAudience, resourceMetadataUrl, authServers, testMode, verbose);
             String instructions = instructionsFile == null ? null : Files.readString(instructionsFile);
 
-            try (McpServer server = new McpServer(t, instructions)) {
+            try (McpServer server = new McpServer(transport, instructions)) {
                 server.serve();
             }
             return 0;
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
+    }
+
+    private static Transport createTransport(Integer httpPort, boolean stdio, String expectedAudience,
+                                           String resourceMetadataUrl, List<String> authServers, boolean testMode,
+                                           boolean verbose) throws Exception {
+        TransportType defType = parseTransport(McpConfiguration.current().transportType());
+        TransportType type = httpPort == null ? defType : TransportType.HTTP;
+        int port = httpPort == null ? McpConfiguration.current().port() : httpPort;
+        if (stdio) type = TransportType.STDIO;
+        
+        List<String> auth = authServers;
+        if (!testMode) {
+            if (auth == null || auth.isEmpty()) throw new IllegalArgumentException("--auth-server is required");
+        } else {
+            auth = List.of();
+        }
+
+        return switch (type) {
+            case STDIO -> new StdioTransport(System.in, System.out);
+            case HTTP -> {
+                AuthorizationManager authManager = null;
+                if (expectedAudience != null && !expectedAudience.isBlank()) {
+                    String secretEnv = System.getenv("MCP_JWT_SECRET");
+                    JwtTokenValidator tokenValidator = secretEnv == null || secretEnv.isBlank()
+                            ? new JwtTokenValidator(expectedAudience)
+                            : new JwtTokenValidator(expectedAudience, secretEnv.getBytes(StandardCharsets.UTF_8));
+                    authManager = new AuthorizationManager(List.of(new BearerTokenAuthorizationStrategy(tokenValidator)));
+                }
+                StreamableHttpTransport ht = new StreamableHttpTransport(
+                        port, Set.copyOf(McpConfiguration.current().allowedOrigins()), authManager,
+                        resourceMetadataUrl, auth);
+                if (verbose) System.err.println("Listening on http://127.0.0.1:" + ht.port());
+                yield ht;
+            }
+        };
     }
 
     private static TransportType parseTransport(String name) {

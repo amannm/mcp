@@ -1,24 +1,13 @@
 package com.amannmalik.mcp.cli;
 
 import com.amannmalik.mcp.McpClient;
-import com.amannmalik.mcp.config.McpConfiguration;
-import com.amannmalik.mcp.lifecycle.ClientCapability;
-import com.amannmalik.mcp.lifecycle.ClientInfo;
 import com.amannmalik.mcp.logging.LoggingLevel;
-import com.amannmalik.mcp.logging.LoggingMessageNotification;
-import com.amannmalik.mcp.roots.InMemoryRootsProvider;
-import com.amannmalik.mcp.roots.Root;
-import com.amannmalik.mcp.sampling.InteractiveSamplingProvider;
-import com.amannmalik.mcp.sampling.SamplingProvider;
-import com.amannmalik.mcp.transport.StdioTransport;
 import picocli.CommandLine;
 import picocli.CommandLine.Model.CommandSpec;
 import picocli.CommandLine.Model.OptionSpec;
 import picocli.CommandLine.ParseResult;
 
 import java.io.IOException;
-import java.util.EnumSet;
-import java.util.List;
 
 /// - [Overview](specification/2025-06-18/index.mdx)
 /// - [Client Features](specification/2025-06-18/client/index.mdx)
@@ -48,42 +37,7 @@ public final class ClientCommand {
 
             if (command == null) throw new IllegalArgumentException("command required");
 
-            StdioTransport transport = new StdioTransport(new ProcessBuilder(command.split(" ")),
-                    verbose ? System.err::println : s -> {
-                    });
-            SamplingProvider samplingProvider = new InteractiveSamplingProvider(false);
-
-            String currentDir = System.getProperty("user.dir");
-            InMemoryRootsProvider rootsProvider = new InMemoryRootsProvider(
-                    List.of(new Root("file://" + currentDir, "Current Directory", null)));
-
-            McpConfiguration cc = McpConfiguration.current();
-            ClientInfo info = new ClientInfo(
-                    cc.clientName(),
-                    cc.clientDisplayName(),
-                    cc.clientVersion());
-            EnumSet<ClientCapability> caps = cc.clientCapabilities().isEmpty()
-                    ? EnumSet.noneOf(ClientCapability.class)
-                    : cc.clientCapabilities().stream()
-                    .map(ClientCapability::valueOf)
-                    .collect(() -> EnumSet.noneOf(ClientCapability.class), EnumSet::add, EnumSet::addAll);
-
-            McpClient.McpClientListener listener = verbose ? new McpClient.McpClientListener() {
-                @Override
-                public void onMessage(LoggingMessageNotification notification) {
-                    String logger = notification.logger() == null ? "" : ":" + notification.logger();
-                    System.err.println(notification.level().name().toLowerCase() + logger + " " + notification.data());
-                }
-            } : null;
-
-            McpClient client = new McpClient(
-                    info,
-                    caps,
-                    transport,
-                    samplingProvider,
-                    rootsProvider,
-                    null,
-                    listener);
+            McpClient client = McpClient.forCli(command, verbose);
             client.connect();
             if (verbose) {
                 try {

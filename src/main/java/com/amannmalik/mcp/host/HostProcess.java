@@ -8,6 +8,7 @@ import com.amannmalik.mcp.lifecycle.*;
 import com.amannmalik.mcp.prompts.Role;
 import com.amannmalik.mcp.sampling.SamplingAccessController;
 import com.amannmalik.mcp.tools.*;
+import com.amannmalik.mcp.transport.StdioTransport;
 import com.amannmalik.mcp.wire.RequestMethod;
 import jakarta.json.JsonObject;
 
@@ -76,18 +77,33 @@ public final class HostProcess implements AutoCloseable {
         return client;
     }
 
-    public HostProcess(SecurityPolicy policy,
-                       ConsentManager consents,
-                       ToolAccessController toolAccess,
-                       PrivacyBoundaryEnforcer privacyBoundary,
-                       SamplingAccessController samplingAccess,
-                       Principal principal) {
+    public HostProcess(SecurityPolicy policy, Principal principal) {
         this.policy = policy;
-        this.consents = consents;
-        this.toolAccess = toolAccess;
-        this.privacyBoundary = privacyBoundary;
-        this.samplingAccess = samplingAccess;
         this.principal = principal;
+        this.consents = new ConsentManager();
+        this.toolAccess = new ToolAccessController();
+        this.privacyBoundary = new PrivacyBoundaryEnforcer();
+        this.samplingAccess = new SamplingAccessController();
+    }
+
+    public static HostProcess forCli(Map<String, String> clientSpecs, boolean verbose) throws IOException {
+        SecurityPolicy policy = c -> true;
+        Principal principal = new Principal(McpConfiguration.current().hostPrincipal(), Set.of());
+        
+        HostProcess host = new HostProcess(policy, principal);
+        
+        for (var entry : clientSpecs.entrySet()) {
+            host.grantConsent(entry.getKey());
+            var pb = new ProcessBuilder(entry.getValue().split(" "));
+            StdioTransport transport = new StdioTransport(pb, verbose ? System.err::println : s -> {});
+            McpClient client = new McpClient(
+                    new ClientInfo(entry.getKey(), entry.getKey(), McpConfiguration.current().clientVersion()),
+                    EnumSet.noneOf(ClientCapability.class),
+                    transport);
+            host.register(entry.getKey(), client);
+        }
+        
+        return host;
     }
 
     public void register(String id, McpClient client) throws IOException {

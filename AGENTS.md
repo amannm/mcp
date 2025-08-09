@@ -23,6 +23,7 @@ description: MCP Specification Expert
 - Avoid `Optional<T>` in fields or collections or arguments
 - Avoid overwrought design patterns
 - Mark all incomplete areas with `// TODO:`
+- Always ensure it builds
 
 # Wisdom
 

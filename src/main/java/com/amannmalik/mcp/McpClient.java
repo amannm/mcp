@@ -123,6 +123,33 @@ public final class McpClient extends JsonRpcEndpoint implements AutoCloseable {
         processor.registerNotification(NotificationMethod.PROMPTS_LIST_CHANGED.method(), n -> listener.onPromptsListChanged());
     }
 
+    public static McpClient forCli(String command, boolean verbose) throws IOException {
+        StdioTransport transport = new StdioTransport(new ProcessBuilder(command.split(" ")),
+                verbose ? System.err::println : s -> {});
+        SamplingProvider samplingProvider = new InteractiveSamplingProvider(false);
+        String currentDir = System.getProperty("user.dir");
+        InMemoryRootsProvider rootsProvider = new InMemoryRootsProvider(
+                List.of(new Root("file://" + currentDir, "Current Directory", null)));
+        
+        McpConfiguration cc = McpConfiguration.current();
+        ClientInfo info = new ClientInfo(cc.clientName(), cc.clientDisplayName(), cc.clientVersion());
+        EnumSet<ClientCapability> caps = cc.clientCapabilities().isEmpty()
+                ? EnumSet.noneOf(ClientCapability.class)
+                : cc.clientCapabilities().stream()
+                .map(ClientCapability::valueOf)
+                .collect(() -> EnumSet.noneOf(ClientCapability.class), EnumSet::add, EnumSet::addAll);
+
+        McpClientListener listener = verbose ? new McpClientListener() {
+            @Override
+            public void onMessage(LoggingMessageNotification notification) {
+                String logger = notification.logger() == null ? "" : ":" + notification.logger();
+                System.err.println(notification.level().name().toLowerCase() + logger + " " + notification.data());
+            }
+        } : null;
+
+        return new McpClient(info, caps, transport, samplingProvider, rootsProvider, null, listener);
+    }
+
     public ClientInfo info() {
         return info;
     }
