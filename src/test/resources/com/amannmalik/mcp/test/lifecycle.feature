@@ -48,7 +48,7 @@ Feature: MCP Lifecycle Conformance
     When initialization is performed
     Then both parties should agree on protocol version "2025-06-18"
     And initialization should complete successfully
-#
+
 #  @core @version-negotiation
 #  Scenario: Protocol version negotiation with server downgrade
 #    Given a McpServer supporting protocol versions:
@@ -166,34 +166,36 @@ Feature: MCP Lifecycle Conformance
 #    And notifications must not have an "id" field
 #    And method names must follow specification format
 #
-#  @validation @initialization
-#  Scenario: Initialize request complete field validation
-#    When the McpHost sends an initialize request
-#    Then the request must contain exactly:
-#      | required_field              | type   |
-#      | params.protocolVersion      | string |
-#      | params.capabilities         | object |
-#      | params.clientInfo           | object |
-#      | params.clientInfo.name      | string |
-#    And params.clientInfo may optionally contain:
-#      | optional_field              | type   |
-#      | params.clientInfo.title     | string |
-#      | params.clientInfo.version   | string |
-#
-#  @validation @initialization
-#  Scenario: Initialize response complete field validation
-#    When the McpServer responds to initialize request
-#    Then the response must contain exactly:
-#      | required_field              | type   |
-#      | result.protocolVersion      | string |
-#      | result.capabilities         | object |
-#      | result.serverInfo           | object |
-#      | result.serverInfo.name      | string |
-#    And result may optionally contain:
-#      | optional_field              | type   |
-#      | result.serverInfo.title     | string |
-#      | result.serverInfo.version   | string |
-#      | result.instructions         | string |
+
+@validation @initialization
+Scenario: Initialize request complete field validation
+  When the McpHost sends an initialize request
+  Then the request must contain exactly:
+    | required_field              | type   |
+    | params.protocolVersion      | string |
+    | params.capabilities         | object |
+    | params.clientInfo           | object |
+    | params.clientInfo.name      | string |
+  And params.clientInfo may optionally contain:
+    | optional_field              | type   |
+    | params.clientInfo.title     | string |
+    | params.clientInfo.version   | string |
+
+@validation @initialization
+Scenario: Initialize response complete field validation
+  When the McpServer responds to initialize request
+  Then the response must contain exactly:
+    | required_field              | type   |
+    | result.protocolVersion      | string |
+    | result.capabilities         | object |
+    | result.serverInfo           | object |
+    | result.serverInfo.name      | string |
+  And result may optionally contain:
+    | optional_field              | type   |
+    | result.serverInfo.title     | string |
+    | result.serverInfo.version   | string |
+    | result.instructions         | string |
+
 #
 #  @transport @stdio @shutdown
 #  Scenario: Graceful shutdown via stdio transport
@@ -205,13 +207,13 @@ Feature: MCP Lifecycle Conformance
 #    And if McpServer doesn't exit within 10 seconds, SIGTERM should be effective
 #    And if still unresponsive after 15 seconds, SIGKILL should terminate it
 #
-#  @transport @stdio @shutdown
-#  Scenario: Server-initiated shutdown via stdio transport
-#    Given an established McpHost-McpServer connection over stdio transport
-#    When the McpServer closes its output stream and exits
-#    Then the McpHost should detect connection termination within 2 seconds
-#    And should handle the disconnection gracefully
-#    And should not attempt to send further messages
+  @transport @stdio @shutdown
+  Scenario: Server-initiated shutdown via stdio transport
+    Given an established McpHost-McpServer connection over stdio transport
+    When the McpServer closes its output stream and exits
+    Then the McpHost should detect connection termination within 2 seconds
+    And should handle the disconnection gracefully
+    And should not attempt to send further messages
 #
 #  @transport @http @shutdown
 #  Scenario: HTTP transport connection termination
@@ -285,14 +287,14 @@ Feature: MCP Lifecycle Conformance
 #    And error message should indicate "Method not found"
 #    And connection should remain stable for valid operations
 #
-#  @operation-phase @version-consistency
-#  Scenario: Protocol version consistency throughout session
-#    Given successful initialization with protocol version "2025-06-18"
-#    When any message is exchanged during operation phase
-#    Then message format should conform exactly to "2025-06-18" specification
-#    And should not use deprecated features from older versions
-#    And should not use preview features from newer versions
-#
+  @operation-phase @version-consistency
+  Scenario: Protocol version consistency throughout session
+    Given successful initialization with protocol version "2025-06-18"
+    When any message is exchanged during operation phase
+    Then message format should conform exactly to "2025-06-18" specification
+    And should not use deprecated features from older versions
+    And should not use preview features from newer versions
+
 #  @transport @http @authorization
 #  Scenario: HTTP transport with JWT authorization lifecycle
 #    Given a McpServer configured with JWT authorization
