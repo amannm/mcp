@@ -73,15 +73,15 @@ public final class ServerCommand {
             Transport transport = TransportFactory.createTransport(httpPort, stdio, expectedAudience, resourceMetadataUrl, authServers, testMode, verbose);
             String instructions = instructionsFile == null ? null : Files.readString(instructionsFile);
            ;
-            try (McpServer server =  new McpServer(ServerDefaults.resources(),
-                    ServerDefaults.tools(),
-                    ServerDefaults.prompts(),
-                    ServerDefaults.completions(),
-                    ServerDefaults.sampling(),
-                    ServerDefaults.privacyBoundary(McpConfiguration.current().defaultBoundary()),
-                    ServerDefaults.toolAccess(),
-                    ServerDefaults.samplingAccess(),
-                    ServerDefaults.principal(),
+            try (McpServer server =  new McpServer(CliDefaults.resources(),
+                    CliDefaults.tools(),
+                    CliDefaults.prompts(),
+                    CliDefaults.completions(),
+                    CliDefaults.sampling(),
+                    CliDefaults.privacyBoundary(McpConfiguration.current().defaultBoundary()),
+                    CliDefaults.toolAccess(),
+                    CliDefaults.samplingAccess(),
+                    CliDefaults.principal(),
                     instructions,
                     transport)) {
                 server.serve();

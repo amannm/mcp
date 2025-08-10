@@ -5,6 +5,7 @@ module mcp.main {
     requires java.net.http;
     requires org.eclipse.jetty.ee10.servlet;
     requires org.eclipse.jetty.server;
+    exports com.amannmalik.mcp.cli;
     exports com.amannmalik.mcp.api;
     exports com.amannmalik.mcp.api.prompt;
     exports com.amannmalik.mcp.api.resource;
