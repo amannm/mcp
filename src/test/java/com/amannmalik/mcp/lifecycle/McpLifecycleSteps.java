@@ -26,6 +26,8 @@ public final class McpLifecycleSteps {
     private long connectMillis;
     private final Set<String> expectedServerCaps = new HashSet<>();
     private final Set<ClientCapability> hostCaps = EnumSet.noneOf(ClientCapability.class);
+    private String serverVersion;
+    private String hostVersion;
 
     @Given("a clean MCP environment")
     public void cleanEnvironment() {
@@ -33,6 +35,8 @@ public final class McpLifecycleSteps {
         connectMillis = 0L;
         expectedServerCaps.clear();
         hostCaps.clear();
+        serverVersion = null;
+        hostVersion = null;
     }
 
     @Given("protocol version {string} is supported")
@@ -129,6 +133,47 @@ public final class McpLifecycleSteps {
     public void noProtocolViolations() {
     }
 
+    @Given("a McpServer supporting protocol version {string}")
+    public void serverSupportsVersion(String version) {
+        serverVersion = version;
+    }
+
+    @Given("a McpHost requesting protocol version {string}")
+    public void hostRequestsVersion(String version) {
+        hostVersion = version;
+    }
+
+    @When("initialization is performed")
+    public void initializationPerformed() throws IOException {
+        PipedInputStream clientIn = new PipedInputStream();
+        PipedOutputStream serverOut = new PipedOutputStream(clientIn);
+        PipedInputStream serverIn = new PipedInputStream();
+        PipedOutputStream clientOut = new PipedOutputStream(serverIn);
+        client = new McpClient(new ClientInfo("TestClient", "Test Client App", "1.0.0"),
+                Set.of(), new StdioTransport(clientIn, clientOut), null, null, null, null);
+        server = new McpServer(new StdioTransport(serverIn, serverOut), null);
+        serverThread = new Thread(() -> {
+            try {
+                server.serve();
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        });
+        serverThread.start();
+        client.connect();
+    }
+
+    @Then("both parties should agree on protocol version {string}")
+    public void bothPartiesAgreeOnVersion(String version) {
+        Assertions.assertEquals(version, serverVersion);
+        Assertions.assertEquals(version, hostVersion);
+        Assertions.assertEquals(version, client.protocolVersion());
+    }
+
+    @Then("initialization should complete successfully")
+    public void initializationCompletes() throws IOException {
+        client.ping();
+    }
     @Given("an established McpHost-McpServer connection over stdio transport")
     public void establishedConnection() throws IOException {
         hostInitiatesConnection();
