@@ -174,6 +174,39 @@ public final class McpLifecycleSteps {
     public void initializationCompletes() throws IOException {
         client.ping();
     }
+    @Given("an established McpHost-McpServer connection over stdio transport")
+    public void establishedConnection() throws IOException {
+        hostInitiatesConnection();
+        client.connect();
+    }
+
+    @When("the McpServer closes its output stream and exits")
+    public void serverClosesOutput() throws IOException {
+        server.close();
+        try {
+            serverThread.join(1_000);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            Assertions.fail("Interrupted");
+        }
+    }
+
+    @Then("the McpHost should detect connection termination within {int} seconds")
+    public void hostDetectsTermination(int seconds) {
+        long start = System.currentTimeMillis();
+        Assertions.assertThrows(IOException.class, () -> client.ping());
+        Assertions.assertTrue(System.currentTimeMillis() - start <= seconds * 1_000L);
+    }
+
+    @Then("should handle the disconnection gracefully")
+    public void handleDisconnectionGracefully() throws IOException {
+        client.close();
+    }
+
+    @Then("should not attempt to send further messages")
+    public void noFurtherMessages() {
+        Assertions.assertThrows(IllegalStateException.class, () -> client.ping());
+    }
 
     @After
     public void tearDown() throws IOException {
