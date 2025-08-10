@@ -1,6 +1,6 @@
 package com.amannmalik.mcp.security;
 
-import com.amannmalik.mcp.api.tools.ToolAccessPolicy;
+import com.amannmalik.mcp.api.ToolAccessPolicy;
 import com.amannmalik.mcp.api.Principal;
 
 public final class ToolAccessController implements ToolAccessPolicy {

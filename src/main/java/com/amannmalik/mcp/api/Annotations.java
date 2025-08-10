@@ -11,7 +11,7 @@ import java.util.Set;
 public record Annotations(Set<Role> audience, Double priority, Instant lastModified) {
     public static final Annotations EMPTY = new Annotations(Set.of(), null, null);
 
-    public static final JsonCodec<Annotations> CODEC = new JsonCodec<>() {
+    static final JsonCodec<Annotations> CODEC = new JsonCodec<>() {
         @Override
         public JsonObject toJson(Annotations ann) {
             if (ann == null || ann.equals(EMPTY)) return JsonValue.EMPTY_JSON_OBJECT;

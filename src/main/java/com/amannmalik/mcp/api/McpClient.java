@@ -1,9 +1,5 @@
 package com.amannmalik.mcp.api;
 
-import com.amannmalik.mcp.api.elicitation.*;
-import com.amannmalik.mcp.api.resource.*;
-import com.amannmalik.mcp.api.roots.RootsProvider;
-import com.amannmalik.mcp.api.sampling.*;
 import com.amannmalik.mcp.config.McpConfiguration;
 import com.amannmalik.mcp.core.*;
 import com.amannmalik.mcp.jsonrpc.*;

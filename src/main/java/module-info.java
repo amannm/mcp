@@ -7,11 +7,4 @@ module mcp.main {
     requires org.eclipse.jetty.server;
     exports com.amannmalik.mcp.cli;
     exports com.amannmalik.mcp.api;
-    exports com.amannmalik.mcp.api.prompt;
-    exports com.amannmalik.mcp.api.resource;
-    exports com.amannmalik.mcp.api.tools;
-    exports com.amannmalik.mcp.api.sampling;
-    exports com.amannmalik.mcp.api.completion;
-    exports com.amannmalik.mcp.api.elicitation;
-    exports com.amannmalik.mcp.api.roots;
 }

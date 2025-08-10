@@ -1,6 +1,6 @@
 package com.amannmalik.mcp.completion;
 
-import com.amannmalik.mcp.api.completion.*;
+import com.amannmalik.mcp.api.*;
 import com.amannmalik.mcp.core.InMemoryProvider;
 import com.amannmalik.mcp.util.StringMetrics;
 import com.amannmalik.mcp.util.ValidationUtil;

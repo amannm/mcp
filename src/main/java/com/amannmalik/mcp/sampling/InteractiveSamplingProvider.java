@@ -1,8 +1,6 @@
 package com.amannmalik.mcp.sampling;
 
-import com.amannmalik.mcp.api.ContentBlock;
-import com.amannmalik.mcp.api.Role;
-import com.amannmalik.mcp.api.sampling.*;
+import com.amannmalik.mcp.api.*;
 import jakarta.json.*;
 
 import java.io.*;

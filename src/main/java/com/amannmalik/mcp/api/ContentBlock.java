@@ -1,7 +1,5 @@
 package com.amannmalik.mcp.api;
 
-import com.amannmalik.mcp.api.resource.Resource;
-import com.amannmalik.mcp.api.resource.ResourceBlock;
 import com.amannmalik.mcp.core.AbstractEntityCodec;
 import com.amannmalik.mcp.sampling.MessageContent;
 import com.amannmalik.mcp.util.Base64Util;
