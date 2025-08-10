@@ -49,18 +49,18 @@ Feature: MCP Lifecycle Conformance
     Then both parties should agree on protocol version "2025-06-18"
     And initialization should complete successfully
 
-#  @core @version-negotiation
-#  Scenario: Protocol version negotiation with server downgrade
-#    Given a McpServer supporting protocol versions:
-#      | version    |
-#      | 2024-11-05 |
-#      | 2025-06-18 |
-#    And a McpHost requesting protocol version "2026-01-01"
-#    When initialization is performed
-#    Then the McpServer should respond with protocol version "2025-06-18"
-#    And the McpHost should accept the downgrade
-#    And initialization should complete successfully
-#
+  @core @version-negotiation
+  Scenario: Protocol version negotiation with server downgrade
+    Given a McpServer supporting protocol versions:
+      | version    |
+      | 2024-11-05 |
+      | 2025-06-18 |
+    And a McpHost requesting protocol version "2026-01-01"
+    When initialization is performed
+    Then the McpServer should respond with protocol version "2025-06-18"
+    And the McpHost should accept the downgrade
+    And initialization should complete successfully
+
 #  @error-handling @version-negotiation
 #  Scenario: Protocol version negotiation failure with incompatible versions
 #    Given a McpServer supporting only protocol version "2024-11-05"
