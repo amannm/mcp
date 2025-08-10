@@ -7,7 +7,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Set;
 
-class TransportFactory {
+public class TransportFactory {
     public static Transport createTransport(Integer httpPort, boolean stdio, String expectedAudience,
                                             String resourceMetadataUrl, List<String> authServers, boolean testMode,
                                             boolean verbose) throws Exception {
