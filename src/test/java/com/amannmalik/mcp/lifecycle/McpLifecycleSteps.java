@@ -42,8 +42,6 @@ public final class McpLifecycleSteps {
 
     private final List<JsonRpcMessage> responses = new ArrayList<>();
 
-    private String serverVersion;
-    private String hostVersion;
     private long shutdownStart;
     private long connectionStart;
     private long requestSent;
@@ -68,8 +66,6 @@ public final class McpLifecycleSteps {
         negotiatedVersion = "";
 
         responses.clear();
-        serverVersion = null;
-        hostVersion = null;
         connectionStart = 0L;
         requestSent = 0L;
         responseReceived = 0L;
