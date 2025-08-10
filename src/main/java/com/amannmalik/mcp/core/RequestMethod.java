@@ -2,7 +2,7 @@ package com.amannmalik.mcp.core;
 
 import java.util.Optional;
 
-public enum RequestMethod implements WireMethod {
+enum RequestMethod implements WireMethod {
     INITIALIZE("initialize"),
     PING("ping"),
     RESOURCES_LIST("resources/list"),
