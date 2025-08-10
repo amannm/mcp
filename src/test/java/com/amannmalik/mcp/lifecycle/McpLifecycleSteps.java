@@ -38,6 +38,7 @@ public final class McpLifecycleSteps {
 
     private String serverVersion;
     private String hostVersion;
+    private long shutdownStart;
     private long connectionStart;
     private long requestSent;
     private long responseReceived;
@@ -409,6 +410,11 @@ public final class McpLifecycleSteps {
         client.connect();
     }
 
+    @And("normal operations are proceeding")
+    public void normalOperationsAreProceeding() throws IOException {
+        client.ping();
+    }
+
     @When("the McpServer closes its output stream and exits")
     public void serverClosesOutput() throws IOException {
         server.close();
@@ -418,6 +424,72 @@ public final class McpLifecycleSteps {
             Thread.currentThread().interrupt();
             Assertions.fail("Interrupted");
         }
+    }
+
+    @When("the McpHost initiates shutdown by closing input stream to McpServer")
+    public void hostInitiatesShutdownByClosingInputStream() throws IOException {
+        shutdownStart = System.currentTimeMillis();
+        client.close();
+    }
+
+    @Then("the McpServer should detect EOF within {int} seconds")
+    public void serverShouldDetectEofWithinSeconds(int seconds) {
+        try {
+            serverThread.join(seconds * 1_000L);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            Assertions.fail("Interrupted");
+        }
+        Assertions.assertFalse(serverThread.isAlive());
+    }
+
+    @Then("the McpServer should exit gracefully within {int} seconds")
+    public void serverShouldExitGracefullyWithinSeconds(int seconds) {
+        Assertions.assertTrue(System.currentTimeMillis() - shutdownStart <= seconds * 1_000L);
+    }
+
+    @Then("if McpServer doesn't exit within {int} seconds, SIGTERM should be effective")
+    public void sigtermEffectiveWithinSeconds(int seconds) {
+        if (serverThread.isAlive()) {
+            try {
+                serverThread.join(seconds * 1_000L);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                Assertions.fail("Interrupted");
+            }
+            if (serverThread.isAlive()) {
+                serverThread.interrupt();
+                try {
+                    serverThread.join(5_000L);
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                    Assertions.fail("Interrupted");
+                }
+            }
+        }
+        Assertions.assertFalse(serverThread.isAlive());
+    }
+
+    @Then("if still unresponsive after {int} seconds, SIGKILL should terminate it")
+    public void sigkillTerminateWithinSeconds(int seconds) {
+        if (serverThread.isAlive()) {
+            try {
+                serverThread.join(seconds * 1_000L);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                Assertions.fail("Interrupted");
+            }
+            if (serverThread.isAlive()) {
+                serverThread.stop();
+                try {
+                    serverThread.join(5_000L);
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                    Assertions.fail("Interrupted");
+                }
+            }
+        }
+        Assertions.assertFalse(serverThread.isAlive());
     }
 
     @Then("the McpHost should detect connection termination within {int} seconds")
