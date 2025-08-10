@@ -10,7 +10,7 @@ import java.util.List;
 public record ListToolsResult(List<Tool> tools,
                               String nextCursor,
                               JsonObject _meta) {
-     public static final JsonCodec<ListToolsResult> CODEC =
+      static final JsonCodec<ListToolsResult> CODEC =
             AbstractEntityCodec.paginatedResult(
                     "tools",
                     "tool",
@@ -22,5 +22,10 @@ public record ListToolsResult(List<Tool> tools,
     public ListToolsResult {
         tools = Immutable.list(tools);
         ValidationUtil.requireMeta(_meta);
+    }
+
+    @Override
+    public String toString() {
+        return CODEC.toJson(this).toString();
     }
 }

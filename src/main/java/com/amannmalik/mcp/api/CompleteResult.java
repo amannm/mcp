@@ -8,7 +8,7 @@ import jakarta.json.*;
 import java.util.List;
 
 public record CompleteResult(Completion completion, JsonObject _meta) {
-    public static final JsonCodec<CompleteResult> CODEC = new JsonCodec<>() {
+    static final JsonCodec<CompleteResult> CODEC = new JsonCodec<>() {
         @Override
         public JsonObject toJson(CompleteResult res) {
             JsonObjectBuilder b = Json.createObjectBuilder()
@@ -36,7 +36,7 @@ public record CompleteResult(Completion completion, JsonObject _meta) {
     }
 
     public record Completion(List<String> values, Integer total, Boolean hasMore) {
-        public static final JsonCodec<Completion> CODEC = new JsonCodec<>() {
+        static final JsonCodec<Completion> CODEC = new JsonCodec<>() {
             @Override
             public JsonObject toJson(Completion c) {
                 JsonArrayBuilder arr = Json.createArrayBuilder();

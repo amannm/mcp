@@ -11,7 +11,7 @@ public record ProgressNotification(
         Double total,
         String message
 ) {
-    public static final JsonCodec<ProgressNotification> CODEC = new JsonCodec<>() {
+     static final JsonCodec<ProgressNotification> CODEC = new JsonCodec<>() {
         @Override
         public JsonObject toJson(ProgressNotification note) {
             JsonObjectBuilder b = Json.createObjectBuilder();

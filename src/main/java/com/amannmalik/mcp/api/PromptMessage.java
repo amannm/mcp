@@ -7,7 +7,7 @@ import jakarta.json.JsonObject;
 import java.util.Set;
 
 public record PromptMessage(Role role, PromptContent content) {
-    public static final JsonCodec<PromptMessage> CODEC = new AbstractEntityCodec<>() {
+     static final JsonCodec<PromptMessage> CODEC = new AbstractEntityCodec<>() {
         @Override
         public JsonObject toJson(PromptMessage m) {
             return Json.createObjectBuilder()

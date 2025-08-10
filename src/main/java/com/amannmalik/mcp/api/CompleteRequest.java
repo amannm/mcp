@@ -12,7 +12,7 @@ public record CompleteRequest(
         Context context,
         JsonObject _meta
 ) {
-    public static final JsonCodec<CompleteRequest> CODEC = new JsonCodec<>() {
+    static final JsonCodec<CompleteRequest> CODEC = new JsonCodec<>() {
         @Override
         public JsonObject toJson(CompleteRequest req) {
             JsonObjectBuilder b = Json.createObjectBuilder()

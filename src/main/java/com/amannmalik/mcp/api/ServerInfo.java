@@ -5,7 +5,7 @@ import com.amannmalik.mcp.util.ValidationUtil;
 import jakarta.json.*;
 
 public record ServerInfo(String name, String title, String version) {
-    public static final JsonCodec<ServerInfo> CODEC = new AbstractEntityCodec<>() {
+     static final JsonCodec<ServerInfo> CODEC = new AbstractEntityCodec<>() {
         @Override
         public JsonObject toJson(ServerInfo info) {
             JsonObjectBuilder b = Json.createObjectBuilder()

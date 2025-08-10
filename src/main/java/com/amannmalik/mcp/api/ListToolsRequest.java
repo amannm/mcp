@@ -5,7 +5,7 @@ import com.amannmalik.mcp.util.ValidationUtil;
 import jakarta.json.JsonObject;
 
 public record ListToolsRequest(String cursor, JsonObject _meta) {
-     public static final JsonCodec<ListToolsRequest> CODEC =
+      static final JsonCodec<ListToolsRequest> CODEC =
             AbstractEntityCodec.paginatedRequest(
                     ListToolsRequest::cursor,
                     ListToolsRequest::_meta,

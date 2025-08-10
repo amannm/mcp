@@ -1,6 +1,5 @@
-package com.amannmalik.mcp.core;
+package com.amannmalik.mcp.api;
 
-import com.amannmalik.mcp.api.*;
 import com.amannmalik.mcp.jsonrpc.JsonRpcNotification;
 import com.amannmalik.mcp.jsonrpc.RequestId;
 import com.amannmalik.mcp.util.NotificationSender;
@@ -11,7 +10,7 @@ import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
-public final class ProgressManager {
+final class ProgressManager {
     private final Map<ProgressToken, Double> progress = new ConcurrentHashMap<>();
     private final Map<RequestId, ProgressToken> tokens = new ConcurrentHashMap<>();
     private final Set<RequestId> active = ConcurrentHashMap.newKeySet();

@@ -7,7 +7,7 @@ import jakarta.json.*;
 import java.util.Set;
 
 public record LoggingMessageNotification(LoggingLevel level, String logger, JsonValue data) {
-    public static final JsonCodec<LoggingMessageNotification> CODEC = new AbstractEntityCodec<>() {
+     static final JsonCodec<LoggingMessageNotification> CODEC = new AbstractEntityCodec<>() {
         @Override
         public JsonObject toJson(LoggingMessageNotification n) {
             JsonObjectBuilder b = Json.createObjectBuilder()

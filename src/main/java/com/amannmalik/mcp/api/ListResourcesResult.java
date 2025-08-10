@@ -10,7 +10,7 @@ import java.util.List;
 public record ListResourcesResult(List<Resource> resources,
                                   String nextCursor,
                                   JsonObject _meta) {
-    public static final JsonCodec<ListResourcesResult> CODEC =
+     static final JsonCodec<ListResourcesResult> CODEC =
             AbstractEntityCodec.paginatedResult(
                     "resources",
                     "resource",

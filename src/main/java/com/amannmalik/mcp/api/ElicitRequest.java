@@ -7,7 +7,7 @@ import jakarta.json.*;
 import java.util.Set;
 
 public record ElicitRequest(String message, JsonObject requestedSchema, JsonObject _meta) {
-    public static final JsonCodec<ElicitRequest> CODEC = new JsonCodec<>() {
+     static final JsonCodec<ElicitRequest> CODEC = new JsonCodec<>() {
         @Override
         public JsonObject toJson(ElicitRequest req) {
             JsonObjectBuilder b = Json.createObjectBuilder()

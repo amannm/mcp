@@ -138,7 +138,7 @@ public final class HostCommand {
                         } else {
                             String cursor = parts.length > 2 ? parts[2] : null;
                             var page = host.listTools(parts[1], cursor);
-                            System.out.println(ListToolsResult.CODEC.toJson(page));
+                            System.out.println(page);
                         }
                     }
                     case "call-tool" -> {
@@ -149,7 +149,7 @@ public final class HostCommand {
                                     Json.createReader(new StringReader(parts[3])).readObject() :
                                     null;
                             var result = host.callTool(parts[1], parts[2], args);
-                            System.out.println(ToolResult.CODEC.toJson(result));
+                            System.out.println(result);
                         }
                     }
                     case "create-message" -> {

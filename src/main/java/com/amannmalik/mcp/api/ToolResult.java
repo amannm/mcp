@@ -10,7 +10,7 @@ public record ToolResult(JsonArray content,
                          JsonObject structuredContent,
                          Boolean isError,
                          JsonObject _meta) {
-    public static final JsonCodec<ToolResult> CODEC = new AbstractEntityCodec<>() {
+     static final JsonCodec<ToolResult> CODEC = new AbstractEntityCodec<>() {
         @Override
         public JsonObject toJson(ToolResult r) {
             JsonObjectBuilder b = Json.createObjectBuilder()
@@ -56,4 +56,8 @@ public record ToolResult(JsonArray content,
         return b.build();
     }
 
+    @Override
+    public String toString() {
+        return CODEC.toJson(this).toString();
+    }
 }

@@ -9,7 +9,7 @@ import java.util.EnumSet;
 import java.util.Set;
 
 public record Annotations(Set<Role> audience, Double priority, Instant lastModified) {
-    public static final Annotations EMPTY = new Annotations(Set.of(), null, null);
+     static final Annotations EMPTY = new Annotations(Set.of(), null, null);
 
     static final JsonCodec<Annotations> CODEC = new JsonCodec<>() {
         @Override

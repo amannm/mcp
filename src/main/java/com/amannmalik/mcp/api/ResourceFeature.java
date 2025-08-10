@@ -1,6 +1,6 @@
-package com.amannmalik.mcp.core;
+package com.amannmalik.mcp.api;
 
-import com.amannmalik.mcp.api.*;
+import com.amannmalik.mcp.core.LifecycleState;
 import com.amannmalik.mcp.jsonrpc.*;
 import com.amannmalik.mcp.resources.*;
 import com.amannmalik.mcp.roots.RootsManager;

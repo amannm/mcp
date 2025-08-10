@@ -6,7 +6,7 @@ import jakarta.json.*;
 import java.util.*;
 
 public record PromptInstance(String description, List<PromptMessage> messages) {
-    public static final JsonCodec<PromptInstance> CODEC = new AbstractEntityCodec<>() {
+     static final JsonCodec<PromptInstance> CODEC = new AbstractEntityCodec<>() {
         @Override
         public JsonObject toJson(PromptInstance inst) {
             JsonArrayBuilder msgs = Json.createArrayBuilder();

@@ -14,7 +14,7 @@ public record CreateMessageResponse(
         String stopReason,
         JsonObject _meta
 ) {
-    public static final JsonCodec<CreateMessageResponse> CODEC = new AbstractEntityCodec<>() {
+     static final JsonCodec<CreateMessageResponse> CODEC = new AbstractEntityCodec<>() {
         @Override
         public JsonObject toJson(CreateMessageResponse resp) {
             JsonObjectBuilder b = Json.createObjectBuilder()

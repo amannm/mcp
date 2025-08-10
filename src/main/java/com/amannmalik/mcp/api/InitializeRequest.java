@@ -11,7 +11,7 @@ record InitializeRequest(
         ClientInfo clientInfo,
         ClientFeatures features
 ) {
-    public static final JsonCodec<InitializeRequest> CODEC = new AbstractEntityCodec<>() {
+     static final JsonCodec<InitializeRequest> CODEC = new AbstractEntityCodec<>() {
         @Override
         public JsonObject toJson(InitializeRequest req) {
             JsonObjectBuilder caps = Json.createObjectBuilder();
@@ -64,7 +64,7 @@ record InitializeRequest(
         }
     };
 
-    public InitializeRequest {
+     InitializeRequest {
         if (protocolVersion == null) {
             throw new IllegalArgumentException("protocolVersion must not be null");
         }

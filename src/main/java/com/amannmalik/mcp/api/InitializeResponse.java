@@ -13,7 +13,7 @@ record InitializeResponse(
         String instructions,
         ServerFeatures features
 ) {
-    public static final JsonCodec<InitializeResponse> CODEC = new AbstractEntityCodec<>() {
+     static final JsonCodec<InitializeResponse> CODEC = new AbstractEntityCodec<>() {
         @Override
         public JsonObject toJson(InitializeResponse resp) {
             JsonObjectBuilder server = Json.createObjectBuilder();
