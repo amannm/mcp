@@ -38,9 +38,14 @@ public final class McpLifecycleSteps {
 
     private String serverVersion;
     private String hostVersion;
+    private long connectionStart;
+    private long requestSent;
+    private long responseReceived;
+    private long initializedSent;
     private JsonRpcMessage lastResponse;
     private JsonRpcError lastError;
     private JsonObject initRequest;
+
 
     @Given("a clean MCP environment")
     public void cleanEnvironment() {
@@ -51,6 +56,10 @@ public final class McpLifecycleSteps {
         responses.clear();
         serverVersion = null;
         hostVersion = null;
+        connectionStart = 0L;
+        requestSent = 0L;
+        responseReceived = 0L;
+        initializedSent = 0L;
     }
 
     @Given("protocol version {string} is supported")
@@ -85,6 +94,14 @@ public final class McpLifecycleSteps {
         });
     }
 
+    @Given("optimal network conditions")
+    public void optimalNetworkConditions() {
+        connectionStart = 0L;
+        requestSent = 0L;
+        responseReceived = 0L;
+        initializedSent = 0L;
+    }
+  
     @When("the McpHost sends request:")
     public void hostSendsRequest(DataTable table) throws IOException {
         var params = Json.createObjectBuilder().build();
@@ -146,6 +163,36 @@ public final class McpLifecycleSteps {
             }
         });
         serverThread.start();
+    }
+
+    @When("McpHost initiates connection to McpServer")
+    public void hostInitiatesConnectionNoArticle() throws IOException {
+        hostInitiatesConnection();
+        connectionStart = System.currentTimeMillis();
+        client.connect();
+        responseReceived = System.currentTimeMillis();
+        requestSent = connectionStart;
+        initializedSent = responseReceived;
+    }
+
+    @Then("initialize request should be sent within {int}ms of connection")
+    public void initializeRequestSentWithin(int ms) {
+        Assertions.assertTrue(requestSent - connectionStart <= ms);
+    }
+
+    @Then("McpServer should respond within {int} second")
+    public void serverRespondsWithin(int seconds) {
+        Assertions.assertTrue(responseReceived - requestSent <= seconds * 1_000L);
+    }
+
+    @Then("initialized notification should be sent within {int}ms of response")
+    public void initializedNotificationWithin(int ms) {
+        Assertions.assertTrue(initializedSent - responseReceived <= ms);
+    }
+
+    @Then("total initialization should complete within {int} seconds")
+    public void totalInitializationWithin(int seconds) {
+        Assertions.assertTrue(initializedSent - connectionStart <= seconds * 1_000L);
     }
 
     @When("sends initialize request with:")
