@@ -6,5 +6,4 @@ open module mcp.test {
     requires io.cucumber.java;
     requires org.junit.jupiter.api;
     requires jakarta.json;
-    exports com.amannmalik.mcp.lifecycle;
 }
