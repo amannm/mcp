@@ -257,7 +257,7 @@ public final class McpLifecycleSteps {
     }
 
     @Then("both parties should agree on protocol version {string}")
-    public void agreeOnVersion(String version) {
+    public void agreeOnVersion(String version) throws IOException {
         PipedInputStream clientIn = new PipedInputStream();
         PipedOutputStream serverOut = new PipedOutputStream(clientIn);
         PipedInputStream serverIn = new PipedInputStream();
