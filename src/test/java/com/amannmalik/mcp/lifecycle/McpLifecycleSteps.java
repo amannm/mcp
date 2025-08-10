@@ -174,6 +174,34 @@ public final class McpLifecycleSteps {
     public void initializationCompletes() throws IOException {
         client.ping();
     }
+
+    @Given("successful initialization with protocol version {string}")
+    public void successfulInitializationWithProtocolVersion(String version) throws IOException {
+        hostInitiatesConnection();
+        client.connect();
+        Assertions.assertEquals(version, client.protocolVersion());
+    }
+
+    @When("any message is exchanged during operation phase")
+    public void anyMessageExchangedDuringOperationPhase() throws IOException {
+        client.ping();
+    }
+
+    @Then("message format should conform exactly to {string} specification")
+    public void messageFormatShouldConformExactlyToSpecification(String version) {
+        Assertions.assertEquals(version, client.protocolVersion());
+    }
+
+    @Then("should not use deprecated features from older versions")
+    public void shouldNotUseDeprecatedFeaturesFromOlderVersions() {
+        // TODO: verify absence of deprecated features
+    }
+
+    @Then("should not use preview features from newer versions")
+    public void shouldNotUsePreviewFeaturesFromNewerVersions() {
+        // TODO: verify absence of preview features
+    }
+
     @Given("an established McpHost-McpServer connection over stdio transport")
     public void establishedConnection() throws IOException {
         hostInitiatesConnection();

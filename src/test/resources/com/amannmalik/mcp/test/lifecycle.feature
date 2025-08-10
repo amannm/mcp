@@ -285,14 +285,14 @@ Feature: MCP Lifecycle Conformance
 #    And error message should indicate "Method not found"
 #    And connection should remain stable for valid operations
 #
-#  @operation-phase @version-consistency
-#  Scenario: Protocol version consistency throughout session
-#    Given successful initialization with protocol version "2025-06-18"
-#    When any message is exchanged during operation phase
-#    Then message format should conform exactly to "2025-06-18" specification
-#    And should not use deprecated features from older versions
-#    And should not use preview features from newer versions
-#
+  @operation-phase @version-consistency
+  Scenario: Protocol version consistency throughout session
+    Given successful initialization with protocol version "2025-06-18"
+    When any message is exchanged during operation phase
+    Then message format should conform exactly to "2025-06-18" specification
+    And should not use deprecated features from older versions
+    And should not use preview features from newer versions
+
 #  @transport @http @authorization
 #  Scenario: HTTP transport with JWT authorization lifecycle
 #    Given a McpServer configured with JWT authorization
