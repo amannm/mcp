@@ -1,7 +1,7 @@
 package com.amannmalik.mcp.api;
 
 import com.amannmalik.mcp.sampling.MessageContent;
-import com.amannmalik.mcp.util.AnnotationsJsonCodec;
+import com.amannmalik.mcp.codec.AnnotationsJsonCodec;
 import com.amannmalik.mcp.util.ValidationUtil;
 import jakarta.json.JsonObject;
 

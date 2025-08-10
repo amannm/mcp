@@ -1,4 +1,4 @@
-package com.amannmalik.mcp.util;
+package com.amannmalik.mcp.codec;
 
 import com.amannmalik.mcp.api.Annotations;
 import com.amannmalik.mcp.api.Role;

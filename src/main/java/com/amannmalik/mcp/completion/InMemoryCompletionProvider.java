@@ -1,6 +1,7 @@
 package com.amannmalik.mcp.completion;
 
 import com.amannmalik.mcp.api.*;
+import com.amannmalik.mcp.codec.ContextJsonCodec;
 import com.amannmalik.mcp.core.InMemoryProvider;
 import com.amannmalik.mcp.util.*;
 import jakarta.json.JsonObject;
