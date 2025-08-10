@@ -34,6 +34,12 @@ public final class McpLifecycleSteps {
     private long connectMillis;
     private final Set<String> expectedServerCaps = new HashSet<>();
     private final Set<ClientCapability> hostCaps = EnumSet.noneOf(ClientCapability.class);
+
+    private final List<String> serverSupportedVersions = new ArrayList<>();
+    private String serverVersion;
+    private String hostVersion;
+    private String negotiatedVersion = "";
+
     private final List<JsonRpcMessage> responses = new ArrayList<>();
 
     private String serverVersion;
@@ -48,12 +54,19 @@ public final class McpLifecycleSteps {
     private JsonObject initRequest;
 
 
+
     @Given("a clean MCP environment")
     public void cleanEnvironment() {
         client = null;
         connectMillis = 0L;
         expectedServerCaps.clear();
         hostCaps.clear();
+
+        serverSupportedVersions.clear();
+        serverVersion = null;
+        hostVersion = null;
+        negotiatedVersion = "";
+
         responses.clear();
         serverVersion = null;
         hostVersion = null;
@@ -61,6 +74,7 @@ public final class McpLifecycleSteps {
         requestSent = 0L;
         responseReceived = 0L;
         initializedSent = 0L;
+
     }
 
     @Given("protocol version {string} is supported")
@@ -237,6 +251,13 @@ public final class McpLifecycleSteps {
     public void noProtocolViolations() {
     }
 
+    @Given("a McpServer supporting protocol versions:")
+    public void serverSupportsVersions(DataTable table) {
+        serverSupportedVersions.clear();
+        serverSupportedVersions.addAll(table.asList());
+        serverSupportedVersions.sort(String::compareTo);
+    }
+
     @Given("a McpServer supporting protocol version {string}")
     public void serverSupportsVersion(String version) {
         Assertions.assertEquals("2025-06-18", version);
@@ -275,6 +296,14 @@ public final class McpLifecycleSteps {
         });
         serverThread.start();
         client.connect();
+        if (!serverSupportedVersions.isEmpty()) {
+            negotiatedVersion = serverSupportedVersions.stream()
+                    .filter(v -> v.compareTo(hostVersion) <= 0)
+                    .max(String::compareTo)
+                    .orElse(serverSupportedVersions.get(serverSupportedVersions.size() - 1));
+        } else {
+            negotiatedVersion = serverVersion;
+        }
     }
 
     @Then("both parties should agree on protocol version {string}")
@@ -282,6 +311,18 @@ public final class McpLifecycleSteps {
         Assertions.assertEquals(version, serverVersion);
         Assertions.assertEquals(version, hostVersion);
         Assertions.assertEquals(version, client.protocolVersion());
+    }
+
+    @Then("the McpServer should respond with protocol version {string}")
+    public void serverRespondsWithProtocolVersion(String version) {
+        Assertions.assertEquals(version, negotiatedVersion);
+        Assertions.assertEquals(version, client.protocolVersion());
+    }
+
+    @Then("the McpHost should accept the downgrade")
+    public void hostShouldAcceptDowngrade() {
+        Assertions.assertNotEquals(hostVersion, negotiatedVersion);
+        Assertions.assertEquals(negotiatedVersion, client.protocolVersion());
     }
 
     @Then("initialization should complete successfully")
