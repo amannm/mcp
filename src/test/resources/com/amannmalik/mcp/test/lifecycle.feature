@@ -180,20 +180,20 @@ Feature: MCP Lifecycle Conformance
 #      | params.clientInfo.title     | string |
 #      | params.clientInfo.version   | string |
 #
-#  @validation @initialization
-#  Scenario: Initialize response complete field validation
-#    When the McpServer responds to initialize request
-#    Then the response must contain exactly:
-#      | required_field              | type   |
-#      | result.protocolVersion      | string |
-#      | result.capabilities         | object |
-#      | result.serverInfo           | object |
-#      | result.serverInfo.name      | string |
-#    And result may optionally contain:
-#      | optional_field              | type   |
-#      | result.serverInfo.title     | string |
-#      | result.serverInfo.version   | string |
-#      | result.instructions         | string |
+  @validation @initialization
+  Scenario: Initialize response complete field validation
+    When the McpServer responds to initialize request
+    Then the response must contain exactly:
+      | required_field              | type   |
+      | result.protocolVersion      | string |
+      | result.capabilities         | object |
+      | result.serverInfo           | object |
+      | result.serverInfo.name      | string |
+    And result may optionally contain:
+      | optional_field              | type   |
+      | result.serverInfo.title     | string |
+      | result.serverInfo.version   | string |
+      | result.instructions         | string |
 #
 #  @transport @stdio @shutdown
 #  Scenario: Graceful shutdown via stdio transport

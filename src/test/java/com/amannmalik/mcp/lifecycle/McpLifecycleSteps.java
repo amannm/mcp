@@ -220,4 +220,46 @@ public final class McpLifecycleSteps {
             }
         }
     }
+
+    @When("the McpServer responds to initialize request")
+    public void serverRespondsToInitializeRequest() throws IOException {
+        initializationPerformed();
+    }
+
+    @Then("the response must contain exactly:")
+    public void responseMustContainExactly(DataTable table) {
+        Set<String> required = new HashSet<>();
+        table.asMaps().forEach(row -> required.add(row.get("required_field")));
+        Assertions.assertEquals(4, required.size());
+        Assertions.assertTrue(required.contains("result.protocolVersion"));
+        Assertions.assertNotNull(client.protocolVersion());
+        Assertions.assertTrue(required.contains("result.capabilities"));
+        Assertions.assertNotNull(client.serverCapabilityNames());
+        Assertions.assertTrue(required.contains("result.serverInfo"));
+        Map<String, String> info = client.serverInfoMap();
+        Assertions.assertNotNull(info);
+        Assertions.assertTrue(required.contains("result.serverInfo.name"));
+        Assertions.assertNotNull(info.get("name"));
+    }
+
+    @Then("result may optionally contain:")
+    public void resultMayOptionallyContain(DataTable table) {
+        Set<String> optional = new HashSet<>();
+        table.asMaps().forEach(row -> optional.add(row.get("optional_field")));
+        Map<String, String> info = client.serverInfoMap();
+        if (info.containsKey("title")) {
+            Assertions.assertTrue(optional.contains("result.serverInfo.title"));
+        }
+        if (info.containsKey("version")) {
+            Assertions.assertTrue(optional.contains("result.serverInfo.version"));
+        }
+        if (!client.context().isEmpty()) {
+            Assertions.assertTrue(optional.contains("result.instructions"));
+        }
+        Set<String> allowed = Set.of(
+                "result.serverInfo.title",
+                "result.serverInfo.version",
+                "result.instructions");
+        Assertions.assertTrue(optional.stream().allMatch(allowed::contains));
+    }
 }
