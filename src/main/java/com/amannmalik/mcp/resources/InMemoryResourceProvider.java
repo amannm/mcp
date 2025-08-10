@@ -1,16 +1,19 @@
 package com.amannmalik.mcp.resources;
 
+import com.amannmalik.mcp.api.*;
+import com.amannmalik.mcp.api.resource.*;
 import com.amannmalik.mcp.core.InMemoryProvider;
-import com.amannmalik.mcp.util.*;
+import com.amannmalik.mcp.util.ChangeListener;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.function.Consumer;
 
 public final class InMemoryResourceProvider extends InMemoryProvider<Resource> implements ResourceProvider {
     private final Map<String, ResourceBlock> contents;
     private final List<ResourceTemplate> templates;
-    private final Map<String, List<ChangeListener<ResourceUpdate>>> listeners = new ConcurrentHashMap<>();
+    private final Map<String, List<Consumer<ResourceUpdate>>> listeners = new ConcurrentHashMap<>();
 
     public InMemoryResourceProvider(List<Resource> resources,
                                     Map<String, ResourceBlock> contents,
@@ -31,7 +34,7 @@ public final class InMemoryResourceProvider extends InMemoryProvider<Resource> i
     }
 
     @Override
-    public ChangeSubscription subscribe(String uri, ChangeListener<ResourceUpdate> listener) {
+    public ChangeSubscription subscribe(String uri, Consumer<ResourceUpdate> listener) {
         listeners.computeIfAbsent(uri, k -> new CopyOnWriteArrayList<>()).add(listener);
         return () -> listeners.getOrDefault(uri, List.of()).remove(listener);
     }
@@ -60,7 +63,7 @@ public final class InMemoryResourceProvider extends InMemoryProvider<Resource> i
             }
         }
         ResourceUpdate update = new ResourceUpdate(uri, title);
-        listeners.getOrDefault(uri, List.of()).forEach(l -> l.changed(update));
+        listeners.getOrDefault(uri, List.of()).forEach(l -> l.accept(update));
     }
 
     public void addResource(Resource resource, ResourceBlock content) {

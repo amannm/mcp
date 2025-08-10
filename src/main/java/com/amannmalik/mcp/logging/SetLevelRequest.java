@@ -1,7 +1,8 @@
 package com.amannmalik.mcp.logging;
 
+import com.amannmalik.mcp.api.LoggingLevel;
 import com.amannmalik.mcp.core.AbstractEntityCodec;
-import com.amannmalik.mcp.core.JsonCodec;
+import com.amannmalik.mcp.api.JsonCodec;
 import com.amannmalik.mcp.util.ValidationUtil;
 import jakarta.json.*;
 

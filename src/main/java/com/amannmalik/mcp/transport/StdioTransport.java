@@ -1,5 +1,6 @@
 package com.amannmalik.mcp.transport;
 
+import com.amannmalik.mcp.api.Transport;
 import com.amannmalik.mcp.config.McpConfiguration;
 import jakarta.json.*;
 
@@ -11,7 +12,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 
 /// - [Transports](specification/2025-06-18/basic/transports.mdx)
-final class StdioTransport implements Transport {
+public final class StdioTransport implements Transport {
     private final BufferedReader in;
     private final BufferedWriter out;
     private final Process process;

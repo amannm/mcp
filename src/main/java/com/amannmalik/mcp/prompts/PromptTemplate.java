@@ -1,6 +1,8 @@
 package com.amannmalik.mcp.prompts;
 
-import com.amannmalik.mcp.util.ContentBlock;
+import com.amannmalik.mcp.api.ContentBlock;
+import com.amannmalik.mcp.api.PromptContent;
+import com.amannmalik.mcp.api.prompt.*;
 import com.amannmalik.mcp.util.Immutable;
 
 import java.util.*;

@@ -1,5 +1,6 @@
 package com.amannmalik.mcp.transport;
 
+import com.amannmalik.mcp.api.Transport;
 import com.amannmalik.mcp.config.McpConfiguration;
 import com.amannmalik.mcp.util.ValidationUtil;
 import jakarta.json.*;
@@ -14,7 +15,7 @@ import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicReference;
 
 /// - [Transports](specification/2025-06-18/basic/transports.mdx)
-final class StreamableHttpClientTransport implements Transport {
+public final class StreamableHttpClientTransport implements Transport {
     private final HttpClient client = HttpClient.newHttpClient();
     private final URI endpoint;
     private final BlockingQueue<JsonObject> incoming = new LinkedBlockingQueue<>();

@@ -1,8 +1,9 @@
 package com.amannmalik.mcp.core;
 
-import com.amannmalik.mcp.util.ContentBlock;
-import com.amannmalik.mcp.prompts.Role;
-import com.amannmalik.mcp.util.Pagination;
+import com.amannmalik.mcp.api.JsonCodec;
+import com.amannmalik.mcp.api.ContentBlock;
+import com.amannmalik.mcp.api.Role;
+import com.amannmalik.mcp.api.Pagination;
 import jakarta.json.*;
 
 import java.util.*;

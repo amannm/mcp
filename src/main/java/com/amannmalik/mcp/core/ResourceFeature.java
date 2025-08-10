@@ -1,11 +1,10 @@
 package com.amannmalik.mcp.core;
 
-import com.amannmalik.mcp.util.Annotations;
-import com.amannmalik.mcp.auth.Principal;
+import com.amannmalik.mcp.api.*;
+import com.amannmalik.mcp.api.resource.*;
 import com.amannmalik.mcp.jsonrpc.*;
 import com.amannmalik.mcp.resources.*;
 import com.amannmalik.mcp.roots.RootsManager;
-import com.amannmalik.mcp.security.ResourceAccessPolicy;
 import com.amannmalik.mcp.util.*;
 import com.amannmalik.mcp.util.ValidationUtil;
 import jakarta.json.*;
@@ -13,10 +12,9 @@ import jakarta.json.*;
 import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.function.Function;
-import java.util.function.Supplier;
+import java.util.function.*;
 
-final class ResourceFeature implements AutoCloseable {
+public final class ResourceFeature implements AutoCloseable {
     private final ResourceProvider resources;
     private final ResourceAccessPolicy access;
     private final Principal principal;
@@ -251,7 +249,7 @@ final class ResourceFeature implements AutoCloseable {
 
     @FunctionalInterface
     private interface SubscriptionFactory<S extends ChangeSubscription> {
-        S subscribe(ChangeListener<Change> listener);
+        S subscribe(Consumer<Change> listener);
     }
 
     @FunctionalInterface

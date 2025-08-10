@@ -1,8 +1,9 @@
 package com.amannmalik.mcp.core;
 
-import com.amannmalik.mcp.prompts.Role;
-import com.amannmalik.mcp.tools.ListToolsResult;
-import com.amannmalik.mcp.tools.ToolResult;
+import com.amannmalik.mcp.api.McpHost;
+import com.amannmalik.mcp.api.Role;
+import com.amannmalik.mcp.api.tools.ListToolsResult;
+import com.amannmalik.mcp.api.tools.ToolResult;
 import jakarta.json.Json;
 import jakarta.json.JsonValue;
 import picocli.CommandLine;

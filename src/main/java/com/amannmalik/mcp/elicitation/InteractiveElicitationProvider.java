@@ -1,5 +1,6 @@
 package com.amannmalik.mcp.elicitation;
 
+import com.amannmalik.mcp.api.elicitation.*;
 import jakarta.json.*;
 
 import java.io.*;

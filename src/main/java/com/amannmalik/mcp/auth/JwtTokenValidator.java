@@ -1,5 +1,6 @@
 package com.amannmalik.mcp.auth;
 
+import com.amannmalik.mcp.api.Principal;
 import com.amannmalik.mcp.util.Base64Util;
 import com.amannmalik.mcp.util.ValidationUtil;
 import jakarta.json.*;
@@ -25,7 +26,7 @@ public final class JwtTokenValidator implements TokenValidator {
     }
 
     @Override
-    public Principal validate(String token) throws AuthorizationException {
+    public com.amannmalik.mcp.api.Principal validate(String token) throws AuthorizationException {
         JwtParts parts = decode(token);
         verifySignature(parts);
         JsonObject payload = parsePayload(parts.payloadJson());

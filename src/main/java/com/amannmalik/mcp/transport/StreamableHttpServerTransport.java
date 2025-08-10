@@ -1,7 +1,8 @@
 package com.amannmalik.mcp.transport;
 
+import com.amannmalik.mcp.api.Transport;
 import com.amannmalik.mcp.auth.AuthorizationManager;
-import com.amannmalik.mcp.auth.Principal;
+import com.amannmalik.mcp.api.Principal;
 import com.amannmalik.mcp.config.McpConfiguration;
 import com.amannmalik.mcp.core.*;
 import com.amannmalik.mcp.util.ValidationUtil;
@@ -22,7 +23,7 @@ import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 
-final class StreamableHttpServerTransport implements Transport {
+public final class StreamableHttpServerTransport implements Transport {
     private final Server server;
     private final int port;
     private final Set<String> allowedOrigins;

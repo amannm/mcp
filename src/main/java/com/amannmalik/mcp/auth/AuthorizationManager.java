@@ -1,5 +1,7 @@
 package com.amannmalik.mcp.auth;
 
+import com.amannmalik.mcp.api.Principal;
+
 import java.util.List;
 
 /// - [Authorization](specification/2025-06-18/basic/authorization.mdx)

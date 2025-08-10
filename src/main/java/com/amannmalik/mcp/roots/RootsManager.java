@@ -1,14 +1,14 @@
 package com.amannmalik.mcp.roots;
 
-import com.amannmalik.mcp.core.RequestMethod;
+import com.amannmalik.mcp.api.*;
 import com.amannmalik.mcp.jsonrpc.*;
-import com.amannmalik.mcp.core.ClientCapability;
 import com.amannmalik.mcp.util.*;
 
 import java.io.IOException;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 /// - [Roots](specification/2025-06-18/client/roots.mdx)
@@ -33,7 +33,7 @@ public final class RootsManager {
         return List.copyOf(fetched);
     }
 
-    public ChangeSubscription subscribe(ChangeListener<Change> listener) {
+    public ChangeSubscription subscribe(Consumer<Change> listener) {
         return listChangeSupport.subscribe(listener);
     }
 

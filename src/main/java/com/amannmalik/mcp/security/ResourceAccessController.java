@@ -1,8 +1,9 @@
 package com.amannmalik.mcp.security;
 
-import com.amannmalik.mcp.util.Annotations;
-import com.amannmalik.mcp.auth.Principal;
-import com.amannmalik.mcp.prompts.Role;
+import com.amannmalik.mcp.api.resource.ResourceAccessPolicy;
+import com.amannmalik.mcp.api.Annotations;
+import com.amannmalik.mcp.api.Principal;
+import com.amannmalik.mcp.api.Role;
 
 public final class ResourceAccessController implements ResourceAccessPolicy {
     private final PrincipalPermissions<Role> permissions = new PrincipalPermissions<>();

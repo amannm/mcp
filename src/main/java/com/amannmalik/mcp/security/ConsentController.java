@@ -1,6 +1,6 @@
 package com.amannmalik.mcp.security;
 
-import com.amannmalik.mcp.auth.Principal;
+import com.amannmalik.mcp.api.Principal;
 
 public final class ConsentController {
     private final PrincipalPermissions<String> consents = new PrincipalPermissions<>();

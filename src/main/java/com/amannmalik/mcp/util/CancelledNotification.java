@@ -1,6 +1,6 @@
 package com.amannmalik.mcp.util;
 
-import com.amannmalik.mcp.core.JsonCodec;
+import com.amannmalik.mcp.api.JsonCodec;
 import com.amannmalik.mcp.jsonrpc.RequestId;
 import jakarta.json.*;
 

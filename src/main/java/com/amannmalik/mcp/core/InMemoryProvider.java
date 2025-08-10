@@ -1,10 +1,12 @@
 package com.amannmalik.mcp.core;
 
+import com.amannmalik.mcp.api.*;
 import com.amannmalik.mcp.util.*;
 
 import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.function.Consumer;
 
 public class InMemoryProvider<T> implements Provider<T> {
     protected final List<T> items;
@@ -24,7 +26,7 @@ public class InMemoryProvider<T> implements Provider<T> {
     }
 
     @Override
-    public ChangeSubscription subscribe(ChangeListener<Change> listener) {
+    public ChangeSubscription subscribe(Consumer<Change> listener) {
         return changeSupport.subscribe(listener);
     }
 

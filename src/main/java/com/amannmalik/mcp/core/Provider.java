@@ -1,11 +1,14 @@
 package com.amannmalik.mcp.core;
 
+import com.amannmalik.mcp.api.*;
 import com.amannmalik.mcp.util.*;
+
+import java.util.function.Consumer;
 
 public interface Provider<T> extends AutoCloseable {
     Pagination.Page<T> list(String cursor);
 
-    default ChangeSubscription subscribe(ChangeListener<Change> listener) {
+    default ChangeSubscription subscribe(Consumer<Change> listener) {
         return () -> {
         };
     }

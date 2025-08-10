@@ -1,8 +1,8 @@
 package com.amannmalik.mcp.transport;
 
-import com.amannmalik.mcp.auth.Principal;
+import com.amannmalik.mcp.api.Principal;
 import com.amannmalik.mcp.config.McpConfiguration;
-import com.amannmalik.mcp.core.RequestMethod;
+import com.amannmalik.mcp.api.RequestMethod;
 import jakarta.json.*;
 import jakarta.json.stream.JsonParsingException;
 import jakarta.servlet.AsyncContext;

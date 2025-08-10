@@ -1,6 +1,8 @@
 package com.amannmalik.mcp.core;
 
-import com.amannmalik.mcp.transport.Transport;
+import com.amannmalik.mcp.api.McpServer;
+import com.amannmalik.mcp.config.McpConfiguration;
+import com.amannmalik.mcp.api.Transport;
 import com.amannmalik.mcp.transport.TransportFactory;
 import picocli.CommandLine;
 import picocli.CommandLine.Model.CommandSpec;
@@ -70,8 +72,18 @@ public final class ServerCommand {
             boolean testMode = parseResult.matchedOptionValue("--test-mode", false);
             Transport transport = TransportFactory.createTransport(httpPort, stdio, expectedAudience, resourceMetadataUrl, authServers, testMode, verbose);
             String instructions = instructionsFile == null ? null : Files.readString(instructionsFile);
-
-            try (McpServer server = new McpServer(transport, instructions)) {
+           ;
+            try (McpServer server =  new McpServer(Defaults.resources(),
+                    Defaults.tools(),
+                    Defaults.prompts(),
+                    Defaults.completions(),
+                    Defaults.sampling(),
+                    Defaults.privacyBoundary(McpConfiguration.current().defaultBoundary()),
+                    Defaults.toolAccess(),
+                    Defaults.samplingAccess(),
+                    Defaults.principal(),
+                    instructions,
+                    transport)) {
                 server.serve();
             }
             return 0;

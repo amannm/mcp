@@ -1,5 +1,7 @@
 package com.amannmalik.mcp.jsonrpc;
 
+import com.amannmalik.mcp.api.JsonRpcMessage;
+
 import java.io.IOException;
 
 /// - [Base Protocol](specification/2025-06-18/basic/index.mdx)
