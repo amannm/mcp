@@ -40,7 +40,7 @@ dependencies {
 }
 
 application {
-    mainClass.set("com.amannmalik.mcp.Entrypoint")
+    mainClass.set("com.amannmalik.mcp.cli.Entrypoint")
 }
 
 java {
@@ -92,7 +92,7 @@ tasks.withType<Jar>().configureEach {
     isReproducibleFileOrder = true
     duplicatesStrategy = DuplicatesStrategy.EXCLUDE
     manifest {
-        attributes["Main-Class"] = "com.amannmalik.mcp.Main"
+        attributes["Main-Class"] = "com.amannmalik.mcp.cli.Entrypoint"
     }
     from({
         configurations.runtimeClasspath.get()

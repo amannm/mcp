@@ -1,5 +1,11 @@
-package com.amannmalik.mcp.api;
+package com.amannmalik.mcp.core;
 
+import com.amannmalik.mcp.api.JsonRpcMessage;
+import com.amannmalik.mcp.api.NotificationMethod;
+import com.amannmalik.mcp.api.ProgressNotification;
+import com.amannmalik.mcp.api.ProgressToken;
+import com.amannmalik.mcp.api.RequestMethod;
+import com.amannmalik.mcp.api.Transport;
 import com.amannmalik.mcp.config.McpConfiguration;
 import com.amannmalik.mcp.jsonrpc.*;
 import com.amannmalik.mcp.util.*;
@@ -12,7 +18,7 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
-sealed class JsonRpcEndpoint implements AutoCloseable permits McpClient, McpServer {
+public sealed class JsonRpcEndpoint implements AutoCloseable permits com.amannmalik.mcp.api.McpClient, com.amannmalik.mcp.api.McpServer {
     protected final Transport transport;
     protected final ProgressManager progress;
     protected final Map<RequestId, CompletableFuture<JsonRpcMessage>> pending = new ConcurrentHashMap<>();
@@ -109,8 +115,6 @@ sealed class JsonRpcEndpoint implements AutoCloseable permits McpClient, McpServ
             case JsonRpcNotification note -> handleNotification(note);
             case JsonRpcResponse resp -> complete(resp.id(), resp);
             case JsonRpcError err -> complete(err.id(), err);
-            default -> {
-            }
         }
     }
 
