@@ -166,20 +166,20 @@ Feature: MCP Lifecycle Conformance
 #    And notifications must not have an "id" field
 #    And method names must follow specification format
 #
-#  @validation @initialization
-#  Scenario: Initialize request complete field validation
-#    When the McpHost sends an initialize request
-#    Then the request must contain exactly:
-#      | required_field              | type   |
-#      | params.protocolVersion      | string |
-#      | params.capabilities         | object |
-#      | params.clientInfo           | object |
-#      | params.clientInfo.name      | string |
-#    And params.clientInfo may optionally contain:
-#      | optional_field              | type   |
-#      | params.clientInfo.title     | string |
-#      | params.clientInfo.version   | string |
-#
+@validation @initialization
+Scenario: Initialize request complete field validation
+  When the McpHost sends an initialize request
+  Then the request must contain exactly:
+    | required_field              | type   |
+    | params.protocolVersion      | string |
+    | params.capabilities         | object |
+    | params.clientInfo           | object |
+    | params.clientInfo.name      | string |
+  And params.clientInfo may optionally contain:
+    | optional_field              | type   |
+    | params.clientInfo.title     | string |
+    | params.clientInfo.version   | string |
+
 #  @validation @initialization
 #  Scenario: Initialize response complete field validation
 #    When the McpServer responds to initialize request
