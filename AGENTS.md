@@ -26,6 +26,7 @@ description: MCP Specification Expert
 - Prefer failing fast
 - Never use `java.lang.reflect`
 - Never loosen visibility for testing
+- Prefer `sealed` and `final` over `non-sealed`
 
 # Wisdom
 
