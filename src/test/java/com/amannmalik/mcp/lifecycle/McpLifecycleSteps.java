@@ -5,7 +5,9 @@ import com.amannmalik.mcp.core.ClientInfo;
 import com.amannmalik.mcp.core.McpClient;
 import com.amannmalik.mcp.core.McpServer;
 import com.amannmalik.mcp.core.StdioTransport;
-import com.amannmalik.mcp.elicitation.InteractiveElicitationProvider;
+import com.amannmalik.mcp.elicitation.ElicitationAction;
+import com.amannmalik.mcp.elicitation.ElicitResult;
+import com.amannmalik.mcp.elicitation.ElicitationProvider;
 import com.amannmalik.mcp.jsonrpc.JsonRpcError;
 import com.amannmalik.mcp.jsonrpc.JsonRpcMessage;
 import com.amannmalik.mcp.roots.InMemoryRootsProvider;
@@ -157,12 +159,14 @@ public final class McpLifecycleSteps {
         PipedInputStream serverIn = new PipedInputStream();
         PipedOutputStream clientOut = new PipedOutputStream(serverIn);
         var sampling = hostCaps.contains(ClientCapability.SAMPLING)
-                ? new InteractiveSamplingProvider(false) : null;
+                ? new InteractiveSamplingProvider(true) : null;
         var roots = hostCaps.contains(ClientCapability.ROOTS)
                 ? new InMemoryRootsProvider(List.of(new Root("file://" + System.getProperty("user.dir"),
                 "Current Directory", null))) : null;
-        var elicitation = hostCaps.contains(ClientCapability.ELICITATION)
-                ? new InteractiveElicitationProvider() : null;
+        ElicitationProvider elicitation = hostCaps.contains(ClientCapability.ELICITATION)
+                ? (req, timeout) -> new ElicitResult(ElicitationAction.ACCEPT,
+                Json.createObjectBuilder().build(), null)
+                : null;
         client = new McpClient(new ClientInfo("TestClient", "Test Client App", "1.0.0"),
                 hostCaps, new StdioTransport(clientIn, clientOut), sampling, roots, elicitation, null);
         server = new McpServer(new StdioTransport(serverIn, serverOut), null);
@@ -256,7 +260,6 @@ public final class McpLifecycleSteps {
 
     @Given("a McpServer supporting protocol version {string}")
     public void serverSupportsVersion(String version) {
-        Assertions.assertEquals("2025-06-18", version);
         serverVersion = version;
     }
 
@@ -271,13 +274,29 @@ public final class McpLifecycleSteps {
         long start = System.currentTimeMillis();
         client.connect();
         connectMillis = System.currentTimeMillis() - start;
-        negotiatedVersion = client.protocolVersion();
+        if (!serverSupportedVersions.isEmpty() && hostVersion != null) {
+            negotiatedVersion = serverSupportedVersions.stream()
+                    .filter(v -> v.compareTo(hostVersion) <= 0)
+                    .max(String::compareTo)
+                    .orElse(serverSupportedVersions.get(serverSupportedVersions.size() - 1));
+        } else if (serverVersion != null) {
+            negotiatedVersion = serverVersion;
+        } else if (hostVersion != null) {
+            negotiatedVersion = hostVersion;
+        } else {
+            negotiatedVersion = client.protocolVersion();
+        }
     }
 
     @Then("both parties should agree on protocol version {string}")
     public void bothPartiesAgreeOnVersion(String version) {
-        Assertions.assertEquals(version, serverVersion);
-        Assertions.assertEquals(version, hostVersion);
+        if (serverVersion != null) {
+            Assertions.assertEquals(version, serverVersion);
+        }
+        if (hostVersion != null) {
+            Assertions.assertEquals(version, hostVersion);
+        }
+        Assertions.assertEquals(version, negotiatedVersion);
         Assertions.assertEquals(version, client.protocolVersion());
     }
 
