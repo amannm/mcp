@@ -1,7 +1,8 @@
 package com.amannmalik.mcp.api;
 
-import com.amannmalik.mcp.jsonrpc.JsonCodec;
 import com.amannmalik.mcp.core.AbstractEntityCodec;
+import com.amannmalik.mcp.jsonrpc.JsonCodec;
+import com.amannmalik.mcp.util.ContentBlockJsonCodec;
 import com.amannmalik.mcp.util.ValidationUtil;
 import jakarta.json.*;
 
@@ -11,7 +12,10 @@ public record ToolResult(JsonArray content,
                          JsonObject structuredContent,
                          Boolean isError,
                          JsonObject _meta) {
-     static final JsonCodec<ToolResult> CODEC = new AbstractEntityCodec<>() {
+
+    private static final JsonCodec<ContentBlock> CONTENT_BLOCK_CODEC = new ContentBlockJsonCodec();
+
+    static final JsonCodec<ToolResult> CODEC = new AbstractEntityCodec<>() {
         @Override
         public JsonObject toJson(ToolResult r) {
             JsonObjectBuilder b = Json.createObjectBuilder()
@@ -46,8 +50,8 @@ public record ToolResult(JsonArray content,
         for (JsonValue v : arr) {
             if (v.getValueType() == JsonValue.ValueType.OBJECT) {
                 try {
-                    ContentBlock c = ContentBlock.CODEC.fromJson(v.asJsonObject());
-                    b.add(ContentBlock.CODEC.toJson(c));
+                    ContentBlock c = CONTENT_BLOCK_CODEC.fromJson(v.asJsonObject());
+                    b.add(CONTENT_BLOCK_CODEC.toJson(c));
                     continue;
                 } catch (IllegalArgumentException ignore) {
                 }
@@ -61,4 +65,5 @@ public record ToolResult(JsonArray content,
     public String toString() {
         return CODEC.toJson(this).toString();
     }
+
 }

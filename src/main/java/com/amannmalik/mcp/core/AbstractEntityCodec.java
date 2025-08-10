@@ -1,15 +1,19 @@
 package com.amannmalik.mcp.core;
 
+import com.amannmalik.mcp.api.*;
 import com.amannmalik.mcp.jsonrpc.JsonCodec;
-import com.amannmalik.mcp.api.ContentBlock;
-import com.amannmalik.mcp.api.Role;
-import com.amannmalik.mcp.api.Pagination;
+import com.amannmalik.mcp.util.AnnotationsJsonCodec;
+import com.amannmalik.mcp.util.ContentBlockJsonCodec;
 import jakarta.json.*;
 
 import java.util.*;
 import java.util.function.*;
 
 public abstract class AbstractEntityCodec<T> implements JsonCodec<T> {
+
+    protected static final JsonCodec<Annotations> ANNOTATIONS_CODEC = new AnnotationsJsonCodec();
+    protected static final JsonCodec<ContentBlock> CONTENT_BLOCK_CODEC = new ContentBlockJsonCodec();
+
     private static final Set<String> REQUEST_KEYS = Set.of("cursor", "_meta");
     private static final Set<String> META_KEYS = Set.of("_meta");
 
@@ -132,7 +136,7 @@ public abstract class AbstractEntityCodec<T> implements JsonCodec<T> {
     protected static ContentBlock requireContent(JsonObject obj) {
         JsonObject c = getObject(obj, "content");
         if (c == null) throw new IllegalArgumentException("content required");
-        return ContentBlock.CODEC.fromJson(c);
+        return CONTENT_BLOCK_CODEC.fromJson(c);
     }
 
     public static void requireOnlyKeys(JsonObject obj, Set<String> allowed) {

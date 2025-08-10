@@ -10,7 +10,7 @@ public sealed interface Transport extends AutoCloseable permits StdioTransport, 
     void send(JsonObject message) throws IOException;
 
     JsonObject receive() throws IOException;
-    
+
     JsonObject receive(long timeoutMillis) throws IOException;
 
     @Override

@@ -1,16 +1,17 @@
 package com.amannmalik.mcp.api;
 
-import com.amannmalik.mcp.config.McpConfiguration;
 import com.amannmalik.mcp.api.McpClient.McpClientListener;
-import com.amannmalik.mcp.core.*;
+import com.amannmalik.mcp.config.McpConfiguration;
+import com.amannmalik.mcp.core.CapabilityRequirements;
 import com.amannmalik.mcp.elicitation.InteractiveElicitationProvider;
-import com.amannmalik.mcp.jsonrpc.*;
+import com.amannmalik.mcp.jsonrpc.JsonRpc;
+import com.amannmalik.mcp.jsonrpc.JsonRpcResponse;
 import com.amannmalik.mcp.roots.InMemoryRootsProvider;
 import com.amannmalik.mcp.roots.Root;
 import com.amannmalik.mcp.sampling.InteractiveSamplingProvider;
 import com.amannmalik.mcp.security.*;
-import com.amannmalik.mcp.tools.*;
-import com.amannmalik.mcp.transport.*;
+import com.amannmalik.mcp.tools.CallToolRequest;
+import com.amannmalik.mcp.transport.TransportFactory;
 import jakarta.json.JsonObject;
 
 import java.io.IOException;
@@ -46,7 +47,7 @@ public final class McpHost implements AutoCloseable {
         this.samplingAccess = new SamplingAccessController();
         for (var entry : clientSpecs.entrySet()) {
             grantConsent(entry.getKey());
-            Transport transport =  TransportFactory.createTransport(entry.getValue().split(" "), verbose);
+            Transport transport = TransportFactory.createTransport(entry.getValue().split(" "), verbose);
             SamplingProvider samplingProvider = new InteractiveSamplingProvider(false);
             String currentDir = System.getProperty("user.dir");
             InMemoryRootsProvider rootsProvider = new InMemoryRootsProvider(

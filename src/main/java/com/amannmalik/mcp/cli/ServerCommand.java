@@ -1,9 +1,9 @@
 package com.amannmalik.mcp.cli;
 
 import com.amannmalik.mcp.api.McpServer;
+import com.amannmalik.mcp.api.Transport;
 import com.amannmalik.mcp.config.CliDefaults;
 import com.amannmalik.mcp.config.McpConfiguration;
-import com.amannmalik.mcp.api.Transport;
 import com.amannmalik.mcp.transport.TransportFactory;
 import picocli.CommandLine;
 import picocli.CommandLine.Model.CommandSpec;
@@ -12,7 +12,8 @@ import picocli.CommandLine.ParseResult;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.*;
+import java.util.Collections;
+import java.util.List;
 
 /// - [Server](specification/2025-06-18/server/index.mdx)
 /// - [Conformance Suite](src/test/resources/com/amannmalik/mcp/mcp.feature)
@@ -73,8 +74,8 @@ public final class ServerCommand {
             boolean testMode = parseResult.matchedOptionValue("--test-mode", false);
             Transport transport = TransportFactory.createTransport(httpPort, stdio, expectedAudience, resourceMetadataUrl, authServers, testMode, verbose);
             String instructions = instructionsFile == null ? null : Files.readString(instructionsFile);
-           ;
-            try (McpServer server =  new McpServer(CliDefaults.resources(),
+            ;
+            try (McpServer server = new McpServer(CliDefaults.resources(),
                     CliDefaults.tools(),
                     CliDefaults.prompts(),
                     CliDefaults.completions(),

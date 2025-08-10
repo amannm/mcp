@@ -54,11 +54,11 @@ public final class StdioTransport implements Transport {
     public JsonObject receive() throws IOException {
         return receive(McpConfiguration.current().defaultMs());
     }
-    
+
     @Override
     public JsonObject receive(long timeoutMillis) throws IOException {
         long endTime = System.currentTimeMillis() + timeoutMillis;
-        
+
         while (System.currentTimeMillis() < endTime) {
             if (in.ready()) {
                 String line = in.readLine();
@@ -67,7 +67,7 @@ public final class StdioTransport implements Transport {
                     return reader.readObject();
                 }
             }
-            
+
             try {
                 Thread.sleep(10);
             } catch (InterruptedException e) {
@@ -75,7 +75,7 @@ public final class StdioTransport implements Transport {
                 throw new IOException("Interrupted while waiting for input", e);
             }
         }
-        
+
         throw new IOException("Timeout after " + timeoutMillis + "ms waiting for input");
     }
 

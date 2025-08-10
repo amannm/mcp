@@ -1,8 +1,8 @@
 package com.amannmalik.mcp.api;
 
+import com.amannmalik.mcp.core.AbstractEntityCodec;
 import com.amannmalik.mcp.jsonrpc.JsonCodec;
 import com.amannmalik.mcp.sampling.MessageContent;
-import com.amannmalik.mcp.core.AbstractEntityCodec;
 import com.amannmalik.mcp.util.ValidationUtil;
 import jakarta.json.*;
 
@@ -15,12 +15,12 @@ public record CreateMessageResponse(
         String stopReason,
         JsonObject _meta
 ) {
-     static final JsonCodec<CreateMessageResponse> CODEC = new AbstractEntityCodec<>() {
+    static final JsonCodec<CreateMessageResponse> CODEC = new AbstractEntityCodec<>() {
         @Override
         public JsonObject toJson(CreateMessageResponse resp) {
             JsonObjectBuilder b = Json.createObjectBuilder()
                     .add("role", resp.role().name().toLowerCase())
-                    .add("content", ContentBlock.CODEC.toJson((ContentBlock) resp.content()))
+                    .add("content", CONTENT_BLOCK_CODEC.toJson((ContentBlock) resp.content()))
                     .add("model", resp.model());
             if (resp.stopReason() != null) b.add("stopReason", resp.stopReason());
             if (resp._meta() != null) b.add("_meta", resp._meta());

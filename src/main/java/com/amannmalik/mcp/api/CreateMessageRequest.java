@@ -1,7 +1,7 @@
 package com.amannmalik.mcp.api;
 
-import com.amannmalik.mcp.jsonrpc.JsonCodec;
 import com.amannmalik.mcp.core.AbstractEntityCodec;
+import com.amannmalik.mcp.jsonrpc.JsonCodec;
 import com.amannmalik.mcp.sampling.ModelPreferences;
 import com.amannmalik.mcp.util.ValidationUtil;
 import jakarta.json.*;
@@ -20,7 +20,7 @@ public record CreateMessageRequest(
         JsonObject metadata,
         JsonObject _meta
 ) {
-     static final JsonCodec<CreateMessageRequest> CODEC = new JsonCodec<>() {
+    static final JsonCodec<CreateMessageRequest> CODEC = new JsonCodec<>() {
         @Override
         public JsonObject toJson(CreateMessageRequest req) {
             JsonArrayBuilder msgs = Json.createArrayBuilder();

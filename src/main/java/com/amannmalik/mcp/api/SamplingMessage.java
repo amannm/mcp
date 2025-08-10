@@ -1,8 +1,8 @@
 package com.amannmalik.mcp.api;
 
+import com.amannmalik.mcp.core.AbstractEntityCodec;
 import com.amannmalik.mcp.jsonrpc.JsonCodec;
 import com.amannmalik.mcp.sampling.MessageContent;
-import com.amannmalik.mcp.core.AbstractEntityCodec;
 import jakarta.json.Json;
 import jakarta.json.JsonObject;
 
@@ -14,7 +14,7 @@ public record SamplingMessage(Role role, MessageContent content) {
         public JsonObject toJson(SamplingMessage m) {
             return Json.createObjectBuilder()
                     .add("role", m.role().name().toLowerCase())
-                    .add("content", ContentBlock.CODEC.toJson((ContentBlock) m.content()))
+                    .add("content", CONTENT_BLOCK_CODEC.toJson((ContentBlock) m.content()))
                     .build();
         }
 
@@ -34,4 +34,5 @@ public record SamplingMessage(Role role, MessageContent content) {
     public SamplingMessage {
         if (role == null || content == null) throw new IllegalArgumentException("role and content are required");
     }
+
 }

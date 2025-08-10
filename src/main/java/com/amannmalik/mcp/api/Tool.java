@@ -1,7 +1,7 @@
 package com.amannmalik.mcp.api;
 
-import com.amannmalik.mcp.jsonrpc.JsonCodec;
 import com.amannmalik.mcp.core.AbstractEntityCodec;
+import com.amannmalik.mcp.jsonrpc.JsonCodec;
 import com.amannmalik.mcp.tools.ToolAnnotations;
 import com.amannmalik.mcp.util.DisplayNameProvider;
 import com.amannmalik.mcp.util.ValidationUtil;
@@ -16,7 +16,7 @@ public record Tool(String name,
                    JsonObject outputSchema,
                    ToolAnnotations annotations,
                    JsonObject _meta) implements DisplayNameProvider {
-   static final JsonCodec<Tool> CODEC = new AbstractEntityCodec<>() {
+    static final JsonCodec<Tool> CODEC = new AbstractEntityCodec<>() {
         @Override
         public JsonObject toJson(Tool tool) {
             JsonObjectBuilder b = Json.createObjectBuilder()

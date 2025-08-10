@@ -93,7 +93,7 @@ public final class StreamableHttpServerTransport implements Transport {
     public JsonObject receive() throws IOException {
         return receive(McpConfiguration.current().defaultMs());
     }
-    
+
     @Override
     public JsonObject receive(long timeoutMillis) throws IOException {
         try {

@@ -3,13 +3,13 @@ package com.amannmalik.mcp.api;
 import com.amannmalik.mcp.config.McpConfiguration;
 import com.amannmalik.mcp.core.*;
 import com.amannmalik.mcp.jsonrpc.*;
-import com.amannmalik.mcp.logging.*;
+import com.amannmalik.mcp.logging.SetLevelRequest;
 import com.amannmalik.mcp.resources.*;
-import com.amannmalik.mcp.roots.*;
+import com.amannmalik.mcp.roots.ListRootsResult;
+import com.amannmalik.mcp.roots.RootsListChangedNotification;
 import com.amannmalik.mcp.tools.ToolListChangedNotification;
-import com.amannmalik.mcp.transport.*;
+import com.amannmalik.mcp.transport.Protocol;
 import com.amannmalik.mcp.util.*;
-import com.amannmalik.mcp.util.ValidationUtil;
 import jakarta.json.*;
 
 import java.io.IOException;
@@ -66,12 +66,12 @@ public final class McpClient extends JsonRpcEndpoint implements AutoCloseable {
     }
 
     McpClient(ClientInfo info,
-                     Set<ClientCapability> capabilities,
-                     Transport transport,
-                     SamplingProvider sampling,
-                     RootsProvider roots,
-                     ElicitationProvider elicitation,
-                     McpClientListener listener) {
+              Set<ClientCapability> capabilities,
+              Transport transport,
+              SamplingProvider sampling,
+              RootsProvider roots,
+              ElicitationProvider elicitation,
+              McpClientListener listener) {
         super(transport,
                 new ProgressManager(new RateLimiter(McpConfiguration.current().progressPerSecond(), 1000)),
                 1);

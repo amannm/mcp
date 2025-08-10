@@ -1,12 +1,12 @@
 package com.amannmalik.mcp.api;
 
-import com.amannmalik.mcp.jsonrpc.JsonCodec;
 import com.amannmalik.mcp.core.AbstractEntityCodec;
+import com.amannmalik.mcp.jsonrpc.JsonCodec;
 import com.amannmalik.mcp.util.ValidationUtil;
 import jakarta.json.JsonObject;
 
 public record ListToolsRequest(String cursor, JsonObject _meta) {
-      static final JsonCodec<ListToolsRequest> CODEC =
+    static final JsonCodec<ListToolsRequest> CODEC =
             AbstractEntityCodec.paginatedRequest(
                     ListToolsRequest::cursor,
                     ListToolsRequest::_meta,

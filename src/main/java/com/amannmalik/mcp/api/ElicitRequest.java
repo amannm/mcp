@@ -1,14 +1,14 @@
 package com.amannmalik.mcp.api;
 
-import com.amannmalik.mcp.jsonrpc.JsonCodec;
 import com.amannmalik.mcp.core.AbstractEntityCodec;
+import com.amannmalik.mcp.jsonrpc.JsonCodec;
 import com.amannmalik.mcp.util.ValidationUtil;
 import jakarta.json.*;
 
 import java.util.Set;
 
 public record ElicitRequest(String message, JsonObject requestedSchema, JsonObject _meta) {
-     static final JsonCodec<ElicitRequest> CODEC = new JsonCodec<>() {
+    static final JsonCodec<ElicitRequest> CODEC = new JsonCodec<>() {
         @Override
         public JsonObject toJson(ElicitRequest req) {
             JsonObjectBuilder b = Json.createObjectBuilder()

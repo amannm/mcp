@@ -1,14 +1,14 @@
 package com.amannmalik.mcp.api;
 
-import com.amannmalik.mcp.jsonrpc.JsonCodec;
 import com.amannmalik.mcp.core.AbstractEntityCodec;
+import com.amannmalik.mcp.jsonrpc.JsonCodec;
 import com.amannmalik.mcp.util.ValidationUtil;
 import jakarta.json.*;
 
 import java.util.Set;
 
 public record LoggingMessageNotification(LoggingLevel level, String logger, JsonValue data) {
-     static final JsonCodec<LoggingMessageNotification> CODEC = new AbstractEntityCodec<>() {
+    static final JsonCodec<LoggingMessageNotification> CODEC = new AbstractEntityCodec<>() {
         @Override
         public JsonObject toJson(LoggingMessageNotification n) {
             JsonObjectBuilder b = Json.createObjectBuilder()

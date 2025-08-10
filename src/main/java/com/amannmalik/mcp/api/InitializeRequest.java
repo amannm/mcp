@@ -1,7 +1,7 @@
 package com.amannmalik.mcp.api;
 
-import com.amannmalik.mcp.jsonrpc.JsonCodec;
 import com.amannmalik.mcp.core.*;
+import com.amannmalik.mcp.jsonrpc.JsonCodec;
 import jakarta.json.*;
 
 import java.util.*;
@@ -12,7 +12,7 @@ record InitializeRequest(
         ClientInfo clientInfo,
         ClientFeatures features
 ) {
-     static final JsonCodec<InitializeRequest> CODEC = new AbstractEntityCodec<>() {
+    static final JsonCodec<InitializeRequest> CODEC = new AbstractEntityCodec<>() {
         @Override
         public JsonObject toJson(InitializeRequest req) {
             JsonObjectBuilder caps = Json.createObjectBuilder();
@@ -65,7 +65,7 @@ record InitializeRequest(
         }
     };
 
-     InitializeRequest {
+    InitializeRequest {
         if (protocolVersion == null) {
             throw new IllegalArgumentException("protocolVersion must not be null");
         }

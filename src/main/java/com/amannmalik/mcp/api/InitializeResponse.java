@@ -1,8 +1,8 @@
 package com.amannmalik.mcp.api;
 
-import com.amannmalik.mcp.jsonrpc.JsonCodec;
 import com.amannmalik.mcp.core.AbstractEntityCodec;
 import com.amannmalik.mcp.core.Capabilities;
+import com.amannmalik.mcp.jsonrpc.JsonCodec;
 import jakarta.json.*;
 
 import java.util.*;
@@ -14,7 +14,7 @@ record InitializeResponse(
         String instructions,
         ServerFeatures features
 ) {
-     static final JsonCodec<InitializeResponse> CODEC = new AbstractEntityCodec<>() {
+    static final JsonCodec<InitializeResponse> CODEC = new AbstractEntityCodec<>() {
         @Override
         public JsonObject toJson(InitializeResponse resp) {
             JsonObjectBuilder server = Json.createObjectBuilder();

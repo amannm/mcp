@@ -2,17 +2,20 @@ package com.amannmalik.mcp.completion;
 
 import com.amannmalik.mcp.api.*;
 import com.amannmalik.mcp.core.InMemoryProvider;
-import com.amannmalik.mcp.util.StringMetrics;
-import com.amannmalik.mcp.util.ValidationUtil;
+import com.amannmalik.mcp.util.*;
 import jakarta.json.JsonObject;
 
 import java.util.*;
 import java.util.concurrent.CopyOnWriteArrayList;
 
-public final class InMemoryCompletionProvider extends InMemoryProvider<CompleteRequest.Ref> implements CompletionProvider {
+public final class InMemoryCompletionProvider extends InMemoryProvider<Ref> implements CompletionProvider {
+
+    private static final ArgumentJsonCodec ARGUMENT_CODEC = new ArgumentJsonCodec();
+    private static final ContextJsonCodec CONTEXT_CODEC = new ContextJsonCodec();
+
     private final List<Entry> entries = new CopyOnWriteArrayList<>();
 
-    public void add(CompleteRequest.Ref ref,
+    public void add(Ref ref,
                     String argumentName,
                     Map<String, String> context,
                     List<String> values) {
@@ -30,10 +33,10 @@ public final class InMemoryCompletionProvider extends InMemoryProvider<CompleteR
 
     @Override
     public CompleteResult execute(String name, JsonObject args) {
-        CompleteRequest.Ref ref = CompletionProvider.decode(name);
-        var arg = CompleteRequest.Argument.CODEC.fromJson(args.getJsonObject("argument"));
-        CompleteRequest.Context ctx = args.containsKey("context")
-                ? CompleteRequest.Context.CODEC.fromJson(args.getJsonObject("context"))
+        Ref ref = CompletionProvider.decode(name);
+        var arg = ARGUMENT_CODEC.fromJson(args.getJsonObject("argument"));
+        Context ctx = args.containsKey("context")
+                ? CONTEXT_CODEC.fromJson(args.getJsonObject("context"))
                 : null;
         return complete(new CompleteRequest(ref, arg, ctx, null));
     }
@@ -75,17 +78,17 @@ public final class InMemoryCompletionProvider extends InMemoryProvider<CompleteR
         return new CompleteResult(new CompleteResult.Completion(sorted, total, hasMore), null);
     }
 
-    private static boolean refEquals(CompleteRequest.Ref a, CompleteRequest.Ref b) {
-        if (a instanceof CompleteRequest.Ref.PromptRef(var aName, var _, var _) &&
-                b instanceof CompleteRequest.Ref.PromptRef(var bName, var _, var _)) {
+    private static boolean refEquals(Ref a, Ref b) {
+        if (a instanceof Ref.PromptRef(var aName, var _, var _) &&
+                b instanceof Ref.PromptRef(var bName, var _, var _)) {
             return aName.equals(bName);
         }
-        if (a instanceof CompleteRequest.Ref.ResourceRef(String aUri) && b instanceof CompleteRequest.Ref.ResourceRef(String bUri)) {
+        if (a instanceof Ref.ResourceRef(String aUri) && b instanceof Ref.ResourceRef(String bUri)) {
             return aUri.equals(bUri);
         }
         return false;
     }
 
-    private record Entry(CompleteRequest.Ref ref, String argumentName, Map<String, String> context, List<String> values) {
+    private record Entry(Ref ref, String argumentName, Map<String, String> context, List<String> values) {
     }
 }

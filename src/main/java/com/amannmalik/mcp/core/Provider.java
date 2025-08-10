@@ -1,7 +1,8 @@
 package com.amannmalik.mcp.core;
 
-import com.amannmalik.mcp.api.*;
-import com.amannmalik.mcp.util.*;
+import com.amannmalik.mcp.api.ChangeSubscription;
+import com.amannmalik.mcp.api.Pagination;
+import com.amannmalik.mcp.util.Change;
 
 import java.util.function.Consumer;
 

@@ -2,7 +2,6 @@ package com.amannmalik.mcp.config;
 
 import com.amannmalik.mcp.api.*;
 import com.amannmalik.mcp.api.Principal;
-import com.amannmalik.mcp.api.CompleteRequest;
 import com.amannmalik.mcp.api.CompletionProvider;
 import com.amannmalik.mcp.api.PromptProvider;
 import com.amannmalik.mcp.api.SamplingAccessPolicy;
@@ -15,7 +14,7 @@ import com.amannmalik.mcp.sampling.InteractiveSamplingProvider;
 import com.amannmalik.mcp.api.SamplingProvider;
 import com.amannmalik.mcp.security.*;
 import com.amannmalik.mcp.tools.*;
-import com.amannmalik.mcp.util.ResourceBlock;
+import com.amannmalik.mcp.api.ResourceBlock;
 import jakarta.json.Json;
 
 import java.time.Instant;
@@ -112,7 +111,7 @@ public final class CliDefaults {
         PROMPTS = promptProvider;
 
         InMemoryCompletionProvider completionProvider = new InMemoryCompletionProvider();
-        completionProvider.add(new CompleteRequest.Ref.PromptRef("test_prompt", null, null), "test_arg", Map.of(), List.of("test_completion"));
+        completionProvider.add(new Ref.PromptRef("test_prompt", null, null), "test_arg", Map.of(), List.of("test_completion"));
         COMPLETIONS = completionProvider;
 
         SAMPLING = new InteractiveSamplingProvider(true);

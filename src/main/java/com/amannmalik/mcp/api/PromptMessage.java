@@ -1,19 +1,19 @@
 package com.amannmalik.mcp.api;
 
-import com.amannmalik.mcp.jsonrpc.JsonCodec;
 import com.amannmalik.mcp.core.AbstractEntityCodec;
+import com.amannmalik.mcp.jsonrpc.JsonCodec;
 import jakarta.json.Json;
 import jakarta.json.JsonObject;
 
 import java.util.Set;
 
 public record PromptMessage(Role role, PromptContent content) {
-     static final JsonCodec<PromptMessage> CODEC = new AbstractEntityCodec<>() {
+    static final JsonCodec<PromptMessage> CODEC = new AbstractEntityCodec<>() {
         @Override
         public JsonObject toJson(PromptMessage m) {
             return Json.createObjectBuilder()
                     .add("role", m.role().name().toLowerCase())
-                    .add("content", ContentBlock.CODEC.toJson((ContentBlock) m.content()))
+                    .add("content", CONTENT_BLOCK_CODEC.toJson((ContentBlock) m.content()))
                     .build();
         }
 

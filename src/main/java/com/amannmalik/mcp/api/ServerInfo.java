@@ -1,12 +1,12 @@
 package com.amannmalik.mcp.api;
 
-import com.amannmalik.mcp.jsonrpc.JsonCodec;
 import com.amannmalik.mcp.core.AbstractEntityCodec;
+import com.amannmalik.mcp.jsonrpc.JsonCodec;
 import com.amannmalik.mcp.util.ValidationUtil;
 import jakarta.json.*;
 
 public record ServerInfo(String name, String title, String version) {
-     static final JsonCodec<ServerInfo> CODEC = new AbstractEntityCodec<>() {
+    static final JsonCodec<ServerInfo> CODEC = new AbstractEntityCodec<>() {
         @Override
         public JsonObject toJson(ServerInfo info) {
             JsonObjectBuilder b = Json.createObjectBuilder()

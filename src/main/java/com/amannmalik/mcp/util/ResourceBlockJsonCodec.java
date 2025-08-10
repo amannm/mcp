@@ -1,0 +1,41 @@
+package com.amannmalik.mcp.util;
+
+import com.amannmalik.mcp.api.ResourceBlock;
+import com.amannmalik.mcp.core.AbstractEntityCodec;
+import com.amannmalik.mcp.jsonrpc.JsonCodec;
+import jakarta.json.*;
+
+import java.util.Set;
+
+public class ResourceBlockJsonCodec implements JsonCodec<ResourceBlock> {
+    @Override
+    public JsonObject toJson(ResourceBlock block) {
+        JsonObjectBuilder b = Json.createObjectBuilder().add("uri", block.uri());
+        if (block.mimeType() != null) b.add("mimeType", block.mimeType());
+        if (block._meta() != null) b.add("_meta", block._meta());
+        return switch (block) {
+            case ResourceBlock.Text t -> b.add("text", t.text()).build();
+            case ResourceBlock.Binary bin -> b.add("blob", Base64Util.encode(bin.blob())).build();
+        };
+    }
+
+    @Override
+    public ResourceBlock fromJson(JsonObject obj) {
+        if (obj == null) throw new IllegalArgumentException("object required");
+        String uri = obj.getString("uri", null);
+        if (uri == null) throw new IllegalArgumentException("uri required");
+        String mime = obj.getString("mimeType", null);
+        JsonObject meta = obj.getJsonObject("_meta");
+        boolean hasText = obj.containsKey("text");
+        boolean hasBlob = obj.containsKey("blob");
+        if (hasText == hasBlob) {
+            throw new IllegalArgumentException("exactly one of text or blob must be present");
+        }
+        AbstractEntityCodec.requireOnlyKeys(obj, Set.of("uri", "mimeType", "_meta", "text", "blob"));
+        if (hasText) {
+            return new ResourceBlock.Text(uri, mime, obj.getString("text"), meta);
+        }
+        byte[] data = Base64Util.decode(obj.getString("blob"));
+        return new ResourceBlock.Binary(uri, mime, data, meta);
+    }
+}

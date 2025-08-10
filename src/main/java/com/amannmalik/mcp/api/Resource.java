@@ -1,10 +1,8 @@
 package com.amannmalik.mcp.api;
 
 import com.amannmalik.mcp.jsonrpc.JsonCodec;
-import com.amannmalik.mcp.core.AbstractEntityCodec;
-import com.amannmalik.mcp.util.DisplayNameProvider;
-import com.amannmalik.mcp.util.ValidationUtil;
-import jakarta.json.*;
+import com.amannmalik.mcp.util.*;
+import jakarta.json.JsonObject;
 
 public record Resource(
         String uri,
@@ -16,39 +14,7 @@ public record Resource(
         Annotations annotations,
         JsonObject _meta
 ) implements DisplayNameProvider {
-    public static final JsonCodec<Resource> CODEC = new AbstractEntityCodec<>() {
-        @Override
-        public JsonObject toJson(Resource r) {
-            JsonObjectBuilder b = Json.createObjectBuilder()
-                    .add("uri", r.uri())
-                    .add("name", r.name());
-            if (r.title() != null) b.add("title", r.title());
-            if (r.description() != null) b.add("description", r.description());
-            if (r.mimeType() != null) b.add("mimeType", r.mimeType());
-            if (r.size() != null) b.add("size", r.size());
-            if (r.annotations() != Annotations.EMPTY) {
-                b.add("annotations", Annotations.CODEC.toJson(r.annotations()));
-            }
-            if (r._meta() != null) b.add("_meta", r._meta());
-            return b.build();
-        }
-
-        @Override
-        public Resource fromJson(JsonObject obj) {
-            if (obj == null) throw new IllegalArgumentException("object required");
-            String uri = requireString(obj, "uri");
-            String name = requireString(obj, "name");
-            String title = obj.getString("title", null);
-            String description = obj.getString("description", null);
-            String mimeType = obj.getString("mimeType", null);
-            Long size = obj.containsKey("size") ? obj.getJsonNumber("size").longValue() : null;
-            Annotations annotations = obj.containsKey("annotations")
-                    ? Annotations.CODEC.fromJson(getObject(obj, "annotations"))
-                    : Annotations.EMPTY;
-            JsonObject meta = obj.getJsonObject("_meta");
-            return new Resource(uri, name, title, description, mimeType, size, annotations, meta);
-        }
-    };
+    public static final JsonCodec<Resource> CODEC = new ResourceAbstractEntityCodec();
 
     public Resource {
         uri = ValidationUtil.requireAbsoluteUri(uri);
@@ -57,7 +23,8 @@ public record Resource(
         description = ValidationUtil.cleanNullable(description);
         mimeType = ValidationUtil.cleanNullable(mimeType);
         if (size != null) size = ValidationUtil.requireNonNegative(size, "size");
-        annotations = annotations == null ? Annotations.EMPTY : annotations;
+        annotations = annotations == null ? AnnotationsJsonCodec.EMPTY : annotations;
         ValidationUtil.requireMeta(_meta);
     }
+
 }
