@@ -4,7 +4,7 @@ import com.amannmalik.mcp.core.AbstractEntityCodec;
 import com.amannmalik.mcp.core.JsonCodec;
 import com.amannmalik.mcp.util.Immutable;
 import com.amannmalik.mcp.util.Pagination;
-import com.amannmalik.mcp.validation.ValidationUtil;
+import com.amannmalik.mcp.util.ValidationUtil;
 import jakarta.json.JsonObject;
 
 import java.util.List;

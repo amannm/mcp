@@ -11,7 +11,7 @@ import com.amannmalik.mcp.sampling.*;
 import com.amannmalik.mcp.security.SamplingAccessPolicy;
 import com.amannmalik.mcp.tools.ToolListChangedNotification;
 import com.amannmalik.mcp.util.*;
-import com.amannmalik.mcp.validation.ValidationUtil;
+import com.amannmalik.mcp.util.ValidationUtil;
 import jakarta.json.*;
 
 import java.io.IOException;

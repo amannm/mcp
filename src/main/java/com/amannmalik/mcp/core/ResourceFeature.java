@@ -1,13 +1,13 @@
 package com.amannmalik.mcp.core;
 
-import com.amannmalik.mcp.annotations.Annotations;
+import com.amannmalik.mcp.util.Annotations;
 import com.amannmalik.mcp.auth.Principal;
 import com.amannmalik.mcp.jsonrpc.*;
 import com.amannmalik.mcp.resources.*;
 import com.amannmalik.mcp.roots.RootsManager;
 import com.amannmalik.mcp.security.ResourceAccessPolicy;
 import com.amannmalik.mcp.util.*;
-import com.amannmalik.mcp.validation.ValidationUtil;
+import com.amannmalik.mcp.util.ValidationUtil;
 import jakarta.json.*;
 
 import java.io.IOException;

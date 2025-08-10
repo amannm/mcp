@@ -1,4 +1,4 @@
-package com.amannmalik.mcp.validation;
+package com.amannmalik.mcp.util;
 
 import jakarta.json.*;
 

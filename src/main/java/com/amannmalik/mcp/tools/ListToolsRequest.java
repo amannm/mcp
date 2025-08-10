@@ -2,7 +2,7 @@ package com.amannmalik.mcp.tools;
 
 import com.amannmalik.mcp.core.AbstractEntityCodec;
 import com.amannmalik.mcp.core.JsonCodec;
-import com.amannmalik.mcp.validation.ValidationUtil;
+import com.amannmalik.mcp.util.ValidationUtil;
 import jakarta.json.JsonObject;
 
 public record ListToolsRequest(String cursor, JsonObject _meta) {

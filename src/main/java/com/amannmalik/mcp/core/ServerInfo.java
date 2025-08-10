@@ -1,6 +1,6 @@
 package com.amannmalik.mcp.core;
 
-import com.amannmalik.mcp.validation.ValidationUtil;
+import com.amannmalik.mcp.util.ValidationUtil;
 import jakarta.json.*;
 
 record ServerInfo(String name, String title, String version) {

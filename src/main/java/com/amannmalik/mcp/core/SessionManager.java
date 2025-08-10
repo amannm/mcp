@@ -2,7 +2,7 @@ package com.amannmalik.mcp.core;
 
 import com.amannmalik.mcp.auth.Principal;
 import com.amannmalik.mcp.util.Base64Util;
-import com.amannmalik.mcp.validation.ValidationUtil;
+import com.amannmalik.mcp.util.ValidationUtil;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 

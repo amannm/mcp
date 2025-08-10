@@ -1,8 +1,7 @@
-package com.amannmalik.mcp.annotations;
+package com.amannmalik.mcp.util;
 
 import com.amannmalik.mcp.core.JsonCodec;
 import com.amannmalik.mcp.prompts.Role;
-import com.amannmalik.mcp.validation.ValidationUtil;
 import jakarta.json.*;
 
 import java.time.Instant;

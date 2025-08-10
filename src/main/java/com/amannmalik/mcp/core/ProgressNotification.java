@@ -1,6 +1,6 @@
 package com.amannmalik.mcp.core;
 
-import com.amannmalik.mcp.validation.ValidationUtil;
+import com.amannmalik.mcp.util.ValidationUtil;
 import jakarta.json.*;
 
 import java.util.Optional;

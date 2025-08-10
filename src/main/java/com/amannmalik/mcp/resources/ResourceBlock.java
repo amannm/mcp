@@ -3,7 +3,7 @@ package com.amannmalik.mcp.resources;
 import com.amannmalik.mcp.core.AbstractEntityCodec;
 import com.amannmalik.mcp.core.JsonCodec;
 import com.amannmalik.mcp.util.Base64Util;
-import com.amannmalik.mcp.validation.ValidationUtil;
+import com.amannmalik.mcp.util.ValidationUtil;
 import jakarta.json.*;
 
 import java.util.Set;

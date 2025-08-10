@@ -2,7 +2,6 @@ package com.amannmalik.mcp.util;
 
 import com.amannmalik.mcp.core.JsonCodec;
 import com.amannmalik.mcp.jsonrpc.RequestId;
-import com.amannmalik.mcp.validation.ValidationUtil;
 import jakarta.json.*;
 
 public record CancelledNotification(RequestId requestId, String reason) {

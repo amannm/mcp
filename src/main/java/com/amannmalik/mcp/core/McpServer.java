@@ -13,7 +13,7 @@ import com.amannmalik.mcp.sampling.*;
 import com.amannmalik.mcp.security.*;
 import com.amannmalik.mcp.tools.*;
 import com.amannmalik.mcp.util.*;
-import com.amannmalik.mcp.validation.ValidationUtil;
+import com.amannmalik.mcp.util.ValidationUtil;
 import jakarta.json.*;
 import jakarta.json.stream.JsonParsingException;
 

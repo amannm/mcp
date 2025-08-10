@@ -1,7 +1,7 @@
 package com.amannmalik.mcp.auth;
 
 import com.amannmalik.mcp.util.Base64Util;
-import com.amannmalik.mcp.validation.ValidationUtil;
+import com.amannmalik.mcp.util.ValidationUtil;
 import jakarta.json.*;
 
 import javax.crypto.Mac;

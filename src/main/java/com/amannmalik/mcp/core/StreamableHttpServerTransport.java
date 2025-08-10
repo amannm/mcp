@@ -3,7 +3,7 @@ package com.amannmalik.mcp.core;
 import com.amannmalik.mcp.auth.AuthorizationManager;
 import com.amannmalik.mcp.auth.Principal;
 import com.amannmalik.mcp.config.McpConfiguration;
-import com.amannmalik.mcp.validation.ValidationUtil;
+import com.amannmalik.mcp.util.ValidationUtil;
 import jakarta.json.Json;
 import jakarta.json.JsonObject;
 import jakarta.servlet.http.HttpServletRequest;
