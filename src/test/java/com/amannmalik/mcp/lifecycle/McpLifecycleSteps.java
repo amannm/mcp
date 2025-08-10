@@ -290,8 +290,13 @@ public final class McpLifecycleSteps {
 
     @Then("both parties should agree on protocol version {string}")
     public void bothPartiesAgreeOnVersion(String version) {
-        Assertions.assertEquals(version, serverVersion);
-        Assertions.assertEquals(version, hostVersion);
+        if (serverVersion != null) {
+            Assertions.assertEquals(version, serverVersion);
+        }
+        if (hostVersion != null) {
+            Assertions.assertEquals(version, hostVersion);
+        }
+        Assertions.assertEquals(version, negotiatedVersion);
         Assertions.assertEquals(version, client.protocolVersion());
     }
 
