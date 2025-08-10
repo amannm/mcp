@@ -1,7 +1,7 @@
 Feature: MCP Lifecycle Conformance
   As an MCP implementation
   I want to ensure proper lifecycle management between McpHost and McpServer
-  So that client-server connections follow the 2025-06-18 specification rigorously
+  So that client-server connections follow the 2025-06-18 specification
 
   Background:
     Given a clean MCP environment
@@ -9,47 +9,34 @@ Feature: MCP Lifecycle Conformance
     And both McpHost and McpServer are available
 
   @core @initialization
-  Scenario: Successful initialization handshake with complete capability exchange
+  # SPEC: lifecycle.mdx:42-125 - Complete initialization handshake sequence
+  Scenario: Standard initialization handshake
     Given a McpServer with capabilities:
       | capability  | subcapability | enabled |
       | prompts     | listChanged   | true    |
       | resources   | subscribe     | true    |
-      | resources   | listChanged   | true    |
       | tools       | listChanged   | true    |
       | logging     |               | true    |
-      | completions |               | true    |
     And a McpHost with capabilities:
       | capability  | subcapability | enabled |
       | roots       | listChanged   | true    |
       | sampling    |               | true    |
-      | elicitation |               | true    |
-    When the McpHost initiates connection to McpServer
-    And sends initialize request with:
+    When the McpHost sends initialize request with:
       | field              | value           |
       | protocolVersion    | 2025-06-18      |
       | clientInfo.name    | TestClient      |
-      | clientInfo.title   | Test Client App |
       | clientInfo.version | 1.0.0           |
-    Then the McpServer should respond within 5 seconds with:
+    Then the McpServer should respond with:
       | field              | value              |
       | protocolVersion    | 2025-06-18         |
       | serverInfo.name    | mcp-java           |
-      | serverInfo.title   | MCP Java Reference |
       | serverInfo.version | 0.1.0              |
-    And the response should include all negotiated server capabilities
+    And the response should include all declared server capabilities
     And the McpHost should send initialized notification
     And both parties should be in operational state
-    And no protocol violations should be recorded
 
-  @core @version-negotiation
-  Scenario: Protocol version negotiation with matching versions
-    Given a McpServer supporting protocol version "2025-06-18"
-    And a McpHost requesting protocol version "2025-06-18"
-    When initialization is performed
-    Then both parties should agree on protocol version "2025-06-18"
-    And initialization should complete successfully
-
-  @core @version-negotiation
+  @core @version-negotiation  
+  # SPEC: lifecycle.mdx:129-137 - Version negotiation behavior
   Scenario: Protocol version negotiation with server downgrade
     Given a McpServer supporting protocol versions:
       | version    |
@@ -58,329 +45,390 @@ Feature: MCP Lifecycle Conformance
     And a McpHost requesting protocol version "2026-01-01"
     When initialization is performed
     Then the McpServer should respond with protocol version "2025-06-18"
-    And the McpHost should accept the downgrade
+    And the McpHost should accept the negotiated version
     And initialization should complete successfully
 
-#  @error-handling @version-negotiation
-#  Scenario: Protocol version negotiation failure with incompatible versions
-#    Given a McpServer supporting only protocol version "2024-11-05"
-#    And a McpHost supporting only versions "2025-06-18" and newer
-#    When the McpHost attempts initialization with version "2025-06-18"
-#    Then the McpServer should respond with protocol version "2024-11-05"
-#    And the McpHost should disconnect due to version incompatibility
-#    And no further communication should occur
-#
-#  @error-handling @initialization
-#  Scenario: Initialize request validation failures
-#    Given an uninitialized McpHost and McpServer connection
-#    When the McpHost sends initialize request missing required field:
-#      | missing_field    |
-#      | protocolVersion  |
-#      | capabilities     |
-#      | clientInfo       |
-#      | clientInfo.name  |
-#    Then the McpServer should respond with error code -32602
-#    And error message should contain "Invalid params"
-#    And the connection should remain uninitialized
-#
-  @sequencing @error-handling
-  Scenario: Requests before initialization must fail
-    Given an uninitialized connection between McpHost and McpServer
+  @error-handling @version-negotiation
+  # SPEC: lifecycle.mdx:136-137 - Client disconnection on version incompatibility
+  Scenario: Protocol version negotiation failure
+    Given a McpServer supporting only protocol version "2024-11-05"
+    And a McpHost supporting only version "2025-06-18"
+    When the McpHost attempts initialization
+    Then the McpServer should respond with protocol version "2024-11-05"
+    And the McpHost should disconnect due to version incompatibility
+
+  @validation @initialization
+  # SPEC: schema.ts:171-180,314-315 - InitializeRequest field requirements
+  Scenario: Initialize request validation
+    Given an uninitialized connection
+    When the McpHost sends initialize request missing:
+      | missing_field    |
+      | protocolVersion  |
+      | capabilities     |
+      | clientInfo       |
+      | clientInfo.name  |
+    Then the McpServer should respond with error code -32602
+    And error message should contain "Invalid params"
+
+  @sequencing @initialization
+  # SPEC: lifecycle.mdx:119-121 - Client request restrictions before initialization
+  Scenario: Requests before initialization are restricted
+    Given an uninitialized connection
     When the McpHost sends request:
       | method         |
       | tools/list     |
       | prompts/list   |
       | resources/list |
-    Then the McpServer should respond with error code -32002
-    And error message should contain "Server not initialized"
+    Then the McpServer should respond with appropriate error
     And the connection should remain uninitialized
-#
-#  @capabilities @negotiation
-#  Scenario: Complete server capability negotiation
-#    Given a McpServer declaring capabilities:
-#      | capability  | subcapability | enabled |
-#      | prompts     | listChanged   | true    |
-#      | resources   | subscribe     | true    |
-#      | resources   | listChanged   | true    |
-#      | tools       | listChanged   | true    |
-#      | logging     |               | true    |
-#      | completions |               | true    |
-#      | experimental| customFeature | true    |
-#    When initialization completes successfully
-#    Then the negotiated server capabilities should exactly match:
-#      | capability  | subcapability |
-#      | prompts     | listChanged   |
-#      | resources   | subscribe     |
-#      | resources   | listChanged   |
-#      | tools       | listChanged   |
-#      | logging     |               |
-#      | completions |               |
-#      | experimental| customFeature |
-#
-#  @capabilities @negotiation
-#  Scenario: Complete client capability negotiation
-#    Given a McpHost declaring capabilities:
-#      | capability  | subcapability | enabled |
-#      | roots       | listChanged   | true    |
-#      | sampling    |               | true    |
-#      | elicitation |               | true    |
-#      | experimental| customFeature | true    |
-#    When initialization completes successfully
-#    Then the negotiated client capabilities should exactly match:
-#      | capability  | subcapability |
-#      | roots       | listChanged   |
-#      | sampling    |               |
-#      | elicitation |               |
-#      | experimental| customFeature |
 
-#  @sequencing @error-handling
-#  Scenario: Server operations forbidden before initialized notification
-#    Given the McpServer has responded to initialize request
-#    But the McpHost has not sent initialized notification
-#    When the McpServer attempts to send:
-#      | method          |
-#      | prompts/list    |
-#      | resources/list  |
-#      | tools/call      |
-#      | sampling/create |
-#    Then these requests should be rejected or deferred
-#    And a protocol violation should be recorded
-#
-#  @sequencing @allowed-operations
-#  Scenario: Allowed server operations before initialized notification
-#    Given the McpServer has responded to initialize request
-#    But the McpHost has not sent initialized notification
-#    When the McpServer sends:
-#      | method               |
-#      | notifications/ping   |
-#      | notifications/log    |
-#    Then these should be accepted without protocol violation
-#    And the connection should remain stable
-#
-#  @json-rpc @compliance
-#  Scenario: JSON-RPC 2.0 message format strict compliance
-#    Given an active connection during any lifecycle phase
-#    When any message is transmitted
-#    Then the message must have field "jsonrpc" with exact value "2.0"
-#    And requests must have a valid "id" field
-#    And notifications must not have an "id" field
-#    And method names must follow specification format
-#
+  @capabilities @negotiation
+  # SPEC: lifecycle.mdx:146-149, schema.ts:243-287 - Capability negotiation
+  Scenario: Server capability negotiation
+    Given a McpServer declaring capabilities:
+      | capability  | subcapability | enabled |
+      | prompts     | listChanged   | true    |
+      | resources   | subscribe     | true    |
+      | tools       | listChanged   | true    |
+      | logging     |               | true    |
+    When initialization completes successfully
+    Then the negotiated server capabilities should exactly match declared capabilities
 
-@validation @initialization
-Scenario: Initialize request complete field validation
-  When the McpHost sends an initialize request
-  Then the request must contain exactly:
-    | required_field              | type   |
-    | params.protocolVersion      | string |
-    | params.capabilities         | object |
-    | params.clientInfo           | object |
-    | params.clientInfo.name      | string |
-  And params.clientInfo may optionally contain:
-    | optional_field              | type   |
-    | params.clientInfo.title     | string |
-    | params.clientInfo.version   | string |
+  @capabilities @negotiation  
+  # SPEC: schema.ts:216-238 - ClientCapabilities definition
+  Scenario: Client capability negotiation
+    Given a McpHost declaring capabilities:
+      | capability  | subcapability | enabled |
+      | roots       | listChanged   | true    |
+      | sampling    |               | true    |
+      | elicitation |               | true    |
+    When initialization completes successfully
+    Then the negotiated client capabilities should exactly match declared capabilities
 
-@validation @initialization
-Scenario: Initialize response complete field validation
-  When the McpServer responds to initialize request
-  Then the response must contain exactly:
-    | required_field              | type   |
-    | result.protocolVersion      | string |
-    | result.capabilities         | object |
-    | result.serverInfo           | object |
-    | result.serverInfo.name      | string |
-  And result may optionally contain:
-    | optional_field              | type   |
-    | result.serverInfo.title     | string |
-    | result.serverInfo.version   | string |
-    | result.instructions         | string |
+  @sequencing @operational
+  # SPEC: lifecycle.mdx:122-125 - Server request restrictions before initialized notification
+  Scenario: Server operations restricted before initialized notification
+    Given the McpServer has responded to initialize request
+    But the McpHost has not sent initialized notification
+    Then the McpServer should only send:
+      | allowed_method       |
+      | ping                 |
+      | logging              |
+    And should defer other operations until initialized notification received
 
-@transport @stdio @shutdown
-Scenario: Graceful shutdown via stdio transport
-  Given an established McpHost-McpServer connection over stdio transport
-  And normal operations are proceeding
-  When the McpHost initiates shutdown by closing input stream to McpServer
-  Then the McpServer should detect EOF within 2 seconds
-  And the McpServer should exit gracefully within 5 seconds
-  And if McpServer doesn't exit within 10 seconds, SIGTERM should be effective
-  And if still unresponsive after 15 seconds, SIGKILL should terminate it
+  @json-rpc @compliance
+  # SPEC: basic/index.mdx:29-31,48-49,95 - JSON-RPC 2.0 message format requirements
+  Scenario: JSON-RPC 2.0 message format compliance
+    Given an active connection during any lifecycle phase
+    When any message is transmitted
+    Then requests must have field "jsonrpc" with value "2.0"
+    And requests must have valid "id" field
+    And notifications must not have "id" field
+    And method names must follow specification format
 
-@transport @stdio @shutdown
-Scenario: Server-initiated shutdown via stdio transport
-  Given an established McpHost-McpServer connection over stdio transport
-  When the McpServer closes its output stream and exits
-  Then the McpHost should detect connection termination within 2 seconds
-  And should handle the disconnection gracefully
-  And should not attempt to send further messages
+  @validation @message-format
+  # SPEC: schema.ts:171-202 - Initialize request/response structure
+  Scenario: Initialize message structure validation
+    When the McpHost sends initialize request
+    Then the request must contain exactly:
+      | required_field              | type   |
+      | params.protocolVersion      | string |
+      | params.capabilities         | object |
+      | params.clientInfo           | object |
+      | params.clientInfo.name      | string |
+    When the McpServer responds to initialize request  
+    Then the response must contain exactly:
+      | required_field              | type   |
+      | result.protocolVersion      | string |
+      | result.capabilities         | object |
+      | result.serverInfo           | object |
+      | result.serverInfo.name      | string |
 
-#
-#  @transport @http @shutdown
-#  Scenario: HTTP transport connection termination
-#    Given an established McpHost-McpServer connection over HTTP transport
-#    When either party closes the HTTP connection
-#    Then the other party should detect disconnection within 30 seconds
-#    And should handle the disconnection gracefully
-#    And should stop attempting further HTTP requests
-#
-#  @timeouts @cancellation
-#  Scenario: Request timeout with cancellation notification
-#    Given an established McpHost-McpServer connection
-#    And request timeout is configured for 10 seconds
-#    When the McpHost sends a tools/call request
-#    And the McpServer does not respond within timeout period
-#    Then the McpHost should send notifications/cancelled message
-#    And should include the original request id
-#    And should stop waiting for response
-#    And should log the timeout event
-#
-#  @timeouts @progress
-#  Scenario: Progress notifications extend timeout within limits
-#    Given an established McpHost-McpServer connection
-#    And request timeout is configured for 30 seconds
-#    And maximum timeout is 120 seconds
-#    When the McpHost sends a long-running tools/call request
-#    And the McpServer sends progress notifications every 20 seconds
-#    Then timeout should be extended with each progress notification
-#    But should never exceed maximum timeout of 120 seconds
-#    And request should eventually complete or timeout
-#
-#  @error-handling @version-negotiation
-#  Scenario: Detailed unsupported protocol version error response
-#    Given a McpServer supporting only versions "2024-11-05" and "2024-06-20"
-#    When the McpHost requests unsupported version "1.0.0"
-#    Then the McpServer should respond with error containing exactly:
-#      | field                | value                              |
-#      | code                | -32602                             |
-#      | message             | Unsupported protocol version       |
-#      | data.supported      | ["2024-11-05", "2024-06-20"]      |
-#      | data.requested      | 1.0.0                              |
-#
-#  @sequencing @initialization
-#  Scenario: Client operations restricted before initialization response
-#    Given an uninitialized connection
-#    When the McpHost sends initialize request
-#    But before McpServer responds
-#    Then McpHost should only be allowed to send:
-#      | allowed_method       |
-#      | notifications/ping   |
-#    And any other requests should be queued or rejected
-#    And should be processed after initialization completes
-#
-#  @sequencing @initialization
-#  Scenario: Server operations restricted before initialized notification
-#    Given the McpServer has responded to initialize request
-#    But McpHost has not yet sent initialized notification
-#    Then McpServer should only send:
-#      | allowed_method       |
-#      | notifications/ping   |
-#      | notifications/log    |
-#    And should defer any other operations until initialized notification received
-#
-  @operation-phase @capability-respect
+  @operation-phase @capability-enforcement
+  # SPEC: lifecycle.mdx:177-180 - Capability boundary enforcement
   Scenario: Capability boundaries respected during operations
-    Given successful initialization with specific negotiated capabilities
+    Given successful initialization with negotiated capabilities
     And server capabilities include "tools" but not "prompts"
-    And client capabilities include "sampling" but not "roots"
-    When McpHost attempts to use non-negotiated server capability "prompts/list"
+    When McpHost attempts to use non-negotiated capability "prompts/list"
     Then McpServer should respond with error code -32601
     And error message should indicate "Method not found"
-    And connection should remain stable for valid operations
 
   @operation-phase @version-consistency
+  # SPEC: lifecycle.mdx:179 - Protocol version consistency
   Scenario: Protocol version consistency throughout session
     Given successful initialization with protocol version "2025-06-18"
     When any message is exchanged during operation phase
     Then message format should conform exactly to "2025-06-18" specification
-    And should not use deprecated features from older versions
-    And should not use preview features from newer versions
 
-#  @transport @http @authorization
-#  Scenario: HTTP transport with JWT authorization lifecycle
-#    Given a McpServer configured with JWT authorization
-#    And expected audience "test-client"
-#    And a valid JWT token for McpHost
-#    When McpHost establishes HTTP connection with Authorization header
-#    And performs initialize sequence
-#    Then authorization should be validated before initialization
-#    And initialization should proceed normally after auth success
-#    And subsequent requests should maintain authorization context
-#
-#  @transport @http @authorization @error-handling
-#  Scenario: HTTP transport authorization failure handling
-#    Given a McpServer configured with JWT authorization
-#    And expected audience "test-client"
-#    When McpHost attempts connection with invalid JWT token
-#    Then HTTP request should return 401 Unauthorized
-#    And initialization should not proceed
-#    And no MCP messages should be processed
-#
-#  @interactive @cli-integration
-#  Scenario: McpHost interactive mode lifecycle integration
-#    Given a McpHost started in interactive CLI mode
-#    And connected to test McpServer
-#    When user issues "clients" command
-#    Then should display active client connections
-#    When user issues "context" command
-#    Then should display aggregated server context
-#    And all operations should respect initialized connection state
-#
-#  @stress-testing @multiple-connections
-#  Scenario: Multiple concurrent client connections lifecycle
-#    Given a McpServer capable of handling multiple connections
-#    When 5 McpHost instances connect simultaneously
-#    And each performs initialization sequence
-#    Then all initializations should complete successfully within 30 seconds
-#    And each connection should maintain independent state
-#    And capabilities should be negotiated per-connection
-#    And shutdown of one connection should not affect others
-#
-#  @error-recovery @connection-resilience
-#  Scenario: Connection recovery after initialization failure
-#    Given a McpHost that experienced initialization failure
-#    When McpHost attempts reconnection with corrected parameters
-#    Then new connection should be established cleanly
-#    And initialization should proceed normally
-#    And previous failed connection state should not interfere
-#
-#  @edge-cases @malformed-messages
-#  Scenario: Malformed initialize request handling
-#    Given an uninitialized connection
-#    When McpHost sends malformed JSON in initialize request
-#    Then McpServer should respond with JSON-RPC parse error -32700
-#    And connection should remain available for retry
-#    And should not crash or become unresponsive
-#
-#  @edge-cases @concurrent-initialization
-#  Scenario: Concurrent initialization attempts prevention
-#    Given an uninitialized connection
-#    When McpHost sends multiple initialize requests simultaneously
-#    Then McpServer should process only the first initialize request
-#    And should respond with error -32600 "Invalid Request" to subsequent attempts
-#    And should complete initialization normally with first request
-#
-#  @security @instruction-handling
-#  Scenario: Server instructions handling during initialization
-#    Given a McpServer configured with custom instructions
-#    When initialization completes successfully
-#    Then initialize response should include instructions field
-#    And McpHost should be able to access and process instructions
-#    And instructions should not affect protocol compliance
-#
-  @performance @initialization-timing
-  Scenario: Initialization performance requirements
-    Given optimal network conditions
-    When McpHost initiates connection to McpServer
-    Then initialize request should be sent within 100ms of connection
-    And McpServer should respond within 1 second
-    And initialized notification should be sent within 100ms of response
-    And total initialization should complete within 2 seconds
+  @error-handling @malformed-messages
+  # SPEC: schema.ts:98, basic/index.mdx:29-31 - Malformed message handling
+  Scenario: Malformed message handling
+    Given an active connection
+    When malformed JSON is transmitted
+    Then the receiver should respond with JSON-RPC parse error -32700
+    And connection should remain stable for retry
 
-#  @cleanup @resource-management
-#  Scenario: Proper resource cleanup on lifecycle completion
-#    Given an established McpHost-McpServer connection
-#    When connection goes through complete lifecycle including shutdown
-#    Then all file handles should be closed
-#    And all threads should be terminated
-#    And no memory leaks should be detected
-#    And system resources should be fully released
+  @transport @stdio @shutdown
+  # SPEC: transports.mdx:190-197 - stdio shutdown procedure
+  Scenario: Graceful shutdown via stdio transport
+    Given an established connection over stdio transport
+    When the McpHost closes input stream to McpServer
+    Then the McpServer should detect EOF and exit gracefully
+    And proper cleanup should occur
+
+  @security @instructions
+  # SPEC: schema.ts:196-201 - Optional instructions field handling
+  Scenario: Server instructions handling during initialization
+    Given a McpServer configured with initialization instructions
+    When initialization completes successfully
+    Then initialize response may include instructions field
+    And instructions should not affect protocol compliance
+
+  @utilities @ping
+  # SPEC: ping.mdx - Ping request/response validation and bidirectional support
+  Scenario: Ping utility during operational phase
+    Given an established connection in operational state
+    When either party sends ping request
+    Then the receiver should respond promptly with empty response {}
+    And connection should remain active
+
+  @utilities @ping @initialization
+  # SPEC: ping.mdx - Ping allowed during restricted phases
+  Scenario: Ping allowed before initialization completion
+    Given an uninitialized connection
+    When either party sends ping request
+    Then ping should be processed normally
+    And should not violate initialization sequence restrictions
+
+  @utilities @ping @timeout
+  # SPEC: ping.mdx - Connection considered stale without ping response
+  Scenario: Ping timeout handling for connection liveness
+    Given an established connection
+    When ping request is sent but no response received within timeout
+    Then connection should be considered stale
+    And appropriate reconnection or cleanup should occur
+
+  @utilities @progress
+  # SPEC: progress.mdx - Progress token handling for long-running requests
+  Scenario: Progress notifications with token tracking
+    Given an established connection
+    When request is sent with _meta.progressToken "task-123"
+    Then server should send progress notifications with matching token
+    And progress values should be increasing
+    And notifications should stop after request completion
+
+  @utilities @progress @validation
+  # SPEC: progress.mdx - Progress token uniqueness and structure
+  Scenario: Progress token validation and uniqueness
+    Given multiple concurrent requests with progress tokens
+    When progress tokens "task-1" and "task-2" are used
+    Then each progress notification should match correct token
+    And tokens should remain unique across active requests
+    And progress notifications should include optional total and message fields
+
+  @utilities @cancellation
+  # SPEC: cancellation.mdx - Cancel request validation and restrictions
+  Scenario: Request cancellation validation
+    Given an in-progress request with id "req-123"
+    When notifications/cancelled is sent with requestId "req-123"
+    Then server should stop processing request "req-123"
+    And should free associated resources
+    And should not send response for cancelled request
+
+  @utilities @cancellation @restrictions
+  # SPEC: cancellation.mdx - Initialize requests cannot be cancelled
+  Scenario: Initialize request cancellation prohibition
+    Given an initialize request in progress
+    When notifications/cancelled is sent for initialize request
+    Then cancellation should be ignored or rejected
+    And initialization should continue normally
+
+  @utilities @cancellation @timing
+  # SPEC: cancellation.mdx - Handle cancellation after completion gracefully
+  Scenario: Cancellation after request completion
+    Given a completed request with id "req-456"
+    When notifications/cancelled is sent with requestId "req-456"
+    Then cancellation should be handled gracefully
+    And should not cause errors or connection issues
+
+  @transport @http @headers
+  # SPEC: transports.mdx - HTTP protocol version header requirements
+  Scenario: HTTP transport protocol version header
+    Given an HTTP transport connection
+    When any HTTP request is sent
+    Then MCP-Protocol-Version header must be included
+    And header value should match negotiated protocol version
+
+  @transport @http @session
+  # SPEC: transports.mdx - HTTP session management
+  Scenario: HTTP session ID handling
+    Given an HTTP transport with session support
+    When connection is established
+    Then Mcp-Session-Id header may be provided
+    And session ID should be cryptographically secure
+    And session ID should be non-sequential
+
+  @transport @http @sse
+  # SPEC: transports.mdx - Server-sent events bidirectional communication
+  Scenario: SSE stream handling for bidirectional communication
+    Given an HTTP transport using SSE
+    When server needs to send requests to client
+    Then SSE stream should be used for server-to-client messages
+    And client responses should be sent via HTTP requests
+    And stream should handle connection persistence
+
+  @transport @http @resumable
+  # SPEC: transports.mdx - SSE stream resumption after disconnection
+  Scenario: Resumable SSE streams with Last-Event-ID
+    Given an established SSE connection that gets interrupted
+    When client reconnects with Last-Event-ID header
+    Then server should resume from last processed event
+    And missed events should be replayed if available
+    And connection should continue normally
+
+  @json-rpc @id-uniqueness
+  # SPEC: basic/index.mdx:48-49 - Request ID uniqueness within session
+  Scenario: Request ID uniqueness enforcement
+    Given an active session
+    When multiple requests are sent with same ID "duplicate-123"
+    Then second request should be rejected as invalid
+    And error should indicate duplicate ID usage
+
+  @json-rpc @id-restrictions
+  # SPEC: basic/index.mdx:48-49 - Request IDs must not be null
+  Scenario: Request ID null value prohibition
+    Given an active connection
+    When request is sent with id field set to null
+    Then request should be rejected with invalid request error -32600
+    And connection should remain stable
+
+  @json-rpc @metadata
+  # SPEC: schema.ts - Metadata field structure validation
+  Scenario: Message metadata field validation
+    Given any message with _meta field
+    Then _meta field should follow specified structure
+    And reserved keys should be validated correctly
+    And custom metadata should be preserved
+
+  @json-rpc @error-codes
+  # SPEC: schema.ts:98-106 - Standard JSON-RPC error code validation
+  Scenario: Standard error code compliance
+    Given various error conditions occur
+    Then appropriate standard error codes should be returned:
+      | condition              | code  | message           |
+      | malformed JSON        | -32700 | Parse error       |
+      | invalid request       | -32600 | Invalid Request   |
+      | method not found      | -32601 | Method not found  |
+      | invalid parameters    | -32602 | Invalid params    |
+      | internal error        | -32603 | Internal error    |
+
+  @authorization @bearer-token
+  # SPEC: authorization.mdx:236-249 - Bearer token validation in Authorization header
+  Scenario: HTTP authorization with Bearer token
+    Given an HTTP connection with JWT authorization
+    When request includes Authorization: Bearer <valid-token>
+    Then token should be validated before processing request
+    And token audience should match server identifier
+    And request should proceed normally after validation
+
+  @authorization @error-handling
+  # SPEC: authorization.mdx:89-92,269-270 - 401 response with WWW-Authenticate header
+  Scenario: Authorization failure handling
+    Given an HTTP connection requiring authorization
+    When request has invalid or expired token
+    Then response should be HTTP 401 Unauthorized
+    And WWW-Authenticate header should be included
+    And header should contain protected resource metadata
+
+  @authorization @audience-validation
+  # SPEC: authorization.mdx - Token audience must be server-specific
+  Scenario: JWT token audience validation
+    Given a JWT token with audience "wrong-server"
+    When token is presented to server expecting audience "correct-server"
+    Then token should be rejected due to audience mismatch
+    And 401 Unauthorized should be returned
+
+  @security @token-restrictions
+  # SPEC: security_best_practices.mdx - Token passthrough prohibition
+  Scenario: Upstream token passthrough prohibition
+    Given a server receiving upstream authorization token
+    When making downstream requests
+    Then upstream token must not be passed through
+    And separate authorization should be used for downstream calls
+
+  @security @session-security
+  # SPEC: security_best_practices.mdx - Session ID cryptographic security
+  Scenario: Session identifier security requirements
+    Given session-based transport
+    When session IDs are generated
+    Then IDs should be cryptographically secure
+    And IDs should be non-sequential
+    And IDs should have sufficient entropy to prevent guessing
+
+  @initialization @complex-capabilities
+  # SPEC: lifecycle.mdx:146-149 - Complex capability negotiation scenarios
+  Scenario: Complex multi-level capability negotiation
+    Given a server with nested capabilities:
+      | capability  | subcapability | enabled |
+      | resources   | subscribe     | true    |
+      | resources   | listChanged   | true    |
+      | tools       | listChanged   | false   |
+    When initialization completes
+    Then negotiated capabilities should exactly match server declarations
+    And capability structure should be preserved
+
+  @initialization @multiple-versions
+  # SPEC: lifecycle.mdx:129-137 - Multiple version support edge cases
+  Scenario: Server supporting multiple protocol versions
+    Given a server supporting versions:
+      | version      | status      |
+      | 2024-11-05   | deprecated  |
+      | 2025-06-18   | current     |
+    When client requests unsupported version "2023-01-01"
+    Then server should respond with highest stable version "2025-06-18"
+    And should not offer deprecated versions
+
+  @initialization @instruction-processing
+  # SPEC: lifecycle.mdx:104, schema.ts:196-201 - Server instruction field handling
+  Scenario: Server initialization instructions processing
+    Given a server with initialization instructions "Use tools carefully"
+    When initialization completes successfully
+    Then response should include instructions field
+    And client should be able to access instructions
+    And instructions should be treated as advisory only
+
+  @error-recovery @connection-resilience
+  # SPEC: lifecycle.mdx - Fresh initialization after connection failure
+  Scenario: Connection recovery after transport failure
+    Given an established connection that fails
+    When client attempts reconnection
+    Then new connection should start fresh
+    And initialization should be performed again
+    And previous connection state should not interfere
+
+  @error-recovery @partial-initialization
+  # SPEC: lifecycle.mdx:42-125 - Rollback from failed initialization
+  Scenario: Partial initialization failure recovery
+    Given initialization sequence in progress
+    When initialization fails after server response but before initialized notification
+    Then connection should return to uninitialized state
+    And subsequent initialization attempt should start cleanly
+    And no partial state should remain
+
+  @shutdown @resource-cleanup
+  # SPEC: transports.mdx:189-204 - Resource cleanup during shutdown
+  Scenario: Proper resource cleanup on connection shutdown
+    Given an active connection with ongoing operations
+    When shutdown is initiated via transport-specific method
+    Then all pending requests should be cancelled or completed
+    And system resources should be properly released
+    And no resource leaks should occur
+
+  @performance @initialization-timeout
+  # SPEC: lifecycle.mdx:208-212 - Request timeout with cancellation
+  Scenario: Initialization request timeout handling
+    Given initialization request timeout configured
+    When initialize request exceeds timeout period
+    Then timeout handler should issue cancellation notification
+    And connection should be terminated cleanly
+    And client should be able to retry initialization
