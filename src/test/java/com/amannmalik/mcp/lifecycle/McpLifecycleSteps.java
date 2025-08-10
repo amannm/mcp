@@ -372,14 +372,19 @@ public final class McpLifecycleSteps {
     @Then("params.clientInfo may optionally contain:")
     public void clientInfoMayOptionallyContain(DataTable table) {
         JsonObject clientInfo = initRequest.getJsonObject("params").getJsonObject("clientInfo");
-        Set<String> allowed = new HashSet<>();
-        allowed.add("name");
-        table.asMaps().forEach(m -> allowed.add(m.get("optional_field").substring("params.clientInfo.".length())));
-        Assertions.assertEquals(allowed, clientInfo.keySet());
-        table.asMaps().forEach(m -> {
-            String key = m.get("optional_field").substring("params.clientInfo.".length());
-            JsonValue v = clientInfo.get(key);
-            if (v != null) assertType(v, m.get("type"));
+        Map<String, String> optional = table.asMaps().stream()
+                .collect(Collectors.toMap(
+                        m -> m.get("optional_field").substring("params.clientInfo.".length()),
+                        m -> m.get("type")));
+
+        Assertions.assertTrue(clientInfo.containsKey("name"));
+        Assertions.assertTrue(clientInfo.keySet().stream()
+                .allMatch(k -> k.equals("name") || optional.containsKey(k)));
+
+        optional.forEach((key, type) -> {
+            if (clientInfo.containsKey(key)) {
+                assertType(clientInfo.get(key), type);
+            }
         });
     }
 
