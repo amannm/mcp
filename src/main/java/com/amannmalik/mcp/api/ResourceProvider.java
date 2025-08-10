@@ -1,6 +1,7 @@
 package com.amannmalik.mcp.api;
 
 import com.amannmalik.mcp.core.Provider;
+import com.amannmalik.mcp.util.ResourceBlock;
 
 import java.util.Optional;
 import java.util.function.Consumer;

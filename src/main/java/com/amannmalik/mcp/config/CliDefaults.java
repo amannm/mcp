@@ -15,6 +15,7 @@ import com.amannmalik.mcp.sampling.InteractiveSamplingProvider;
 import com.amannmalik.mcp.api.SamplingProvider;
 import com.amannmalik.mcp.security.*;
 import com.amannmalik.mcp.tools.*;
+import com.amannmalik.mcp.util.ResourceBlock;
 import jakarta.json.Json;
 
 import java.time.Instant;
