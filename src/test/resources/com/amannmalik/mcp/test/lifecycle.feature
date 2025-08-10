@@ -41,14 +41,14 @@ Feature: MCP Lifecycle Conformance
     And both parties should be in operational state
     And no protocol violations should be recorded
 
-#  @core @version-negotiation
-#  Scenario: Protocol version negotiation with matching versions
-#    Given a McpServer supporting protocol version "2025-06-18"
-#    And a McpHost requesting protocol version "2025-06-18"
-#    When initialization is performed
-#    Then both parties should agree on protocol version "2025-06-18"
-#    And initialization should complete successfully
-#
+  @core @version-negotiation
+  Scenario: Protocol version negotiation with matching versions
+    Given a McpServer supporting protocol version "2025-06-18"
+    And a McpHost requesting protocol version "2025-06-18"
+    When initialization is performed
+    Then both parties should agree on protocol version "2025-06-18"
+    And initialization should complete successfully
+
 #  @core @version-negotiation
 #  Scenario: Protocol version negotiation with server downgrade
 #    Given a McpServer supporting protocol versions:
