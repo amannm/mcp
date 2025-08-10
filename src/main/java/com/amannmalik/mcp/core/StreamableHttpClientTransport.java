@@ -1,5 +1,6 @@
 package com.amannmalik.mcp.core;
 
+import com.amannmalik.mcp.config.McpConfiguration;
 import com.amannmalik.mcp.util.ValidationUtil;
 import jakarta.json.*;
 
@@ -85,11 +86,20 @@ final class StreamableHttpClientTransport implements Transport {
 
     @Override
     public JsonObject receive() throws IOException {
+        return receive(McpConfiguration.current().defaultMs());
+    }
+    
+    @Override
+    public JsonObject receive(long timeoutMillis) throws IOException {
         try {
-            return incoming.take();
+            JsonObject result = incoming.poll(timeoutMillis, TimeUnit.MILLISECONDS);
+            if (result == null) {
+                throw new IOException("Timeout after " + timeoutMillis + "ms waiting for message");
+            }
+            return result;
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
-            throw new IOException(e);
+            throw new IOException("Interrupted while waiting for message", e);
         }
     }
 

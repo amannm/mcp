@@ -9,6 +9,8 @@ public interface Transport extends AutoCloseable {
     void send(JsonObject message) throws IOException;
 
     JsonObject receive() throws IOException;
+    
+    JsonObject receive(long timeoutMillis) throws IOException;
 
     @Override
     void close() throws IOException;

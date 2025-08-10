@@ -74,6 +74,9 @@ public final class ResourceFeature implements AutoCloseable {
     }
 
     private JsonRpcMessage listResources(JsonRpcRequest req) {
+        if (state.get() != LifecycleState.OPERATION) {
+            return JsonRpcError.of(req.id(), -32002, "Server not initialized");
+        }
         Optional<ProgressToken> progressToken = ProgressNotification.fromMeta(req.params());
         try {
             ListResourcesRequest lr = ListResourcesRequest.CODEC.fromJson(req.params());

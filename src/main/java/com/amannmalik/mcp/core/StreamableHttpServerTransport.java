@@ -19,6 +19,7 @@ import java.net.InetSocketAddress;
 import java.util.*;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.TimeUnit;
 
 final class StreamableHttpServerTransport implements Transport {
     private final Server server;
@@ -88,15 +89,23 @@ final class StreamableHttpServerTransport implements Transport {
 
     @Override
     public JsonObject receive() throws IOException {
+        return receive(McpConfiguration.current().defaultMs());
+    }
+    
+    @Override
+    public JsonObject receive(long timeoutMillis) throws IOException {
         try {
-            JsonObject obj = incoming.take();
+            JsonObject obj = incoming.poll(timeoutMillis, TimeUnit.MILLISECONDS);
+            if (obj == null) {
+                throw new IOException("Timeout after " + timeoutMillis + "ms waiting for message");
+            }
             if (closed && obj.containsKey("_close")) {
                 throw new EOFException();
             }
             return obj;
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
-            throw new IOException(e);
+            throw new IOException("Interrupted while waiting for message", e);
         }
     }
 

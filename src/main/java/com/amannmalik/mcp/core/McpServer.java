@@ -351,6 +351,13 @@ public final class McpServer extends JsonRpcEndpoint implements AutoCloseable {
         }
     }
 
+    private Optional<JsonRpcError> checkInitialized(RequestId id) {
+        if (lifecycleState != LifecycleState.OPERATION) {
+            return Optional.of(JsonRpcError.of(id, -32002, McpConfiguration.current().errorNotInitialized()));
+        }
+        return Optional.empty();
+    }
+
 
     private Optional<String> rateLimit(RateLimiter limiter, String key) {
         try {
@@ -378,6 +385,8 @@ public final class McpServer extends JsonRpcEndpoint implements AutoCloseable {
     }
 
     private JsonRpcMessage listTools(JsonRpcRequest req) {
+        Optional<JsonRpcError> initCheck = checkInitialized(req.id());
+        if (initCheck.isPresent()) return initCheck.get();
         requireServerCapability(ServerCapability.TOOLS);
         try {
             ListToolsRequest ltr = ListToolsRequest.CODEC.fromJson(req.params());
@@ -443,6 +452,8 @@ public final class McpServer extends JsonRpcEndpoint implements AutoCloseable {
     }
 
     private JsonRpcMessage listPrompts(JsonRpcRequest req) {
+        Optional<JsonRpcError> initCheck = checkInitialized(req.id());
+        if (initCheck.isPresent()) return initCheck.get();
         requireServerCapability(ServerCapability.PROMPTS);
         try {
             ListPromptsRequest lpr = ListPromptsRequest.CODEC.fromJson(req.params());

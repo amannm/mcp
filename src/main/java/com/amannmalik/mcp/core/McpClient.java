@@ -311,7 +311,9 @@ public final class McpClient extends JsonRpcEndpoint implements AutoCloseable {
     }
 
     public JsonRpcMessage request(String method, JsonObject params, long timeoutMillis) throws IOException {
-        if (!connected) throw new IllegalStateException("not connected");
+        if (!connected) {
+            return JsonRpcError.of(new RequestId.NumericId(0), -32002, "Server not initialized");
+        }
         try {
             return super.request(method, params, timeoutMillis);
         } catch (UnauthorizedException e) {

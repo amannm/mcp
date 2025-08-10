@@ -50,11 +50,31 @@ public final class StdioTransport implements Transport {
 
     @Override
     public JsonObject receive() throws IOException {
-        String line = in.readLine();
-        if (line == null) throw new EOFException();
-        try (JsonReader reader = Json.createReader(new StringReader(line))) {
-            return reader.readObject();
+        return receive(McpConfiguration.current().defaultMs());
+    }
+    
+    @Override
+    public JsonObject receive(long timeoutMillis) throws IOException {
+        long endTime = System.currentTimeMillis() + timeoutMillis;
+        
+        while (System.currentTimeMillis() < endTime) {
+            if (in.ready()) {
+                String line = in.readLine();
+                if (line == null) throw new EOFException();
+                try (JsonReader reader = Json.createReader(new StringReader(line))) {
+                    return reader.readObject();
+                }
+            }
+            
+            try {
+                Thread.sleep(10);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                throw new IOException("Interrupted while waiting for input", e);
+            }
         }
+        
+        throw new IOException("Timeout after " + timeoutMillis + "ms waiting for input");
     }
 
     @Override
