@@ -205,13 +205,13 @@ Feature: MCP Lifecycle Conformance
 #    And if McpServer doesn't exit within 10 seconds, SIGTERM should be effective
 #    And if still unresponsive after 15 seconds, SIGKILL should terminate it
 #
-#  @transport @stdio @shutdown
-#  Scenario: Server-initiated shutdown via stdio transport
-#    Given an established McpHost-McpServer connection over stdio transport
-#    When the McpServer closes its output stream and exits
-#    Then the McpHost should detect connection termination within 2 seconds
-#    And should handle the disconnection gracefully
-#    And should not attempt to send further messages
+  @transport @stdio @shutdown
+  Scenario: Server-initiated shutdown via stdio transport
+    Given an established McpHost-McpServer connection over stdio transport
+    When the McpServer closes its output stream and exits
+    Then the McpHost should detect connection termination within 2 seconds
+    And should handle the disconnection gracefully
+    And should not attempt to send further messages
 #
 #  @transport @http @shutdown
 #  Scenario: HTTP transport connection termination
