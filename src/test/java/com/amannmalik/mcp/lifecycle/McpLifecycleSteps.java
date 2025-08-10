@@ -262,7 +262,6 @@ public final class McpLifecycleSteps {
 
     @Given("a McpHost requesting protocol version {string}")
     public void hostRequestsVersion(String version) {
-        Assertions.assertEquals("2025-06-18", version);
         hostVersion = version;
     }
 
@@ -272,34 +271,7 @@ public final class McpLifecycleSteps {
         long start = System.currentTimeMillis();
         client.connect();
         connectMillis = System.currentTimeMillis() - start;
-    }
-
-    @Then("both parties should agree on protocol version {string}")
-    public void agreeOnVersion(String version) throws IOException {
-        PipedInputStream clientIn = new PipedInputStream();
-        PipedOutputStream serverOut = new PipedOutputStream(clientIn);
-        PipedInputStream serverIn = new PipedInputStream();
-        PipedOutputStream clientOut = new PipedOutputStream(serverIn);
-        client = new McpClient(new ClientInfo("TestClient", "Test Client App", "1.0.0"),
-                Set.of(), new StdioTransport(clientIn, clientOut), null, null, null, null);
-        server = new McpServer(new StdioTransport(serverIn, serverOut), null);
-        serverThread = new Thread(() -> {
-            try {
-                server.serve();
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
-        });
-        serverThread.start();
-        client.connect();
-        if (!serverSupportedVersions.isEmpty()) {
-            negotiatedVersion = serverSupportedVersions.stream()
-                    .filter(v -> v.compareTo(hostVersion) <= 0)
-                    .max(String::compareTo)
-                    .orElse(serverSupportedVersions.get(serverSupportedVersions.size() - 1));
-        } else {
-            negotiatedVersion = serverVersion;
-        }
+        negotiatedVersion = client.protocolVersion();
     }
 
     @Then("both parties should agree on protocol version {string}")
