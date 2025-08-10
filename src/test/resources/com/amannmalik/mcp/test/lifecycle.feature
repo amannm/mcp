@@ -275,16 +275,16 @@ Feature: MCP Lifecycle Conformance
 #      | notifications/log    |
 #    And should defer any other operations until initialized notification received
 #
-#  @operation-phase @capability-respect
-#  Scenario: Capability boundaries respected during operations
-#    Given successful initialization with specific negotiated capabilities
-#    And server capabilities include "tools" but not "prompts"
-#    And client capabilities include "sampling" but not "roots"
-#    When McpHost attempts to use non-negotiated server capability "prompts/list"
-#    Then McpServer should respond with error code -32601
-#    And error message should indicate "Method not found"
-#    And connection should remain stable for valid operations
-#
+  @operation-phase @capability-respect
+  Scenario: Capability boundaries respected during operations
+    Given successful initialization with specific negotiated capabilities
+    And server capabilities include "tools" but not "prompts"
+    And client capabilities include "sampling" but not "roots"
+    When McpHost attempts to use non-negotiated server capability "prompts/list"
+    Then McpServer should respond with error code -32601
+    And error message should indicate "Method not found"
+    And connection should remain stable for valid operations
+
   @operation-phase @version-consistency
   Scenario: Protocol version consistency throughout session
     Given successful initialization with protocol version "2025-06-18"

@@ -19,6 +19,10 @@ import java.io.PipedInputStream;
 import java.io.PipedOutputStream;
 import java.util.*;
 
+import com.amannmalik.mcp.jsonrpc.JsonRpcError;
+import com.amannmalik.mcp.jsonrpc.JsonRpcMessage;
+import jakarta.json.Json;
+
 public final class McpLifecycleSteps {
     private McpClient client;
     private McpServer server;
@@ -28,6 +32,8 @@ public final class McpLifecycleSteps {
     private final Set<ClientCapability> hostCaps = EnumSet.noneOf(ClientCapability.class);
     private String serverVersion;
     private String hostVersion;
+    private JsonRpcMessage lastResponse;
+    private JsonRpcError lastError;
 
     @Given("a clean MCP environment")
     public void cleanEnvironment() {
@@ -234,6 +240,53 @@ public final class McpLifecycleSteps {
     @Then("should not attempt to send further messages")
     public void noFurtherMessages() {
         Assertions.assertThrows(IllegalStateException.class, () -> client.ping());
+    }
+
+    @Given("successful initialization with specific negotiated capabilities")
+    public void successfulInitializationWithSpecificNegotiatedCapabilities() throws IOException {
+        hostCaps.clear();
+        hostCaps.add(ClientCapability.SAMPLING);
+        hostInitiatesConnection();
+        client.connect();
+    }
+
+    @Given("server capabilities include {string} but not {string}")
+    public void serverCapabilitiesIncludeButNot(String present, String absent) {
+        Set<String> caps = client.serverCapabilityNames();
+        Assertions.assertTrue(caps.contains(present.toUpperCase()));
+        Assertions.assertFalse(caps.contains(absent.toUpperCase()));
+    }
+
+    @Given("client capabilities include {string} but not {string}")
+    public void clientCapabilitiesIncludeButNot(String present, String absent) {
+        Assertions.assertTrue(hostCaps.contains(ClientCapability.valueOf(present.toUpperCase())));
+        Assertions.assertFalse(hostCaps.contains(ClientCapability.valueOf(absent.toUpperCase())));
+    }
+
+    @When("McpHost attempts to use non-negotiated server capability {string}")
+    public void mcphostAttemptsToUseNonNegotiatedServerCapability(String method) throws IOException {
+        lastResponse = client.request(method, Json.createObjectBuilder().build());
+    }
+
+    @Then("McpServer should respond with error code {int}")
+    public void mcpserverShouldRespondWithErrorCode(int code) {
+        if (lastResponse instanceof JsonRpcError err) {
+            lastError = err;
+            Assertions.assertEquals(code, err.error().code());
+        } else {
+            Assertions.fail("Expected error response");
+        }
+    }
+
+    @Then("error message should indicate {string}")
+    public void errorMessageShouldIndicate(String message) {
+        Assertions.assertNotNull(lastError);
+        Assertions.assertTrue(lastError.error().message().contains(message));
+    }
+
+    @Then("connection should remain stable for valid operations")
+    public void connectionShouldRemainStableForValidOperations() throws IOException {
+        client.ping();
     }
 
     @After
