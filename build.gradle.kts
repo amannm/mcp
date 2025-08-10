@@ -40,7 +40,7 @@ dependencies {
 }
 
 application {
-    mainClass.set("com.amannmalik.mcp.Main")
+    mainClass.set("com.amannmalik.mcp.Entrypoint")
 }
 
 java {
