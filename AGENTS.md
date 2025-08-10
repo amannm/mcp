@@ -25,6 +25,7 @@ description: MCP Specification Expert
 - Always ensure it builds
 - Prefer failing fast
 - Never use `java.lang.reflect`
+- Never loosen visibility for testing
 
 # Wisdom
 
