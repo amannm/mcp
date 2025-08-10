@@ -129,6 +129,34 @@ public final class McpLifecycleSteps {
     public void noProtocolViolations() {
     }
 
+    @Given("a McpServer supporting protocol version {string}")
+    public void serverSupportsVersion(String version) {
+        Assertions.assertEquals("2025-06-18", version);
+    }
+
+    @Given("a McpHost requesting protocol version {string}")
+    public void hostRequestsVersion(String version) {
+        Assertions.assertEquals("2025-06-18", version);
+    }
+
+    @When("initialization is performed")
+    public void initializationPerformed() throws IOException {
+        hostInitiatesConnection();
+        long start = System.currentTimeMillis();
+        client.connect();
+        connectMillis = System.currentTimeMillis() - start;
+    }
+
+    @Then("both parties should agree on protocol version {string}")
+    public void agreeOnVersion(String version) {
+        Assertions.assertEquals(version, client.protocolVersion());
+    }
+
+    @Then("initialization should complete successfully")
+    public void initializationCompletes() throws IOException {
+        client.ping();
+    }
+
     @After
     public void tearDown() throws IOException {
         if (client != null) client.close();
