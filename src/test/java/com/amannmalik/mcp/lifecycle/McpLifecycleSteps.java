@@ -137,16 +137,26 @@ public final class McpLifecycleSteps {
 
     @Given("a McpServer supporting protocol version {string}")
     public void serverSupportsVersion(String version) {
+        Assertions.assertEquals("2025-06-18", version);
         serverVersion = version;
     }
 
     @Given("a McpHost requesting protocol version {string}")
     public void hostRequestsVersion(String version) {
+        Assertions.assertEquals("2025-06-18", version);
         hostVersion = version;
     }
 
     @When("initialization is performed")
     public void initializationPerformed() throws IOException {
+        hostInitiatesConnection();
+        long start = System.currentTimeMillis();
+        client.connect();
+        connectMillis = System.currentTimeMillis() - start;
+    }
+
+    @Then("both parties should agree on protocol version {string}")
+    public void agreeOnVersion(String version) {
         PipedInputStream clientIn = new PipedInputStream();
         PipedOutputStream serverOut = new PipedOutputStream(clientIn);
         PipedInputStream serverIn = new PipedInputStream();
@@ -176,7 +186,6 @@ public final class McpLifecycleSteps {
     public void initializationCompletes() throws IOException {
         client.ping();
     }
-
 
     @When("the McpHost sends an initialize request")
     public void hostSendsInitializeRequest() throws IOException {
@@ -326,7 +335,7 @@ public final class McpLifecycleSteps {
     public void noFurtherMessages() {
         Assertions.assertThrows(IllegalStateException.class, () -> client.ping());
     }
-
+  
     @After
     public void tearDown() throws IOException {
         if (client != null) client.close();
