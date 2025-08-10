@@ -1,5 +1,8 @@
-package com.amannmalik.mcp.api;
+package com.amannmalik.mcp.core;
 
+import com.amannmalik.mcp.api.ProgressNotification;
+import com.amannmalik.mcp.api.ProgressToken;
+import com.amannmalik.mcp.api.NotificationMethod;
 import com.amannmalik.mcp.jsonrpc.JsonRpcNotification;
 import com.amannmalik.mcp.jsonrpc.RequestId;
 import com.amannmalik.mcp.util.NotificationSender;
@@ -10,7 +13,7 @@ import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
-final class ProgressManager {
+public final class ProgressManager {
     private final Map<ProgressToken, Double> progress = new ConcurrentHashMap<>();
     private final Map<RequestId, ProgressToken> tokens = new ConcurrentHashMap<>();
     private final Set<RequestId> active = ConcurrentHashMap.newKeySet();
@@ -87,7 +90,7 @@ final class ProgressManager {
         }
         sender.send(new JsonRpcNotification(
                 NotificationMethod.PROGRESS.method(),
-                ProgressNotification.CODEC.toJson(note)
+                ProgressNotification.toJson(note)
         ));
     }
 }

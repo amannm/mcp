@@ -1,5 +1,4 @@
-package com.amannmalik.mcp.api;
-
+package com.amannmalik.mcp.jsonrpc;
 import jakarta.json.JsonObject;
 
 public interface JsonCodec<T> {

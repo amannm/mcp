@@ -1,6 +1,6 @@
 package com.amannmalik.mcp.core;
 
-import com.amannmalik.mcp.api.JsonCodec;
+import com.amannmalik.mcp.jsonrpc.JsonCodec;
 import com.amannmalik.mcp.api.ContentBlock;
 import com.amannmalik.mcp.api.Role;
 import com.amannmalik.mcp.api.Pagination;

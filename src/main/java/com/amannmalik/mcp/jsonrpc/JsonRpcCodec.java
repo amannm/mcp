@@ -1,6 +1,5 @@
 package com.amannmalik.mcp.jsonrpc;
 
-import com.amannmalik.mcp.api.JsonCodec;
 import com.amannmalik.mcp.api.JsonRpcMessage;
 import jakarta.json.*;
 

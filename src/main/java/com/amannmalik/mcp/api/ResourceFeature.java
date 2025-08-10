@@ -1,6 +1,8 @@
 package com.amannmalik.mcp.api;
 
+import com.amannmalik.mcp.core.JsonRpcEndpoint;
 import com.amannmalik.mcp.core.LifecycleState;
+import com.amannmalik.mcp.core.ProgressManager;
 import com.amannmalik.mcp.jsonrpc.*;
 import com.amannmalik.mcp.resources.*;
 import com.amannmalik.mcp.roots.RootsManager;

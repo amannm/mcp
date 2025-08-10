@@ -1,7 +1,7 @@
 package com.amannmalik.mcp.prompts;
 
 import com.amannmalik.mcp.core.AbstractEntityCodec;
-import com.amannmalik.mcp.api.JsonCodec;
+import com.amannmalik.mcp.jsonrpc.JsonCodec;
 import com.amannmalik.mcp.util.Immutable;
 import com.amannmalik.mcp.api.Pagination;
 import com.amannmalik.mcp.util.ValidationUtil;
