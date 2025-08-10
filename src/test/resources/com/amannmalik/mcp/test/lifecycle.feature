@@ -83,17 +83,17 @@ Feature: MCP Lifecycle Conformance
 #    And error message should contain "Invalid params"
 #    And the connection should remain uninitialized
 #
-#  @sequencing @error-handling
-#  Scenario: Requests before initialization must fail
-#    Given an uninitialized connection between McpHost and McpServer
-#    When the McpHost sends request:
-#      | method         |
-#      | tools/list     |
-#      | prompts/list   |
-#      | resources/list |
-#    Then the McpServer should respond with error code -32002
-#    And error message should contain "Server not initialized"
-#    And the connection should remain uninitialized
+  @sequencing @error-handling
+  Scenario: Requests before initialization must fail
+    Given an uninitialized connection between McpHost and McpServer
+    When the McpHost sends request:
+      | method         |
+      | tools/list     |
+      | prompts/list   |
+      | resources/list |
+    Then the McpServer should respond with error code -32002
+    And error message should contain "Server not initialized"
+    And the connection should remain uninitialized
 #
 #  @capabilities @negotiation
 #  Scenario: Complete server capability negotiation
@@ -166,52 +166,54 @@ Feature: MCP Lifecycle Conformance
 #    And notifications must not have an "id" field
 #    And method names must follow specification format
 #
-#  @validation @initialization
-#  Scenario: Initialize request complete field validation
-#    When the McpHost sends an initialize request
-#    Then the request must contain exactly:
-#      | required_field              | type   |
-#      | params.protocolVersion      | string |
-#      | params.capabilities         | object |
-#      | params.clientInfo           | object |
-#      | params.clientInfo.name      | string |
-#    And params.clientInfo may optionally contain:
-#      | optional_field              | type   |
-#      | params.clientInfo.title     | string |
-#      | params.clientInfo.version   | string |
-#
-  @validation @initialization
-  Scenario: Initialize response complete field validation
-    When the McpServer responds to initialize request
-    Then the response must contain exactly:
-      | required_field              | type   |
-      | result.protocolVersion      | string |
-      | result.capabilities         | object |
-      | result.serverInfo           | object |
-      | result.serverInfo.name      | string |
-    And result may optionally contain:
-      | optional_field              | type   |
-      | result.serverInfo.title     | string |
-      | result.serverInfo.version   | string |
-      | result.instructions         | string |
-#
-#  @transport @stdio @shutdown
-#  Scenario: Graceful shutdown via stdio transport
-#    Given an established McpHost-McpServer connection over stdio transport
-#    And normal operations are proceeding
-#    When the McpHost initiates shutdown by closing input stream to McpServer
-#    Then the McpServer should detect EOF within 2 seconds
-#    And the McpServer should exit gracefully within 5 seconds
-#    And if McpServer doesn't exit within 10 seconds, SIGTERM should be effective
-#    And if still unresponsive after 15 seconds, SIGKILL should terminate it
-#
-  @transport @stdio @shutdown
-  Scenario: Server-initiated shutdown via stdio transport
-    Given an established McpHost-McpServer connection over stdio transport
-    When the McpServer closes its output stream and exits
-    Then the McpHost should detect connection termination within 2 seconds
-    And should handle the disconnection gracefully
-    And should not attempt to send further messages
+
+@validation @initialization
+Scenario: Initialize request complete field validation
+  When the McpHost sends an initialize request
+  Then the request must contain exactly:
+    | required_field              | type   |
+    | params.protocolVersion      | string |
+    | params.capabilities         | object |
+    | params.clientInfo           | object |
+    | params.clientInfo.name      | string |
+  And params.clientInfo may optionally contain:
+    | optional_field              | type   |
+    | params.clientInfo.title     | string |
+    | params.clientInfo.version   | string |
+
+@validation @initialization
+Scenario: Initialize response complete field validation
+  When the McpServer responds to initialize request
+  Then the response must contain exactly:
+    | required_field              | type   |
+    | result.protocolVersion      | string |
+    | result.capabilities         | object |
+    | result.serverInfo           | object |
+    | result.serverInfo.name      | string |
+  And result may optionally contain:
+    | optional_field              | type   |
+    | result.serverInfo.title     | string |
+    | result.serverInfo.version   | string |
+    | result.instructions         | string |
+
+@transport @stdio @shutdown
+Scenario: Graceful shutdown via stdio transport
+  Given an established McpHost-McpServer connection over stdio transport
+  And normal operations are proceeding
+  When the McpHost initiates shutdown by closing input stream to McpServer
+  Then the McpServer should detect EOF within 2 seconds
+  And the McpServer should exit gracefully within 5 seconds
+  And if McpServer doesn't exit within 10 seconds, SIGTERM should be effective
+  And if still unresponsive after 15 seconds, SIGKILL should terminate it
+
+@transport @stdio @shutdown
+Scenario: Server-initiated shutdown via stdio transport
+  Given an established McpHost-McpServer connection over stdio transport
+  When the McpServer closes its output stream and exits
+  Then the McpHost should detect connection termination within 2 seconds
+  And should handle the disconnection gracefully
+  And should not attempt to send further messages
+
 #
 #  @transport @http @shutdown
 #  Scenario: HTTP transport connection termination
@@ -275,16 +277,16 @@ Feature: MCP Lifecycle Conformance
 #      | notifications/log    |
 #    And should defer any other operations until initialized notification received
 #
-#  @operation-phase @capability-respect
-#  Scenario: Capability boundaries respected during operations
-#    Given successful initialization with specific negotiated capabilities
-#    And server capabilities include "tools" but not "prompts"
-#    And client capabilities include "sampling" but not "roots"
-#    When McpHost attempts to use non-negotiated server capability "prompts/list"
-#    Then McpServer should respond with error code -32601
-#    And error message should indicate "Method not found"
-#    And connection should remain stable for valid operations
-#
+  @operation-phase @capability-respect
+  Scenario: Capability boundaries respected during operations
+    Given successful initialization with specific negotiated capabilities
+    And server capabilities include "tools" but not "prompts"
+    And client capabilities include "sampling" but not "roots"
+    When McpHost attempts to use non-negotiated server capability "prompts/list"
+    Then McpServer should respond with error code -32601
+    And error message should indicate "Method not found"
+    And connection should remain stable for valid operations
+
   @operation-phase @version-consistency
   Scenario: Protocol version consistency throughout session
     Given successful initialization with protocol version "2025-06-18"
@@ -365,15 +367,15 @@ Feature: MCP Lifecycle Conformance
 #    And McpHost should be able to access and process instructions
 #    And instructions should not affect protocol compliance
 #
-#  @performance @initialization-timing
-#  Scenario: Initialization performance requirements
-#    Given optimal network conditions
-#    When McpHost initiates connection to McpServer
-#    Then initialize request should be sent within 100ms of connection
-#    And McpServer should respond within 1 second
-#    And initialized notification should be sent within 100ms of response
-#    And total initialization should complete within 2 seconds
-#
+  @performance @initialization-timing
+  Scenario: Initialization performance requirements
+    Given optimal network conditions
+    When McpHost initiates connection to McpServer
+    Then initialize request should be sent within 100ms of connection
+    And McpServer should respond within 1 second
+    And initialized notification should be sent within 100ms of response
+    And total initialization should complete within 2 seconds
+
 #  @cleanup @resource-management
 #  Scenario: Proper resource cleanup on lifecycle completion
 #    Given an established McpHost-McpServer connection
