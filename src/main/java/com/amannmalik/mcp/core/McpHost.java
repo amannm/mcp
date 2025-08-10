@@ -32,15 +32,6 @@ public final class McpHost implements AutoCloseable {
     private final ResourceAccessController privacyBoundary;
     private final SamplingAccessController samplingAccess;
 
-    public McpHost(Predicate<McpClient> policy, Principal principal) {
-        this.policy = policy;
-        this.principal = principal;
-        this.consents = new ConsentController();
-        this.toolAccess = new ToolAccessController();
-        this.privacyBoundary = new ResourceAccessController();
-        this.samplingAccess = new SamplingAccessController();
-    }
-
     @Override
     public void close() throws IOException {
         for (String id : Set.copyOf(clients.keySet())) {
@@ -48,12 +39,17 @@ public final class McpHost implements AutoCloseable {
         }
     }
 
-    public static McpHost forCli(Map<String, String> clientSpecs, boolean verbose) throws IOException {
+    public McpHost(Map<String, String> clientSpecs, boolean verbose) throws IOException {
         Predicate<McpClient> policy = c -> true;
         Principal principal = new Principal(McpConfiguration.current().hostPrincipal(), Set.of());
-        McpHost host = new McpHost(policy, principal);
+        this.policy = policy;
+        this.principal = principal;
+        this.consents = new ConsentController();
+        this.toolAccess = new ToolAccessController();
+        this.privacyBoundary = new ResourceAccessController();
+        this.samplingAccess = new SamplingAccessController();
         for (var entry : clientSpecs.entrySet()) {
-            host.grantConsent(entry.getKey());
+            grantConsent(entry.getKey());
             Transport transport =  TransportFactory.createTransport(entry.getValue().split(" "), verbose);
             SamplingProvider samplingProvider = new InteractiveSamplingProvider(false);
             String currentDir = System.getProperty("user.dir");
@@ -81,9 +77,8 @@ public final class McpHost implements AutoCloseable {
                     rootsProvider,
                     elicitationProvider,
                     listener);
-            host.register(entry.getKey(), client);
+            register(entry.getKey(), client);
         }
-        return host;
     }
 
     public void register(String id, McpClient client) {

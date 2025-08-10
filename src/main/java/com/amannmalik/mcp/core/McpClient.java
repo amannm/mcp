@@ -129,119 +129,6 @@ public final class McpClient extends JsonRpcEndpoint implements AutoCloseable {
         notifyInitialized();
     }
 
-    private JsonRpcMessage sendInitialization() throws IOException {
-        InitializeRequest init = new InitializeRequest(
-                Protocol.LATEST_VERSION,
-                new Capabilities(capabilities, Set.of(), Map.of(), Map.of()),
-                info,
-                new ClientFeatures(rootsListChangedSupported)
-        );
-        var initJson = InitializeRequest.CODEC.toJson(init);
-        RequestId reqId = nextId();
-        JsonRpcRequest request = new JsonRpcRequest(reqId, RequestMethod.INITIALIZE.method(), initJson);
-        try {
-            send(request);
-        } catch (UnauthorizedException e) {
-            handleUnauthorized(e);
-            throw e;
-        }
-        CompletableFuture<JsonRpcMessage> future = CompletableFuture.supplyAsync(() -> {
-            try {
-                return JsonRpcCodec.CODEC.fromJson(transport.receive());
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
-        });
-        try {
-            return future.get(McpConfiguration.current().defaultMs(), TimeUnit.MILLISECONDS);
-        } catch (TimeoutException e) {
-            try {
-                transport.close();
-            } catch (IOException ignore) {
-            }
-            throw new IOException("Initialization timed out after " + McpConfiguration.current().defaultMs() + " ms");
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            throw new IOException(e);
-        } catch (ExecutionException e) {
-            Throwable cause = e.getCause();
-            if (cause instanceof IOException io) throw io;
-            throw new IOException(cause);
-        }
-    }
-
-    private void handleInitialization(JsonRpcMessage msg) throws IOException {
-        JsonRpcResponse resp;
-        try {
-            resp = JsonRpc.expectResponse(msg);
-        } catch (IOException e) {
-            throw new IOException("Initialization failed: " + e.getMessage(), e);
-        }
-        InitializeResponse ir = InitializeResponse.CODEC.fromJson(resp.result());
-        String serverVersion = ir.protocolVersion();
-        if (!Protocol.LATEST_VERSION.equals(serverVersion) && !Protocol.PREVIOUS_VERSION.equals(serverVersion)) {
-            try {
-                transport.close();
-            } catch (IOException ignore) {
-            }
-            throw new UnsupportedProtocolVersionException(serverVersion, Protocol.LATEST_VERSION + " or " + Protocol.PREVIOUS_VERSION);
-        }
-        transport.setProtocolVersion(serverVersion);
-        protocolVersion = serverVersion;
-        serverInfo = ir.serverInfo();
-        serverCapabilities = ir.capabilities().server();
-        instructions = ir.instructions();
-        ServerFeatures f = ir.features();
-        if (f != null) {
-            serverFeatures = f;
-        }
-    }
-
-    private void notifyInitialized() throws IOException {
-        send(new JsonRpcNotification(NotificationMethod.INITIALIZED.method(), null));
-    }
-
-    private void subscribeRootsIfNeeded() throws IOException {
-        if (roots == null || !capabilities.contains(ClientCapability.ROOTS) || !rootsListChangedSupported) return;
-        try {
-            rootsSubscription = roots.subscribe(ignored -> {
-                try {
-                    notify(NotificationMethod.ROOTS_LIST_CHANGED,
-                            RootsListChangedNotification.CODEC.toJson(new RootsListChangedNotification()));
-                } catch (IOException ignore) {
-                }
-            });
-        } catch (Exception e) {
-            throw new IOException(e);
-        }
-    }
-
-    private void startBackgroundTasks() {
-        reader = new Thread(this::readLoop);
-        reader.setDaemon(true);
-        reader.start();
-        if (pingInterval > 0) {
-            pingExec = Executors.newSingleThreadScheduledExecutor();
-            pingFailures = 0;
-            pingExec.scheduleAtFixedRate(() -> {
-                try {
-                    ping(pingTimeout);
-                    pingFailures = 0;
-                } catch (IOException | RuntimeException e) {
-                    pingFailures++;
-                    System.err.println("Ping failure: " + e.getMessage());
-                    if (pingFailures >= 3) {
-                        pingFailures = 0;
-                        try {
-                            disconnect();
-                        } catch (IOException ignore) {
-                        }
-                    }
-                }
-            }, pingInterval, pingInterval, TimeUnit.MILLISECONDS);
-        }
-    }
-
     public synchronized void disconnect() throws IOException {
         if (!connected) return;
         connected = false;
@@ -275,10 +162,6 @@ public final class McpClient extends JsonRpcEndpoint implements AutoCloseable {
 
     public String context() {
         return instructions == null ? "" : instructions;
-    }
-
-    public void ping() throws IOException {
-        ping(McpConfiguration.current().defaultMs());
     }
 
     public void ping(long timeoutMillis) throws IOException {
@@ -421,6 +304,119 @@ public final class McpClient extends JsonRpcEndpoint implements AutoCloseable {
         }
         try (InputStream body = resp.body(); JsonReader reader = Json.createReader(body)) {
             resourceMetadata = ResourceMetadata.CODEC.fromJson(reader.readObject());
+        }
+    }
+
+    private JsonRpcMessage sendInitialization() throws IOException {
+        InitializeRequest init = new InitializeRequest(
+                Protocol.LATEST_VERSION,
+                new Capabilities(capabilities, Set.of(), Map.of(), Map.of()),
+                info,
+                new ClientFeatures(rootsListChangedSupported)
+        );
+        var initJson = InitializeRequest.CODEC.toJson(init);
+        RequestId reqId = nextId();
+        JsonRpcRequest request = new JsonRpcRequest(reqId, RequestMethod.INITIALIZE.method(), initJson);
+        try {
+            send(request);
+        } catch (UnauthorizedException e) {
+            handleUnauthorized(e);
+            throw e;
+        }
+        CompletableFuture<JsonRpcMessage> future = CompletableFuture.supplyAsync(() -> {
+            try {
+                return JsonRpcCodec.CODEC.fromJson(transport.receive());
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        });
+        try {
+            return future.get(McpConfiguration.current().defaultMs(), TimeUnit.MILLISECONDS);
+        } catch (TimeoutException e) {
+            try {
+                transport.close();
+            } catch (IOException ignore) {
+            }
+            throw new IOException("Initialization timed out after " + McpConfiguration.current().defaultMs() + " ms");
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new IOException(e);
+        } catch (ExecutionException e) {
+            Throwable cause = e.getCause();
+            if (cause instanceof IOException io) throw io;
+            throw new IOException(cause);
+        }
+    }
+
+    private void handleInitialization(JsonRpcMessage msg) throws IOException {
+        JsonRpcResponse resp;
+        try {
+            resp = JsonRpc.expectResponse(msg);
+        } catch (IOException e) {
+            throw new IOException("Initialization failed: " + e.getMessage(), e);
+        }
+        InitializeResponse ir = InitializeResponse.CODEC.fromJson(resp.result());
+        String serverVersion = ir.protocolVersion();
+        if (!Protocol.LATEST_VERSION.equals(serverVersion) && !Protocol.PREVIOUS_VERSION.equals(serverVersion)) {
+            try {
+                transport.close();
+            } catch (IOException ignore) {
+            }
+            throw new UnsupportedProtocolVersionException(serverVersion, Protocol.LATEST_VERSION + " or " + Protocol.PREVIOUS_VERSION);
+        }
+        transport.setProtocolVersion(serverVersion);
+        protocolVersion = serverVersion;
+        serverInfo = ir.serverInfo();
+        serverCapabilities = ir.capabilities().server();
+        instructions = ir.instructions();
+        ServerFeatures f = ir.features();
+        if (f != null) {
+            serverFeatures = f;
+        }
+    }
+
+    private void notifyInitialized() throws IOException {
+        send(new JsonRpcNotification(NotificationMethod.INITIALIZED.method(), null));
+    }
+
+    private void subscribeRootsIfNeeded() throws IOException {
+        if (roots == null || !capabilities.contains(ClientCapability.ROOTS) || !rootsListChangedSupported) return;
+        try {
+            rootsSubscription = roots.subscribe(ignored -> {
+                try {
+                    notify(NotificationMethod.ROOTS_LIST_CHANGED,
+                            RootsListChangedNotification.CODEC.toJson(new RootsListChangedNotification()));
+                } catch (IOException ignore) {
+                }
+            });
+        } catch (Exception e) {
+            throw new IOException(e);
+        }
+    }
+
+    private void startBackgroundTasks() {
+        reader = new Thread(this::readLoop);
+        reader.setDaemon(true);
+        reader.start();
+        if (pingInterval > 0) {
+            pingExec = Executors.newSingleThreadScheduledExecutor();
+            pingFailures = 0;
+            pingExec.scheduleAtFixedRate(() -> {
+                try {
+                    ping(pingTimeout);
+                    pingFailures = 0;
+                } catch (IOException | RuntimeException e) {
+                    pingFailures++;
+                    System.err.println("Ping failure: " + e.getMessage());
+                    if (pingFailures >= 3) {
+                        pingFailures = 0;
+                        try {
+                            disconnect();
+                        } catch (IOException ignore) {
+                        }
+                    }
+                }
+            }, pingInterval, pingInterval, TimeUnit.MILLISECONDS);
         }
     }
 
