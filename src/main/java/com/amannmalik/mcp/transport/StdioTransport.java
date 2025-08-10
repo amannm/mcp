@@ -1,4 +1,4 @@
-package com.amannmalik.mcp.core;
+package com.amannmalik.mcp.transport;
 
 import com.amannmalik.mcp.config.McpConfiguration;
 import jakarta.json.*;
@@ -26,8 +26,9 @@ final class StdioTransport implements Transport {
         this.logReader = null;
     }
 
-    public StdioTransport(ProcessBuilder builder, Consumer<String> logSink) throws IOException {
+    public StdioTransport(String[] args, Consumer<String> logSink) throws IOException {
         Objects.requireNonNull(logSink, "logSink");
+        var builder = new ProcessBuilder(args);
         builder.redirectErrorStream(false);
         this.process = builder.start();
         this.in = new BufferedReader(new InputStreamReader(process.getInputStream(), StandardCharsets.UTF_8));

@@ -2,6 +2,7 @@ package com.amannmalik.mcp.core;
 
 import com.amannmalik.mcp.config.McpConfiguration;
 import com.amannmalik.mcp.jsonrpc.*;
+import com.amannmalik.mcp.transport.Transport;
 import com.amannmalik.mcp.util.*;
 import jakarta.json.JsonObject;
 

@@ -1,9 +1,9 @@
-package com.amannmalik.mcp.core;
+package com.amannmalik.mcp.transport;
 
 import com.amannmalik.mcp.config.McpConfiguration;
 
 /// - [Lifecycle](specification/2025-06-18/basic/lifecycle.mdx)
-final class Protocol {
+public final class Protocol {
     private Protocol() {
     }
 

@@ -1,4 +1,4 @@
-package com.amannmalik.mcp.core;
+package com.amannmalik.mcp.transport;
 
 import com.amannmalik.mcp.config.McpConfiguration;
 import com.amannmalik.mcp.util.Base64Util;
@@ -12,7 +12,7 @@ import java.util.ArrayDeque;
 import java.util.Deque;
 import java.util.concurrent.atomic.AtomicLong;
 
-final class SseClient implements AutoCloseable {
+public final class SseClient implements AutoCloseable {
     private static final SecureRandom RANDOM = new SecureRandom();
     private static final int HISTORY_LIMIT =
             McpConfiguration.current().sseHistoryLimit();
@@ -24,7 +24,7 @@ final class SseClient implements AutoCloseable {
     private final AtomicLong nextId = new AtomicLong(1);
     private volatile boolean closed;
 
-    SseClient(AsyncContext context) throws IOException {
+    public SseClient(AsyncContext context) throws IOException {
         byte[] bytes = new byte[8];
         RANDOM.nextBytes(bytes);
         this.prefix = Base64Util.encodeUrl(bytes);
@@ -38,11 +38,11 @@ final class SseClient implements AutoCloseable {
         sendHistory(lastId);
     }
 
-    boolean isActive() {
+    public boolean isActive() {
         return !closed && context != null;
     }
 
-    void send(JsonObject msg) {
+    public void send(JsonObject msg) {
         long id = nextId.getAndIncrement();
         history.addLast(new SseEvent(id, msg));
         while (history.size() > HISTORY_LIMIT) {

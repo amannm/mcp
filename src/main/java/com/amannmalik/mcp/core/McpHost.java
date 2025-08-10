@@ -14,6 +14,7 @@ import com.amannmalik.mcp.sampling.InteractiveSamplingProvider;
 import com.amannmalik.mcp.sampling.SamplingProvider;
 import com.amannmalik.mcp.security.*;
 import com.amannmalik.mcp.tools.*;
+import com.amannmalik.mcp.transport.*;
 import jakarta.json.JsonObject;
 
 import java.io.IOException;
@@ -53,9 +54,7 @@ public final class McpHost implements AutoCloseable {
         McpHost host = new McpHost(policy, principal);
         for (var entry : clientSpecs.entrySet()) {
             host.grantConsent(entry.getKey());
-            var pb = new ProcessBuilder(entry.getValue().split(" "));
-            StdioTransport transport = new StdioTransport(pb, verbose ? System.err::println : s -> {
-            });
+            Transport transport =  TransportFactory.createTransport(entry.getValue().split(" "), verbose);
             SamplingProvider samplingProvider = new InteractiveSamplingProvider(false);
             String currentDir = System.getProperty("user.dir");
             InMemoryRootsProvider rootsProvider = new InMemoryRootsProvider(

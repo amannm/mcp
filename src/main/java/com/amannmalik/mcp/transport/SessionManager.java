@@ -1,4 +1,4 @@
-package com.amannmalik.mcp.core;
+package com.amannmalik.mcp.transport;
 
 import com.amannmalik.mcp.auth.Principal;
 import com.amannmalik.mcp.util.Base64Util;

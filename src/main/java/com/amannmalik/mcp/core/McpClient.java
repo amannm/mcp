@@ -10,6 +10,7 @@ import com.amannmalik.mcp.roots.*;
 import com.amannmalik.mcp.sampling.*;
 import com.amannmalik.mcp.security.SamplingAccessPolicy;
 import com.amannmalik.mcp.tools.ToolListChangedNotification;
+import com.amannmalik.mcp.transport.*;
 import com.amannmalik.mcp.util.*;
 import com.amannmalik.mcp.util.ValidationUtil;
 import jakarta.json.*;
@@ -117,13 +118,11 @@ public final class McpClient extends JsonRpcEndpoint implements AutoCloseable {
         JsonRpcMessage msg = sendInitialization();
         handleInitialization(msg);
         connected = true;
-        if (transport instanceof StreamableHttpClientTransport http) {
-            try {
-                http.listen();
-            } catch (UnauthorizedException e) {
-                handleUnauthorized(e);
-                throw e;
-            }
+        try {
+            transport.listen();
+        } catch (UnauthorizedException e) {
+            handleUnauthorized(e);
+            throw e;
         }
         startBackgroundTasks();
         subscribeRootsIfNeeded();
@@ -187,9 +186,7 @@ public final class McpClient extends JsonRpcEndpoint implements AutoCloseable {
             }
             throw new UnsupportedProtocolVersionException(serverVersion, Protocol.LATEST_VERSION + " or " + Protocol.PREVIOUS_VERSION);
         }
-        if (transport instanceof StreamableHttpClientTransport http) {
-            http.setProtocolVersion(serverVersion);
-        }
+        transport.setProtocolVersion(serverVersion);
         protocolVersion = serverVersion;
         serverInfo = ir.serverInfo();
         serverCapabilities = ir.capabilities().server();

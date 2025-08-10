@@ -4,7 +4,7 @@ import jakarta.json.*;
 
 import java.util.List;
 
-record ResourceMetadata(String resource, List<String> authorizationServers) {
+public record ResourceMetadata(String resource, List<String> authorizationServers) {
     public static final JsonCodec<ResourceMetadata> CODEC = new JsonCodec<>() {
         @Override
         public JsonObject toJson(ResourceMetadata meta) {

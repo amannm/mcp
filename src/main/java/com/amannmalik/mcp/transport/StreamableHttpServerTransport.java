@@ -1,8 +1,9 @@
-package com.amannmalik.mcp.core;
+package com.amannmalik.mcp.transport;
 
 import com.amannmalik.mcp.auth.AuthorizationManager;
 import com.amannmalik.mcp.auth.Principal;
 import com.amannmalik.mcp.config.McpConfiguration;
+import com.amannmalik.mcp.core.*;
 import com.amannmalik.mcp.util.ValidationUtil;
 import jakarta.json.Json;
 import jakarta.json.JsonObject;

@@ -1,5 +1,6 @@
-package com.amannmalik.mcp.core;
+package com.amannmalik.mcp.transport;
 
+import com.amannmalik.mcp.core.ResourceMetadata;
 import jakarta.json.JsonObject;
 import jakarta.servlet.http.*;
 

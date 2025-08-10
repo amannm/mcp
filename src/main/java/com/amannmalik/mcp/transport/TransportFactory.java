@@ -1,8 +1,9 @@
-package com.amannmalik.mcp.core;
+package com.amannmalik.mcp.transport;
 
 import com.amannmalik.mcp.auth.*;
 import com.amannmalik.mcp.config.McpConfiguration;
 
+import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Set;
@@ -43,11 +44,16 @@ public class TransportFactory {
         };
     }
 
-    public static TransportType parseTransport(String name) {
+    static TransportType parseTransport(String name) {
         return switch (name) {
             case "stdio" -> TransportType.STDIO;
             case "http" -> TransportType.HTTP;
             default -> throw new IllegalArgumentException("unknown transport: " + name);
         };
+    }
+
+    public static Transport createTransport(String[] s, boolean verbose) throws IOException {
+        return new StdioTransport(s, verbose ? System.err::println : _ -> {
+        });
     }
 }

@@ -12,6 +12,8 @@ import com.amannmalik.mcp.roots.RootsManager;
 import com.amannmalik.mcp.sampling.*;
 import com.amannmalik.mcp.security.*;
 import com.amannmalik.mcp.tools.*;
+import com.amannmalik.mcp.transport.Protocol;
+import com.amannmalik.mcp.transport.Transport;
 import com.amannmalik.mcp.util.*;
 import com.amannmalik.mcp.util.ValidationUtil;
 import jakarta.json.*;

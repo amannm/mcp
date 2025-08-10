@@ -5,15 +5,15 @@ import jakarta.json.JsonObject;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
-final class MessageDispatcher {
+public final class MessageDispatcher {
     private final MessageRouter router;
     private final Queue<JsonObject> backlog = new ConcurrentLinkedQueue<>();
 
-    MessageDispatcher(MessageRouter router) {
+    public MessageDispatcher(MessageRouter router) {
         this.router = router;
     }
 
-    void dispatch(JsonObject message) {
+    public void dispatch(JsonObject message) {
         if (router.route(message)) {
             flush();
         } else {
@@ -21,7 +21,7 @@ final class MessageDispatcher {
         }
     }
 
-    void flush() {
+    public void flush() {
         while (true) {
             JsonObject msg = backlog.peek();
             if (msg == null) return;

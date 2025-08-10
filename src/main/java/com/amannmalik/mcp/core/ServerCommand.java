@@ -1,5 +1,7 @@
 package com.amannmalik.mcp.core;
 
+import com.amannmalik.mcp.transport.Transport;
+import com.amannmalik.mcp.transport.TransportFactory;
 import picocli.CommandLine;
 import picocli.CommandLine.Model.CommandSpec;
 import picocli.CommandLine.Model.OptionSpec;

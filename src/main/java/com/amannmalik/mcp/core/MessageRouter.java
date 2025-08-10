@@ -1,5 +1,6 @@
 package com.amannmalik.mcp.core;
 
+import com.amannmalik.mcp.transport.SseClient;
 import jakarta.json.JsonObject;
 
 import java.util.Set;
@@ -10,18 +11,18 @@ import java.util.function.BiConsumer;
 
 /// - [Base Protocol](specification/2025-06-18/basic/index.mdx)
 /// - [Conformance Suite](src/test/resources/com/amannmalik/mcp/mcp.feature)
-final class MessageRouter {
+public final class MessageRouter {
     private final ConcurrentHashMap<String, SseClient> requestStreams;
     private final ConcurrentHashMap<String, BlockingQueue<JsonObject>> responseQueues;
     private final Set<SseClient> generalClients;
     private final AtomicReference<SseClient> lastGeneral;
     private final BiConsumer<String, SseClient> remover;
 
-    MessageRouter(ConcurrentHashMap<String, SseClient> requestStreams,
-                  ConcurrentHashMap<String, BlockingQueue<JsonObject>> responseQueues,
-                  Set<SseClient> generalClients,
-                  AtomicReference<SseClient> lastGeneral,
-                  BiConsumer<String, SseClient> remover) {
+    public MessageRouter(ConcurrentHashMap<String, SseClient> requestStreams,
+                         ConcurrentHashMap<String, BlockingQueue<JsonObject>> responseQueues,
+                         Set<SseClient> generalClients,
+                         AtomicReference<SseClient> lastGeneral,
+                         BiConsumer<String, SseClient> remover) {
         this.requestStreams = requestStreams;
         this.responseQueues = responseQueues;
         this.generalClients = generalClients;
@@ -29,7 +30,7 @@ final class MessageRouter {
         this.remover = remover;
     }
 
-    boolean route(JsonObject message) {
+    public boolean route(JsonObject message) {
         String id = message.containsKey("id") ? message.get("id").toString() : null;
         String method = message.getString("method", null);
         if (id != null) {
