@@ -7,10 +7,8 @@ import com.amannmalik.mcp.elicitation.InteractiveElicitationProvider;
 import com.amannmalik.mcp.jsonrpc.JsonRpc;
 import com.amannmalik.mcp.jsonrpc.JsonRpcResponse;
 import com.amannmalik.mcp.roots.InMemoryRootsProvider;
-import com.amannmalik.mcp.roots.Root;
 import com.amannmalik.mcp.sampling.InteractiveSamplingProvider;
 import com.amannmalik.mcp.security.*;
-import com.amannmalik.mcp.tools.CallToolRequest;
 import com.amannmalik.mcp.transport.TransportFactory;
 import jakarta.json.JsonObject;
 

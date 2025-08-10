@@ -2,10 +2,9 @@ package com.amannmalik.mcp.codec;
 
 import com.amannmalik.mcp.api.Annotations;
 import com.amannmalik.mcp.api.Resource;
-import com.amannmalik.mcp.core.AbstractEntityCodec;
 import jakarta.json.*;
 
-public class ResourceAbstractEntityCodec extends AbstractEntityCodec<Resource> {
+public non-sealed class ResourceAbstractEntityCodec extends AbstractEntityCodec<Resource> {
     @Override
     public JsonObject toJson(Resource r) {
         JsonObjectBuilder b = Json.createObjectBuilder()

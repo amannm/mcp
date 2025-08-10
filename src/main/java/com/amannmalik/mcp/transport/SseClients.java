@@ -1,5 +1,8 @@
 package com.amannmalik.mcp.transport;
 
+import com.amannmalik.mcp.api.JsonRpcMessage;
+import com.amannmalik.mcp.codec.JsonCodec;
+import com.amannmalik.mcp.codec.JsonRpcMessageJsonCodec;
 import com.amannmalik.mcp.jsonrpc.*;
 import com.amannmalik.mcp.util.CloseUtil;
 import jakarta.json.JsonObject;
@@ -17,6 +20,8 @@ final class SseClients {
     final ConcurrentHashMap<String, SseClient> byPrefix = new ConcurrentHashMap<>();
     final AtomicReference<SseClient> lastGeneral = new AtomicReference<>();
     final ConcurrentHashMap<String, BlockingQueue<JsonObject>> responses = new ConcurrentHashMap<>();
+
+    static final JsonCodec<JsonRpcMessage> CODEC = new JsonRpcMessageJsonCodec();
 
     void removeRequest(String key, SseClient client) {
         request.remove(key);
@@ -80,7 +85,7 @@ final class SseClients {
         responses.forEach((id, q) -> {
             RequestId reqId = RequestId.parse(id);
             JsonRpcError err = JsonRpcError.of(reqId, JsonRpcErrorCode.INTERNAL_ERROR, "Transport closed");
-            if (!q.offer(JsonRpcCodec.CODEC.toJson(err))) {
+            if (!q.offer(CODEC.toJson(err))) {
                 throw new IllegalStateException("queue full");
             }
         });

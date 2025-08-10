@@ -1,7 +1,6 @@
 package com.amannmalik.mcp.codec;
 
 import com.amannmalik.mcp.api.Context;
-import com.amannmalik.mcp.jsonrpc.JsonCodec;
 import com.amannmalik.mcp.util.ValidationUtil;
 import jakarta.json.*;
 

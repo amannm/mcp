@@ -1,9 +1,9 @@
 package com.amannmalik.mcp.api;
 
-import com.amannmalik.mcp.jsonrpc.JsonCodec;
+import com.amannmalik.mcp.codec.JsonCodec;
 import com.amannmalik.mcp.codec.LoggingMessageNotificationAbstractEntityCodec;
 import com.amannmalik.mcp.util.ValidationUtil;
-import jakarta.json.*;
+import jakarta.json.JsonValue;
 
 public record LoggingMessageNotification(LoggingLevel level, String logger, JsonValue data) {
     static final JsonCodec<LoggingMessageNotification> CODEC = new LoggingMessageNotificationAbstractEntityCodec();

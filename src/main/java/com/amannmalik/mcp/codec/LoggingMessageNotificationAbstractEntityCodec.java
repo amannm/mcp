@@ -2,12 +2,11 @@ package com.amannmalik.mcp.codec;
 
 import com.amannmalik.mcp.api.LoggingLevel;
 import com.amannmalik.mcp.api.LoggingMessageNotification;
-import com.amannmalik.mcp.core.AbstractEntityCodec;
 import jakarta.json.*;
 
 import java.util.Set;
 
-public class LoggingMessageNotificationAbstractEntityCodec extends AbstractEntityCodec<LoggingMessageNotification> {
+public non-sealed class LoggingMessageNotificationAbstractEntityCodec extends AbstractEntityCodec<LoggingMessageNotification> {
     @Override
     public JsonObject toJson(LoggingMessageNotification n) {
         JsonObjectBuilder b = Json.createObjectBuilder()

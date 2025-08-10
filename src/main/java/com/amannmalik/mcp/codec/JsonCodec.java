@@ -1,4 +1,4 @@
-package com.amannmalik.mcp.jsonrpc;
+package com.amannmalik.mcp.codec;
 
 import jakarta.json.JsonObject;
 

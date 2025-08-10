@@ -7,7 +7,6 @@ import com.amannmalik.mcp.resources.InMemoryResourceProvider;
 import com.amannmalik.mcp.sampling.InteractiveSamplingProvider;
 import com.amannmalik.mcp.security.ResourceAccessController;
 import com.amannmalik.mcp.tools.InMemoryToolProvider;
-import com.amannmalik.mcp.tools.ToolAnnotations;
 import jakarta.json.Json;
 
 import java.time.Instant;

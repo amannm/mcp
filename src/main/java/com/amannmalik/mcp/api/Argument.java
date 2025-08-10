@@ -1,7 +1,7 @@
 package com.amannmalik.mcp.api;
 
-import com.amannmalik.mcp.completion.ArgumentJsonCodec;
-import com.amannmalik.mcp.jsonrpc.JsonCodec;
+import com.amannmalik.mcp.codec.ArgumentJsonCodec;
+import com.amannmalik.mcp.codec.JsonCodec;
 import com.amannmalik.mcp.util.ValidationUtil;
 
 public record Argument(String name, String value) {

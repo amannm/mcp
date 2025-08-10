@@ -2,7 +2,6 @@ package com.amannmalik.mcp.codec;
 
 import com.amannmalik.mcp.api.ProgressNotification;
 import com.amannmalik.mcp.api.ProgressToken;
-import com.amannmalik.mcp.jsonrpc.JsonCodec;
 import com.amannmalik.mcp.util.ValidationUtil;
 import jakarta.json.*;
 

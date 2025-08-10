@@ -1,11 +1,10 @@
 package com.amannmalik.mcp.api;
 
+import com.amannmalik.mcp.codec.InitializeRequestAbstractEntityCodec;
 import com.amannmalik.mcp.config.McpConfiguration;
 import com.amannmalik.mcp.core.*;
 import com.amannmalik.mcp.jsonrpc.*;
-import com.amannmalik.mcp.logging.SetLevelRequest;
-import com.amannmalik.mcp.resources.*;
-import com.amannmalik.mcp.roots.ListRootsResult;
+import com.amannmalik.mcp.resources.ResourceListChangedNotification;
 import com.amannmalik.mcp.roots.RootsListChangedNotification;
 import com.amannmalik.mcp.tools.ToolListChangedNotification;
 import com.amannmalik.mcp.transport.Protocol;
@@ -49,6 +48,8 @@ public final class McpClient extends JsonRpcEndpoint implements AutoCloseable {
     private final McpClientListener listener;
     private volatile ResourceMetadata resourceMetadata;
     private final Map<String, Consumer<ResourceUpdate>> resourceListeners = new ConcurrentHashMap<>();
+
+    private final InitializeRequestAbstractEntityCodec INITIALIZE_REQUEST_CODEC = new InitializeRequestAbstractEntityCodec();
 
     public void configurePing(long intervalMillis, long timeoutMillis) {
         if (connected) throw new IllegalStateException("already connected");
@@ -311,7 +312,7 @@ public final class McpClient extends JsonRpcEndpoint implements AutoCloseable {
                 info,
                 new ClientFeatures(rootsListChangedSupported)
         );
-        var initJson = InitializeRequest.CODEC.toJson(init);
+        var initJson = INITIALIZE_REQUEST_CODEC.toJson(init);
         RequestId reqId = nextId();
         JsonRpcRequest request = new JsonRpcRequest(reqId, RequestMethod.INITIALIZE.method(), initJson);
         try {
@@ -322,7 +323,7 @@ public final class McpClient extends JsonRpcEndpoint implements AutoCloseable {
         }
         CompletableFuture<JsonRpcMessage> future = CompletableFuture.supplyAsync(() -> {
             try {
-                return JsonRpcCodec.CODEC.fromJson(transport.receive());
+                return CODEC.fromJson(transport.receive());
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
@@ -420,7 +421,7 @@ public final class McpClient extends JsonRpcEndpoint implements AutoCloseable {
     private void readLoop() {
         while (connected) {
             try {
-                JsonRpcMessage msg = JsonRpcCodec.CODEC.fromJson(transport.receive());
+                JsonRpcMessage msg = CODEC.fromJson(transport.receive());
                 process(msg);
             } catch (IOException e) {
                 pending.values().forEach(f -> f.completeExceptionally(e));

@@ -1,7 +1,6 @@
-package com.amannmalik.mcp.completion;
+package com.amannmalik.mcp.codec;
 
 import com.amannmalik.mcp.api.Argument;
-import com.amannmalik.mcp.jsonrpc.JsonCodec;
 import jakarta.json.Json;
 import jakarta.json.JsonObject;
 

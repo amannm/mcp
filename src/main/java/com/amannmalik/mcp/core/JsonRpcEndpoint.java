@@ -1,9 +1,10 @@
 package com.amannmalik.mcp.core;
 
 import com.amannmalik.mcp.api.*;
+import com.amannmalik.mcp.codec.JsonCodec;
+import com.amannmalik.mcp.codec.JsonRpcMessageJsonCodec;
 import com.amannmalik.mcp.config.McpConfiguration;
 import com.amannmalik.mcp.jsonrpc.*;
-import com.amannmalik.mcp.util.CancelledNotification;
 import jakarta.json.JsonObject;
 
 import java.io.IOException;
@@ -20,6 +21,8 @@ public sealed class JsonRpcEndpoint implements AutoCloseable permits com.amannma
     private final Map<String, Function<JsonRpcRequest, JsonRpcMessage>> requests = new HashMap<>();
     private final Map<String, Consumer<JsonRpcNotification>> notifications = new HashMap<>();
     private final AtomicLong counter;
+
+    protected static final JsonCodec<JsonRpcMessage> CODEC = new JsonRpcMessageJsonCodec();
 
     protected JsonRpcEndpoint(Transport transport, ProgressManager progress, long initialId) {
         if (transport == null || progress == null) throw new IllegalArgumentException("transport and progress required");
@@ -95,7 +98,7 @@ public sealed class JsonRpcEndpoint implements AutoCloseable permits com.amannma
     }
 
     protected synchronized void send(JsonRpcMessage msg) throws IOException {
-        transport.send(JsonRpcCodec.CODEC.toJson(msg));
+        transport.send(CODEC.toJson(msg));
     }
 
     protected void process(JsonRpcMessage msg) throws IOException {

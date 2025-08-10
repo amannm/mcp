@@ -1,47 +1,13 @@
 package com.amannmalik.mcp.api;
 
-import com.amannmalik.mcp.core.AbstractEntityCodec;
+import com.amannmalik.mcp.codec.ElicitResultJsonCodec;
+import com.amannmalik.mcp.codec.JsonCodec;
 import com.amannmalik.mcp.elicitation.ElicitationAction;
-import com.amannmalik.mcp.jsonrpc.JsonCodec;
 import com.amannmalik.mcp.util.ValidationUtil;
-import jakarta.json.*;
-
-import java.util.Set;
+import jakarta.json.JsonObject;
 
 public record ElicitResult(ElicitationAction action, JsonObject content, JsonObject _meta) {
-    static final JsonCodec<ElicitResult> CODEC = new JsonCodec<>() {
-        @Override
-        public JsonObject toJson(ElicitResult r) {
-            JsonObjectBuilder b = Json.createObjectBuilder()
-                    .add("action", r.action().name().toLowerCase());
-            if (r.content() != null) b.add("content", r.content());
-            if (r._meta() != null) b.add("_meta", r._meta());
-            return b.build();
-        }
-
-        @Override
-        public ElicitResult fromJson(JsonObject obj) {
-            if (obj == null) throw new IllegalArgumentException("action required");
-            AbstractEntityCodec.requireOnlyKeys(obj, Set.of("action", "content", "_meta"));
-            String raw = obj.getString("action", null);
-            if (raw == null) throw new IllegalArgumentException("action required");
-            ElicitationAction action;
-            try {
-                action = ElicitationAction.valueOf(raw.toUpperCase());
-            } catch (IllegalArgumentException e) {
-                throw new IllegalArgumentException("invalid action", e);
-            }
-            JsonValue c = obj.get("content");
-            JsonObject content = null;
-            if (c != null) {
-                if (c.getValueType() != JsonValue.ValueType.OBJECT) {
-                    throw new IllegalArgumentException("content must be object");
-                }
-                content = c.asJsonObject();
-            }
-            return new ElicitResult(action, content, obj.getJsonObject("_meta"));
-        }
-    };
+    static final JsonCodec<ElicitResult> CODEC = new ElicitResultJsonCodec();
 
     public ElicitResult {
         if (action == null) {
@@ -64,4 +30,5 @@ public record ElicitResult(ElicitationAction action, JsonObject content, JsonObj
         }
         ValidationUtil.requireMeta(_meta);
     }
+
 }

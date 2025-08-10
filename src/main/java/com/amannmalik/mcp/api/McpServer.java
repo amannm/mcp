@@ -1,13 +1,12 @@
 package com.amannmalik.mcp.api;
 
+import com.amannmalik.mcp.codec.InitializeRequestAbstractEntityCodec;
 import com.amannmalik.mcp.config.McpConfiguration;
 import com.amannmalik.mcp.core.*;
 import com.amannmalik.mcp.elicitation.ElicitationAction;
 import com.amannmalik.mcp.jsonrpc.*;
-import com.amannmalik.mcp.logging.SetLevelRequest;
 import com.amannmalik.mcp.prompts.*;
 import com.amannmalik.mcp.roots.RootsManager;
-import com.amannmalik.mcp.tools.CallToolRequest;
 import com.amannmalik.mcp.tools.ToolListChangedNotification;
 import com.amannmalik.mcp.transport.Protocol;
 import com.amannmalik.mcp.util.*;
@@ -54,6 +53,8 @@ public final class McpServer extends JsonRpcEndpoint implements AutoCloseable {
     private final RateLimiter logLimiter = new RateLimiter(
             McpConfiguration.current().logsPerSecond(),
             McpConfiguration.current().rateLimiterWindowMs());
+
+    private final InitializeRequestAbstractEntityCodec INITIALIZE_REQUEST_CODEC = new InitializeRequestAbstractEntityCodec();
 
     public McpServer(ResourceProvider resources,
                      ToolProvider tools,
@@ -171,7 +172,7 @@ public final class McpServer extends JsonRpcEndpoint implements AutoCloseable {
             var obj = receiveMessage();
             if (obj.isEmpty()) continue;
             try {
-                process(JsonRpcCodec.CODEC.fromJson(obj.get()));
+                process(CODEC.fromJson(obj.get()));
             } catch (IllegalArgumentException e) {
                 handleInvalidRequest(e);
             } catch (IOException e) {
@@ -275,7 +276,7 @@ public final class McpServer extends JsonRpcEndpoint implements AutoCloseable {
 
 
     private JsonRpcMessage initialize(JsonRpcRequest req) {
-        InitializeRequest init = InitializeRequest.CODEC.fromJson(req.params());
+        InitializeRequest init = INITIALIZE_REQUEST_CODEC.fromJson(req.params());
         InitializeResponse baseResp;
         try {
             baseResp = initialize(init);
@@ -550,7 +551,7 @@ public final class McpServer extends JsonRpcEndpoint implements AutoCloseable {
             var obj = receiveMessage();
             if (obj.isEmpty()) continue;
             try {
-                process(JsonRpcCodec.CODEC.fromJson(obj.get()));
+                process(CODEC.fromJson(obj.get()));
             } catch (IllegalArgumentException ex) {
                 handleInvalidRequest(ex);
             }
