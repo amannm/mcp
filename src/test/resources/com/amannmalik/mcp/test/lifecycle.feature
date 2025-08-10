@@ -365,15 +365,15 @@ Feature: MCP Lifecycle Conformance
 #    And McpHost should be able to access and process instructions
 #    And instructions should not affect protocol compliance
 #
-#  @performance @initialization-timing
-#  Scenario: Initialization performance requirements
-#    Given optimal network conditions
-#    When McpHost initiates connection to McpServer
-#    Then initialize request should be sent within 100ms of connection
-#    And McpServer should respond within 1 second
-#    And initialized notification should be sent within 100ms of response
-#    And total initialization should complete within 2 seconds
-#
+  @performance @initialization-timing
+  Scenario: Initialization performance requirements
+    Given optimal network conditions
+    When McpHost initiates connection to McpServer
+    Then initialize request should be sent within 100ms of connection
+    And McpServer should respond within 1 second
+    And initialized notification should be sent within 100ms of response
+    And total initialization should complete within 2 seconds
+
 #  @cleanup @resource-management
 #  Scenario: Proper resource cleanup on lifecycle completion
 #    Given an established McpHost-McpServer connection
