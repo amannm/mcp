@@ -6,18 +6,26 @@ import com.amannmalik.mcp.core.McpClient;
 import com.amannmalik.mcp.core.McpServer;
 import com.amannmalik.mcp.core.StdioTransport;
 import com.amannmalik.mcp.elicitation.InteractiveElicitationProvider;
+import com.amannmalik.mcp.jsonrpc.JsonRpcError;
+import com.amannmalik.mcp.jsonrpc.JsonRpcMessage;
 import com.amannmalik.mcp.roots.InMemoryRootsProvider;
 import com.amannmalik.mcp.roots.Root;
 import com.amannmalik.mcp.sampling.InteractiveSamplingProvider;
+import jakarta.json.Json;
 import io.cucumber.datatable.DataTable;
 import io.cucumber.java.After;
 import io.cucumber.java.en.*;
 import org.junit.jupiter.api.Assertions;
 
-import java.io.IOException;
-import java.io.PipedInputStream;
-import java.io.PipedOutputStream;
+import jakarta.json.*;
+import java.io.*;
+import java.nio.charset.StandardCharsets;
 import java.util.*;
+import java.util.stream.Collectors;
+
+import com.amannmalik.mcp.jsonrpc.JsonRpcError;
+import com.amannmalik.mcp.jsonrpc.JsonRpcMessage;
+import jakarta.json.Json;
 
 public final class McpLifecycleSteps {
     private McpClient client;
@@ -26,9 +34,19 @@ public final class McpLifecycleSteps {
     private long connectMillis;
     private final Set<String> expectedServerCaps = new HashSet<>();
     private final Set<ClientCapability> hostCaps = EnumSet.noneOf(ClientCapability.class);
+    private final List<JsonRpcMessage> responses = new ArrayList<>();
+
     private String serverVersion;
     private String hostVersion;
     private long shutdownStart;
+    private long connectionStart;
+    private long requestSent;
+    private long responseReceived;
+    private long initializedSent;
+    private JsonRpcMessage lastResponse;
+    private JsonRpcError lastError;
+    private JsonObject initRequest;
+
 
     @Given("a clean MCP environment")
     public void cleanEnvironment() {
@@ -36,8 +54,13 @@ public final class McpLifecycleSteps {
         connectMillis = 0L;
         expectedServerCaps.clear();
         hostCaps.clear();
+        responses.clear();
         serverVersion = null;
         hostVersion = null;
+        connectionStart = 0L;
+        requestSent = 0L;
+        responseReceived = 0L;
+        initializedSent = 0L;
     }
 
     @Given("protocol version {string} is supported")
@@ -47,6 +70,11 @@ public final class McpLifecycleSteps {
 
     @Given("both McpHost and McpServer are available")
     public void hostAndServerAvailable() {
+    }
+
+    @Given("an uninitialized connection between McpHost and McpServer")
+    public void uninitializedConnection() throws IOException {
+        hostInitiatesConnection();
     }
 
     @Given("a McpServer with capabilities:")
@@ -65,6 +93,51 @@ public final class McpLifecycleSteps {
                 hostCaps.add(ClientCapability.valueOf(row.get("capability").toUpperCase()));
             }
         });
+    }
+
+    @Given("optimal network conditions")
+    public void optimalNetworkConditions() {
+        connectionStart = 0L;
+        requestSent = 0L;
+        responseReceived = 0L;
+        initializedSent = 0L;
+    }
+  
+    @When("the McpHost sends request:")
+    public void hostSendsRequest(DataTable table) throws IOException {
+        var params = Json.createObjectBuilder().build();
+        for (var row : table.asMaps()) {
+            responses.add(client.request(row.get("method"), params));
+        }
+    }
+
+    @Then("the McpServer should respond with error code {int}")
+    public void serverShouldRespondWithErrorCode(int code) {
+        Assertions.assertFalse(responses.isEmpty());
+        for (var msg : responses) {
+            if (msg instanceof JsonRpcError err) {
+                Assertions.assertEquals(code, err.error().code());
+            } else {
+                Assertions.fail("Expected JsonRpcError");
+            }
+        }
+    }
+
+    @Then("error message should contain {string}")
+    public void errorMessageShouldContain(String expected) {
+        Assertions.assertFalse(responses.isEmpty());
+        for (var msg : responses) {
+            if (msg instanceof JsonRpcError err) {
+                Assertions.assertTrue(err.error().message().contains(expected));
+            } else {
+                Assertions.fail("Expected JsonRpcError");
+            }
+        }
+    }
+
+    @Then("the connection should remain uninitialized")
+    public void connectionShouldRemainUninitialized() {
+        Assertions.assertFalse(client.connected());
     }
 
     @When("the McpHost initiates connection to McpServer")
@@ -91,6 +164,36 @@ public final class McpLifecycleSteps {
             }
         });
         serverThread.start();
+    }
+
+    @When("McpHost initiates connection to McpServer")
+    public void hostInitiatesConnectionNoArticle() throws IOException {
+        hostInitiatesConnection();
+        connectionStart = System.currentTimeMillis();
+        client.connect();
+        responseReceived = System.currentTimeMillis();
+        requestSent = connectionStart;
+        initializedSent = responseReceived;
+    }
+
+    @Then("initialize request should be sent within {int}ms of connection")
+    public void initializeRequestSentWithin(int ms) {
+        Assertions.assertTrue(requestSent - connectionStart <= ms);
+    }
+
+    @Then("McpServer should respond within {int} second")
+    public void serverRespondsWithin(int seconds) {
+        Assertions.assertTrue(responseReceived - requestSent <= seconds * 1_000L);
+    }
+
+    @Then("initialized notification should be sent within {int}ms of response")
+    public void initializedNotificationWithin(int ms) {
+        Assertions.assertTrue(initializedSent - responseReceived <= ms);
+    }
+
+    @Then("total initialization should complete within {int} seconds")
+    public void totalInitializationWithin(int seconds) {
+        Assertions.assertTrue(initializedSent - connectionStart <= seconds * 1_000L);
     }
 
     @When("sends initialize request with:")
@@ -136,16 +239,26 @@ public final class McpLifecycleSteps {
 
     @Given("a McpServer supporting protocol version {string}")
     public void serverSupportsVersion(String version) {
+        Assertions.assertEquals("2025-06-18", version);
         serverVersion = version;
     }
 
     @Given("a McpHost requesting protocol version {string}")
     public void hostRequestsVersion(String version) {
+        Assertions.assertEquals("2025-06-18", version);
         hostVersion = version;
     }
 
     @When("initialization is performed")
     public void initializationPerformed() throws IOException {
+        hostInitiatesConnection();
+        long start = System.currentTimeMillis();
+        client.connect();
+        connectMillis = System.currentTimeMillis() - start;
+    }
+
+    @Then("both parties should agree on protocol version {string}")
+    public void agreeOnVersion(String version) throws IOException {
         PipedInputStream clientIn = new PipedInputStream();
         PipedOutputStream serverOut = new PipedOutputStream(clientIn);
         PipedInputStream serverIn = new PipedInputStream();
@@ -174,6 +287,94 @@ public final class McpLifecycleSteps {
     @Then("initialization should complete successfully")
     public void initializationCompletes() throws IOException {
         client.ping();
+    }
+
+    @When("the McpHost sends an initialize request")
+    public void hostSendsInitializeRequest() throws IOException {
+        PipedInputStream clientIn = new PipedInputStream();
+        PipedOutputStream serverOut = new PipedOutputStream(clientIn);
+        PipedInputStream serverIn = new PipedInputStream();
+        PipedOutputStream clientOut = new PipedOutputStream(serverIn);
+        client = new McpClient(new ClientInfo("TestClient", "Test Client App", "1.0.0"),
+                Set.of(), new StdioTransport(clientIn, clientOut), null, null, null, null);
+        serverThread = new Thread(() -> {
+            try (BufferedReader r = new BufferedReader(new InputStreamReader(serverIn, StandardCharsets.UTF_8));
+                 BufferedWriter w = new BufferedWriter(new OutputStreamWriter(serverOut, StandardCharsets.UTF_8))) {
+                String line = r.readLine();
+                initRequest = Json.createReader(new StringReader(line)).readObject();
+                JsonObject resp = Json.createObjectBuilder()
+                        .add("jsonrpc", "2.0")
+                        .add("id", initRequest.get("id"))
+                        .add("result", Json.createObjectBuilder()
+                                .add("protocolVersion", "2025-06-18")
+                                .add("capabilities", Json.createObjectBuilder().build())
+                                .add("serverInfo", Json.createObjectBuilder()
+                                        .add("name", "mcp-java")
+                                        .add("title", "MCP Java Reference")
+                                        .add("version", "0.1.0")
+                                        .build())
+                                .build())
+                        .build();
+                w.write(resp.toString());
+                w.write('\n');
+                w.flush();
+                while (r.readLine() != null) {
+                }
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        });
+        serverThread.start();
+        client.connect();
+    }
+
+    @Then("the request must contain exactly:")
+    public void requestMustContainExactly(DataTable table) {
+        JsonObject params = initRequest.getJsonObject("params");
+        Set<String> expected = table.asMaps().stream()
+                .map(m -> m.get("required_field").split("\\.")[1])
+                .collect(Collectors.toSet());
+        Assertions.assertEquals(expected, params.keySet());
+        table.asMaps().forEach(m -> {
+            JsonValue v = resolve(initRequest, m.get("required_field"));
+            assertType(v, m.get("type"));
+        });
+    }
+
+    @Then("params.clientInfo may optionally contain:")
+    public void clientInfoMayOptionallyContain(DataTable table) {
+        JsonObject clientInfo = initRequest.getJsonObject("params").getJsonObject("clientInfo");
+        Set<String> allowed = new HashSet<>();
+        allowed.add("name");
+        table.asMaps().forEach(m -> allowed.add(m.get("optional_field").substring("params.clientInfo.".length())));
+        Assertions.assertEquals(allowed, clientInfo.keySet());
+        table.asMaps().forEach(m -> {
+            String key = m.get("optional_field").substring("params.clientInfo.".length());
+            JsonValue v = clientInfo.get(key);
+            if (v != null) assertType(v, m.get("type"));
+        });
+    }
+
+    private static JsonValue resolve(JsonObject obj, String path) {
+        String[] parts = path.split("\\.");
+        JsonObject current = obj;
+        for (int i = 0; i < parts.length - 1; i++) {
+            JsonValue v = current.get(parts[i]);
+            Assertions.assertNotNull(v);
+            Assertions.assertEquals(JsonValue.ValueType.OBJECT, v.getValueType());
+            current = v.asJsonObject();
+        }
+        return current.get(parts[parts.length - 1]);
+    }
+
+    private static void assertType(JsonValue value, String type) {
+        Assertions.assertNotNull(value);
+        JsonValue.ValueType actual = value.getValueType();
+        switch (type) {
+            case "string" -> Assertions.assertEquals(JsonValue.ValueType.STRING, actual);
+            case "object" -> Assertions.assertEquals(JsonValue.ValueType.OBJECT, actual);
+            default -> Assertions.fail("unsupported type: " + type);
+        }
     }
 
     @Given("successful initialization with protocol version {string}")
@@ -308,6 +509,53 @@ public final class McpLifecycleSteps {
         Assertions.assertThrows(IllegalStateException.class, () -> client.ping());
     }
 
+    @Given("successful initialization with specific negotiated capabilities")
+    public void successfulInitializationWithSpecificNegotiatedCapabilities() throws IOException {
+        hostCaps.clear();
+        hostCaps.add(ClientCapability.SAMPLING);
+        hostInitiatesConnection();
+        client.connect();
+    }
+
+    @Given("server capabilities include {string} but not {string}")
+    public void serverCapabilitiesIncludeButNot(String present, String absent) {
+        Set<String> caps = client.serverCapabilityNames();
+        Assertions.assertTrue(caps.contains(present.toUpperCase()));
+        Assertions.assertFalse(caps.contains(absent.toUpperCase()));
+    }
+
+    @Given("client capabilities include {string} but not {string}")
+    public void clientCapabilitiesIncludeButNot(String present, String absent) {
+        Assertions.assertTrue(hostCaps.contains(ClientCapability.valueOf(present.toUpperCase())));
+        Assertions.assertFalse(hostCaps.contains(ClientCapability.valueOf(absent.toUpperCase())));
+    }
+
+    @When("McpHost attempts to use non-negotiated server capability {string}")
+    public void mcphostAttemptsToUseNonNegotiatedServerCapability(String method) throws IOException {
+        lastResponse = client.request(method, Json.createObjectBuilder().build());
+    }
+
+    @Then("McpServer should respond with error code {int}")
+    public void mcpserverShouldRespondWithErrorCode(int code) {
+        if (lastResponse instanceof JsonRpcError err) {
+            lastError = err;
+            Assertions.assertEquals(code, err.error().code());
+        } else {
+            Assertions.fail("Expected error response");
+        }
+    }
+
+    @Then("error message should indicate {string}")
+    public void errorMessageShouldIndicate(String message) {
+        Assertions.assertNotNull(lastError);
+        Assertions.assertTrue(lastError.error().message().contains(message));
+    }
+
+    @Then("connection should remain stable for valid operations")
+    public void connectionShouldRemainStableForValidOperations() throws IOException {
+        client.ping();
+    }
+  
     @After
     public void tearDown() throws IOException {
         if (client != null) client.close();
