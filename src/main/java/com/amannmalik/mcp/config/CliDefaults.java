@@ -1,4 +1,4 @@
-package com.amannmalik.mcp.cli;
+package com.amannmalik.mcp.config;
 
 import com.amannmalik.mcp.api.*;
 import com.amannmalik.mcp.api.Principal;
@@ -6,7 +6,6 @@ import com.amannmalik.mcp.api.CompleteRequest;
 import com.amannmalik.mcp.api.CompletionProvider;
 import com.amannmalik.mcp.api.PromptProvider;
 import com.amannmalik.mcp.api.SamplingAccessPolicy;
-import com.amannmalik.mcp.config.McpConfiguration;
 import com.amannmalik.mcp.api.Annotations;
 import com.amannmalik.mcp.completion.*;
 import com.amannmalik.mcp.api.ContentBlock;
@@ -21,7 +20,7 @@ import jakarta.json.Json;
 import java.time.Instant;
 import java.util.*;
 
-final class CliDefaults {
+public final class CliDefaults {
     private static final ResourceProvider RESOURCES;
     private static final ToolProvider TOOLS;
     private static final PromptProvider PROMPTS;

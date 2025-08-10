@@ -1,6 +1,7 @@
 package com.amannmalik.mcp.cli;
 
 import com.amannmalik.mcp.api.McpServer;
+import com.amannmalik.mcp.config.CliDefaults;
 import com.amannmalik.mcp.config.McpConfiguration;
 import com.amannmalik.mcp.api.Transport;
 import com.amannmalik.mcp.transport.TransportFactory;
