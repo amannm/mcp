@@ -20,12 +20,13 @@ import java.net.URI;
 import java.net.http.*;
 import java.util.*;
 import java.util.concurrent.*;
+import java.util.stream.Collectors;
 
 /// - [Overview](specification/2025-06-18/index.mdx)
 /// - [Client Features](specification/2025-06-18/client/index.mdx)
 /// - [Sampling](specification/2025-06-18/client/sampling.mdx)
 /// - [Elicitation](specification/2025-06-18/client/elicitation.mdx)
-final class McpClient extends JsonRpcEndpoint implements AutoCloseable {
+public final class McpClient extends JsonRpcEndpoint implements AutoCloseable {
     private final ClientInfo info;
     private final Set<ClientCapability> capabilities;
     private final SamplingProvider sampling;
@@ -333,8 +334,27 @@ final class McpClient extends JsonRpcEndpoint implements AutoCloseable {
         disconnect();
     }
 
+    public String protocolVersion() {
+        return protocolVersion;
+    }
+
+    public ServerInfo serverInfo() {
+        return serverInfo;
+    }
+
     public Set<ServerCapability> serverCapabilities() {
         return serverCapabilities;
+    }
+
+    public Set<String> serverCapabilityNames() {
+        return serverCapabilities.stream().map(Enum::name).collect(Collectors.toUnmodifiableSet());
+    }
+
+    public Map<String, String> serverInfoMap() {
+        return Map.of(
+                "name", serverInfo.name(),
+                "title", serverInfo.title(),
+                "version", serverInfo.version());
     }
 
     public ListResourcesResult listResources(String cursor) throws IOException {
