@@ -1,4 +1,4 @@
-package com.amannmalik.mcp.core;
+package com.amannmalik.mcp.cli;
 
 import com.amannmalik.mcp.api.McpHost;
 import com.amannmalik.mcp.api.Role;

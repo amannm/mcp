@@ -1,4 +1,4 @@
-package com.amannmalik.mcp.core;
+package com.amannmalik.mcp.cli;
 
 import picocli.CommandLine;
 import picocli.CommandLine.Model.CommandSpec;

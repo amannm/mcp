@@ -1,4 +1,4 @@
-package com.amannmalik.mcp.core;
+package com.amannmalik.mcp.cli;
 
 import com.amannmalik.mcp.api.*;
 import com.amannmalik.mcp.api.Principal;
@@ -23,7 +23,7 @@ import jakarta.json.Json;
 import java.time.Instant;
 import java.util.*;
 
-public final class Defaults {
+public final class ServerDefaults {
     private static final ResourceProvider RESOURCES;
     private static final ToolProvider TOOLS;
     private static final PromptProvider PROMPTS;
@@ -120,7 +120,7 @@ public final class Defaults {
         SAMPLING = new InteractiveSamplingProvider(true);
     }
 
-    private Defaults() {
+    private ServerDefaults() {
     }
 
     public static ResourceProvider resources() {
@@ -157,7 +157,7 @@ public final class Defaults {
         return p;
     }
 
-     static Principal principal() {
+    public static Principal principal() {
         return new Principal(McpConfiguration.current().defaultPrincipal(), Set.of());
     }
 }

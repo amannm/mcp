@@ -1,4 +1,4 @@
-package com.amannmalik.mcp.core;
+package com.amannmalik.mcp.cli;
 
 import com.amannmalik.mcp.api.McpServer;
 import com.amannmalik.mcp.config.McpConfiguration;
@@ -73,15 +73,15 @@ public final class ServerCommand {
             Transport transport = TransportFactory.createTransport(httpPort, stdio, expectedAudience, resourceMetadataUrl, authServers, testMode, verbose);
             String instructions = instructionsFile == null ? null : Files.readString(instructionsFile);
            ;
-            try (McpServer server =  new McpServer(Defaults.resources(),
-                    Defaults.tools(),
-                    Defaults.prompts(),
-                    Defaults.completions(),
-                    Defaults.sampling(),
-                    Defaults.privacyBoundary(McpConfiguration.current().defaultBoundary()),
-                    Defaults.toolAccess(),
-                    Defaults.samplingAccess(),
-                    Defaults.principal(),
+            try (McpServer server =  new McpServer(ServerDefaults.resources(),
+                    ServerDefaults.tools(),
+                    ServerDefaults.prompts(),
+                    ServerDefaults.completions(),
+                    ServerDefaults.sampling(),
+                    ServerDefaults.privacyBoundary(McpConfiguration.current().defaultBoundary()),
+                    ServerDefaults.toolAccess(),
+                    ServerDefaults.samplingAccess(),
+                    ServerDefaults.principal(),
                     instructions,
                     transport)) {
                 server.serve();
