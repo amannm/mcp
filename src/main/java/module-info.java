@@ -10,4 +10,5 @@ module mcp.main {
     exports com.amannmalik.mcp.elicitation;
     exports com.amannmalik.mcp.roots;
     exports com.amannmalik.mcp.sampling;
+    exports com.amannmalik.mcp.jsonrpc;
 }

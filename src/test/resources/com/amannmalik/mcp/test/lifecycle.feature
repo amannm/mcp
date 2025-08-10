@@ -83,17 +83,17 @@ Feature: MCP Lifecycle Conformance
 #    And error message should contain "Invalid params"
 #    And the connection should remain uninitialized
 #
-#  @sequencing @error-handling
-#  Scenario: Requests before initialization must fail
-#    Given an uninitialized connection between McpHost and McpServer
-#    When the McpHost sends request:
-#      | method         |
-#      | tools/list     |
-#      | prompts/list   |
-#      | resources/list |
-#    Then the McpServer should respond with error code -32002
-#    And error message should contain "Server not initialized"
-#    And the connection should remain uninitialized
+  @sequencing @error-handling
+  Scenario: Requests before initialization must fail
+    Given an uninitialized connection between McpHost and McpServer
+    When the McpHost sends request:
+      | method         |
+      | tools/list     |
+      | prompts/list   |
+      | resources/list |
+    Then the McpServer should respond with error code -32002
+    And error message should contain "Server not initialized"
+    And the connection should remain uninitialized
 #
 #  @capabilities @negotiation
 #  Scenario: Complete server capability negotiation
