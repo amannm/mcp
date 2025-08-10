@@ -194,17 +194,17 @@ Feature: MCP Lifecycle Conformance
       | result.serverInfo.title     | string |
       | result.serverInfo.version   | string |
       | result.instructions         | string |
-#
-#  @transport @stdio @shutdown
-#  Scenario: Graceful shutdown via stdio transport
-#    Given an established McpHost-McpServer connection over stdio transport
-#    And normal operations are proceeding
-#    When the McpHost initiates shutdown by closing input stream to McpServer
-#    Then the McpServer should detect EOF within 2 seconds
-#    And the McpServer should exit gracefully within 5 seconds
-#    And if McpServer doesn't exit within 10 seconds, SIGTERM should be effective
-#    And if still unresponsive after 15 seconds, SIGKILL should terminate it
-#
+
+  @transport @stdio @shutdown
+  Scenario: Graceful shutdown via stdio transport
+    Given an established McpHost-McpServer connection over stdio transport
+    And normal operations are proceeding
+    When the McpHost initiates shutdown by closing input stream to McpServer
+    Then the McpServer should detect EOF within 2 seconds
+    And the McpServer should exit gracefully within 5 seconds
+    And if McpServer doesn't exit within 10 seconds, SIGTERM should be effective
+    And if still unresponsive after 15 seconds, SIGKILL should terminate it
+
   @transport @stdio @shutdown
   Scenario: Server-initiated shutdown via stdio transport
     Given an established McpHost-McpServer connection over stdio transport
