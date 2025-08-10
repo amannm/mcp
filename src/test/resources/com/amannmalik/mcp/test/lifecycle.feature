@@ -166,6 +166,7 @@ Feature: MCP Lifecycle Conformance
 #    And notifications must not have an "id" field
 #    And method names must follow specification format
 #
+
 @validation @initialization
 Scenario: Initialize request complete field validation
   When the McpHost sends an initialize request
@@ -180,20 +181,21 @@ Scenario: Initialize request complete field validation
     | params.clientInfo.title     | string |
     | params.clientInfo.version   | string |
 
-#  @validation @initialization
-#  Scenario: Initialize response complete field validation
-#    When the McpServer responds to initialize request
-#    Then the response must contain exactly:
-#      | required_field              | type   |
-#      | result.protocolVersion      | string |
-#      | result.capabilities         | object |
-#      | result.serverInfo           | object |
-#      | result.serverInfo.name      | string |
-#    And result may optionally contain:
-#      | optional_field              | type   |
-#      | result.serverInfo.title     | string |
-#      | result.serverInfo.version   | string |
-#      | result.instructions         | string |
+@validation @initialization
+Scenario: Initialize response complete field validation
+  When the McpServer responds to initialize request
+  Then the response must contain exactly:
+    | required_field              | type   |
+    | result.protocolVersion      | string |
+    | result.capabilities         | object |
+    | result.serverInfo           | object |
+    | result.serverInfo.name      | string |
+  And result may optionally contain:
+    | optional_field              | type   |
+    | result.serverInfo.title     | string |
+    | result.serverInfo.version   | string |
+    | result.instructions         | string |
+
 #
 #  @transport @stdio @shutdown
 #  Scenario: Graceful shutdown via stdio transport
@@ -285,14 +287,14 @@ Scenario: Initialize request complete field validation
 #    And error message should indicate "Method not found"
 #    And connection should remain stable for valid operations
 #
-#  @operation-phase @version-consistency
-#  Scenario: Protocol version consistency throughout session
-#    Given successful initialization with protocol version "2025-06-18"
-#    When any message is exchanged during operation phase
-#    Then message format should conform exactly to "2025-06-18" specification
-#    And should not use deprecated features from older versions
-#    And should not use preview features from newer versions
-#
+  @operation-phase @version-consistency
+  Scenario: Protocol version consistency throughout session
+    Given successful initialization with protocol version "2025-06-18"
+    When any message is exchanged during operation phase
+    Then message format should conform exactly to "2025-06-18" specification
+    And should not use deprecated features from older versions
+    And should not use preview features from newer versions
+
 #  @transport @http @authorization
 #  Scenario: HTTP transport with JWT authorization lifecycle
 #    Given a McpServer configured with JWT authorization

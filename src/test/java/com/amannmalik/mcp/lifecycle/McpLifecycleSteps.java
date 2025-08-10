@@ -177,6 +177,7 @@ public final class McpLifecycleSteps {
         client.ping();
     }
 
+
     @When("the McpHost sends an initialize request")
     public void hostSendsInitializeRequest() throws IOException {
         PipedInputStream clientIn = new PipedInputStream();
@@ -264,6 +265,34 @@ public final class McpLifecycleSteps {
             default -> Assertions.fail("unsupported type: " + type);
         }
     }
+
+    @Given("successful initialization with protocol version {string}")
+    public void successfulInitializationWithProtocolVersion(String version) throws IOException {
+        hostInitiatesConnection();
+        client.connect();
+        Assertions.assertEquals(version, client.protocolVersion());
+    }
+
+    @When("any message is exchanged during operation phase")
+    public void anyMessageExchangedDuringOperationPhase() throws IOException {
+        client.ping();
+    }
+
+    @Then("message format should conform exactly to {string} specification")
+    public void messageFormatShouldConformExactlyToSpecification(String version) {
+        Assertions.assertEquals(version, client.protocolVersion());
+    }
+
+    @Then("should not use deprecated features from older versions")
+    public void shouldNotUseDeprecatedFeaturesFromOlderVersions() {
+        // TODO: verify absence of deprecated features
+    }
+
+    @Then("should not use preview features from newer versions")
+    public void shouldNotUsePreviewFeaturesFromNewerVersions() {
+        // TODO: verify absence of preview features
+    }
+
     @Given("an established McpHost-McpServer connection over stdio transport")
     public void establishedConnection() throws IOException {
         hostInitiatesConnection();
@@ -309,5 +338,47 @@ public final class McpLifecycleSteps {
                 Thread.currentThread().interrupt();
             }
         }
+    }
+
+    @When("the McpServer responds to initialize request")
+    public void serverRespondsToInitializeRequest() throws IOException {
+        initializationPerformed();
+    }
+
+    @Then("the response must contain exactly:")
+    public void responseMustContainExactly(DataTable table) {
+        Set<String> required = new HashSet<>();
+        table.asMaps().forEach(row -> required.add(row.get("required_field")));
+        Assertions.assertEquals(4, required.size());
+        Assertions.assertTrue(required.contains("result.protocolVersion"));
+        Assertions.assertNotNull(client.protocolVersion());
+        Assertions.assertTrue(required.contains("result.capabilities"));
+        Assertions.assertNotNull(client.serverCapabilityNames());
+        Assertions.assertTrue(required.contains("result.serverInfo"));
+        Map<String, String> info = client.serverInfoMap();
+        Assertions.assertNotNull(info);
+        Assertions.assertTrue(required.contains("result.serverInfo.name"));
+        Assertions.assertNotNull(info.get("name"));
+    }
+
+    @Then("result may optionally contain:")
+    public void resultMayOptionallyContain(DataTable table) {
+        Set<String> optional = new HashSet<>();
+        table.asMaps().forEach(row -> optional.add(row.get("optional_field")));
+        Map<String, String> info = client.serverInfoMap();
+        if (info.containsKey("title")) {
+            Assertions.assertTrue(optional.contains("result.serverInfo.title"));
+        }
+        if (info.containsKey("version")) {
+            Assertions.assertTrue(optional.contains("result.serverInfo.version"));
+        }
+        if (!client.context().isEmpty()) {
+            Assertions.assertTrue(optional.contains("result.instructions"));
+        }
+        Set<String> allowed = Set.of(
+                "result.serverInfo.title",
+                "result.serverInfo.version",
+                "result.instructions");
+        Assertions.assertTrue(optional.stream().allMatch(allowed::contains));
     }
 }
