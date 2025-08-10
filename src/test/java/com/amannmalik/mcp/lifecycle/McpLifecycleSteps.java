@@ -6,9 +6,12 @@ import com.amannmalik.mcp.core.McpClient;
 import com.amannmalik.mcp.core.McpServer;
 import com.amannmalik.mcp.core.StdioTransport;
 import com.amannmalik.mcp.elicitation.InteractiveElicitationProvider;
+import com.amannmalik.mcp.jsonrpc.JsonRpcError;
+import com.amannmalik.mcp.jsonrpc.JsonRpcMessage;
 import com.amannmalik.mcp.roots.InMemoryRootsProvider;
 import com.amannmalik.mcp.roots.Root;
 import com.amannmalik.mcp.sampling.InteractiveSamplingProvider;
+import jakarta.json.Json;
 import io.cucumber.datatable.DataTable;
 import io.cucumber.java.After;
 import io.cucumber.java.en.*;
@@ -31,6 +34,8 @@ public final class McpLifecycleSteps {
     private long connectMillis;
     private final Set<String> expectedServerCaps = new HashSet<>();
     private final Set<ClientCapability> hostCaps = EnumSet.noneOf(ClientCapability.class);
+    private final List<JsonRpcMessage> responses = new ArrayList<>();
+
     private String serverVersion;
     private String hostVersion;
     private JsonRpcMessage lastResponse;
@@ -43,6 +48,7 @@ public final class McpLifecycleSteps {
         connectMillis = 0L;
         expectedServerCaps.clear();
         hostCaps.clear();
+        responses.clear();
         serverVersion = null;
         hostVersion = null;
     }
@@ -54,6 +60,11 @@ public final class McpLifecycleSteps {
 
     @Given("both McpHost and McpServer are available")
     public void hostAndServerAvailable() {
+    }
+
+    @Given("an uninitialized connection between McpHost and McpServer")
+    public void uninitializedConnection() throws IOException {
+        hostInitiatesConnection();
     }
 
     @Given("a McpServer with capabilities:")
@@ -72,6 +83,43 @@ public final class McpLifecycleSteps {
                 hostCaps.add(ClientCapability.valueOf(row.get("capability").toUpperCase()));
             }
         });
+    }
+
+    @When("the McpHost sends request:")
+    public void hostSendsRequest(DataTable table) throws IOException {
+        var params = Json.createObjectBuilder().build();
+        for (var row : table.asMaps()) {
+            responses.add(client.request(row.get("method"), params));
+        }
+    }
+
+    @Then("the McpServer should respond with error code {int}")
+    public void serverShouldRespondWithErrorCode(int code) {
+        Assertions.assertFalse(responses.isEmpty());
+        for (var msg : responses) {
+            if (msg instanceof JsonRpcError err) {
+                Assertions.assertEquals(code, err.error().code());
+            } else {
+                Assertions.fail("Expected JsonRpcError");
+            }
+        }
+    }
+
+    @Then("error message should contain {string}")
+    public void errorMessageShouldContain(String expected) {
+        Assertions.assertFalse(responses.isEmpty());
+        for (var msg : responses) {
+            if (msg instanceof JsonRpcError err) {
+                Assertions.assertTrue(err.error().message().contains(expected));
+            } else {
+                Assertions.fail("Expected JsonRpcError");
+            }
+        }
+    }
+
+    @Then("the connection should remain uninitialized")
+    public void connectionShouldRemainUninitialized() {
+        Assertions.assertFalse(client.connected());
     }
 
     @When("the McpHost initiates connection to McpServer")
