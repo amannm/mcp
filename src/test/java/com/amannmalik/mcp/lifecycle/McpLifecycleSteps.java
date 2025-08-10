@@ -24,8 +24,8 @@ public final class McpLifecycleSteps {
     private McpServer server;
     private Thread serverThread;
     private long connectMillis;
-    private Set<String> expectedServerCaps = new HashSet<>();
-    private Set<ClientCapability> hostCaps = EnumSet.noneOf(ClientCapability.class);
+    private final Set<String> expectedServerCaps = new HashSet<>();
+    private final Set<ClientCapability> hostCaps = EnumSet.noneOf(ClientCapability.class);
 
     @Given("a clean MCP environment")
     public void cleanEnvironment() {
@@ -91,9 +91,9 @@ public final class McpLifecycleSteps {
     @When("sends initialize request with:")
     public void sendsInitializeRequest(DataTable table) throws IOException {
         Map<String, String> map = table.asMap(String.class, String.class);
-        Assertions.assertEquals(map.get("clientInfo.name"), "TestClient");
-        Assertions.assertEquals(map.get("clientInfo.title"), "Test Client App");
-        Assertions.assertEquals(map.get("clientInfo.version"), "1.0.0");
+        Assertions.assertEquals("TestClient", map.get("clientInfo.name"));
+        Assertions.assertEquals("Test Client App", map.get("clientInfo.title"));
+        Assertions.assertEquals("1.0.0", map.get("clientInfo.version"));
         long start = System.currentTimeMillis();
         client.connect();
         connectMillis = System.currentTimeMillis() - start;
