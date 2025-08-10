@@ -2,7 +2,7 @@ package com.amannmalik.mcp.api;
 
 import java.util.Optional;
 
-public enum NotificationMethod implements WireMethod {
+public enum NotificationMethod implements JsonRpcMethod {
     INITIALIZED("notifications/initialized"),
     CANCELLED("notifications/cancelled"),
     PROGRESS("notifications/progress"),
@@ -24,7 +24,7 @@ public enum NotificationMethod implements WireMethod {
     }
 
     public static Optional<NotificationMethod> from(String method) {
-        return WireMethod.from(NotificationMethod.class, method);
+        return JsonRpcMethod.from(NotificationMethod.class, method);
     }
 }
 

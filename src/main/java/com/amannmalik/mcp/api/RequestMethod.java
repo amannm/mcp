@@ -2,7 +2,7 @@ package com.amannmalik.mcp.api;
 
 import java.util.Optional;
 
-public enum RequestMethod implements WireMethod {
+public enum RequestMethod implements JsonRpcMethod {
     INITIALIZE("initialize"),
     PING("ping"),
     RESOURCES_LIST("resources/list"),
@@ -31,6 +31,6 @@ public enum RequestMethod implements WireMethod {
     }
 
     public static Optional<RequestMethod> from(String method) {
-        return WireMethod.from(RequestMethod.class, method);
+        return JsonRpcMethod.from(RequestMethod.class, method);
     }
 }
