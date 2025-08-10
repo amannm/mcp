@@ -2,7 +2,7 @@ package com.amannmalik.mcp.api;
 
 import java.util.Optional;
 
-public sealed interface WireMethod permits RequestMethod, NotificationMethod {
+sealed interface WireMethod permits RequestMethod, NotificationMethod {
     String method();
 
     static <T extends Enum<T> & WireMethod> Optional<T> from(Class<T> type, String method) {
