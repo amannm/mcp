@@ -1,7 +1,7 @@
 package com.amannmalik.mcp.resources;
 
-import com.amannmalik.mcp.jsonrpc.JsonCodec;
 import com.amannmalik.mcp.api.ResourceBlock;
+import com.amannmalik.mcp.jsonrpc.JsonCodec;
 import com.amannmalik.mcp.util.*;
 import jakarta.json.*;
 

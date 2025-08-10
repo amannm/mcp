@@ -40,7 +40,6 @@ public final class McpServer extends JsonRpcEndpoint implements AutoCloseable {
     private ChangeSubscription toolListSubscription;
     private ChangeSubscription promptsSubscription;
     private final RootsManager rootsManager;
-    private final ResourceAccessPolicy resourceAccess;
     private final ToolAccessPolicy toolAccess;
     private final SamplingAccessPolicy samplingAccess;
     private final Principal principal;
@@ -95,7 +94,6 @@ public final class McpServer extends JsonRpcEndpoint implements AutoCloseable {
         this.prompts = prompts;
         this.completions = completions;
         this.sampling = sampling;
-        this.resourceAccess = resourceAccess;
         this.toolAccess = toolAccess == null ? ToolAccessPolicy.PERMISSIVE : toolAccess;
         this.samplingAccess = samplingAccess == null ? SamplingAccessPolicy.PERMISSIVE : samplingAccess;
         this.principal = principal;

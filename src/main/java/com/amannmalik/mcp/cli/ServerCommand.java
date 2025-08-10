@@ -74,7 +74,6 @@ public final class ServerCommand {
             boolean testMode = parseResult.matchedOptionValue("--test-mode", false);
             Transport transport = TransportFactory.createTransport(httpPort, stdio, expectedAudience, resourceMetadataUrl, authServers, testMode, verbose);
             String instructions = instructionsFile == null ? null : Files.readString(instructionsFile);
-            ;
             try (McpServer server = new McpServer(CliDefaults.resources(),
                     CliDefaults.tools(),
                     CliDefaults.prompts(),

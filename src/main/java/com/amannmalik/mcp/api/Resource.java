@@ -14,7 +14,7 @@ public record Resource(
         Annotations annotations,
         JsonObject _meta
 ) implements DisplayNameProvider {
-    public static final JsonCodec<Resource> CODEC = new ResourceAbstractEntityCodec();
+    static final JsonCodec<Resource> CODEC = new ResourceAbstractEntityCodec();
 
     public Resource {
         uri = ValidationUtil.requireAbsoluteUri(uri);

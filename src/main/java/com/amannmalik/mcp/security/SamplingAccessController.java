@@ -1,7 +1,7 @@
 package com.amannmalik.mcp.security;
 
-import com.amannmalik.mcp.api.SamplingAccessPolicy;
 import com.amannmalik.mcp.api.Principal;
+import com.amannmalik.mcp.api.SamplingAccessPolicy;
 
 import java.util.Objects;
 

@@ -10,6 +10,7 @@ public class CompleteRequestJsonCodec implements JsonCodec<CompleteRequest> {
     private static final ArgumentJsonCodec ARGUMENT_CODEC = new ArgumentJsonCodec();
     private static final RefJsonCodec REF_CODEC = new RefJsonCodec();
     private static final ContextJsonCodec CONTEXT_CODEC = new ContextJsonCodec();
+
     @Override
     public JsonObject toJson(CompleteRequest req) {
         JsonObjectBuilder b = Json.createObjectBuilder()

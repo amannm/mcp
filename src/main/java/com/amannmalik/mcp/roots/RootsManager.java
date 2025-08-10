@@ -1,8 +1,10 @@
 package com.amannmalik.mcp.roots;
 
 import com.amannmalik.mcp.api.*;
-import com.amannmalik.mcp.jsonrpc.*;
-import com.amannmalik.mcp.util.*;
+import com.amannmalik.mcp.jsonrpc.JsonRpcError;
+import com.amannmalik.mcp.jsonrpc.JsonRpcResponse;
+import com.amannmalik.mcp.util.Change;
+import com.amannmalik.mcp.util.ChangeSupport;
 
 import java.io.IOException;
 import java.util.List;

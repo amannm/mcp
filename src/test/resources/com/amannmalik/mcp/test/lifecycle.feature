@@ -12,25 +12,25 @@ Feature: MCP Lifecycle Conformance
   # SPEC: lifecycle.mdx:42-125 - Complete initialization handshake sequence
   Scenario: Standard initialization handshake
     Given a McpServer with capabilities:
-      | capability  | subcapability | enabled |
-      | prompts     | listChanged   | true    |
-      | resources   | subscribe     | true    |
-      | tools       | listChanged   | true    |
-      | logging     |               | true    |
+      | capability | subcapability | enabled |
+      | prompts    | listChanged   | true    |
+      | resources  | subscribe     | true    |
+      | tools      | listChanged   | true    |
+      | logging    |               | true    |
     And a McpHost with capabilities:
-      | capability  | subcapability | enabled |
-      | roots       | listChanged   | true    |
-      | sampling    |               | true    |
+      | capability | subcapability | enabled |
+      | roots      | listChanged   | true    |
+      | sampling   |               | true    |
     When the McpHost sends initialize request with:
-      | field              | value           |
-      | protocolVersion    | 2025-06-18      |
-      | clientInfo.name    | TestClient      |
-      | clientInfo.version | 1.0.0           |
+      | field              | value      |
+      | protocolVersion    | 2025-06-18 |
+      | clientInfo.name    | TestClient |
+      | clientInfo.version | 1.0.0      |
     Then the McpServer should respond with:
-      | field              | value              |
-      | protocolVersion    | 2025-06-18         |
-      | serverInfo.name    | mcp-java           |
-      | serverInfo.version | 0.1.0              |
+      | field              | value      |
+      | protocolVersion    | 2025-06-18 |
+      | serverInfo.name    | mcp-java   |
+      | serverInfo.version | 0.1.0      |
     And the response should include all declared server capabilities
     And the McpHost should send initialized notification
     And both parties should be in operational state
@@ -62,11 +62,11 @@ Feature: MCP Lifecycle Conformance
   Scenario: Initialize request validation
     Given an uninitialized connection
     When the McpHost sends initialize request missing:
-      | missing_field    |
-      | protocolVersion  |
-      | capabilities     |
-      | clientInfo       |
-      | clientInfo.name  |
+      | missing_field   |
+      | protocolVersion |
+      | capabilities    |
+      | clientInfo      |
+      | clientInfo.name |
     Then the McpServer should respond with error code -32602
     And error message should contain "Invalid params"
 
@@ -86,11 +86,11 @@ Feature: MCP Lifecycle Conformance
   # SPEC: lifecycle.mdx:146-149, schema.ts:243-287 - Capability negotiation
   Scenario: Server capability negotiation
     Given a McpServer declaring capabilities:
-      | capability  | subcapability | enabled |
-      | prompts     | listChanged   | true    |
-      | resources   | subscribe     | true    |
-      | tools       | listChanged   | true    |
-      | logging     |               | true    |
+      | capability | subcapability | enabled |
+      | prompts    | listChanged   | true    |
+      | resources  | subscribe     | true    |
+      | tools      | listChanged   | true    |
+      | logging    |               | true    |
     When initialization completes successfully
     Then the negotiated server capabilities should exactly match declared capabilities
 
@@ -111,9 +111,9 @@ Feature: MCP Lifecycle Conformance
     Given the McpServer has responded to initialize request
     But the McpHost has not sent initialized notification
     Then the McpServer should only send:
-      | allowed_method       |
-      | ping                 |
-      | logging              |
+      | allowed_method |
+      | ping           |
+      | logging        |
     And should defer other operations until initialized notification received
 
   @json-rpc @compliance
@@ -131,18 +131,18 @@ Feature: MCP Lifecycle Conformance
   Scenario: Initialize message structure validation
     When the McpHost sends initialize request
     Then the request must contain exactly:
-      | required_field              | type   |
-      | params.protocolVersion      | string |
-      | params.capabilities         | object |
-      | params.clientInfo           | object |
-      | params.clientInfo.name      | string |
-    When the McpServer responds to initialize request  
+      | required_field         | type   |
+      | params.protocolVersion | string |
+      | params.capabilities    | object |
+      | params.clientInfo      | object |
+      | params.clientInfo.name | string |
+    When the McpServer responds to initialize request
     Then the response must contain exactly:
-      | required_field              | type   |
-      | result.protocolVersion      | string |
-      | result.capabilities         | object |
-      | result.serverInfo           | object |
-      | result.serverInfo.name      | string |
+      | required_field         | type   |
+      | result.protocolVersion | string |
+      | result.capabilities    | object |
+      | result.serverInfo      | object |
+      | result.serverInfo.name | string |
 
   @operation-phase @capability-enforcement
   # SPEC: lifecycle.mdx:177-180 - Capability boundary enforcement
@@ -315,12 +315,12 @@ Feature: MCP Lifecycle Conformance
   Scenario: Standard error code compliance
     Given various error conditions occur
     Then appropriate standard error codes should be returned:
-      | condition              | code  | message           |
-      | malformed JSON        | -32700 | Parse error       |
-      | invalid request       | -32600 | Invalid Request   |
-      | method not found      | -32601 | Method not found  |
-      | invalid parameters    | -32602 | Invalid params    |
-      | internal error        | -32603 | Internal error    |
+      | condition          | code   | message          |
+      | malformed JSON     | -32700 | Parse error      |
+      | invalid request    | -32600 | Invalid Request  |
+      | method not found   | -32601 | Method not found |
+      | invalid parameters | -32602 | Invalid params   |
+      | internal error     | -32603 | Internal error   |
 
   @authorization @bearer-token
   # SPEC: authorization.mdx:236-249 - Bearer token validation in Authorization header
@@ -369,10 +369,10 @@ Feature: MCP Lifecycle Conformance
   # SPEC: lifecycle.mdx:146-149 - Complex capability negotiation scenarios
   Scenario: Complex multi-level capability negotiation
     Given a server with nested capabilities:
-      | capability  | subcapability | enabled |
-      | resources   | subscribe     | true    |
-      | resources   | listChanged   | true    |
-      | tools       | listChanged   | false   |
+      | capability | subcapability | enabled |
+      | resources  | subscribe     | true    |
+      | resources  | listChanged   | true    |
+      | tools      | listChanged   | false   |
     When initialization completes
     Then negotiated capabilities should exactly match server declarations
     And capability structure should be preserved
@@ -381,9 +381,9 @@ Feature: MCP Lifecycle Conformance
   # SPEC: lifecycle.mdx:129-137 - Multiple version support edge cases
   Scenario: Server supporting multiple protocol versions
     Given a server supporting versions:
-      | version      | status      |
-      | 2024-11-05   | deprecated  |
-      | 2025-06-18   | current     |
+      | version    | status     |
+      | 2024-11-05 | deprecated |
+      | 2025-06-18 | current    |
     When client requests unsupported version "2023-01-01"
     Then server should respond with highest stable version "2025-06-18"
     And should not offer deprecated versions

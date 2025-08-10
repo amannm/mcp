@@ -1,6 +1,6 @@
 package com.amannmalik.mcp.util;
 
-import com.amannmalik.mcp.api.*;
+import com.amannmalik.mcp.api.ContentBlock;
 import com.amannmalik.mcp.core.AbstractEntityCodec;
 import com.amannmalik.mcp.jsonrpc.JsonCodec;
 import jakarta.json.*;
@@ -11,6 +11,7 @@ public class ContentBlockJsonCodec implements JsonCodec<ContentBlock> {
 
     private final AnnotationsJsonCodec ANNOTATIONS_CODEC = new AnnotationsJsonCodec();
     private final ResourceBlockJsonCodec RESOURCE_BLOCK_CODEC = new ResourceBlockJsonCodec();
+    private final ResourceAbstractEntityCodec RESOURCE_ENTITY_CODEC = new ResourceAbstractEntityCodec();
 
     @Override
     public JsonObject toJson(ContentBlock content) {
@@ -26,7 +27,7 @@ public class ContentBlockJsonCodec implements JsonCodec<ContentBlock> {
             case ContentBlock.Audio a -> b.add("data", Base64Util.encode(a.data()))
                     .add("mimeType", a.mimeType()).build();
             case ContentBlock.ResourceLink l -> {
-                JsonObject obj = Resource.CODEC.toJson(l.resource());
+                JsonObject obj = RESOURCE_ENTITY_CODEC.toJson(l.resource());
                 obj.forEach((k, v) -> {
                     if (!"_meta".equals(k)) b.add(k, v);
                 });
@@ -68,7 +69,7 @@ public class ContentBlockJsonCodec implements JsonCodec<ContentBlock> {
                     RESOURCE_BLOCK_CODEC.fromJson(obj.getJsonObject("resource")),
                     obj.containsKey("annotations") ? ANNOTATIONS_CODEC.fromJson(obj.getJsonObject("annotations")) : null,
                     obj.getJsonObject("_meta"));
-            case "resource_link" -> new ContentBlock.ResourceLink(Resource.CODEC.fromJson(obj));
+            case "resource_link" -> new ContentBlock.ResourceLink(RESOURCE_ENTITY_CODEC.fromJson(obj));
             default -> throw new IllegalArgumentException("unknown content type: " + type);
         };
     }

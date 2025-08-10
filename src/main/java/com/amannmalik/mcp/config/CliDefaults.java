@@ -1,20 +1,13 @@
 package com.amannmalik.mcp.config;
 
 import com.amannmalik.mcp.api.*;
-import com.amannmalik.mcp.api.Principal;
-import com.amannmalik.mcp.api.CompletionProvider;
-import com.amannmalik.mcp.api.PromptProvider;
-import com.amannmalik.mcp.api.SamplingAccessPolicy;
-import com.amannmalik.mcp.api.Annotations;
-import com.amannmalik.mcp.completion.*;
-import com.amannmalik.mcp.api.ContentBlock;
+import com.amannmalik.mcp.completion.InMemoryCompletionProvider;
 import com.amannmalik.mcp.prompts.*;
-import com.amannmalik.mcp.resources.*;
+import com.amannmalik.mcp.resources.InMemoryResourceProvider;
 import com.amannmalik.mcp.sampling.InteractiveSamplingProvider;
-import com.amannmalik.mcp.api.SamplingProvider;
-import com.amannmalik.mcp.security.*;
-import com.amannmalik.mcp.tools.*;
-import com.amannmalik.mcp.api.ResourceBlock;
+import com.amannmalik.mcp.security.ResourceAccessController;
+import com.amannmalik.mcp.tools.InMemoryToolProvider;
+import com.amannmalik.mcp.tools.ToolAnnotations;
 import jakarta.json.Json;
 
 import java.time.Instant;
