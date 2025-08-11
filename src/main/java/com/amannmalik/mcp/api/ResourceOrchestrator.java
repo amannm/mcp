@@ -80,7 +80,7 @@ final class ResourceOrchestrator implements AutoCloseable {
         if (state.get() != LifecycleState.OPERATION) {
             return JsonRpcError.of(req.id(), -32002, "Server not initialized");
         }
-        Optional<ProgressToken> progressToken = ProgressNotification.fromMeta(req.params());
+        Optional<ProgressToken> progressToken = ProgressToken.fromMeta(req.params());
         try {
             ListResourcesRequest lr = AbstractEntityCodec.paginatedRequest(
                     ListResourcesRequest::cursor,
