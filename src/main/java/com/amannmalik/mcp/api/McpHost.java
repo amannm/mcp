@@ -61,10 +61,6 @@ public final class McpHost implements AutoCloseable {
                 }
             } : null;
 
-            EnumSet<ClientCapability> caps = clientConfig.clientCapabilities().isEmpty()
-                    ? EnumSet.noneOf(ClientCapability.class)
-                    : EnumSet.copyOf(clientConfig.clientCapabilities());
-
             ElicitationProvider elicitationProvider = new InteractiveElicitationProvider();
 
             McpClient client = new McpClient(
@@ -238,9 +234,13 @@ public final class McpHost implements AutoCloseable {
     private McpClient requireClientForMethod(String id, JsonRpcMethod method) {
         McpClient client = requireConnectedClient(id);
         if (method instanceof RequestMethod rm) {
-            rm.serverCapability().ifPresent(cap -> requireCapability(client, cap));
+            for (ServerCapability cap : rm.serverCapabilities()) {
+                requireCapability(client, cap);
+            }
         }
-        method.clientCapability().ifPresent(cap -> requireCapability(client, cap));
+        for (ClientCapability cap : method.clientCapabilities()) {
+            requireCapability(client, cap);
+        }
         return client;
     }
 
