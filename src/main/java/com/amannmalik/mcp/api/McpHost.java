@@ -169,13 +169,27 @@ public final class McpHost implements AutoCloseable {
         McpClient client = requireClient(clientId);
         requireCapability(client, ServerCapability.TOOLS);
         consents.requireConsent(principal, "tool:" + name);
-        toolAccess.requireAllowed(principal, name);
+        Tool tool = findTool(clientId, name)
+                .orElseThrow(() -> new IllegalArgumentException("Tool not found: " + name));
+        toolAccess.requireAllowed(principal, tool);
         JsonRpcResponse resp = JsonRpc.expectResponse(client.request(
                 RequestMethod.TOOLS_CALL,
                 CALL_TOOL_REQUEST_CODEC.toJson(new CallToolRequest(name, args, null)),
                 0L
         ));
         return TOOL_RESULT_ABSTRACT_ENTITY_CODEC.fromJson(resp.result());
+    }
+
+    private Optional<Tool> findTool(String clientId, String name) throws IOException {
+        String cursor = null;
+        do {
+            ListToolsResult page = listTools(clientId, cursor);
+            for (Tool t : page.tools()) {
+                if (t.name().equals(name)) return Optional.of(t);
+            }
+            cursor = page.nextCursor();
+        } while (cursor != null);
+        return Optional.empty();
     }
 
     public JsonObject createMessage(String clientId, JsonObject params) throws IOException {
