@@ -1,7 +1,8 @@
 package com.amannmalik.mcp.api;
 
 import com.amannmalik.mcp.codec.*;
-import com.amannmalik.mcp.core.*;
+import com.amannmalik.mcp.core.LifecycleState;
+import com.amannmalik.mcp.core.ProgressManager;
 import com.amannmalik.mcp.jsonrpc.*;
 import com.amannmalik.mcp.resources.ReadResourceResult;
 import com.amannmalik.mcp.resources.ResourceListChangedNotification;

@@ -1,26 +1,24 @@
 package com.amannmalik.mcp.api;
 
-import java.util.List;
-
 public record McpServerConfiguration(
         // Protocol configuration
         String version,
         String compatibilityVersion,
         long defaultTimeoutMs,
         long initialRequestId,
-        
+
         // Rate limiting configuration
         RateLimitConfig rateLimiting,
-        
+
         // Server identity configuration
         ServerIdentity serverIdentity,
-        
+
         // Error handling configuration
         ErrorMessages errorMessages,
-        
+
         // Logging configuration
         LoggingConfig loggingConfig,
-        
+
         // Default principal for server operations
         String defaultPrincipal,
         String defaultBoundary
@@ -29,7 +27,7 @@ public record McpServerConfiguration(
     public static McpServerConfiguration defaultConfiguration() {
         return new McpServerConfiguration(
                 "2025-06-18",
-                "2025-03-26", 
+                "2025-03-26",
                 30_000L,
                 1L,
                 RateLimitConfig.defaultConfig(),
@@ -43,7 +41,7 @@ public record McpServerConfiguration(
 
     public record RateLimitConfig(
             int toolsPerSecond,
-            int completionsPerSecond, 
+            int completionsPerSecond,
             int logsPerSecond,
             int progressPerSecond,
             long windowMs,
@@ -76,7 +74,7 @@ public record McpServerConfiguration(
             return new ErrorMessages(
                     "Error processing message",
                     "Server not initialized",
-                    "Parse error", 
+                    "Parse error",
                     "Invalid request",
                     "Access denied",
                     "Request timed out"

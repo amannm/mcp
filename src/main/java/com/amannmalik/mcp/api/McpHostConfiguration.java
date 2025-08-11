@@ -1,9 +1,6 @@
 package com.amannmalik.mcp.api;
 
-import com.amannmalik.mcp.api.ClientCapability;
-import java.util.EnumSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 public record McpHostConfiguration(
         // Protocol configuration
@@ -11,22 +8,26 @@ public record McpHostConfiguration(
         String compatibilityVersion,
         long defaultTimeoutMs,
         long pingTimeoutMs,
-        
+
         // Client identity configuration
         ClientIdentity clientIdentity,
-        
+
         // Client capabilities configuration
         Set<ClientCapability> clientCapabilities,
-        
+
         // Host principal configuration
         String hostPrincipal,
-        
+
         // Transport configuration
         TransportConfig transportConfig,
-        
+
         // Process configuration
         ProcessConfig processConfig
 ) {
+
+    public McpHostConfiguration {
+        clientCapabilities = Set.copyOf(clientCapabilities);
+    }
 
     public static McpHostConfiguration defaultConfiguration() {
         return new McpHostConfiguration(
@@ -67,6 +68,10 @@ public record McpHostConfiguration(
             int sseHistoryLimit,
             int responseQueueCapacity
     ) {
+        public TransportConfig {
+            allowedOrigins = List.copyOf(allowedOrigins);
+        }
+
         public static TransportConfig defaultConfig() {
             return new TransportConfig(
                     "stdio",
@@ -75,10 +80,6 @@ public record McpHostConfiguration(
                     100,
                     1
             );
-        }
-
-        public TransportConfig {
-            allowedOrigins = List.copyOf(allowedOrigins);
         }
     }
 
@@ -90,9 +91,5 @@ public record McpHostConfiguration(
         public static ProcessConfig defaultConfig() {
             return new ProcessConfig(2, 100, 100);
         }
-    }
-
-    public McpHostConfiguration {
-        clientCapabilities = Set.copyOf(clientCapabilities);
     }
 }

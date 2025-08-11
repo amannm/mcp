@@ -44,7 +44,7 @@ public final class McpServer extends JsonRpcEndpoint implements AutoCloseable {
                     ListPromptsResult::_meta,
                     new PromptAbstractEntityCodec(),
                     (page, meta) -> new ListPromptsResult(page.items(), page.nextCursor(), meta));
-    
+
     private final McpServerConfiguration config;
     private final Set<ServerCapability> serverCapabilities;
     private final ServerInfo serverInfo;
