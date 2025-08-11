@@ -3,7 +3,9 @@ package com.amannmalik.mcp.api;
 import com.amannmalik.mcp.util.ValidationUtil;
 import jakarta.json.JsonObject;
 
-public sealed interface ResourceBlock permits ResourceBlock.Text, ResourceBlock.Binary {
+public sealed interface ResourceBlock permits
+        ResourceBlock.Text,
+        ResourceBlock.Binary {
 
     String uri();
 
