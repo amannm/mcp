@@ -8,6 +8,6 @@ public sealed interface PaginatedResult<T> extends Result permits ListResourcesR
         com.amannmalik.mcp.prompts.ListPromptsResult {
     List<T> items();
 
-    String nextCursor();
+    Cursor nextCursor();
 }
 

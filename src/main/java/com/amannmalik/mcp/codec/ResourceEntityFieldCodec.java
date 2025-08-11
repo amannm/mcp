@@ -1,6 +1,6 @@
 package com.amannmalik.mcp.codec;
 
-import com.amannmalik.mcp.spi.Pagination;
+import com.amannmalik.mcp.spi.*;
 import jakarta.json.*;
 
 import java.util.*;
@@ -44,6 +44,6 @@ public final class ResourceEntityFieldCodec<I, R> extends AbstractEntityCodec<R>
         String next = obj.getString("nextCursor", null);
         JsonObject m = obj.getJsonObject("_meta");
         requireOnlyKeys(obj, Set.of(field, "nextCursor", "_meta"));
-        return from.apply(new Pagination.Page<>(items, next), m);
+        return from.apply(new Pagination.Page<>(items, Cursor.of(next)), m);
     }
 }

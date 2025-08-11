@@ -24,7 +24,7 @@ public non-sealed interface CompletionProvider extends ExecutingProvider<Ref, Co
 
     @Override
     default Pagination.Page<Ref> list(String cursor) {
-        return new Pagination.Page<>(List.of(), null);
+        return new Pagination.Page<>(List.of(), Cursor.End.INSTANCE);
     }
 
     default CompleteResult complete(CompleteRequest request) throws InterruptedException {
