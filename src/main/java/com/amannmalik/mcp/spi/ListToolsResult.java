@@ -8,7 +8,7 @@ import java.util.List;
 
 public record ListToolsResult(List<Tool> tools,
                               String nextCursor,
-                              JsonObject _meta) {
+                              JsonObject _meta) implements PaginatedResult {
     public ListToolsResult {
         tools = Immutable.list(tools);
         ValidationUtil.requireMeta(_meta);

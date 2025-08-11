@@ -3,7 +3,7 @@ package com.amannmalik.mcp.spi;
 import com.amannmalik.mcp.util.ValidationUtil;
 import jakarta.json.JsonObject;
 
-public record ElicitResult(ElicitationAction action, JsonObject content, JsonObject _meta) {
+public record ElicitResult(ElicitationAction action, JsonObject content, JsonObject _meta) implements Result {
 
     public ElicitResult {
         if (action == null) {

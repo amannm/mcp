@@ -8,7 +8,7 @@ import java.util.List;
 
 public record ListResourceTemplatesResult(List<ResourceTemplate> resourceTemplates,
                                           String nextCursor,
-                                          JsonObject _meta) {
+                                          JsonObject _meta) implements PaginatedResult {
     public ListResourceTemplatesResult {
         resourceTemplates = Immutable.list(resourceTemplates);
         ValidationUtil.requireMeta(_meta);
