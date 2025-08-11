@@ -18,7 +18,7 @@ public non-sealed interface ToolProvider extends Provider<Tool> {
                 if (t.name().equals(name)) return Optional.of(t);
             }
             Cursor next = page.nextCursor();
-            cursor = next instanceof Cursor.Token t ? t.value() : null;
+            cursor = next instanceof Cursor.Token(String value) ? value : null;
         } while (cursor != null);
         return Optional.empty();
     }

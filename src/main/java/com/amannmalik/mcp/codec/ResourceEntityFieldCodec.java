@@ -1,6 +1,7 @@
 package com.amannmalik.mcp.codec;
 
-import com.amannmalik.mcp.spi.*;
+import com.amannmalik.mcp.spi.Cursor;
+import com.amannmalik.mcp.spi.Pagination;
 import jakarta.json.*;
 
 import java.util.*;

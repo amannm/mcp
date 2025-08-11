@@ -1,10 +1,6 @@
 package com.amannmalik.mcp.core;
 
-import com.amannmalik.mcp.api.ClientCapability;
-import com.amannmalik.mcp.api.JsonRpcMethod;
-import com.amannmalik.mcp.api.NotificationMethod;
-import com.amannmalik.mcp.api.RequestMethod;
-import com.amannmalik.mcp.api.ServerCapability;
+import com.amannmalik.mcp.api.*;
 
 import java.util.Map;
 import java.util.Optional;

@@ -7,14 +7,14 @@ public sealed interface Cursor permits Cursor.End, Cursor.Token {
         return value == null ? End.INSTANCE : new Token(value);
     }
 
+    enum End implements Cursor {
+        INSTANCE
+    }
+
     record Token(String value) implements Cursor {
         public Token {
             if (value == null) throw new IllegalArgumentException("value is required");
             value = ValidationUtil.requireClean(value);
         }
-    }
-
-    enum End implements Cursor {
-        INSTANCE
     }
 }

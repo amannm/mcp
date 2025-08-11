@@ -42,6 +42,7 @@ final class McpClient extends JsonRpcEndpoint implements AutoCloseable {
     private final ElicitationProvider elicitation;
     private final McpClientListener listener;
     private final Map<String, Consumer<ResourceUpdate>> resourceListeners = new ConcurrentHashMap<>();
+    private final long initializationTimeout;
     private AutoCloseable rootsSubscription;
     private SamplingAccessPolicy samplingAccess;
     private Principal principal;
@@ -50,7 +51,6 @@ final class McpClient extends JsonRpcEndpoint implements AutoCloseable {
     private int pingFailures;
     private long pingInterval;
     private long pingTimeout;
-    private final long initializationTimeout;
     private volatile boolean connected;
     private Set<ServerCapability> serverCapabilities = Set.of();
     private String instructions;
