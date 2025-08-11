@@ -1,6 +1,7 @@
 package com.amannmalik.mcp.cli;
 
 import com.amannmalik.mcp.api.*;
+import com.amannmalik.mcp.spi.Cursor;
 import com.amannmalik.mcp.spi.Role;
 import com.amannmalik.mcp.spi.SamplingAccessPolicy;
 import jakarta.json.Json;
@@ -179,7 +180,8 @@ public final class HostCommand {
                         if (parts.length < 2) {
                             System.out.println("Usage: list-tools <client-id> [cursor]");
                         } else {
-                            String cursor = parts.length > 2 ? parts[2] : null;
+                            String token = parts.length > 2 ? parts[2] : null;
+                            Cursor cursor = token == null ? Cursor.Start.INSTANCE : new Cursor.Token(token);
                             var page = host.listTools(parts[1], cursor);
                             System.out.println(page);
                         }

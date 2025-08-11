@@ -256,13 +256,14 @@ final class McpClient extends JsonRpcEndpoint implements AutoCloseable {
                 "version", serverInfo.version());
     }
 
-    public ListResourcesResult listResources(String cursor) throws IOException {
+    public ListResourcesResult listResources(Cursor cursor) throws IOException {
+        String token = cursor instanceof Cursor.Token(var value) ? value : null;
         JsonRpcResponse resp = JsonRpc.expectResponse(request(
                 RequestMethod.RESOURCES_LIST,
                 AbstractEntityCodec.paginatedRequest(
                         ListResourcesRequest::cursor,
                         ListResourcesRequest::_meta,
-                        ListResourcesRequest::new).toJson(new ListResourcesRequest(cursor, null)), 0L
+                        ListResourcesRequest::new).toJson(new ListResourcesRequest(token, null)), 0L
         ));
         return AbstractEntityCodec.paginatedResult(
                 "resources",
@@ -273,13 +274,14 @@ final class McpClient extends JsonRpcEndpoint implements AutoCloseable {
                 (page, meta) -> new ListResourcesResult(page.items(), page.nextCursor(), meta)).fromJson(resp.result());
     }
 
-    public ListResourceTemplatesResult listResourceTemplates(String cursor) throws IOException {
+    public ListResourceTemplatesResult listResourceTemplates(Cursor cursor) throws IOException {
+        String token = cursor instanceof Cursor.Token(var value) ? value : null;
         JsonRpcResponse resp = JsonRpc.expectResponse(request(
                 RequestMethod.RESOURCES_TEMPLATES_LIST,
                 AbstractEntityCodec.paginatedRequest(
                         ListResourceTemplatesRequest::cursor,
                         ListResourceTemplatesRequest::_meta,
-                        ListResourceTemplatesRequest::new).toJson(new ListResourceTemplatesRequest(cursor, null)), 0L
+                        ListResourceTemplatesRequest::new).toJson(new ListResourceTemplatesRequest(token, null)), 0L
         ));
         return AbstractEntityCodec.paginatedResult(
                 "resourceTemplates",
@@ -499,7 +501,7 @@ final class McpClient extends JsonRpcEndpoint implements AutoCloseable {
             return JsonRpcError.of(req.id(), JsonRpcErrorCode.METHOD_NOT_FOUND, "Roots not supported");
         }
         try {
-            var page = roots.list(null);
+            var page = roots.list(Cursor.Start.INSTANCE);
             return new JsonRpcResponse(req.id(),
                     new ListRootsResultAbstractEntityCodec().toJson(new ListRootsResult(page.items(), null)));
         } catch (Exception e) {

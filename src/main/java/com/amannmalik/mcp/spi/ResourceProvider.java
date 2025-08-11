@@ -12,7 +12,7 @@ public non-sealed interface ResourceProvider extends Provider<Resource> {
         return Optional.empty();
     }
 
-    Pagination.Page<ResourceTemplate> listTemplates(String cursor);
+    Pagination.Page<ResourceTemplate> listTemplates(Cursor cursor);
 
     AutoCloseable subscribe(String uri, Consumer<ResourceUpdate> listener);
 

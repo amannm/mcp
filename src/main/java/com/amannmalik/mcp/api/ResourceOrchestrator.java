@@ -86,7 +86,7 @@ final class ResourceOrchestrator implements AutoCloseable {
                     ListResourcesRequest::cursor,
                     ListResourcesRequest::_meta,
                     ListResourcesRequest::new).fromJson(req.params());
-            String cursor = sanitizeCursor(lr.cursor());
+            Cursor cursor = sanitizeCursor(lr.cursor());
             progressToken.ifPresent(t -> {
                 try {
                     progress.send(new ProgressNotification(t, 0.0, null, "Starting resource list"), sender::assNotify);
@@ -142,7 +142,7 @@ final class ResourceOrchestrator implements AutoCloseable {
                             ListResourceTemplatesRequest::cursor,
                             ListResourceTemplatesRequest::_meta,
                             ListResourceTemplatesRequest::new).fromJson(req.params());
-            String cursor = sanitizeCursor(request.cursor());
+            Cursor cursor = sanitizeCursor(request.cursor());
             Pagination.Page<ResourceTemplate> page = resources.listTemplates(cursor);
             List<ResourceTemplate> filtered = page.items().stream()
                     .filter(t -> allowed(t.annotations()))
@@ -230,8 +230,10 @@ final class ResourceOrchestrator implements AutoCloseable {
                 .orElse(true);
     }
 
-    private String sanitizeCursor(String cursor) {
-        return cursor == null ? null : Pagination.sanitize(ValidationUtil.cleanNullable(cursor));
+    private Cursor sanitizeCursor(String cursor) {
+        if (cursor == null) return Cursor.Start.INSTANCE;
+        String clean = ValidationUtil.cleanNullable(cursor);
+        return new Cursor.Token(Pagination.requireValidCursor(clean));
     }
 
     private JsonRpcMessage withAccessibleUri(JsonRpcRequest req, String uri, Supplier<JsonRpcMessage> action) {

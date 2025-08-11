@@ -15,7 +15,7 @@ public non-sealed interface SamplingProvider extends ExecutingProvider<SamplingM
     }
 
     @Override
-    default Pagination.Page<SamplingMessage> list(String cursor) {
+    default Pagination.Page<SamplingMessage> list(Cursor cursor) {
         return new Pagination.Page<>(List.of(), Cursor.End.INSTANCE);
     }
 

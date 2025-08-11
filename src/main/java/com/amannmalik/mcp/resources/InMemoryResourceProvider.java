@@ -27,8 +27,8 @@ public final class InMemoryResourceProvider extends InMemoryProvider<Resource> i
     }
 
     @Override
-    public Pagination.Page<ResourceTemplate> listTemplates(String cursor) {
-        return Pagination.page(templates, cursor, Pagination.DEFAULT_PAGE_SIZE);
+    public Pagination.Page<ResourceTemplate> listTemplates(Cursor cursor) {
+        return Pagination.page(templates, cursor == null ? Cursor.Start.INSTANCE : cursor, Pagination.DEFAULT_PAGE_SIZE);
     }
 
     @Override
