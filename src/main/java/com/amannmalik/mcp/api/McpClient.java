@@ -33,6 +33,14 @@ final class McpClient extends JsonRpcEndpoint implements AutoCloseable {
     private static final CancelledNotificationJsonCodec CANCELLED_NOTIFICATION_JSON_CODEC = new CancelledNotificationJsonCodec();
     private static final JsonCodec<LoggingMessageNotification> LOGGING_MESSAGE_NOTIFICATION_JSON_CODEC = new LoggingMessageNotificationAbstractEntityCodec();
     private static final JsonCodec<ProgressNotification> PROGRESS_NOTIFICATION_JSON_CODEC = new ProgressNotificationJsonCodec();
+    private static final RootsProvider NO_ROOTS_PROVIDER = cursor -> {
+        throw new UnsupportedOperationException("Roots not supported");
+    };
+    private static final ElicitationProvider NO_ELICITATION_PROVIDER = (req, timeout) -> {
+        throw new UnsupportedOperationException("Elicitation not supported");
+    };
+    private static final McpClientListener NOOP_LISTENER = new McpClientListener() {
+    };
     private final ClientInfo info;
     private final Set<ClientCapability> capabilities;
     private final SamplingProvider sampling;
@@ -72,17 +80,19 @@ final class McpClient extends JsonRpcEndpoint implements AutoCloseable {
         this.info = new ClientInfo(config.serverName(), config.serverDisplayName(), config.serverVersion());
         this.capabilities = config.clientCapabilities().isEmpty() ? Set.of() : EnumSet.copyOf(config.clientCapabilities());
         this.sampling = sampling;
-        this.roots = roots;
-        this.rootsListChangedSupported = roots != null && roots.supportsListChanged();
-        this.elicitation = elicitation;
-        this.listener = listener == null ? new McpClientListener() {
-        } : listener;
         if (this.capabilities.contains(ClientCapability.SAMPLING) && this.sampling == null) {
             throw new IllegalArgumentException("sampling capability requires provider");
         }
-        if (this.capabilities.contains(ClientCapability.ELICITATION) && this.elicitation == null) {
+        if (this.capabilities.contains(ClientCapability.ROOTS) && roots == null) {
+            throw new IllegalArgumentException("roots capability requires provider");
+        }
+        this.roots = roots == null ? NO_ROOTS_PROVIDER : roots;
+        this.rootsListChangedSupported = this.capabilities.contains(ClientCapability.ROOTS) && this.roots.supportsListChanged();
+        if (this.capabilities.contains(ClientCapability.ELICITATION) && elicitation == null) {
             throw new IllegalArgumentException("elicitation capability requires provider");
         }
+        this.elicitation = elicitation == null ? NO_ELICITATION_PROVIDER : elicitation;
+        this.listener = listener == null ? NOOP_LISTENER : listener;
         this.samplingAccess = config.samplingAccessPolicy();
         this.principal = new Principal(config.principal(), Set.of());
         this.pingInterval = config.pingIntervalMs();
@@ -100,9 +110,7 @@ final class McpClient extends JsonRpcEndpoint implements AutoCloseable {
         registerNotification(NotificationMethod.RESOURCES_LIST_CHANGED, this::handleResourcesListChanged);
         registerNotification(NotificationMethod.RESOURCES_UPDATED, this::handleResourceUpdated);
         registerNotification(NotificationMethod.TOOLS_LIST_CHANGED, this::handleToolsListChanged);
-        if (listener != null) {
-            registerNotification(NotificationMethod.PROMPTS_LIST_CHANGED, n -> listener.onPromptsListChanged());
-        }
+        registerNotification(NotificationMethod.PROMPTS_LIST_CHANGED, n -> listener.onPromptsListChanged());
     }
 
     private static Transport createTransport(McpClientConfiguration config,
@@ -416,7 +424,7 @@ final class McpClient extends JsonRpcEndpoint implements AutoCloseable {
     }
 
     private void subscribeRootsIfNeeded() throws IOException {
-        if (roots == null || !capabilities.contains(ClientCapability.ROOTS) || !rootsListChangedSupported) return;
+        if (!capabilities.contains(ClientCapability.ROOTS) || !rootsListChangedSupported) return;
         try {
             rootsSubscription = roots.onListChanged(() -> {
                 try {
@@ -496,7 +504,7 @@ final class McpClient extends JsonRpcEndpoint implements AutoCloseable {
     }
 
     private JsonRpcMessage handleListRoots(JsonRpcRequest req) {
-        if (roots == null) {
+        if (!capabilities.contains(ClientCapability.ROOTS)) {
             return JsonRpcError.of(req.id(), JsonRpcErrorCode.METHOD_NOT_FOUND, "Roots not supported");
         }
         try {
@@ -509,7 +517,7 @@ final class McpClient extends JsonRpcEndpoint implements AutoCloseable {
     }
 
     private JsonRpcMessage handleElicit(JsonRpcRequest req) {
-        if (elicitation == null) {
+        if (!capabilities.contains(ClientCapability.ELICITATION)) {
             return JsonRpcError.of(req.id(), JsonRpcErrorCode.METHOD_NOT_FOUND, "Elicitation not supported");
         }
         JsonObject params = req.params();
@@ -540,11 +548,11 @@ final class McpClient extends JsonRpcEndpoint implements AutoCloseable {
     }
 
     private void requireCapability(RequestMethod method) {
-        method.serverCapability()
-                .filter(c -> !serverCapabilities.contains(c))
-                .ifPresent(c -> {
-                    throw new IllegalStateException("Server capability not negotiated: " + c);
-                });
+        for (ServerCapability cap : method.serverCapabilities()) {
+            if (!serverCapabilities.contains(cap)) {
+                throw new IllegalStateException("Server capability not negotiated: " + cap);
+            }
+        }
     }
 
     private void handleProgress(JsonRpcNotification note) {

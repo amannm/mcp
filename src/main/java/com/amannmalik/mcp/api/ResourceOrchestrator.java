@@ -80,7 +80,7 @@ final class ResourceOrchestrator implements AutoCloseable {
         if (state.get() != LifecycleState.OPERATION) {
             return JsonRpcError.of(req.id(), -32002, "Server not initialized");
         }
-        Optional<ProgressToken> progressToken = ProgressNotification.fromMeta(req.params());
+        Optional<ProgressToken> progressToken = ProgressToken.fromMeta(req.params());
         try {
             ListResourcesRequest lr = AbstractEntityCodec.paginatedRequest(
                     ListResourcesRequest::cursor,
@@ -233,7 +233,7 @@ final class ResourceOrchestrator implements AutoCloseable {
     private Cursor sanitizeCursor(String cursor) {
         if (cursor == null) return Cursor.Start.INSTANCE;
         String clean = ValidationUtil.cleanNullable(cursor);
-        return new Cursor.Token(Pagination.requireValidCursor(clean));
+        return new Cursor.Token(clean);
     }
 
     private JsonRpcMessage withAccessibleUri(JsonRpcRequest req, String uri, Supplier<JsonRpcMessage> action) {
