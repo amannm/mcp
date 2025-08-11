@@ -10,7 +10,6 @@ import com.amannmalik.mcp.spi.Provider;
 import com.amannmalik.mcp.tools.InMemoryToolProvider;
 import com.amannmalik.mcp.util.ChangeSupport;
 
-import java.io.Closeable;
 import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -39,7 +38,7 @@ public sealed class InMemoryProvider<T> implements Provider<T> permits
     }
 
     @Override
-    public Closeable subscribe(Consumer<Change> listener) {
+    public AutoCloseable subscribe(Consumer<Change> listener) {
         return changeSupport.subscribe(listener);
     }
 
