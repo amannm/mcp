@@ -20,7 +20,7 @@ public final class TransportFactory {
                                                 boolean insecure,
                                                 boolean verbose) throws Exception {
 
-        int port = httpPort == null ? McpHostConfiguration.defaultConfiguration().port() : httpPort;
+        int port = httpPort == null ? McpHostConfiguration.defaultConfiguration().serverPort() : httpPort;
         List<String> auth = authServers;
         if (!insecure) {
             if (auth == null || auth.isEmpty()) throw new IllegalArgumentException("auth server must be specified");

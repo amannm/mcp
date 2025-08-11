@@ -23,9 +23,12 @@ public final class StreamableHttpClientTransport implements Transport {
     private final AtomicReference<String> sessionId = new AtomicReference<>();
     private final AtomicReference<String> protocolVersion = new AtomicReference<>(Protocol.LATEST_VERSION);
     private final AtomicReference<String> authorization = new AtomicReference<>();
+    private final long receiveTimeout;
 
     public StreamableHttpClientTransport(URI endpoint) {
         this.endpoint = endpoint;
+        // TODO: externalize
+        this.receiveTimeout = 10L;
     }
 
     public void setProtocolVersion(String version) {
@@ -87,7 +90,7 @@ public final class StreamableHttpClientTransport implements Transport {
 
     @Override
     public JsonObject receive() throws IOException {
-        return receive(McpHostConfiguration.defaultConfiguration().defaultTimeoutMs());
+        return receive(receiveTimeout);
     }
 
     @Override

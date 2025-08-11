@@ -1,6 +1,7 @@
 package com.amannmalik.mcp.cli;
 
 import com.amannmalik.mcp.api.*;
+import com.amannmalik.mcp.transport.StdioTransport;
 import com.amannmalik.mcp.util.ServerDefaults;
 import picocli.CommandLine;
 import picocli.CommandLine.Model.CommandSpec;
@@ -68,7 +69,7 @@ public final class ServerCommand {
             boolean verbose = parseResult.matchedOptionValue("--verbose", false);
             Transport transport;
             if (stdio) {
-                transport = TransportFactory.createStdioTransport(new String[0], verbose);
+                transport = TransportFactory.createStdioTransport(System.in, System.out);
             } else {
                 Integer httpPort = parseResult.matchedOptionValue("--http", 3000);
                 String expectedAudience = parseResult.matchedOptionValue("--audience", null);

@@ -49,33 +49,44 @@ public final class McpHost implements AutoCloseable {
         this.toolAccess = new ToolAccessController();
         this.privacyBoundary = new ResourceAccessController();
         this.samplingAccess = new SamplingAccessController();
-        for (var entry : config.clientSpecs().entrySet()) {
-            grantConsent(entry.getKey());
-            Transport transport = TransportFactory.createStdioTransport(entry.getValue().split(" "), config.verbose());
-            SamplingProvider samplingProvider = new InteractiveSamplingProvider(false);
-            String currentDir = System.getProperty("user.dir");
-            InMemoryRootsProvider rootsProvider = new InMemoryRootsProvider(
-                    List.of(new Root("file://" + currentDir, "Current Directory", null)));
-            McpClientListener listener = config.verbose() ? new McpClientListener() {
+        for (McpClientConfiguration clientConfig : config.clientConfigurations()) {
+            grantConsent(clientConfig.clientId());
+            Transport transport = TransportFactory.createStdioTransport(
+                    clientConfig.commandSpec().split(" "), 
+                    clientConfig.verbose() || config.globalVerbose());
+            
+            SamplingProvider samplingProvider = new InteractiveSamplingProvider(clientConfig.interactiveSampling());
+            
+            // Create roots from configured directories
+            List<Root> roots = clientConfig.rootDirectories().stream()
+                    .map(dir -> new Root("file://" + dir, dir, null))
+                    .toList();
+            InMemoryRootsProvider rootsProvider = new InMemoryRootsProvider(roots);
+            
+            McpClientListener listener = (clientConfig.verbose() || config.globalVerbose()) ? new McpClientListener() {
                 @Override
                 public void onMessage(LoggingMessageNotification notification) {
                     String logger = notification.logger() == null ? "" : ":" + notification.logger();
-                    System.err.println(notification.level().name().toLowerCase() + logger + " " + notification.data());
+                    System.err.println("[" + clientConfig.clientId() + "] " + 
+                            notification.level().name().toLowerCase() + logger + " " + notification.data());
                 }
             } : null;
-            EnumSet<ClientCapability> caps = config.clientCapabilities().isEmpty()
+            
+            EnumSet<ClientCapability> caps = clientConfig.clientCapabilities().isEmpty()
                     ? EnumSet.noneOf(ClientCapability.class)
-                    : EnumSet.copyOf(config.clientCapabilities());
+                    : EnumSet.copyOf(clientConfig.clientCapabilities());
+            
             ElicitationProvider elicitationProvider = new InteractiveElicitationProvider();
+            
             McpClient client = new McpClient(
-                    new ClientInfo(entry.getKey(), entry.getKey(), config.clientVersion()),
-                    caps,
+                    clientConfig,
                     transport,
                     samplingProvider,
                     rootsProvider,
                     elicitationProvider,
                     listener);
-            register(entry.getKey(), client);
+            
+            register(clientConfig.clientId(), client, clientConfig);
         }
     }
 
@@ -117,7 +128,7 @@ public final class McpHost implements AutoCloseable {
         }
     }
 
-    private void register(String id, McpClient client) {
+    private void register(String id, McpClient client, McpClientConfiguration clientConfig) {
         if (!policy.test(client)) {
             throw new SecurityException("Client not authorized: " + client.info().name());
         }
@@ -128,8 +139,8 @@ public final class McpHost implements AutoCloseable {
         client.setPrincipal(principal);
         client.setSamplingAccessPolicy(samplingAccess);
         client.configurePing(
-                config.defaultTimeoutMs(),
-                config.pingTimeoutMs());
+                clientConfig.timeoutMs(),
+                clientConfig.pingTimeoutMs());
     }
 
     public void connect(String id) throws IOException {

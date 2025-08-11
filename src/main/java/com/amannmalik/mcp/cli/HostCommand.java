@@ -11,6 +11,7 @@ import picocli.CommandLine.ParseResult;
 
 import java.io.*;
 import java.util.*;
+import java.util.stream.Collectors;
 
 public final class HostCommand {
     public HostCommand() {
@@ -27,7 +28,7 @@ public final class HostCommand {
                         .type(List.class)
                         .auxiliaryTypes(String.class)
                         .splitRegex(",")
-                        .description("Client as id:command")
+                        .description("Client as id:command or id:command:verbose:capabilities")
                         .build())
                 .addOption(OptionSpec.builder("--interactive")
                         .type(boolean.class)
@@ -48,20 +49,55 @@ public final class HostCommand {
 
             if (clientSpecs.isEmpty()) throw new IllegalArgumentException("--client required");
 
-            Map<String, String> clients = new LinkedHashMap<>();
+            List<McpClientConfiguration> clientConfigs = new ArrayList<>();
             for (String spec : clientSpecs) {
-                int idx = spec.indexOf(':');
-                if (idx <= 0 || idx == spec.length() - 1) throw new IllegalArgumentException("id:command expected: " + spec);
-                clients.put(spec.substring(0, idx), spec.substring(idx + 1));
+                String[] parts = spec.split(":", -1);
+                if (parts.length < 2) {
+                    throw new IllegalArgumentException("id:command expected: " + spec);
+                }
+                
+                String clientId = parts[0];
+                String command = parts[1];
+                boolean clientVerbose = parts.length > 2 ? Boolean.parseBoolean(parts[2]) : verbose;
+                
+                Set<ClientCapability> capabilities = EnumSet.of(
+                        ClientCapability.SAMPLING, 
+                        ClientCapability.ROOTS, 
+                        ClientCapability.ELICITATION);
+                
+                if (parts.length > 3 && !parts[3].isEmpty()) {
+                    capabilities = Arrays.stream(parts[3].split(","))
+                            .map(String::trim)
+                            .map(String::toUpperCase)
+                            .map(ClientCapability::valueOf)
+                            .collect(Collectors.toCollection(() -> EnumSet.noneOf(ClientCapability.class)));
+                }
+
+                McpClientConfiguration clientConfig = new McpClientConfiguration(
+                        clientId,
+                        clientId,
+                        clientId,
+                        "1.0.0",
+                        capabilities,
+                        command,
+                        30_000L,  // timeoutMs override
+                        5_000L,   // pingTimeoutMs override
+                        20,       // progressPerSecond override
+                        1_000L,   // rateLimiterWindowMs override
+                        clientVerbose,
+                        false,
+                        List.of(System.getProperty("user.dir"))
+                );
+                clientConfigs.add(clientConfig);
             }
 
-            McpHostConfiguration config = McpHostConfiguration.withClientSpecs(clients, verbose);
+            McpHostConfiguration config = McpHostConfiguration.withClientConfigurations(clientConfigs);
             
             try (McpHost host = new McpHost(config)) {
-                for (String clientId : clients.keySet()) {
-                    host.connect(clientId);
-                    if (verbose) {
-                        System.err.println("Registered client: " + clientId);
+                for (McpClientConfiguration clientConfig : clientConfigs) {
+                    host.connect(clientConfig.clientId());
+                    if (verbose || clientConfig.verbose()) {
+                        System.err.println("Registered client: " + clientConfig.clientId());
                     }
                 }
                 if (interactive) {

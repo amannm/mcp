@@ -46,6 +46,7 @@ final class McpClient extends JsonRpcEndpoint implements AutoCloseable {
     private int pingFailures;
     private long pingInterval;
     private long pingTimeout;
+    private long initializationTimeout;
     private volatile boolean connected;
     private Set<ServerCapability> serverCapabilities = Set.of();
     private String instructions;
@@ -54,8 +55,7 @@ final class McpClient extends JsonRpcEndpoint implements AutoCloseable {
     private ServerInfo serverInfo;
     private volatile ResourceMetadata resourceMetadata;
 
-    McpClient(ClientInfo info,
-              Set<ClientCapability> capabilities,
+    McpClient(McpClientConfiguration config,
               Transport transport,
               SamplingProvider sampling,
               RootsProvider roots,
@@ -63,11 +63,11 @@ final class McpClient extends JsonRpcEndpoint implements AutoCloseable {
               McpClientListener listener) {
         super(transport,
                 new ProgressManager(new RateLimiter(
-                        McpHostConfiguration.defaultConfiguration().progressPerSecond(),
-                        McpHostConfiguration.defaultConfiguration().rateLimiterWindowMs())),
+                        config.progressPerSecond(),
+                        config.rateLimiterWindowMs())),
                 1);
-        this.info = info;
-        this.capabilities = capabilities.isEmpty() ? Set.of() : EnumSet.copyOf(capabilities);
+        this.info = new ClientInfo(config.serverName(), config.serverDisplayName(), config.serverVersion());
+        this.capabilities = config.clientCapabilities().isEmpty() ? Set.of() : EnumSet.copyOf(config.clientCapabilities());
         this.sampling = sampling;
         this.roots = roots;
         this.rootsListChangedSupported = roots != null && roots.supportsListChanged();
@@ -81,7 +81,8 @@ final class McpClient extends JsonRpcEndpoint implements AutoCloseable {
             throw new IllegalArgumentException("elicitation capability requires provider");
         }
         this.pingInterval = 0;
-        this.pingTimeout = McpHostConfiguration.defaultConfiguration().pingTimeoutMs();
+        this.pingTimeout = config.pingTimeoutMs();
+        this.initializationTimeout = config.timeoutMs();
 
         registerRequest(RequestMethod.SAMPLING_CREATE_MESSAGE.method(), this::handleCreateMessage);
         registerRequest(RequestMethod.ROOTS_LIST.method(), this::handleListRoots);
@@ -348,13 +349,13 @@ final class McpClient extends JsonRpcEndpoint implements AutoCloseable {
             }
         });
         try {
-            return future.get(McpHostConfiguration.defaultConfiguration().defaultTimeoutMs(), TimeUnit.MILLISECONDS);
+            return future.get(initializationTimeout, TimeUnit.MILLISECONDS);
         } catch (TimeoutException e) {
             try {
                 transport.close();
             } catch (IOException ignore) {
             }
-            throw new IOException("Initialization timed out after " + McpHostConfiguration.defaultConfiguration().defaultTimeoutMs() + " ms");
+            throw new IOException("Initialization timed out after " +initializationTimeout + " ms");
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             throw new IOException(e);

@@ -13,17 +13,21 @@ import java.util.function.Consumer;
 
 /// - [Transports](specification/2025-06-18/basic/transports.mdx)
 public final class StdioTransport implements Transport {
+    // TODO: externalize
     private static final Duration WAIT = Duration.ofSeconds(McpHostConfiguration.defaultConfiguration().processWaitSeconds());
     private final BufferedReader in;
     private final BufferedWriter out;
     private final Process process;
     private final Thread logReader;
+    private final long receiveTimeout;
 
     public StdioTransport(InputStream in, OutputStream out) {
         this.process = null;
         this.logReader = null;
         this.in = new BufferedReader(new InputStreamReader(in, StandardCharsets.UTF_8));
         this.out = new BufferedWriter(new OutputStreamWriter(out, StandardCharsets.UTF_8));
+        // TODO: externalize
+        this.receiveTimeout = 10L;
     }
 
     public StdioTransport(String[] command, Consumer<String> logSink) throws IOException {
@@ -37,6 +41,8 @@ public final class StdioTransport implements Transport {
         this.logReader = new Thread(() -> readLogs(process.getErrorStream(), logSink));
         this.logReader.setDaemon(true);
         this.logReader.start();
+        // TODO: externalize
+        this.receiveTimeout = 10L;
     }
 
     private static void readLogs(InputStream err, Consumer<String> sink) {
@@ -60,7 +66,7 @@ public final class StdioTransport implements Transport {
 
     @Override
     public JsonObject receive() throws IOException {
-        return receive(McpHostConfiguration.defaultConfiguration().defaultTimeoutMs());
+        return receive(receiveTimeout);
     }
 
     @Override
