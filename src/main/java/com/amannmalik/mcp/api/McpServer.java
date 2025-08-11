@@ -17,6 +17,10 @@ import jakarta.json.stream.JsonParsingException;
 
 import java.io.*;
 import java.nio.charset.StandardCharsets;
+
+import java.io.EOFException;
+import java.io.IOException;
+
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
@@ -338,7 +342,8 @@ public final class McpServer extends JsonRpcEndpoint implements AutoCloseable {
                     "Unsupported protocol version",
                     Json.createObjectBuilder()
                             .add("supported", config.supportedVersions().stream()
-                                    .collect(Json::createArrayBuilder, JsonArrayBuilder::add, (a, b) -> {})
+                                    .collect(Json::createArrayBuilder, JsonArrayBuilder::add, (a, b) -> {
+                                    })
                                     .build())
                             .add("requested", e.requested())
                             .build());
@@ -458,8 +463,12 @@ public final class McpServer extends JsonRpcEndpoint implements AutoCloseable {
         if (limit.isPresent()) {
             return JsonRpcError.of(req.id(), config.rateLimitErrorCode(), limit.get());
         }
+        Optional<Tool> tool = tools.find(callRequest.name());
+        if (tool.isEmpty()) {
+            return JsonRpcError.of(req.id(), JsonRpcErrorCode.INVALID_PARAMS, "Unknown tool: " + callRequest.name());
+        }
         try {
-            toolAccess.requireAllowed(principal, callRequest.name());
+            toolAccess.requireAllowed(principal, tool.get());
         } catch (SecurityException e) {
             return JsonRpcError.of(req.id(), JsonRpcErrorCode.INTERNAL_ERROR, config.errorAccessDenied());
         }

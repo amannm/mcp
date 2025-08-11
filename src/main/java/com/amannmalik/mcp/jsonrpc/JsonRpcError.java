@@ -27,11 +27,6 @@ public record JsonRpcError(RequestId id, ErrorDetail error) implements JsonRpcMe
         return new JsonRpcError(id, new ErrorDetail(code, message, data));
     }
 
-    @Override
-    public String jsonrpc() {
-        return JsonRpc.VERSION;
-    }
-
     public record ErrorDetail(int code, String message, JsonValue data) {
     }
 }

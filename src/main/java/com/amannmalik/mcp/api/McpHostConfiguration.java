@@ -9,7 +9,7 @@ public record McpHostConfiguration(
 
         // Host identity (when host acts as a client to other MCP systems)
         String hostClientName,
-        String hostClientDisplayName, 
+        String hostClientDisplayName,
         String hostClientVersion,
         Set<ClientCapability> hostClientCapabilities,
 
