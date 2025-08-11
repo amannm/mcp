@@ -11,15 +11,14 @@ public non-sealed interface ToolProvider extends Provider<Tool> {
 
     default Optional<Tool> find(String name) {
         if (name == null) throw new IllegalArgumentException("name required");
-        String cursor = null;
+        Cursor cursor = Cursor.Start.INSTANCE;
         do {
             Pagination.Page<Tool> page = list(cursor);
             for (Tool t : page.items()) {
                 if (t.name().equals(name)) return Optional.of(t);
             }
-            Cursor next = page.nextCursor();
-            cursor = next instanceof Cursor.Token(String value) ? value : null;
-        } while (cursor != null);
+            cursor = page.nextCursor();
+        } while (!(cursor instanceof Cursor.End));
         return Optional.empty();
     }
 }

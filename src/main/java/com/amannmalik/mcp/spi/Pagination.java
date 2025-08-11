@@ -13,12 +13,17 @@ public final class Pagination {
     private Pagination() {
     }
 
-    public static <T> Page<T> page(List<T> items, String cursor, int size) {
-        int start = ValidationUtil.requireNonNegative(decode(cursor), "cursor");
+    public static <T> Page<T> page(List<T> items, Cursor cursor, int size) {
+        int start = switch (cursor) {
+            case null -> 0;
+            case Cursor.Start _ -> 0;
+            case Cursor.Token(var value) -> ValidationUtil.requireNonNegative(decode(value), "cursor");
+            case Cursor.End _ -> throw new IllegalArgumentException("Invalid cursor");
+        };
         if (start > items.size()) throw new IllegalArgumentException("Invalid cursor");
         int end = Math.min(items.size(), start + size);
         List<T> slice = items.subList(start, end);
-        Cursor next = end < items.size() ? Cursor.of(encode(end)) : Cursor.End.INSTANCE;
+        Cursor next = end < items.size() ? new Cursor.Token(encode(end)) : Cursor.End.INSTANCE;
         return new Page<>(slice, next);
     }
 
@@ -40,10 +45,6 @@ public final class Pagination {
     public static String requireValidCursor(String cursor) {
         decode(cursor);
         return cursor;
-    }
-
-    public static String sanitize(String cursor) {
-        return cursor == null ? null : requireValidCursor(cursor);
     }
 
     public record Page<T>(List<T> items, Cursor nextCursor) {

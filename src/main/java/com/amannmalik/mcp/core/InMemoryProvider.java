@@ -5,6 +5,7 @@ import com.amannmalik.mcp.completion.InMemoryCompletionProvider;
 import com.amannmalik.mcp.prompts.InMemoryPromptProvider;
 import com.amannmalik.mcp.resources.InMemoryResourceProvider;
 import com.amannmalik.mcp.roots.InMemoryRootsProvider;
+import com.amannmalik.mcp.spi.Cursor;
 import com.amannmalik.mcp.spi.Pagination;
 import com.amannmalik.mcp.spi.Provider;
 import com.amannmalik.mcp.tools.InMemoryToolProvider;
@@ -33,8 +34,8 @@ public sealed class InMemoryProvider<T> implements Provider<T> permits
     }
 
     @Override
-    public Pagination.Page<T> list(String cursor) {
-        return Pagination.page(items, cursor, Pagination.DEFAULT_PAGE_SIZE);
+    public Pagination.Page<T> list(Cursor cursor) {
+        return Pagination.page(items, cursor == null ? Cursor.Start.INSTANCE : cursor, Pagination.DEFAULT_PAGE_SIZE);
     }
 
     @Override

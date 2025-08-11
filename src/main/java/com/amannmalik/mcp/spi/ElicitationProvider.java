@@ -15,7 +15,7 @@ public non-sealed interface ElicitationProvider extends ExecutingProvider<Elicit
     }
 
     @Override
-    default Pagination.Page<ElicitRequest> list(String cursor) {
+    default Pagination.Page<ElicitRequest> list(Cursor cursor) {
         return new Pagination.Page<>(List.of(), Cursor.End.INSTANCE);
     }
 

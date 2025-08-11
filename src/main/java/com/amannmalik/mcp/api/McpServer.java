@@ -425,8 +425,10 @@ public final class McpServer extends JsonRpcEndpoint implements AutoCloseable {
         }
     }
 
-    private String sanitizeCursor(String cursor) {
-        return cursor == null ? null : Pagination.sanitize(ValidationUtil.cleanNullable(cursor));
+    private Cursor sanitizeCursor(String cursor) {
+        if (cursor == null) return Cursor.Start.INSTANCE;
+        String clean = ValidationUtil.cleanNullable(cursor);
+        return new Cursor.Token(Pagination.requireValidCursor(clean));
     }
 
     private JsonRpcMessage listTools(JsonRpcRequest req) {
@@ -438,7 +440,7 @@ public final class McpServer extends JsonRpcEndpoint implements AutoCloseable {
                     ListToolsRequest::cursor,
                     ListToolsRequest::_meta,
                     ListToolsRequest::new).fromJson(req.params());
-            String cursor = sanitizeCursor(ltr.cursor());
+            Cursor cursor = sanitizeCursor(ltr.cursor());
             Pagination.Page<Tool> page = tools.list(cursor);
             JsonObject json = LIST_TOOLS_RESULT_JSON_CODEC.toJson(new ListToolsResult(page.items(), page.nextCursor(), null));
             return new JsonRpcResponse(req.id(), json);
@@ -509,7 +511,7 @@ public final class McpServer extends JsonRpcEndpoint implements AutoCloseable {
         requireServerCapability(ServerCapability.PROMPTS);
         try {
             ListPromptsRequest lpr = ListPromptsRequest.CODEC.fromJson(req.params());
-            String cursor = sanitizeCursor(lpr.cursor());
+            Cursor cursor = sanitizeCursor(lpr.cursor());
             Pagination.Page<Prompt> page = prompts.list(cursor);
             return new JsonRpcResponse(req.id(), LIST_PROMPTS_RESULT_CODEC.toJson(new ListPromptsResult(page.items(), page.nextCursor(), null)));
         } catch (IllegalArgumentException e) {

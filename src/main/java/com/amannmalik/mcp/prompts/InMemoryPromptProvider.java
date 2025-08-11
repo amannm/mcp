@@ -26,7 +26,7 @@ public final class InMemoryPromptProvider extends InMemoryProvider<Prompt> imple
     }
 
     @Override
-    public Pagination.Page<Prompt> list(String cursor) {
+    public Pagination.Page<Prompt> list(Cursor cursor) {
         items.sort(Comparator.comparing(Prompt::name));
         return super.list(cursor);
     }

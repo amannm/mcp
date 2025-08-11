@@ -137,15 +137,16 @@ public final class McpHost implements AutoCloseable {
                 .collect(Collectors.joining(System.lineSeparator()));
     }
 
-    public ListToolsResult listTools(String clientId, String cursor) throws IOException {
+    public ListToolsResult listTools(String clientId, Cursor cursor) throws IOException {
         McpClient client = requireClient(clientId);
         requireCapability(client, ServerCapability.TOOLS);
+        String token = cursor instanceof Cursor.Token(var value) ? value : null;
         JsonRpcResponse resp = JsonRpc.expectResponse(client.request(
                 RequestMethod.TOOLS_LIST,
                 AbstractEntityCodec.paginatedRequest(
                         ListToolsRequest::cursor,
                         ListToolsRequest::_meta,
-                        ListToolsRequest::new).toJson(new ListToolsRequest(cursor, null)),
+                        ListToolsRequest::new).toJson(new ListToolsRequest(token, null)),
                 0L
         ));
         return LIST_TOOLS_RESULT_JSON_CODEC.fromJson(resp.result());
@@ -167,15 +168,14 @@ public final class McpHost implements AutoCloseable {
     }
 
     private Optional<Tool> findTool(String clientId, String name) throws IOException {
-        String cursor = null;
+        Cursor cursor = Cursor.Start.INSTANCE;
         do {
             ListToolsResult page = listTools(clientId, cursor);
             for (Tool t : page.tools()) {
                 if (t.name().equals(name)) return Optional.of(t);
             }
-            Cursor next = page.nextCursor();
-            cursor = next instanceof Cursor.Token(String value) ? value : null;
-        } while (cursor != null);
+            cursor = page.nextCursor();
+        } while (!(cursor instanceof Cursor.End));
         return Optional.empty();
     }
 
