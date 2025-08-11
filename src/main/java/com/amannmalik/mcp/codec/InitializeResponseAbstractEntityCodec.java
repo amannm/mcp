@@ -31,7 +31,7 @@ public final class InitializeResponseAbstractEntityCodec extends AbstractEntityC
                 default -> {
                 }
             }
-            server.add(c.name().toLowerCase(), b.build());
+            server.add(c.code(), b.build());
         }
         resp.capabilities().serverExperimental().forEach(server::add);
         JsonObjectBuilder b = Json.createObjectBuilder()
@@ -49,26 +49,21 @@ public final class InitializeResponseAbstractEntityCodec extends AbstractEntityC
         Set<ServerCapability> server = EnumSet.noneOf(ServerCapability.class);
         Map<String, JsonObject> experimental = new HashMap<>();
         if (capsObj != null) {
-            capsObj.forEach((k, v) -> {
-                try {
-                    server.add(ServerCapability.valueOf(k.toUpperCase()));
-                } catch (IllegalArgumentException ignore) {
-                    experimental.put(k, v.asJsonObject());
-                }
-            });
+            capsObj.forEach((k, v) -> ServerCapability.from(k)
+                    .ifPresentOrElse(server::add, () -> experimental.put(k, v.asJsonObject())));
         }
         EnumSet<ServerFeature> features = EnumSet.noneOf(ServerFeature.class);
         if (capsObj != null) {
-            JsonObject res = capsObj.getJsonObject("resources");
+            JsonObject res = capsObj.getJsonObject(ServerCapability.RESOURCES.code());
             if (res != null) {
                 if (res.getBoolean("subscribe", false)) features.add(ServerFeature.RESOURCES_SUBSCRIBE);
                 if (res.getBoolean("listChanged", false)) features.add(ServerFeature.RESOURCES_LIST_CHANGED);
             }
-            JsonObject tools = capsObj.getJsonObject("tools");
+            JsonObject tools = capsObj.getJsonObject(ServerCapability.TOOLS.code());
             if (tools != null && tools.getBoolean("listChanged", false)) {
                 features.add(ServerFeature.TOOLS_LIST_CHANGED);
             }
-            JsonObject prompts = capsObj.getJsonObject("prompts");
+            JsonObject prompts = capsObj.getJsonObject(ServerCapability.PROMPTS.code());
             if (prompts != null && prompts.getBoolean("listChanged", false)) {
                 features.add(ServerFeature.PROMPTS_LIST_CHANGED);
             }
