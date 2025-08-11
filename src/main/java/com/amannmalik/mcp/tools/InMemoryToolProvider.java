@@ -74,12 +74,12 @@ public final class InMemoryToolProvider extends InMemoryProvider<Tool> implement
         }
         items.add(tool);
         if (handler != null) handlers.put(tool.name(), handler);
-        notifyListeners();
+        notifyListChanged();
     }
 
     public void removeTool(String name) {
         items.removeIf(t -> t.name().equals(name));
         handlers.remove(name);
-        notifyListeners();
+        notifyListChanged();
     }
 }

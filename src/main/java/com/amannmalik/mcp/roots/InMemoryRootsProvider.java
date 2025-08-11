@@ -13,11 +13,11 @@ public final class InMemoryRootsProvider extends InMemoryProvider<Root> implemen
 
     public void add(Root root) {
         items.add(root);
-        notifyListeners();
+        notifyListChanged();
     }
 
     public void remove(String uri) {
         items.removeIf(r -> r.uri().equals(uri));
-        notifyListeners();
+        notifyListChanged();
     }
 }

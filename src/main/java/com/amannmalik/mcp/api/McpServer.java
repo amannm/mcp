@@ -19,7 +19,6 @@ import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
-import java.util.function.Consumer;
 
 /// - [Server](specification/2025-06-18/server/index.mdx)
 /// - [MCP server conformance test](src/test/resources/com/amannmalik/mcp/mcp_conformance.feature:6-34)
@@ -133,14 +132,14 @@ public final class McpServer extends JsonRpcEndpoint implements AutoCloseable {
 
         if (tools != null && tools.supportsListChanged()) {
             toolListSubscription = subscribeListChanges(
-                    tools::subscribe,
+                    tools::onListChanged,
                     NotificationMethod.TOOLS_LIST_CHANGED,
                     TOOL_LIST_CHANGED_NOTIFICATION_JSON_CODEC.toJson(new ToolListChangedNotification()));
         }
 
         if (prompts != null && prompts.supportsListChanged()) {
             promptsSubscription = subscribeListChanges(
-                    prompts::subscribe,
+                    prompts::onListChanged,
                     NotificationMethod.PROMPTS_LIST_CHANGED,
                     PromptListChangedNotification.CODEC.toJson(new PromptListChangedNotification()));
         }
@@ -208,7 +207,7 @@ public final class McpServer extends JsonRpcEndpoint implements AutoCloseable {
             NotificationMethod method,
             JsonObject payload) {
         try {
-            return factory.subscribe(ignored -> {
+            return factory.onListChanged(() -> {
                 if (state() != LifecycleState.OPERATION) return;
                 try {
                     send(new JsonRpcNotification(method.method(), payload));
@@ -682,6 +681,6 @@ public final class McpServer extends JsonRpcEndpoint implements AutoCloseable {
 
     @FunctionalInterface
     private interface SubscriptionFactory<S extends AutoCloseable> {
-        S subscribe(Consumer<Change> listener);
+        S onListChanged(Runnable listener);
     }
 }

@@ -16,13 +16,13 @@ public final class InMemoryPromptProvider extends InMemoryProvider<Prompt> imple
             throw new IllegalArgumentException("duplicate prompt name: " + name);
         }
         items.add(template.prompt());
-        notifyListeners();
+        notifyListChanged();
     }
 
     public void remove(String name) {
         templates.remove(name);
         items.removeIf(p -> p.name().equals(name));
-        notifyListeners();
+        notifyListChanged();
     }
 
     @Override

@@ -5,13 +5,12 @@ import com.amannmalik.mcp.codec.*;
 import com.amannmalik.mcp.jsonrpc.JsonRpcError;
 import com.amannmalik.mcp.jsonrpc.JsonRpcResponse;
 import com.amannmalik.mcp.spi.Root;
-import com.amannmalik.mcp.util.ChangeSupport;
+import com.amannmalik.mcp.util.EventSupport;
 
 import java.io.IOException;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 /// - [Roots](specification/2025-06-18/client/roots.mdx)
@@ -22,7 +21,7 @@ public final class RootsManager {
     private static final ListRootsResultAbstractEntityCodec LIST_RESULTS_CODEC = new ListRootsResultAbstractEntityCodec();
     private final Supplier<Set<ClientCapability>> capabilities;
     private final RequestSender requester;
-    private final ChangeSupport<Change> listChangeSupport = new ChangeSupport<>();
+    private final EventSupport listChangeSupport = new EventSupport();
     private final List<Root> roots = new CopyOnWriteArrayList<>();
 
     public RootsManager(Supplier<Set<ClientCapability>> capabilities, RequestSender requester) {
@@ -35,11 +34,11 @@ public final class RootsManager {
         boolean changed = !roots.equals(fetched);
         roots.clear();
         roots.addAll(fetched);
-        if (changed) listChangeSupport.notifyListeners(Change.INSTANCE);
+        if (changed) listChangeSupport.notifyListeners();
         return List.copyOf(fetched);
     }
 
-    public AutoCloseable subscribe(Consumer<Change> listener) {
+    public AutoCloseable onListChanged(Runnable listener) {
         return listChangeSupport.subscribe(listener);
     }
 
