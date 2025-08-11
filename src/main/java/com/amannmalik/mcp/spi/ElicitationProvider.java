@@ -3,8 +3,6 @@ package com.amannmalik.mcp.spi;
 import com.amannmalik.mcp.codec.ElicitRequestJsonCodec;
 import jakarta.json.JsonObject;
 
-import java.util.List;
-
 /// - [Elicitation](specification/2025-06-18/client/elicitation.mdx)
 /// - [MCP elicitation specification conformance](src/test/resources/com/amannmalik/mcp/mcp_conformance.feature:116-131)
 public non-sealed interface ElicitationProvider extends ExecutingProvider<ElicitRequest, ElicitResult> {
@@ -12,11 +10,6 @@ public non-sealed interface ElicitationProvider extends ExecutingProvider<Elicit
 
     default ElicitResult elicit(ElicitRequest request) throws InterruptedException {
         return elicit(request, 0);
-    }
-
-    @Override
-    default Pagination.Page<ElicitRequest> list(Cursor cursor) {
-        return new Pagination.Page<>(List.of(), Cursor.End.INSTANCE);
     }
 
     @Override
