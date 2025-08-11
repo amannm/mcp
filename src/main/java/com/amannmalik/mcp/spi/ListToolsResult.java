@@ -1,6 +1,5 @@
-package com.amannmalik.mcp.api;
+package com.amannmalik.mcp.spi;
 
-import com.amannmalik.mcp.spi.Tool;
 import com.amannmalik.mcp.util.Immutable;
 import com.amannmalik.mcp.util.ValidationUtil;
 import jakarta.json.JsonObject;
