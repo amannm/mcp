@@ -1,8 +1,6 @@
 package com.amannmalik.mcp.api;
 
 
-import com.amannmalik.mcp.util.JsonRpcMethod;
-
 import java.util.Optional;
 
 public enum NotificationMethod implements JsonRpcMethod {

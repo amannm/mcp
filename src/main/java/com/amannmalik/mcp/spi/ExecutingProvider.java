@@ -1,6 +1,5 @@
-package com.amannmalik.mcp.util;
+package com.amannmalik.mcp.spi;
 
-import com.amannmalik.mcp.spi.*;
 import jakarta.json.JsonObject;
 
 public sealed interface ExecutingProvider<T, R> extends Provider<T> permits

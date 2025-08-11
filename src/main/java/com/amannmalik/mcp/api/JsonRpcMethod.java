@@ -1,7 +1,4 @@
-package com.amannmalik.mcp.util;
-
-import com.amannmalik.mcp.api.NotificationMethod;
-import com.amannmalik.mcp.api.RequestMethod;
+package com.amannmalik.mcp.api;
 
 import java.util.Optional;
 

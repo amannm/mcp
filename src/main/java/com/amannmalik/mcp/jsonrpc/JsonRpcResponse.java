@@ -1,6 +1,7 @@
 package com.amannmalik.mcp.jsonrpc;
 
 import com.amannmalik.mcp.api.JsonRpcMessage;
+import com.amannmalik.mcp.api.RequestId;
 import jakarta.json.JsonObject;
 
 public record JsonRpcResponse(RequestId id, JsonObject result) implements JsonRpcMessage {

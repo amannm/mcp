@@ -1,6 +1,7 @@
 package com.amannmalik.mcp.transport;
 
 import com.amannmalik.mcp.api.JsonRpcMessage;
+import com.amannmalik.mcp.api.RequestId;
 import com.amannmalik.mcp.codec.JsonCodec;
 import com.amannmalik.mcp.codec.JsonRpcMessageJsonCodec;
 import com.amannmalik.mcp.jsonrpc.*;

@@ -2,7 +2,6 @@ package com.amannmalik.mcp.spi;
 
 import com.amannmalik.mcp.api.Change;
 import com.amannmalik.mcp.core.InMemoryProvider;
-import com.amannmalik.mcp.util.ExecutingProvider;
 
 import java.io.Closeable;
 import java.util.function.Consumer;

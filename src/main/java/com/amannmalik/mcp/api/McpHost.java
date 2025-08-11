@@ -10,7 +10,6 @@ import com.amannmalik.mcp.roots.InMemoryRootsProvider;
 import com.amannmalik.mcp.sampling.InteractiveSamplingProvider;
 import com.amannmalik.mcp.security.*;
 import com.amannmalik.mcp.spi.*;
-import com.amannmalik.mcp.util.JsonRpcMethod;
 import jakarta.json.JsonObject;
 
 import java.io.IOException;
