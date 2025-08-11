@@ -1,7 +1,9 @@
 package com.amannmalik.mcp.api;
 
-
+import java.util.Arrays;
+import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 public enum NotificationMethod implements JsonRpcMethod {
     INITIALIZED("notifications/initialized"),
@@ -14,6 +16,9 @@ public enum NotificationMethod implements JsonRpcMethod {
     MESSAGE("notifications/message"),
     ROOTS_LIST_CHANGED("notifications/roots/list_changed");
 
+    private static final Map<String, NotificationMethod> BY_METHOD = Arrays.stream(values())
+            .collect(Collectors.toUnmodifiableMap(NotificationMethod::method, m -> m));
+
     private final String method;
 
     NotificationMethod(String method) {
@@ -21,7 +26,8 @@ public enum NotificationMethod implements JsonRpcMethod {
     }
 
     public static Optional<NotificationMethod> from(String method) {
-        return JsonRpcMethod.from(NotificationMethod.class, method);
+        if (method == null) return Optional.empty();
+        return Optional.ofNullable(BY_METHOD.get(method));
     }
 
     public String method() {

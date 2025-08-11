@@ -1,7 +1,9 @@
 package com.amannmalik.mcp.api;
 
-
+import java.util.Arrays;
+import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 public enum RequestMethod implements JsonRpcMethod {
     INITIALIZE("initialize"),
@@ -21,6 +23,9 @@ public enum RequestMethod implements JsonRpcMethod {
     ROOTS_LIST("roots/list"),
     ELICITATION_CREATE("elicitation/create");
 
+    private static final Map<String, RequestMethod> BY_METHOD = Arrays.stream(values())
+            .collect(Collectors.toUnmodifiableMap(RequestMethod::method, m -> m));
+
     private final String method;
 
     RequestMethod(String method) {
@@ -28,7 +33,8 @@ public enum RequestMethod implements JsonRpcMethod {
     }
 
     public static Optional<RequestMethod> from(String method) {
-        return JsonRpcMethod.from(RequestMethod.class, method);
+        if (method == null) return Optional.empty();
+        return Optional.ofNullable(BY_METHOD.get(method));
     }
 
     public String method() {
