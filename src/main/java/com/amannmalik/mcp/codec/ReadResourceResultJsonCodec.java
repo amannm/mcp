@@ -1,6 +1,6 @@
 package com.amannmalik.mcp.codec;
 
-import com.amannmalik.mcp.api.model.ResourceBlock;
+import com.amannmalik.mcp.spi.ResourceBlock;
 import com.amannmalik.mcp.resources.ReadResourceResult;
 import jakarta.json.*;
 

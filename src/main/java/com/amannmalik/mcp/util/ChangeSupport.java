@@ -1,6 +1,6 @@
 package com.amannmalik.mcp.util;
 
-import com.amannmalik.mcp.api.ChangeSubscription;
+import com.amannmalik.mcp.spi.ChangeSubscription;
 
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;

@@ -1,6 +1,6 @@
 package com.amannmalik.mcp.codec;
 
-import com.amannmalik.mcp.api.model.Argument;
+import com.amannmalik.mcp.spi.Argument;
 import jakarta.json.Json;
 import jakarta.json.JsonObject;
 

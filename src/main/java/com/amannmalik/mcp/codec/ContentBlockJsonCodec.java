@@ -1,6 +1,6 @@
 package com.amannmalik.mcp.codec;
 
-import com.amannmalik.mcp.api.model.ContentBlock;
+import com.amannmalik.mcp.spi.ContentBlock;
 import com.amannmalik.mcp.util.Base64Util;
 import jakarta.json.*;
 

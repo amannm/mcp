@@ -1,6 +1,6 @@
 package com.amannmalik.mcp.codec;
 
-import com.amannmalik.mcp.api.model.Root;
+import com.amannmalik.mcp.spi.Root;
 import jakarta.json.*;
 
 import java.util.Set;

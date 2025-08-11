@@ -1,6 +1,6 @@
 package com.amannmalik.mcp.codec;
 
-import com.amannmalik.mcp.sampling.ModelHint;
+import com.amannmalik.mcp.spi.ModelHint;
 import jakarta.json.*;
 
 import java.util.Set;

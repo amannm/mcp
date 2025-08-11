@@ -2,8 +2,7 @@ package com.amannmalik.mcp.api;
 
 import com.amannmalik.mcp.api.McpClient.McpClientListener;
 import com.amannmalik.mcp.api.model.*;
-import com.amannmalik.mcp.spi.ElicitationProvider;
-import com.amannmalik.mcp.spi.SamplingProvider;
+import com.amannmalik.mcp.spi.*;
 import com.amannmalik.mcp.codec.*;
 import com.amannmalik.mcp.core.CapabilityRequirements;
 import com.amannmalik.mcp.elicitation.InteractiveElicitationProvider;

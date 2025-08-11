@@ -1,7 +1,7 @@
 package com.amannmalik.mcp.codec;
 
-import com.amannmalik.mcp.api.model.Annotations;
-import com.amannmalik.mcp.api.model.Resource;
+import com.amannmalik.mcp.spi.Annotations;
+import com.amannmalik.mcp.spi.Resource;
 import jakarta.json.*;
 
 public non-sealed class ResourceAbstractEntityCodec extends AbstractEntityCodec<Resource> {

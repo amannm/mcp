@@ -2,6 +2,7 @@ package com.amannmalik.mcp.cli;
 
 import com.amannmalik.mcp.api.McpHost;
 import com.amannmalik.mcp.api.model.*;
+import com.amannmalik.mcp.spi.Role;
 import jakarta.json.Json;
 import jakarta.json.JsonValue;
 import picocli.CommandLine;

@@ -1,6 +1,6 @@
 package com.amannmalik.mcp.prompts;
 
-import com.amannmalik.mcp.api.model.Prompt;
+import com.amannmalik.mcp.spi.Prompt;
 import com.amannmalik.mcp.util.Immutable;
 import com.amannmalik.mcp.util.ValidationUtil;
 import jakarta.json.JsonObject;

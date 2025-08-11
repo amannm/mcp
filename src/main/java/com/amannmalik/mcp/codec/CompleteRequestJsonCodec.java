@@ -1,6 +1,6 @@
 package com.amannmalik.mcp.codec;
 
-import com.amannmalik.mcp.api.model.*;
+import com.amannmalik.mcp.spi.*;
 import jakarta.json.*;
 
 public class CompleteRequestJsonCodec implements JsonCodec<CompleteRequest> {

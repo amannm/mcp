@@ -1,11 +1,12 @@
 package com.amannmalik.mcp.roots;
 
-import com.amannmalik.mcp.api.ChangeSubscription;
+import com.amannmalik.mcp.spi.ChangeSubscription;
 import com.amannmalik.mcp.api.JsonRpcMessage;
 import com.amannmalik.mcp.api.model.*;
 import com.amannmalik.mcp.codec.*;
 import com.amannmalik.mcp.jsonrpc.JsonRpcError;
 import com.amannmalik.mcp.jsonrpc.JsonRpcResponse;
+import com.amannmalik.mcp.spi.Root;
 import com.amannmalik.mcp.util.ChangeSupport;
 
 import java.io.IOException;

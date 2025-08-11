@@ -1,7 +1,7 @@
 package com.amannmalik.mcp.codec;
 
-import com.amannmalik.mcp.api.model.Prompt;
-import com.amannmalik.mcp.api.model.PromptArgument;
+import com.amannmalik.mcp.spi.Prompt;
+import com.amannmalik.mcp.spi.PromptArgument;
 import jakarta.json.*;
 
 import java.util.*;

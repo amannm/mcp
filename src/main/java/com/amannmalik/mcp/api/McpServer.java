@@ -3,7 +3,7 @@ package com.amannmalik.mcp.api;
 import com.amannmalik.mcp.api.model.*;
 import com.amannmalik.mcp.codec.*;
 import com.amannmalik.mcp.core.*;
-import com.amannmalik.mcp.elicitation.ElicitationAction;
+import com.amannmalik.mcp.spi.ElicitationAction;
 import com.amannmalik.mcp.jsonrpc.*;
 import com.amannmalik.mcp.prompts.*;
 import com.amannmalik.mcp.roots.RootsManager;

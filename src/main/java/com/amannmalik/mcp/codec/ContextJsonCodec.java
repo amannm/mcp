@@ -1,6 +1,6 @@
 package com.amannmalik.mcp.codec;
 
-import com.amannmalik.mcp.api.model.Context;
+import com.amannmalik.mcp.spi.Context;
 import com.amannmalik.mcp.util.ValidationUtil;
 import jakarta.json.*;
 

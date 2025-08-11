@@ -1,6 +1,6 @@
 package com.amannmalik.mcp.codec;
 
-import com.amannmalik.mcp.api.model.Ref;
+import com.amannmalik.mcp.spi.Ref;
 import jakarta.json.*;
 
 public class RefJsonCodec implements JsonCodec<Ref> {

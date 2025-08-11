@@ -1,9 +1,5 @@
 package com.amannmalik.mcp.spi;
 
-import com.amannmalik.mcp.api.Provider;
-import com.amannmalik.mcp.api.model.Prompt;
-import com.amannmalik.mcp.api.model.PromptInstance;
-
 import java.util.Map;
 
 /// - [Prompts](specification/2025-06-18/server/prompts.mdx)

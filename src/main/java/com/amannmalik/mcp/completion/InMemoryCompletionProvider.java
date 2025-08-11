@@ -1,7 +1,7 @@
 package com.amannmalik.mcp.completion;
 
-import com.amannmalik.mcp.spi.CompletionProvider;
-import com.amannmalik.mcp.api.model.*;
+import com.amannmalik.mcp.api.McpConfiguration;
+import com.amannmalik.mcp.spi.*;
 import com.amannmalik.mcp.codec.ArgumentJsonCodec;
 import com.amannmalik.mcp.codec.ContextJsonCodec;
 import com.amannmalik.mcp.core.InMemoryProvider;
@@ -13,6 +13,7 @@ import java.util.*;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 public final class InMemoryCompletionProvider extends InMemoryProvider<Ref> implements CompletionProvider {
+    private static final int MAX_VALUES = McpConfiguration.current().maxCompletionValues();
 
     private static final ArgumentJsonCodec ARGUMENT_CODEC = new ArgumentJsonCodec();
     private static final ContextJsonCodec CONTEXT_CODEC = new ContextJsonCodec();
@@ -86,7 +87,7 @@ public final class InMemoryCompletionProvider extends InMemoryProvider<Ref> impl
                 .thenComparing(String::compareTo);
         List<String> sorted = unique.stream()
                 .sorted(cmp)
-                .limit(CompleteResult.MAX_VALUES)
+                .limit(MAX_VALUES)
                 .toList();
         int total = unique.size();
         boolean hasMore = total > sorted.size();

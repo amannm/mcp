@@ -1,7 +1,5 @@
 package com.amannmalik.mcp.spi;
 
-import com.amannmalik.mcp.api.Pagination;
-import com.amannmalik.mcp.api.model.*;
 import com.amannmalik.mcp.codec.ArgumentJsonCodec;
 import com.amannmalik.mcp.codec.ContextJsonCodec;
 import com.amannmalik.mcp.util.ExecutingProvider;

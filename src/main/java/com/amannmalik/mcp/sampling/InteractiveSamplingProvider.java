@@ -1,8 +1,7 @@
 package com.amannmalik.mcp.sampling;
 
-import com.amannmalik.mcp.api.MessageContent;
-import com.amannmalik.mcp.spi.SamplingProvider;
-import com.amannmalik.mcp.api.model.*;
+import com.amannmalik.mcp.spi.MessageContent;
+import com.amannmalik.mcp.spi.*;
 import jakarta.json.*;
 
 import java.io.*;

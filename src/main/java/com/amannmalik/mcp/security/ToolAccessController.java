@@ -1,7 +1,7 @@
 package com.amannmalik.mcp.security;
 
 import com.amannmalik.mcp.spi.ToolAccessPolicy;
-import com.amannmalik.mcp.api.model.Principal;
+import com.amannmalik.mcp.spi.Principal;
 
 public final class ToolAccessController implements ToolAccessPolicy {
     private final PrincipalPermissions<String> permissions = new PrincipalPermissions<>();

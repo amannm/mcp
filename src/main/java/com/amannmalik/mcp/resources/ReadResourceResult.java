@@ -1,6 +1,6 @@
 package com.amannmalik.mcp.resources;
 
-import com.amannmalik.mcp.api.model.ResourceBlock;
+import com.amannmalik.mcp.spi.ResourceBlock;
 import com.amannmalik.mcp.util.Immutable;
 import com.amannmalik.mcp.util.ValidationUtil;
 import jakarta.json.JsonObject;

@@ -1,8 +1,8 @@
 package com.amannmalik.mcp.codec;
 
-import com.amannmalik.mcp.api.model.CreateMessageRequest;
-import com.amannmalik.mcp.api.model.SamplingMessage;
-import com.amannmalik.mcp.sampling.ModelPreferences;
+import com.amannmalik.mcp.spi.CreateMessageRequest;
+import com.amannmalik.mcp.spi.SamplingMessage;
+import com.amannmalik.mcp.spi.ModelPreferences;
 import jakarta.json.*;
 
 import java.util.List;

@@ -1,6 +1,6 @@
 package com.amannmalik.mcp.util;
 
-import com.amannmalik.mcp.api.model.Root;
+import com.amannmalik.mcp.spi.Root;
 
 import java.net.URI;
 import java.nio.file.Path;
