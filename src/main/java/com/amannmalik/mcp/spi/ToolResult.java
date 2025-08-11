@@ -8,7 +8,7 @@ import jakarta.json.*;
 public record ToolResult(JsonArray content,
                          JsonObject structuredContent,
                          Boolean isError,
-                         JsonObject _meta) {
+                         JsonObject _meta) implements Result {
 
     private static final JsonCodec<ContentBlock> CONTENT_BLOCK_CODEC = new ContentBlockJsonCodec();
 
