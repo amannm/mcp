@@ -27,6 +27,7 @@ public final class McpServer extends JsonRpcEndpoint implements AutoCloseable {
     private static final CompleteRequestJsonCodec COMPLETE_REQUEST_JSON_CODEC = new CompleteRequestJsonCodec();
     private static final JsonCodec<SetLevelRequest> SET_LEVEL_REQUEST_JSON_CODEC = new SetLevelRequestAbstractEntityCodec();
     private static final CancelledNotificationJsonCodec CANCELLED_NOTIFICATION_JSON_CODEC = new CancelledNotificationJsonCodec();
+    private static final JsonCodec<ToolListChangedNotification> TOOL_LIST_CHANGED_NOTIFICATION_JSON_CODEC = new ToolListChangedNotificationJsonCodec();
     private static final JsonCodec<ListToolsResult> LIST_TOOLS_RESULT_JSON_CODEC =
             AbstractEntityCodec.paginatedResult(
                     "tools",
@@ -131,7 +132,7 @@ public final class McpServer extends JsonRpcEndpoint implements AutoCloseable {
             toolListSubscription = subscribeListChanges(
                     tools::subscribe,
                     NotificationMethod.TOOLS_LIST_CHANGED,
-                    AbstractEntityCodec.empty(ToolListChangedNotification::new).toJson(new ToolListChangedNotification()));
+                    TOOL_LIST_CHANGED_NOTIFICATION_JSON_CODEC.toJson(new ToolListChangedNotification()));
         }
 
         if (prompts != null && prompts.supportsListChanged()) {
