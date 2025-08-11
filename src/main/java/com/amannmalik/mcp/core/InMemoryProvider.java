@@ -4,9 +4,7 @@ import com.amannmalik.mcp.completion.InMemoryCompletionProvider;
 import com.amannmalik.mcp.prompts.InMemoryPromptProvider;
 import com.amannmalik.mcp.resources.InMemoryResourceProvider;
 import com.amannmalik.mcp.roots.InMemoryRootsProvider;
-import com.amannmalik.mcp.spi.Cursor;
-import com.amannmalik.mcp.spi.Pagination;
-import com.amannmalik.mcp.spi.Provider;
+import com.amannmalik.mcp.spi.*;
 import com.amannmalik.mcp.tools.InMemoryToolProvider;
 import com.amannmalik.mcp.util.EventSupport;
 

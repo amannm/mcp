@@ -1,9 +1,7 @@
 package com.amannmalik.mcp.cli;
 
 import com.amannmalik.mcp.api.*;
-import com.amannmalik.mcp.spi.Cursor;
-import com.amannmalik.mcp.spi.Role;
-import com.amannmalik.mcp.spi.SamplingAccessPolicy;
+import com.amannmalik.mcp.spi.*;
 import jakarta.json.Json;
 import jakarta.json.JsonValue;
 import picocli.CommandLine;
