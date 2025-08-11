@@ -7,10 +7,11 @@ import jakarta.json.JsonObject;
 import java.util.List;
 
 public record ListToolsResult(List<Tool> tools,
-                              String nextCursor,
+                              Cursor nextCursor,
                               JsonObject _meta) implements PaginatedResult<Tool> {
     public ListToolsResult {
         tools = Immutable.list(tools);
+        nextCursor = nextCursor == null ? Cursor.End.INSTANCE : nextCursor;
         ValidationUtil.requireMeta(_meta);
     }
 

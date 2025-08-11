@@ -7,10 +7,11 @@ import jakarta.json.JsonObject;
 import java.util.List;
 
 public record ListResourcesResult(List<Resource> resources,
-                                  String nextCursor,
+                                  Cursor nextCursor,
                                   JsonObject _meta) implements PaginatedResult<Resource> {
     public ListResourcesResult {
         resources = Immutable.list(resources);
+        nextCursor = nextCursor == null ? Cursor.End.INSTANCE : nextCursor;
         ValidationUtil.requireMeta(_meta);
     }
 

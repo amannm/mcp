@@ -18,6 +18,7 @@ import java.util.function.*;
 
 final class ResourceOrchestrator implements AutoCloseable {
     private static final JsonCodec<ResourceUpdatedNotification> RESOURCE_UPDATED_NOTIFICATION_JSON_CODEC = new ResourceUpdatedNotificationAbstractEntityCodec();
+    private static final JsonCodec<ResourceListChangedNotification> RESOURCE_LIST_CHANGED_NOTIFICATION_JSON_CODEC = new ResourceListChangedNotificationJsonCodec();
     private final ResourceProvider resources;
     private final ResourceAccessPolicy access;
     private final Principal principal;
@@ -47,7 +48,7 @@ final class ResourceOrchestrator implements AutoCloseable {
                 subscribeListChanges(
                         resources::subscribe,
                         NotificationMethod.RESOURCES_LIST_CHANGED,
-                        AbstractEntityCodec.empty(ResourceListChangedNotification::new).toJson(new ResourceListChangedNotification())) : null;
+                        RESOURCE_LIST_CHANGED_NOTIFICATION_JSON_CODEC.toJson(new ResourceListChangedNotification())) : null;
     }
 
     public void register(JsonRpcEndpoint endpoint) {

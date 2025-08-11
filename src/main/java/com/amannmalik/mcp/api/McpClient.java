@@ -26,6 +26,8 @@ import java.util.stream.Collectors;
 final class McpClient extends JsonRpcEndpoint implements AutoCloseable {
     private static final InitializeRequestAbstractEntityCodec INITIALIZE_REQUEST_CODEC = new InitializeRequestAbstractEntityCodec();
     private static final JsonCodec<ResourceUpdatedNotification> RESOURCE_UPDATED_NOTIFICATION_JSON_CODEC = new ResourceUpdatedNotificationAbstractEntityCodec();
+    private static final JsonCodec<ResourceListChangedNotification> RESOURCE_LIST_CHANGED_NOTIFICATION_JSON_CODEC = new ResourceListChangedNotificationJsonCodec();
+    private static final JsonCodec<ToolListChangedNotification> TOOL_LIST_CHANGED_NOTIFICATION_JSON_CODEC = new ToolListChangedNotificationJsonCodec();
     private static final JsonCodec<SubscribeRequest> SUBSCRIBE_REQUEST_JSON_CODEC = new SubscribeRequestAbstractEntityCodec();
     private static final JsonCodec<UnsubscribeRequest> UNSUBSCRIBE_REQUEST_JSON_CODEC = new UnsubscribeRequestAbstractEntityCodec();
     private static final JsonCodec<SetLevelRequest> SET_LEVEL_REQUEST_JSON_CODEC = new SetLevelRequestAbstractEntityCodec();
@@ -564,8 +566,7 @@ final class McpClient extends JsonRpcEndpoint implements AutoCloseable {
 
     private void handleResourcesListChanged(JsonRpcNotification note) {
         try {
-            // TODO: understand and refactor this
-            AbstractEntityCodec.empty(ResourceListChangedNotification::new).fromJson(note.params());
+            RESOURCE_LIST_CHANGED_NOTIFICATION_JSON_CODEC.fromJson(note.params());
             listener.onResourceListChanged();
         } catch (IllegalArgumentException ignore) {
         }
@@ -585,8 +586,7 @@ final class McpClient extends JsonRpcEndpoint implements AutoCloseable {
 
     private void handleToolsListChanged(JsonRpcNotification note) {
         try {
-            // TODO: understand and refactor this
-            AbstractEntityCodec.empty(ToolListChangedNotification::new).fromJson(note.params());
+            TOOL_LIST_CHANGED_NOTIFICATION_JSON_CODEC.fromJson(note.params());
             listener.onToolListChanged();
         } catch (IllegalArgumentException ignore) {
         }

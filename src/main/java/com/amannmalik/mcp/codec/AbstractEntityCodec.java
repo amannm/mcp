@@ -47,7 +47,7 @@ public sealed abstract class AbstractEntityCodec<T> implements JsonCodec<T> perm
         JsonArrayBuilder arr = Json.createArrayBuilder();
         page.items().forEach(item -> arr.add(encoder.apply(item)));
         JsonObjectBuilder b = Json.createObjectBuilder().add(field, arr.build());
-        if (page.nextCursor() != null) b.add("nextCursor", page.nextCursor());
+        if (page.nextCursor() instanceof Cursor.Token t) b.add("nextCursor", t.value());
         if (meta != null) b.add("_meta", meta);
         return b.build();
     }
