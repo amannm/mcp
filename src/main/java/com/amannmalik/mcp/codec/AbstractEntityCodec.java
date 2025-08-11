@@ -1,6 +1,8 @@
 package com.amannmalik.mcp.codec;
 
 import com.amannmalik.mcp.api.*;
+import com.amannmalik.mcp.api.model.ContentBlock;
+import com.amannmalik.mcp.api.model.Role;
 import jakarta.json.*;
 
 import java.util.Objects;

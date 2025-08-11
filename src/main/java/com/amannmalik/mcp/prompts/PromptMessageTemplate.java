@@ -1,7 +1,7 @@
 package com.amannmalik.mcp.prompts;
 
-import com.amannmalik.mcp.api.PromptContent;
-import com.amannmalik.mcp.api.Role;
+import com.amannmalik.mcp.api.model.PromptContent;
+import com.amannmalik.mcp.api.model.Role;
 
 public record PromptMessageTemplate(Role role, PromptContent content) {
     public PromptMessageTemplate {

@@ -1,6 +1,6 @@
 package com.amannmalik.mcp.codec;
 
-import com.amannmalik.mcp.api.Completion;
+import com.amannmalik.mcp.api.model.Completion;
 import jakarta.json.*;
 
 class CompletionJsonCodec implements JsonCodec<Completion> {

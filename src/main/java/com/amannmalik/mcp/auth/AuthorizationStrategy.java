@@ -1,6 +1,6 @@
 package com.amannmalik.mcp.auth;
 
-import com.amannmalik.mcp.api.Principal;
+import com.amannmalik.mcp.api.model.Principal;
 
 import java.util.Optional;
 

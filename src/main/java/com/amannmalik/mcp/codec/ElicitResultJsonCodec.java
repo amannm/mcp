@@ -1,6 +1,6 @@
 package com.amannmalik.mcp.codec;
 
-import com.amannmalik.mcp.api.ElicitResult;
+import com.amannmalik.mcp.api.model.ElicitResult;
 import com.amannmalik.mcp.elicitation.ElicitationAction;
 import jakarta.json.*;
 

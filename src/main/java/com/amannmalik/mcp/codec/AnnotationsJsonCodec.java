@@ -1,7 +1,7 @@
 package com.amannmalik.mcp.codec;
 
-import com.amannmalik.mcp.api.Annotations;
-import com.amannmalik.mcp.api.Role;
+import com.amannmalik.mcp.api.model.Annotations;
+import com.amannmalik.mcp.api.model.Role;
 import jakarta.json.*;
 
 import java.time.Instant;

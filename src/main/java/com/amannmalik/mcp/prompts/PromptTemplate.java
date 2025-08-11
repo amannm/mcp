@@ -1,6 +1,6 @@
 package com.amannmalik.mcp.prompts;
 
-import com.amannmalik.mcp.api.*;
+import com.amannmalik.mcp.api.model.*;
 import com.amannmalik.mcp.util.Immutable;
 
 import java.util.*;

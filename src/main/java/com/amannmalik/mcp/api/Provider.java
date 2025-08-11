@@ -1,5 +1,7 @@
 package com.amannmalik.mcp.api;
 
+import com.amannmalik.mcp.api.model.Change;
+
 import java.util.function.Consumer;
 
 public interface Provider<T> extends AutoCloseable {

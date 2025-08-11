@@ -1,6 +1,6 @@
 package com.amannmalik.mcp.transport;
 
-import com.amannmalik.mcp.api.Principal;
+import com.amannmalik.mcp.api.model.Principal;
 import com.amannmalik.mcp.util.Base64Util;
 import com.amannmalik.mcp.util.ValidationUtil;
 import jakarta.servlet.http.HttpServletRequest;

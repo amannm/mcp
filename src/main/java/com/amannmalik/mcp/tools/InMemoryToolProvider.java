@@ -1,6 +1,8 @@
 package com.amannmalik.mcp.tools;
 
 import com.amannmalik.mcp.api.*;
+import com.amannmalik.mcp.api.model.Tool;
+import com.amannmalik.mcp.api.model.ToolResult;
 import com.amannmalik.mcp.core.InMemoryProvider;
 import com.amannmalik.mcp.util.ValidationUtil;
 import jakarta.json.*;

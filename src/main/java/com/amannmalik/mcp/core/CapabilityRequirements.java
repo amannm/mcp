@@ -1,7 +1,7 @@
 package com.amannmalik.mcp.core;
 
-import com.amannmalik.mcp.api.RequestMethod;
-import com.amannmalik.mcp.api.ServerCapability;
+import com.amannmalik.mcp.api.model.RequestMethod;
+import com.amannmalik.mcp.api.model.ServerCapability;
 
 import java.util.Map;
 import java.util.Optional;

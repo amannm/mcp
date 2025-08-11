@@ -1,6 +1,6 @@
 package com.amannmalik.mcp.transport;
 
-import com.amannmalik.mcp.api.Principal;
+import com.amannmalik.mcp.api.model.Principal;
 import com.amannmalik.mcp.auth.AuthorizationException;
 import com.amannmalik.mcp.auth.AuthorizationManager;
 import com.amannmalik.mcp.core.UnauthorizedException;

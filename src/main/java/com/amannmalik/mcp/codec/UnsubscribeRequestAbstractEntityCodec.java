@@ -1,6 +1,6 @@
 package com.amannmalik.mcp.codec;
 
-import com.amannmalik.mcp.api.UnsubscribeRequest;
+import com.amannmalik.mcp.api.model.UnsubscribeRequest;
 import jakarta.json.*;
 
 import java.util.Set;

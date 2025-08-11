@@ -1,6 +1,8 @@
 package com.amannmalik.mcp.prompts;
 
 import com.amannmalik.mcp.api.*;
+import com.amannmalik.mcp.api.model.Prompt;
+import com.amannmalik.mcp.api.model.PromptInstance;
 import com.amannmalik.mcp.core.InMemoryProvider;
 
 import java.util.Comparator;

@@ -1,6 +1,6 @@
 package com.amannmalik.mcp.codec;
 
-import com.amannmalik.mcp.api.SubscribeRequest;
+import com.amannmalik.mcp.api.model.SubscribeRequest;
 import jakarta.json.*;
 
 import java.util.Set;

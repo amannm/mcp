@@ -1,6 +1,6 @@
 package com.amannmalik.mcp.codec;
 
-import com.amannmalik.mcp.api.ElicitRequest;
+import com.amannmalik.mcp.api.model.ElicitRequest;
 import jakarta.json.*;
 
 import java.util.Set;

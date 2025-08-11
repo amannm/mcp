@@ -1,6 +1,6 @@
 package com.amannmalik.mcp.codec;
 
-import com.amannmalik.mcp.api.ClientInfo;
+import com.amannmalik.mcp.api.model.ClientInfo;
 import jakarta.json.*;
 
 public final class ClientInfoAbstractEntityCodec extends AbstractEntityCodec<ClientInfo> {

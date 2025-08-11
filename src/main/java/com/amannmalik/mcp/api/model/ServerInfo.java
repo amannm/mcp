@@ -1,0 +1,14 @@
+package com.amannmalik.mcp.api.model;
+
+import com.amannmalik.mcp.util.ValidationUtil;
+
+public record ServerInfo(String name, String title, String version) {
+    public ServerInfo {
+        if (name == null || version == null) {
+            throw new IllegalArgumentException("name and version required");
+        }
+        name = ValidationUtil.requireClean(name);
+        version = ValidationUtil.requireClean(version);
+        title = ValidationUtil.cleanNullable(title);
+    }
+}

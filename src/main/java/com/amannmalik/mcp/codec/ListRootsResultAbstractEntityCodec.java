@@ -1,7 +1,7 @@
 package com.amannmalik.mcp.codec;
 
-import com.amannmalik.mcp.api.ListRootsResult;
-import com.amannmalik.mcp.api.Root;
+import com.amannmalik.mcp.api.model.ListRootsResult;
+import com.amannmalik.mcp.api.model.Root;
 import jakarta.json.*;
 
 import java.util.List;

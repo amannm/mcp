@@ -1,6 +1,6 @@
 package com.amannmalik.mcp.util;
 
-import com.amannmalik.mcp.api.ClientInfo;
+import com.amannmalik.mcp.api.model.ClientInfo;
 import com.amannmalik.mcp.core.Capabilities;
 import com.amannmalik.mcp.core.ClientFeatures;
 
