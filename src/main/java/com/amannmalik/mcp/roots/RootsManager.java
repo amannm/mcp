@@ -7,7 +7,6 @@ import com.amannmalik.mcp.jsonrpc.JsonRpcResponse;
 import com.amannmalik.mcp.spi.Root;
 import com.amannmalik.mcp.util.ChangeSupport;
 
-import java.io.Closeable;
 import java.io.IOException;
 import java.util.List;
 import java.util.Set;
@@ -40,7 +39,7 @@ public final class RootsManager {
         return List.copyOf(fetched);
     }
 
-    public Closeable subscribe(Consumer<Change> listener) {
+    public AutoCloseable subscribe(Consumer<Change> listener) {
         return listChangeSupport.subscribe(listener);
     }
 

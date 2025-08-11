@@ -38,7 +38,7 @@ final class McpClient extends JsonRpcEndpoint implements AutoCloseable {
     private final ElicitationProvider elicitation;
     private final McpClientListener listener;
     private final Map<String, Consumer<ResourceUpdate>> resourceListeners = new ConcurrentHashMap<>();
-    private Closeable rootsSubscription;
+    private AutoCloseable rootsSubscription;
     private SamplingAccessPolicy samplingAccess;
     private Principal principal;
     private Thread reader;
@@ -275,7 +275,7 @@ final class McpClient extends JsonRpcEndpoint implements AutoCloseable {
                 (page1, meta) -> new ListResourceTemplatesResult(page1.items(), page1.nextCursor(), meta)).fromJson(resp.result());
     }
 
-    public Closeable subscribeResource(String uri, Consumer<ResourceUpdate> listener) throws IOException {
+    public AutoCloseable subscribeResource(String uri, Consumer<ResourceUpdate> listener) throws IOException {
         if (!serverFeatures.resourcesSubscribe()) {
             throw new IllegalStateException("resource subscribe not supported");
         }

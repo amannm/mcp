@@ -65,8 +65,8 @@ public final class McpServer extends JsonRpcEndpoint implements AutoCloseable {
     private LifecycleState lifecycleState = LifecycleState.INIT;
     private Set<ClientCapability> clientCapabilities = Set.of();
     private ClientFeatures clientFeatures = ClientFeatures.EMPTY;
-    private Closeable toolListSubscription;
-    private Closeable promptsSubscription;
+    private AutoCloseable toolListSubscription;
+    private AutoCloseable promptsSubscription;
     private volatile LoggingLevel logLevel;
 
 
@@ -169,7 +169,7 @@ public final class McpServer extends JsonRpcEndpoint implements AutoCloseable {
         registerRequest(RequestMethod.SAMPLING_CREATE_MESSAGE.method(), this::handleCreateMessage);
     }
 
-    private <S extends Closeable> S subscribeListChanges(
+    private <S extends AutoCloseable> S subscribeListChanges(
             SubscriptionFactory<S> factory,
             NotificationMethod method,
             JsonObject payload) {
@@ -633,7 +633,7 @@ public final class McpServer extends JsonRpcEndpoint implements AutoCloseable {
     }
 
     @FunctionalInterface
-    private interface SubscriptionFactory<S extends Closeable> {
+    private interface SubscriptionFactory<S extends AutoCloseable> {
         S subscribe(Consumer<Change> listener);
     }
 }
