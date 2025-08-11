@@ -21,7 +21,7 @@ public final class InitializeRequestAbstractEntityCodec extends AbstractEntityCo
             if (c == ClientCapability.ROOTS && req.features().rootsListChanged()) {
                 b.add("listChanged", true);
             }
-            caps.add(c.name().toLowerCase(), b.build());
+            caps.add(c.code(), b.build());
         }
         req.capabilities().clientExperimental().forEach(caps::add);
         return Json.createObjectBuilder()
@@ -42,14 +42,15 @@ public final class InitializeRequestAbstractEntityCodec extends AbstractEntityCo
             for (var entry : capsObj.entrySet()) {
                 String k = entry.getKey();
                 JsonObject v = entry.getValue().asJsonObject();
-                switch (k) {
-                    case "roots" -> {
-                        client.add(ClientCapability.ROOTS);
+                Optional<ClientCapability> cap = ClientCapability.from(k);
+                if (cap.isPresent()) {
+                    ClientCapability c = cap.get();
+                    client.add(c);
+                    if (c == ClientCapability.ROOTS) {
                         rootsList = v.getBoolean("listChanged", false);
                     }
-                    case "sampling" -> client.add(ClientCapability.SAMPLING);
-                    case "elicitation" -> client.add(ClientCapability.ELICITATION);
-                    default -> experimental.put(k, v);
+                } else {
+                    experimental.put(k, v);
                 }
             }
         }
