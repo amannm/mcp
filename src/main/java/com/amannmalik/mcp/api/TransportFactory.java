@@ -40,7 +40,9 @@ public final class TransportFactory {
     }
 
     public static Transport createStdioTransport(String[] commands, boolean verbose) throws IOException {
-        return new StdioTransport(commands, System.in, System.out, verbose ? System.err::println : _ -> {
+        return commands.length == 0
+                ? new StdioTransport(System.in, System.out)
+                : new StdioTransport(commands, verbose ? System.err::println : _ -> {
         });
     }
 }
