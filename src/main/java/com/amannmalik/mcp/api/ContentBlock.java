@@ -11,12 +11,6 @@ public sealed interface ContentBlock permits
         ContentBlock.Audio,
         ContentBlock.ResourceLink,
         ContentBlock.EmbeddedResource {
-    String type();
-
-    Annotations annotations();
-
-    JsonObject _meta();
-
     private static Annotations orEmpty(Annotations annotations) {
         return annotations == null ? AnnotationsJsonCodec.EMPTY : annotations;
     }
@@ -34,6 +28,12 @@ public sealed interface ContentBlock permits
         if (mimeType == null) throw new IllegalArgumentException("mimeType is required");
         return ValidationUtil.requireClean(mimeType);
     }
+
+    String type();
+
+    Annotations annotations();
+
+    JsonObject _meta();
 
     record Text(String text, Annotations annotations, JsonObject _meta)
             implements ContentBlock, PromptContent, MessageContent {

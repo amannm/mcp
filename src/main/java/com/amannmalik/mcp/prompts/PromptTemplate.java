@@ -11,6 +11,25 @@ public record PromptTemplate(Prompt prompt, List<PromptMessageTemplate> messages
         messages = Immutable.list(messages);
     }
 
+    private static PromptContent instantiate(PromptContent tmpl, Map<String, String> args) {
+        return switch (tmpl) {
+            case ContentBlock.Text t -> new ContentBlock.Text(substitute(t.text(), args), t.annotations(), t._meta());
+            case ContentBlock.Image i -> new ContentBlock.Image(i.data(), i.mimeType(), i.annotations(), i._meta());
+            case ContentBlock.Audio a -> new ContentBlock.Audio(a.data(), a.mimeType(), a.annotations(), a._meta());
+            case ContentBlock.EmbeddedResource r -> new ContentBlock.EmbeddedResource(r.resource(), r.annotations(), r._meta());
+            case ContentBlock.ResourceLink l -> new ContentBlock.ResourceLink(l.resource());
+            default -> tmpl;
+        };
+    }
+
+    private static String substitute(String template, Map<String, String> args) {
+        String result = template;
+        for (Map.Entry<String, String> e : args.entrySet()) {
+            result = result.replace("{" + e.getKey() + "}", e.getValue());
+        }
+        return result;
+    }
+
     PromptInstance instantiate(Map<String, String> args) {
         Map<String, String> provided = Immutable.map(args);
 
@@ -37,24 +56,5 @@ public record PromptTemplate(Prompt prompt, List<PromptMessageTemplate> messages
             list.add(new PromptMessage(t.role(), instantiate(t.content(), provided)));
         }
         return new PromptInstance(prompt.description(), list);
-    }
-
-    private static PromptContent instantiate(PromptContent tmpl, Map<String, String> args) {
-        return switch (tmpl) {
-            case ContentBlock.Text t -> new ContentBlock.Text(substitute(t.text(), args), t.annotations(), t._meta());
-            case ContentBlock.Image i -> new ContentBlock.Image(i.data(), i.mimeType(), i.annotations(), i._meta());
-            case ContentBlock.Audio a -> new ContentBlock.Audio(a.data(), a.mimeType(), a.annotations(), a._meta());
-            case ContentBlock.EmbeddedResource r -> new ContentBlock.EmbeddedResource(r.resource(), r.annotations(), r._meta());
-            case ContentBlock.ResourceLink l -> new ContentBlock.ResourceLink(l.resource());
-            default -> tmpl;
-        };
-    }
-
-    private static String substitute(String template, Map<String, String> args) {
-        String result = template;
-        for (Map.Entry<String, String> e : args.entrySet()) {
-            result = result.replace("{" + e.getKey() + "}", e.getValue());
-        }
-        return result;
     }
 }

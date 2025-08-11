@@ -23,22 +23,24 @@ import java.util.*;
 import java.util.concurrent.*;
 
 public final class StreamableHttpServerTransport implements Transport {
-    private final Server server;
-    private final int port;
-    private final Set<String> allowedOrigins;
-    final AuthorizationManager authManager;
-    private final String resourceMetadataUrl;
-    final String canonicalResource;
-    final List<String> authorizationServers;
     // Default to the previous protocol revision when the version header is
     // absent, as recommended for backwards compatibility.
     static final String COMPATIBILITY_VERSION =
             Protocol.PREVIOUS_VERSION;
+    private static final Principal DEFAULT_PRINCIPAL = new Principal(
+            McpConfiguration.current().defaultPrincipal(), Set.of());
+    final AuthorizationManager authManager;
+    final String canonicalResource;
+    final List<String> authorizationServers;
     final BlockingQueue<JsonObject> incoming = new LinkedBlockingQueue<>();
-    private volatile boolean closed;
     final SseClients clients = new SseClients();
     final SessionManager sessions = new SessionManager(COMPATIBILITY_VERSION);
+    private final Server server;
+    private final int port;
+    private final Set<String> allowedOrigins;
+    private final String resourceMetadataUrl;
     private final MessageDispatcher dispatcher;
+    private volatile boolean closed;
 
     public StreamableHttpServerTransport(int port,
                                          Set<String> allowedOrigins,
@@ -125,9 +127,6 @@ public final class StreamableHttpServerTransport implements Transport {
             throw new IOException(e);
         }
     }
-
-    private static final Principal DEFAULT_PRINCIPAL = new Principal(
-            McpConfiguration.current().defaultPrincipal(), Set.of());
 
     Optional<Principal> authorize(HttpServletRequest req, HttpServletResponse resp) throws IOException {
         return AuthorizationUtil.authorize(

@@ -17,6 +17,8 @@ import java.util.function.Supplier;
 /// - [Roots](specification/2025-06-18/client/roots.mdx)
 /// - [MCP roots specification conformance](src/test/resources/com/amannmalik/mcp/mcp_conformance.feature:154-169)
 public final class RootsManager {
+    public static final JsonCodec<ListRootsRequest> CODEC =
+            AbstractEntityCodec.metaOnly(ListRootsRequest::_meta, ListRootsRequest::new);
     private static final ListRootsResultAbstractEntityCodec LIST_RESULTS_CODEC = new ListRootsResultAbstractEntityCodec();
     private final Supplier<Set<ClientCapability>> capabilities;
     private final RequestSender requester;
@@ -60,9 +62,6 @@ public final class RootsManager {
     public void listChangedNotification() {
         refreshAsync();
     }
-
-    public static final JsonCodec<ListRootsRequest> CODEC =
-            AbstractEntityCodec.metaOnly(ListRootsRequest::_meta, ListRootsRequest::new);
 
     private List<Root> fetchRoots() throws IOException {
         requireClientCapability(ClientCapability.ROOTS);

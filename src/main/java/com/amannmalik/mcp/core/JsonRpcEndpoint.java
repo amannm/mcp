@@ -15,15 +15,14 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 
 public sealed class JsonRpcEndpoint implements AutoCloseable permits McpClient, McpServer {
+    protected static final JsonRpcMessageJsonCodec CODEC = new JsonRpcMessageJsonCodec();
+    protected static final CancelledNotificationJsonCodec CANCEL_CODEC = new CancelledNotificationJsonCodec();
     protected final Transport transport;
     protected final ProgressManager progress;
     protected final Map<RequestId, CompletableFuture<JsonRpcMessage>> pending = new ConcurrentHashMap<>();
     private final Map<String, Function<JsonRpcRequest, JsonRpcMessage>> requests = new HashMap<>();
     private final Map<String, Consumer<JsonRpcNotification>> notifications = new HashMap<>();
     private final AtomicLong counter;
-
-    protected static final JsonRpcMessageJsonCodec CODEC = new JsonRpcMessageJsonCodec();
-    protected static final CancelledNotificationJsonCodec CANCEL_CODEC = new CancelledNotificationJsonCodec();
 
     protected JsonRpcEndpoint(Transport transport, ProgressManager progress, long initialId) {
         if (transport == null || progress == null) throw new IllegalArgumentException("transport and progress required");

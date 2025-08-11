@@ -13,12 +13,12 @@ import java.util.function.Consumer;
 
 /// - [Transports](specification/2025-06-18/basic/transports.mdx)
 public final class StdioTransport implements Transport {
+    private static final Duration WAIT = Duration.ofSeconds(
+            McpConfiguration.current().processWaitSeconds());
     private final BufferedReader in;
     private final BufferedWriter out;
     private final Process process;
     private final Thread logReader;
-    private static final Duration WAIT = Duration.ofSeconds(
-            McpConfiguration.current().processWaitSeconds());
 
     public StdioTransport(InputStream in, OutputStream out) {
         this.in = new BufferedReader(new InputStreamReader(in, StandardCharsets.UTF_8));
@@ -37,6 +37,14 @@ public final class StdioTransport implements Transport {
         this.logReader = new Thread(() -> readLogs(process.getErrorStream(), logSink));
         this.logReader.setDaemon(true);
         this.logReader.start();
+    }
+
+    private static void readLogs(InputStream err, Consumer<String> sink) {
+        try (BufferedReader r = new BufferedReader(new InputStreamReader(err, StandardCharsets.UTF_8))) {
+            String line;
+            while ((line = r.readLine()) != null) sink.accept(line);
+        } catch (IOException ignore) {
+        }
     }
 
     @Override
@@ -111,13 +119,5 @@ public final class StdioTransport implements Transport {
             }
         }
         if (ex != null) throw ex;
-    }
-
-    private static void readLogs(InputStream err, Consumer<String> sink) {
-        try (BufferedReader r = new BufferedReader(new InputStreamReader(err, StandardCharsets.UTF_8))) {
-            String line;
-            while ((line = r.readLine()) != null) sink.accept(line);
-        } catch (IOException ignore) {
-        }
     }
 }

@@ -25,13 +25,23 @@ import java.util.stream.Collectors;
 /// - [Sampling](specification/2025-06-18/client/sampling.mdx)
 /// - [Elicitation](specification/2025-06-18/client/elicitation.mdx)
 public final class McpClient extends JsonRpcEndpoint implements AutoCloseable {
+    private static final InitializeRequestAbstractEntityCodec INITIALIZE_REQUEST_CODEC = new InitializeRequestAbstractEntityCodec();
+    private static final JsonCodec<ResourceUpdatedNotification> RESOURCE_UPDATED_NOTIFICATION_JSON_CODEC = new ResourceUpdatedNotificationAbstractEntityCodec();
+    private static final JsonCodec<SubscribeRequest> SUBSCRIBE_REQUEST_JSON_CODEC = new SubscribeRequestAbstractEntityCodec();
+    private static final JsonCodec<UnsubscribeRequest> UNSUBSCRIBE_REQUEST_JSON_CODEC = new UnsubscribeRequestAbstractEntityCodec();
+    private static final JsonCodec<SetLevelRequest> SET_LEVEL_REQUEST_JSON_CODEC = new SetLevelRequestAbstractEntityCodec();
+    private static final CancelledNotificationJsonCodec CANCELLED_NOTIFICATION_JSON_CODEC = new CancelledNotificationJsonCodec();
+    private static final JsonCodec<LoggingMessageNotification> LOGGING_MESSAGE_NOTIFICATION_JSON_CODEC = new LoggingMessageNotificationAbstractEntityCodec();
+    private static final JsonCodec<ProgressNotification> PROGRESS_NOTIFICATION_JSON_CODEC = new ProgressNotificationJsonCodec();
     private final ClientInfo info;
     private final Set<ClientCapability> capabilities;
     private final SamplingProvider sampling;
     private final RootsProvider roots;
-    private ChangeSubscription rootsSubscription;
     private final boolean rootsListChangedSupported;
     private final ElicitationProvider elicitation;
+    private final McpClientListener listener;
+    private final Map<String, Consumer<ResourceUpdate>> resourceListeners = new ConcurrentHashMap<>();
+    private ChangeSubscription rootsSubscription;
     private SamplingAccessPolicy samplingAccess = SamplingAccessPolicy.PERMISSIVE;
     private Principal principal = new Principal(McpConfiguration.current().defaultPrincipal(), Set.of());
     private Thread reader;
@@ -45,33 +55,7 @@ public final class McpClient extends JsonRpcEndpoint implements AutoCloseable {
     private ServerFeatures serverFeatures = new ServerFeatures(false, false, false, false);
     private String protocolVersion;
     private ServerInfo serverInfo;
-    private final McpClientListener listener;
     private volatile ResourceMetadata resourceMetadata;
-    private final Map<String, Consumer<ResourceUpdate>> resourceListeners = new ConcurrentHashMap<>();
-
-    private static final InitializeRequestAbstractEntityCodec INITIALIZE_REQUEST_CODEC = new InitializeRequestAbstractEntityCodec();
-    private static final JsonCodec<ResourceUpdatedNotification> RESOURCE_UPDATED_NOTIFICATION_JSON_CODEC = new ResourceUpdatedNotificationAbstractEntityCodec();
-    private static final JsonCodec<SubscribeRequest> SUBSCRIBE_REQUEST_JSON_CODEC = new SubscribeRequestAbstractEntityCodec();
-    private static final JsonCodec<UnsubscribeRequest> UNSUBSCRIBE_REQUEST_JSON_CODEC = new UnsubscribeRequestAbstractEntityCodec();
-    private static final JsonCodec<SetLevelRequest> SET_LEVEL_REQUEST_JSON_CODEC = new SetLevelRequestAbstractEntityCodec();
-    private static final CancelledNotificationJsonCodec CANCELLED_NOTIFICATION_JSON_CODEC = new CancelledNotificationJsonCodec();
-    private static final JsonCodec<LoggingMessageNotification> LOGGING_MESSAGE_NOTIFICATION_JSON_CODEC = new LoggingMessageNotificationAbstractEntityCodec();
-    private static final JsonCodec<ProgressNotification> PROGRESS_NOTIFICATION_JSON_CODEC = new ProgressNotificationJsonCodec();
-
-    public void configurePing(long intervalMillis, long timeoutMillis) {
-        if (connected) throw new IllegalStateException("already connected");
-        if (intervalMillis < 0 || timeoutMillis <= 0) throw new IllegalArgumentException("invalid ping settings");
-        this.pingInterval = intervalMillis;
-        this.pingTimeout = timeoutMillis;
-    }
-
-    public void setSamplingAccessPolicy(SamplingAccessPolicy policy) {
-        samplingAccess = policy == null ? SamplingAccessPolicy.PERMISSIVE : policy;
-    }
-
-    public void setPrincipal(Principal principal) {
-        if (principal != null) this.principal = principal;
-    }
 
     McpClient(ClientInfo info,
               Set<ClientCapability> capabilities,
@@ -114,6 +98,21 @@ public final class McpClient extends JsonRpcEndpoint implements AutoCloseable {
         if (listener != null) {
             registerNotification(NotificationMethod.PROMPTS_LIST_CHANGED.method(), n -> listener.onPromptsListChanged());
         }
+    }
+
+    public void configurePing(long intervalMillis, long timeoutMillis) {
+        if (connected) throw new IllegalStateException("already connected");
+        if (intervalMillis < 0 || timeoutMillis <= 0) throw new IllegalArgumentException("invalid ping settings");
+        this.pingInterval = intervalMillis;
+        this.pingTimeout = timeoutMillis;
+    }
+
+    public void setSamplingAccessPolicy(SamplingAccessPolicy policy) {
+        samplingAccess = policy == null ? SamplingAccessPolicy.PERMISSIVE : policy;
+    }
+
+    public void setPrincipal(Principal principal) {
+        if (principal != null) this.principal = principal;
     }
 
     public ClientInfo info() {
@@ -259,7 +258,7 @@ public final class McpClient extends JsonRpcEndpoint implements AutoCloseable {
                 "resource",
                 r -> new Pagination.Page<>(r.resources(), r.nextCursor()),
                 ListResourcesResult::_meta,
-                Resource.CODEC,
+                new ResourceAbstractEntityCodec(),
                 (page, meta) -> new ListResourcesResult(page.items(), page.nextCursor(), meta)).fromJson(resp.result());
     }
 
@@ -276,7 +275,7 @@ public final class McpClient extends JsonRpcEndpoint implements AutoCloseable {
                 "resourceTemplate",
                 r -> new Pagination.Page<>(r.resourceTemplates(), r.nextCursor()),
                 ListResourceTemplatesResult::_meta,
-                ResourceTemplate.CODEC,
+                new ResourceTemplateAbstractEntityCodec(),
                 (page1, meta) -> new ListResourceTemplatesResult(page1.items(), page1.nextCursor(), meta)).fromJson(resp.result());
     }
 
@@ -557,7 +556,7 @@ public final class McpClient extends JsonRpcEndpoint implements AutoCloseable {
     private void handleResourcesListChanged(JsonRpcNotification note) {
         try {
             // TODO: understand and refactor this
-            ResourceListChangedNotification.CODEC.fromJson(note.params());
+            AbstractEntityCodec.empty(ResourceListChangedNotification::new).fromJson(note.params());
             listener.onResourceListChanged();
         } catch (IllegalArgumentException ignore) {
         }

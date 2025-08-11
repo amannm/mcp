@@ -23,37 +23,7 @@ import java.util.function.Consumer;
 /// - [Server](specification/2025-06-18/server/index.mdx)
 /// - [MCP server conformance test](src/test/resources/com/amannmalik/mcp/mcp_conformance.feature:6-34)
 public final class McpServer extends JsonRpcEndpoint implements AutoCloseable {
-    private final Set<ServerCapability> serverCapabilities;
-    private final ServerInfo serverInfo;
-    private final String instructions;
-    private final List<String> supportedVersions;
-    private String protocolVersion;
-    private LifecycleState lifecycleState = LifecycleState.INIT;
-    private Set<ClientCapability> clientCapabilities = Set.of();
-    private ClientFeatures clientFeatures = ClientFeatures.EMPTY;
-    private final ResourceOrchestrator resourceOrchestrator;
-    private final ToolProvider tools;
-    private final PromptProvider prompts;
-    private final CompletionProvider completions;
-    private final SamplingProvider sampling;
-    private ChangeSubscription toolListSubscription;
-    private ChangeSubscription promptsSubscription;
-    private final RootsManager rootsManager;
-    private final ToolAccessPolicy toolAccess;
-    private final SamplingAccessPolicy samplingAccess;
-    private final Principal principal;
-    private volatile LoggingLevel logLevel = LoggingLevel.INFO;
     private static final int RATE_LIMIT_CODE = McpConfiguration.current().rateLimit();
-    private final RateLimiter toolLimiter = new RateLimiter(
-            McpConfiguration.current().toolsPerSecond(),
-            McpConfiguration.current().rateLimiterWindowMs());
-    private final RateLimiter completionLimiter = new RateLimiter(
-            McpConfiguration.current().completionsPerSecond(),
-            McpConfiguration.current().rateLimiterWindowMs());
-    private final RateLimiter logLimiter = new RateLimiter(
-            McpConfiguration.current().logsPerSecond(),
-            McpConfiguration.current().rateLimiterWindowMs());
-
     private static final InitializeRequestAbstractEntityCodec INITIALIZE_REQUEST_CODEC = new InitializeRequestAbstractEntityCodec();
     private static final JsonCodec<LoggingMessageNotification> LOGGING_MESSAGE_NOTIFICATION_JSON_CODEC = new LoggingMessageNotificationAbstractEntityCodec();
     private static final CallToolRequestAbstractEntityCodec CALL_TOOL_REQUEST_CODEC = new CallToolRequestAbstractEntityCodec();
@@ -69,6 +39,35 @@ public final class McpServer extends JsonRpcEndpoint implements AutoCloseable {
                     ListPromptsResult::_meta,
                     new PromptAbstractEntityCodec(),
                     (page, meta) -> new ListPromptsResult(page.items(), page.nextCursor(), meta));
+    private final Set<ServerCapability> serverCapabilities;
+    private final ServerInfo serverInfo;
+    private final String instructions;
+    private final List<String> supportedVersions;
+    private final ResourceOrchestrator resourceOrchestrator;
+    private final ToolProvider tools;
+    private final PromptProvider prompts;
+    private final CompletionProvider completions;
+    private final SamplingProvider sampling;
+    private final RootsManager rootsManager;
+    private final ToolAccessPolicy toolAccess;
+    private final SamplingAccessPolicy samplingAccess;
+    private final Principal principal;
+    private final RateLimiter toolLimiter = new RateLimiter(
+            McpConfiguration.current().toolsPerSecond(),
+            McpConfiguration.current().rateLimiterWindowMs());
+    private final RateLimiter completionLimiter = new RateLimiter(
+            McpConfiguration.current().completionsPerSecond(),
+            McpConfiguration.current().rateLimiterWindowMs());
+    private final RateLimiter logLimiter = new RateLimiter(
+            McpConfiguration.current().logsPerSecond(),
+            McpConfiguration.current().rateLimiterWindowMs());
+    private String protocolVersion;
+    private LifecycleState lifecycleState = LifecycleState.INIT;
+    private Set<ClientCapability> clientCapabilities = Set.of();
+    private ClientFeatures clientFeatures = ClientFeatures.EMPTY;
+    private ChangeSubscription toolListSubscription;
+    private ChangeSubscription promptsSubscription;
+    private volatile LoggingLevel logLevel = LoggingLevel.INFO;
 
 
     public McpServer(ResourceProvider resources,
@@ -177,11 +176,6 @@ public final class McpServer extends JsonRpcEndpoint implements AutoCloseable {
         }
     }
 
-    @FunctionalInterface
-    private interface SubscriptionFactory<S extends ChangeSubscription> {
-        S subscribe(Consumer<Change> listener);
-    }
-
     public void serve() throws IOException {
         while (state() != LifecycleState.SHUTDOWN) {
             var obj = receiveMessage();
@@ -231,7 +225,6 @@ public final class McpServer extends JsonRpcEndpoint implements AutoCloseable {
             System.err.println("Failed to send error: " + ioe.getMessage());
         }
     }
-
 
     private InitializeResponse initialize(InitializeRequest request) {
         ensureState(LifecycleState.INIT);
@@ -288,7 +281,6 @@ public final class McpServer extends JsonRpcEndpoint implements AutoCloseable {
             throw new IllegalStateException("Invalid lifecycle state: " + lifecycleState);
         }
     }
-
 
     private JsonRpcMessage initialize(JsonRpcRequest req) {
         InitializeRequest init = INITIALIZE_REQUEST_CODEC.fromJson(req.params());
@@ -359,7 +351,6 @@ public final class McpServer extends JsonRpcEndpoint implements AutoCloseable {
         }
         return Optional.empty();
     }
-
 
     private Optional<String> rateLimit(RateLimiter limiter, String key) {
         try {
@@ -475,12 +466,11 @@ public final class McpServer extends JsonRpcEndpoint implements AutoCloseable {
         try {
             GetPromptRequest getRequest = ((JsonCodec<GetPromptRequest>) new GetPromptRequestAbstractEntityCodec()).fromJson(req.params());
             PromptInstance inst = prompts.get(getRequest.name(), getRequest.arguments());
-            return new JsonRpcResponse(req.id(), PromptInstance.CODEC.toJson(inst));
+            return new JsonRpcResponse(req.id(), new PromptInstanceAbstractEntityCodec().toJson(inst));
         } catch (IllegalArgumentException e) {
             return JsonRpcError.of(req.id(), JsonRpcErrorCode.INVALID_PARAMS, e.getMessage());
         }
     }
-
 
     private JsonRpcMessage setLogLevel(JsonRpcRequest req) {
         requireServerCapability(ServerCapability.LOGGING);
@@ -507,7 +497,6 @@ public final class McpServer extends JsonRpcEndpoint implements AutoCloseable {
     private void sendLog(LoggingLevel level, String logger, JsonValue data) throws IOException {
         sendLog(new LoggingMessageNotification(level, logger, data));
     }
-
 
     private JsonRpcMessage complete(JsonRpcRequest req) {
         if (!serverCapabilities().contains(ServerCapability.COMPLETIONS)) {
@@ -632,5 +621,10 @@ public final class McpServer extends JsonRpcEndpoint implements AutoCloseable {
         if (completions != null) completions.close();
         if (sampling != null) sampling.close();
         transport.close();
+    }
+
+    @FunctionalInterface
+    private interface SubscriptionFactory<S extends ChangeSubscription> {
+        S subscribe(Consumer<Change> listener);
     }
 }

@@ -36,6 +36,15 @@ public sealed interface RequestId permits RequestId.StringId, RequestId.NumericI
         };
     }
 
+    enum NullId implements RequestId {
+        INSTANCE;
+
+        @Override
+        public String toString() {
+            return "null";
+        }
+    }
+
     record StringId(String value) implements RequestId {
         @Override
         public String toString() {
@@ -47,15 +56,6 @@ public sealed interface RequestId permits RequestId.StringId, RequestId.NumericI
         @Override
         public String toString() {
             return Long.toString(value);
-        }
-    }
-
-    enum NullId implements RequestId {
-        INSTANCE;
-
-        @Override
-        public String toString() {
-            return "null";
         }
     }
 }

@@ -18,8 +18,6 @@ public record CreateMessageRequest(
         JsonObject _meta
 ) {
 
-    public enum IncludeContext {NONE, THIS_SERVER, ALL_SERVERS}
-
     public CreateMessageRequest {
         messages = messages == null || messages.isEmpty() ? List.of() : List.copyOf(messages);
         systemPrompt = ValidationUtil.cleanNullable(systemPrompt);
@@ -31,5 +29,7 @@ public record CreateMessageRequest(
         maxTokens = ValidationUtil.requirePositive(maxTokens, "maxTokens");
         ValidationUtil.requireMeta(_meta);
     }
+
+    public enum IncludeContext {NONE, THIS_SERVER, ALL_SERVERS}
 
 }

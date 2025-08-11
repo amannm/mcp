@@ -1,7 +1,6 @@
 package com.amannmalik.mcp.api;
 
-import com.amannmalik.mcp.codec.AbstractEntityCodec;
-import com.amannmalik.mcp.codec.JsonCodec;
+import com.amannmalik.mcp.codec.*;
 import com.amannmalik.mcp.util.Immutable;
 import com.amannmalik.mcp.util.ValidationUtil;
 import jakarta.json.JsonObject;
@@ -17,7 +16,7 @@ public record ListToolsResult(List<Tool> tools,
                     "tool",
                     r -> new Pagination.Page<>(r.tools(), r.nextCursor()),
                     ListToolsResult::_meta,
-                    Tool.CODEC,
+                    new ToolAbstractEntityCodec(),
                     (page, meta) -> new ListToolsResult(page.items(), page.nextCursor(), meta));
 
     public ListToolsResult {

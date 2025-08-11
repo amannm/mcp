@@ -4,7 +4,10 @@ import com.amannmalik.mcp.api.JsonRpcMessage;
 import jakarta.json.JsonValue;
 
 public record JsonRpcError(RequestId id, ErrorDetail error) implements JsonRpcMessage {
-    public record ErrorDetail(int code, String message, JsonValue data) {
+    public JsonRpcError {
+        if (id == null || error == null) {
+            throw new IllegalArgumentException("id and error are required");
+        }
     }
 
     public static JsonRpcError of(RequestId id, JsonRpcErrorCode code, String message) {
@@ -23,14 +26,11 @@ public record JsonRpcError(RequestId id, ErrorDetail error) implements JsonRpcMe
         return new JsonRpcError(id, new ErrorDetail(code, message, data));
     }
 
-    public JsonRpcError {
-        if (id == null || error == null) {
-            throw new IllegalArgumentException("id and error are required");
-        }
-    }
-
     @Override
     public String jsonrpc() {
         return JsonRpc.VERSION;
+    }
+
+    public record ErrorDetail(int code, String message, JsonValue data) {
     }
 }

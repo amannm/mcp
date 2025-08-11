@@ -19,12 +19,12 @@ public enum NotificationMethod implements JsonRpcMethod {
         this.method = method;
     }
 
-    public String method() {
-        return method;
-    }
-
     public static Optional<NotificationMethod> from(String method) {
         return JsonRpcMethod.from(NotificationMethod.class, method);
+    }
+
+    public String method() {
+        return method;
     }
 }
 

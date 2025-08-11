@@ -9,13 +9,28 @@ import java.util.*;
 import java.util.regex.Pattern;
 
 public final class ValidationUtil {
-    private ValidationUtil() {
-    }
-
     private static final Pattern LABEL =
             Pattern.compile("[A-Za-z](?:[A-Za-z0-9-]*[A-Za-z0-9])?");
     private static final Pattern NAME =
             Pattern.compile("(?:[A-Za-z0-9](?:[A-Za-z0-9._-]*[A-Za-z0-9])?)?");
+    private static final Set<String> STRING_KEYS = Set.of(
+            "type", "title", "description", "minLength", "maxLength", "format"
+    );
+    private static final Set<String> ENUM_KEYS = Set.of(
+            "type", "title", "description", "enum", "enumNames"
+    );
+    private static final Set<String> NUMBER_KEYS = Set.of(
+            "type", "title", "description", "minimum", "maximum"
+    );
+    private static final Set<String> BOOLEAN_KEYS = Set.of(
+            "type", "title", "description", "default"
+    );
+    private static final Set<String> ALLOWED_SCHEMA_KEYS = Set.of(
+            "type", "properties", "required"
+    );
+
+    private ValidationUtil() {
+    }
 
     public static boolean containsNonVisibleAscii(String value) {
         if (value == null) return true;
@@ -468,25 +483,6 @@ public final class ValidationUtil {
             throw new IllegalArgumentException(field + " must be integral");
         }
     }
-
-    private static final Set<String> STRING_KEYS = Set.of(
-            "type", "title", "description", "minLength", "maxLength", "format"
-    );
-
-    private static final Set<String> ENUM_KEYS = Set.of(
-            "type", "title", "description", "enum", "enumNames"
-    );
-
-    private static final Set<String> NUMBER_KEYS = Set.of(
-            "type", "title", "description", "minimum", "maximum"
-    );
-
-    private static final Set<String> BOOLEAN_KEYS = Set.of(
-            "type", "title", "description", "default"
-    );
-    private static final Set<String> ALLOWED_SCHEMA_KEYS = Set.of(
-            "type", "properties", "required"
-    );
 
     private static void requireAllowedKeys(JsonObject prop, Set<String> allowed, String name) {
         for (String key : prop.keySet()) {

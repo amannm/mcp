@@ -15,13 +15,12 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicReference;
 
 final class SseClients {
+    static final JsonCodec<JsonRpcMessage> CODEC = new JsonRpcMessageJsonCodec();
     final Set<SseClient> general = ConcurrentHashMap.newKeySet();
     final ConcurrentHashMap<String, SseClient> request = new ConcurrentHashMap<>();
     final ConcurrentHashMap<String, SseClient> byPrefix = new ConcurrentHashMap<>();
     final AtomicReference<SseClient> lastGeneral = new AtomicReference<>();
     final ConcurrentHashMap<String, BlockingQueue<JsonObject>> responses = new ConcurrentHashMap<>();
-
-    static final JsonCodec<JsonRpcMessage> CODEC = new JsonRpcMessageJsonCodec();
 
     void removeRequest(String key, SseClient client) {
         request.remove(key);

@@ -14,14 +14,10 @@ import java.util.concurrent.atomic.AtomicReference;
 /// - [Security Best Practices](specification/2025-06-18/basic/security_best_practices.mdx)
 final class SessionManager {
     private static final SecureRandom RANDOM = new SecureRandom();
-
-    private record SessionState(String id, String owner, Principal principal) {
-    }
-
     private final AtomicReference<SessionState> current = new AtomicReference<>();
     private final AtomicReference<String> lastSessionId = new AtomicReference<>();
-    private volatile String protocolVersion;
     private final String compatibilityVersion;
+    private volatile String protocolVersion;
 
     SessionManager(String compatibilityVersion) {
         this.compatibilityVersion = compatibilityVersion;
@@ -147,6 +143,9 @@ final class SessionManager {
             lastSessionId.set(null);
         }
         protocolVersion = compatibilityVersion;
+    }
+
+    private record SessionState(String id, String owner, Principal principal) {
     }
 }
 

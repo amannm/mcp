@@ -38,9 +38,6 @@ public final class JwtTokenValidator implements TokenValidator {
         return new Principal(subject, scopes);
     }
 
-    private record JwtParts(String headerJson, String payloadJson, String signature) {
-    }
-
     private JwtParts decode(String token) throws AuthorizationException {
         token = ValidationUtil.requireNonBlank(token);
         String[] parts = token.split("\\.");
@@ -125,5 +122,8 @@ public final class JwtTokenValidator implements TokenValidator {
     private Set<String> extractScopes(JsonObject payload) {
         var scopeStr = payload.getString("scope", null);
         return (scopeStr == null || scopeStr.isBlank()) ? Set.of() : Set.of(scopeStr.split(" "));
+    }
+
+    private record JwtParts(String headerJson, String payloadJson, String signature) {
     }
 }

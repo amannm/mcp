@@ -12,22 +12,23 @@ public enum JsonRpcErrorCode {
     LIFECYCLE_ERROR(0);
 
     private static final Map<Integer, JsonRpcErrorCode> BY_CODE;
-    private final int code;
-
-    JsonRpcErrorCode(int code) {
-        this.code = code;
-    }
 
     static {
         BY_CODE = Arrays.stream(values())
                 .collect(Collectors.toUnmodifiableMap(e -> e.code, e -> e));
     }
 
-    public int code() {
-        return code;
+    private final int code;
+
+    JsonRpcErrorCode(int code) {
+        this.code = code;
     }
 
     public static Optional<JsonRpcErrorCode> fromCode(int code) {
         return Optional.ofNullable(BY_CODE.get(code));
+    }
+
+    public int code() {
+        return code;
     }
 }

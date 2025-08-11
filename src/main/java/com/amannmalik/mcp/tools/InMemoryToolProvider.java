@@ -17,6 +17,26 @@ public final class InMemoryToolProvider extends InMemoryProvider<Tool> implement
         this.handlers = handlers == null ? new ConcurrentHashMap<>() : new ConcurrentHashMap<>(handlers);
     }
 
+    private static ToolResult withStructuredText(ToolResult result) {
+        if (hasStructuredText(result)) return result;
+        var b = Json.createArrayBuilder(result.content());
+        b.add(Json.createObjectBuilder()
+                .add("type", "text")
+                .add("text", result.structuredContent().toString())
+                .build());
+        return new ToolResult(b.build(), result.structuredContent(), result.isError(), result._meta());
+    }
+
+    private static boolean hasStructuredText(ToolResult result) {
+        String text = result.structuredContent().toString();
+        for (JsonValue v : result.content()) {
+            if (v.getValueType() != JsonValue.ValueType.OBJECT) continue;
+            JsonObject o = v.asJsonObject();
+            if ("text".equals(o.getString("type", null)) && text.equals(o.getString("text", null))) return true;
+        }
+        return false;
+    }
+
     @Override
     public Optional<Tool> find(String name) {
         if (name == null) throw new IllegalArgumentException("name required");
@@ -61,25 +81,5 @@ public final class InMemoryToolProvider extends InMemoryProvider<Tool> implement
         items.removeIf(t -> t.name().equals(name));
         handlers.remove(name);
         notifyListeners();
-    }
-
-    private static ToolResult withStructuredText(ToolResult result) {
-        if (hasStructuredText(result)) return result;
-        var b = Json.createArrayBuilder(result.content());
-        b.add(Json.createObjectBuilder()
-                .add("type", "text")
-                .add("text", result.structuredContent().toString())
-                .build());
-        return new ToolResult(b.build(), result.structuredContent(), result.isError(), result._meta());
-    }
-
-    private static boolean hasStructuredText(ToolResult result) {
-        String text = result.structuredContent().toString();
-        for (JsonValue v : result.content()) {
-            if (v.getValueType() != JsonValue.ValueType.OBJECT) continue;
-            JsonObject o = v.asJsonObject();
-            if ("text".equals(o.getString("type", null)) && text.equals(o.getString("text", null))) return true;
-        }
-        return false;
     }
 }

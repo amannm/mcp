@@ -140,9 +140,6 @@ public final class InteractiveSamplingProvider implements SamplingProvider {
         );
     }
 
-    private record AiResult(String content, String model) {
-    }
-
     private Optional<AiResult> openAiResponse(CreateMessageRequest request, long timeoutMillis) throws IOException, InterruptedException {
         String apiKey = System.getenv("OPENAI_API_KEY");
         if (apiKey == null || apiKey.isBlank()) return Optional.empty();
@@ -242,5 +239,8 @@ public final class InteractiveSamplingProvider implements SamplingProvider {
                     (lastUserMessage.length() > 50 ? lastUserMessage.substring(0, 50) + "..." : lastUserMessage) +
                     "\". I'm a simulated assistant and would be happy to help with information or guidance on this topic.";
         }
+    }
+
+    private record AiResult(String content, String model) {
     }
 }

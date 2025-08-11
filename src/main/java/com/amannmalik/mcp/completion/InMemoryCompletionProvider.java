@@ -18,6 +18,17 @@ public final class InMemoryCompletionProvider extends InMemoryProvider<Ref> impl
 
     private final List<Entry> entries = new CopyOnWriteArrayList<>();
 
+    private static boolean refEquals(Ref a, Ref b) {
+        if (a instanceof Ref.PromptRef(var aName, var _, var _) &&
+                b instanceof Ref.PromptRef(var bName, var _, var _)) {
+            return aName.equals(bName);
+        }
+        if (a instanceof Ref.ResourceRef(String aUri) && b instanceof Ref.ResourceRef(String bUri)) {
+            return aUri.equals(bUri);
+        }
+        return false;
+    }
+
     public void add(Ref ref,
                     String argumentName,
                     Map<String, String> context,
@@ -79,17 +90,6 @@ public final class InMemoryCompletionProvider extends InMemoryProvider<Ref> impl
         int total = unique.size();
         boolean hasMore = total > sorted.size();
         return new CompleteResult(new Completion(sorted, total, hasMore), null);
-    }
-
-    private static boolean refEquals(Ref a, Ref b) {
-        if (a instanceof Ref.PromptRef(var aName, var _, var _) &&
-                b instanceof Ref.PromptRef(var bName, var _, var _)) {
-            return aName.equals(bName);
-        }
-        if (a instanceof Ref.ResourceRef(String aUri) && b instanceof Ref.ResourceRef(String bUri)) {
-            return aUri.equals(bUri);
-        }
-        return false;
     }
 
     private record Entry(Ref ref, String argumentName, Map<String, String> context, List<String> values) {

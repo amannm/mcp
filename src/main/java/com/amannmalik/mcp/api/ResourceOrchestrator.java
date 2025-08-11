@@ -15,6 +15,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.*;
 
 final class ResourceOrchestrator implements AutoCloseable {
+    private static final JsonCodec<ResourceUpdatedNotification> RESOURCE_UPDATED_NOTIFICATION_JSON_CODEC = new ResourceUpdatedNotificationAbstractEntityCodec();
     private final ResourceProvider resources;
     private final ResourceAccessPolicy access;
     private final Principal principal;
@@ -24,8 +25,6 @@ final class ResourceOrchestrator implements AutoCloseable {
     private final ProgressManager progress;
     private final Map<String, ChangeSubscription> subscriptions = new ConcurrentHashMap<>();
     private final ChangeSubscription listSubscription;
-
-    static final JsonCodec<ResourceUpdatedNotification> RESOURCE_UPDATED_NOTIFICATION_JSON_CODEC = new ResourceUpdatedNotificationAbstractEntityCodec();
 
 
     public ResourceOrchestrator(ResourceProvider resources,
@@ -46,7 +45,7 @@ final class ResourceOrchestrator implements AutoCloseable {
                 subscribeListChanges(
                         resources::subscribe,
                         NotificationMethod.RESOURCES_LIST_CHANGED,
-                        ResourceListChangedNotification.CODEC.toJson(new ResourceListChangedNotification())) : null;
+                        AbstractEntityCodec.empty(ResourceListChangedNotification::new).toJson(new ResourceListChangedNotification())) : null;
     }
 
     public void register(JsonRpcEndpoint endpoint) {
@@ -113,7 +112,7 @@ final class ResourceOrchestrator implements AutoCloseable {
                     "resource",
                     r -> new Pagination.Page<>(r.resources(), r.nextCursor()),
                     ListResourcesResult::_meta,
-                    Resource.CODEC,
+                    new ResourceAbstractEntityCodec(),
                     (page, meta) -> new ListResourcesResult(page.items(), page.nextCursor(), meta)).toJson(result));
         } catch (IllegalArgumentException e) {
             return JsonRpcError.of(req.id(), JsonRpcErrorCode.INVALID_PARAMS, e.getMessage());
@@ -123,13 +122,13 @@ final class ResourceOrchestrator implements AutoCloseable {
     private JsonRpcMessage readResource(JsonRpcRequest req) {
         ReadResourceRequest rrr;
         try {
-            rrr = ReadResourceRequest.CODEC.fromJson(req.params());
+            rrr = ((JsonCodec<ReadResourceRequest>) new ReadResourceRequestAbstractEntityCodec()).fromJson(req.params());
         } catch (IllegalArgumentException e) {
             return JsonRpcError.of(req.id(), JsonRpcErrorCode.INVALID_PARAMS, e.getMessage());
         }
         return withExistingResource(req, rrr.uri(), block -> {
             ReadResourceResult result = new ReadResourceResult(List.of(block), null);
-            return new JsonRpcResponse(req.id(), ReadResourceResult.CODEC.toJson(result));
+            return new JsonRpcResponse(req.id(), new ReadResourceResultJsonCodec().toJson(result));
         });
     }
 
@@ -151,7 +150,7 @@ final class ResourceOrchestrator implements AutoCloseable {
                     "resourceTemplate",
                     r -> new Pagination.Page<>(r.resourceTemplates(), r.nextCursor()),
                     ListResourceTemplatesResult::_meta,
-                    ResourceTemplate.CODEC,
+                    new ResourceTemplateAbstractEntityCodec(),
                     (page1, meta) -> new ListResourceTemplatesResult(page1.items(), page1.nextCursor(), meta)).toJson(result));
         } catch (IllegalArgumentException e) {
             return JsonRpcError.of(req.id(), JsonRpcErrorCode.INVALID_PARAMS, e.getMessage());
@@ -161,7 +160,7 @@ final class ResourceOrchestrator implements AutoCloseable {
     private JsonRpcMessage subscribeResource(JsonRpcRequest req) {
         SubscribeRequest sr;
         try {
-            sr = SubscribeRequest.CODEC.fromJson(req.params());
+            sr = ((JsonCodec<SubscribeRequest>) new SubscribeRequestAbstractEntityCodec()).fromJson(req.params());
         } catch (IllegalArgumentException e) {
             return JsonRpcError.of(req.id(), JsonRpcErrorCode.INVALID_PARAMS, e.getMessage());
         }

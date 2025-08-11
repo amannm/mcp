@@ -8,7 +8,7 @@ import java.util.*;
 
 public final class InitializeResponseAbstractEntityCodec extends AbstractEntityCodec<InitializeResponse> {
 
-   private  static final JsonCodec<ServerInfo> SERVER_INFO_CODEC = new ServerInfoAbstractEntityCodec();
+    private static final JsonCodec<ServerInfo> SERVER_INFO_CODEC = new ServerInfoAbstractEntityCodec();
 
     @Override
     public JsonObject toJson(InitializeResponse resp) {

@@ -1,7 +1,5 @@
 package com.amannmalik.mcp.api;
 
-import com.amannmalik.mcp.codec.JsonCodec;
-import com.amannmalik.mcp.codec.ProgressNotificationJsonCodec;
 import com.amannmalik.mcp.util.ValidationUtil;
 import jakarta.json.JsonObject;
 import jakarta.json.JsonValue;
@@ -14,8 +12,18 @@ public record ProgressNotification(
         Double total,
         String message
 ) {
-    static final JsonCodec<ProgressNotification> CODEC = new ProgressNotificationJsonCodec();
 
+    public ProgressNotification {
+        if (token == null) throw new IllegalArgumentException("token is required");
+        progress = ValidationUtil.requireNonNegative(progress, "progress");
+        if (total != null) {
+            total = ValidationUtil.requirePositive(total, "total");
+            if (progress > total) {
+                throw new IllegalArgumentException("progress must not exceed total");
+            }
+        }
+        message = ValidationUtil.cleanNullable(message);
+    }
 
     public static Optional<ProgressToken> fromMeta(JsonObject params) {
         if (params == null || !params.containsKey("_meta")) return Optional.empty();
@@ -29,18 +37,6 @@ public record ProgressNotification(
             default -> throw new IllegalArgumentException("progressToken must be a string or number");
         };
         return Optional.of(token);
-    }
-
-    public ProgressNotification {
-        if (token == null) throw new IllegalArgumentException("token is required");
-        progress = ValidationUtil.requireNonNegative(progress, "progress");
-        if (total != null) {
-            total = ValidationUtil.requirePositive(total, "total");
-            if (progress > total) {
-                throw new IllegalArgumentException("progress must not exceed total");
-            }
-        }
-        message = ValidationUtil.cleanNullable(message);
     }
 
 }

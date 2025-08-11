@@ -8,11 +8,11 @@ import java.util.List;
 
 /// - [Pagination](specification/2025-06-18/server/utilities/pagination.mdx)
 public final class Pagination {
-    private Pagination() {
-    }
-
     public static final int DEFAULT_PAGE_SIZE =
             McpConfiguration.current().defaultPageSize();
+
+    private Pagination() {
+    }
 
     public static <T> Page<T> page(List<T> items, String cursor, int size) {
         int start = ValidationUtil.requireNonNegative(decode(cursor), "cursor");

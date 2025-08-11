@@ -20,6 +20,8 @@ import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 public final class McpHost implements AutoCloseable {
+    private static final CallToolRequestAbstractEntityCodec CALL_TOOL_REQUEST_CODEC = new CallToolRequestAbstractEntityCodec();
+    private static final JsonCodec<ToolResult> TOOL_RESULT_ABSTRACT_ENTITY_CODEC = new ToolResultAbstractEntityCodec();
     private final Map<String, McpClient> clients = new ConcurrentHashMap<>();
     private final Predicate<McpClient> policy;
     private final ConsentController consents;
@@ -27,16 +29,6 @@ public final class McpHost implements AutoCloseable {
     private final ToolAccessController toolAccess;
     private final ResourceAccessController privacyBoundary;
     private final SamplingAccessController samplingAccess;
-
-    private static final CallToolRequestAbstractEntityCodec CALL_TOOL_REQUEST_CODEC = new CallToolRequestAbstractEntityCodec();
-    private static final JsonCodec<ToolResult> TOOL_RESULT_ABSTRACT_ENTITY_CODEC = new ToolResultAbstractEntityCodec();
-
-    @Override
-    public void close() throws IOException {
-        for (String id : Set.copyOf(clients.keySet())) {
-            unregister(id);
-        }
-    }
 
     public McpHost(Map<String, String> clientSpecs, boolean verbose) throws IOException {
         Predicate<McpClient> policy = c -> true;
@@ -77,6 +69,45 @@ public final class McpHost implements AutoCloseable {
                     elicitationProvider,
                     listener);
             register(entry.getKey(), client);
+        }
+    }
+
+    private static Optional<ServerCapability> serverCapabilityForMethod(String method) {
+        return RequestMethod.from(method)
+                .flatMap(CapabilityRequirements::forMethod)
+                .or(() -> {
+                    if (method.startsWith("tools/")) return Optional.of(ServerCapability.TOOLS);
+                    if (method.startsWith("resources/")) return Optional.of(ServerCapability.RESOURCES);
+                    if (method.startsWith("prompts/")) return Optional.of(ServerCapability.PROMPTS);
+                    if (method.startsWith("completion/")) return Optional.of(ServerCapability.COMPLETIONS);
+                    if (method.startsWith("logging/")) return Optional.of(ServerCapability.LOGGING);
+                    return Optional.empty();
+                });
+    }
+
+    private static Optional<ClientCapability> clientCapabilityForMethod(String method) {
+        if (method.startsWith("roots/")) return Optional.of(ClientCapability.ROOTS);
+        if (method.startsWith("sampling/")) return Optional.of(ClientCapability.SAMPLING);
+        if (method.startsWith("elicitation/")) return Optional.of(ClientCapability.ELICITATION);
+        return Optional.empty();
+    }
+
+    private static void requireCapability(McpClient client, ServerCapability cap) {
+        if (!client.serverCapabilities().contains(cap)) {
+            throw new IllegalStateException("Server capability not supported: " + cap);
+        }
+    }
+
+    private static void requireCapability(McpClient client, ClientCapability cap) {
+        if (!client.capabilities().contains(cap)) {
+            throw new IllegalStateException("Client capability not supported: " + cap);
+        }
+    }
+
+    @Override
+    public void close() throws IOException {
+        for (String id : Set.copyOf(clients.keySet())) {
+            unregister(id);
         }
     }
 
@@ -208,38 +239,6 @@ public final class McpHost implements AutoCloseable {
         serverCapabilityForMethod(method).ifPresent(cap -> requireCapability(client, cap));
         clientCapabilityForMethod(method).ifPresent(cap -> requireCapability(client, cap));
         return client;
-    }
-
-    private static Optional<ServerCapability> serverCapabilityForMethod(String method) {
-        return RequestMethod.from(method)
-                .flatMap(CapabilityRequirements::forMethod)
-                .or(() -> {
-                    if (method.startsWith("tools/")) return Optional.of(ServerCapability.TOOLS);
-                    if (method.startsWith("resources/")) return Optional.of(ServerCapability.RESOURCES);
-                    if (method.startsWith("prompts/")) return Optional.of(ServerCapability.PROMPTS);
-                    if (method.startsWith("completion/")) return Optional.of(ServerCapability.COMPLETIONS);
-                    if (method.startsWith("logging/")) return Optional.of(ServerCapability.LOGGING);
-                    return Optional.empty();
-                });
-    }
-
-    private static Optional<ClientCapability> clientCapabilityForMethod(String method) {
-        if (method.startsWith("roots/")) return Optional.of(ClientCapability.ROOTS);
-        if (method.startsWith("sampling/")) return Optional.of(ClientCapability.SAMPLING);
-        if (method.startsWith("elicitation/")) return Optional.of(ClientCapability.ELICITATION);
-        return Optional.empty();
-    }
-
-    private static void requireCapability(McpClient client, ServerCapability cap) {
-        if (!client.serverCapabilities().contains(cap)) {
-            throw new IllegalStateException("Server capability not supported: " + cap);
-        }
-    }
-
-    private static void requireCapability(McpClient client, ClientCapability cap) {
-        if (!client.capabilities().contains(cap)) {
-            throw new IllegalStateException("Client capability not supported: " + cap);
-        }
     }
 
 }

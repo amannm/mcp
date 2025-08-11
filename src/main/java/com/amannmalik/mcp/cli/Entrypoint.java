@@ -7,6 +7,9 @@ import picocli.CommandLine.*;
 /// - [Overview](specification/2025-06-18/index.mdx)
 /// - [Architecture](specification/2025-06-18/architecture/index.mdx)
 public final class Entrypoint {
+    public Entrypoint() {
+    }
+
     public static void main(String[] args) {
         CommandSpec mainSpec = CommandSpec.create()
                 .name("mcp");
@@ -29,9 +32,6 @@ public final class Entrypoint {
             commandLine.getErr().println("ERROR: " + e.getMessage());
             System.exit(commandLine.getCommandSpec().exitCodeOnExecutionException());
         }
-    }
-
-    public Entrypoint() {
     }
 
     private static int execute(ParseResult parseResult) {

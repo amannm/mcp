@@ -21,6 +21,18 @@ final class McpServlet extends HttpServlet {
         this.transport = transport;
     }
 
+    private static MessageType classify(JsonObject obj) {
+        boolean hasMethod = obj.containsKey("method");
+        boolean hasId = obj.containsKey("id");
+        boolean isRequest = hasMethod && hasId;
+        boolean isNotification = hasMethod && !hasId;
+        boolean isResponse = !hasMethod && (obj.containsKey("result") || obj.containsKey("error"));
+        if (isRequest) return MessageType.REQUEST;
+        if (isNotification) return MessageType.NOTIFICATION;
+        if (isResponse) return MessageType.RESPONSE;
+        return MessageType.INVALID;
+    }
+
     @Override
     protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws IOException {
         var principalOpt = authorize(req, resp, true, true);
@@ -90,20 +102,6 @@ final class McpServlet extends HttpServlet {
         if (!transport.validateSession(req, resp, principalOpt.get(), false)) return;
         transport.terminateSession(true);
         resp.setStatus(HttpServletResponse.SC_OK);
-    }
-
-    private enum MessageType {REQUEST, NOTIFICATION, RESPONSE, INVALID}
-
-    private static MessageType classify(JsonObject obj) {
-        boolean hasMethod = obj.containsKey("method");
-        boolean hasId = obj.containsKey("id");
-        boolean isRequest = hasMethod && hasId;
-        boolean isNotification = hasMethod && !hasId;
-        boolean isResponse = !hasMethod && (obj.containsKey("result") || obj.containsKey("error"));
-        if (isRequest) return MessageType.REQUEST;
-        if (isNotification) return MessageType.NOTIFICATION;
-        if (isResponse) return MessageType.RESPONSE;
-        return MessageType.INVALID;
     }
 
     private Optional<Principal> authorize(HttpServletRequest req,
@@ -196,5 +194,7 @@ final class McpServlet extends HttpServlet {
             resp.sendError(HttpServletResponse.SC_SERVICE_UNAVAILABLE);
         }
     }
+
+    private enum MessageType {REQUEST, NOTIFICATION, RESPONSE, INVALID}
 }
 

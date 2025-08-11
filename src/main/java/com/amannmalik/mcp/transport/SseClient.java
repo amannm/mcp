@@ -16,12 +16,11 @@ public final class SseClient implements AutoCloseable {
     private static final SecureRandom RANDOM = new SecureRandom();
     private static final int HISTORY_LIMIT =
             McpConfiguration.current().sseHistoryLimit();
-
-    private AsyncContext context;
-    private PrintWriter out;
     final String prefix;
     private final Deque<SseEvent> history = new ArrayDeque<>();
     private final AtomicLong nextId = new AtomicLong(1);
+    private AsyncContext context;
+    private PrintWriter out;
     private volatile boolean closed;
 
     public SseClient(AsyncContext context) throws IOException {

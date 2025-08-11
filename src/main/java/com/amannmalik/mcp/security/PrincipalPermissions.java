@@ -7,6 +7,10 @@ import java.util.concurrent.ConcurrentHashMap;
 final class PrincipalPermissions<T> {
     private final Map<String, Set<T>> map = new ConcurrentHashMap<>();
 
+    private static void requirePrincipal(String id) {
+        if (id == null || id.isBlank()) throw new IllegalArgumentException("principalId required");
+    }
+
     public void grant(String principalId, T permission) {
         requirePrincipal(principalId);
         if (permission == null) throw new IllegalArgumentException("permission required");
@@ -32,10 +36,6 @@ final class PrincipalPermissions<T> {
         if (!contains(principalId, permission)) {
             throw new SecurityException(message);
         }
-    }
-
-    private static void requirePrincipal(String id) {
-        if (id == null || id.isBlank()) throw new IllegalArgumentException("principalId required");
     }
 }
 

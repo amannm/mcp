@@ -26,11 +26,11 @@ public enum RequestMethod implements JsonRpcMethod {
         this.method = method;
     }
 
-    public String method() {
-        return method;
-    }
-
     public static Optional<RequestMethod> from(String method) {
         return JsonRpcMethod.from(RequestMethod.class, method);
+    }
+
+    public String method() {
+        return method;
     }
 }

@@ -6,6 +6,47 @@ import jakarta.json.*;
 
 public class JsonRpcMessageJsonCodec implements JsonCodec<JsonRpcMessage> {
 
+    static void validateVersion(JsonObject obj) {
+        var version = obj.getString("jsonrpc", null);
+        if (!JsonRpc.VERSION.equals(version)) throw new IllegalArgumentException("Unsupported jsonrpc version: " + version);
+    }
+
+    static JsonObject params(JsonValue value) {
+        if (value == null) return null;
+        if (value.getValueType() != JsonValue.ValueType.OBJECT) throw new IllegalArgumentException("params must be an object");
+        return value.asJsonObject();
+    }
+
+    static JsonObject result(JsonValue value) {
+        if (value == null || value.getValueType() != JsonValue.ValueType.OBJECT) throw new IllegalArgumentException("result must be an object");
+        return value.asJsonObject();
+    }
+
+    static JsonRpcKind kind(String method, JsonValue idValue, boolean hasResult, boolean hasError) {
+        if (hasResult && hasError) throw new IllegalArgumentException("response cannot contain both result and error");
+        if (method != null) {
+            if (idValue != null && idValue.getValueType() != JsonValue.ValueType.NULL) return JsonRpcKind.REQUEST;
+            return JsonRpcKind.NOTIFICATION;
+        }
+        if (hasResult) return JsonRpcKind.RESPONSE;
+        if (hasError) return JsonRpcKind.ERROR;
+        throw new IllegalArgumentException("Unknown message type");
+    }
+
+    static RequestId requestId(JsonValue value) {
+        if (value == null || value.getValueType() == JsonValue.ValueType.NULL) throw new IllegalArgumentException("id is required for response");
+        return RequestId.from(value);
+    }
+
+    static RequestId optionalId(JsonValue value) {
+        if (value == null || value.getValueType() == JsonValue.ValueType.NULL) return RequestId.NullId.INSTANCE;
+        return RequestId.from(value);
+    }
+
+    static JsonRpcError.ErrorDetail errorDetail(JsonObject obj) {
+        return new JsonRpcError.ErrorDetail(obj.getInt("code"), obj.getString("message"), obj.get("data"));
+    }
+
     @Override
     public JsonObject toJson(JsonRpcMessage msg) {
         var builder = Json.createObjectBuilder().add("jsonrpc", JsonRpc.VERSION);
@@ -52,47 +93,6 @@ public class JsonRpcMessageJsonCodec implements JsonCodec<JsonRpcMessage> {
             case RESPONSE -> new JsonRpcResponse(requestId(idValue), result(obj.get("result")));
             case ERROR -> new JsonRpcError(optionalId(idValue), errorDetail(obj.getJsonObject("error")));
         };
-    }
-
-    static void validateVersion(JsonObject obj) {
-        var version = obj.getString("jsonrpc", null);
-        if (!JsonRpc.VERSION.equals(version)) throw new IllegalArgumentException("Unsupported jsonrpc version: " + version);
-    }
-
-    static JsonObject params(JsonValue value) {
-        if (value == null) return null;
-        if (value.getValueType() != JsonValue.ValueType.OBJECT) throw new IllegalArgumentException("params must be an object");
-        return value.asJsonObject();
-    }
-
-    static JsonObject result(JsonValue value) {
-        if (value == null || value.getValueType() != JsonValue.ValueType.OBJECT) throw new IllegalArgumentException("result must be an object");
-        return value.asJsonObject();
-    }
-
-    static JsonRpcKind kind(String method, JsonValue idValue, boolean hasResult, boolean hasError) {
-        if (hasResult && hasError) throw new IllegalArgumentException("response cannot contain both result and error");
-        if (method != null) {
-            if (idValue != null && idValue.getValueType() != JsonValue.ValueType.NULL) return JsonRpcKind.REQUEST;
-            return JsonRpcKind.NOTIFICATION;
-        }
-        if (hasResult) return JsonRpcKind.RESPONSE;
-        if (hasError) return JsonRpcKind.ERROR;
-        throw new IllegalArgumentException("Unknown message type");
-    }
-
-    static RequestId requestId(JsonValue value) {
-        if (value == null || value.getValueType() == JsonValue.ValueType.NULL) throw new IllegalArgumentException("id is required for response");
-        return RequestId.from(value);
-    }
-
-    static RequestId optionalId(JsonValue value) {
-        if (value == null || value.getValueType() == JsonValue.ValueType.NULL) return RequestId.NullId.INSTANCE;
-        return RequestId.from(value);
-    }
-
-    static JsonRpcError.ErrorDetail errorDetail(JsonObject obj) {
-        return new JsonRpcError.ErrorDetail(obj.getInt("code"), obj.getString("message"), obj.get("data"));
     }
 
 }
