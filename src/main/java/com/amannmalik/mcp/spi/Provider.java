@@ -5,7 +5,7 @@ import com.amannmalik.mcp.core.InMemoryProvider;
 
 import java.util.Optional;
 
-public sealed interface Provider<T> extends AutoCloseable permits InMemoryProvider, PromptProvider, ResourceProvider, RootsProvider, ExecutingProvider {
+public sealed interface Provider<T> extends AutoCloseable permits InMemoryProvider, NamedProvider, RootsProvider, ExecutingProvider {
 
     Pagination.Page<T> list(Cursor cursor);
 

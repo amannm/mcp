@@ -17,10 +17,16 @@ final class SessionManager {
     private final AtomicReference<SessionState> current = new AtomicReference<>();
     private final AtomicReference<String> lastSessionId = new AtomicReference<>();
     private final String compatibilityVersion;
+    private final TransportConfiguration.SessionConfig sessionConfig;
     private volatile String protocolVersion;
 
     SessionManager(String compatibilityVersion) {
+        this(compatibilityVersion, TransportConfiguration.SessionConfig.defaultConfig());
+    }
+
+    SessionManager(String compatibilityVersion, TransportConfiguration.SessionConfig sessionConfig) {
         this.compatibilityVersion = compatibilityVersion;
+        this.sessionConfig = sessionConfig;
         this.protocolVersion = compatibilityVersion;
     }
 
@@ -81,7 +87,7 @@ final class SessionManager {
     private boolean createSession(HttpServletRequest req,
                                   HttpServletResponse resp,
                                   Principal principal) {
-        byte[] bytes = new byte[32];
+        byte[] bytes = new byte[sessionConfig.sessionIdByteLength()];
         RANDOM.nextBytes(bytes);
         String id = Base64Util.encodeUrl(bytes);
         current.set(new SessionState(id, req.getRemoteAddr(), principal));

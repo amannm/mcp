@@ -84,7 +84,7 @@ final class McpServlet extends HttpServlet {
         }
         SseClient client;
         if (found == null) {
-            client = new SseClient(ac);
+            client = new SseClient(ac, transport.transportConfig.sse());
             transport.clients.byPrefix.put(client.prefix, client);
         } else {
             client = found;
@@ -154,7 +154,8 @@ final class McpServlet extends HttpServlet {
         transport.clients.responses.put(id, q);
         try {
             transport.incoming.put(obj);
-            JsonObject response = q.poll(30, TimeUnit.SECONDS);
+            long timeoutSeconds = transport.transportConfig.session().initializeRequestTimeout().toSeconds();
+            JsonObject response = q.poll(timeoutSeconds, TimeUnit.SECONDS);
             if (response == null) {
                 resp.sendError(HttpServletResponse.SC_REQUEST_TIMEOUT);
                 return;
@@ -181,7 +182,7 @@ final class McpServlet extends HttpServlet {
                                      HttpServletRequest req,
                                      HttpServletResponse resp) throws IOException {
         AsyncContext ac = initSse(req, resp);
-        SseClient client = new SseClient(ac);
+        SseClient client = new SseClient(ac, transport.transportConfig.sse());
         String key = obj.get("id").toString();
         transport.clients.request.put(key, client);
         transport.clients.byPrefix.put(client.prefix, client);
