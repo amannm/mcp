@@ -20,16 +20,16 @@ public record McpClientConfiguration(
         // Transport configuration
         String commandSpec,
 
-        Long timeoutMs,
-        Long pingTimeoutMs,
-        Integer progressPerSecond,
-        Long rateLimiterWindowMs,
+        long timeoutMs,
+        long pingTimeoutMs,
+        int progressPerSecond,
+        long rateLimiterWindowMs,
 
         // Client-specific behavior
         boolean verbose,
         boolean interactiveSampling,
         List<String> rootDirectories,
-        Long pingIntervalMs,
+        long pingIntervalMs,
         SamplingAccessPolicy samplingAccessPolicy,
         String principal
 ) {
@@ -37,15 +37,15 @@ public record McpClientConfiguration(
     public McpClientConfiguration {
         clientCapabilities = Set.copyOf(clientCapabilities);
         rootDirectories = List.copyOf(rootDirectories);
-        if (timeoutMs == null || timeoutMs <= 0)
+        if (timeoutMs <= 0)
             throw new IllegalArgumentException("Invalid timeout configuration");
-        if (pingTimeoutMs == null || pingTimeoutMs <= 0)
+        if (pingTimeoutMs <= 0)
             throw new IllegalArgumentException("Invalid ping timeout configuration");
-        if (progressPerSecond == null || progressPerSecond < 0)
+        if (progressPerSecond < 0)
             throw new IllegalArgumentException("Invalid progress rate configuration");
-        if (rateLimiterWindowMs == null || rateLimiterWindowMs <= 0)
+        if (rateLimiterWindowMs <= 0)
             throw new IllegalArgumentException("Invalid rate limiter window");
-        if (pingIntervalMs == null || pingIntervalMs < 0)
+        if (pingIntervalMs < 0)
             throw new IllegalArgumentException("Invalid ping interval configuration");
         if (samplingAccessPolicy == null)
             throw new IllegalArgumentException("Invalid sampling access configuration");
