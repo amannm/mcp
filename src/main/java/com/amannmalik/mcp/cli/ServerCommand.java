@@ -2,7 +2,7 @@ package com.amannmalik.mcp.cli;
 
 import com.amannmalik.mcp.api.McpServer;
 import com.amannmalik.mcp.api.Transport;
-import com.amannmalik.mcp.config.CliDefaults;
+import com.amannmalik.mcp.config.ServerDefaults;
 import com.amannmalik.mcp.config.McpConfiguration;
 import com.amannmalik.mcp.transport.TransportFactory;
 import picocli.CommandLine;
@@ -74,15 +74,15 @@ public final class ServerCommand {
             boolean testMode = parseResult.matchedOptionValue("--test-mode", false);
             Transport transport = TransportFactory.createTransport(httpPort, stdio, expectedAudience, resourceMetadataUrl, authServers, testMode, verbose);
             String instructions = instructionsFile == null ? null : Files.readString(instructionsFile);
-            try (McpServer server = new McpServer(CliDefaults.resources(),
-                    CliDefaults.tools(),
-                    CliDefaults.prompts(),
-                    CliDefaults.completions(),
-                    CliDefaults.sampling(),
-                    CliDefaults.privacyBoundary(McpConfiguration.current().defaultBoundary()),
-                    CliDefaults.toolAccess(),
-                    CliDefaults.samplingAccess(),
-                    CliDefaults.principal(),
+            try (McpServer server = new McpServer(ServerDefaults.resources(),
+                    ServerDefaults.tools(),
+                    ServerDefaults.prompts(),
+                    ServerDefaults.completions(),
+                    ServerDefaults.sampling(),
+                    ServerDefaults.privacyBoundary(McpConfiguration.current().defaultBoundary()),
+                    ServerDefaults.toolAccess(),
+                    ServerDefaults.samplingAccess(),
+                    ServerDefaults.principal(),
                     instructions,
                     transport)) {
                 server.serve();

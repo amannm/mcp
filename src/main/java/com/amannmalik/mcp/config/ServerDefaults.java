@@ -12,7 +12,7 @@ import jakarta.json.Json;
 import java.time.Instant;
 import java.util.*;
 
-public final class CliDefaults {
+public final class ServerDefaults {
     private static final ResourceProvider RESOURCES;
     private static final ToolProvider TOOLS;
     private static final PromptProvider PROMPTS;
@@ -109,7 +109,7 @@ public final class CliDefaults {
         SAMPLING = new InteractiveSamplingProvider(true);
     }
 
-    private CliDefaults() {
+    private ServerDefaults() {
     }
 
     public static ResourceProvider resources() {
