@@ -46,11 +46,23 @@ public record McpServerConfiguration(
 
         // Default principal for server operations
         String defaultPrincipal,
-        String defaultBoundary
+        String defaultBoundary,
+
+        // Transport configuration
+        String transportType,
+        int serverPort,
+        List<String> allowedOrigins,
+        String expectedAudience,
+        String resourceMetadataUrl,
+        List<String> authServers,
+        boolean insecure,
+        boolean verbose
 ) {
 
     public McpServerConfiguration {
         supportedVersions = List.copyOf(supportedVersions);
+        allowedOrigins = List.copyOf(allowedOrigins);
+        authServers = List.copyOf(authServers);
         if (supportedVersions.isEmpty())
             throw new IllegalArgumentException("Supported versions required");
         if (defaultTimeoutMs <= 0 || initialRequestId < 0)
@@ -63,6 +75,8 @@ public record McpServerConfiguration(
             throw new IllegalArgumentException("Rate limit error code must be negative");
         if (initialLogLevel == null || toolAccessPolicy == null || samplingAccessPolicy == null)
             throw new IllegalArgumentException("Invalid policy configuration");
+        if (serverPort < 0 || serverPort > 65_535)
+            throw new IllegalArgumentException("Invalid port number");
     }
 
     public static McpServerConfiguration defaultConfiguration() {
@@ -94,7 +108,63 @@ public record McpServerConfiguration(
                 ToolAccessPolicy.PERMISSIVE,
                 SamplingAccessPolicy.PERMISSIVE,
                 "default",
-                "default"
+                "default",
+                "stdio",
+                3000,
+                List.of("http://localhost", "http://127.0.0.1"),
+                null,
+                null,
+                List.of(),
+                false,
+                false
+        );
+    }
+
+    public McpServerConfiguration withTransport(String transportType,
+                                                int serverPort,
+                                                List<String> allowedOrigins,
+                                                String expectedAudience,
+                                                String resourceMetadataUrl,
+                                                List<String> authServers,
+                                                boolean insecure,
+                                                boolean verbose) {
+        return new McpServerConfiguration(
+                version,
+                compatibilityVersion,
+                defaultTimeoutMs,
+                initialRequestId,
+                supportedVersions,
+                toolsPerSecond,
+                completionsPerSecond,
+                logsPerSecond,
+                progressPerSecond,
+                rateLimiterWindowMs,
+                rateLimitErrorCode,
+                serverName,
+                serverDescription,
+                serverVersion,
+                errorProcessing,
+                errorNotInitialized,
+                errorParse,
+                errorInvalidRequest,
+                errorAccessDenied,
+                errorTimeout,
+                serverLoggerName,
+                parserLoggerName,
+                cancellationLoggerName,
+                initialLogLevel,
+                toolAccessPolicy,
+                samplingAccessPolicy,
+                defaultPrincipal,
+                defaultBoundary,
+                transportType,
+                serverPort,
+                allowedOrigins,
+                expectedAudience,
+                resourceMetadataUrl,
+                authServers,
+                insecure,
+                verbose
         );
     }
 }

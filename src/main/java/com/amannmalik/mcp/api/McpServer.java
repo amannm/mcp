@@ -1,16 +1,22 @@
 package com.amannmalik.mcp.api;
 
+import com.amannmalik.mcp.auth.AuthorizationManager;
+import com.amannmalik.mcp.auth.BearerTokenAuthorizationStrategy;
+import com.amannmalik.mcp.auth.JwtTokenValidator;
 import com.amannmalik.mcp.codec.*;
 import com.amannmalik.mcp.core.*;
 import com.amannmalik.mcp.jsonrpc.*;
 import com.amannmalik.mcp.prompts.*;
 import com.amannmalik.mcp.roots.RootsManager;
 import com.amannmalik.mcp.spi.*;
+import com.amannmalik.mcp.transport.StdioTransport;
+import com.amannmalik.mcp.transport.StreamableHttpServerTransport;
 import com.amannmalik.mcp.util.*;
 import jakarta.json.*;
 import jakarta.json.stream.JsonParsingException;
 
 import java.io.*;
+import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
@@ -82,9 +88,8 @@ public final class McpServer extends JsonRpcEndpoint implements AutoCloseable {
                      // This can be used by clients to improve the LLM's understanding of available tools, resources, etc.
                      // It can be thought of like a "hint" to the model.
                      // For example, this information MAY be added to the system prompt.
-                     String instructions,
-                     Transport transport) {
-        super(transport,
+                     String instructions) throws Exception {
+        super(createTransport(config),
                 new ProgressManager(new RateLimiter(config.progressPerSecond(),
                         config.rateLimiterWindowMs())),
                 config.initialRequestId());
@@ -167,6 +172,35 @@ public final class McpServer extends JsonRpcEndpoint implements AutoCloseable {
         }
 
         registerRequest(RequestMethod.SAMPLING_CREATE_MESSAGE.method(), this::handleCreateMessage);
+    }
+
+    private static Transport createTransport(McpServerConfiguration config) throws Exception {
+        return switch (config.transportType()) {
+            case "stdio" -> new StdioTransport(System.in, System.out);
+            case "http" -> {
+                List<String> auth = config.insecure() ? List.of() : config.authServers();
+                if (!config.insecure() && auth.isEmpty()) {
+                    throw new IllegalArgumentException("auth server must be specified");
+                }
+                AuthorizationManager authManager = null;
+                if (config.expectedAudience() != null && !config.expectedAudience().isBlank()) {
+                    String secretEnv = System.getenv("MCP_JWT_SECRET");
+                    JwtTokenValidator tokenValidator = secretEnv == null || secretEnv.isBlank()
+                            ? new JwtTokenValidator(config.expectedAudience())
+                            : new JwtTokenValidator(config.expectedAudience(), secretEnv.getBytes(StandardCharsets.UTF_8));
+                    authManager = new AuthorizationManager(List.of(new BearerTokenAuthorizationStrategy(tokenValidator)));
+                }
+                StreamableHttpServerTransport ht = new StreamableHttpServerTransport(
+                        config.serverPort(),
+                        Set.copyOf(config.allowedOrigins()),
+                        authManager,
+                        config.resourceMetadataUrl(),
+                        auth);
+                if (config.verbose()) System.err.println("Listening on http://127.0.0.1:" + ht.port());
+                yield ht;
+            }
+            default -> throw new IllegalArgumentException("Unknown transport type: " + config.transportType());
+        };
     }
 
     private <S extends AutoCloseable> S subscribeListChanges(

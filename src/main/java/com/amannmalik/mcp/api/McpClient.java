@@ -6,6 +6,7 @@ import com.amannmalik.mcp.jsonrpc.*;
 import com.amannmalik.mcp.resources.ResourceListChangedNotification;
 import com.amannmalik.mcp.spi.*;
 import com.amannmalik.mcp.transport.Protocol;
+import com.amannmalik.mcp.transport.StdioTransport;
 import com.amannmalik.mcp.util.*;
 import jakarta.json.*;
 
@@ -56,12 +57,12 @@ final class McpClient extends JsonRpcEndpoint implements AutoCloseable {
     private volatile ResourceMetadata resourceMetadata;
 
     McpClient(McpClientConfiguration config,
-              Transport transport,
+              boolean globalVerbose,
               SamplingProvider sampling,
               RootsProvider roots,
               ElicitationProvider elicitation,
-              McpClientListener listener) {
-        super(transport,
+              McpClientListener listener) throws IOException {
+        super(createTransport(config, globalVerbose),
                 new ProgressManager(new RateLimiter(
                         config.progressPerSecond(),
                         config.rateLimiterWindowMs())),
@@ -100,6 +101,17 @@ final class McpClient extends JsonRpcEndpoint implements AutoCloseable {
         if (listener != null) {
             registerNotification(NotificationMethod.PROMPTS_LIST_CHANGED.method(), n -> listener.onPromptsListChanged());
         }
+    }
+
+    private static Transport createTransport(McpClientConfiguration config,
+                                             boolean globalVerbose) throws IOException {
+        String spec = config.commandSpec();
+        String[] cmds = spec == null || spec.isBlank() ? new String[0] : spec.split(" ");
+        boolean verbose = config.verbose() || globalVerbose;
+        return cmds.length == 0
+                ? new StdioTransport(System.in, System.out)
+                : new StdioTransport(cmds, verbose ? System.err::println : s -> {
+        });
     }
 
     public void configurePing(long intervalMillis, long timeoutMillis) {

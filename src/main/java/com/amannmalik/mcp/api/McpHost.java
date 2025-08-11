@@ -44,10 +44,7 @@ public final class McpHost implements AutoCloseable {
         this.samplingAccess = new SamplingAccessController();
         for (McpClientConfiguration clientConfig : config.clientConfigurations()) {
             grantConsent(clientConfig.clientId());
-            Transport transport = TransportFactory.createStdioTransport(
-                    clientConfig.commandSpec().split(" "), 
-                    clientConfig.verbose() || config.globalVerbose());
-            
+
             SamplingProvider samplingProvider = new InteractiveSamplingProvider(clientConfig.interactiveSampling());
             
             // Create roots from configured directories
@@ -73,7 +70,7 @@ public final class McpHost implements AutoCloseable {
             
             McpClient client = new McpClient(
                     clientConfig,
-                    transport,
+                    config.globalVerbose(),
                     samplingProvider,
                     rootsProvider,
                     elicitationProvider,
