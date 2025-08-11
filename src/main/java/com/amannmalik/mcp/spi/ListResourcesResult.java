@@ -8,9 +8,14 @@ import java.util.List;
 
 public record ListResourcesResult(List<Resource> resources,
                                   String nextCursor,
-                                  JsonObject _meta) {
+                                  JsonObject _meta) implements PaginatedResult<Resource> {
     public ListResourcesResult {
         resources = Immutable.list(resources);
         ValidationUtil.requireMeta(_meta);
+    }
+
+    @Override
+    public List<Resource> items() {
+        return resources;
     }
 }
