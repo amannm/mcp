@@ -2,7 +2,9 @@ package com.amannmalik.mcp.api;
 
 import com.amannmalik.mcp.util.ValidationUtil;
 
-public sealed interface ProgressToken permits ProgressToken.StringToken, ProgressToken.NumericToken {
+public sealed interface ProgressToken permits
+        ProgressToken.StringToken,
+        ProgressToken.NumericToken {
     String asString();
 
     record StringToken(String value) implements ProgressToken {

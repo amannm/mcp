@@ -2,7 +2,10 @@ package com.amannmalik.mcp.api;
 
 import jakarta.json.*;
 
-public sealed interface RequestId permits RequestId.StringId, RequestId.NumericId, RequestId.NullId {
+public sealed interface RequestId permits
+        RequestId.StringId,
+        RequestId.NumericId,
+        RequestId.NullId {
 
     static RequestId parse(String raw) {
         if (raw == null) throw new IllegalArgumentException("raw required");
