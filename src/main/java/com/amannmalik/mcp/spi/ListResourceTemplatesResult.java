@@ -1,16 +1,20 @@
 package com.amannmalik.mcp.spi;
 
-import com.amannmalik.mcp.util.Immutable;
-import com.amannmalik.mcp.util.ValidationUtil;
 import jakarta.json.JsonObject;
 
 import java.util.List;
 
 public record ListResourceTemplatesResult(List<ResourceTemplate> resourceTemplates,
                                           String nextCursor,
-                                          JsonObject _meta) {
+                                          JsonObject _meta)
+        implements PaginatedResult<ResourceTemplate> {
     public ListResourceTemplatesResult {
-        resourceTemplates = Immutable.list(resourceTemplates);
-        ValidationUtil.requireMeta(_meta);
+        resourceTemplates = PaginatedResult.items(resourceTemplates);
+        _meta = PaginatedResult.meta(_meta);
+    }
+
+    @Override
+    public List<ResourceTemplate> items() {
+        return resourceTemplates;
     }
 }
