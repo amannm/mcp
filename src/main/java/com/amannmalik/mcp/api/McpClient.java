@@ -9,7 +9,8 @@ import com.amannmalik.mcp.transport.Protocol;
 import com.amannmalik.mcp.util.*;
 import jakarta.json.*;
 
-import java.io.*;
+import java.io.IOException;
+import java.io.InputStream;
 import java.net.URI;
 import java.net.http.*;
 import java.util.*;
@@ -46,7 +47,7 @@ final class McpClient extends JsonRpcEndpoint implements AutoCloseable {
     private int pingFailures;
     private long pingInterval;
     private long pingTimeout;
-    private long initializationTimeout;
+    private final long initializationTimeout;
     private volatile boolean connected;
     private Set<ServerCapability> serverCapabilities = Set.of();
     private String instructions;
@@ -357,7 +358,7 @@ final class McpClient extends JsonRpcEndpoint implements AutoCloseable {
                 transport.close();
             } catch (IOException ignore) {
             }
-            throw new IOException("Initialization timed out after " +initializationTimeout + " ms");
+            throw new IOException("Initialization timed out after " + initializationTimeout + " ms");
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             throw new IOException(e);

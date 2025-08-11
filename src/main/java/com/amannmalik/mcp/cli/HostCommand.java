@@ -56,16 +56,16 @@ public final class HostCommand {
                 if (parts.length < 2) {
                     throw new IllegalArgumentException("id:command expected: " + spec);
                 }
-                
+
                 String clientId = parts[0];
                 String command = parts[1];
                 boolean clientVerbose = parts.length > 2 ? Boolean.parseBoolean(parts[2]) : verbose;
-                
+
                 Set<ClientCapability> capabilities = EnumSet.of(
-                        ClientCapability.SAMPLING, 
-                        ClientCapability.ROOTS, 
+                        ClientCapability.SAMPLING,
+                        ClientCapability.ROOTS,
                         ClientCapability.ELICITATION);
-                
+
                 if (parts.length > 3 && !parts[3].isEmpty()) {
                     capabilities = Arrays.stream(parts[3].split(","))
                             .map(String::trim)
@@ -96,7 +96,7 @@ public final class HostCommand {
             }
 
             McpHostConfiguration config = McpHostConfiguration.withClientConfigurations(clientConfigs);
-            
+
             try (McpHost host = new McpHost(config)) {
                 for (McpClientConfiguration clientConfig : clientConfigs) {
                     host.connect(clientConfig.clientId());

@@ -3,7 +3,8 @@ package com.amannmalik.mcp.api;
 import com.amannmalik.mcp.spi.SamplingAccessPolicy;
 import com.amannmalik.mcp.spi.ToolAccessPolicy;
 import com.amannmalik.mcp.transport.Protocol;
-import java.util.*;
+
+import java.util.List;
 
 public record McpServerConfiguration(
         // Protocol configuration

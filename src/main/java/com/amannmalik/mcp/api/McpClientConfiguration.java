@@ -1,12 +1,14 @@
 package com.amannmalik.mcp.api;
 
 import com.amannmalik.mcp.spi.SamplingAccessPolicy;
-import java.util.*;
+
+import java.util.List;
+import java.util.Set;
 
 public record McpClientConfiguration(
         // Client connection identity
         String clientId,
-        
+
         // MCP server identity (that we're connecting to)
         String serverName,
         String serverDisplayName,

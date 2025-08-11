@@ -45,32 +45,32 @@ public final class McpHost implements AutoCloseable {
         for (McpClientConfiguration clientConfig : config.clientConfigurations()) {
             grantConsent(clientConfig.clientId());
             Transport transport = TransportFactory.createStdioTransport(
-                    clientConfig.commandSpec().split(" "), 
+                    clientConfig.commandSpec().split(" "),
                     clientConfig.verbose() || config.globalVerbose());
-            
+
             SamplingProvider samplingProvider = new InteractiveSamplingProvider(clientConfig.interactiveSampling());
-            
+
             // Create roots from configured directories
             List<Root> roots = clientConfig.rootDirectories().stream()
                     .map(dir -> new Root("file://" + dir, dir, null))
                     .toList();
             InMemoryRootsProvider rootsProvider = new InMemoryRootsProvider(roots);
-            
+
             McpClientListener listener = (clientConfig.verbose() || config.globalVerbose()) ? new McpClientListener() {
                 @Override
                 public void onMessage(LoggingMessageNotification notification) {
                     String logger = notification.logger() == null ? "" : ":" + notification.logger();
-                    System.err.println("[" + clientConfig.clientId() + "] " + 
+                    System.err.println("[" + clientConfig.clientId() + "] " +
                             notification.level().name().toLowerCase() + logger + " " + notification.data());
                 }
             } : null;
-            
+
             EnumSet<ClientCapability> caps = clientConfig.clientCapabilities().isEmpty()
                     ? EnumSet.noneOf(ClientCapability.class)
                     : EnumSet.copyOf(clientConfig.clientCapabilities());
-            
+
             ElicitationProvider elicitationProvider = new InteractiveElicitationProvider();
-            
+
             McpClient client = new McpClient(
                     clientConfig,
                     transport,
@@ -78,7 +78,7 @@ public final class McpHost implements AutoCloseable {
                     rootsProvider,
                     elicitationProvider,
                     listener);
-            
+
             register(clientConfig.clientId(), client, clientConfig);
         }
     }

@@ -10,7 +10,8 @@ import com.amannmalik.mcp.util.*;
 import jakarta.json.*;
 import jakarta.json.stream.JsonParsingException;
 
-import java.io.*;
+import java.io.EOFException;
+import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
@@ -304,7 +305,8 @@ public final class McpServer extends JsonRpcEndpoint implements AutoCloseable {
                     "Unsupported protocol version",
                     Json.createObjectBuilder()
                             .add("supported", config.supportedVersions().stream()
-                                    .collect(Json::createArrayBuilder, JsonArrayBuilder::add, (a, b) -> {})
+                                    .collect(Json::createArrayBuilder, JsonArrayBuilder::add, (a, b) -> {
+                                    })
                                     .build())
                             .add("requested", e.requested())
                             .build());
