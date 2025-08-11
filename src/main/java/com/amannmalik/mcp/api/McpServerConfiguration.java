@@ -2,7 +2,6 @@ package com.amannmalik.mcp.api;
 
 import com.amannmalik.mcp.spi.SamplingAccessPolicy;
 import com.amannmalik.mcp.spi.ToolAccessPolicy;
-import com.amannmalik.mcp.transport.Protocol;
 
 import java.util.List;
 
@@ -82,11 +81,11 @@ public record McpServerConfiguration(
 
     public static McpServerConfiguration defaultConfiguration() {
         return new McpServerConfiguration(
-                "2025-06-18",
-                "2025-03-26",
+                Protocol.LATEST_VERSION,
+                Protocol.PREVIOUS_VERSION,
                 30_000L,
                 1L,
-                List.of(Protocol.LATEST_VERSION, Protocol.PREVIOUS_VERSION),
+                Protocol.SUPPORTED_VERSIONS,
                 5,
                 10,
                 20,

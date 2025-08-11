@@ -1,5 +1,6 @@
 package com.amannmalik.mcp.transport;
 
+import com.amannmalik.mcp.api.Protocol;
 import com.amannmalik.mcp.api.Transport;
 import com.amannmalik.mcp.util.ValidationUtil;
 import jakarta.json.*;
