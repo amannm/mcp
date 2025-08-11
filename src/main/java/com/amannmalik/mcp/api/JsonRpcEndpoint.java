@@ -54,15 +54,15 @@ sealed class JsonRpcEndpoint implements AutoCloseable permits McpClient, McpServ
             throw new IOException(cause);
         } catch (TimeoutException e) {
             try {
-                notify(NotificationMethod.CANCELLED.method(),
+                sendNotification(NotificationMethod.CANCELLED.method(),
                         CANCEL_CODEC.toJson(new CancelledNotification(id, "timeout")));
             } catch (IOException ignore) {
             }
-            throw new IOException(McpServerConfiguration.defaultConfiguration().errorTimeout() + " after " + timeoutMillis + " ms", e);
+            throw new IOException("timeout after " + timeoutMillis + " ms", e);
         }
     }
 
-    protected final void notify(String method, JsonObject params) throws IOException {
+    protected final void sendNotification(String method, JsonObject params) throws IOException {
         send(new JsonRpcNotification(method, params));
     }
 

@@ -191,8 +191,8 @@ public final class McpHost implements AutoCloseable {
         return requireClientForMethod(id, method).request(method, params, 0L);
     }
 
-    public void notify(String id, NotificationMethod method, JsonObject params) throws IOException {
-        requireClientForMethod(id, method).notify(method, params);
+    public void sendNotification(String id, NotificationMethod method, JsonObject params) throws IOException {
+        requireClientForMethod(id, method).sendNotification(method, params);
     }
 
     public void grantConsent(String scope) {

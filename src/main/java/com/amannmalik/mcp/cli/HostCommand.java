@@ -246,7 +246,7 @@ public final class HostCommand {
                             var params = parts.length > 3 ?
                                     Json.createReader(new StringReader(parts[3])).readObject() :
                                     JsonValue.EMPTY_JSON_OBJECT;
-                            host.notify(parts[1], NotificationMethod.from(parts[2]).orElseThrow(), params);
+                            host.sendNotification(parts[1], NotificationMethod.from(parts[2]).orElseThrow(), params);
                             System.out.println("Notification sent");
                         }
                     }
