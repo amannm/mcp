@@ -1,5 +1,7 @@
-package com.amannmalik.mcp.api;
+package com.amannmalik.mcp.spi;
 
+import com.amannmalik.mcp.api.Pagination;
+import com.amannmalik.mcp.api.Provider;
 import com.amannmalik.mcp.api.model.Tool;
 import com.amannmalik.mcp.api.model.ToolResult;
 import jakarta.json.JsonObject;

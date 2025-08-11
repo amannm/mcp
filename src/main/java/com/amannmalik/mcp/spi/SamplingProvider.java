@@ -1,7 +1,9 @@
-package com.amannmalik.mcp.api;
+package com.amannmalik.mcp.spi;
 
+import com.amannmalik.mcp.api.Pagination;
 import com.amannmalik.mcp.api.model.*;
 import com.amannmalik.mcp.codec.CreateMessageRequestJsonCodec;
+import com.amannmalik.mcp.util.ExecutingProvider;
 import jakarta.json.JsonObject;
 
 import java.util.List;

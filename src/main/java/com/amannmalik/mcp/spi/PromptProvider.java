@@ -1,5 +1,6 @@
-package com.amannmalik.mcp.api;
+package com.amannmalik.mcp.spi;
 
+import com.amannmalik.mcp.api.Provider;
 import com.amannmalik.mcp.api.model.Prompt;
 import com.amannmalik.mcp.api.model.PromptInstance;
 

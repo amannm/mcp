@@ -6,6 +6,7 @@ import com.amannmalik.mcp.prompts.*;
 import com.amannmalik.mcp.resources.InMemoryResourceProvider;
 import com.amannmalik.mcp.sampling.InteractiveSamplingProvider;
 import com.amannmalik.mcp.security.ResourceAccessController;
+import com.amannmalik.mcp.spi.*;
 import com.amannmalik.mcp.tools.InMemoryToolProvider;
 import jakarta.json.Json;
 

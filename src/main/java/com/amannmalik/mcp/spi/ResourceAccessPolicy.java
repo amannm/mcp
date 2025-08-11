@@ -1,4 +1,4 @@
-package com.amannmalik.mcp.api;
+package com.amannmalik.mcp.spi;
 
 import com.amannmalik.mcp.api.model.Annotations;
 import com.amannmalik.mcp.api.model.Principal;

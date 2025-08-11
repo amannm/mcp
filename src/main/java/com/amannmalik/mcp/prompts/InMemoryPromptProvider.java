@@ -1,7 +1,7 @@
 package com.amannmalik.mcp.prompts;
 
 import com.amannmalik.mcp.api.Pagination;
-import com.amannmalik.mcp.api.PromptProvider;
+import com.amannmalik.mcp.spi.PromptProvider;
 import com.amannmalik.mcp.api.model.Prompt;
 import com.amannmalik.mcp.api.model.PromptInstance;
 import com.amannmalik.mcp.core.InMemoryProvider;

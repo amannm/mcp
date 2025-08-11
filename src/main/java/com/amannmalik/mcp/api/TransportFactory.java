@@ -4,7 +4,7 @@ import com.amannmalik.mcp.auth.*;
 import com.amannmalik.mcp.transport.StdioTransport;
 import com.amannmalik.mcp.transport.StreamableHttpServerTransport;
 
-import java.io.IOException;
+import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Set;
@@ -40,6 +40,10 @@ public final class TransportFactory {
                 resourceMetadataUrl, auth);
         if (verbose) System.err.println("Listening on http://127.0.0.1:" + ht.port());
         return ht;
+    }
+
+    public static Transport createStdioTransport(InputStream in, OutputStream out) {
+        return new StdioTransport(in, out);
     }
 
     public static Transport createStdioTransport(String[] commands, boolean verbose) throws IOException {

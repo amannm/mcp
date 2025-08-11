@@ -7,6 +7,7 @@ import com.amannmalik.mcp.elicitation.ElicitationAction;
 import com.amannmalik.mcp.jsonrpc.*;
 import com.amannmalik.mcp.prompts.*;
 import com.amannmalik.mcp.roots.RootsManager;
+import com.amannmalik.mcp.spi.*;
 import com.amannmalik.mcp.tools.ToolListChangedNotification;
 import com.amannmalik.mcp.transport.Protocol;
 import com.amannmalik.mcp.util.*;
