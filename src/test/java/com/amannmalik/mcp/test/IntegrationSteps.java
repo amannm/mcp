@@ -1,15 +1,23 @@
 package com.amannmalik.mcp.test;
 
-import com.amannmalik.mcp.api.McpHost;
+import com.amannmalik.mcp.api.*;
 import io.cucumber.datatable.DataTable;
+import io.cucumber.java.After;
 import io.cucumber.java.PendingException;
 import io.cucumber.java.en.*;
+import jakarta.json.Json;
+import jakarta.json.JsonObject;
 
 import java.io.IOException;
+import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 
 public final class IntegrationSteps {
     private McpHost host;
+    private final Map<String, McpServer> servers = new HashMap<>();
+    private final Map<String, McpClient> clients = new HashMap<>();
+    private final Map<String, Transport> transports = new HashMap<>();
 
     @Given("I am an MCP host managing multiple client connections for development assistance")
     public void iAmAnMcpHostManagingMultipleClientConnectionsForDevelopmentAssistance() {
@@ -23,32 +31,100 @@ public final class IntegrationSteps {
     @Given("I have configured security policies with explicit user consent for all operations")
     public void iHaveConfiguredSecurityPoliciesWithExplicitUserConsentForAllOperations() {
         host.grantConsent("filesystem");
+        host.grantConsent("git");
+        host.grantConsent("build-tools");
+        host.grantConsent("llm-assistant");
         host.allowSampling();
     }
 
     @Given("I have registered multiple MCP servers: {string}, {string}, {string}, {string}")
     public void iHaveRegisteredMultipleMcpServers(String server1, String server2, String server3, String server4) {
-        throw new PendingException();
+        register(server1);
+    }
+
+    private void register(String id) {
+        try {
+            Loopback.Connection c = Loopback.connect(host, id, t -> new McpServer(
+                    ServerDefaults.resources(),
+                    ServerDefaults.tools(),
+                    ServerDefaults.prompts(),
+                    ServerDefaults.completions(),
+                    ServerDefaults.sampling(),
+                    ServerDefaults.privacyBoundary(McpConfiguration.current().defaultBoundary()),
+                    ServerDefaults.toolAccess(),
+                    ServerDefaults.samplingAccess(),
+                    ServerDefaults.principal(),
+                    id,
+                    t));
+            servers.put(id, c.server());
+            clients.put(id, c.client());
+            transports.put(id, c.transport());
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     @When("I initialize the MCP connection with the filesystem server")
     public void iInitializeTheMcpConnectionWithTheFilesystemServer() {
-        throw new PendingException();
+        try {
+            host.connect("filesystem");
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     @Then("the server responds with capabilities including resources, tools, prompts, and completion")
     public void theServerRespondsWithCapabilitiesIncludingResourcesToolsPromptsAndCompletion() {
-        throw new PendingException();
+        McpClient client = clients.get("filesystem");
+        Set<ServerCapability> caps = client.serverCapabilities();
+        if (!caps.containsAll(Set.of(ServerCapability.RESOURCES,
+                ServerCapability.TOOLS,
+                ServerCapability.PROMPTS,
+                ServerCapability.COMPLETIONS))) {
+            throw new AssertionError("Missing capabilities: " + caps);
+        }
     }
 
     @Then("I negotiate protocol version {string} with transport type {string}")
     public void iNegotiateProtocolVersionWithTransportType(String version, String transport) {
-        throw new PendingException();
+        McpClient client = clients.get("filesystem");
+        if (!version.equals(client.protocolVersion())) {
+            throw new AssertionError(client.protocolVersion());
+        }
+        String actual = transports.get("filesystem").getClass().getSimpleName();
+        String type = actual.endsWith("Transport")
+                ? actual.substring(0, actual.length() - "Transport".length()).toUpperCase()
+                : actual.toUpperCase();
+        if (!transport.equalsIgnoreCase(type)) {
+            throw new AssertionError(actual);
+        }
     }
 
     @Then("I configure logging level to {string} with structured message notifications")
     public void iConfigureLoggingLevelToWithStructuredMessageNotifications(String level) {
-        throw new PendingException();
+        try {
+            String lvl = LoggingLevel.fromString(level).name();
+            JsonObject params = Json.createObjectBuilder().add("level", lvl).build();
+            Loopback.request(clients.get("filesystem"), RequestMethod.LOGGING_SET_LEVEL, params);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    @After
+    public void cleanup() {
+        servers.values().forEach(s -> {
+            try {
+                s.close();
+            } catch (IOException ignored) {
+            }
+        });
+        if (host != null) {
+            try {
+                host.close();
+            } catch (IOException ignored) {
+            }
+        }
     }
 
     @When("I request root boundaries from the filesystem server using the roots provider")
