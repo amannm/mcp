@@ -13,26 +13,34 @@ import java.util.function.Consumer;
 
 /// - [Transports](specification/2025-06-18/basic/transports.mdx)
 public final class StdioTransport implements Transport {
-    private static final Duration WAIT = Duration.ofSeconds(
-            McpConfiguration.current().processWaitSeconds());
+    private static final Duration WAIT = Duration.ofSeconds(McpConfiguration.current().processWaitSeconds());
     private final BufferedReader in;
     private final BufferedWriter out;
     private final Process process;
     private final Thread logReader;
 
-    public StdioTransport(String[] commands, InputStream in, OutputStream out, Consumer<String> logSink) throws IOException {
-        Objects.requireNonNull(logSink, "logSink");
-        var builder = new ProcessBuilder(commands);
-        builder.redirectErrorStream(false);
-        this.process = builder.start();
+    public StdioTransport(InputStream in, OutputStream out) {
+        this.process = null;
+        this.logReader = null;
         this.in = new BufferedReader(new InputStreamReader(in, StandardCharsets.UTF_8));
         this.out = new BufferedWriter(new OutputStreamWriter(out, StandardCharsets.UTF_8));
+    }
+
+    public StdioTransport(String[] command, Consumer<String> logSink) throws IOException {
+        Objects.requireNonNull(logSink, "logSink");
+        if (command.length == 0) throw new IllegalArgumentException("command");
+        var builder = new ProcessBuilder(command);
+        builder.redirectErrorStream(false);
+        this.process = builder.start();
+        this.in = new BufferedReader(new InputStreamReader(process.getInputStream(), StandardCharsets.UTF_8));
+        this.out = new BufferedWriter(new OutputStreamWriter(process.getOutputStream(), StandardCharsets.UTF_8));
         this.logReader = new Thread(() -> readLogs(process.getErrorStream(), logSink));
         this.logReader.setDaemon(true);
         this.logReader.start();
     }
+
     private static void readLogs(InputStream err, Consumer<String> sink) {
-        try (BufferedReader r = new BufferedReader(new InputStreamReader(err, StandardCharsets.UTF_8))) {
+        try (var r = new BufferedReader(new InputStreamReader(err, StandardCharsets.UTF_8))) {
             String line;
             while ((line = r.readLine()) != null) sink.accept(line);
         } catch (IOException ignore) {
