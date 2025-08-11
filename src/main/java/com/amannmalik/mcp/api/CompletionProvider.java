@@ -1,5 +1,7 @@
 package com.amannmalik.mcp.api;
 
+import com.amannmalik.mcp.codec.ArgumentJsonCodec;
+import com.amannmalik.mcp.codec.ContextJsonCodec;
 import com.amannmalik.mcp.core.ExecutingProvider;
 import jakarta.json.Json;
 import jakarta.json.JsonObject;
@@ -16,9 +18,9 @@ public interface CompletionProvider extends ExecutingProvider<Ref, CompleteResul
     default CompleteResult complete(CompleteRequest request) throws InterruptedException {
         JsonObject ctx = request.context() == null
                 ? Json.createObjectBuilder().build()
-                : Context.CODEC.toJson(request.context());
+                : new ContextJsonCodec().toJson(request.context());
         JsonObject args = Json.createObjectBuilder()
-                .add("argument", Argument.CODEC.toJson(request.argument()))
+                .add("argument", new ArgumentJsonCodec().toJson(request.argument()))
                 .add("context", ctx)
                 .build();
         return execute(encode(request.ref()), args);

@@ -10,8 +10,7 @@ public record ToolResult(JsonArray content,
                          JsonObject _meta) {
 
     private static final JsonCodec<ContentBlock> CONTENT_BLOCK_CODEC = new ContentBlockJsonCodec();
-
-    static final JsonCodec<ToolResult> CODEC = new ToolResultAbstractEntityCodec();
+    private static final JsonCodec<ToolResult> TOOL_RESULT_ABSTRACT_ENTITY_CODEC = new ToolResultAbstractEntityCodec();
 
     public ToolResult {
         content = sanitize(content == null ? JsonValue.EMPTY_JSON_ARRAY : content);
@@ -37,7 +36,7 @@ public record ToolResult(JsonArray content,
 
     @Override
     public String toString() {
-        return CODEC.toJson(this).toString();
+        return TOOL_RESULT_ABSTRACT_ENTITY_CODEC.toJson(this).toString();
     }
 
 }

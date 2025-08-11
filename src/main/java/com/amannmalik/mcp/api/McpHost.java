@@ -1,6 +1,7 @@
 package com.amannmalik.mcp.api;
 
 import com.amannmalik.mcp.api.McpClient.McpClientListener;
+import com.amannmalik.mcp.codec.*;
 import com.amannmalik.mcp.config.McpConfiguration;
 import com.amannmalik.mcp.core.CapabilityRequirements;
 import com.amannmalik.mcp.elicitation.InteractiveElicitationProvider;
@@ -26,6 +27,10 @@ public final class McpHost implements AutoCloseable {
     private final ToolAccessController toolAccess;
     private final ResourceAccessController privacyBoundary;
     private final SamplingAccessController samplingAccess;
+
+    private static final CallToolRequestAbstractEntityCodec CALL_TOOL_REQUEST_CODEC = new CallToolRequestAbstractEntityCodec();
+    private static final JsonCodec<ToolResult> TOOL_RESULT_ABSTRACT_ENTITY_CODEC = new ToolResultAbstractEntityCodec();
+
 
     @Override
     public void close() throws IOException {
@@ -114,9 +119,12 @@ public final class McpHost implements AutoCloseable {
         requireCapability(client, ServerCapability.TOOLS);
         JsonRpcResponse resp = JsonRpc.expectResponse(client.request(
                 RequestMethod.TOOLS_LIST,
-                ListToolsRequest.CODEC.toJson(new ListToolsRequest(cursor, null))
+                AbstractEntityCodec.paginatedRequest(
+                        ListToolsRequest::cursor,
+                        ListToolsRequest::_meta,
+                        ListToolsRequest::new).toJson(new ListToolsRequest(cursor, null))
         ));
-        return ListToolsResult.CODEC.fromJson(resp.result());
+        return ListToolsResult.LIST_TOOLS_RESULT_JSON_CODEC.fromJson(resp.result());
     }
 
     public ToolResult callTool(String clientId, String name, JsonObject args) throws IOException {
@@ -126,9 +134,9 @@ public final class McpHost implements AutoCloseable {
         toolAccess.requireAllowed(principal, name);
         JsonRpcResponse resp = JsonRpc.expectResponse(client.request(
                 RequestMethod.TOOLS_CALL,
-                CallToolRequest.CODEC.toJson(new CallToolRequest(name, args, null))
+                CALL_TOOL_REQUEST_CODEC.toJson(new CallToolRequest(name, args, null))
         ));
-        return ToolResult.CODEC.fromJson(resp.result());
+        return TOOL_RESULT_ABSTRACT_ENTITY_CODEC.fromJson(resp.result());
     }
 
     public JsonObject createMessage(String clientId, JsonObject params) throws IOException {

@@ -16,9 +16,6 @@ public record ProgressNotification(
 ) {
     static final JsonCodec<ProgressNotification> CODEC = new ProgressNotificationJsonCodec();
 
-    public static JsonObject toJson(ProgressNotification note) {
-        return CODEC.toJson(note);
-    }
 
     public static Optional<ProgressToken> fromMeta(JsonObject params) {
         if (params == null || !params.containsKey("_meta")) return Optional.empty();

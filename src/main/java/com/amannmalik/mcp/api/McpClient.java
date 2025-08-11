@@ -49,10 +49,14 @@ public final class McpClient extends JsonRpcEndpoint implements AutoCloseable {
     private volatile ResourceMetadata resourceMetadata;
     private final Map<String, Consumer<ResourceUpdate>> resourceListeners = new ConcurrentHashMap<>();
 
-    private final InitializeRequestAbstractEntityCodec INITIALIZE_REQUEST_CODEC = new InitializeRequestAbstractEntityCodec();
-
-    static final JsonCodec<ResourceUpdatedNotification> RESOURCE_UPDATED_NOTIFICATION_JSON_CODEC = new ResourceUpdatedNotificationAbstractEntityCodec();
-
+    private static final InitializeRequestAbstractEntityCodec INITIALIZE_REQUEST_CODEC = new InitializeRequestAbstractEntityCodec();
+    private static final JsonCodec<ResourceUpdatedNotification> RESOURCE_UPDATED_NOTIFICATION_JSON_CODEC = new ResourceUpdatedNotificationAbstractEntityCodec();
+    private static final JsonCodec<SubscribeRequest> SUBSCRIBE_REQUEST_JSON_CODEC = new SubscribeRequestAbstractEntityCodec();
+    private static final JsonCodec<UnsubscribeRequest> UNSUBSCRIBE_REQUEST_JSON_CODEC = new UnsubscribeRequestAbstractEntityCodec();
+    private static final JsonCodec<SetLevelRequest> SET_LEVEL_REQUEST_JSON_CODEC = new SetLevelRequestAbstractEntityCodec();
+    private static final CancelledNotificationJsonCodec CANCELLED_NOTIFICATION_JSON_CODEC = new CancelledNotificationJsonCodec();
+    private static final JsonCodec<LoggingMessageNotification> LOGGING_MESSAGE_NOTIFICATION_JSON_CODEC = new LoggingMessageNotificationAbstractEntityCodec();
+    private static final JsonCodec<ProgressNotification> PROGRESS_NOTIFICATION_JSON_CODEC = new ProgressNotificationJsonCodec();
 
     public void configurePing(long intervalMillis, long timeoutMillis) {
         if (connected) throw new IllegalStateException("already connected");
@@ -171,11 +175,10 @@ public final class McpClient extends JsonRpcEndpoint implements AutoCloseable {
             throw new IOException("Unexpected ping response");
         }
     }
-
     public void setLogLevel(LoggingLevel level) throws IOException {
         if (level == null) throw new IllegalArgumentException("level required");
         JsonRpc.expectResponse(request(RequestMethod.LOGGING_SET_LEVEL,
-                SetLevelRequest.CODEC.toJson(new SetLevelRequest(level, null))));
+                SET_LEVEL_REQUEST_JSON_CODEC.toJson(new SetLevelRequest(level, null))));
     }
 
     public JsonRpcMessage request(String method, JsonObject params) throws IOException {
@@ -243,19 +246,36 @@ public final class McpClient extends JsonRpcEndpoint implements AutoCloseable {
     public ListResourcesResult listResources(String cursor) throws IOException {
         JsonRpcResponse resp = JsonRpc.expectResponse(request(
                 RequestMethod.RESOURCES_LIST,
-                ListResourcesRequest.CODEC.toJson(new ListResourcesRequest(cursor, null))
+                AbstractEntityCodec.paginatedRequest(
+                        ListResourcesRequest::cursor,
+                        ListResourcesRequest::_meta,
+                        ListResourcesRequest::new).toJson(new ListResourcesRequest(cursor, null))
         ));
-        return ListResourcesResult.CODEC.fromJson(resp.result());
+        return AbstractEntityCodec.paginatedResult(
+                "resources",
+                "resource",
+                r -> new Pagination.Page<>(r.resources(), r.nextCursor()),
+                ListResourcesResult::_meta,
+                Resource.CODEC,
+                (page, meta) -> new ListResourcesResult(page.items(), page.nextCursor(), meta)).fromJson(resp.result());
     }
 
     public ListResourceTemplatesResult listResourceTemplates(String cursor) throws IOException {
         JsonRpcResponse resp = JsonRpc.expectResponse(request(
                 RequestMethod.RESOURCES_TEMPLATES_LIST,
-                ListResourceTemplatesRequest.CODEC.toJson(new ListResourceTemplatesRequest(cursor, null))
+                AbstractEntityCodec.paginatedRequest(
+                        ListResourceTemplatesRequest::cursor,
+                        ListResourceTemplatesRequest::_meta,
+                        ListResourceTemplatesRequest::new).toJson(new ListResourceTemplatesRequest(cursor, null))
         ));
-        return ListResourceTemplatesResult.CODEC.fromJson(resp.result());
+        return AbstractEntityCodec.paginatedResult(
+                "resourceTemplates",
+                "resourceTemplate",
+                r -> new Pagination.Page<>(r.resourceTemplates(), r.nextCursor()),
+                ListResourceTemplatesResult::_meta,
+                ResourceTemplate.CODEC,
+                (page1, meta) -> new ListResourceTemplatesResult(page1.items(), page1.nextCursor(), meta)).fromJson(resp.result());
     }
-
     public ChangeSubscription subscribeResource(String uri, Consumer<ResourceUpdate> listener) throws IOException {
         if (!serverFeatures.resourcesSubscribe()) {
             throw new IllegalStateException("resource subscribe not supported");
@@ -265,7 +285,7 @@ public final class McpClient extends JsonRpcEndpoint implements AutoCloseable {
         }
         JsonRpc.expectResponse(request(
                 RequestMethod.RESOURCES_SUBSCRIBE,
-                SubscribeRequest.CODEC.toJson(new SubscribeRequest(uri, null))
+                SUBSCRIBE_REQUEST_JSON_CODEC.toJson(new SubscribeRequest(uri, null))
         ));
         resourceListeners.put(uri, listener);
         return () -> {
@@ -273,7 +293,7 @@ public final class McpClient extends JsonRpcEndpoint implements AutoCloseable {
             try {
                 request(
                         RequestMethod.RESOURCES_UNSUBSCRIBE,
-                        UnsubscribeRequest.CODEC.toJson(new UnsubscribeRequest(uri, null))
+                        UNSUBSCRIBE_REQUEST_JSON_CODEC.toJson(new UnsubscribeRequest(uri, null))
                 );
             } catch (IOException ignore) {
             }
@@ -356,7 +376,7 @@ public final class McpClient extends JsonRpcEndpoint implements AutoCloseable {
         } catch (IOException e) {
             throw new IOException("Initialization failed: " + e.getMessage(), e);
         }
-        InitializeResponse ir = InitializeResponse.CODEC.fromJson(resp.result());
+        InitializeResponse ir = ((JsonCodec<InitializeResponse>) new InitializeResponseAbstractEntityCodec()).fromJson(resp.result());
         String serverVersion = ir.protocolVersion();
         if (!Protocol.LATEST_VERSION.equals(serverVersion) && !Protocol.PREVIOUS_VERSION.equals(serverVersion)) {
             try {
@@ -442,14 +462,14 @@ public final class McpClient extends JsonRpcEndpoint implements AutoCloseable {
             return JsonRpcError.of(req.id(), JsonRpcErrorCode.INVALID_PARAMS, "Missing params");
         }
         try {
-            CreateMessageRequest cmr = CreateMessageRequest.CODEC.fromJson(params);
+            CreateMessageRequest cmr = new CreateMessageRequestJsonCodec().fromJson(params);
             try {
                 samplingAccess.requireAllowed(principal);
             } catch (SecurityException e) {
                 return JsonRpcError.of(req.id(), JsonRpcErrorCode.INTERNAL_ERROR, e.getMessage());
             }
             CreateMessageResponse resp = sampling.createMessage(cmr);
-            return new JsonRpcResponse(req.id(), CreateMessageResponse.CODEC.toJson(resp));
+            return new JsonRpcResponse(req.id(), new CreateMessageResponseAbstractEntityCodec().toJson(resp));
         } catch (IllegalArgumentException e) {
             return JsonRpcError.of(req.id(), JsonRpcErrorCode.INVALID_PARAMS, e.getMessage());
         } catch (InterruptedException e) {
@@ -467,7 +487,7 @@ public final class McpClient extends JsonRpcEndpoint implements AutoCloseable {
         try {
             var page = roots.list(null);
             return new JsonRpcResponse(req.id(),
-                    ListRootsResult.CODEC.toJson(new ListRootsResult(page.items(), null)));
+                    new ListRootsResultAbstractEntityCodec().toJson(new ListRootsResult(page.items(), null)));
         } catch (Exception e) {
             return JsonRpcError.of(req.id(), JsonRpcErrorCode.INTERNAL_ERROR, e.getMessage());
         }
@@ -482,9 +502,9 @@ public final class McpClient extends JsonRpcEndpoint implements AutoCloseable {
             return JsonRpcError.of(req.id(), JsonRpcErrorCode.INVALID_PARAMS, "Missing params");
         }
         try {
-            ElicitRequest er = ElicitRequest.CODEC.fromJson(params);
+            ElicitRequest er = new ElicitRequestJsonCodec().fromJson(params);
             ElicitResult resp = elicitation.elicit(er);
-            return new JsonRpcResponse(req.id(), ElicitResult.CODEC.toJson(resp));
+            return new JsonRpcResponse(req.id(), new ElicitResultJsonCodec().toJson(resp));
         } catch (IllegalArgumentException e) {
             return JsonRpcError.of(req.id(), JsonRpcErrorCode.INVALID_PARAMS, e.getMessage());
         } catch (Exception e) {
@@ -515,7 +535,7 @@ public final class McpClient extends JsonRpcEndpoint implements AutoCloseable {
     private void handleProgress(JsonRpcNotification note) {
         if (note.params() == null) return;
         try {
-            ProgressNotification pn = ProgressNotification.CODEC.fromJson(note.params());
+            ProgressNotification pn = PROGRESS_NOTIFICATION_JSON_CODEC.fromJson(note.params());
             progress.record(pn);
             listener.onProgress(pn);
         } catch (IllegalArgumentException | IllegalStateException ignore) {
@@ -525,13 +545,14 @@ public final class McpClient extends JsonRpcEndpoint implements AutoCloseable {
     private void handleMessage(JsonRpcNotification note) {
         if (note.params() == null) return;
         try {
-            listener.onMessage(LoggingMessageNotification.CODEC.fromJson(note.params()));
+            listener.onMessage(LOGGING_MESSAGE_NOTIFICATION_JSON_CODEC.fromJson(note.params()));
         } catch (IllegalArgumentException ignore) {
         }
     }
 
     private void handleResourcesListChanged(JsonRpcNotification note) {
         try {
+            // TODO: understand and refactor this
             ResourceListChangedNotification.CODEC.fromJson(note.params());
             listener.onResourceListChanged();
         } catch (IllegalArgumentException ignore) {
@@ -552,14 +573,14 @@ public final class McpClient extends JsonRpcEndpoint implements AutoCloseable {
 
     private void handleToolsListChanged(JsonRpcNotification note) {
         try {
+            // TODO: understand and refactor this
             ToolListChangedNotification.CODEC.fromJson(note.params());
             listener.onToolListChanged();
         } catch (IllegalArgumentException ignore) {
         }
     }
-
     private void cancelled(JsonRpcNotification note) {
-        CancelledNotification cn = CancelledNotification.CODEC.fromJson(note.params());
+        CancelledNotification cn = CANCELLED_NOTIFICATION_JSON_CODEC.fromJson(note.params());
         progress.cancel(cn.requestId(), cn.reason());
         progress.release(cn.requestId());
         String reason = progress.reason(cn.requestId());

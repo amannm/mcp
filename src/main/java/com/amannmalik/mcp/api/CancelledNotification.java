@@ -5,7 +5,6 @@ import com.amannmalik.mcp.jsonrpc.RequestId;
 import com.amannmalik.mcp.util.ValidationUtil;
 
 public record CancelledNotification(RequestId requestId, String reason) {
-    static final CancelledNotificationJsonCodec CODEC = new CancelledNotificationJsonCodec();
 
     public CancelledNotification {
         if (requestId == null) throw new IllegalArgumentException("requestId is required");

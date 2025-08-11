@@ -1,6 +1,7 @@
 package com.amannmalik.mcp.core;
 
 import com.amannmalik.mcp.api.*;
+import com.amannmalik.mcp.codec.ProgressNotificationJsonCodec;
 import com.amannmalik.mcp.jsonrpc.JsonRpcNotification;
 import com.amannmalik.mcp.jsonrpc.RequestId;
 import com.amannmalik.mcp.util.NotificationSender;
@@ -17,6 +18,8 @@ public final class ProgressManager {
     private final Set<RequestId> active = ConcurrentHashMap.newKeySet();
     private final Map<RequestId, String> cancelled = new ConcurrentHashMap<>();
     private final RateLimiter limiter;
+
+    private final ProgressNotificationJsonCodec NOTIFICATION_CODEC = new ProgressNotificationJsonCodec();
 
     public ProgressManager(RateLimiter limiter) {
         if (limiter == null) throw new IllegalArgumentException("limiter required");
@@ -88,7 +91,7 @@ public final class ProgressManager {
         }
         sender.send(new JsonRpcNotification(
                 NotificationMethod.PROGRESS.method(),
-                ProgressNotification.toJson(note)
+                NOTIFICATION_CODEC.toJson(note)
         ));
     }
 }

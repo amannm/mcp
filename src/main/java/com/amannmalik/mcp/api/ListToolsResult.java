@@ -11,7 +11,7 @@ import java.util.List;
 public record ListToolsResult(List<Tool> tools,
                               String nextCursor,
                               JsonObject _meta) {
-    static final JsonCodec<ListToolsResult> CODEC =
+    static final JsonCodec<ListToolsResult> LIST_TOOLS_RESULT_JSON_CODEC =
             AbstractEntityCodec.paginatedResult(
                     "tools",
                     "tool",
@@ -27,6 +27,6 @@ public record ListToolsResult(List<Tool> tools,
 
     @Override
     public String toString() {
-        return CODEC.toJson(this).toString();
+        return LIST_TOOLS_RESULT_JSON_CODEC.toJson(this).toString();
     }
 }

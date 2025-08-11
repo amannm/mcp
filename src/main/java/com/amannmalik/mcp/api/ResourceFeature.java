@@ -1,7 +1,6 @@
 package com.amannmalik.mcp.api;
 
-import com.amannmalik.mcp.codec.JsonCodec;
-import com.amannmalik.mcp.codec.ResourceUpdatedNotificationAbstractEntityCodec;
+import com.amannmalik.mcp.codec.*;
 import com.amannmalik.mcp.core.*;
 import com.amannmalik.mcp.jsonrpc.*;
 import com.amannmalik.mcp.resources.ReadResourceResult;
@@ -81,7 +80,10 @@ final class ResourceFeature implements AutoCloseable {
         }
         Optional<ProgressToken> progressToken = ProgressNotification.fromMeta(req.params());
         try {
-            ListResourcesRequest lr = ListResourcesRequest.CODEC.fromJson(req.params());
+            ListResourcesRequest lr = AbstractEntityCodec.paginatedRequest(
+                    ListResourcesRequest::cursor,
+                    ListResourcesRequest::_meta,
+                    ListResourcesRequest::new).fromJson(req.params());
             String cursor = sanitizeCursor(lr.cursor());
             progressToken.ifPresent(t -> {
                 try {
@@ -106,7 +108,13 @@ final class ResourceFeature implements AutoCloseable {
                 }
             });
             ListResourcesResult result = new ListResourcesResult(filtered, list.nextCursor(), null);
-            return new JsonRpcResponse(req.id(), ListResourcesResult.CODEC.toJson(result));
+            return new JsonRpcResponse(req.id(), AbstractEntityCodec.paginatedResult(
+                    "resources",
+                    "resource",
+                    r -> new Pagination.Page<>(r.resources(), r.nextCursor()),
+                    ListResourcesResult::_meta,
+                    Resource.CODEC,
+                    (page, meta) -> new ListResourcesResult(page.items(), page.nextCursor(), meta)).toJson(result));
         } catch (IllegalArgumentException e) {
             return JsonRpcError.of(req.id(), JsonRpcErrorCode.INVALID_PARAMS, e.getMessage());
         }
@@ -128,14 +136,23 @@ final class ResourceFeature implements AutoCloseable {
     private JsonRpcMessage listTemplates(JsonRpcRequest req) {
         try {
             ListResourceTemplatesRequest request =
-                    ListResourceTemplatesRequest.CODEC.fromJson(req.params());
+                    AbstractEntityCodec.paginatedRequest(
+                            ListResourceTemplatesRequest::cursor,
+                            ListResourceTemplatesRequest::_meta,
+                            ListResourceTemplatesRequest::new).fromJson(req.params());
             String cursor = sanitizeCursor(request.cursor());
             Pagination.Page<ResourceTemplate> page = resources.listTemplates(cursor);
             List<ResourceTemplate> filtered = page.items().stream()
                     .filter(t -> allowed(t.annotations()))
                     .toList();
             ListResourceTemplatesResult result = new ListResourceTemplatesResult(filtered, page.nextCursor(), null);
-            return new JsonRpcResponse(req.id(), ListResourceTemplatesResult.CODEC.toJson(result));
+            return new JsonRpcResponse(req.id(), AbstractEntityCodec.paginatedResult(
+                    "resourceTemplates",
+                    "resourceTemplate",
+                    r -> new Pagination.Page<>(r.resourceTemplates(), r.nextCursor()),
+                    ListResourceTemplatesResult::_meta,
+                    ResourceTemplate.CODEC,
+                    (page1, meta) -> new ListResourceTemplatesResult(page1.items(), page1.nextCursor(), meta)).toJson(result));
         } catch (IllegalArgumentException e) {
             return JsonRpcError.of(req.id(), JsonRpcErrorCode.INVALID_PARAMS, e.getMessage());
         }
@@ -175,7 +192,7 @@ final class ResourceFeature implements AutoCloseable {
     private JsonRpcMessage unsubscribeResource(JsonRpcRequest req) {
         UnsubscribeRequest ur;
         try {
-            ur = UnsubscribeRequest.CODEC.fromJson(req.params());
+            ur = ((JsonCodec<UnsubscribeRequest>) new UnsubscribeRequestAbstractEntityCodec()).fromJson(req.params());
         } catch (IllegalArgumentException e) {
             return JsonRpcError.of(req.id(), JsonRpcErrorCode.INVALID_PARAMS, e.getMessage());
         }

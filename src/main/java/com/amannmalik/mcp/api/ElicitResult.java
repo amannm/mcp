@@ -1,13 +1,10 @@
 package com.amannmalik.mcp.api;
 
-import com.amannmalik.mcp.codec.ElicitResultJsonCodec;
-import com.amannmalik.mcp.codec.JsonCodec;
 import com.amannmalik.mcp.elicitation.ElicitationAction;
 import com.amannmalik.mcp.util.ValidationUtil;
 import jakarta.json.JsonObject;
 
 public record ElicitResult(ElicitationAction action, JsonObject content, JsonObject _meta) {
-    static final JsonCodec<ElicitResult> CODEC = new ElicitResultJsonCodec();
 
     public ElicitResult {
         if (action == null) {

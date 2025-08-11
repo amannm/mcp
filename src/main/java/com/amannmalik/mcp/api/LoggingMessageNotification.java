@@ -6,7 +6,6 @@ import com.amannmalik.mcp.util.ValidationUtil;
 import jakarta.json.JsonValue;
 
 public record LoggingMessageNotification(LoggingLevel level, String logger, JsonValue data) {
-    static final JsonCodec<LoggingMessageNotification> CODEC = new LoggingMessageNotificationAbstractEntityCodec();
 
     public LoggingMessageNotification {
         if (level == null || data == null) throw new IllegalArgumentException("level and data are required");

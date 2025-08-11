@@ -1,5 +1,6 @@
 package com.amannmalik.mcp.api;
 
+import com.amannmalik.mcp.codec.ElicitRequestJsonCodec;
 import com.amannmalik.mcp.core.ExecutingProvider;
 import jakarta.json.JsonObject;
 
@@ -21,6 +22,6 @@ public interface ElicitationProvider extends ExecutingProvider<ElicitRequest, El
 
     @Override
     default ElicitResult execute(String name, JsonObject args) throws InterruptedException {
-        return elicit(ElicitRequest.CODEC.fromJson(args), 0);
+        return elicit(new ElicitRequestJsonCodec().fromJson(args), 0);
     }
 }

@@ -1,10 +1,8 @@
 package com.amannmalik.mcp.api;
 
-import com.amannmalik.mcp.codec.ArgumentJsonCodec;
 import com.amannmalik.mcp.util.ValidationUtil;
 
 public record Argument(String name, String value) {
-    static final ArgumentJsonCodec CODEC = new ArgumentJsonCodec();
 
     public Argument(String name, String value) {
         if (name == null || value == null) {

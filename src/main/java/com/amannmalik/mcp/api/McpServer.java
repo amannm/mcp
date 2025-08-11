@@ -55,6 +55,21 @@ public final class McpServer extends JsonRpcEndpoint implements AutoCloseable {
             McpConfiguration.current().rateLimiterWindowMs());
 
     private final InitializeRequestAbstractEntityCodec INITIALIZE_REQUEST_CODEC = new InitializeRequestAbstractEntityCodec();
+    private static final JsonCodec<LoggingMessageNotification> LOGGING_MESSAGE_NOTIFICATION_JSON_CODEC = new LoggingMessageNotificationAbstractEntityCodec();
+    private static final CallToolRequestAbstractEntityCodec CALL_TOOL_REQUEST_CODEC = new CallToolRequestAbstractEntityCodec();
+    private static final JsonCodec<ToolResult> TOOL_RESULT_ABSTRACT_ENTITY_CODEC = new ToolResultAbstractEntityCodec();
+    private static final JsonCodec<ListPromptsResult> LIST_PROMPTS_RESULT_CODEC =
+            AbstractEntityCodec.paginatedResult(
+                    "prompts",
+                    "prompt",
+                    r -> new Pagination.Page<>(r.prompts(), r.nextCursor()),
+                    ListPromptsResult::_meta,
+                    new PromptAbstractEntityCodec(),
+                    (page, meta) -> new ListPromptsResult(page.items(), page.nextCursor(), meta));
+    private static final CompleteRequestJsonCodec COMPLETE_REQUEST_JSON_CODEC = new CompleteRequestJsonCodec();
+    private static final JsonCodec<SetLevelRequest> SET_LEVEL_REQUEST_JSON_CODEC = new SetLevelRequestAbstractEntityCodec();
+    private static final CancelledNotificationJsonCodec CANCELLED_NOTIFICATION_JSON_CODEC = new CancelledNotificationJsonCodec();
+
 
     public McpServer(ResourceProvider resources,
                      ToolProvider tools,
@@ -300,7 +315,7 @@ public final class McpServer extends JsonRpcEndpoint implements AutoCloseable {
                 baseResp.instructions(),
                 serverFeatures()
         );
-        var json = InitializeResponse.CODEC.toJson(resp);
+        var json = new InitializeResponseAbstractEntityCodec().toJson(resp);
         return new JsonRpcResponse(req.id(), json);
     }
 
@@ -356,7 +371,7 @@ public final class McpServer extends JsonRpcEndpoint implements AutoCloseable {
     }
 
     private void cancelled(JsonRpcNotification note) {
-        CancelledNotification cn = CancelledNotification.CODEC.fromJson(note.params());
+        CancelledNotification cn = CANCELLED_NOTIFICATION_JSON_CODEC.fromJson(note.params());
         progress.cancel(cn.requestId(), cn.reason());
         progress.release(cn.requestId());
         try {
@@ -376,10 +391,13 @@ public final class McpServer extends JsonRpcEndpoint implements AutoCloseable {
         if (initCheck.isPresent()) return initCheck.get();
         requireServerCapability(ServerCapability.TOOLS);
         try {
-            ListToolsRequest ltr = ListToolsRequest.CODEC.fromJson(req.params());
+            ListToolsRequest ltr = AbstractEntityCodec.paginatedRequest(
+                    ListToolsRequest::cursor,
+                    ListToolsRequest::_meta,
+                    ListToolsRequest::new).fromJson(req.params());
             String cursor = sanitizeCursor(ltr.cursor());
             Pagination.Page<Tool> page = tools.list(cursor);
-            JsonObject json = ListToolsResult.CODEC.toJson(new ListToolsResult(page.items(), page.nextCursor(), null));
+            JsonObject json = ListToolsResult.LIST_TOOLS_RESULT_JSON_CODEC.toJson(new ListToolsResult(page.items(), page.nextCursor(), null));
             return new JsonRpcResponse(req.id(), json);
         } catch (IllegalArgumentException e) {
             return JsonRpcError.of(req.id(), JsonRpcErrorCode.INVALID_PARAMS, e.getMessage());
@@ -390,7 +408,7 @@ public final class McpServer extends JsonRpcEndpoint implements AutoCloseable {
         requireServerCapability(ServerCapability.TOOLS);
         CallToolRequest callRequest;
         try {
-            callRequest = CallToolRequest.CODEC.fromJson(req.params());
+            callRequest = CALL_TOOL_REQUEST_CODEC.fromJson(req.params());
         } catch (IllegalArgumentException e) {
             return JsonRpcError.of(req.id(), JsonRpcErrorCode.INVALID_PARAMS, e.getMessage());
         }
@@ -405,7 +423,7 @@ public final class McpServer extends JsonRpcEndpoint implements AutoCloseable {
         }
         try {
             ToolResult result = tools.call(callRequest.name(), callRequest.arguments());
-            return new JsonRpcResponse(req.id(), ToolResult.CODEC.toJson(result));
+            return new JsonRpcResponse(req.id(), TOOL_RESULT_ABSTRACT_ENTITY_CODEC.toJson(result));
         } catch (IllegalArgumentException e) {
             return handleToolCallFailure(req, callRequest, e);
         }
@@ -423,7 +441,7 @@ public final class McpServer extends JsonRpcEndpoint implements AutoCloseable {
                 if (res.action() == ElicitationAction.ACCEPT) {
                     try {
                         ToolResult result = tools.call(callRequest.name(), res.content());
-                        return new JsonRpcResponse(req.id(), ToolResult.CODEC.toJson(result));
+                        return new JsonRpcResponse(req.id(), TOOL_RESULT_ABSTRACT_ENTITY_CODEC.toJson(result));
                     } catch (IllegalArgumentException ex) {
                         return JsonRpcError.of(req.id(), JsonRpcErrorCode.INVALID_PARAMS, ex.getMessage());
                     }
@@ -437,15 +455,6 @@ public final class McpServer extends JsonRpcEndpoint implements AutoCloseable {
         }
         return JsonRpcError.of(req.id(), JsonRpcErrorCode.INVALID_PARAMS, e.getMessage());
     }
-
-    static final JsonCodec<ListPromptsResult> LIST_PROMPTS_RESULT_CODEC =
-            AbstractEntityCodec.paginatedResult(
-                    "prompts",
-                    "prompt",
-                    r -> new Pagination.Page<>(r.prompts(), r.nextCursor()),
-                    ListPromptsResult::_meta,
-                    new PromptAbstractEntityCodec(),
-                    (page, meta) -> new ListPromptsResult(page.items(), page.nextCursor(), meta));
 
 
     private JsonRpcMessage listPrompts(JsonRpcRequest req) {
@@ -465,13 +474,14 @@ public final class McpServer extends JsonRpcEndpoint implements AutoCloseable {
     private JsonRpcMessage getPrompt(JsonRpcRequest req) {
         requireServerCapability(ServerCapability.PROMPTS);
         try {
-            GetPromptRequest getRequest = GetPromptRequest.CODEC.fromJson(req.params());
+            GetPromptRequest getRequest = ((JsonCodec<GetPromptRequest>) new GetPromptRequestAbstractEntityCodec()).fromJson(req.params());
             PromptInstance inst = prompts.get(getRequest.name(), getRequest.arguments());
             return new JsonRpcResponse(req.id(), PromptInstance.CODEC.toJson(inst));
         } catch (IllegalArgumentException e) {
             return JsonRpcError.of(req.id(), JsonRpcErrorCode.INVALID_PARAMS, e.getMessage());
         }
     }
+
 
     private JsonRpcMessage setLogLevel(JsonRpcRequest req) {
         requireServerCapability(ServerCapability.LOGGING);
@@ -480,7 +490,7 @@ public final class McpServer extends JsonRpcEndpoint implements AutoCloseable {
             return JsonRpcError.of(req.id(), JsonRpcErrorCode.INVALID_PARAMS, "Missing params");
         }
         try {
-            logLevel = SetLevelRequest.CODEC.fromJson(params).level();
+            logLevel = SET_LEVEL_REQUEST_JSON_CODEC.fromJson(params).level();
             return new JsonRpcResponse(req.id(), JsonValue.EMPTY_JSON_OBJECT);
         } catch (IllegalArgumentException e) {
             return JsonRpcError.of(req.id(), JsonRpcErrorCode.INVALID_PARAMS, e.getMessage());
@@ -492,12 +502,13 @@ public final class McpServer extends JsonRpcEndpoint implements AutoCloseable {
                 note.level().ordinal() < logLevel.ordinal()) return;
         requireServerCapability(ServerCapability.LOGGING);
         send(new JsonRpcNotification(NotificationMethod.MESSAGE.method(),
-                LoggingMessageNotification.CODEC.toJson(note)));
+                LOGGING_MESSAGE_NOTIFICATION_JSON_CODEC.toJson(note)));
     }
 
     private void sendLog(LoggingLevel level, String logger, JsonValue data) throws IOException {
         sendLog(new LoggingMessageNotification(level, logger, data));
     }
+
 
     private JsonRpcMessage complete(JsonRpcRequest req) {
         if (!serverCapabilities().contains(ServerCapability.COMPLETIONS)) {
@@ -509,13 +520,13 @@ public final class McpServer extends JsonRpcEndpoint implements AutoCloseable {
             return JsonRpcError.of(req.id(), JsonRpcErrorCode.INVALID_PARAMS, "Missing params");
         }
         try {
-            CompleteRequest request = CompleteRequest.CODEC.fromJson(params);
+            CompleteRequest request = COMPLETE_REQUEST_JSON_CODEC.fromJson(params);
             Optional<String> limit = rateLimit(completionLimiter, request.ref().toString());
             if (limit.isPresent()) {
                 return JsonRpcError.of(req.id(), RATE_LIMIT_CODE, limit.get());
             }
             CompleteResult result = completions.complete(request);
-            return new JsonRpcResponse(req.id(), CompleteResult.CODEC.toJson(result));
+            return new JsonRpcResponse(req.id(), new CompleteResultJsonCodec().toJson(result));
         } catch (IllegalArgumentException e) {
             return JsonRpcError.of(req.id(), JsonRpcErrorCode.INVALID_PARAMS, e.getMessage());
         } catch (InterruptedException e) {
@@ -552,7 +563,7 @@ public final class McpServer extends JsonRpcEndpoint implements AutoCloseable {
                 try {
                     send(new JsonRpcNotification(
                             NotificationMethod.CANCELLED.method(),
-                            CancelledNotification.CODEC.toJson(new CancelledNotification(id, "timeout"))));
+                            CANCELLED_NOTIFICATION_JSON_CODEC.toJson(new CancelledNotification(id, "timeout"))));
                 } catch (IOException ignore) {
                 }
                 pending.remove(id);
@@ -570,9 +581,9 @@ public final class McpServer extends JsonRpcEndpoint implements AutoCloseable {
 
     private ElicitResult elicit(ElicitRequest req) throws IOException {
         requireClientCapability(ClientCapability.ELICITATION);
-        JsonRpcMessage msg = request(RequestMethod.ELICITATION_CREATE, ElicitRequest.CODEC.toJson(req));
+        JsonRpcMessage msg = request(RequestMethod.ELICITATION_CREATE, new ElicitRequestJsonCodec().toJson(req));
         if (msg instanceof JsonRpcResponse resp) {
-            ElicitResult er = ElicitResult.CODEC.fromJson(resp.result());
+            ElicitResult er = new ElicitResultJsonCodec().fromJson(resp.result());
             if (er.action() == ElicitationAction.ACCEPT) {
                 ValidationUtil.validateSchema(req.requestedSchema(), er.content());
             }
@@ -597,9 +608,9 @@ public final class McpServer extends JsonRpcEndpoint implements AutoCloseable {
             return JsonRpcError.of(req.id(), JsonRpcErrorCode.INVALID_PARAMS, "Missing params");
         }
         try {
-            CreateMessageRequest cmr = CreateMessageRequest.CODEC.fromJson(params);
+            CreateMessageRequest cmr = new CreateMessageRequestJsonCodec().fromJson(params);
             CreateMessageResponse resp = createMessage(cmr);
-            return new JsonRpcResponse(req.id(), CreateMessageResponse.CODEC.toJson(resp));
+            return new JsonRpcResponse(req.id(), new CreateMessageResponseAbstractEntityCodec().toJson(resp));
         } catch (IllegalArgumentException e) {
             return JsonRpcError.of(req.id(), JsonRpcErrorCode.INVALID_PARAMS, e.getMessage());
         } catch (Exception e) {

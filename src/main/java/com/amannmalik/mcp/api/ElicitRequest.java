@@ -1,12 +1,9 @@
 package com.amannmalik.mcp.api;
 
-import com.amannmalik.mcp.codec.ElicitRequestJsonCodec;
-import com.amannmalik.mcp.codec.JsonCodec;
 import com.amannmalik.mcp.util.ValidationUtil;
 import jakarta.json.JsonObject;
 
 public record ElicitRequest(String message, JsonObject requestedSchema, JsonObject _meta) {
-    static final JsonCodec<ElicitRequest> CODEC = new ElicitRequestJsonCodec();
 
     public ElicitRequest(String message, JsonObject requestedSchema, JsonObject _meta) {
         if (message == null || requestedSchema == null) {
