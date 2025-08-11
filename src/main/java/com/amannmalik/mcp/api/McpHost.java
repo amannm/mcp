@@ -2,7 +2,6 @@ package com.amannmalik.mcp.api;
 
 import com.amannmalik.mcp.api.McpClient.McpClientListener;
 import com.amannmalik.mcp.codec.*;
-import com.amannmalik.mcp.core.CapabilityRequirements;
 import com.amannmalik.mcp.elicitation.InteractiveElicitationProvider;
 import com.amannmalik.mcp.jsonrpc.JsonRpc;
 import com.amannmalik.mcp.jsonrpc.JsonRpcResponse;
@@ -78,14 +77,6 @@ public final class McpHost implements AutoCloseable {
 
             register(clientConfig.clientId(), client, clientConfig);
         }
-    }
-
-    private static Optional<ServerCapability> serverCapabilityForMethod(RequestMethod requestMethod) {
-        return CapabilityRequirements.forMethod(requestMethod);
-    }
-
-    private static Optional<ClientCapability> clientCapabilityForMethod(JsonRpcMethod method) {
-        return CapabilityRequirements.forClient(method);
     }
 
     private static void requireCapability(McpClient client, ServerCapability cap) {
@@ -247,9 +238,9 @@ public final class McpHost implements AutoCloseable {
     private McpClient requireClientForMethod(String id, JsonRpcMethod method) {
         McpClient client = requireConnectedClient(id);
         if (method instanceof RequestMethod rm) {
-            serverCapabilityForMethod(rm).ifPresent(cap -> requireCapability(client, cap));
+            rm.serverCapability().ifPresent(cap -> requireCapability(client, cap));
         }
-        clientCapabilityForMethod(method).ifPresent(cap -> requireCapability(client, cap));
+        method.clientCapability().ifPresent(cap -> requireCapability(client, cap));
         return client;
     }
 

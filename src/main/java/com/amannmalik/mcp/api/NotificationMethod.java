@@ -27,5 +27,10 @@ public enum NotificationMethod implements JsonRpcMethod {
     public String method() {
         return method;
     }
+
+    @Override
+    public Optional<ClientCapability> clientCapability() {
+        return this == ROOTS_LIST_CHANGED ? Optional.of(ClientCapability.ROOTS) : Optional.empty();
+    }
 }
 

@@ -541,7 +541,7 @@ final class McpClient extends JsonRpcEndpoint implements AutoCloseable {
     }
 
     private void requireCapability(RequestMethod method) {
-        CapabilityRequirements.forMethod(method)
+        method.serverCapability()
                 .filter(c -> !serverCapabilities.contains(c))
                 .ifPresent(c -> {
                     throw new IllegalStateException("Server capability not negotiated: " + c);

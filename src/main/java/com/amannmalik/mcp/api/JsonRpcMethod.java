@@ -14,4 +14,8 @@ public sealed interface JsonRpcMethod permits
     }
 
     String method();
+
+    default Optional<ClientCapability> clientCapability() {
+        return Optional.empty();
+    }
 }
