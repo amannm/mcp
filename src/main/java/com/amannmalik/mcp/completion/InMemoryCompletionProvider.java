@@ -43,7 +43,7 @@ public final class InMemoryCompletionProvider extends InMemoryProvider<Ref> impl
         entries.add(new Entry(ref, argumentName, ctx, vals));
         if (items.stream().noneMatch(r -> refEquals(r, ref))) {
             items.add(ref);
-            notifyListeners();
+            notifyListChanged();
         }
     }
 

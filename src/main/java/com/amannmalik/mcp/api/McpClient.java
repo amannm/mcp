@@ -426,7 +426,7 @@ final class McpClient extends JsonRpcEndpoint implements AutoCloseable {
     private void subscribeRootsIfNeeded() throws IOException {
         if (!capabilities.contains(ClientCapability.ROOTS) || !rootsListChangedSupported) return;
         try {
-            rootsSubscription = roots.subscribe(ignored -> {
+            rootsSubscription = roots.onListChanged(() -> {
                 try {
                     JsonObject params = AbstractEntityCodec.empty(RootsListChangedNotification::new).toJson(new RootsListChangedNotification());
                     send(new JsonRpcNotification(NotificationMethod.ROOTS_LIST_CHANGED.method(), params));

@@ -75,13 +75,13 @@ public final class InMemoryResourceProvider extends InMemoryProvider<Resource> i
         }
         items.add(resource);
         if (content != null) contents.put(resource.uri(), content);
-        notifyListeners();
+        notifyListChanged();
     }
 
     public void removeResource(String uri) {
         items.removeIf(r -> r.uri().equals(uri));
         contents.remove(uri);
-        notifyListeners();
+        notifyListChanged();
     }
 
     public void addTemplate(ResourceTemplate template) {
@@ -94,11 +94,11 @@ public final class InMemoryResourceProvider extends InMemoryProvider<Resource> i
             }
         }
         templates.add(template);
-        notifyListeners();
+        notifyListChanged();
     }
 
     public void removeTemplate(String name) {
         templates.removeIf(t -> t.name().equals(name));
-        notifyListeners();
+        notifyListChanged();
     }
 }

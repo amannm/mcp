@@ -1,6 +1,5 @@
 package com.amannmalik.mcp.core;
 
-import com.amannmalik.mcp.api.Change;
 import com.amannmalik.mcp.completion.InMemoryCompletionProvider;
 import com.amannmalik.mcp.prompts.InMemoryPromptProvider;
 import com.amannmalik.mcp.resources.InMemoryResourceProvider;
@@ -9,12 +8,11 @@ import com.amannmalik.mcp.spi.Cursor;
 import com.amannmalik.mcp.spi.Pagination;
 import com.amannmalik.mcp.spi.Provider;
 import com.amannmalik.mcp.tools.InMemoryToolProvider;
-import com.amannmalik.mcp.util.ChangeSupport;
+import com.amannmalik.mcp.util.EventSupport;
 
 import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.function.Consumer;
 
 public sealed class InMemoryProvider<T> implements Provider<T> permits
         InMemoryCompletionProvider,
@@ -23,7 +21,7 @@ public sealed class InMemoryProvider<T> implements Provider<T> permits
         InMemoryRootsProvider,
         InMemoryToolProvider {
     protected final List<T> items;
-    private final ChangeSupport<Change> changeSupport = new ChangeSupport<>();
+    private final EventSupport changeSupport = new EventSupport();
 
     public InMemoryProvider() {
         this(null);
@@ -39,7 +37,7 @@ public sealed class InMemoryProvider<T> implements Provider<T> permits
     }
 
     @Override
-    public AutoCloseable subscribe(Consumer<Change> listener) {
+    public AutoCloseable onListChanged(Runnable listener) {
         return changeSupport.subscribe(listener);
     }
 
@@ -48,7 +46,7 @@ public sealed class InMemoryProvider<T> implements Provider<T> permits
         return true;
     }
 
-    protected void notifyListeners() {
-        changeSupport.notifyListeners(Change.INSTANCE);
+    protected void notifyListChanged() {
+        changeSupport.notifyListeners();
     }
 }

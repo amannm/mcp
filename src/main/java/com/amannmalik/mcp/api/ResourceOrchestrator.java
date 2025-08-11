@@ -46,7 +46,7 @@ final class ResourceOrchestrator implements AutoCloseable {
         this.progress = progress;
         this.listSubscription = resources.supportsListChanged() ?
                 subscribeListChanges(
-                        resources::subscribe,
+                        resources::onListChanged,
                         NotificationMethod.RESOURCES_LIST_CHANGED,
                         RESOURCE_LIST_CHANGED_NOTIFICATION_JSON_CODEC.toJson(new ResourceListChangedNotification())) : null;
     }
@@ -259,7 +259,7 @@ final class ResourceOrchestrator implements AutoCloseable {
             NotificationMethod method,
             JsonObject payload) {
         try {
-            return factory.subscribe(ignored -> {
+            return factory.onListChanged(() -> {
                 if (state.get() != LifecycleState.OPERATION) return;
                 try {
                     sender.assNotify(method, payload);
@@ -273,7 +273,7 @@ final class ResourceOrchestrator implements AutoCloseable {
 
     @FunctionalInterface
     private interface SubscriptionFactory<S extends AutoCloseable> {
-        S subscribe(Consumer<Change> listener);
+        S onListChanged(Runnable listener);
     }
 
     @FunctionalInterface
