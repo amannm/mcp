@@ -1,7 +1,6 @@
 package com.amannmalik.mcp.core;
 
 import com.amannmalik.mcp.api.*;
-import com.amannmalik.mcp.api.Change;
 import com.amannmalik.mcp.util.ChangeSupport;
 
 import java.util.Collection;

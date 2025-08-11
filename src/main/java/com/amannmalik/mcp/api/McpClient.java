@@ -182,7 +182,7 @@ public final class McpClient extends JsonRpcEndpoint implements AutoCloseable {
                 SET_LEVEL_REQUEST_JSON_CODEC.toJson(new SetLevelRequest(level, null)), 0L));
     }
 
-     JsonRpcMessage request(RequestMethod method, JsonObject params, long timeoutMillis) throws IOException {
+    JsonRpcMessage request(RequestMethod method, JsonObject params, long timeoutMillis) throws IOException {
         requireCapability(method);
         if (!connected) {
             return JsonRpcError.of(new RequestId.NumericId(0), -32002, "Server not initialized");
@@ -570,7 +570,7 @@ public final class McpClient extends JsonRpcEndpoint implements AutoCloseable {
     private void handleToolsListChanged(JsonRpcNotification note) {
         try {
             // TODO: understand and refactor this
-            ToolListChangedNotification.CODEC.fromJson(note.params());
+            AbstractEntityCodec.empty(ToolListChangedNotification::new).fromJson(note.params());
             listener.onToolListChanged();
         } catch (IllegalArgumentException ignore) {
         }

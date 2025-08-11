@@ -129,7 +129,7 @@ public final class McpServer extends JsonRpcEndpoint implements AutoCloseable {
             toolListSubscription = subscribeListChanges(
                     tools::subscribe,
                     NotificationMethod.TOOLS_LIST_CHANGED,
-                    ToolListChangedNotification.CODEC.toJson(new ToolListChangedNotification()));
+                    AbstractEntityCodec.empty(ToolListChangedNotification::new).toJson(new ToolListChangedNotification()));
         }
 
         if (prompts != null && prompts.supportsListChanged()) {

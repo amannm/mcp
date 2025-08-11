@@ -10,6 +10,8 @@ import java.util.List;
 import java.util.Set;
 
 public final class TransportFactory {
+    private TransportFactory() {}
+
     public static Transport createHttpTransport(Integer httpPort,
                                                 String expectedAudience,
                                                 String resourceMetadataUrl,

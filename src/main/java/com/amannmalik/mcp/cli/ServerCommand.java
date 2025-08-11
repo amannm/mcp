@@ -1,10 +1,6 @@
 package com.amannmalik.mcp.cli;
 
-import com.amannmalik.mcp.api.McpServer;
-import com.amannmalik.mcp.api.Transport;
-import com.amannmalik.mcp.api.ServerDefaults;
-import com.amannmalik.mcp.api.McpConfiguration;
-import com.amannmalik.mcp.api.TransportFactory;
+import com.amannmalik.mcp.api.*;
 import picocli.CommandLine;
 import picocli.CommandLine.Model.CommandSpec;
 import picocli.CommandLine.Model.OptionSpec;
@@ -18,7 +14,9 @@ import java.util.List;
 /// - [Server](specification/2025-06-18/server/index.mdx)
 /// - [Conformance Suite](src/test/resources/com/amannmalik/mcp/mcp.feature)
 public final class ServerCommand {
-    public ServerCommand() {}
+    public ServerCommand() {
+    }
+
     public static CommandSpec createCommandSpec() {
         CommandSpec spec = CommandSpec.create()
                 .name("server")
