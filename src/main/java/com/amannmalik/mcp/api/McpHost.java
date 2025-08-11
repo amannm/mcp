@@ -9,7 +9,6 @@ import com.amannmalik.mcp.jsonrpc.JsonRpcResponse;
 import com.amannmalik.mcp.roots.InMemoryRootsProvider;
 import com.amannmalik.mcp.sampling.InteractiveSamplingProvider;
 import com.amannmalik.mcp.security.*;
-import com.amannmalik.mcp.transport.TransportFactory;
 import jakarta.json.JsonObject;
 
 import java.io.IOException;
@@ -40,7 +39,7 @@ public final class McpHost implements AutoCloseable {
         this.samplingAccess = new SamplingAccessController();
         for (var entry : clientSpecs.entrySet()) {
             grantConsent(entry.getKey());
-            Transport transport = TransportFactory.createTransport(entry.getValue().split(" "), verbose);
+            Transport transport = TransportFactory.createStdioTransport(entry.getValue().split(" "), verbose);
             SamplingProvider samplingProvider = new InteractiveSamplingProvider(false);
             String currentDir = System.getProperty("user.dir");
             InMemoryRootsProvider rootsProvider = new InMemoryRootsProvider(

@@ -1,4 +1,4 @@
-package com.amannmalik.mcp.sampling;
+package com.amannmalik.mcp.api;
 
 public interface MessageContent {
 }

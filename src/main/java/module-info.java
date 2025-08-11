@@ -1,6 +1,6 @@
 module mcp.main {
-    requires info.picocli;
-    requires jakarta.json;
+    requires transitive info.picocli;
+    requires transitive jakarta.json;
     requires jakarta.servlet;
     requires java.net.http;
     requires org.eclipse.jetty.ee10.servlet;

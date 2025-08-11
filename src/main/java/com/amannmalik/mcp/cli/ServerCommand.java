@@ -4,7 +4,7 @@ import com.amannmalik.mcp.api.McpServer;
 import com.amannmalik.mcp.api.Transport;
 import com.amannmalik.mcp.api.ServerDefaults;
 import com.amannmalik.mcp.api.McpConfiguration;
-import com.amannmalik.mcp.transport.TransportFactory;
+import com.amannmalik.mcp.api.TransportFactory;
 import picocli.CommandLine;
 import picocli.CommandLine.Model.CommandSpec;
 import picocli.CommandLine.Model.OptionSpec;
@@ -18,6 +18,7 @@ import java.util.List;
 /// - [Server](specification/2025-06-18/server/index.mdx)
 /// - [Conformance Suite](src/test/resources/com/amannmalik/mcp/mcp.feature)
 public final class ServerCommand {
+    public ServerCommand() {}
     public static CommandSpec createCommandSpec() {
         CommandSpec spec = CommandSpec.create()
                 .name("server")
@@ -64,15 +65,20 @@ public final class ServerCommand {
         if (helpExitCode != null) return helpExitCode;
 
         try {
-            Integer httpPort = parseResult.matchedOptionValue("--http", null);
             boolean stdio = parseResult.matchedOptionValue("--stdio", false);
-            Path instructionsFile = parseResult.matchedOptionValue("--instructions", null);
             boolean verbose = parseResult.matchedOptionValue("--verbose", false);
-            String expectedAudience = parseResult.matchedOptionValue("--audience", null);
-            String resourceMetadataUrl = parseResult.matchedOptionValue("--resource-metadata", null);
-            List<String> authServers = parseResult.matchedOptionValue("--auth-server", Collections.emptyList());
-            boolean testMode = parseResult.matchedOptionValue("--test-mode", false);
-            Transport transport = TransportFactory.createTransport(httpPort, stdio, expectedAudience, resourceMetadataUrl, authServers, testMode, verbose);
+            Transport transport;
+            if (stdio) {
+                transport = TransportFactory.createStdioTransport(new String[0], verbose);
+            } else {
+                Integer httpPort = parseResult.matchedOptionValue("--http", 3000);
+                String expectedAudience = parseResult.matchedOptionValue("--audience", null);
+                String resourceMetadataUrl = parseResult.matchedOptionValue("--resource-metadata", null);
+                List<String> authServers = parseResult.matchedOptionValue("--auth-server", Collections.emptyList());
+                boolean testMode = parseResult.matchedOptionValue("--test-mode", false);
+                transport = TransportFactory.createHttpTransport(httpPort, expectedAudience, resourceMetadataUrl, authServers, testMode, verbose);
+            }
+            Path instructionsFile = parseResult.matchedOptionValue("--instructions", null);
             String instructions = instructionsFile == null ? null : Files.readString(instructionsFile);
             try (McpServer server = new McpServer(ServerDefaults.resources(),
                     ServerDefaults.tools(),

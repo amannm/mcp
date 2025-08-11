@@ -1,4 +1,4 @@
-package com.amannmalik.mcp.util;
+package com.amannmalik.mcp.api;
 
 /**
  * Sentinel value indicating a change occurred without additional detail.

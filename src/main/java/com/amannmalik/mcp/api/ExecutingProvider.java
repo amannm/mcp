@@ -1,4 +1,4 @@
-package com.amannmalik.mcp.core;
+package com.amannmalik.mcp.api;
 
 import jakarta.json.JsonObject;
 

@@ -1,7 +1,6 @@
 package com.amannmalik.mcp.api;
 
 import com.amannmalik.mcp.codec.ElicitRequestJsonCodec;
-import com.amannmalik.mcp.core.ExecutingProvider;
 import jakarta.json.JsonObject;
 
 import java.util.List;

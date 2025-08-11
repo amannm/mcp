@@ -4,7 +4,7 @@ import com.amannmalik.mcp.api.*;
 import com.amannmalik.mcp.codec.*;
 import com.amannmalik.mcp.jsonrpc.JsonRpcError;
 import com.amannmalik.mcp.jsonrpc.JsonRpcResponse;
-import com.amannmalik.mcp.util.Change;
+import com.amannmalik.mcp.api.Change;
 import com.amannmalik.mcp.util.ChangeSupport;
 
 import java.io.IOException;

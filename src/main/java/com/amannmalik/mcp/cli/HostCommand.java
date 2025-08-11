@@ -13,6 +13,7 @@ import java.io.*;
 import java.util.*;
 
 public final class HostCommand {
+    public HostCommand() {}
     public static CommandSpec createCommandSpec() {
         CommandSpec spec = CommandSpec.create()
                 .name("host")

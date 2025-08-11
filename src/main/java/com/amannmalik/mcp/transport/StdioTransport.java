@@ -20,25 +20,17 @@ public final class StdioTransport implements Transport {
     private final Process process;
     private final Thread logReader;
 
-    public StdioTransport(InputStream in, OutputStream out) {
-        this.in = new BufferedReader(new InputStreamReader(in, StandardCharsets.UTF_8));
-        this.out = new BufferedWriter(new OutputStreamWriter(out, StandardCharsets.UTF_8));
-        this.process = null;
-        this.logReader = null;
-    }
-
-    public StdioTransport(String[] args, Consumer<String> logSink) throws IOException {
+    public StdioTransport(String[] commands, InputStream in, OutputStream out, Consumer<String> logSink) throws IOException {
         Objects.requireNonNull(logSink, "logSink");
-        var builder = new ProcessBuilder(args);
+        var builder = new ProcessBuilder(commands);
         builder.redirectErrorStream(false);
         this.process = builder.start();
-        this.in = new BufferedReader(new InputStreamReader(process.getInputStream(), StandardCharsets.UTF_8));
-        this.out = new BufferedWriter(new OutputStreamWriter(process.getOutputStream(), StandardCharsets.UTF_8));
+        this.in = new BufferedReader(new InputStreamReader(in, StandardCharsets.UTF_8));
+        this.out = new BufferedWriter(new OutputStreamWriter(out, StandardCharsets.UTF_8));
         this.logReader = new Thread(() -> readLogs(process.getErrorStream(), logSink));
         this.logReader.setDaemon(true);
         this.logReader.start();
     }
-
     private static void readLogs(InputStream err, Consumer<String> sink) {
         try (BufferedReader r = new BufferedReader(new InputStreamReader(err, StandardCharsets.UTF_8))) {
             String line;
