@@ -10,9 +10,4 @@ public record JsonRpcRequest(RequestId id, String method, JsonObject params) imp
             throw new IllegalArgumentException("id and method are required");
         }
     }
-
-    @Override
-    public String jsonrpc() {
-        return JsonRpc.VERSION;
-    }
 }
