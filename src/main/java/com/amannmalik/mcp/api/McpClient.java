@@ -5,7 +5,6 @@ import com.amannmalik.mcp.core.*;
 import com.amannmalik.mcp.jsonrpc.*;
 import com.amannmalik.mcp.resources.ResourceListChangedNotification;
 import com.amannmalik.mcp.spi.*;
-import com.amannmalik.mcp.transport.Protocol;
 import com.amannmalik.mcp.transport.StdioTransport;
 import com.amannmalik.mcp.util.*;
 import jakarta.json.*;
