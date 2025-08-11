@@ -22,15 +22,15 @@ public final class StreamableHttpClientTransport implements Transport {
     private final AtomicReference<String> sessionId = new AtomicReference<>();
     private final AtomicReference<String> protocolVersion = new AtomicReference<>(Protocol.LATEST_VERSION);
     private final AtomicReference<String> authorization = new AtomicReference<>();
-    private final TransportConfiguration transportConfig;
+    private final ClientConfiguration clientConfig;
 
     public StreamableHttpClientTransport(URI endpoint) {
-        this(endpoint, TransportConfiguration.defaultConfiguration());
+        this(endpoint, ClientConfiguration.defaultConfiguration());
     }
 
-    public StreamableHttpClientTransport(URI endpoint, TransportConfiguration transportConfig) {
+    public StreamableHttpClientTransport(URI endpoint, ClientConfiguration clientConfig) {
         this.endpoint = endpoint;
-        this.transportConfig = transportConfig;
+        this.clientConfig = clientConfig;
     }
 
     public void setProtocolVersion(String version) {
@@ -92,7 +92,7 @@ public final class StreamableHttpClientTransport implements Transport {
 
     @Override
     public JsonObject receive() throws IOException {
-        return receive(transportConfig.clientConnection().defaultReceiveTimeout().toMillis());
+        return receive(clientConfig.clientConnection().defaultReceiveTimeout().toMillis());
     }
 
     @Override
@@ -134,7 +134,7 @@ public final class StreamableHttpClientTransport implements Transport {
 
     private HttpRequest.Builder builder() {
         var b = HttpRequest.newBuilder(endpoint)
-                .header("Origin", transportConfig.clientConnection().defaultOriginHeader())
+                .header("Origin", clientConfig.clientConnection().defaultOriginHeader())
                 .header(TransportHeaders.PROTOCOL_VERSION, protocolVersion.get());
         Optional.ofNullable(authorization.get())
                 .ifPresent(t -> b.header(TransportHeaders.AUTHORIZATION, "Bearer " + t));

@@ -34,7 +34,7 @@ public final class StreamableHttpServerTransport implements Transport {
     final BlockingQueue<JsonObject> incoming = new LinkedBlockingQueue<>();
     final SseClients clients = new SseClients();
     final SessionManager sessions;
-    final TransportConfiguration transportConfig;
+    final ServerConfiguration serverConfig;
     private final Server server;
     private final int port;
     private final Set<String> allowedOrigins;
@@ -47,7 +47,7 @@ public final class StreamableHttpServerTransport implements Transport {
                                          AuthorizationManager auth,
                                          String resourceMetadataUrl,
                                          List<String> authorizationServers) throws Exception {
-        this(port, allowedOrigins, auth, resourceMetadataUrl, authorizationServers, TransportConfiguration.defaultConfiguration());
+        this(port, allowedOrigins, auth, resourceMetadataUrl, authorizationServers, ServerConfiguration.defaultConfiguration());
     }
 
     public StreamableHttpServerTransport(int port,
@@ -55,17 +55,17 @@ public final class StreamableHttpServerTransport implements Transport {
                                          AuthorizationManager auth,
                                          String resourceMetadataUrl,
                                          List<String> authorizationServers,
-                                         TransportConfiguration transportConfig) throws Exception {
-        this.transportConfig = transportConfig;
-        this.sessions = new SessionManager(COMPATIBILITY_VERSION, transportConfig.session());
+                                         ServerConfiguration serverConfig) throws Exception {
+        this.serverConfig = serverConfig;
+        this.sessions = new SessionManager(COMPATIBILITY_VERSION, serverConfig.session());
         
-        server = new Server(new InetSocketAddress(transportConfig.serverBind().bindAddress(), port));
+        server = new Server(new InetSocketAddress(serverConfig.serverBind().bindAddress(), port));
         ServletContextHandler ctx = new ServletContextHandler();
         
-        for (String path : transportConfig.serverBind().servletPaths()) {
+        for (String path : serverConfig.serverBind().servletPaths()) {
             if (path.equals("/")) {
                 ctx.addServlet(new ServletHolder(new McpServlet(this)), "/");
-            } else if (path.equals(transportConfig.serverBind().resourceMetadataPath())) {
+            } else if (path.equals(serverConfig.serverBind().resourceMetadataPath())) {
                 ctx.addServlet(new ServletHolder(new MetadataServlet(this)), path);
             }
         }
@@ -78,14 +78,14 @@ public final class StreamableHttpServerTransport implements Transport {
         
         if (resourceMetadataUrl == null || resourceMetadataUrl.isBlank()) {
             this.resourceMetadataUrl = String.format(
-                    transportConfig.serverBind().resourceMetadataUrlTemplate(),
-                    transportConfig.serverBind().bindAddress(),
+                    serverConfig.serverBind().resourceMetadataUrlTemplate(),
+                    serverConfig.serverBind().bindAddress(),
                     this.port);
         } else {
             this.resourceMetadataUrl = resourceMetadataUrl;
         }
         
-        this.canonicalResource = "http://" + transportConfig.serverBind().bindAddress() + ":" + this.port;
+        this.canonicalResource = "http://" + serverConfig.serverBind().bindAddress() + ":" + this.port;
         if (authorizationServers == null || authorizationServers.isEmpty()) {
             this.authorizationServers = List.of();
         } else {

@@ -4,30 +4,19 @@ import java.time.Duration;
 import java.util.List;
 import java.util.Set;
 
-/// Transport-level configuration for MCP connections
-/// - [Transports](specification/2025-06-18/basic/transports.mdx)
-/// - [Security Best Practices](specification/2025-06-18/basic/security_best_practices.mdx)
-public record TransportConfiguration(
-        // Server binding configuration
+/// Server-side configuration for MCP connections
+/// - [Architecture](specification/2025-06-18/architecture/index.mdx)
+/// - [Server Features](specification/2025-06-18/server/index.mdx)
+public record ServerConfiguration(
         ServerBindConfig serverBind,
-
-        // Client connection configuration  
-        ClientConnectionConfig clientConnection,
-
-        // Session management configuration
         SessionConfig session,
-
-        // Server-sent events configuration
         SseConfig sse,
-
-        // HTTP servlet configuration
         ServletConfig servlet
 ) {
 
-    public static TransportConfiguration defaultConfiguration() {
-        return new TransportConfiguration(
+    public static ServerConfiguration defaultConfiguration() {
+        return new ServerConfiguration(
                 ServerBindConfig.defaultConfig(),
-                ClientConnectionConfig.defaultConfig(),
                 SessionConfig.defaultConfig(),
                 SseConfig.defaultConfig(),
                 ServletConfig.defaultConfig()
@@ -54,23 +43,6 @@ public record TransportConfiguration(
                     Set.of("/", "/.well-known/oauth-protected-resource"),
                     "/.well-known/oauth-protected-resource",
                     "http://%s:%d/.well-known/oauth-protected-resource"
-            );
-        }
-    }
-
-    public record ClientConnectionConfig(
-            Duration defaultReceiveTimeout,
-            String defaultOriginHeader,
-            Duration httpRequestTimeout,
-            boolean enableKeepAlive
-    ) {
-
-        public static ClientConnectionConfig defaultConfig() {
-            return new ClientConnectionConfig(
-                    Duration.ofSeconds(10),
-                    "http://127.0.0.1",
-                    Duration.ofSeconds(30),
-                    true
             );
         }
     }

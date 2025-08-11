@@ -1,6 +1,6 @@
 package com.amannmalik.mcp.transport;
 
-import com.amannmalik.mcp.api.TransportConfiguration;
+import com.amannmalik.mcp.api.ServerConfiguration;
 import com.amannmalik.mcp.spi.Principal;
 import com.amannmalik.mcp.util.Base64Util;
 import com.amannmalik.mcp.util.ValidationUtil;
@@ -18,14 +18,14 @@ final class SessionManager {
     private final AtomicReference<SessionState> current = new AtomicReference<>();
     private final AtomicReference<String> lastSessionId = new AtomicReference<>();
     private final String compatibilityVersion;
-    private final TransportConfiguration.SessionConfig sessionConfig;
+    private final ServerConfiguration.SessionConfig sessionConfig;
     private volatile String protocolVersion;
 
     SessionManager(String compatibilityVersion) {
-        this(compatibilityVersion, TransportConfiguration.SessionConfig.defaultConfig());
+        this(compatibilityVersion, ServerConfiguration.SessionConfig.defaultConfig());
     }
 
-    SessionManager(String compatibilityVersion, TransportConfiguration.SessionConfig sessionConfig) {
+    SessionManager(String compatibilityVersion, ServerConfiguration.SessionConfig sessionConfig) {
         this.compatibilityVersion = compatibilityVersion;
         this.sessionConfig = sessionConfig;
         this.protocolVersion = compatibilityVersion;
