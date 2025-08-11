@@ -66,7 +66,7 @@ public final class RootsManager {
     private List<Root> fetchRoots() throws IOException {
         requireClientCapability(ClientCapability.ROOTS);
         JsonRpcMessage msg = requester.send(RequestMethod.ROOTS_LIST,
-                CODEC.toJson(new ListRootsRequest(null)));
+                CODEC.toJson(new ListRootsRequest(null)), 0L);
         if (msg instanceof JsonRpcResponse resp) {
             return LIST_RESULTS_CODEC.fromJson(resp.result()).roots();
         }

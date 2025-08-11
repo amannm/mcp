@@ -1,7 +1,6 @@
 package com.amannmalik.mcp.cli;
 
-import com.amannmalik.mcp.api.McpHost;
-import com.amannmalik.mcp.api.Role;
+import com.amannmalik.mcp.api.*;
 import jakarta.json.Json;
 import jakarta.json.JsonValue;
 import picocli.CommandLine;
@@ -192,7 +191,7 @@ public final class HostCommand {
                             var params = parts.length > 3 ?
                                     Json.createReader(new StringReader(parts[3])).readObject() :
                                     JsonValue.EMPTY_JSON_OBJECT;
-                            System.out.println(host.request(parts[1], parts[2], params));
+                            System.out.println(host.request(parts[1], RequestMethod.from(parts[2]).orElseThrow(), params));
                         }
                     }
                     case "notify" -> {
@@ -202,7 +201,7 @@ public final class HostCommand {
                             var params = parts.length > 3 ?
                                     Json.createReader(new StringReader(parts[3])).readObject() :
                                     JsonValue.EMPTY_JSON_OBJECT;
-                            host.notify(parts[1], parts[2], params);
+                            host.notify(parts[1], NotificationMethod.from(parts[2]).orElseThrow(), params);
                             System.out.println("Notification sent");
                         }
                     }

@@ -9,9 +9,7 @@ public record ToolAnnotations(
         Boolean idempotentHint,
         Boolean openWorldHint
 ) {
-
     public ToolAnnotations {
         title = ValidationUtil.cleanNullable(title);
     }
-
 }

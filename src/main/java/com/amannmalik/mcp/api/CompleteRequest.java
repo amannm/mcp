@@ -15,5 +15,4 @@ public record CompleteRequest(
         }
         ValidationUtil.requireMeta(_meta);
     }
-
 }

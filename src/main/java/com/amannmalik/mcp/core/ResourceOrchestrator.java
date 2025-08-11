@@ -1,7 +1,7 @@
-package com.amannmalik.mcp.api;
+package com.amannmalik.mcp.core;
 
+import com.amannmalik.mcp.api.*;
 import com.amannmalik.mcp.codec.*;
-import com.amannmalik.mcp.core.*;
 import com.amannmalik.mcp.jsonrpc.*;
 import com.amannmalik.mcp.resources.ReadResourceResult;
 import com.amannmalik.mcp.resources.ResourceListChangedNotification;
@@ -14,7 +14,7 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.*;
 
-final class ResourceOrchestrator implements AutoCloseable {
+public final class ResourceOrchestrator implements AutoCloseable {
     private static final JsonCodec<ResourceUpdatedNotification> RESOURCE_UPDATED_NOTIFICATION_JSON_CODEC = new ResourceUpdatedNotificationAbstractEntityCodec();
     private final ResourceProvider resources;
     private final ResourceAccessPolicy access;

@@ -4,7 +4,6 @@ import com.amannmalik.mcp.util.ValidationUtil;
 import jakarta.json.JsonObject;
 
 public record Root(String uri, String name, JsonObject _meta) {
-
     public Root {
         uri = ValidationUtil.requireFileUri(uri);
         if (name != null) {
@@ -12,5 +11,4 @@ public record Root(String uri, String name, JsonObject _meta) {
         }
         ValidationUtil.requireMeta(_meta);
     }
-
 }

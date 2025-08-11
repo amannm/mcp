@@ -179,23 +179,12 @@ public final class McpClient extends JsonRpcEndpoint implements AutoCloseable {
     public void setLogLevel(LoggingLevel level) throws IOException {
         if (level == null) throw new IllegalArgumentException("level required");
         JsonRpc.expectResponse(request(RequestMethod.LOGGING_SET_LEVEL,
-                SET_LEVEL_REQUEST_JSON_CODEC.toJson(new SetLevelRequest(level, null))));
+                SET_LEVEL_REQUEST_JSON_CODEC.toJson(new SetLevelRequest(level, null)), 0L));
     }
 
-    public JsonRpcMessage request(String method, JsonObject params) throws IOException {
-        return request(method, params, McpConfiguration.current().defaultMs());
-    }
-
-    public JsonRpcMessage request(RequestMethod method, JsonObject params) throws IOException {
-        return super.request(method, params);
-    }
-
+    @Override
     public JsonRpcMessage request(RequestMethod method, JsonObject params, long timeoutMillis) throws IOException {
         requireCapability(method);
-        return super.request(method, params, timeoutMillis);
-    }
-
-    public JsonRpcMessage request(String method, JsonObject params, long timeoutMillis) throws IOException {
         if (!connected) {
             return JsonRpcError.of(new RequestId.NumericId(0), -32002, "Server not initialized");
         }
@@ -207,12 +196,8 @@ public final class McpClient extends JsonRpcEndpoint implements AutoCloseable {
         }
     }
 
-    public void notify(String method, JsonObject params) throws IOException {
-        if (!connected) throw new IllegalStateException("not connected");
-        super.notify(method, params);
-    }
-
     public void notify(NotificationMethod method, JsonObject params) throws IOException {
+        if (!connected) throw new IllegalStateException("not connected");
         notify(method.method(), params);
     }
 
@@ -250,7 +235,7 @@ public final class McpClient extends JsonRpcEndpoint implements AutoCloseable {
                 AbstractEntityCodec.paginatedRequest(
                         ListResourcesRequest::cursor,
                         ListResourcesRequest::_meta,
-                        ListResourcesRequest::new).toJson(new ListResourcesRequest(cursor, null))
+                        ListResourcesRequest::new).toJson(new ListResourcesRequest(cursor, null)), 0L
         ));
         return AbstractEntityCodec.paginatedResult(
                 "resources",
@@ -267,7 +252,7 @@ public final class McpClient extends JsonRpcEndpoint implements AutoCloseable {
                 AbstractEntityCodec.paginatedRequest(
                         ListResourceTemplatesRequest::cursor,
                         ListResourceTemplatesRequest::_meta,
-                        ListResourceTemplatesRequest::new).toJson(new ListResourceTemplatesRequest(cursor, null))
+                        ListResourceTemplatesRequest::new).toJson(new ListResourceTemplatesRequest(cursor, null)), 0L
         ));
         return AbstractEntityCodec.paginatedResult(
                 "resourceTemplates",
@@ -287,7 +272,7 @@ public final class McpClient extends JsonRpcEndpoint implements AutoCloseable {
         }
         JsonRpc.expectResponse(request(
                 RequestMethod.RESOURCES_SUBSCRIBE,
-                SUBSCRIBE_REQUEST_JSON_CODEC.toJson(new SubscribeRequest(uri, null))
+                SUBSCRIBE_REQUEST_JSON_CODEC.toJson(new SubscribeRequest(uri, null)), 0L
         ));
         resourceListeners.put(uri, listener);
         return () -> {
@@ -295,7 +280,7 @@ public final class McpClient extends JsonRpcEndpoint implements AutoCloseable {
             try {
                 request(
                         RequestMethod.RESOURCES_UNSUBSCRIBE,
-                        UNSUBSCRIBE_REQUEST_JSON_CODEC.toJson(new UnsubscribeRequest(uri, null))
+                        UNSUBSCRIBE_REQUEST_JSON_CODEC.toJson(new UnsubscribeRequest(uri, null)), 0L
                 );
             } catch (IOException ignore) {
             }

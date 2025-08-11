@@ -1,6 +1,5 @@
 package com.amannmalik.mcp.api;
 
-import com.amannmalik.mcp.util.DisplayNameProvider;
 import com.amannmalik.mcp.util.ValidationUtil;
 import jakarta.json.JsonObject;
 

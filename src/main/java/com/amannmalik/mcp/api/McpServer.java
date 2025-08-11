@@ -5,6 +5,7 @@ import com.amannmalik.mcp.core.*;
 import com.amannmalik.mcp.elicitation.ElicitationAction;
 import com.amannmalik.mcp.jsonrpc.*;
 import com.amannmalik.mcp.prompts.*;
+import com.amannmalik.mcp.core.ResourceOrchestrator;
 import com.amannmalik.mcp.roots.RootsManager;
 import com.amannmalik.mcp.tools.ToolListChangedNotification;
 import com.amannmalik.mcp.transport.Protocol;
@@ -525,11 +526,11 @@ public final class McpServer extends JsonRpcEndpoint implements AutoCloseable {
     }
 
     @Override
-    protected JsonRpcMessage doRequest(String method, JsonObject params, long timeoutMillis) throws IOException {
+    protected JsonRpcMessage request(RequestMethod method, JsonObject params, long timeoutMillis) throws IOException {
         RequestId id = nextId();
         CompletableFuture<JsonRpcMessage> future = new CompletableFuture<>();
         pending.put(id, future);
-        send(new JsonRpcRequest(id, method, params));
+        send(new JsonRpcRequest(id, method.method(), params));
         long end = System.currentTimeMillis() + timeoutMillis;
         while (true) {
             if (future.isDone()) {
@@ -568,7 +569,7 @@ public final class McpServer extends JsonRpcEndpoint implements AutoCloseable {
 
     private ElicitResult elicit(ElicitRequest req) throws IOException {
         requireClientCapability(ClientCapability.ELICITATION);
-        JsonRpcMessage msg = request(RequestMethod.ELICITATION_CREATE, new ElicitRequestJsonCodec().toJson(req));
+        JsonRpcMessage msg = request(RequestMethod.ELICITATION_CREATE, new ElicitRequestJsonCodec().toJson(req), 0L);
         if (msg instanceof JsonRpcResponse resp) {
             ElicitResult er = new ElicitResultJsonCodec().fromJson(resp.result());
             if (er.action() == ElicitationAction.ACCEPT) {

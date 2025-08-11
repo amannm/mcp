@@ -8,6 +8,6 @@ import java.io.IOException;
 
 @FunctionalInterface
 public interface RequestSender {
-    JsonRpcMessage send(RequestMethod method, JsonObject params) throws IOException;
+    JsonRpcMessage send(RequestMethod method, JsonObject params, long timeoutMillis) throws IOException;
 }
 

@@ -70,23 +70,22 @@ public final class McpHost implements AutoCloseable {
         }
     }
 
-    private static Optional<ServerCapability> serverCapabilityForMethod(String method) {
-        return RequestMethod.from(method)
-                .flatMap(CapabilityRequirements::forMethod)
+    private static Optional<ServerCapability> serverCapabilityForMethod(RequestMethod requestMethod) {
+        return CapabilityRequirements.forMethod(requestMethod)
                 .or(() -> {
-                    if (method.startsWith("tools/")) return Optional.of(ServerCapability.TOOLS);
-                    if (method.startsWith("resources/")) return Optional.of(ServerCapability.RESOURCES);
-                    if (method.startsWith("prompts/")) return Optional.of(ServerCapability.PROMPTS);
-                    if (method.startsWith("completion/")) return Optional.of(ServerCapability.COMPLETIONS);
-                    if (method.startsWith("logging/")) return Optional.of(ServerCapability.LOGGING);
+                    if (requestMethod.method().startsWith("tools/")) return Optional.of(ServerCapability.TOOLS);
+                    if (requestMethod.method().startsWith("resources/")) return Optional.of(ServerCapability.RESOURCES);
+                    if (requestMethod.method().startsWith("prompts/")) return Optional.of(ServerCapability.PROMPTS);
+                    if (requestMethod.method().startsWith("completion/")) return Optional.of(ServerCapability.COMPLETIONS);
+                    if (requestMethod.method().startsWith("logging/")) return Optional.of(ServerCapability.LOGGING);
                     return Optional.empty();
                 });
     }
 
-    private static Optional<ClientCapability> clientCapabilityForMethod(String method) {
-        if (method.startsWith("roots/")) return Optional.of(ClientCapability.ROOTS);
-        if (method.startsWith("sampling/")) return Optional.of(ClientCapability.SAMPLING);
-        if (method.startsWith("elicitation/")) return Optional.of(ClientCapability.ELICITATION);
+    private static Optional<ClientCapability> clientCapabilityForMethod(JsonRpcMethod method) {
+        if (method.method().startsWith("roots/")) return Optional.of(ClientCapability.ROOTS);
+        if (method.method().startsWith("sampling/")) return Optional.of(ClientCapability.SAMPLING);
+        if (method.method().startsWith("elicitation/")) return Optional.of(ClientCapability.ELICITATION);
         return Optional.empty();
     }
 
@@ -150,7 +149,8 @@ public final class McpHost implements AutoCloseable {
                 AbstractEntityCodec.paginatedRequest(
                         ListToolsRequest::cursor,
                         ListToolsRequest::_meta,
-                        ListToolsRequest::new).toJson(new ListToolsRequest(cursor, null))
+                        ListToolsRequest::new).toJson(new ListToolsRequest(cursor, null)),
+                0L
         ));
         return ListToolsResult.LIST_TOOLS_RESULT_JSON_CODEC.fromJson(resp.result());
     }
@@ -162,7 +162,8 @@ public final class McpHost implements AutoCloseable {
         toolAccess.requireAllowed(principal, name);
         JsonRpcResponse resp = JsonRpc.expectResponse(client.request(
                 RequestMethod.TOOLS_CALL,
-                CALL_TOOL_REQUEST_CODEC.toJson(new CallToolRequest(name, args, null))
+                CALL_TOOL_REQUEST_CODEC.toJson(new CallToolRequest(name, args, null)),
+                0L
         ));
         return TOOL_RESULT_ABSTRACT_ENTITY_CODEC.fromJson(resp.result());
     }
@@ -172,15 +173,15 @@ public final class McpHost implements AutoCloseable {
         requireCapability(client, ClientCapability.SAMPLING);
         consents.requireConsent(principal, "sampling");
         samplingAccess.requireAllowed(principal);
-        JsonRpcResponse resp = JsonRpc.expectResponse(client.request(RequestMethod.SAMPLING_CREATE_MESSAGE, params));
+        JsonRpcResponse resp = JsonRpc.expectResponse(client.request(RequestMethod.SAMPLING_CREATE_MESSAGE, params, 0L));
         return resp.result();
     }
 
-    public JsonRpcMessage request(String id, String method, JsonObject params) throws IOException {
-        return requireClientForMethod(id, method).request(method, params);
+    public JsonRpcMessage request(String id, RequestMethod method, JsonObject params) throws IOException {
+        return requireClientForMethod(id, method).request(method, params, 0L);
     }
 
-    public void notify(String id, String method, JsonObject params) throws IOException {
+    public void notify(String id, NotificationMethod method, JsonObject params) throws IOException {
         requireClientForMethod(id, method).notify(method, params);
     }
 
@@ -232,9 +233,11 @@ public final class McpHost implements AutoCloseable {
         return client;
     }
 
-    private McpClient requireClientForMethod(String id, String method) {
+    private McpClient requireClientForMethod(String id, JsonRpcMethod method) {
         McpClient client = requireConnectedClient(id);
-        serverCapabilityForMethod(method).ifPresent(cap -> requireCapability(client, cap));
+        if (method instanceof RequestMethod rm) {
+            serverCapabilityForMethod(rm).ifPresent(cap -> requireCapability(client, cap));
+        }
         clientCapabilityForMethod(method).ifPresent(cap -> requireCapability(client, cap));
         return client;
     }

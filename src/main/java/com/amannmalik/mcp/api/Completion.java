@@ -6,7 +6,6 @@ import com.amannmalik.mcp.util.ValidationUtil;
 import java.util.List;
 
 public record Completion(List<String> values, Integer total, Boolean hasMore) {
-
     public Completion(List<String> values, Integer total, Boolean hasMore) {
         this.values = Immutable.list(values).stream()
                 .map(ValidationUtil::requireClean)
@@ -20,5 +19,4 @@ public record Completion(List<String> values, Integer total, Boolean hasMore) {
             throw new IllegalArgumentException("total must be >= values length");
         }
     }
-
 }

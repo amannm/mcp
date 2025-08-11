@@ -1,4 +1,4 @@
-package com.amannmalik.mcp.util;
+package com.amannmalik.mcp.api;
 
 public interface DisplayNameProvider {
     String name();
