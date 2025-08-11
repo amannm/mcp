@@ -9,9 +9,6 @@ public enum ClientCapability {
     ELICITATION("elicitation"),
     EXPERIMENTAL("experimental");
 
-    private static final Map<String, ClientCapability> BY_CODE = Arrays.stream(values())
-            .collect(Collectors.toUnmodifiableMap(ClientCapability::code, c -> c));
-
     private final String code;
 
     ClientCapability(String code) {
@@ -20,7 +17,13 @@ public enum ClientCapability {
 
     public static Optional<ClientCapability> from(String raw) {
         if (raw == null) return Optional.empty();
-        return Optional.ofNullable(BY_CODE.get(raw));
+        return switch (raw) {
+            case "roots" -> Optional.of(ROOTS);
+            case "sampling" -> Optional.of(SAMPLING);
+            case "elicitation" -> Optional.of(ELICITATION);
+            case "experimental" -> Optional.of(EXPERIMENTAL);
+            default -> Optional.empty();
+        };
     }
 
     public String code() {
