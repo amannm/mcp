@@ -16,7 +16,6 @@ public record McpHostConfiguration(
         // Security configuration
         String hostPrincipal,
 
-
         // Transport server configuration (when host serves)
         String transportType,
         int serverPort,
