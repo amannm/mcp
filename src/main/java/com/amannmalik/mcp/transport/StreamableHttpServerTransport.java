@@ -1,8 +1,6 @@
 package com.amannmalik.mcp.transport;
 
-import com.amannmalik.mcp.api.McpServerConfiguration;
-import com.amannmalik.mcp.api.Protocol;
-import com.amannmalik.mcp.api.Transport;
+import com.amannmalik.mcp.api.*;
 import com.amannmalik.mcp.auth.AuthorizationManager;
 import com.amannmalik.mcp.core.MessageDispatcher;
 import com.amannmalik.mcp.core.MessageRouter;
@@ -35,7 +33,8 @@ public final class StreamableHttpServerTransport implements Transport {
     final List<String> authorizationServers;
     final BlockingQueue<JsonObject> incoming = new LinkedBlockingQueue<>();
     final SseClients clients = new SseClients();
-    final SessionManager sessions = new SessionManager(COMPATIBILITY_VERSION);
+    final SessionManager sessions;
+    final TransportConfiguration transportConfig;
     private final Server server;
     private final int port;
     private final Set<String> allowedOrigins;
@@ -48,22 +47,45 @@ public final class StreamableHttpServerTransport implements Transport {
                                          AuthorizationManager auth,
                                          String resourceMetadataUrl,
                                          List<String> authorizationServers) throws Exception {
-        server = new Server(new InetSocketAddress("127.0.0.1", port));
+        this(port, allowedOrigins, auth, resourceMetadataUrl, authorizationServers, TransportConfiguration.defaultConfiguration());
+    }
+
+    public StreamableHttpServerTransport(int port,
+                                         Set<String> allowedOrigins,
+                                         AuthorizationManager auth,
+                                         String resourceMetadataUrl,
+                                         List<String> authorizationServers,
+                                         TransportConfiguration transportConfig) throws Exception {
+        this.transportConfig = transportConfig;
+        this.sessions = new SessionManager(COMPATIBILITY_VERSION, transportConfig.session());
+        
+        server = new Server(new InetSocketAddress(transportConfig.serverBind().bindAddress(), port));
         ServletContextHandler ctx = new ServletContextHandler();
-        ctx.addServlet(new ServletHolder(new McpServlet(this)), "/");
-        ctx.addServlet(new ServletHolder(new MetadataServlet(this)), "/.well-known/oauth-protected-resource");
+        
+        for (String path : transportConfig.serverBind().servletPaths()) {
+            if (path.equals("/")) {
+                ctx.addServlet(new ServletHolder(new McpServlet(this)), "/");
+            } else if (path.equals(transportConfig.serverBind().resourceMetadataPath())) {
+                ctx.addServlet(new ServletHolder(new MetadataServlet(this)), path);
+            }
+        }
+        
         server.setHandler(ctx);
         server.start();
         this.port = ((ServerConnector) server.getConnectors()[0]).getLocalPort();
         this.allowedOrigins = ValidationUtil.requireAllowedOrigins(allowedOrigins);
         this.authManager = auth;
+        
         if (resourceMetadataUrl == null || resourceMetadataUrl.isBlank()) {
-            this.resourceMetadataUrl = "http://127.0.0.1:" + this.port
-                    + "/.well-known/oauth-protected-resource";
+            this.resourceMetadataUrl = String.format(
+                    transportConfig.serverBind().resourceMetadataUrlTemplate(),
+                    transportConfig.serverBind().bindAddress(),
+                    this.port);
         } else {
             this.resourceMetadataUrl = resourceMetadataUrl;
         }
-        this.canonicalResource = "http://127.0.0.1:" + this.port;
+        
+        this.canonicalResource = "http://" + transportConfig.serverBind().bindAddress() + ":" + this.port;
         if (authorizationServers == null || authorizationServers.isEmpty()) {
             this.authorizationServers = List.of();
         } else {

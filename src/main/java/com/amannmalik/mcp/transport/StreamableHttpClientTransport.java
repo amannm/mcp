@@ -1,7 +1,6 @@
 package com.amannmalik.mcp.transport;
 
-import com.amannmalik.mcp.api.Protocol;
-import com.amannmalik.mcp.api.Transport;
+import com.amannmalik.mcp.api.*;
 import com.amannmalik.mcp.util.ValidationUtil;
 import jakarta.json.*;
 
@@ -23,12 +22,15 @@ public final class StreamableHttpClientTransport implements Transport {
     private final AtomicReference<String> sessionId = new AtomicReference<>();
     private final AtomicReference<String> protocolVersion = new AtomicReference<>(Protocol.LATEST_VERSION);
     private final AtomicReference<String> authorization = new AtomicReference<>();
-    private final long receiveTimeout;
+    private final TransportConfiguration transportConfig;
 
     public StreamableHttpClientTransport(URI endpoint) {
+        this(endpoint, TransportConfiguration.defaultConfiguration());
+    }
+
+    public StreamableHttpClientTransport(URI endpoint, TransportConfiguration transportConfig) {
         this.endpoint = endpoint;
-        // TODO: externalize
-        this.receiveTimeout = 10L;
+        this.transportConfig = transportConfig;
     }
 
     public void setProtocolVersion(String version) {
@@ -90,7 +92,7 @@ public final class StreamableHttpClientTransport implements Transport {
 
     @Override
     public JsonObject receive() throws IOException {
-        return receive(receiveTimeout);
+        return receive(transportConfig.clientConnection().defaultReceiveTimeout().toMillis());
     }
 
     @Override
@@ -132,7 +134,7 @@ public final class StreamableHttpClientTransport implements Transport {
 
     private HttpRequest.Builder builder() {
         var b = HttpRequest.newBuilder(endpoint)
-                .header("Origin", "http://127.0.0.1")
+                .header("Origin", transportConfig.clientConnection().defaultOriginHeader())
                 .header(TransportHeaders.PROTOCOL_VERSION, protocolVersion.get());
         Optional.ofNullable(authorization.get())
                 .ifPresent(t -> b.header(TransportHeaders.AUTHORIZATION, "Bearer " + t));

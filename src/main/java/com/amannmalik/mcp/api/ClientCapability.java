@@ -1,6 +1,7 @@
 package com.amannmalik.mcp.api;
 
-import java.util.Optional;
+import java.util.*;
+import java.util.stream.Collectors;
 
 public enum ClientCapability {
     ROOTS("roots"),
@@ -14,10 +15,6 @@ public enum ClientCapability {
         this.code = code;
     }
 
-    public String code() {
-        return code;
-    }
-
     public static Optional<ClientCapability> from(String raw) {
         if (raw == null) return Optional.empty();
         return switch (raw) {
@@ -27,5 +24,9 @@ public enum ClientCapability {
             case "experimental" -> Optional.of(EXPERIMENTAL);
             default -> Optional.empty();
         };
+    }
+
+    public String code() {
+        return code;
     }
 }

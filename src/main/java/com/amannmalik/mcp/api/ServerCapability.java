@@ -1,6 +1,9 @@
 package com.amannmalik.mcp.api;
 
-import java.util.Optional;
+
+import java.util.*;
+import java.util.stream.Collectors;
+
 
 public enum ServerCapability {
     PROMPTS("prompts"),
@@ -16,10 +19,6 @@ public enum ServerCapability {
         this.code = code;
     }
 
-    public String code() {
-        return code;
-    }
-
     public static Optional<ServerCapability> from(String raw) {
         if (raw == null) return Optional.empty();
         return switch (raw) {
@@ -31,5 +30,9 @@ public enum ServerCapability {
             case "experimental" -> Optional.of(EXPERIMENTAL);
             default -> Optional.empty();
         };
+    }
+
+    public String code() {
+        return code;
     }
 }

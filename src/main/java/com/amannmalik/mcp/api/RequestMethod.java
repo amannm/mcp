@@ -1,7 +1,9 @@
 package com.amannmalik.mcp.api;
 
-import java.util.EnumSet;
-import java.util.Optional;
+
+import java.util.*;
+import java.util.stream.Collectors;
+
 
 public enum RequestMethod implements JsonRpcMethod {
     INITIALIZE("initialize"),
