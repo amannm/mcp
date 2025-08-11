@@ -10,7 +10,7 @@ import java.util.Map;
 public record GetPromptRequest(String name,
                                Map<String, String> arguments,
                                JsonObject _meta) {
-    public static final JsonCodec<GetPromptRequest> CODEC = new GetPromptRequestAbstractEntityCodec();
+    static final JsonCodec<GetPromptRequest> CODEC = new GetPromptRequestAbstractEntityCodec();
 
     public GetPromptRequest {
         if (name == null) throw new IllegalArgumentException("name required");

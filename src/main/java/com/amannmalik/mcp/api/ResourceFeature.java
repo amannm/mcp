@@ -1,5 +1,7 @@
 package com.amannmalik.mcp.api;
 
+import com.amannmalik.mcp.codec.JsonCodec;
+import com.amannmalik.mcp.codec.ResourceUpdatedNotificationAbstractEntityCodec;
 import com.amannmalik.mcp.core.*;
 import com.amannmalik.mcp.jsonrpc.*;
 import com.amannmalik.mcp.resources.ReadResourceResult;
@@ -23,6 +25,9 @@ final class ResourceFeature implements AutoCloseable {
     private final ProgressManager progress;
     private final Map<String, ChangeSubscription> subscriptions = new ConcurrentHashMap<>();
     private final ChangeSubscription listSubscription;
+
+    static final JsonCodec<ResourceUpdatedNotification> RESOURCE_UPDATED_NOTIFICATION_JSON_CODEC = new ResourceUpdatedNotificationAbstractEntityCodec();
+
 
     public ResourceFeature(ResourceProvider resources,
                            ResourceAccessPolicy access,
@@ -155,7 +160,7 @@ final class ResourceFeature implements AutoCloseable {
                         ResourceUpdatedNotification n = new ResourceUpdatedNotification(update.uri(), update.title());
                         sender.send(new JsonRpcNotification(
                                 NotificationMethod.RESOURCES_UPDATED.method(),
-                                ResourceUpdatedNotification.CODEC.toJson(n)));
+                                RESOURCE_UPDATED_NOTIFICATION_JSON_CODEC.toJson(n)));
                     } catch (IOException ignore) {
                     }
                 });

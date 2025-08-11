@@ -11,7 +11,6 @@ public record ToolAnnotations(
         Boolean idempotentHint,
         Boolean openWorldHint
 ) {
-    public static final JsonCodec<ToolAnnotations> CODEC = new ToolAnnotationsAbstractEntityCodec();
 
     public ToolAnnotations {
         title = ValidationUtil.cleanNullable(title);

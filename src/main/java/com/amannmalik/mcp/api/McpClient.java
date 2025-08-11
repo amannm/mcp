@@ -1,6 +1,6 @@
 package com.amannmalik.mcp.api;
 
-import com.amannmalik.mcp.codec.InitializeRequestAbstractEntityCodec;
+import com.amannmalik.mcp.codec.*;
 import com.amannmalik.mcp.config.McpConfiguration;
 import com.amannmalik.mcp.core.*;
 import com.amannmalik.mcp.jsonrpc.*;
@@ -50,6 +50,9 @@ public final class McpClient extends JsonRpcEndpoint implements AutoCloseable {
     private final Map<String, Consumer<ResourceUpdate>> resourceListeners = new ConcurrentHashMap<>();
 
     private final InitializeRequestAbstractEntityCodec INITIALIZE_REQUEST_CODEC = new InitializeRequestAbstractEntityCodec();
+
+    static final JsonCodec<ResourceUpdatedNotification> RESOURCE_UPDATED_NOTIFICATION_JSON_CODEC = new ResourceUpdatedNotificationAbstractEntityCodec();
+
 
     public void configurePing(long intervalMillis, long timeoutMillis) {
         if (connected) throw new IllegalStateException("already connected");
@@ -538,7 +541,7 @@ public final class McpClient extends JsonRpcEndpoint implements AutoCloseable {
     private void handleResourceUpdated(JsonRpcNotification note) {
         if (note.params() == null) return;
         try {
-            ResourceUpdatedNotification run = ResourceUpdatedNotification.CODEC.fromJson(note.params());
+            ResourceUpdatedNotification run = RESOURCE_UPDATED_NOTIFICATION_JSON_CODEC.fromJson(note.params());
             Consumer<ResourceUpdate> listener = resourceListeners.get(run.uri());
             if (listener != null) {
                 listener.accept(new ResourceUpdate(run.uri(), run.title()));

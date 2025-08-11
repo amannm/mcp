@@ -9,7 +9,7 @@ import java.time.format.DateTimeParseException;
 import java.util.EnumSet;
 import java.util.Set;
 
-public class AnnotationsJsonCodec implements JsonCodec<Annotations> {
+public final class AnnotationsJsonCodec implements JsonCodec<Annotations> {
 
     public static final Annotations EMPTY = new Annotations(Set.of(), null, null);
 

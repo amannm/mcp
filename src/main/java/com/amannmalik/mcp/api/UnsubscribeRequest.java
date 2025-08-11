@@ -6,7 +6,7 @@ import com.amannmalik.mcp.util.ValidationUtil;
 import jakarta.json.JsonObject;
 
 public record UnsubscribeRequest(String uri, JsonObject _meta) {
-    public static final JsonCodec<UnsubscribeRequest> CODEC = new UnsubscribeRequestAbstractEntityCodec();
+    static final JsonCodec<UnsubscribeRequest> CODEC = new UnsubscribeRequestAbstractEntityCodec();
 
     public UnsubscribeRequest {
         uri = ValidationUtil.requireAbsoluteUri(uri);

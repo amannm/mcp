@@ -1,6 +1,7 @@
 package com.amannmalik.mcp.roots;
 
 import com.amannmalik.mcp.api.*;
+import com.amannmalik.mcp.codec.*;
 import com.amannmalik.mcp.jsonrpc.JsonRpcError;
 import com.amannmalik.mcp.jsonrpc.JsonRpcResponse;
 import com.amannmalik.mcp.util.Change;
@@ -16,6 +17,7 @@ import java.util.function.Supplier;
 /// - [Roots](specification/2025-06-18/client/roots.mdx)
 /// - [MCP roots specification conformance](src/test/resources/com/amannmalik/mcp/mcp_conformance.feature:154-169)
 public final class RootsManager {
+    private static final ListRootsResultAbstractEntityCodec LIST_RESULTS_CODEC = new ListRootsResultAbstractEntityCodec();
     private final Supplier<Set<ClientCapability>> capabilities;
     private final RequestSender requester;
     private final ChangeSupport<Change> listChangeSupport = new ChangeSupport<>();
@@ -59,12 +61,15 @@ public final class RootsManager {
         refreshAsync();
     }
 
+    public static final JsonCodec<ListRootsRequest> CODEC =
+            AbstractEntityCodec.metaOnly(ListRootsRequest::_meta, ListRootsRequest::new);
+
     private List<Root> fetchRoots() throws IOException {
         requireClientCapability(ClientCapability.ROOTS);
         JsonRpcMessage msg = requester.send(RequestMethod.ROOTS_LIST,
-                ListRootsRequest.CODEC.toJson(new ListRootsRequest(null)));
+                CODEC.toJson(new ListRootsRequest(null)));
         if (msg instanceof JsonRpcResponse resp) {
-            return ListRootsResult.CODEC.fromJson(resp.result()).roots();
+            return LIST_RESULTS_CODEC.fromJson(resp.result()).roots();
         }
         throw new IOException(((JsonRpcError) msg).error().message());
     }

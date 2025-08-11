@@ -6,7 +6,7 @@ import com.amannmalik.mcp.util.ValidationUtil;
 import jakarta.json.JsonObject;
 
 public record SetLevelRequest(LoggingLevel level, JsonObject _meta) {
-    public static final JsonCodec<SetLevelRequest> CODEC = new SetLevelRequestAbstractEntityCodec();
+     static final JsonCodec<SetLevelRequest> CODEC = new SetLevelRequestAbstractEntityCodec();
 
     public SetLevelRequest {
         if (level == null) throw new IllegalArgumentException("level is required");

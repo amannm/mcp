@@ -8,7 +8,7 @@ import java.util.Set;
 import java.util.function.*;
 
 public sealed abstract class AbstractEntityCodec<T> implements JsonCodec<T> permits
-        AbstractEntityPageCodec,
+        EntityCursorPageCodec,
         CallToolRequestAbstractEntityCodec,
         ClientInfoAbstractEntityCodec,
         CreateMessageResponseAbstractEntityCodec,
@@ -28,7 +28,8 @@ public sealed abstract class AbstractEntityCodec<T> implements JsonCodec<T> perm
         ResourceEntityMetaCodec,
         ResourceTemplateAbstractEntityCodec,
         ResourceUpdatedNotificationAbstractEntityCodec,
-        RootAbstractEntityCodec, SamplingMessageAbstractEntityCodec,
+        RootAbstractEntityCodec,
+        SamplingMessageAbstractEntityCodec,
         ServerInfoAbstractEntityCodec,
         SetLevelRequestAbstractEntityCodec,
         SubscribeRequestAbstractEntityCodec,
@@ -52,13 +53,15 @@ public sealed abstract class AbstractEntityCodec<T> implements JsonCodec<T> perm
         return b.build();
     }
 
+    // TODO: add comments on what this does
     public static <T> JsonCodec<T> paginatedRequest(
             Function<T, String> cursor,
             Function<T, JsonObject> meta,
             BiFunction<String, JsonObject, T> from) {
-        return new AbstractEntityPageCodec<>(cursor, meta, from);
+        return new EntityCursorPageCodec<>(cursor, meta, from);
     }
 
+    // TODO: add comments on what this does
     public static <I, R> JsonCodec<R> paginatedResult(
             String field,
             String itemName,

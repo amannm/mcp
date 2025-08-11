@@ -1,6 +1,6 @@
 package com.amannmalik.mcp.api;
 
-import com.amannmalik.mcp.codec.InitializeRequestAbstractEntityCodec;
+import com.amannmalik.mcp.codec.*;
 import com.amannmalik.mcp.config.McpConfiguration;
 import com.amannmalik.mcp.core.*;
 import com.amannmalik.mcp.elicitation.ElicitationAction;
@@ -438,6 +438,16 @@ public final class McpServer extends JsonRpcEndpoint implements AutoCloseable {
         return JsonRpcError.of(req.id(), JsonRpcErrorCode.INVALID_PARAMS, e.getMessage());
     }
 
+    static final JsonCodec<ListPromptsResult> LIST_PROMPTS_RESULT_CODEC =
+            AbstractEntityCodec.paginatedResult(
+                    "prompts",
+                    "prompt",
+                    r -> new Pagination.Page<>(r.prompts(), r.nextCursor()),
+                    ListPromptsResult::_meta,
+                    new PromptAbstractEntityCodec(),
+                    (page, meta) -> new ListPromptsResult(page.items(), page.nextCursor(), meta));
+
+
     private JsonRpcMessage listPrompts(JsonRpcRequest req) {
         Optional<JsonRpcError> initCheck = checkInitialized(req.id());
         if (initCheck.isPresent()) return initCheck.get();
@@ -446,7 +456,7 @@ public final class McpServer extends JsonRpcEndpoint implements AutoCloseable {
             ListPromptsRequest lpr = ListPromptsRequest.CODEC.fromJson(req.params());
             String cursor = sanitizeCursor(lpr.cursor());
             Pagination.Page<Prompt> page = prompts.list(cursor);
-            return new JsonRpcResponse(req.id(), ListPromptsResult.CODEC.toJson(new ListPromptsResult(page.items(), page.nextCursor(), null)));
+            return new JsonRpcResponse(req.id(), LIST_PROMPTS_RESULT_CODEC.toJson(new ListPromptsResult(page.items(), page.nextCursor(), null)));
         } catch (IllegalArgumentException e) {
             return JsonRpcError.of(req.id(), JsonRpcErrorCode.INVALID_PARAMS, e.getMessage());
         }

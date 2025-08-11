@@ -1,7 +1,7 @@
 package com.amannmalik.mcp.core;
 
 import com.amannmalik.mcp.api.*;
-import com.amannmalik.mcp.codec.JsonCodec;
+import com.amannmalik.mcp.codec.CancelledNotificationJsonCodec;
 import com.amannmalik.mcp.codec.JsonRpcMessageJsonCodec;
 import com.amannmalik.mcp.config.McpConfiguration;
 import com.amannmalik.mcp.jsonrpc.*;
@@ -14,7 +14,7 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
-public sealed class JsonRpcEndpoint implements AutoCloseable permits com.amannmalik.mcp.api.McpClient, com.amannmalik.mcp.api.McpServer {
+public sealed class JsonRpcEndpoint implements AutoCloseable permits McpClient, McpServer {
     protected final Transport transport;
     protected final ProgressManager progress;
     protected final Map<RequestId, CompletableFuture<JsonRpcMessage>> pending = new ConcurrentHashMap<>();
@@ -22,7 +22,8 @@ public sealed class JsonRpcEndpoint implements AutoCloseable permits com.amannma
     private final Map<String, Consumer<JsonRpcNotification>> notifications = new HashMap<>();
     private final AtomicLong counter;
 
-    protected static final JsonCodec<JsonRpcMessage> CODEC = new JsonRpcMessageJsonCodec();
+    protected static final JsonRpcMessageJsonCodec CODEC = new JsonRpcMessageJsonCodec();
+    protected static final CancelledNotificationJsonCodec CANCEL_CODEC = new CancelledNotificationJsonCodec();
 
     protected JsonRpcEndpoint(Transport transport, ProgressManager progress, long initialId) {
         if (transport == null || progress == null) throw new IllegalArgumentException("transport and progress required");
@@ -86,7 +87,7 @@ public sealed class JsonRpcEndpoint implements AutoCloseable permits com.amannma
         } catch (TimeoutException e) {
             try {
                 notify(NotificationMethod.CANCELLED.method(),
-                        CancelledNotification.CODEC.toJson(new CancelledNotification(id, "timeout")));
+                        CANCEL_CODEC.toJson(new CancelledNotification(id, "timeout")));
             } catch (IOException ignore) {
             }
             throw new IOException(McpConfiguration.current().errorTimeout() + " after " + timeoutMillis + " ms", e);

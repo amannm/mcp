@@ -6,7 +6,6 @@ import com.amannmalik.mcp.util.ValidationUtil;
 import jakarta.json.JsonObject;
 
 public record Root(String uri, String name, JsonObject _meta) {
-    public static final JsonCodec<Root> CODEC = new RootAbstractEntityCodec();
 
     public Root {
         uri = ValidationUtil.requireFileUri(uri);

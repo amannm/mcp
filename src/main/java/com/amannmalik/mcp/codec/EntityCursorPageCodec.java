@@ -5,12 +5,12 @@ import jakarta.json.*;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 
-public final class AbstractEntityPageCodec<T> extends AbstractEntityCodec<T> {
+public final class EntityCursorPageCodec<T> extends AbstractEntityCodec<T> {
     private final Function<T, String> cursor;
     private final Function<T, JsonObject> meta;
     private final BiFunction<String, JsonObject, T> from;
 
-    public AbstractEntityPageCodec(Function<T, String> cursor, Function<T, JsonObject> meta, BiFunction<String, JsonObject, T> from) {
+    public EntityCursorPageCodec(Function<T, String> cursor, Function<T, JsonObject> meta, BiFunction<String, JsonObject, T> from) {
         this.cursor = cursor;
         this.meta = meta;
         this.from = from;
