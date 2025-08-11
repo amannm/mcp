@@ -173,7 +173,8 @@ public final class McpHost implements AutoCloseable {
             for (Tool t : page.tools()) {
                 if (t.name().equals(name)) return Optional.of(t);
             }
-            cursor = page.nextCursor();
+            Cursor next = page.nextCursor();
+            cursor = next instanceof Cursor.Token t ? t.value() : null;
         } while (cursor != null);
         return Optional.empty();
     }

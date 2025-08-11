@@ -19,7 +19,7 @@ public final class Pagination {
         if (start > items.size()) throw new IllegalArgumentException("Invalid cursor");
         int end = Math.min(items.size(), start + size);
         List<T> slice = items.subList(start, end);
-        String next = end < items.size() ? encode(end) : null;
+        Cursor next = end < items.size() ? Cursor.of(encode(end)) : Cursor.End.INSTANCE;
         return new Page<>(slice, next);
     }
 
@@ -47,9 +47,10 @@ public final class Pagination {
         return cursor == null ? null : requireValidCursor(cursor);
     }
 
-    public record Page<T>(List<T> items, String nextCursor) {
+    public record Page<T>(List<T> items, Cursor nextCursor) {
         public Page {
             items = items == null ? List.of() : List.copyOf(items);
+            nextCursor = nextCursor == null ? Cursor.End.INSTANCE : nextCursor;
         }
     }
 }
