@@ -428,7 +428,7 @@ public final class McpServer extends JsonRpcEndpoint implements AutoCloseable {
     private Cursor sanitizeCursor(String cursor) {
         if (cursor == null) return Cursor.Start.INSTANCE;
         String clean = ValidationUtil.cleanNullable(cursor);
-        return new Cursor.Token(Pagination.requireValidCursor(clean));
+        return new Cursor.Token(clean);
     }
 
     private JsonRpcMessage listTools(JsonRpcRequest req) {
