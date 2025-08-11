@@ -16,9 +16,12 @@ import java.util.concurrent.*;
 /// - [Conformance Suite](src/test/resources/com/amannmalik/mcp/mcp.feature)
 final class McpServlet extends HttpServlet {
     private final StreamableHttpServerTransport transport;
+    private final int responseQueueCapacity;
 
     McpServlet(StreamableHttpServerTransport transport) {
         this.transport = transport;
+        // TODO: this config
+        this.responseQueueCapacity = 10;
     }
 
     private static MessageType classify(JsonObject obj) {
@@ -149,8 +152,7 @@ final class McpServlet extends HttpServlet {
 
     private void handleInitialize(JsonObject obj, HttpServletResponse resp) throws IOException {
         String id = obj.get("id").toString();
-        BlockingQueue<JsonObject> q = new LinkedBlockingQueue<>(
-                McpHostConfiguration.defaultConfiguration().responseQueueCapacity());
+        BlockingQueue<JsonObject> q = new LinkedBlockingQueue<>(responseQueueCapacity);
         transport.clients.responses.put(id, q);
         try {
             transport.incoming.put(obj);

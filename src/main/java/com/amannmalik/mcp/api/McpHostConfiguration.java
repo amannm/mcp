@@ -16,13 +16,6 @@ public record McpHostConfiguration(
         // Security configuration
         String hostPrincipal,
 
-        // Transport server configuration (when host serves)
-        String transportType,
-        int serverPort,
-        List<String> allowedOrigins,
-        int sseHistoryLimit,
-        int responseQueueCapacity,
-
         // Global process configuration
         int processWaitSeconds,
         int defaultPageSize,
@@ -37,16 +30,11 @@ public record McpHostConfiguration(
 
     public McpHostConfiguration {
         hostClientCapabilities = Set.copyOf(hostClientCapabilities);
-        allowedOrigins = List.copyOf(allowedOrigins);
         clientConfigurations = List.copyOf(clientConfigurations);
         if (processWaitSeconds <= 0)
             throw new IllegalArgumentException("Invalid process wait seconds");
-        if (serverPort < 0 || serverPort > 65_535)
-            throw new IllegalArgumentException("Invalid port number");
-        if (defaultPageSize <= 0 || maxCompletionValues <= 0 || responseQueueCapacity <= 0)
+        if (defaultPageSize <= 0 || maxCompletionValues <= 0)
             throw new IllegalArgumentException("Invalid pagination configuration");
-        if (sseHistoryLimit < 0)
-            throw new IllegalArgumentException("Invalid SSE history limit");
     }
 
     public static McpHostConfiguration defaultConfiguration() {
@@ -58,11 +46,6 @@ public record McpHostConfiguration(
                 "1.0.0",
                 defaultHostClientCapabilities(),
                 "user",
-                "stdio",
-                0,
-                List.of("http://localhost", "http://127.0.0.1"),
-                100,
-                1,
                 2,
                 100,
                 100,
@@ -88,12 +71,7 @@ public record McpHostConfiguration(
                 "1.0.0",
                 defaultHostClientCapabilities(),
                 "user",
-                "stdio",
                 0,
-                List.of("http://localhost", "http://127.0.0.1"),
-                100,
-                1,
-                2,
                 100,
                 100,
                 false,

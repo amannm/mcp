@@ -15,8 +15,7 @@ import java.util.concurrent.atomic.AtomicLong;
 
 public final class SseClient implements AutoCloseable {
     private static final SecureRandom RANDOM = new SecureRandom();
-    private static final int HISTORY_LIMIT =
-            McpHostConfiguration.defaultConfiguration().sseHistoryLimit();
+    private final long historyLimit;
     final String prefix;
     private final Deque<SseEvent> history = new ArrayDeque<>();
     private final AtomicLong nextId = new AtomicLong(1);
@@ -29,6 +28,8 @@ public final class SseClient implements AutoCloseable {
         RANDOM.nextBytes(bytes);
         this.prefix = Base64Util.encodeUrl(bytes);
         attach(context, 0);
+        // TODO: config
+        historyLimit = 1L;
     }
 
     void attach(AsyncContext ctx, long lastId) throws IOException {
@@ -45,7 +46,7 @@ public final class SseClient implements AutoCloseable {
     public void send(JsonObject msg) {
         long id = nextId.getAndIncrement();
         history.addLast(new SseEvent(id, msg));
-        while (history.size() > HISTORY_LIMIT) {
+        while (history.size() > historyLimit) {
             history.removeFirst();
         }
         if (closed || context == null) {
