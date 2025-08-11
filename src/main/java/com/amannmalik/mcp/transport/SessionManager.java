@@ -1,5 +1,6 @@
 package com.amannmalik.mcp.transport;
 
+import com.amannmalik.mcp.api.TransportConfiguration;
 import com.amannmalik.mcp.spi.Principal;
 import com.amannmalik.mcp.util.Base64Util;
 import com.amannmalik.mcp.util.ValidationUtil;

@@ -1,4 +1,4 @@
-package com.amannmalik.mcp.transport;
+package com.amannmalik.mcp.api;
 
 import java.time.Duration;
 import java.util.List;

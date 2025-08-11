@@ -1,6 +1,7 @@
 package com.amannmalik.mcp.transport;
 
 import com.amannmalik.mcp.api.McpHostConfiguration;
+import com.amannmalik.mcp.api.TransportConfiguration;
 import com.amannmalik.mcp.util.Base64Util;
 import jakarta.json.JsonObject;
 import jakarta.servlet.AsyncContext;
