@@ -86,8 +86,6 @@ public final class ServerCommand {
                     ServerDefaults.completions(),
                     ServerDefaults.sampling(),
                     ServerDefaults.privacyBoundary(McpServerConfiguration.defaultConfiguration().defaultBoundary()),
-                    ServerDefaults.toolAccess(),
-                    ServerDefaults.samplingAccess(),
                     ServerDefaults.principal(),
                     instructions,
                     transport)) {

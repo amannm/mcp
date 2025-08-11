@@ -6,7 +6,6 @@ import com.amannmalik.mcp.jsonrpc.*;
 import com.amannmalik.mcp.prompts.*;
 import com.amannmalik.mcp.roots.RootsManager;
 import com.amannmalik.mcp.spi.*;
-import com.amannmalik.mcp.transport.Protocol;
 import com.amannmalik.mcp.util.*;
 import jakarta.json.*;
 import jakarta.json.stream.JsonParsingException;
@@ -68,7 +67,7 @@ public final class McpServer extends JsonRpcEndpoint implements AutoCloseable {
     private ClientFeatures clientFeatures = ClientFeatures.EMPTY;
     private Closeable toolListSubscription;
     private Closeable promptsSubscription;
-    private volatile LoggingLevel logLevel = LoggingLevel.INFO;
+    private volatile LoggingLevel logLevel;
 
 
     public McpServer(McpServerConfiguration config,
@@ -78,8 +77,6 @@ public final class McpServer extends JsonRpcEndpoint implements AutoCloseable {
                      CompletionProvider completions,
                      SamplingProvider sampling,
                      ResourceAccessPolicy resourceAccess,
-                     ToolAccessPolicy toolAccess,
-                     SamplingAccessPolicy samplingAccess,
                      Principal principal,
                      // Instructions describing how to use the server and its features
                      // This can be used by clients to improve the LLM's understanding of available tools, resources, etc.
@@ -113,7 +110,7 @@ public final class McpServer extends JsonRpcEndpoint implements AutoCloseable {
                 config.serverDescription(),
                 config.serverVersion());
         this.instructions = instructions;
-        List<String> versions = new ArrayList<>(Set.of(Protocol.LATEST_VERSION, Protocol.PREVIOUS_VERSION));
+        List<String> versions = new ArrayList<>(config.supportedVersions());
         versions.sort(Comparator.reverseOrder());
         this.supportedVersions = List.copyOf(versions);
         this.protocolVersion = this.supportedVersions.getFirst();
@@ -121,8 +118,9 @@ public final class McpServer extends JsonRpcEndpoint implements AutoCloseable {
         this.prompts = prompts;
         this.completions = completions;
         this.sampling = sampling;
-        this.toolAccess = toolAccess == null ? ToolAccessPolicy.PERMISSIVE : toolAccess;
-        this.samplingAccess = samplingAccess == null ? SamplingAccessPolicy.PERMISSIVE : samplingAccess;
+        this.toolAccess = config.toolAccessPolicy();
+        this.samplingAccess = config.samplingAccessPolicy();
+        this.logLevel = config.initialLogLevel();
         this.principal = principal;
         this.rootsManager = new RootsManager(this::negotiatedClientCapabilities, this::request);
         this.resourceOrchestrator = resources == null ? null :
@@ -305,9 +303,8 @@ public final class McpServer extends JsonRpcEndpoint implements AutoCloseable {
                     JsonRpcErrorCode.INVALID_PARAMS,
                     "Unsupported protocol version",
                     Json.createObjectBuilder()
-                            .add("supported", Json.createArrayBuilder()
-                                    .add(Protocol.LATEST_VERSION)
-                                    .add(Protocol.PREVIOUS_VERSION)
+                            .add("supported", config.supportedVersions().stream()
+                                    .collect(Json::createArrayBuilder, JsonArrayBuilder::add, (a, b) -> {})
                                     .build())
                             .add("requested", e.requested())
                             .build());

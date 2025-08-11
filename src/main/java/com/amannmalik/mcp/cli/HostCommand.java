@@ -2,6 +2,7 @@ package com.amannmalik.mcp.cli;
 
 import com.amannmalik.mcp.api.*;
 import com.amannmalik.mcp.spi.Role;
+import com.amannmalik.mcp.spi.SamplingAccessPolicy;
 import jakarta.json.Json;
 import jakarta.json.JsonValue;
 import picocli.CommandLine;
@@ -86,7 +87,10 @@ public final class HostCommand {
                         1_000L,   // rateLimiterWindowMs override
                         clientVerbose,
                         false,
-                        List.of(System.getProperty("user.dir"))
+                        List.of(System.getProperty("user.dir")),
+                        0L,       // pingIntervalMs override
+                        SamplingAccessPolicy.PERMISSIVE,
+                        McpHostConfiguration.defaultConfiguration().hostPrincipal()
                 );
                 clientConfigs.add(clientConfig);
             }

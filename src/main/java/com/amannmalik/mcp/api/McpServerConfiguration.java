@@ -1,11 +1,17 @@
 package com.amannmalik.mcp.api;
 
+import com.amannmalik.mcp.spi.SamplingAccessPolicy;
+import com.amannmalik.mcp.spi.ToolAccessPolicy;
+import com.amannmalik.mcp.transport.Protocol;
+import java.util.*;
+
 public record McpServerConfiguration(
         // Protocol configuration
         String version,
         String compatibilityVersion,
         long defaultTimeoutMs,
         long initialRequestId,
+        List<String> supportedVersions,
 
         // Rate limiting configuration
         int toolsPerSecond,
@@ -32,6 +38,11 @@ public record McpServerConfiguration(
         String serverLoggerName,
         String parserLoggerName,
         String cancellationLoggerName,
+        LoggingLevel initialLogLevel,
+
+        // Access policy configuration
+        ToolAccessPolicy toolAccessPolicy,
+        SamplingAccessPolicy samplingAccessPolicy,
 
         // Default principal for server operations
         String defaultPrincipal,
@@ -39,6 +50,9 @@ public record McpServerConfiguration(
 ) {
 
     public McpServerConfiguration {
+        supportedVersions = List.copyOf(supportedVersions);
+        if (supportedVersions.isEmpty())
+            throw new IllegalArgumentException("Supported versions required");
         if (defaultTimeoutMs <= 0 || initialRequestId < 0)
             throw new IllegalArgumentException("Invalid protocol configuration");
         if (toolsPerSecond < 0 || completionsPerSecond < 0 || logsPerSecond < 0 || progressPerSecond < 0)
@@ -47,6 +61,8 @@ public record McpServerConfiguration(
             throw new IllegalArgumentException("Invalid rate limiter window");
         if (rateLimitErrorCode >= 0)
             throw new IllegalArgumentException("Rate limit error code must be negative");
+        if (initialLogLevel == null || toolAccessPolicy == null || samplingAccessPolicy == null)
+            throw new IllegalArgumentException("Invalid policy configuration");
     }
 
     public static McpServerConfiguration defaultConfiguration() {
@@ -55,6 +71,7 @@ public record McpServerConfiguration(
                 "2025-03-26",
                 30_000L,
                 1L,
+                List.of(Protocol.LATEST_VERSION, Protocol.PREVIOUS_VERSION),
                 5,
                 10,
                 20,
@@ -73,6 +90,9 @@ public record McpServerConfiguration(
                 "server",
                 "parser",
                 "cancellation",
+                LoggingLevel.INFO,
+                ToolAccessPolicy.PERMISSIVE,
+                SamplingAccessPolicy.PERMISSIVE,
                 "default",
                 "default"
         );

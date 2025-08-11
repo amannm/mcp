@@ -1,6 +1,7 @@
 package com.amannmalik.mcp.api;
 
 import java.util.*;
+import java.util.function.Predicate;
 
 public record McpHostConfiguration(
         // Protocol configuration
@@ -31,7 +32,8 @@ public record McpHostConfiguration(
 
         // Global behavior
         boolean globalVerbose,
-        
+        Predicate<McpClient> clientPolicy,
+
         // Managed client configurations
         List<McpClientConfiguration> clientConfigurations
 ) {
@@ -40,6 +42,8 @@ public record McpHostConfiguration(
         hostClientCapabilities = Set.copyOf(hostClientCapabilities);
         allowedOrigins = List.copyOf(allowedOrigins);
         clientConfigurations = List.copyOf(clientConfigurations);
+        if (clientPolicy == null)
+            throw new IllegalArgumentException("Client policy required");
         if (processWaitSeconds <= 0)
             throw new IllegalArgumentException("Invalid process wait seconds");
         if (serverPort < 0 || serverPort > 65_535)
@@ -68,6 +72,7 @@ public record McpHostConfiguration(
                 100,
                 100,
                 false,
+                c -> true,
                 List.of()
         );
     }
@@ -98,6 +103,7 @@ public record McpHostConfiguration(
                 100,
                 100,
                 false,
+                c -> true,
                 clientConfigurations
         );
     }

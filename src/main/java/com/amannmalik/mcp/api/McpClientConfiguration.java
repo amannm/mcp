@@ -1,5 +1,6 @@
 package com.amannmalik.mcp.api;
 
+import com.amannmalik.mcp.spi.SamplingAccessPolicy;
 import java.util.*;
 
 public record McpClientConfiguration(
@@ -25,7 +26,10 @@ public record McpClientConfiguration(
         // Client-specific behavior
         boolean verbose,
         boolean interactiveSampling,
-        List<String> rootDirectories
+        List<String> rootDirectories,
+        Long pingIntervalMs,
+        SamplingAccessPolicy samplingAccessPolicy,
+        String principal
 ) {
 
     public McpClientConfiguration {
@@ -39,5 +43,11 @@ public record McpClientConfiguration(
             throw new IllegalArgumentException("Invalid progress rate configuration");
         if (rateLimiterWindowMs == null || rateLimiterWindowMs <= 0)
             throw new IllegalArgumentException("Invalid rate limiter window");
+        if (pingIntervalMs == null || pingIntervalMs < 0)
+            throw new IllegalArgumentException("Invalid ping interval configuration");
+        if (samplingAccessPolicy == null)
+            throw new IllegalArgumentException("Invalid sampling access configuration");
+        if (principal == null || principal.isBlank())
+            throw new IllegalArgumentException("Invalid principal configuration");
     }
 }

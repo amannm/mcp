@@ -39,8 +39,8 @@ final class McpClient extends JsonRpcEndpoint implements AutoCloseable {
     private final McpClientListener listener;
     private final Map<String, Consumer<ResourceUpdate>> resourceListeners = new ConcurrentHashMap<>();
     private Closeable rootsSubscription;
-    private SamplingAccessPolicy samplingAccess = SamplingAccessPolicy.PERMISSIVE;
-    private Principal principal = new Principal(McpHostConfiguration.defaultConfiguration().hostPrincipal(), Set.of());
+    private SamplingAccessPolicy samplingAccess;
+    private Principal principal;
     private Thread reader;
     private ScheduledExecutorService pingExec;
     private int pingFailures;
@@ -80,7 +80,9 @@ final class McpClient extends JsonRpcEndpoint implements AutoCloseable {
         if (this.capabilities.contains(ClientCapability.ELICITATION) && this.elicitation == null) {
             throw new IllegalArgumentException("elicitation capability requires provider");
         }
-        this.pingInterval = 0;
+        this.samplingAccess = config.samplingAccessPolicy();
+        this.principal = new Principal(config.principal(), Set.of());
+        this.pingInterval = config.pingIntervalMs();
         this.pingTimeout = config.pingTimeoutMs();
         this.initializationTimeout = config.timeoutMs();
 
@@ -108,7 +110,7 @@ final class McpClient extends JsonRpcEndpoint implements AutoCloseable {
     }
 
     public void setSamplingAccessPolicy(SamplingAccessPolicy policy) {
-        samplingAccess = policy == null ? SamplingAccessPolicy.PERMISSIVE : policy;
+        if (policy != null) this.samplingAccess = policy;
     }
 
     public void setPrincipal(Principal principal) {

@@ -41,10 +41,8 @@ public final class McpHost implements AutoCloseable {
 
     public McpHost(McpHostConfiguration config) throws IOException {
         this.config = config;
-        Predicate<McpClient> policy = c -> true;
-        Principal principal = new Principal(config.hostPrincipal(), Set.of());
-        this.policy = policy;
-        this.principal = principal;
+        this.policy = config.clientPolicy();
+        this.principal = new Principal(config.hostPrincipal(), Set.of());
         this.consents = new ConsentController();
         this.toolAccess = new ToolAccessController();
         this.privacyBoundary = new ResourceAccessController();
@@ -139,7 +137,7 @@ public final class McpHost implements AutoCloseable {
         client.setPrincipal(principal);
         client.setSamplingAccessPolicy(samplingAccess);
         client.configurePing(
-                clientConfig.timeoutMs(),
+                clientConfig.pingIntervalMs(),
                 clientConfig.pingTimeoutMs());
     }
 

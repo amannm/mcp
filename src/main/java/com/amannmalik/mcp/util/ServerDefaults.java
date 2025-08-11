@@ -19,8 +19,6 @@ public final class ServerDefaults {
     private static final PromptProvider PROMPTS;
     private static final CompletionProvider COMPLETIONS;
     private static final SamplingProvider SAMPLING;
-    private static final ToolAccessPolicy TOOL_ACCESS = ToolAccessPolicy.PERMISSIVE;
-    private static final SamplingAccessPolicy SAMPLING_ACCESS = SamplingAccessPolicy.PERMISSIVE;
 
     static {
         Annotations ann = new Annotations(Set.of(Role.USER), 0.5, Instant.parse("2024-01-01T00:00:00Z"));
@@ -131,14 +129,6 @@ public final class ServerDefaults {
 
     public static SamplingProvider sampling() {
         return SAMPLING;
-    }
-
-    public static ToolAccessPolicy toolAccess() {
-        return TOOL_ACCESS;
-    }
-
-    public static SamplingAccessPolicy samplingAccess() {
-        return SAMPLING_ACCESS;
     }
 
     public static ResourceAccessPolicy privacyBoundary(String principalId) {
