@@ -78,7 +78,7 @@ public final class InMemoryCompletionProvider extends InMemoryProvider<Ref> impl
                 .toList();
         int total = unique.size();
         boolean hasMore = total > sorted.size();
-        return new CompleteResult(new CompleteResult.Completion(sorted, total, hasMore), null);
+        return new CompleteResult(new Completion(sorted, total, hasMore), null);
     }
 
     private static boolean refEquals(Ref a, Ref b) {

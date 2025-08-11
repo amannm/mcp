@@ -2,7 +2,7 @@ package com.amannmalik.mcp.codec;
 
 import jakarta.json.JsonObject;
 
-public interface JsonCodec<T> {
+interface JsonCodec<T> {
     JsonObject toJson(T entity);
 
     T fromJson(JsonObject json);
