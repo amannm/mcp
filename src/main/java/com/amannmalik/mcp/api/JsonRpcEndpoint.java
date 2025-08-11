@@ -7,8 +7,14 @@ import com.amannmalik.mcp.jsonrpc.*;
 import jakarta.json.JsonObject;
 
 import java.io.IOException;
-import java.util.*;
-import java.util.concurrent.*;
+import java.util.EnumMap;
+import java.util.Map;
+import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -19,8 +25,8 @@ sealed class JsonRpcEndpoint implements AutoCloseable permits McpClient, McpServ
     protected final Transport transport;
     protected final ProgressManager progress;
     protected final Map<RequestId, CompletableFuture<JsonRpcMessage>> pending = new ConcurrentHashMap<>();
-    private final Map<String, Function<JsonRpcRequest, JsonRpcMessage>> requests = new HashMap<>();
-    private final Map<String, Consumer<JsonRpcNotification>> notifications = new HashMap<>();
+    private final Map<RequestMethod, Function<JsonRpcRequest, JsonRpcMessage>> requests = new EnumMap<>(RequestMethod.class);
+    private final Map<NotificationMethod, Consumer<JsonRpcNotification>> notifications = new EnumMap<>(NotificationMethod.class);
     private final AtomicLong counter;
 
     protected JsonRpcEndpoint(Transport transport, ProgressManager progress, long initialId) {
@@ -34,11 +40,11 @@ sealed class JsonRpcEndpoint implements AutoCloseable permits McpClient, McpServ
         return new RequestId.NumericId(counter.getAndIncrement());
     }
 
-    public final void registerRequest(String method, Function<JsonRpcRequest, JsonRpcMessage> handler) {
+    public final void registerRequest(RequestMethod method, Function<JsonRpcRequest, JsonRpcMessage> handler) {
         requests.put(method, handler);
     }
 
-    protected final void registerNotification(String method, Consumer<JsonRpcNotification> handler) {
+    protected final void registerNotification(NotificationMethod method, Consumer<JsonRpcNotification> handler) {
         notifications.put(method, handler);
     }
 
@@ -54,7 +60,7 @@ sealed class JsonRpcEndpoint implements AutoCloseable permits McpClient, McpServ
             throw new IOException(cause);
         } catch (TimeoutException e) {
             try {
-                notify(NotificationMethod.CANCELLED.method(),
+                notify(NotificationMethod.CANCELLED,
                         CANCEL_CODEC.toJson(new CancelledNotification(id, "timeout")));
             } catch (IOException ignore) {
             }
@@ -62,8 +68,8 @@ sealed class JsonRpcEndpoint implements AutoCloseable permits McpClient, McpServ
         }
     }
 
-    protected final void notify(String method, JsonObject params) throws IOException {
-        send(new JsonRpcNotification(method, params));
+    protected final void notify(NotificationMethod method, JsonObject params) throws IOException {
+        send(new JsonRpcNotification(method.method(), params));
     }
 
     protected final synchronized void send(JsonRpcMessage msg) throws IOException {
@@ -115,11 +121,13 @@ sealed class JsonRpcEndpoint implements AutoCloseable permits McpClient, McpServ
 
     private JsonRpcMessage dispatch(JsonRpcRequest req) {
         try {
-            var handler = requests.get(req.method());
-            if (handler == null) {
+            var method = RequestMethod.from(req.method())
+                    .flatMap(m -> Optional.ofNullable(requests.get(m))
+                            .map(f -> Map.entry(m, f)));
+            if (method.isEmpty()) {
                 return JsonRpcError.of(req.id(), JsonRpcErrorCode.METHOD_NOT_FOUND, "Unknown method: " + req.method());
             }
-            var resp = handler.apply(req);
+            var resp = method.get().getValue().apply(req);
             if (resp == null) throw new IllegalStateException("handler returned null");
             return resp;
         } catch (IllegalArgumentException e) {
@@ -130,16 +138,17 @@ sealed class JsonRpcEndpoint implements AutoCloseable permits McpClient, McpServ
     }
 
     private void handleNotification(JsonRpcNotification note) {
-        var handler = notifications.get(note.method());
-        if (handler != null) handler.accept(note);
+        NotificationMethod.from(note.method())
+                .map(notifications::get)
+                .ifPresent(h -> h.accept(note));
     }
 
     private void sendProgress(ProgressToken token, double current) {
         String msg = current >= 1.0 ? "completed" : "in progress";
         try {
-            progress.send(new ProgressNotification(token, current, 1.0, msg), m -> {
+            progress.send(new ProgressNotification(token, current, 1.0, msg), (m, payload) -> {
                 try {
-                    send(m);
+                    notify(m, payload);
                 } catch (IOException ex) {
                     throw new RuntimeException(ex);
                 }
