@@ -84,22 +84,11 @@ public final class McpHost implements AutoCloseable {
     }
 
     private static Optional<ServerCapability> serverCapabilityForMethod(RequestMethod requestMethod) {
-        return CapabilityRequirements.forMethod(requestMethod)
-                .or(() -> {
-                    if (requestMethod.method().startsWith("tools/")) return Optional.of(ServerCapability.TOOLS);
-                    if (requestMethod.method().startsWith("resources/")) return Optional.of(ServerCapability.RESOURCES);
-                    if (requestMethod.method().startsWith("prompts/")) return Optional.of(ServerCapability.PROMPTS);
-                    if (requestMethod.method().startsWith("completion/")) return Optional.of(ServerCapability.COMPLETIONS);
-                    if (requestMethod.method().startsWith("logging/")) return Optional.of(ServerCapability.LOGGING);
-                    return Optional.empty();
-                });
+        return CapabilityRequirements.forMethod(requestMethod);
     }
 
     private static Optional<ClientCapability> clientCapabilityForMethod(JsonRpcMethod method) {
-        if (method.method().startsWith("roots/")) return Optional.of(ClientCapability.ROOTS);
-        if (method.method().startsWith("sampling/")) return Optional.of(ClientCapability.SAMPLING);
-        if (method.method().startsWith("elicitation/")) return Optional.of(ClientCapability.ELICITATION);
-        return Optional.empty();
+        return CapabilityRequirements.forClient(method);
     }
 
     private static void requireCapability(McpClient client, ServerCapability cap) {
