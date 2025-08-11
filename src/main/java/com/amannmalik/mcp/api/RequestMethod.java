@@ -34,4 +34,26 @@ public enum RequestMethod implements JsonRpcMethod {
     public String method() {
         return method;
     }
+
+    public Optional<ServerCapability> serverCapability() {
+        return switch (this) {
+            case RESOURCES_LIST, RESOURCES_TEMPLATES_LIST, RESOURCES_READ, RESOURCES_SUBSCRIBE, RESOURCES_UNSUBSCRIBE ->
+                    Optional.of(ServerCapability.RESOURCES);
+            case TOOLS_LIST, TOOLS_CALL -> Optional.of(ServerCapability.TOOLS);
+            case PROMPTS_LIST, PROMPTS_GET -> Optional.of(ServerCapability.PROMPTS);
+            case LOGGING_SET_LEVEL -> Optional.of(ServerCapability.LOGGING);
+            case COMPLETION_COMPLETE -> Optional.of(ServerCapability.COMPLETIONS);
+            default -> Optional.empty();
+        };
+    }
+
+    @Override
+    public Optional<ClientCapability> clientCapability() {
+        return switch (this) {
+            case ROOTS_LIST -> Optional.of(ClientCapability.ROOTS);
+            case SAMPLING_CREATE_MESSAGE -> Optional.of(ClientCapability.SAMPLING);
+            case ELICITATION_CREATE -> Optional.of(ClientCapability.ELICITATION);
+            default -> Optional.empty();
+        };
+    }
 }
