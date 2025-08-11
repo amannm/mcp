@@ -1,8 +1,6 @@
 package com.amannmalik.mcp.api;
 
-import java.util.Arrays;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 import java.util.stream.Collectors;
 
 public enum ClientCapability {
@@ -20,12 +18,12 @@ public enum ClientCapability {
         this.code = code;
     }
 
-    public String code() {
-        return code;
-    }
-
     public static Optional<ClientCapability> from(String raw) {
         if (raw == null) return Optional.empty();
         return Optional.ofNullable(BY_CODE.get(raw));
+    }
+
+    public String code() {
+        return code;
     }
 }

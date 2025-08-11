@@ -9,6 +9,20 @@ import java.util.Optional;
 public sealed interface ProgressToken permits
         ProgressToken.StringToken,
         ProgressToken.NumericToken {
+    static Optional<ProgressToken> fromMeta(JsonObject params) {
+        if (params == null || !params.containsKey("_meta")) return Optional.empty();
+        JsonObject meta = params.getJsonObject("_meta");
+        ValidationUtil.requireMeta(meta);
+        if (!meta.containsKey("progressToken")) return Optional.empty();
+        JsonValue val = meta.get("progressToken");
+        ProgressToken token = switch (val.getValueType()) {
+            case STRING -> new ProgressToken.StringToken(ValidationUtil.requireClean(meta.getString("progressToken")));
+            case NUMBER -> new ProgressToken.NumericToken(meta.getJsonNumber("progressToken").longValue());
+            default -> throw new IllegalArgumentException("progressToken must be a string or number");
+        };
+        return Optional.of(token);
+    }
+
     String asString();
 
     record StringToken(String value) implements ProgressToken {
@@ -37,19 +51,5 @@ public sealed interface ProgressToken permits
         public String toString() {
             return Long.toString(value);
         }
-    }
-
-    static Optional<ProgressToken> fromMeta(JsonObject params) {
-        if (params == null || !params.containsKey("_meta")) return Optional.empty();
-        JsonObject meta = params.getJsonObject("_meta");
-        ValidationUtil.requireMeta(meta);
-        if (!meta.containsKey("progressToken")) return Optional.empty();
-        JsonValue val = meta.get("progressToken");
-        ProgressToken token = switch (val.getValueType()) {
-            case STRING -> new ProgressToken.StringToken(ValidationUtil.requireClean(meta.getString("progressToken")));
-            case NUMBER -> new ProgressToken.NumericToken(meta.getJsonNumber("progressToken").longValue());
-            default -> throw new IllegalArgumentException("progressToken must be a string or number");
-        };
-        return Optional.of(token);
     }
 }
