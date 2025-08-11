@@ -78,12 +78,12 @@ public final class ServerCommand {
             }
             Path instructionsFile = parseResult.matchedOptionValue("--instructions", null);
             String instructions = instructionsFile == null ? null : Files.readString(instructionsFile);
-            try (McpServer server = new McpServer(ServerDefaults.resources(),
+            try (McpServer server = new McpServer(McpServerConfiguration.defaultConfiguration(), ServerDefaults.resources(),
                     ServerDefaults.tools(),
                     ServerDefaults.prompts(),
                     ServerDefaults.completions(),
                     ServerDefaults.sampling(),
-                    ServerDefaults.privacyBoundary(McpConfiguration.current().defaultBoundary()),
+                    ServerDefaults.privacyBoundary(McpServerConfiguration.defaultConfiguration().defaultBoundary()),
                     ServerDefaults.toolAccess(),
                     ServerDefaults.samplingAccess(),
                     ServerDefaults.principal(),

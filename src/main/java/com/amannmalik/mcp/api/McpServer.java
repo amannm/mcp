@@ -20,7 +20,6 @@ import java.util.function.Consumer;
 /// - [Server](specification/2025-06-18/server/index.mdx)
 /// - [MCP server conformance test](src/test/resources/com/amannmalik/mcp/mcp_conformance.feature:6-34)
 public final class McpServer extends JsonRpcEndpoint implements AutoCloseable {
-    private static final int RATE_LIMIT_CODE = McpConfiguration.current().rateLimit();
     private static final InitializeRequestAbstractEntityCodec INITIALIZE_REQUEST_CODEC = new InitializeRequestAbstractEntityCodec();
     private static final JsonCodec<LoggingMessageNotification> LOGGING_MESSAGE_NOTIFICATION_JSON_CODEC = new LoggingMessageNotificationAbstractEntityCodec();
     private static final CallToolRequestAbstractEntityCodec CALL_TOOL_REQUEST_CODEC = new CallToolRequestAbstractEntityCodec();
@@ -45,6 +44,8 @@ public final class McpServer extends JsonRpcEndpoint implements AutoCloseable {
                     ListPromptsResult::_meta,
                     new PromptAbstractEntityCodec(),
                     (page, meta) -> new ListPromptsResult(page.items(), page.nextCursor(), meta));
+    
+    private final McpServerConfiguration config;
     private final Set<ServerCapability> serverCapabilities;
     private final ServerInfo serverInfo;
     private final String instructions;
@@ -58,15 +59,9 @@ public final class McpServer extends JsonRpcEndpoint implements AutoCloseable {
     private final ToolAccessPolicy toolAccess;
     private final SamplingAccessPolicy samplingAccess;
     private final Principal principal;
-    private final RateLimiter toolLimiter = new RateLimiter(
-            McpConfiguration.current().toolsPerSecond(),
-            McpConfiguration.current().rateLimiterWindowMs());
-    private final RateLimiter completionLimiter = new RateLimiter(
-            McpConfiguration.current().completionsPerSecond(),
-            McpConfiguration.current().rateLimiterWindowMs());
-    private final RateLimiter logLimiter = new RateLimiter(
-            McpConfiguration.current().logsPerSecond(),
-            McpConfiguration.current().rateLimiterWindowMs());
+    private final RateLimiter toolLimiter;
+    private final RateLimiter completionLimiter;
+    private final RateLimiter logLimiter;
     private String protocolVersion;
     private LifecycleState lifecycleState = LifecycleState.INIT;
     private Set<ClientCapability> clientCapabilities = Set.of();
@@ -76,7 +71,8 @@ public final class McpServer extends JsonRpcEndpoint implements AutoCloseable {
     private volatile LoggingLevel logLevel = LoggingLevel.INFO;
 
 
-    public McpServer(ResourceProvider resources,
+    public McpServer(McpServerConfiguration config,
+                     ResourceProvider resources,
                      ToolProvider tools,
                      PromptProvider prompts,
                      CompletionProvider completions,
@@ -92,9 +88,19 @@ public final class McpServer extends JsonRpcEndpoint implements AutoCloseable {
                      String instructions,
                      Transport transport) {
         super(transport,
-                new ProgressManager(new RateLimiter(McpConfiguration.current().progressPerSecond(),
-                        McpConfiguration.current().rateLimiterWindowMs())),
-                McpConfiguration.current().initialRequestId());
+                new ProgressManager(new RateLimiter(config.rateLimiting().progressPerSecond(),
+                        config.rateLimiting().windowMs())),
+                config.initialRequestId());
+        this.config = config;
+        this.toolLimiter = new RateLimiter(
+                config.rateLimiting().toolsPerSecond(),
+                config.rateLimiting().windowMs());
+        this.completionLimiter = new RateLimiter(
+                config.rateLimiting().completionsPerSecond(),
+                config.rateLimiting().windowMs());
+        this.logLimiter = new RateLimiter(
+                config.rateLimiting().logsPerSecond(),
+                config.rateLimiting().windowMs());
         EnumSet<ServerCapability> caps = EnumSet.noneOf(ServerCapability.class);
         if (resources != null) caps.add(ServerCapability.RESOURCES);
         if (tools != null) caps.add(ServerCapability.TOOLS);
@@ -103,9 +109,9 @@ public final class McpServer extends JsonRpcEndpoint implements AutoCloseable {
         caps.add(ServerCapability.LOGGING);
         this.serverCapabilities = EnumSet.copyOf(caps);
         this.serverInfo = new ServerInfo(
-                McpConfiguration.current().serverName(),
-                McpConfiguration.current().serverDescription(),
-                McpConfiguration.current().serverVersion());
+                config.serverIdentity().name(),
+                config.serverIdentity().description(),
+                config.serverIdentity().version());
         this.instructions = instructions;
         List<String> versions = new ArrayList<>(Set.of(Protocol.LATEST_VERSION, Protocol.PREVIOUS_VERSION));
         versions.sort(Comparator.reverseOrder());
@@ -191,11 +197,11 @@ public final class McpServer extends JsonRpcEndpoint implements AutoCloseable {
             } catch (IllegalArgumentException e) {
                 handleInvalidRequest(e);
             } catch (IOException e) {
-                System.err.println(McpConfiguration.current().errorProcessing() + ": " + e.getMessage());
-                sendLog(LoggingLevel.ERROR, McpConfiguration.current().loggerServer(), Json.createValue(e.getMessage()));
+                System.err.println(config.errorMessages().errorProcessing() + ": " + e.getMessage());
+                sendLog(LoggingLevel.ERROR, config.loggingConfig().serverLoggerName(), Json.createValue(e.getMessage()));
             } catch (Exception e) {
-                System.err.println("Unexpected " + McpConfiguration.current().errorProcessing().toLowerCase() + ": " + e.getMessage());
-                sendLog(LoggingLevel.ERROR, McpConfiguration.current().loggerServer(), Json.createValue(e.getMessage()));
+                System.err.println("Unexpected " + config.errorMessages().errorProcessing().toLowerCase() + ": " + e.getMessage());
+                sendLog(LoggingLevel.ERROR, config.loggingConfig().serverLoggerName(), Json.createValue(e.getMessage()));
             }
         }
     }
@@ -213,9 +219,9 @@ public final class McpServer extends JsonRpcEndpoint implements AutoCloseable {
     }
 
     private void handleParseError(JsonParsingException e) {
-        System.err.println(McpConfiguration.current().errorParse() + ": " + e.getMessage());
+        System.err.println(config.errorMessages().errorParse() + ": " + e.getMessage());
         try {
-            sendLog(LoggingLevel.ERROR, McpConfiguration.current().loggerParser(), Json.createValue(e.getMessage()));
+            sendLog(LoggingLevel.ERROR, config.loggingConfig().parserLoggerName(), Json.createValue(e.getMessage()));
             send(JsonRpcError.of(RequestId.NullId.INSTANCE, JsonRpcErrorCode.PARSE_ERROR, e.getMessage()));
         } catch (IOException ioe) {
             System.err.println("Failed to send error: " + ioe.getMessage());
@@ -223,9 +229,9 @@ public final class McpServer extends JsonRpcEndpoint implements AutoCloseable {
     }
 
     private void handleInvalidRequest(IllegalArgumentException e) {
-        System.err.println(McpConfiguration.current().errorInvalidRequest() + ": " + e.getMessage());
+        System.err.println(config.errorMessages().errorInvalidRequest() + ": " + e.getMessage());
         try {
-            sendLog(LoggingLevel.WARNING, McpConfiguration.current().loggerServer(), Json.createValue(e.getMessage()));
+            sendLog(LoggingLevel.WARNING, config.loggingConfig().serverLoggerName(), Json.createValue(e.getMessage()));
             send(JsonRpcError.of(RequestId.NullId.INSTANCE, JsonRpcErrorCode.INVALID_REQUEST, e.getMessage()));
         } catch (IOException ioe) {
             System.err.println("Failed to send error: " + ioe.getMessage());
@@ -353,7 +359,7 @@ public final class McpServer extends JsonRpcEndpoint implements AutoCloseable {
 
     private Optional<JsonRpcError> checkInitialized(RequestId id) {
         if (lifecycleState != LifecycleState.OPERATION) {
-            return Optional.of(JsonRpcError.of(id, -32002, McpConfiguration.current().errorNotInitialized()));
+            return Optional.of(JsonRpcError.of(id, -32002, config.errorMessages().errorNotInitialized()));
         }
         return Optional.empty();
     }
@@ -373,7 +379,7 @@ public final class McpServer extends JsonRpcEndpoint implements AutoCloseable {
         progress.release(cn.requestId());
         try {
             String reason = progress.reason(cn.requestId());
-            sendLog(LoggingLevel.INFO, McpConfiguration.current().loggerCancellation(),
+            sendLog(LoggingLevel.INFO, config.loggingConfig().cancellationLoggerName(),
                     reason == null ? JsonValue.NULL : Json.createValue(reason));
         } catch (IOException ignore) {
         }
@@ -411,12 +417,12 @@ public final class McpServer extends JsonRpcEndpoint implements AutoCloseable {
         }
         Optional<String> limit = rateLimit(toolLimiter, callRequest.name());
         if (limit.isPresent()) {
-            return JsonRpcError.of(req.id(), RATE_LIMIT_CODE, limit.get());
+            return JsonRpcError.of(req.id(), config.rateLimiting().rateLimitErrorCode(), limit.get());
         }
         try {
             toolAccess.requireAllowed(principal, callRequest.name());
         } catch (SecurityException e) {
-            return JsonRpcError.of(req.id(), JsonRpcErrorCode.INTERNAL_ERROR, McpConfiguration.current().errorAccessDenied());
+            return JsonRpcError.of(req.id(), JsonRpcErrorCode.INTERNAL_ERROR, config.errorMessages().errorAccessDenied());
         }
         try {
             ToolResult result = tools.call(callRequest.name(), callRequest.arguments());
@@ -517,7 +523,7 @@ public final class McpServer extends JsonRpcEndpoint implements AutoCloseable {
             CompleteRequest request = COMPLETE_REQUEST_JSON_CODEC.fromJson(params);
             Optional<String> limit = rateLimit(completionLimiter, request.ref().toString());
             if (limit.isPresent()) {
-                return JsonRpcError.of(req.id(), RATE_LIMIT_CODE, limit.get());
+                return JsonRpcError.of(req.id(), config.rateLimiting().rateLimitErrorCode(), limit.get());
             }
             CompleteResult result = completions.complete(request);
             return new JsonRpcResponse(req.id(), new CompleteResultJsonCodec().toJson(result));
@@ -561,7 +567,7 @@ public final class McpServer extends JsonRpcEndpoint implements AutoCloseable {
                 } catch (IOException ignore) {
                 }
                 pending.remove(id);
-                throw new IOException(McpConfiguration.current().errorTimeout() + " after " + timeoutMillis + " ms");
+                throw new IOException(config.errorMessages().errorTimeout() + " after " + timeoutMillis + " ms");
             }
             var obj = receiveMessage();
             if (obj.isEmpty()) continue;
@@ -590,7 +596,7 @@ public final class McpServer extends JsonRpcEndpoint implements AutoCloseable {
         requireClientCapability(ClientCapability.SAMPLING);
         samplingAccess.requireAllowed(principal);
         try {
-            return sampling.createMessage(req, McpConfiguration.current().defaultMs());
+            return sampling.createMessage(req, config.defaultTimeoutMs());
         } catch (InterruptedException e) {
             throw new IOException(e);
         }

@@ -30,6 +30,7 @@ public final class McpHost implements AutoCloseable {
                     new ToolAbstractEntityCodec(),
                     (page, meta) -> new ListToolsResult(page.items(), page.nextCursor(), meta));
 
+    private final McpHostConfiguration config;
     private final Map<String, McpClient> clients = new ConcurrentHashMap<>();
     private final Predicate<McpClient> policy;
     private final ConsentController consents;
@@ -38,9 +39,10 @@ public final class McpHost implements AutoCloseable {
     private final ResourceAccessController privacyBoundary;
     private final SamplingAccessController samplingAccess;
 
-    public McpHost(Map<String, String> clientSpecs, boolean verbose) throws IOException {
+    public McpHost(McpHostConfiguration config, Map<String, String> clientSpecs, boolean verbose) throws IOException {
+        this.config = config;
         Predicate<McpClient> policy = c -> true;
-        Principal principal = new Principal(McpConfiguration.current().hostPrincipal(), Set.of());
+        Principal principal = new Principal(config.hostPrincipal(), Set.of());
         this.policy = policy;
         this.principal = principal;
         this.consents = new ConsentController();
@@ -61,15 +63,12 @@ public final class McpHost implements AutoCloseable {
                     System.err.println(notification.level().name().toLowerCase() + logger + " " + notification.data());
                 }
             } : null;
-            McpConfiguration cc = McpConfiguration.current();
-            EnumSet<ClientCapability> caps = cc.clientCapabilities().isEmpty()
+            EnumSet<ClientCapability> caps = config.clientCapabilities().isEmpty()
                     ? EnumSet.noneOf(ClientCapability.class)
-                    : cc.clientCapabilities().stream()
-                    .map(ClientCapability::valueOf)
-                    .collect(() -> EnumSet.noneOf(ClientCapability.class), EnumSet::add, EnumSet::addAll);
+                    : EnumSet.copyOf(config.clientCapabilities());
             ElicitationProvider elicitationProvider = new InteractiveElicitationProvider();
             McpClient client = new McpClient(
-                    new ClientInfo(entry.getKey(), entry.getKey(), cc.clientVersion()),
+                    new ClientInfo(entry.getKey(), entry.getKey(), config.clientIdentity().version()),
                     caps,
                     transport,
                     samplingProvider,
@@ -129,8 +128,8 @@ public final class McpHost implements AutoCloseable {
         client.setPrincipal(principal);
         client.setSamplingAccessPolicy(samplingAccess);
         client.configurePing(
-                McpConfiguration.current().defaultMs(),
-                McpConfiguration.current().pingMs());
+                config.defaultTimeoutMs(),
+                config.pingTimeoutMs());
     }
 
     public void connect(String id) throws IOException {
