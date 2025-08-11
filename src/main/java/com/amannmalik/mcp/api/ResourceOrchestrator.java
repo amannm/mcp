@@ -14,7 +14,7 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.*;
 
-final class ResourceFeature implements AutoCloseable {
+final class ResourceOrchestrator implements AutoCloseable {
     private final ResourceProvider resources;
     private final ResourceAccessPolicy access;
     private final Principal principal;
@@ -28,13 +28,13 @@ final class ResourceFeature implements AutoCloseable {
     static final JsonCodec<ResourceUpdatedNotification> RESOURCE_UPDATED_NOTIFICATION_JSON_CODEC = new ResourceUpdatedNotificationAbstractEntityCodec();
 
 
-    public ResourceFeature(ResourceProvider resources,
-                           ResourceAccessPolicy access,
-                           Principal principal,
-                           RootsManager roots,
-                           Supplier<LifecycleState> state,
-                           Sender sender,
-                           ProgressManager progress) {
+    public ResourceOrchestrator(ResourceProvider resources,
+                                ResourceAccessPolicy access,
+                                Principal principal,
+                                RootsManager roots,
+                                Supplier<LifecycleState> state,
+                                Sender sender,
+                                ProgressManager progress) {
         this.resources = resources;
         this.access = access;
         this.principal = principal;

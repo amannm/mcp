@@ -31,7 +31,7 @@ public final class McpServer extends JsonRpcEndpoint implements AutoCloseable {
     private LifecycleState lifecycleState = LifecycleState.INIT;
     private Set<ClientCapability> clientCapabilities = Set.of();
     private ClientFeatures clientFeatures = ClientFeatures.EMPTY;
-    private final ResourceFeature resourceFeature;
+    private final ResourceOrchestrator resourceOrchestrator;
     private final ToolProvider tools;
     private final PromptProvider prompts;
     private final CompletionProvider completions;
@@ -114,8 +114,8 @@ public final class McpServer extends JsonRpcEndpoint implements AutoCloseable {
         this.samplingAccess = samplingAccess == null ? SamplingAccessPolicy.PERMISSIVE : samplingAccess;
         this.principal = principal;
         this.rootsManager = new RootsManager(this::negotiatedClientCapabilities, this::request);
-        this.resourceFeature = resources == null ? null :
-                new ResourceFeature(resources, resourceAccess, principal, rootsManager, this::state, this::send, progress);
+        this.resourceOrchestrator = resources == null ? null :
+                new ResourceOrchestrator(resources, resourceAccess, principal, rootsManager, this::state, this::send, progress);
 
         if (tools != null && tools.supportsListChanged()) {
             toolListSubscription = subscribeListChanges(
@@ -137,8 +137,8 @@ public final class McpServer extends JsonRpcEndpoint implements AutoCloseable {
         registerNotification(NotificationMethod.CANCELLED.method(), this::cancelled);
         registerNotification(NotificationMethod.ROOTS_LIST_CHANGED.method(), n -> rootsManager.listChangedNotification());
 
-        if (resourceFeature != null) {
-            resourceFeature.register(this);
+        if (resourceOrchestrator != null) {
+            resourceOrchestrator.register(this);
         }
 
         if (tools != null) {
@@ -340,8 +340,8 @@ public final class McpServer extends JsonRpcEndpoint implements AutoCloseable {
 
     private ServerFeatures serverFeatures() {
         return new ServerFeatures(
-                resourceFeature != null && resourceFeature.supportsSubscribe(),
-                resourceFeature != null && resourceFeature.supportsListChanged(),
+                resourceOrchestrator != null && resourceOrchestrator.supportsSubscribe(),
+                resourceOrchestrator != null && resourceOrchestrator.supportsListChanged(),
                 tools != null && tools.supportsListChanged(),
                 prompts != null && prompts.supportsListChanged()
         );
@@ -620,7 +620,7 @@ public final class McpServer extends JsonRpcEndpoint implements AutoCloseable {
     @Override
     public void close() throws IOException {
         shutdown();
-        CloseUtil.closeQuietly(resourceFeature);
+        CloseUtil.closeQuietly(resourceOrchestrator);
         if (toolListSubscription != null) {
             CloseUtil.closeQuietly(toolListSubscription);
             toolListSubscription = null;
