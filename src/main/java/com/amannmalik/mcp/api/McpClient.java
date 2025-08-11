@@ -9,8 +9,7 @@ import com.amannmalik.mcp.transport.Protocol;
 import com.amannmalik.mcp.util.*;
 import jakarta.json.*;
 
-import java.io.IOException;
-import java.io.InputStream;
+import java.io.*;
 import java.net.URI;
 import java.net.http.*;
 import java.util.*;
@@ -39,7 +38,7 @@ public final class McpClient extends JsonRpcEndpoint implements AutoCloseable {
     private final ElicitationProvider elicitation;
     private final McpClientListener listener;
     private final Map<String, Consumer<ResourceUpdate>> resourceListeners = new ConcurrentHashMap<>();
-    private ChangeSubscription rootsSubscription;
+    private Closeable rootsSubscription;
     private SamplingAccessPolicy samplingAccess = SamplingAccessPolicy.PERMISSIVE;
     private Principal principal = new Principal(McpConfiguration.current().defaultPrincipal(), Set.of());
     private Thread reader;
@@ -271,7 +270,7 @@ public final class McpClient extends JsonRpcEndpoint implements AutoCloseable {
                 (page1, meta) -> new ListResourceTemplatesResult(page1.items(), page1.nextCursor(), meta)).fromJson(resp.result());
     }
 
-    public ChangeSubscription subscribeResource(String uri, Consumer<ResourceUpdate> listener) throws IOException {
+    public Closeable subscribeResource(String uri, Consumer<ResourceUpdate> listener) throws IOException {
         if (!serverFeatures.resourcesSubscribe()) {
             throw new IllegalStateException("resource subscribe not supported");
         }

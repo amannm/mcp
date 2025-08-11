@@ -11,6 +11,7 @@ import com.amannmalik.mcp.spi.*;
 import com.amannmalik.mcp.util.*;
 import jakarta.json.*;
 
+import java.io.Closeable;
 import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -25,8 +26,8 @@ final class ResourceOrchestrator implements AutoCloseable {
     private final Supplier<LifecycleState> state;
     private final Sender sender;
     private final ProgressManager progress;
-    private final Map<String, ChangeSubscription> subscriptions = new ConcurrentHashMap<>();
-    private final ChangeSubscription listSubscription;
+    private final Map<String, Closeable> subscriptions = new ConcurrentHashMap<>();
+    private final Closeable listSubscription;
 
 
     public ResourceOrchestrator(ResourceProvider resources,
@@ -173,7 +174,7 @@ final class ResourceOrchestrator implements AutoCloseable {
                         Json.createObjectBuilder().add("uri", uri).build());
             }
             try {
-                ChangeSubscription sub = resources.subscribe(uri, update -> {
+                Closeable sub = resources.subscribe(uri, update -> {
                     try {
                         ResourceUpdatedNotification n = new ResourceUpdatedNotification(update.uri(), update.title());
                         sender.send(new JsonRpcNotification(
@@ -203,7 +204,7 @@ final class ResourceOrchestrator implements AutoCloseable {
                 return JsonRpcError.of(req.id(), -32602, "No active subscription for resource",
                         Json.createObjectBuilder().add("uri", uri).build());
             }
-            ChangeSubscription sub = subscriptions.remove(uri);
+            Closeable sub = subscriptions.remove(uri);
             CloseUtil.closeQuietly(sub);
             return new JsonRpcResponse(req.id(), JsonValue.EMPTY_JSON_OBJECT);
         });
@@ -252,8 +253,8 @@ final class ResourceOrchestrator implements AutoCloseable {
         });
     }
 
-    private <S extends ChangeSubscription> S subscribeListChanges(
-            SubscriptionFactory<S> factory,
+    private Closeable subscribeListChanges(
+            SubscriptionFactory<Closeable> factory,
             NotificationMethod method,
             JsonObject payload) {
         try {
@@ -270,7 +271,7 @@ final class ResourceOrchestrator implements AutoCloseable {
     }
 
     @FunctionalInterface
-    private interface SubscriptionFactory<S extends ChangeSubscription> {
+    private interface SubscriptionFactory<S extends Closeable> {
         S subscribe(Consumer<Change> listener);
     }
 

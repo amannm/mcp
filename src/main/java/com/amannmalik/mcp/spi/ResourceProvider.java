@@ -1,5 +1,6 @@
 package com.amannmalik.mcp.spi;
 
+import java.io.Closeable;
 import java.util.Optional;
 import java.util.function.Consumer;
 
@@ -14,7 +15,7 @@ public non-sealed interface ResourceProvider extends Provider<Resource> {
 
     Pagination.Page<ResourceTemplate> listTemplates(String cursor);
 
-    ChangeSubscription subscribe(String uri, Consumer<ResourceUpdate> listener);
+    Closeable subscribe(String uri, Consumer<ResourceUpdate> listener);
 
     default boolean supportsSubscribe() {
         return false;

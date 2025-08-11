@@ -4,10 +4,10 @@ import com.amannmalik.mcp.api.*;
 import com.amannmalik.mcp.codec.*;
 import com.amannmalik.mcp.jsonrpc.JsonRpcError;
 import com.amannmalik.mcp.jsonrpc.JsonRpcResponse;
-import com.amannmalik.mcp.spi.ChangeSubscription;
 import com.amannmalik.mcp.spi.Root;
 import com.amannmalik.mcp.util.ChangeSupport;
 
+import java.io.Closeable;
 import java.io.IOException;
 import java.util.List;
 import java.util.Set;
@@ -40,7 +40,7 @@ public final class RootsManager {
         return List.copyOf(fetched);
     }
 
-    public ChangeSubscription subscribe(Consumer<Change> listener) {
+    public Closeable subscribe(Consumer<Change> listener) {
         return listChangeSupport.subscribe(listener);
     }
 

@@ -11,8 +11,7 @@ import com.amannmalik.mcp.util.*;
 import jakarta.json.*;
 import jakarta.json.stream.JsonParsingException;
 
-import java.io.EOFException;
-import java.io.IOException;
+import java.io.*;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
@@ -73,8 +72,8 @@ public final class McpServer extends JsonRpcEndpoint implements AutoCloseable {
     private LifecycleState lifecycleState = LifecycleState.INIT;
     private Set<ClientCapability> clientCapabilities = Set.of();
     private ClientFeatures clientFeatures = ClientFeatures.EMPTY;
-    private ChangeSubscription toolListSubscription;
-    private ChangeSubscription promptsSubscription;
+    private Closeable toolListSubscription;
+    private Closeable promptsSubscription;
     private volatile LoggingLevel logLevel = LoggingLevel.INFO;
 
 
@@ -167,7 +166,7 @@ public final class McpServer extends JsonRpcEndpoint implements AutoCloseable {
         registerRequest(RequestMethod.SAMPLING_CREATE_MESSAGE.method(), this::handleCreateMessage);
     }
 
-    private <S extends ChangeSubscription> S subscribeListChanges(
+    private <S extends Closeable> S subscribeListChanges(
             SubscriptionFactory<S> factory,
             NotificationMethod method,
             JsonObject payload) {
@@ -632,7 +631,7 @@ public final class McpServer extends JsonRpcEndpoint implements AutoCloseable {
     }
 
     @FunctionalInterface
-    private interface SubscriptionFactory<S extends ChangeSubscription> {
+    private interface SubscriptionFactory<S extends Closeable> {
         S subscribe(Consumer<Change> listener);
     }
 }

@@ -3,6 +3,7 @@ package com.amannmalik.mcp.resources;
 import com.amannmalik.mcp.core.InMemoryProvider;
 import com.amannmalik.mcp.spi.*;
 
+import java.io.Closeable;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -32,7 +33,7 @@ public final class InMemoryResourceProvider extends InMemoryProvider<Resource> i
     }
 
     @Override
-    public ChangeSubscription subscribe(String uri, Consumer<ResourceUpdate> listener) {
+    public Closeable subscribe(String uri, Consumer<ResourceUpdate> listener) {
         listeners.computeIfAbsent(uri, k -> new CopyOnWriteArrayList<>()).add(listener);
         return () -> listeners.getOrDefault(uri, List.of()).remove(listener);
     }
