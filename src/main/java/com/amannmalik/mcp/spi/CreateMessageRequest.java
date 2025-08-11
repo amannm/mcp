@@ -1,5 +1,6 @@
 package com.amannmalik.mcp.spi;
 
+import com.amannmalik.mcp.util.Immutable;
 import com.amannmalik.mcp.util.ValidationUtil;
 import jakarta.json.JsonObject;
 
@@ -18,13 +19,11 @@ public record CreateMessageRequest(
 ) {
 
     public CreateMessageRequest {
-        messages = messages == null || messages.isEmpty() ? List.of() : List.copyOf(messages);
+        messages = Immutable.list(messages);
         systemPrompt = ValidationUtil.cleanNullable(systemPrompt);
-        if (stopSequences == null || stopSequences.isEmpty()) {
-            stopSequences = List.of();
-        } else {
-            stopSequences = stopSequences.stream().map(ValidationUtil::requireClean).toList();
-        }
+        stopSequences = Immutable.list(stopSequences == null
+                ? null
+                : stopSequences.stream().map(ValidationUtil::requireClean).toList());
         maxTokens = ValidationUtil.requirePositive(maxTokens, "maxTokens");
         ValidationUtil.requireMeta(_meta);
     }

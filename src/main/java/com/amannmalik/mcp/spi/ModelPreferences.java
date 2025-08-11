@@ -1,5 +1,6 @@
 package com.amannmalik.mcp.spi;
 
+import com.amannmalik.mcp.util.Immutable;
 import com.amannmalik.mcp.util.ValidationUtil;
 
 import java.util.List;
@@ -11,7 +12,7 @@ public record ModelPreferences(
         Double intelligencePriority
 ) {
     public ModelPreferences {
-        hints = hints == null || hints.isEmpty() ? List.of() : List.copyOf(hints);
+        hints = Immutable.list(hints);
         if (costPriority != null) {
             costPriority = ValidationUtil.requireFraction(costPriority, "costPriority");
         }
