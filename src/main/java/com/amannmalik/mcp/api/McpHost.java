@@ -15,7 +15,6 @@ import jakarta.json.JsonObject;
 import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 public final class McpHost implements AutoCloseable {
@@ -30,9 +29,7 @@ public final class McpHost implements AutoCloseable {
                     new ToolAbstractEntityCodec(),
                     (page, meta) -> new ListToolsResult(page.items(), page.nextCursor(), meta));
 
-    private final McpHostConfiguration config;
     private final Map<String, McpClient> clients = new ConcurrentHashMap<>();
-    private final Predicate<McpClient> policy;
     private final ConsentController consents;
     private final Principal principal;
     private final ToolAccessController toolAccess;
@@ -40,8 +37,6 @@ public final class McpHost implements AutoCloseable {
     private final SamplingAccessController samplingAccess;
 
     public McpHost(McpHostConfiguration config) throws IOException {
-        this.config = config;
-        this.policy = config.clientPolicy();
         this.principal = new Principal(config.hostPrincipal(), Set.of());
         this.consents = new ConsentController();
         this.toolAccess = new ToolAccessController();
@@ -127,9 +122,6 @@ public final class McpHost implements AutoCloseable {
     }
 
     private void register(String id, McpClient client, McpClientConfiguration clientConfig) {
-        if (!policy.test(client)) {
-            throw new SecurityException("Client not authorized: " + client.info().name());
-        }
         consents.requireConsent(principal, client.info().name());
         if (clients.putIfAbsent(id, client) != null) {
             throw new IllegalArgumentException("Client already registered: " + id);

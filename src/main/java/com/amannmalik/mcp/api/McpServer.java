@@ -339,13 +339,21 @@ public final class McpServer extends JsonRpcEndpoint implements AutoCloseable {
         }
     }
 
-    private ServerFeatures serverFeatures() {
-        return new ServerFeatures(
-                resourceOrchestrator != null && resourceOrchestrator.supportsSubscribe(),
-                resourceOrchestrator != null && resourceOrchestrator.supportsListChanged(),
-                tools != null && tools.supportsListChanged(),
-                prompts != null && prompts.supportsListChanged()
-        );
+    private Set<ServerFeature> serverFeatures() {
+        EnumSet<ServerFeature> f = EnumSet.noneOf(ServerFeature.class);
+        if (resourceOrchestrator != null && resourceOrchestrator.supportsSubscribe()) {
+            f.add(ServerFeature.RESOURCES_SUBSCRIBE);
+        }
+        if (resourceOrchestrator != null && resourceOrchestrator.supportsListChanged()) {
+            f.add(ServerFeature.RESOURCES_LIST_CHANGED);
+        }
+        if (tools != null && tools.supportsListChanged()) {
+            f.add(ServerFeature.TOOLS_LIST_CHANGED);
+        }
+        if (prompts != null && prompts.supportsListChanged()) {
+            f.add(ServerFeature.PROMPTS_LIST_CHANGED);
+        }
+        return f.isEmpty() ? Set.of() : EnumSet.copyOf(f);
     }
 
     private void requireServerCapability(ServerCapability cap) {

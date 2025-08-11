@@ -16,17 +16,17 @@ public final class InitializeResponseAbstractEntityCodec extends AbstractEntityC
         JsonObjectBuilder server = Json.createObjectBuilder();
         for (var c : resp.capabilities().server()) {
             JsonObjectBuilder b = Json.createObjectBuilder();
-            ServerFeatures f = resp.features();
+            Set<ServerFeature> f = resp.features();
             switch (c) {
                 case PROMPTS -> {
-                    if (f != null && f.promptsListChanged()) b.add("listChanged", true);
+                    if (f != null && f.contains(ServerFeature.PROMPTS_LIST_CHANGED)) b.add("listChanged", true);
                 }
                 case RESOURCES -> {
-                    if (f != null && f.resourcesSubscribe()) b.add("subscribe", true);
-                    if (f != null && f.resourcesListChanged()) b.add("listChanged", true);
+                    if (f != null && f.contains(ServerFeature.RESOURCES_SUBSCRIBE)) b.add("subscribe", true);
+                    if (f != null && f.contains(ServerFeature.RESOURCES_LIST_CHANGED)) b.add("listChanged", true);
                 }
                 case TOOLS -> {
-                    if (f != null && f.toolsListChanged()) b.add("listChanged", true);
+                    if (f != null && f.contains(ServerFeature.TOOLS_LIST_CHANGED)) b.add("listChanged", true);
                 }
                 default -> {
                 }
@@ -57,23 +57,20 @@ public final class InitializeResponseAbstractEntityCodec extends AbstractEntityC
                 }
             });
         }
-        boolean resSub = false;
-        boolean resList = false;
-        boolean toolList = false;
-        boolean promptList = false;
+        EnumSet<ServerFeature> features = EnumSet.noneOf(ServerFeature.class);
         if (capsObj != null) {
             JsonObject res = capsObj.getJsonObject("resources");
             if (res != null) {
-                resSub = res.getBoolean("subscribe", false);
-                resList = res.getBoolean("listChanged", false);
+                if (res.getBoolean("subscribe", false)) features.add(ServerFeature.RESOURCES_SUBSCRIBE);
+                if (res.getBoolean("listChanged", false)) features.add(ServerFeature.RESOURCES_LIST_CHANGED);
             }
             JsonObject tools = capsObj.getJsonObject("tools");
-            if (tools != null) {
-                toolList = tools.getBoolean("listChanged", false);
+            if (tools != null && tools.getBoolean("listChanged", false)) {
+                features.add(ServerFeature.TOOLS_LIST_CHANGED);
             }
             JsonObject prompts = capsObj.getJsonObject("prompts");
-            if (prompts != null) {
-                promptList = prompts.getBoolean("listChanged", false);
+            if (prompts != null && prompts.getBoolean("listChanged", false)) {
+                features.add(ServerFeature.PROMPTS_LIST_CHANGED);
             }
         }
         Capabilities caps = new Capabilities(
@@ -84,7 +81,7 @@ public final class InitializeResponseAbstractEntityCodec extends AbstractEntityC
         );
         ServerInfo info = SERVER_INFO_CODEC.fromJson(getObject(obj, "serverInfo"));
         String instructions = obj.getString("instructions", null);
-        ServerFeatures features = new ServerFeatures(resSub, resList, toolList, promptList);
-        return new InitializeResponse(version, caps, info, instructions, features);
+        Set<ServerFeature> f = features.isEmpty() ? Set.of() : EnumSet.copyOf(features);
+        return new InitializeResponse(version, caps, info, instructions, f);
     }
 }

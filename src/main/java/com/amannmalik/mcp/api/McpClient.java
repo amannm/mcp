@@ -50,7 +50,7 @@ final class McpClient extends JsonRpcEndpoint implements AutoCloseable {
     private volatile boolean connected;
     private Set<ServerCapability> serverCapabilities = Set.of();
     private String instructions;
-    private ServerFeatures serverFeatures = new ServerFeatures(false, false, false, false);
+    private Set<ServerFeature> serverFeatures = EnumSet.noneOf(ServerFeature.class);
     private String protocolVersion;
     private ServerInfo serverInfo;
     private volatile ResourceMetadata resourceMetadata;
@@ -276,7 +276,7 @@ final class McpClient extends JsonRpcEndpoint implements AutoCloseable {
     }
 
     public AutoCloseable subscribeResource(String uri, Consumer<ResourceUpdate> listener) throws IOException {
-        if (!serverFeatures.resourcesSubscribe()) {
+        if (!serverFeatures.contains(ServerFeature.RESOURCES_SUBSCRIBE)) {
             throw new IllegalStateException("resource subscribe not supported");
         }
         if (listener == null) {
@@ -389,9 +389,9 @@ final class McpClient extends JsonRpcEndpoint implements AutoCloseable {
         serverInfo = ir.serverInfo();
         serverCapabilities = ir.capabilities().server();
         instructions = ir.instructions();
-        ServerFeatures f = ir.features();
+        Set<ServerFeature> f = ir.features();
         if (f != null) {
-            serverFeatures = f;
+            serverFeatures = EnumSet.copyOf(f);
         }
     }
 

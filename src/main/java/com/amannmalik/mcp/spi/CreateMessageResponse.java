@@ -9,7 +9,7 @@ public record CreateMessageResponse(
         String model,
         String stopReason,
         JsonObject _meta
-) {
+) implements Result {
 
     public CreateMessageResponse {
         if (role == null || content == null || model == null) {
