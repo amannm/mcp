@@ -8,7 +8,7 @@ import java.util.Set;
 
 public final class ToolAbstractEntityCodec extends AbstractEntityCodec<Tool> {
 
-    static final JsonCodec<ToolAnnotations> TOOL_ANNOTATIONS_JSON_CODEC = new ToolAnnotationsAbstractEntityCodec();
+    private static final JsonCodec<ToolAnnotations> TOOL_ANNOTATIONS_JSON_CODEC = new ToolAnnotationsAbstractEntityCodec();
 
     @Override
     public JsonObject toJson(Tool tool) {

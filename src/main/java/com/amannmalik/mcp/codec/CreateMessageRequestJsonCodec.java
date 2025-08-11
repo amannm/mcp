@@ -10,12 +10,12 @@ import java.util.Set;
 
 public class CreateMessageRequestJsonCodec implements JsonCodec<CreateMessageRequest> {
 
-    static final JsonCodec<SamplingMessage> CODEC = new SamplingMessageAbstractEntityCodec();
+    static final JsonCodec<SamplingMessage> SAMPLING_MESSAGE_JSON_CODEC = new SamplingMessageAbstractEntityCodec();
 
     @Override
     public JsonObject toJson(CreateMessageRequest req) {
         JsonArrayBuilder msgs = Json.createArrayBuilder();
-        req.messages().forEach(m -> msgs.add(CODEC.toJson(m)));
+        req.messages().forEach(m -> msgs.add(SAMPLING_MESSAGE_JSON_CODEC.toJson(m)));
         JsonObjectBuilder b = Json.createObjectBuilder().add("messages", msgs.build());
         if (req.modelPreferences() != null) b.add("modelPreferences", ModelPreferences.CODEC.toJson(req.modelPreferences()));
         if (req.systemPrompt() != null) b.add("systemPrompt", req.systemPrompt());
@@ -41,7 +41,7 @@ public class CreateMessageRequestJsonCodec implements JsonCodec<CreateMessageReq
         if (obj == null) throw new IllegalArgumentException("object required");
         AbstractEntityCodec.requireOnlyKeys(obj, Set.of("messages", "modelPreferences", "systemPrompt", "includeContext", "temperature", "maxTokens", "stopSequences", "metadata", "_meta"));
         List<SamplingMessage> messages = obj.getJsonArray("messages").stream()
-                .map(v -> CODEC.fromJson(v.asJsonObject()))
+                .map(v -> SAMPLING_MESSAGE_JSON_CODEC.fromJson(v.asJsonObject()))
                 .toList();
         ModelPreferences prefs = obj.containsKey("modelPreferences")
                 ? ModelPreferences.CODEC.fromJson(obj.getJsonObject("modelPreferences"))

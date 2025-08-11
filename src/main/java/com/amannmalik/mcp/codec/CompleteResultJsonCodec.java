@@ -6,12 +6,12 @@ import jakarta.json.*;
 
 public class CompleteResultJsonCodec implements JsonCodec<CompleteResult> {
 
-    static final JsonCodec<Completion> CODEC = new CompletionJsonCodec();
+    private static final JsonCodec<Completion> COMPLETION_JSON_CODEC = new CompletionJsonCodec();
 
     @Override
     public JsonObject toJson(CompleteResult res) {
         JsonObjectBuilder b = Json.createObjectBuilder()
-                .add("completion", CODEC.toJson(res.completion()));
+                .add("completion", COMPLETION_JSON_CODEC.toJson(res.completion()));
         if (res._meta() != null) b.add("_meta", res._meta());
         return b.build();
     }
@@ -20,7 +20,7 @@ public class CompleteResultJsonCodec implements JsonCodec<CompleteResult> {
     public CompleteResult fromJson(JsonObject obj) {
         JsonObject compObj = obj.getJsonObject("completion");
         if (compObj == null) throw new IllegalArgumentException("completion required");
-        Completion comp = CODEC.fromJson(compObj);
+        Completion comp = COMPLETION_JSON_CODEC.fromJson(compObj);
         JsonObject meta = obj.getJsonObject("_meta");
         return new CompleteResult(comp, meta);
     }

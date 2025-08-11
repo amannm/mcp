@@ -14,7 +14,7 @@ public final class ResourceTemplateAbstractEntityCodec extends AbstractEntityCod
         if (t.description() != null) b.add("description", t.description());
         if (t.mimeType() != null) b.add("mimeType", t.mimeType());
         if (t.annotations() != AnnotationsJsonCodec.EMPTY) {
-            b.add("annotations", ANNOTATIONS_CODEC.toJson(t.annotations()));
+            b.add("annotations", new AnnotationsJsonCodec().toJson(t.annotations()));
         }
         if (t._meta() != null) b.add("_meta", t._meta());
         return b.build();
@@ -29,7 +29,7 @@ public final class ResourceTemplateAbstractEntityCodec extends AbstractEntityCod
         String description = obj.getString("description", null);
         String mimeType = obj.getString("mimeType", null);
         Annotations annotations = obj.containsKey("annotations")
-                ? ANNOTATIONS_CODEC.fromJson(getObject(obj, "annotations"))
+                ? new AnnotationsJsonCodec().fromJson(getObject(obj, "annotations"))
                 : AnnotationsJsonCodec.EMPTY;
         JsonObject meta = obj.getJsonObject("_meta");
         return new ResourceTemplate(uriTemplate, name, title, description, mimeType, annotations, meta);

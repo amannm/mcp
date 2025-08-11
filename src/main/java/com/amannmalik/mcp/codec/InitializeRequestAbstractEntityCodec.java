@@ -9,7 +9,7 @@ import java.util.*;
 
 public final class InitializeRequestAbstractEntityCodec extends AbstractEntityCodec<InitializeRequest> {
 
-    static final JsonCodec<ClientInfo> CODEC = new ClientInfoAbstractEntityCodec();
+    static final JsonCodec<ClientInfo> CLIENT_INFO_JSON_CODEC = new ClientInfoAbstractEntityCodec();
 
     @Override
     public JsonObject toJson(InitializeRequest req) {
@@ -25,7 +25,7 @@ public final class InitializeRequestAbstractEntityCodec extends AbstractEntityCo
         return Json.createObjectBuilder()
                 .add("protocolVersion", req.protocolVersion())
                 .add("capabilities", caps.build())
-                .add("clientInfo", CODEC.toJson(req.clientInfo()))
+                .add("clientInfo", CLIENT_INFO_JSON_CODEC.toJson(req.clientInfo()))
                 .build();
     }
 
@@ -57,7 +57,7 @@ public final class InitializeRequestAbstractEntityCodec extends AbstractEntityCo
                 experimental.isEmpty() ? Map.of() : Map.copyOf(experimental),
                 Map.of()
         );
-        ClientInfo info = CODEC.fromJson(getObject(obj, "clientInfo"));
+        ClientInfo info = CLIENT_INFO_JSON_CODEC.fromJson(getObject(obj, "clientInfo"));
         ClientFeatures features = new ClientFeatures(rootsList);
         return new InitializeRequest(version, caps, info, features);
     }

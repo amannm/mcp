@@ -15,7 +15,7 @@ public non-sealed class ResourceAbstractEntityCodec extends AbstractEntityCodec<
         if (r.mimeType() != null) b.add("mimeType", r.mimeType());
         if (r.size() != null) b.add("size", r.size());
         if (r.annotations() != AnnotationsJsonCodec.EMPTY) {
-            b.add("annotations", ANNOTATIONS_CODEC.toJson(r.annotations()));
+            b.add("annotations", new AnnotationsJsonCodec().toJson(r.annotations()));
         }
         if (r._meta() != null) b.add("_meta", r._meta());
         return b.build();
@@ -31,7 +31,7 @@ public non-sealed class ResourceAbstractEntityCodec extends AbstractEntityCodec<
         String mimeType = obj.getString("mimeType", null);
         Long size = obj.containsKey("size") ? obj.getJsonNumber("size").longValue() : null;
         Annotations annotations = obj.containsKey("annotations")
-                ? ANNOTATIONS_CODEC.fromJson(getObject(obj, "annotations"))
+                ? new AnnotationsJsonCodec().fromJson(getObject(obj, "annotations"))
                 : AnnotationsJsonCodec.EMPTY;
         JsonObject meta = obj.getJsonObject("_meta");
         return new Resource(uri, name, title, description, mimeType, size, annotations, meta);
