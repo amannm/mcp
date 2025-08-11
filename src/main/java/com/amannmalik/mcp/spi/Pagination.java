@@ -2,6 +2,7 @@ package com.amannmalik.mcp.spi;
 
 import com.amannmalik.mcp.api.McpHostConfiguration;
 import com.amannmalik.mcp.util.Base64Util;
+import com.amannmalik.mcp.util.Immutable;
 import com.amannmalik.mcp.util.ValidationUtil;
 
 import java.util.List;
@@ -49,7 +50,7 @@ public final class Pagination {
 
     public record Page<T>(List<T> items, Cursor nextCursor) {
         public Page {
-            items = items == null ? List.of() : List.copyOf(items);
+            items = Immutable.list(items);
             nextCursor = nextCursor == null ? Cursor.End.INSTANCE : nextCursor;
         }
     }

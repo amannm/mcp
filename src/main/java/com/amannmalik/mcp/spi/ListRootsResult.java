@@ -1,5 +1,6 @@
 package com.amannmalik.mcp.spi;
 
+import com.amannmalik.mcp.util.Immutable;
 import com.amannmalik.mcp.util.ValidationUtil;
 import jakarta.json.JsonObject;
 
@@ -7,7 +8,7 @@ import java.util.List;
 
 public record ListRootsResult(List<Root> roots, JsonObject _meta) implements Result {
     public ListRootsResult {
-        roots = roots == null || roots.isEmpty() ? List.of() : List.copyOf(roots);
+        roots = Immutable.list(roots);
         ValidationUtil.requireMeta(_meta);
     }
 }

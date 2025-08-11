@@ -1,5 +1,6 @@
 package com.amannmalik.mcp.spi;
 
+import com.amannmalik.mcp.util.Immutable;
 import com.amannmalik.mcp.util.ValidationUtil;
 import jakarta.json.JsonObject;
 
@@ -14,7 +15,7 @@ public record Prompt(
 ) implements DisplayNameProvider {
     public Prompt {
         name = ValidationUtil.requireClean(name);
-        arguments = arguments == null || arguments.isEmpty() ? List.of() : List.copyOf(arguments);
+        arguments = Immutable.list(arguments);
         title = ValidationUtil.cleanNullable(title);
         description = ValidationUtil.cleanNullable(description);
         ValidationUtil.requireMeta(_meta);
