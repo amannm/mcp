@@ -22,15 +22,15 @@ public final class StreamableHttpClientTransport implements Transport {
     private final AtomicReference<String> sessionId = new AtomicReference<>();
     private final AtomicReference<String> protocolVersion = new AtomicReference<>(Protocol.LATEST_VERSION);
     private final AtomicReference<String> authorization = new AtomicReference<>();
-    private final ClientConfiguration clientConfig;
+    private final McpClientConfiguration.ConnectionConfig connectionConfig;
 
     public StreamableHttpClientTransport(URI endpoint) {
-        this(endpoint, ClientConfiguration.defaultConfiguration());
+        this(endpoint, McpClientConfiguration.ConnectionConfig.defaultConfig());
     }
 
-    public StreamableHttpClientTransport(URI endpoint, ClientConfiguration clientConfig) {
+    public StreamableHttpClientTransport(URI endpoint, McpClientConfiguration.ConnectionConfig connectionConfig) {
         this.endpoint = endpoint;
-        this.clientConfig = clientConfig;
+        this.connectionConfig = connectionConfig;
     }
 
     public void setProtocolVersion(String version) {
@@ -92,7 +92,7 @@ public final class StreamableHttpClientTransport implements Transport {
 
     @Override
     public JsonObject receive() throws IOException {
-        return receive(clientConfig.clientConnection().defaultReceiveTimeout().toMillis());
+        return receive(connectionConfig.defaultReceiveTimeout().toMillis());
     }
 
     @Override
@@ -134,7 +134,7 @@ public final class StreamableHttpClientTransport implements Transport {
 
     private HttpRequest.Builder builder() {
         var b = HttpRequest.newBuilder(endpoint)
-                .header("Origin", clientConfig.clientConnection().defaultOriginHeader())
+                .header("Origin", connectionConfig.defaultOriginHeader())
                 .header(TransportHeaders.PROTOCOL_VERSION, protocolVersion.get());
         Optional.ofNullable(authorization.get())
                 .ifPresent(t -> b.header(TransportHeaders.AUTHORIZATION, "Bearer " + t));

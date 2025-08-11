@@ -24,10 +24,6 @@ public final class SseClient implements AutoCloseable {
     private PrintWriter out;
     private volatile boolean closed;
 
-    public SseClient(AsyncContext context) throws IOException {
-        this(context, ServerConfiguration.SseConfig.defaultConfig());
-    }
-
     public SseClient(AsyncContext context, ServerConfiguration.SseConfig config) throws IOException {
         byte[] bytes = new byte[config.clientPrefixByteLength()];
         RANDOM.nextBytes(bytes);

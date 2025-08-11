@@ -44,15 +44,15 @@ public final class McpHost implements AutoCloseable {
         for (McpClientConfiguration clientConfig : config.clientConfigurations()) {
             grantConsent(clientConfig.clientId());
 
-            SamplingProvider samplingProvider = new InteractiveSamplingProvider(clientConfig.interactiveSampling());
+            SamplingProvider samplingProvider = new InteractiveSamplingProvider(clientConfig.behavior().interactiveSampling());
 
             // Create roots from configured directories
-            List<Root> roots = clientConfig.rootDirectories().stream()
+            List<Root> roots = clientConfig.behavior().rootDirectories().stream()
                     .map(dir -> new Root("file://" + dir, dir, null))
                     .toList();
             InMemoryRootsProvider rootsProvider = new InMemoryRootsProvider(roots);
 
-            McpClientListener listener = (clientConfig.verbose() || config.globalVerbose()) ? new McpClientListener() {
+            McpClientListener listener = (clientConfig.behavior().verbose() || config.globalVerbose()) ? new McpClientListener() {
                 @Override
                 public void onMessage(LoggingMessageNotification notification) {
                     String logger = notification.logger() == null ? "" : ":" + notification.logger();
@@ -102,8 +102,8 @@ public final class McpHost implements AutoCloseable {
         client.setPrincipal(principal);
         client.setSamplingAccessPolicy(samplingAccess);
         client.configurePing(
-                clientConfig.pingIntervalMs(),
-                clientConfig.pingTimeoutMs());
+                clientConfig.transport().pingInterval().toMillis(),
+                clientConfig.transport().pingTimeout().toMillis());
     }
 
     public void connect(String id) throws IOException {

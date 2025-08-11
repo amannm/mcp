@@ -74,8 +74,8 @@ final class McpClient extends JsonRpcEndpoint implements AutoCloseable {
               McpClientListener listener) throws IOException {
         super(createTransport(config, globalVerbose),
                 new ProgressManager(new RateLimiter(
-                        config.progressPerSecond(),
-                        config.rateLimiterWindowMs())),
+                        config.transport().progressPerSecond(),
+                        config.transport().rateLimiterWindow().toMillis())),
                 1);
         this.info = new ClientInfo(config.serverName(), config.serverDisplayName(), config.serverVersion());
         this.capabilities = config.clientCapabilities().isEmpty() ? Set.of() : EnumSet.copyOf(config.clientCapabilities());
@@ -93,11 +93,11 @@ final class McpClient extends JsonRpcEndpoint implements AutoCloseable {
         }
         this.elicitation = elicitation == null ? NO_ELICITATION_PROVIDER : elicitation;
         this.listener = listener == null ? NOOP_LISTENER : listener;
-        this.samplingAccess = config.samplingAccessPolicy();
+        this.samplingAccess = config.behavior().samplingAccessPolicy();
         this.principal = new Principal(config.principal(), Set.of());
-        this.pingInterval = config.pingIntervalMs();
-        this.pingTimeout = config.pingTimeoutMs();
-        this.initializationTimeout = config.timeoutMs();
+        this.pingInterval = config.transport().pingInterval().toMillis();
+        this.pingTimeout = config.transport().pingTimeout().toMillis();
+        this.initializationTimeout = config.session().initializeRequestTimeout().toMillis();
 
         registerRequest(RequestMethod.SAMPLING_CREATE_MESSAGE, this::handleCreateMessage);
         registerRequest(RequestMethod.ROOTS_LIST, this::handleListRoots);
@@ -117,7 +117,7 @@ final class McpClient extends JsonRpcEndpoint implements AutoCloseable {
                                              boolean globalVerbose) throws IOException {
         String spec = config.commandSpec();
         String[] cmds = spec == null || spec.isBlank() ? new String[0] : spec.split(" ");
-        boolean verbose = config.verbose() || globalVerbose;
+        boolean verbose = config.behavior().verbose() || globalVerbose;
         return cmds.length == 0
                 ? new StdioTransport(System.in, System.out)
                 : new StdioTransport(cmds, verbose ? System.err::println : s -> {

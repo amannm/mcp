@@ -78,18 +78,23 @@ public final class HostCommand {
                         clientId,
                         clientId,
                         "1.0.0",
+                        McpHostConfiguration.defaultConfiguration().hostPrincipal(),
                         capabilities,
                         command,
-                        30_000L,  // timeoutMs override
-                        5_000L,   // pingTimeoutMs override
-                        20,       // progressPerSecond override
-                        1_000L,   // rateLimiterWindowMs override
-                        clientVerbose,
-                        false,
-                        List.of(System.getProperty("user.dir")),
-                        0L,       // pingIntervalMs override
-                        SamplingAccessPolicy.PERMISSIVE,
-                        McpHostConfiguration.defaultConfiguration().hostPrincipal()
+                        McpClientConfiguration.ConnectionConfig.defaultConfig(),
+                        McpClientConfiguration.SessionConfig.defaultConfig(),
+                        new McpClientConfiguration.TransportConfig(
+                                java.time.Duration.ofMillis(5_000L),     // pingTimeout
+                                java.time.Duration.ofMillis(0L),         // pingInterval
+                                20,                                       // progressPerSecond
+                                java.time.Duration.ofMillis(1_000L)      // rateLimiterWindow
+                        ),
+                        new McpClientConfiguration.BehaviorConfig(
+                                clientVerbose,
+                                false,
+                                List.of(System.getProperty("user.dir")),
+                                SamplingAccessPolicy.PERMISSIVE
+                        )
                 );
                 clientConfigs.add(clientConfig);
             }
@@ -99,7 +104,7 @@ public final class HostCommand {
             try (McpHost host = new McpHost(config)) {
                 for (McpClientConfiguration clientConfig : clientConfigs) {
                     host.connect(clientConfig.clientId());
-                    if (verbose || clientConfig.verbose()) {
+                    if (verbose || clientConfig.behavior().verbose()) {
                         System.err.println("Registered client: " + clientConfig.clientId());
                     }
                 }
