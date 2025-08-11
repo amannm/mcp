@@ -1,6 +1,6 @@
 package com.amannmalik.mcp.spi;
 
-import com.amannmalik.mcp.api.McpConfiguration;
+import com.amannmalik.mcp.api.McpHostConfiguration;
 import com.amannmalik.mcp.util.Base64Util;
 import com.amannmalik.mcp.util.ValidationUtil;
 
@@ -9,7 +9,7 @@ import java.util.List;
 /// - [Pagination](specification/2025-06-18/server/utilities/pagination.mdx)
 public final class Pagination {
     public static final int DEFAULT_PAGE_SIZE =
-            McpConfiguration.current().defaultPageSize();
+            McpHostConfiguration.defaultConfiguration().defaultPageSize();
 
     private Pagination() {
     }

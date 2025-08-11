@@ -1,6 +1,6 @@
 package com.amannmalik.mcp.transport;
 
-import com.amannmalik.mcp.api.McpConfiguration;
+import com.amannmalik.mcp.api.McpHostConfiguration;
 import com.amannmalik.mcp.api.Transport;
 import jakarta.json.*;
 
@@ -13,7 +13,7 @@ import java.util.function.Consumer;
 
 /// - [Transports](specification/2025-06-18/basic/transports.mdx)
 public final class StdioTransport implements Transport {
-    private static final Duration WAIT = Duration.ofSeconds(McpConfiguration.current().processWaitSeconds());
+    private static final Duration WAIT = Duration.ofSeconds(McpHostConfiguration.defaultConfiguration().processWaitSeconds());
     private final BufferedReader in;
     private final BufferedWriter out;
     private final Process process;
@@ -60,7 +60,7 @@ public final class StdioTransport implements Transport {
 
     @Override
     public JsonObject receive() throws IOException {
-        return receive(McpConfiguration.current().defaultMs());
+        return receive(McpHostConfiguration.defaultConfiguration().defaultTimeoutMs());
     }
 
     @Override

@@ -10,7 +10,9 @@ public record McpHostConfiguration(
         long pingTimeoutMs,
 
         // Client identity configuration
-        ClientIdentity clientIdentity,
+        String clientName,
+        String clientDisplayName,
+        String clientVersion,
 
         // Client capabilities configuration
         Set<ClientCapability> clientCapabilities,
@@ -18,15 +20,47 @@ public record McpHostConfiguration(
         // Host principal configuration
         String hostPrincipal,
 
+        // Rate limiting configuration (for client operations)
+        int progressPerSecond,
+        long rateLimiterWindowMs,
+
         // Transport configuration
-        TransportConfig transportConfig,
+        String transportType,
+        int port,
+        List<String> allowedOrigins,
+        int sseHistoryLimit,
+        int responseQueueCapacity,
 
         // Process configuration
-        ProcessConfig processConfig
+        int processWaitSeconds,
+        int defaultPageSize,
+        int maxCompletionValues,
+
+        // Client specifications
+        Map<String, String> clientSpecs,
+
+        // Logging configuration
+        boolean verbose
 ) {
 
     public McpHostConfiguration {
         clientCapabilities = Set.copyOf(clientCapabilities);
+        allowedOrigins = List.copyOf(allowedOrigins);
+        clientSpecs = Map.copyOf(clientSpecs);
+        if (defaultTimeoutMs <= 0 || pingTimeoutMs <= 0)
+            throw new IllegalArgumentException("Invalid timeout configuration");
+        if (progressPerSecond < 0)
+            throw new IllegalArgumentException("Invalid progress rate configuration");
+        if (rateLimiterWindowMs <= 0)
+            throw new IllegalArgumentException("Invalid rate limiter window");
+        if (processWaitSeconds <= 0)
+            throw new IllegalArgumentException("Invalid process wait seconds");
+        if (port < 0 || port > 65_535)
+            throw new IllegalArgumentException("Invalid port number");
+        if (defaultPageSize <= 0 || maxCompletionValues <= 0 || responseQueueCapacity <= 0)
+            throw new IllegalArgumentException("Invalid pagination configuration");
+        if (sseHistoryLimit < 0)
+            throw new IllegalArgumentException("Invalid SSE history limit");
     }
 
     public static McpHostConfiguration defaultConfiguration() {
@@ -35,11 +69,23 @@ public record McpHostConfiguration(
                 "2025-03-26",
                 30_000L,
                 5_000L,
-                ClientIdentity.defaultIdentity(),
+                "cli",
+                "CLI",
+                "0",
                 defaultClientCapabilities(),
                 "user",
-                TransportConfig.defaultConfig(),
-                ProcessConfig.defaultConfig()
+                20,
+                1_000L,
+                "stdio",
+                0,
+                List.of("http://localhost", "http://127.0.0.1"),
+                100,
+                1,
+                2,
+                100,
+                100,
+                Map.of(),
+                false
         );
     }
 
@@ -51,45 +97,29 @@ public record McpHostConfiguration(
         );
     }
 
-    public record ClientIdentity(
-            String name,
-            String displayName,
-            String version
-    ) {
-        public static ClientIdentity defaultIdentity() {
-            return new ClientIdentity("cli", "CLI", "0");
-        }
-    }
-
-    public record TransportConfig(
-            String type,
-            int port,
-            List<String> allowedOrigins,
-            int sseHistoryLimit,
-            int responseQueueCapacity
-    ) {
-        public TransportConfig {
-            allowedOrigins = List.copyOf(allowedOrigins);
-        }
-
-        public static TransportConfig defaultConfig() {
-            return new TransportConfig(
-                    "stdio",
-                    0,
-                    List.of("http://localhost", "http://127.0.0.1"),
-                    100,
-                    1
-            );
-        }
-    }
-
-    public record ProcessConfig(
-            int waitSeconds,
-            int defaultPageSize,
-            int maxCompletionValues
-    ) {
-        public static ProcessConfig defaultConfig() {
-            return new ProcessConfig(2, 100, 100);
-        }
+    public static McpHostConfiguration withClientSpecs(Map<String, String> clientSpecs, boolean verbose) {
+        return new McpHostConfiguration(
+                "2025-06-18",
+                "2025-03-26",
+                30_000L,
+                5_000L,
+                "cli",
+                "CLI",
+                "0",
+                defaultClientCapabilities(),
+                "user",
+                20,
+                1_000L,
+                "stdio",
+                0,
+                List.of("http://localhost", "http://127.0.0.1"),
+                100,
+                1,
+                2,
+                100,
+                100,
+                clientSpecs,
+                verbose
+        );
     }
 }

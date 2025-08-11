@@ -55,7 +55,9 @@ public final class HostCommand {
                 clients.put(spec.substring(0, idx), spec.substring(idx + 1));
             }
 
-            try (McpHost host = new McpHost(McpHostConfiguration.defaultConfiguration(), clients, verbose)) {
+            McpHostConfiguration config = McpHostConfiguration.withClientSpecs(clients, verbose);
+            
+            try (McpHost host = new McpHost(config)) {
                 for (String clientId : clients.keySet()) {
                     host.connect(clientId);
                     if (verbose) {

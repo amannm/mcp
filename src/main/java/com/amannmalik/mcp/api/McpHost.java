@@ -39,7 +39,7 @@ public final class McpHost implements AutoCloseable {
     private final ResourceAccessController privacyBoundary;
     private final SamplingAccessController samplingAccess;
 
-    public McpHost(McpHostConfiguration config, Map<String, String> clientSpecs, boolean verbose) throws IOException {
+    public McpHost(McpHostConfiguration config) throws IOException {
         this.config = config;
         Predicate<McpClient> policy = c -> true;
         Principal principal = new Principal(config.hostPrincipal(), Set.of());
@@ -49,14 +49,14 @@ public final class McpHost implements AutoCloseable {
         this.toolAccess = new ToolAccessController();
         this.privacyBoundary = new ResourceAccessController();
         this.samplingAccess = new SamplingAccessController();
-        for (var entry : clientSpecs.entrySet()) {
+        for (var entry : config.clientSpecs().entrySet()) {
             grantConsent(entry.getKey());
-            Transport transport = TransportFactory.createStdioTransport(entry.getValue().split(" "), verbose);
+            Transport transport = TransportFactory.createStdioTransport(entry.getValue().split(" "), config.verbose());
             SamplingProvider samplingProvider = new InteractiveSamplingProvider(false);
             String currentDir = System.getProperty("user.dir");
             InMemoryRootsProvider rootsProvider = new InMemoryRootsProvider(
                     List.of(new Root("file://" + currentDir, "Current Directory", null)));
-            McpClientListener listener = verbose ? new McpClientListener() {
+            McpClientListener listener = config.verbose() ? new McpClientListener() {
                 @Override
                 public void onMessage(LoggingMessageNotification notification) {
                     String logger = notification.logger() == null ? "" : ":" + notification.logger();
@@ -68,7 +68,7 @@ public final class McpHost implements AutoCloseable {
                     : EnumSet.copyOf(config.clientCapabilities());
             ElicitationProvider elicitationProvider = new InteractiveElicitationProvider();
             McpClient client = new McpClient(
-                    new ClientInfo(entry.getKey(), entry.getKey(), config.clientIdentity().version()),
+                    new ClientInfo(entry.getKey(), entry.getKey(), config.clientVersion()),
                     caps,
                     transport,
                     samplingProvider,

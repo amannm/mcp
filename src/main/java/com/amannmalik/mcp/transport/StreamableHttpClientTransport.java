@@ -1,6 +1,6 @@
 package com.amannmalik.mcp.transport;
 
-import com.amannmalik.mcp.api.McpConfiguration;
+import com.amannmalik.mcp.api.McpHostConfiguration;
 import com.amannmalik.mcp.api.Transport;
 import com.amannmalik.mcp.util.ValidationUtil;
 import jakarta.json.*;
@@ -87,7 +87,7 @@ public final class StreamableHttpClientTransport implements Transport {
 
     @Override
     public JsonObject receive() throws IOException {
-        return receive(McpConfiguration.current().defaultMs());
+        return receive(McpHostConfiguration.defaultConfiguration().defaultTimeoutMs());
     }
 
     @Override

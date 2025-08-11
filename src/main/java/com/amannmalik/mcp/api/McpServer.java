@@ -88,19 +88,19 @@ public final class McpServer extends JsonRpcEndpoint implements AutoCloseable {
                      String instructions,
                      Transport transport) {
         super(transport,
-                new ProgressManager(new RateLimiter(config.rateLimiting().progressPerSecond(),
-                        config.rateLimiting().windowMs())),
+                new ProgressManager(new RateLimiter(config.progressPerSecond(),
+                        config.rateLimiterWindowMs())),
                 config.initialRequestId());
         this.config = config;
         this.toolLimiter = new RateLimiter(
-                config.rateLimiting().toolsPerSecond(),
-                config.rateLimiting().windowMs());
+                config.toolsPerSecond(),
+                config.rateLimiterWindowMs());
         this.completionLimiter = new RateLimiter(
-                config.rateLimiting().completionsPerSecond(),
-                config.rateLimiting().windowMs());
+                config.completionsPerSecond(),
+                config.rateLimiterWindowMs());
         this.logLimiter = new RateLimiter(
-                config.rateLimiting().logsPerSecond(),
-                config.rateLimiting().windowMs());
+                config.logsPerSecond(),
+                config.rateLimiterWindowMs());
         EnumSet<ServerCapability> caps = EnumSet.noneOf(ServerCapability.class);
         if (resources != null) caps.add(ServerCapability.RESOURCES);
         if (tools != null) caps.add(ServerCapability.TOOLS);
@@ -109,9 +109,9 @@ public final class McpServer extends JsonRpcEndpoint implements AutoCloseable {
         caps.add(ServerCapability.LOGGING);
         this.serverCapabilities = EnumSet.copyOf(caps);
         this.serverInfo = new ServerInfo(
-                config.serverIdentity().name(),
-                config.serverIdentity().description(),
-                config.serverIdentity().version());
+                config.serverName(),
+                config.serverDescription(),
+                config.serverVersion());
         this.instructions = instructions;
         List<String> versions = new ArrayList<>(Set.of(Protocol.LATEST_VERSION, Protocol.PREVIOUS_VERSION));
         versions.sort(Comparator.reverseOrder());
@@ -197,11 +197,11 @@ public final class McpServer extends JsonRpcEndpoint implements AutoCloseable {
             } catch (IllegalArgumentException e) {
                 handleInvalidRequest(e);
             } catch (IOException e) {
-                System.err.println(config.errorMessages().errorProcessing() + ": " + e.getMessage());
-                sendLog(LoggingLevel.ERROR, config.loggingConfig().serverLoggerName(), Json.createValue(e.getMessage()));
+                System.err.println(config.errorProcessing() + ": " + e.getMessage());
+                sendLog(LoggingLevel.ERROR, config.serverLoggerName(), Json.createValue(e.getMessage()));
             } catch (Exception e) {
-                System.err.println("Unexpected " + config.errorMessages().errorProcessing().toLowerCase() + ": " + e.getMessage());
-                sendLog(LoggingLevel.ERROR, config.loggingConfig().serverLoggerName(), Json.createValue(e.getMessage()));
+                System.err.println("Unexpected " + config.errorProcessing().toLowerCase() + ": " + e.getMessage());
+                sendLog(LoggingLevel.ERROR, config.serverLoggerName(), Json.createValue(e.getMessage()));
             }
         }
     }
@@ -219,9 +219,9 @@ public final class McpServer extends JsonRpcEndpoint implements AutoCloseable {
     }
 
     private void handleParseError(JsonParsingException e) {
-        System.err.println(config.errorMessages().errorParse() + ": " + e.getMessage());
+        System.err.println(config.errorParse() + ": " + e.getMessage());
         try {
-            sendLog(LoggingLevel.ERROR, config.loggingConfig().parserLoggerName(), Json.createValue(e.getMessage()));
+            sendLog(LoggingLevel.ERROR, config.parserLoggerName(), Json.createValue(e.getMessage()));
             send(JsonRpcError.of(RequestId.NullId.INSTANCE, JsonRpcErrorCode.PARSE_ERROR, e.getMessage()));
         } catch (IOException ioe) {
             System.err.println("Failed to send error: " + ioe.getMessage());
@@ -229,9 +229,9 @@ public final class McpServer extends JsonRpcEndpoint implements AutoCloseable {
     }
 
     private void handleInvalidRequest(IllegalArgumentException e) {
-        System.err.println(config.errorMessages().errorInvalidRequest() + ": " + e.getMessage());
+        System.err.println(config.errorInvalidRequest() + ": " + e.getMessage());
         try {
-            sendLog(LoggingLevel.WARNING, config.loggingConfig().serverLoggerName(), Json.createValue(e.getMessage()));
+            sendLog(LoggingLevel.WARNING, config.serverLoggerName(), Json.createValue(e.getMessage()));
             send(JsonRpcError.of(RequestId.NullId.INSTANCE, JsonRpcErrorCode.INVALID_REQUEST, e.getMessage()));
         } catch (IOException ioe) {
             System.err.println("Failed to send error: " + ioe.getMessage());
@@ -359,7 +359,7 @@ public final class McpServer extends JsonRpcEndpoint implements AutoCloseable {
 
     private Optional<JsonRpcError> checkInitialized(RequestId id) {
         if (lifecycleState != LifecycleState.OPERATION) {
-            return Optional.of(JsonRpcError.of(id, -32002, config.errorMessages().errorNotInitialized()));
+            return Optional.of(JsonRpcError.of(id, -32002, config.errorNotInitialized()));
         }
         return Optional.empty();
     }
@@ -379,7 +379,7 @@ public final class McpServer extends JsonRpcEndpoint implements AutoCloseable {
         progress.release(cn.requestId());
         try {
             String reason = progress.reason(cn.requestId());
-            sendLog(LoggingLevel.INFO, config.loggingConfig().cancellationLoggerName(),
+            sendLog(LoggingLevel.INFO, config.cancellationLoggerName(),
                     reason == null ? JsonValue.NULL : Json.createValue(reason));
         } catch (IOException ignore) {
         }
@@ -417,12 +417,12 @@ public final class McpServer extends JsonRpcEndpoint implements AutoCloseable {
         }
         Optional<String> limit = rateLimit(toolLimiter, callRequest.name());
         if (limit.isPresent()) {
-            return JsonRpcError.of(req.id(), config.rateLimiting().rateLimitErrorCode(), limit.get());
+            return JsonRpcError.of(req.id(), config.rateLimitErrorCode(), limit.get());
         }
         try {
             toolAccess.requireAllowed(principal, callRequest.name());
         } catch (SecurityException e) {
-            return JsonRpcError.of(req.id(), JsonRpcErrorCode.INTERNAL_ERROR, config.errorMessages().errorAccessDenied());
+            return JsonRpcError.of(req.id(), JsonRpcErrorCode.INTERNAL_ERROR, config.errorAccessDenied());
         }
         try {
             ToolResult result = tools.call(callRequest.name(), callRequest.arguments());
@@ -523,7 +523,7 @@ public final class McpServer extends JsonRpcEndpoint implements AutoCloseable {
             CompleteRequest request = COMPLETE_REQUEST_JSON_CODEC.fromJson(params);
             Optional<String> limit = rateLimit(completionLimiter, request.ref().toString());
             if (limit.isPresent()) {
-                return JsonRpcError.of(req.id(), config.rateLimiting().rateLimitErrorCode(), limit.get());
+                return JsonRpcError.of(req.id(), config.rateLimitErrorCode(), limit.get());
             }
             CompleteResult result = completions.complete(request);
             return new JsonRpcResponse(req.id(), new CompleteResultJsonCodec().toJson(result));
@@ -567,7 +567,7 @@ public final class McpServer extends JsonRpcEndpoint implements AutoCloseable {
                 } catch (IOException ignore) {
                 }
                 pending.remove(id);
-                throw new IOException(config.errorMessages().errorTimeout() + " after " + timeoutMillis + " ms");
+                throw new IOException(config.errorTimeout() + " after " + timeoutMillis + " ms");
             }
             var obj = receiveMessage();
             if (obj.isEmpty()) continue;

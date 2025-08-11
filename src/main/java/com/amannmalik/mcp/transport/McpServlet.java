@@ -1,6 +1,6 @@
 package com.amannmalik.mcp.transport;
 
-import com.amannmalik.mcp.api.McpConfiguration;
+import com.amannmalik.mcp.api.McpHostConfiguration;
 import com.amannmalik.mcp.api.RequestMethod;
 import com.amannmalik.mcp.spi.Principal;
 import jakarta.json.*;
@@ -150,7 +150,7 @@ final class McpServlet extends HttpServlet {
     private void handleInitialize(JsonObject obj, HttpServletResponse resp) throws IOException {
         String id = obj.get("id").toString();
         BlockingQueue<JsonObject> q = new LinkedBlockingQueue<>(
-                McpConfiguration.current().responseQueueCapacity());
+                McpHostConfiguration.defaultConfiguration().responseQueueCapacity());
         transport.clients.responses.put(id, q);
         try {
             transport.incoming.put(obj);

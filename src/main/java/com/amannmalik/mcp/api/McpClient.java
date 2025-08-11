@@ -40,7 +40,7 @@ final class McpClient extends JsonRpcEndpoint implements AutoCloseable {
     private final Map<String, Consumer<ResourceUpdate>> resourceListeners = new ConcurrentHashMap<>();
     private Closeable rootsSubscription;
     private SamplingAccessPolicy samplingAccess = SamplingAccessPolicy.PERMISSIVE;
-    private Principal principal = new Principal(McpConfiguration.current().defaultPrincipal(), Set.of());
+    private Principal principal = new Principal(McpHostConfiguration.defaultConfiguration().hostPrincipal(), Set.of());
     private Thread reader;
     private ScheduledExecutorService pingExec;
     private int pingFailures;
@@ -62,7 +62,9 @@ final class McpClient extends JsonRpcEndpoint implements AutoCloseable {
               ElicitationProvider elicitation,
               McpClientListener listener) {
         super(transport,
-                new ProgressManager(new RateLimiter(McpConfiguration.current().progressPerSecond(), 1000)),
+                new ProgressManager(new RateLimiter(
+                        McpHostConfiguration.defaultConfiguration().progressPerSecond(),
+                        McpHostConfiguration.defaultConfiguration().rateLimiterWindowMs())),
                 1);
         this.info = info;
         this.capabilities = capabilities.isEmpty() ? Set.of() : EnumSet.copyOf(capabilities);
@@ -79,7 +81,7 @@ final class McpClient extends JsonRpcEndpoint implements AutoCloseable {
             throw new IllegalArgumentException("elicitation capability requires provider");
         }
         this.pingInterval = 0;
-        this.pingTimeout = McpConfiguration.current().pingMs();
+        this.pingTimeout = McpHostConfiguration.defaultConfiguration().pingTimeoutMs();
 
         registerRequest(RequestMethod.SAMPLING_CREATE_MESSAGE.method(), this::handleCreateMessage);
         registerRequest(RequestMethod.ROOTS_LIST.method(), this::handleListRoots);
@@ -346,13 +348,13 @@ final class McpClient extends JsonRpcEndpoint implements AutoCloseable {
             }
         });
         try {
-            return future.get(McpConfiguration.current().defaultMs(), TimeUnit.MILLISECONDS);
+            return future.get(McpHostConfiguration.defaultConfiguration().defaultTimeoutMs(), TimeUnit.MILLISECONDS);
         } catch (TimeoutException e) {
             try {
                 transport.close();
             } catch (IOException ignore) {
             }
-            throw new IOException("Initialization timed out after " + McpConfiguration.current().defaultMs() + " ms");
+            throw new IOException("Initialization timed out after " + McpHostConfiguration.defaultConfiguration().defaultTimeoutMs() + " ms");
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             throw new IOException(e);

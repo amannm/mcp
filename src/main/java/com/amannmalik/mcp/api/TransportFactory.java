@@ -20,7 +20,7 @@ public final class TransportFactory {
                                                 boolean insecure,
                                                 boolean verbose) throws Exception {
 
-        int port = httpPort == null ? McpConfiguration.current().port() : httpPort;
+        int port = httpPort == null ? McpHostConfiguration.defaultConfiguration().port() : httpPort;
         List<String> auth = authServers;
         if (!insecure) {
             if (auth == null || auth.isEmpty()) throw new IllegalArgumentException("auth server must be specified");
@@ -36,7 +36,7 @@ public final class TransportFactory {
             authManager = new AuthorizationManager(List.of(new BearerTokenAuthorizationStrategy(tokenValidator)));
         }
         StreamableHttpServerTransport ht = new StreamableHttpServerTransport(
-                port, Set.copyOf(McpConfiguration.current().allowedOrigins()), authManager,
+                port, Set.copyOf(McpHostConfiguration.defaultConfiguration().allowedOrigins()), authManager,
                 resourceMetadataUrl, auth);
         if (verbose) System.err.println("Listening on http://127.0.0.1:" + ht.port());
         return ht;

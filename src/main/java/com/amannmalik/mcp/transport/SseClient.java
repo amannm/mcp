@@ -1,6 +1,6 @@
 package com.amannmalik.mcp.transport;
 
-import com.amannmalik.mcp.api.McpConfiguration;
+import com.amannmalik.mcp.api.McpHostConfiguration;
 import com.amannmalik.mcp.util.Base64Util;
 import jakarta.json.JsonObject;
 import jakarta.servlet.AsyncContext;
@@ -15,7 +15,7 @@ import java.util.concurrent.atomic.AtomicLong;
 public final class SseClient implements AutoCloseable {
     private static final SecureRandom RANDOM = new SecureRandom();
     private static final int HISTORY_LIMIT =
-            McpConfiguration.current().sseHistoryLimit();
+            McpHostConfiguration.defaultConfiguration().sseHistoryLimit();
     final String prefix;
     private final Deque<SseEvent> history = new ArrayDeque<>();
     private final AtomicLong nextId = new AtomicLong(1);

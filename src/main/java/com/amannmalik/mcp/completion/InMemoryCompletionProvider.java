@@ -1,6 +1,6 @@
 package com.amannmalik.mcp.completion;
 
-import com.amannmalik.mcp.api.McpConfiguration;
+import com.amannmalik.mcp.api.McpHostConfiguration;
 import com.amannmalik.mcp.codec.ArgumentJsonCodec;
 import com.amannmalik.mcp.codec.ContextJsonCodec;
 import com.amannmalik.mcp.core.InMemoryProvider;
@@ -13,7 +13,7 @@ import java.util.*;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 public final class InMemoryCompletionProvider extends InMemoryProvider<Ref> implements CompletionProvider {
-    private static final int MAX_VALUES = McpConfiguration.current().maxCompletionValues();
+    private static final int MAX_VALUES = McpHostConfiguration.defaultConfiguration().maxCompletionValues();
 
     private static final ArgumentJsonCodec ARGUMENT_CODEC = new ArgumentJsonCodec();
     private static final ContextJsonCodec CONTEXT_CODEC = new ContextJsonCodec();

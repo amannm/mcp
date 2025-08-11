@@ -147,6 +147,6 @@ public final class ServerDefaults {
     }
 
     public static Principal principal() {
-        return new Principal(McpConfiguration.current().defaultPrincipal(), Set.of());
+        return new Principal(McpServerConfiguration.defaultConfiguration().defaultPrincipal(), Set.of());
     }
 }

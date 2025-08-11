@@ -1,6 +1,6 @@
 package com.amannmalik.mcp.transport;
 
-import com.amannmalik.mcp.api.McpConfiguration;
+import com.amannmalik.mcp.api.McpServerConfiguration;
 import com.amannmalik.mcp.api.Transport;
 import com.amannmalik.mcp.auth.AuthorizationManager;
 import com.amannmalik.mcp.core.MessageDispatcher;
@@ -28,7 +28,7 @@ public final class StreamableHttpServerTransport implements Transport {
     static final String COMPATIBILITY_VERSION =
             Protocol.PREVIOUS_VERSION;
     private static final Principal DEFAULT_PRINCIPAL = new Principal(
-            McpConfiguration.current().defaultPrincipal(), Set.of());
+            McpServerConfiguration.defaultConfiguration().defaultPrincipal(), Set.of());
     final AuthorizationManager authManager;
     final String canonicalResource;
     final List<String> authorizationServers;
@@ -92,7 +92,7 @@ public final class StreamableHttpServerTransport implements Transport {
 
     @Override
     public JsonObject receive() throws IOException {
-        return receive(McpConfiguration.current().defaultMs());
+        return receive(McpServerConfiguration.defaultConfiguration().defaultTimeoutMs());
     }
 
     @Override

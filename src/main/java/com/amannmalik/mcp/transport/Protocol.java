@@ -1,13 +1,13 @@
 package com.amannmalik.mcp.transport;
 
-import com.amannmalik.mcp.api.McpConfiguration;
+import com.amannmalik.mcp.api.McpServerConfiguration;
 
 /// - [Lifecycle](specification/2025-06-18/basic/lifecycle.mdx)
 public final class Protocol {
     public static final String LATEST_VERSION =
-            McpConfiguration.current().version();
+            McpServerConfiguration.defaultConfiguration().version();
     public static final String PREVIOUS_VERSION =
-            McpConfiguration.current().compatibilityVersion();
+            McpServerConfiguration.defaultConfiguration().compatibilityVersion();
 
     private Protocol() {
     }

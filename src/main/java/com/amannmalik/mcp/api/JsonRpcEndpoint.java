@@ -58,7 +58,7 @@ sealed class JsonRpcEndpoint implements AutoCloseable permits McpClient, McpServ
                         CANCEL_CODEC.toJson(new CancelledNotification(id, "timeout")));
             } catch (IOException ignore) {
             }
-            throw new IOException(McpConfiguration.current().errorTimeout() + " after " + timeoutMillis + " ms", e);
+            throw new IOException(McpServerConfiguration.defaultConfiguration().errorTimeout() + " after " + timeoutMillis + " ms", e);
         }
     }
 
