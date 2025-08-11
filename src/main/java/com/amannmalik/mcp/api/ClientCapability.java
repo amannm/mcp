@@ -1,18 +1,12 @@
 package com.amannmalik.mcp.api;
 
-import java.util.Arrays;
-import java.util.Map;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 public enum ClientCapability {
     ROOTS("roots"),
     SAMPLING("sampling"),
     ELICITATION("elicitation"),
     EXPERIMENTAL("experimental");
-
-    private static final Map<String, ClientCapability> BY_CODE = Arrays.stream(values())
-            .collect(Collectors.toUnmodifiableMap(ClientCapability::code, c -> c));
 
     private final String code;
 
@@ -26,6 +20,12 @@ public enum ClientCapability {
 
     public static Optional<ClientCapability> from(String raw) {
         if (raw == null) return Optional.empty();
-        return Optional.ofNullable(BY_CODE.get(raw));
+        return switch (raw) {
+            case "roots" -> Optional.of(ROOTS);
+            case "sampling" -> Optional.of(SAMPLING);
+            case "elicitation" -> Optional.of(ELICITATION);
+            case "experimental" -> Optional.of(EXPERIMENTAL);
+            default -> Optional.empty();
+        };
     }
 }
