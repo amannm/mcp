@@ -2,7 +2,6 @@ package com.amannmalik.mcp.core;
 
 import com.amannmalik.mcp.api.*;
 import com.amannmalik.mcp.codec.ProgressNotificationJsonCodec;
-import com.amannmalik.mcp.jsonrpc.JsonRpcNotification;
 import com.amannmalik.mcp.util.NotificationSender;
 import com.amannmalik.mcp.util.RateLimiter;
 import jakarta.json.JsonObject;
@@ -88,9 +87,6 @@ public final class ProgressManager {
         } catch (IllegalArgumentException | IllegalStateException | SecurityException ignore) {
             return;
         }
-        sender.send(new JsonRpcNotification(
-                NotificationMethod.PROGRESS.method(),
-                NOTIFICATION_CODEC.toJson(note)
-        ));
+        sender.send(NotificationMethod.PROGRESS, NOTIFICATION_CODEC.toJson(note));
     }
 }

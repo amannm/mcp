@@ -52,12 +52,12 @@ final class ResourceOrchestrator implements AutoCloseable {
     }
 
     public void register(JsonRpcEndpoint endpoint) {
-        endpoint.registerRequest(RequestMethod.RESOURCES_LIST.method(), this::listResources);
-        endpoint.registerRequest(RequestMethod.RESOURCES_READ.method(), this::readResource);
-        endpoint.registerRequest(RequestMethod.RESOURCES_TEMPLATES_LIST.method(), this::listTemplates);
+        endpoint.registerRequest(RequestMethod.RESOURCES_LIST, this::listResources);
+        endpoint.registerRequest(RequestMethod.RESOURCES_READ, this::readResource);
+        endpoint.registerRequest(RequestMethod.RESOURCES_TEMPLATES_LIST, this::listTemplates);
         if (resources.supportsSubscribe()) {
-            endpoint.registerRequest(RequestMethod.RESOURCES_SUBSCRIBE.method(), this::subscribeResource);
-            endpoint.registerRequest(RequestMethod.RESOURCES_UNSUBSCRIBE.method(), this::unsubscribeResource);
+            endpoint.registerRequest(RequestMethod.RESOURCES_SUBSCRIBE, this::subscribeResource);
+            endpoint.registerRequest(RequestMethod.RESOURCES_UNSUBSCRIBE, this::unsubscribeResource);
         }
     }
 
@@ -89,14 +89,14 @@ final class ResourceOrchestrator implements AutoCloseable {
             String cursor = sanitizeCursor(lr.cursor());
             progressToken.ifPresent(t -> {
                 try {
-                    progress.send(new ProgressNotification(t, 0.0, null, "Starting resource list"), sender::send);
+                    progress.send(new ProgressNotification(t, 0.0, null, "Starting resource list"), sender::notify);
                 } catch (IOException ignore) {
                 }
             });
             Pagination.Page<Resource> list = resources.list(cursor);
             progressToken.ifPresent(t -> {
                 try {
-                    progress.send(new ProgressNotification(t, 0.5, null, "Filtering resources"), sender::send);
+                    progress.send(new ProgressNotification(t, 0.5, null, "Filtering resources"), sender::notify);
                 } catch (IOException ignore) {
                 }
             });
@@ -105,7 +105,7 @@ final class ResourceOrchestrator implements AutoCloseable {
                     .toList();
             progressToken.ifPresent(t -> {
                 try {
-                    progress.send(new ProgressNotification(t, 1.0, null, "Completed resource list"), sender::send);
+                    progress.send(new ProgressNotification(t, 1.0, null, "Completed resource list"), sender::notify);
                 } catch (IOException ignore) {
                 }
             });
@@ -177,9 +177,8 @@ final class ResourceOrchestrator implements AutoCloseable {
                 AutoCloseable sub = resources.subscribe(uri, update -> {
                     try {
                         ResourceUpdatedNotification n = new ResourceUpdatedNotification(update.uri(), update.title());
-                        sender.send(new JsonRpcNotification(
-                                NotificationMethod.RESOURCES_UPDATED.method(),
-                                RESOURCE_UPDATED_NOTIFICATION_JSON_CODEC.toJson(n)));
+                        sender.notify(NotificationMethod.RESOURCES_UPDATED,
+                                RESOURCE_UPDATED_NOTIFICATION_JSON_CODEC.toJson(n));
                     } catch (IOException ignore) {
                     }
                 });
@@ -261,7 +260,7 @@ final class ResourceOrchestrator implements AutoCloseable {
             return factory.subscribe(ignored -> {
                 if (state.get() != LifecycleState.OPERATION) return;
                 try {
-                    sender.send(new JsonRpcNotification(method.method(), payload));
+                    sender.notify(method, payload);
                 } catch (IOException ignore) {
                 }
             });
@@ -277,6 +276,6 @@ final class ResourceOrchestrator implements AutoCloseable {
 
     @FunctionalInterface
     public interface Sender {
-        void send(JsonRpcMessage msg) throws IOException;
+        void notify(NotificationMethod method, JsonObject payload) throws IOException;
     }
 }

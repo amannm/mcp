@@ -90,19 +90,19 @@ final class McpClient extends JsonRpcEndpoint implements AutoCloseable {
         this.pingTimeout = config.pingTimeoutMs();
         this.initializationTimeout = config.timeoutMs();
 
-        registerRequest(RequestMethod.SAMPLING_CREATE_MESSAGE.method(), this::handleCreateMessage);
-        registerRequest(RequestMethod.ROOTS_LIST.method(), this::handleListRoots);
-        registerRequest(RequestMethod.ELICITATION_CREATE.method(), this::handleElicit);
-        registerRequest(RequestMethod.PING.method(), this::handlePing);
+        registerRequest(RequestMethod.SAMPLING_CREATE_MESSAGE, this::handleCreateMessage);
+        registerRequest(RequestMethod.ROOTS_LIST, this::handleListRoots);
+        registerRequest(RequestMethod.ELICITATION_CREATE, this::handleElicit);
+        registerRequest(RequestMethod.PING, this::handlePing);
 
-        registerNotification(NotificationMethod.PROGRESS.method(), this::handleProgress);
-        registerNotification(NotificationMethod.MESSAGE.method(), this::handleMessage);
-        registerNotification(NotificationMethod.CANCELLED.method(), this::cancelled);
-        registerNotification(NotificationMethod.RESOURCES_LIST_CHANGED.method(), this::handleResourcesListChanged);
-        registerNotification(NotificationMethod.RESOURCES_UPDATED.method(), this::handleResourceUpdated);
-        registerNotification(NotificationMethod.TOOLS_LIST_CHANGED.method(), this::handleToolsListChanged);
+        registerNotification(NotificationMethod.PROGRESS, this::handleProgress);
+        registerNotification(NotificationMethod.MESSAGE, this::handleMessage);
+        registerNotification(NotificationMethod.CANCELLED, this::cancelled);
+        registerNotification(NotificationMethod.RESOURCES_LIST_CHANGED, this::handleResourcesListChanged);
+        registerNotification(NotificationMethod.RESOURCES_UPDATED, this::handleResourceUpdated);
+        registerNotification(NotificationMethod.TOOLS_LIST_CHANGED, this::handleToolsListChanged);
         if (listener != null) {
-            registerNotification(NotificationMethod.PROMPTS_LIST_CHANGED.method(), n -> listener.onPromptsListChanged());
+            registerNotification(NotificationMethod.PROMPTS_LIST_CHANGED, n -> listener.onPromptsListChanged());
         }
     }
 
@@ -223,9 +223,9 @@ final class McpClient extends JsonRpcEndpoint implements AutoCloseable {
         }
     }
 
-    public void notify(NotificationMethod method, JsonObject params) throws IOException {
+    public void sendNotification(NotificationMethod method, JsonObject params) throws IOException {
         if (!connected) throw new IllegalStateException("not connected");
-        notify(method.method(), params);
+        super.notify(method, params);
     }
 
     @Override
@@ -411,7 +411,7 @@ final class McpClient extends JsonRpcEndpoint implements AutoCloseable {
     }
 
     private void notifyInitialized() throws IOException {
-        send(new JsonRpcNotification(NotificationMethod.INITIALIZED.method(), null));
+        notify(NotificationMethod.INITIALIZED, null);
     }
 
     private void subscribeRootsIfNeeded() throws IOException {

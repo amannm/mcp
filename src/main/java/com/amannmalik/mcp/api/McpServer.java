@@ -129,7 +129,7 @@ public final class McpServer extends JsonRpcEndpoint implements AutoCloseable {
         this.principal = principal;
         this.rootsManager = new RootsManager(this::negotiatedClientCapabilities, this::request);
         this.resourceOrchestrator = resources == null ? null :
-                new ResourceOrchestrator(resources, resourceAccess, principal, rootsManager, this::state, this::send, progress);
+                new ResourceOrchestrator(resources, resourceAccess, principal, rootsManager, this::state, this::notify, progress);
 
         if (tools != null && tools.supportsListChanged()) {
             toolListSubscription = subscribeListChanges(
@@ -145,33 +145,33 @@ public final class McpServer extends JsonRpcEndpoint implements AutoCloseable {
                     PromptListChangedNotification.CODEC.toJson(new PromptListChangedNotification()));
         }
 
-        registerRequest(RequestMethod.INITIALIZE.method(), this::initialize);
-        registerNotification(NotificationMethod.INITIALIZED.method(), this::initialized);
-        registerRequest(RequestMethod.PING.method(), this::ping);
-        registerNotification(NotificationMethod.CANCELLED.method(), this::cancelled);
-        registerNotification(NotificationMethod.ROOTS_LIST_CHANGED.method(), n -> rootsManager.listChangedNotification());
+        registerRequest(RequestMethod.INITIALIZE, this::initialize);
+        registerNotification(NotificationMethod.INITIALIZED, this::initialized);
+        registerRequest(RequestMethod.PING, this::ping);
+        registerNotification(NotificationMethod.CANCELLED, this::cancelled);
+        registerNotification(NotificationMethod.ROOTS_LIST_CHANGED, n -> rootsManager.listChangedNotification());
 
         if (resourceOrchestrator != null) {
             resourceOrchestrator.register(this);
         }
 
         if (tools != null) {
-            registerRequest(RequestMethod.TOOLS_LIST.method(), this::listTools);
-            registerRequest(RequestMethod.TOOLS_CALL.method(), this::callTool);
+            registerRequest(RequestMethod.TOOLS_LIST, this::listTools);
+            registerRequest(RequestMethod.TOOLS_CALL, this::callTool);
         }
 
         if (prompts != null) {
-            registerRequest(RequestMethod.PROMPTS_LIST.method(), this::listPrompts);
-            registerRequest(RequestMethod.PROMPTS_GET.method(), this::getPrompt);
+            registerRequest(RequestMethod.PROMPTS_LIST, this::listPrompts);
+            registerRequest(RequestMethod.PROMPTS_GET, this::getPrompt);
         }
 
-        registerRequest(RequestMethod.LOGGING_SET_LEVEL.method(), this::setLogLevel);
+        registerRequest(RequestMethod.LOGGING_SET_LEVEL, this::setLogLevel);
 
         if (completions != null) {
-            registerRequest(RequestMethod.COMPLETION_COMPLETE.method(), this::complete);
+            registerRequest(RequestMethod.COMPLETION_COMPLETE, this::complete);
         }
 
-        registerRequest(RequestMethod.SAMPLING_CREATE_MESSAGE.method(), this::handleCreateMessage);
+        registerRequest(RequestMethod.SAMPLING_CREATE_MESSAGE, this::handleCreateMessage);
     }
 
     private static Transport createTransport(McpServerConfiguration config) throws Exception {
@@ -211,7 +211,7 @@ public final class McpServer extends JsonRpcEndpoint implements AutoCloseable {
             return factory.subscribe(ignored -> {
                 if (state() != LifecycleState.OPERATION) return;
                 try {
-                    send(new JsonRpcNotification(method.method(), payload));
+                    notify(method, payload);
                 } catch (IOException ignore) {
                 }
             });
@@ -546,8 +546,8 @@ public final class McpServer extends JsonRpcEndpoint implements AutoCloseable {
         if (rateLimit(logLimiter, note.logger() == null ? "" : note.logger()).isPresent() ||
                 note.level().ordinal() < logLevel.ordinal()) return;
         requireServerCapability(ServerCapability.LOGGING);
-        send(new JsonRpcNotification(NotificationMethod.MESSAGE.method(),
-                LOGGING_MESSAGE_NOTIFICATION_JSON_CODEC.toJson(note)));
+        notify(NotificationMethod.MESSAGE,
+                LOGGING_MESSAGE_NOTIFICATION_JSON_CODEC.toJson(note));
     }
 
     private void sendLog(LoggingLevel level, String logger, JsonValue data) throws IOException {
@@ -605,9 +605,8 @@ public final class McpServer extends JsonRpcEndpoint implements AutoCloseable {
             }
             if (System.currentTimeMillis() >= end) {
                 try {
-                    send(new JsonRpcNotification(
-                            NotificationMethod.CANCELLED.method(),
-                            CANCELLED_NOTIFICATION_JSON_CODEC.toJson(new CancelledNotification(id, "timeout"))));
+                    notify(NotificationMethod.CANCELLED,
+                            CANCELLED_NOTIFICATION_JSON_CODEC.toJson(new CancelledNotification(id, "timeout")));
                 } catch (IOException ignore) {
                 }
                 pending.remove(id);
