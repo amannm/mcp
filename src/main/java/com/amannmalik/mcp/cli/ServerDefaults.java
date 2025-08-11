@@ -1,5 +1,6 @@
-package com.amannmalik.mcp.api;
+package com.amannmalik.mcp.cli;
 
+import com.amannmalik.mcp.api.McpServerConfiguration;
 import com.amannmalik.mcp.completion.InMemoryCompletionProvider;
 import com.amannmalik.mcp.prompts.*;
 import com.amannmalik.mcp.resources.InMemoryResourceProvider;
@@ -12,7 +13,7 @@ import jakarta.json.Json;
 import java.time.Instant;
 import java.util.*;
 
-public final class ServerDefaults {
+final class ServerDefaults {
     private static final ResourceProvider RESOURCES;
     private static final ToolProvider TOOLS;
     private static final PromptProvider PROMPTS;
