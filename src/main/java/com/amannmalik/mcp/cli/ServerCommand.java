@@ -66,28 +66,25 @@ public final class ServerCommand {
         try {
             boolean stdio = parseResult.matchedOptionValue("--stdio", false);
             boolean verbose = parseResult.matchedOptionValue("--verbose", false);
-            Transport transport;
-            if (stdio) {
-                transport = TransportFactory.createStdioTransport(System.in, System.out);
-            } else {
-                Integer httpPort = parseResult.matchedOptionValue("--http", 3000);
-                String expectedAudience = parseResult.matchedOptionValue("--audience", null);
-                String resourceMetadataUrl = parseResult.matchedOptionValue("--resource-metadata", null);
-                List<String> authServers = parseResult.matchedOptionValue("--auth-server", Collections.emptyList());
-                boolean testMode = parseResult.matchedOptionValue("--test-mode", false);
-                transport = TransportFactory.createHttpTransport(httpPort, expectedAudience, resourceMetadataUrl, authServers, testMode, verbose);
-            }
+            Integer httpPort = parseResult.matchedOptionValue("--http", 3000);
+            String expectedAudience = parseResult.matchedOptionValue("--audience", null);
+            String resourceMetadataUrl = parseResult.matchedOptionValue("--resource-metadata", null);
+            List<String> authServers = parseResult.matchedOptionValue("--auth-server", Collections.emptyList());
+            boolean testMode = parseResult.matchedOptionValue("--test-mode", false);
+            McpServerConfiguration base = McpServerConfiguration.defaultConfiguration();
+            McpServerConfiguration config = stdio
+                    ? base.withTransport("stdio", base.serverPort(), base.allowedOrigins(), null, null, List.of(), true, verbose)
+                    : base.withTransport("http", httpPort, base.allowedOrigins(), expectedAudience, resourceMetadataUrl, authServers, testMode, verbose);
             Path instructionsFile = parseResult.matchedOptionValue("--instructions", null);
             String instructions = instructionsFile == null ? null : Files.readString(instructionsFile);
-            try (McpServer server = new McpServer(McpServerConfiguration.defaultConfiguration(), ServerDefaults.resources(),
+            try (McpServer server = new McpServer(config, ServerDefaults.resources(),
                     ServerDefaults.tools(),
                     ServerDefaults.prompts(),
                     ServerDefaults.completions(),
                     ServerDefaults.sampling(),
-                    ServerDefaults.privacyBoundary(McpServerConfiguration.defaultConfiguration().defaultBoundary()),
+                    ServerDefaults.privacyBoundary(config.defaultBoundary()),
                     ServerDefaults.principal(),
-                    instructions,
-                    transport)) {
+                    instructions)) {
                 server.serve();
             }
             return 0;
