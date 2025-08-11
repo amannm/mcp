@@ -8,6 +8,7 @@ import java.io.*;
 import java.net.URI;
 import java.net.http.*;
 import java.nio.charset.StandardCharsets;
+import java.time.Duration;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.*;
@@ -22,15 +23,21 @@ public final class StreamableHttpClientTransport implements Transport {
     private final AtomicReference<String> sessionId = new AtomicReference<>();
     private final AtomicReference<String> protocolVersion = new AtomicReference<>(Protocol.LATEST_VERSION);
     private final AtomicReference<String> authorization = new AtomicReference<>();
-    private final McpClientConfiguration.ConnectionConfig connectionConfig;
+    private final Duration defaultReceiveTimeout;
+    private final String defaultOriginHeader;
 
     public StreamableHttpClientTransport(URI endpoint) {
-        this(endpoint, McpClientConfiguration.ConnectionConfig.defaultConfig());
+        this(endpoint, Duration.ofSeconds(10), "http://127.0.0.1");
     }
 
-    public StreamableHttpClientTransport(URI endpoint, McpClientConfiguration.ConnectionConfig connectionConfig) {
+    public StreamableHttpClientTransport(URI endpoint, Duration defaultReceiveTimeout, String defaultOriginHeader) {
         this.endpoint = endpoint;
-        this.connectionConfig = connectionConfig;
+        if (defaultReceiveTimeout == null || defaultReceiveTimeout.isNegative() || defaultReceiveTimeout.isZero())
+            throw new IllegalArgumentException("Default receive timeout must be positive");
+        if (defaultOriginHeader == null || defaultOriginHeader.isBlank())
+            throw new IllegalArgumentException("Default origin header is required");
+        this.defaultReceiveTimeout = defaultReceiveTimeout;
+        this.defaultOriginHeader = defaultOriginHeader;
     }
 
     public void setProtocolVersion(String version) {
@@ -92,7 +99,7 @@ public final class StreamableHttpClientTransport implements Transport {
 
     @Override
     public JsonObject receive() throws IOException {
-        return receive(connectionConfig.defaultReceiveTimeout().toMillis());
+        return receive(defaultReceiveTimeout.toMillis());
     }
 
     @Override
@@ -134,7 +141,7 @@ public final class StreamableHttpClientTransport implements Transport {
 
     private HttpRequest.Builder builder() {
         var b = HttpRequest.newBuilder(endpoint)
-                .header("Origin", connectionConfig.defaultOriginHeader())
+                .header("Origin", defaultOriginHeader)
                 .header(TransportHeaders.PROTOCOL_VERSION, protocolVersion.get());
         Optional.ofNullable(authorization.get())
                 .ifPresent(t -> b.header(TransportHeaders.AUTHORIZATION, "Bearer " + t));
