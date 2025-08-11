@@ -1,6 +1,7 @@
 package com.amannmalik.mcp.security;
 
 import com.amannmalik.mcp.spi.Principal;
+import com.amannmalik.mcp.spi.Tool;
 import com.amannmalik.mcp.spi.ToolAccessPolicy;
 
 public final class ToolAccessController implements ToolAccessPolicy {
@@ -15,9 +16,9 @@ public final class ToolAccessController implements ToolAccessPolicy {
     }
 
     @Override
-    public void requireAllowed(Principal principal, String tool) {
+    public void requireAllowed(Principal principal, Tool tool) {
         if (principal == null) throw new IllegalArgumentException("principal required");
-        if (tool == null || tool.isBlank()) throw new IllegalArgumentException("tool required");
-        permissions.requirePermission(principal.id(), tool, "Tool not authorized: " + tool);
+        if (tool == null) throw new IllegalArgumentException("tool required");
+        permissions.requirePermission(principal.id(), tool.name(), "Tool not authorized: " + tool.name());
     }
 }

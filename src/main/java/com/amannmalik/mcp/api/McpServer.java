@@ -426,8 +426,12 @@ public final class McpServer extends JsonRpcEndpoint implements AutoCloseable {
         if (limit.isPresent()) {
             return JsonRpcError.of(req.id(), config.rateLimitErrorCode(), limit.get());
         }
+        Optional<Tool> tool = tools.find(callRequest.name());
+        if (tool.isEmpty()) {
+            return JsonRpcError.of(req.id(), JsonRpcErrorCode.INVALID_PARAMS, "Unknown tool: " + callRequest.name());
+        }
         try {
-            toolAccess.requireAllowed(principal, callRequest.name());
+            toolAccess.requireAllowed(principal, tool.get());
         } catch (SecurityException e) {
             return JsonRpcError.of(req.id(), JsonRpcErrorCode.INTERNAL_ERROR, config.errorAccessDenied());
         }
