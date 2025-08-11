@@ -10,15 +10,13 @@ import jakarta.json.Json;
 import jakarta.json.JsonObject;
 
 import java.io.IOException;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 public final class IntegrationSteps {
-    private McpHost host;
     private final Map<String, McpServer> servers = new HashMap<>();
     private final Map<String, McpClient> clients = new HashMap<>();
     private final Map<String, Transport> transports = new HashMap<>();
+    private McpHost host;
 
     @Given("I am an MCP host managing multiple client connections for development assistance")
     public void iAmAnMcpHostManagingMultipleClientConnectionsForDevelopmentAssistance() {

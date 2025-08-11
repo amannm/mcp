@@ -8,7 +8,7 @@ import java.util.List;
 
 /// - [Sampling](specification/2025-06-18/client/sampling.mdx)
 /// - [MCP sampling specification conformance](src/test/resources/com/amannmalik/mcp/mcp_conformance.feature:135-150)
-public interface SamplingProvider extends ExecutingProvider<SamplingMessage, CreateMessageResponse> {
+public non-sealed interface SamplingProvider extends ExecutingProvider<SamplingMessage, CreateMessageResponse> {
     CreateMessageResponse createMessage(CreateMessageRequest request, long timeoutMillis) throws InterruptedException;
 
     default CreateMessageResponse createMessage(CreateMessageRequest request) throws InterruptedException {

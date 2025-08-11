@@ -9,7 +9,7 @@ import jakarta.json.JsonObject;
 import java.util.List;
 
 /// - [Completion](specification/2025-06-18/server/utilities/completion.mdx)
-public interface CompletionProvider extends ExecutingProvider<Ref, CompleteResult> {
+public non-sealed interface CompletionProvider extends ExecutingProvider<Ref, CompleteResult> {
     static String encode(Ref ref) {
         return switch (ref) {
             case Ref.PromptRef(var name, var _, var _) -> "prompt:" + name;

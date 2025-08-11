@@ -1,7 +1,7 @@
 package com.amannmalik.mcp.roots;
 
-import com.amannmalik.mcp.api.model.Root;
 import com.amannmalik.mcp.api.RootsProvider;
+import com.amannmalik.mcp.api.model.Root;
 import com.amannmalik.mcp.core.InMemoryProvider;
 
 import java.util.List;

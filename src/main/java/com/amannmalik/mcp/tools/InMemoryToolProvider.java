@@ -1,6 +1,6 @@
 package com.amannmalik.mcp.tools;
 
-import com.amannmalik.mcp.api.*;
+import com.amannmalik.mcp.api.ToolProvider;
 import com.amannmalik.mcp.api.model.Tool;
 import com.amannmalik.mcp.api.model.ToolResult;
 import com.amannmalik.mcp.core.InMemoryProvider;
