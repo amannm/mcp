@@ -54,10 +54,13 @@ public final class McpServer extends JsonRpcEndpoint implements AutoCloseable {
             McpConfiguration.current().logsPerSecond(),
             McpConfiguration.current().rateLimiterWindowMs());
 
-    private final InitializeRequestAbstractEntityCodec INITIALIZE_REQUEST_CODEC = new InitializeRequestAbstractEntityCodec();
+    private static final InitializeRequestAbstractEntityCodec INITIALIZE_REQUEST_CODEC = new InitializeRequestAbstractEntityCodec();
     private static final JsonCodec<LoggingMessageNotification> LOGGING_MESSAGE_NOTIFICATION_JSON_CODEC = new LoggingMessageNotificationAbstractEntityCodec();
     private static final CallToolRequestAbstractEntityCodec CALL_TOOL_REQUEST_CODEC = new CallToolRequestAbstractEntityCodec();
     private static final JsonCodec<ToolResult> TOOL_RESULT_ABSTRACT_ENTITY_CODEC = new ToolResultAbstractEntityCodec();
+    private static final CompleteRequestJsonCodec COMPLETE_REQUEST_JSON_CODEC = new CompleteRequestJsonCodec();
+    private static final JsonCodec<SetLevelRequest> SET_LEVEL_REQUEST_JSON_CODEC = new SetLevelRequestAbstractEntityCodec();
+    private static final CancelledNotificationJsonCodec CANCELLED_NOTIFICATION_JSON_CODEC = new CancelledNotificationJsonCodec();
     private static final JsonCodec<ListPromptsResult> LIST_PROMPTS_RESULT_CODEC =
             AbstractEntityCodec.paginatedResult(
                     "prompts",
@@ -66,9 +69,6 @@ public final class McpServer extends JsonRpcEndpoint implements AutoCloseable {
                     ListPromptsResult::_meta,
                     new PromptAbstractEntityCodec(),
                     (page, meta) -> new ListPromptsResult(page.items(), page.nextCursor(), meta));
-    private static final CompleteRequestJsonCodec COMPLETE_REQUEST_JSON_CODEC = new CompleteRequestJsonCodec();
-    private static final JsonCodec<SetLevelRequest> SET_LEVEL_REQUEST_JSON_CODEC = new SetLevelRequestAbstractEntityCodec();
-    private static final CancelledNotificationJsonCodec CANCELLED_NOTIFICATION_JSON_CODEC = new CancelledNotificationJsonCodec();
 
 
     public McpServer(ResourceProvider resources,
@@ -455,7 +455,6 @@ public final class McpServer extends JsonRpcEndpoint implements AutoCloseable {
         }
         return JsonRpcError.of(req.id(), JsonRpcErrorCode.INVALID_PARAMS, e.getMessage());
     }
-
 
     private JsonRpcMessage listPrompts(JsonRpcRequest req) {
         Optional<JsonRpcError> initCheck = checkInitialized(req.id());

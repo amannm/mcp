@@ -31,7 +31,6 @@ public final class McpHost implements AutoCloseable {
     private static final CallToolRequestAbstractEntityCodec CALL_TOOL_REQUEST_CODEC = new CallToolRequestAbstractEntityCodec();
     private static final JsonCodec<ToolResult> TOOL_RESULT_ABSTRACT_ENTITY_CODEC = new ToolResultAbstractEntityCodec();
 
-
     @Override
     public void close() throws IOException {
         for (String id : Set.copyOf(clients.keySet())) {

@@ -111,7 +111,9 @@ public final class McpClient extends JsonRpcEndpoint implements AutoCloseable {
         registerNotification(NotificationMethod.RESOURCES_LIST_CHANGED.method(), this::handleResourcesListChanged);
         registerNotification(NotificationMethod.RESOURCES_UPDATED.method(), this::handleResourceUpdated);
         registerNotification(NotificationMethod.TOOLS_LIST_CHANGED.method(), this::handleToolsListChanged);
-        registerNotification(NotificationMethod.PROMPTS_LIST_CHANGED.method(), n -> listener.onPromptsListChanged());
+        if (listener != null) {
+            registerNotification(NotificationMethod.PROMPTS_LIST_CHANGED.method(), n -> listener.onPromptsListChanged());
+        }
     }
 
     public ClientInfo info() {
@@ -175,6 +177,7 @@ public final class McpClient extends JsonRpcEndpoint implements AutoCloseable {
             throw new IOException("Unexpected ping response");
         }
     }
+
     public void setLogLevel(LoggingLevel level) throws IOException {
         if (level == null) throw new IllegalArgumentException("level required");
         JsonRpc.expectResponse(request(RequestMethod.LOGGING_SET_LEVEL,
@@ -276,6 +279,7 @@ public final class McpClient extends JsonRpcEndpoint implements AutoCloseable {
                 ResourceTemplate.CODEC,
                 (page1, meta) -> new ListResourceTemplatesResult(page1.items(), page1.nextCursor(), meta)).fromJson(resp.result());
     }
+
     public ChangeSubscription subscribeResource(String uri, Consumer<ResourceUpdate> listener) throws IOException {
         if (!serverFeatures.resourcesSubscribe()) {
             throw new IllegalStateException("resource subscribe not supported");
@@ -579,6 +583,7 @@ public final class McpClient extends JsonRpcEndpoint implements AutoCloseable {
         } catch (IllegalArgumentException ignore) {
         }
     }
+
     private void cancelled(JsonRpcNotification note) {
         CancelledNotification cn = CANCELLED_NOTIFICATION_JSON_CODEC.fromJson(note.params());
         progress.cancel(cn.requestId(), cn.reason());
@@ -589,7 +594,7 @@ public final class McpClient extends JsonRpcEndpoint implements AutoCloseable {
         }
     }
 
-    public interface McpClientListener {
+    interface McpClientListener {
         default void onProgress(ProgressNotification notification) {
         }
 

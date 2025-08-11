@@ -5,9 +5,12 @@ import com.amannmalik.mcp.sampling.MessageContent;
 import com.amannmalik.mcp.util.ValidationUtil;
 import jakarta.json.JsonObject;
 
-public sealed interface ContentBlock
-        permits ContentBlock.Text, ContentBlock.Image, ContentBlock.Audio,
-        ContentBlock.ResourceLink, ContentBlock.EmbeddedResource {
+public sealed interface ContentBlock permits
+        ContentBlock.Text,
+        ContentBlock.Image,
+        ContentBlock.Audio,
+        ContentBlock.ResourceLink,
+        ContentBlock.EmbeddedResource {
     String type();
 
     Annotations annotations();

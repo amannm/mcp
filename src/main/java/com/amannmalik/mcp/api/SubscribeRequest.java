@@ -6,7 +6,7 @@ import com.amannmalik.mcp.util.ValidationUtil;
 import jakarta.json.JsonObject;
 
 public record SubscribeRequest(String uri, JsonObject _meta) {
-     static final JsonCodec<SubscribeRequest> CODEC = new SubscribeRequestAbstractEntityCodec();
+    static final JsonCodec<SubscribeRequest> CODEC = new SubscribeRequestAbstractEntityCodec();
 
     public SubscribeRequest {
         uri = ValidationUtil.requireAbsoluteUri(uri);

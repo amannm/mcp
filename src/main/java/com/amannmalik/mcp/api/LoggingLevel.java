@@ -15,7 +15,7 @@ public enum LoggingLevel {
     EMERGENCY;
 
     private static final Map<String, LoggingLevel> BY_NAME = Arrays.stream(values())
-                .collect(Collectors.toUnmodifiableMap(l -> l.name().toLowerCase(), l -> l));
+            .collect(Collectors.toUnmodifiableMap(l -> l.name().toLowerCase(), l -> l));
 
     public static LoggingLevel fromString(String raw) {
         if (raw == null) throw new IllegalArgumentException("level required");
