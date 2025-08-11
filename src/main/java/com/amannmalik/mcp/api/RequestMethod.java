@@ -1,7 +1,9 @@
 package com.amannmalik.mcp.api;
 
+
 import java.util.*;
 import java.util.stream.Collectors;
+
 
 public enum RequestMethod implements JsonRpcMethod {
     INITIALIZE("initialize"),
@@ -20,9 +22,6 @@ public enum RequestMethod implements JsonRpcMethod {
     SAMPLING_CREATE_MESSAGE("sampling/createMessage", EnumSet.noneOf(ServerCapability.class), EnumSet.of(ClientCapability.SAMPLING)),
     ROOTS_LIST("roots/list", EnumSet.noneOf(ServerCapability.class), EnumSet.of(ClientCapability.ROOTS)),
     ELICITATION_CREATE("elicitation/create", EnumSet.noneOf(ServerCapability.class), EnumSet.of(ClientCapability.ELICITATION));
-
-    private static final Map<String, RequestMethod> BY_METHOD = Arrays.stream(values())
-            .collect(Collectors.toUnmodifiableMap(RequestMethod::method, m -> m));
 
     private final String method;
     private final EnumSet<ServerCapability> serverCapabilities;
@@ -44,7 +43,25 @@ public enum RequestMethod implements JsonRpcMethod {
 
     public static Optional<RequestMethod> from(String method) {
         if (method == null) return Optional.empty();
-        return Optional.ofNullable(BY_METHOD.get(method));
+        return switch (method) {
+            case "initialize" -> Optional.of(INITIALIZE);
+            case "ping" -> Optional.of(PING);
+            case "resources/list" -> Optional.of(RESOURCES_LIST);
+            case "resources/templates/list" -> Optional.of(RESOURCES_TEMPLATES_LIST);
+            case "resources/read" -> Optional.of(RESOURCES_READ);
+            case "resources/subscribe" -> Optional.of(RESOURCES_SUBSCRIBE);
+            case "resources/unsubscribe" -> Optional.of(RESOURCES_UNSUBSCRIBE);
+            case "tools/list" -> Optional.of(TOOLS_LIST);
+            case "tools/call" -> Optional.of(TOOLS_CALL);
+            case "prompts/list" -> Optional.of(PROMPTS_LIST);
+            case "prompts/get" -> Optional.of(PROMPTS_GET);
+            case "logging/setLevel" -> Optional.of(LOGGING_SET_LEVEL);
+            case "completion/complete" -> Optional.of(COMPLETION_COMPLETE);
+            case "sampling/createMessage" -> Optional.of(SAMPLING_CREATE_MESSAGE);
+            case "roots/list" -> Optional.of(ROOTS_LIST);
+            case "elicitation/create" -> Optional.of(ELICITATION_CREATE);
+            default -> Optional.empty();
+        };
     }
 
     public String method() {

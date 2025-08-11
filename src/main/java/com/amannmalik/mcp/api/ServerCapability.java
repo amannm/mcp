@@ -1,7 +1,9 @@
 package com.amannmalik.mcp.api;
 
+
 import java.util.*;
 import java.util.stream.Collectors;
+
 
 public enum ServerCapability {
     PROMPTS("prompts"),
@@ -11,9 +13,6 @@ public enum ServerCapability {
     COMPLETIONS("completions"),
     EXPERIMENTAL("experimental");
 
-    private static final Map<String, ServerCapability> BY_CODE = Arrays.stream(values())
-            .collect(Collectors.toUnmodifiableMap(ServerCapability::code, c -> c));
-
     private final String code;
 
     ServerCapability(String code) {
@@ -22,7 +21,15 @@ public enum ServerCapability {
 
     public static Optional<ServerCapability> from(String raw) {
         if (raw == null) return Optional.empty();
-        return Optional.ofNullable(BY_CODE.get(raw));
+        return switch (raw) {
+            case "prompts" -> Optional.of(PROMPTS);
+            case "resources" -> Optional.of(RESOURCES);
+            case "tools" -> Optional.of(TOOLS);
+            case "logging" -> Optional.of(LOGGING);
+            case "completions" -> Optional.of(COMPLETIONS);
+            case "experimental" -> Optional.of(EXPERIMENTAL);
+            default -> Optional.empty();
+        };
     }
 
     public String code() {
