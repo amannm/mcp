@@ -2,8 +2,8 @@ package com.amannmalik.mcp.cli;
 
 import com.amannmalik.mcp.api.McpServer;
 import com.amannmalik.mcp.api.Transport;
-import com.amannmalik.mcp.config.ServerDefaults;
-import com.amannmalik.mcp.config.McpConfiguration;
+import com.amannmalik.mcp.api.ServerDefaults;
+import com.amannmalik.mcp.api.McpConfiguration;
 import com.amannmalik.mcp.transport.TransportFactory;
 import picocli.CommandLine;
 import picocli.CommandLine.Model.CommandSpec;

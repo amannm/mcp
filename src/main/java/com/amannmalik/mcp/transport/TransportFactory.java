@@ -3,7 +3,7 @@ package com.amannmalik.mcp.transport;
 import com.amannmalik.mcp.api.Transport;
 import com.amannmalik.mcp.api.TransportType;
 import com.amannmalik.mcp.auth.*;
-import com.amannmalik.mcp.config.McpConfiguration;
+import com.amannmalik.mcp.api.McpConfiguration;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;

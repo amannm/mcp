@@ -1,6 +1,5 @@
 package com.amannmalik.mcp.api;
 
-import com.amannmalik.mcp.config.McpConfiguration;
 import com.amannmalik.mcp.util.Base64Util;
 import com.amannmalik.mcp.util.ValidationUtil;
 

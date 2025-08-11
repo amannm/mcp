@@ -1,6 +1,5 @@
-package com.amannmalik.mcp.config;
+package com.amannmalik.mcp.api;
 
-import com.amannmalik.mcp.api.*;
 import com.amannmalik.mcp.completion.InMemoryCompletionProvider;
 import com.amannmalik.mcp.prompts.*;
 import com.amannmalik.mcp.resources.InMemoryResourceProvider;

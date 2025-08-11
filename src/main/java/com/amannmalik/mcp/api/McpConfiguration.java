@@ -1,4 +1,4 @@
-package com.amannmalik.mcp.config;
+package com.amannmalik.mcp.api;
 
 import java.util.List;
 

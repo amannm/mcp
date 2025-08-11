@@ -1,7 +1,7 @@
 package com.amannmalik.mcp.transport;
 
 import com.amannmalik.mcp.api.Transport;
-import com.amannmalik.mcp.config.McpConfiguration;
+import com.amannmalik.mcp.api.McpConfiguration;
 import jakarta.json.*;
 
 import java.io.*;
