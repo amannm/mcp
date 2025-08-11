@@ -28,7 +28,6 @@ public final class McpServer extends JsonRpcEndpoint implements AutoCloseable {
     private static final CompleteRequestJsonCodec COMPLETE_REQUEST_JSON_CODEC = new CompleteRequestJsonCodec();
     private static final JsonCodec<SetLevelRequest> SET_LEVEL_REQUEST_JSON_CODEC = new SetLevelRequestAbstractEntityCodec();
     private static final CancelledNotificationJsonCodec CANCELLED_NOTIFICATION_JSON_CODEC = new CancelledNotificationJsonCodec();
-
     private static final JsonCodec<ListToolsResult> LIST_TOOLS_RESULT_JSON_CODEC =
             AbstractEntityCodec.paginatedResult(
                     "tools",

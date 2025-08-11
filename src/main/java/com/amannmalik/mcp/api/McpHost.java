@@ -119,7 +119,7 @@ public final class McpHost implements AutoCloseable {
         }
     }
 
-    public void register(String id, McpClient client) {
+    private void register(String id, McpClient client) {
         if (!policy.test(client)) {
             throw new SecurityException("Client not authorized: " + client.info().name());
         }

@@ -34,7 +34,7 @@ sealed class JsonRpcEndpoint implements AutoCloseable permits McpClient, McpServ
         return new RequestId.NumericId(counter.getAndIncrement());
     }
 
-    protected final void registerRequest(String method, Function<JsonRpcRequest, JsonRpcMessage> handler) {
+    public final void registerRequest(String method, Function<JsonRpcRequest, JsonRpcMessage> handler) {
         requests.put(method, handler);
     }
 

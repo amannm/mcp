@@ -21,7 +21,7 @@ import java.util.stream.Collectors;
 /// - [Client Features](specification/2025-06-18/client/index.mdx)
 /// - [Sampling](specification/2025-06-18/client/sampling.mdx)
 /// - [Elicitation](specification/2025-06-18/client/elicitation.mdx)
-public final class McpClient extends JsonRpcEndpoint implements AutoCloseable {
+final class McpClient extends JsonRpcEndpoint implements AutoCloseable {
     private static final InitializeRequestAbstractEntityCodec INITIALIZE_REQUEST_CODEC = new InitializeRequestAbstractEntityCodec();
     private static final JsonCodec<ResourceUpdatedNotification> RESOURCE_UPDATED_NOTIFICATION_JSON_CODEC = new ResourceUpdatedNotificationAbstractEntityCodec();
     private static final JsonCodec<SubscribeRequest> SUBSCRIBE_REQUEST_JSON_CODEC = new SubscribeRequestAbstractEntityCodec();
@@ -180,7 +180,7 @@ public final class McpClient extends JsonRpcEndpoint implements AutoCloseable {
                 SET_LEVEL_REQUEST_JSON_CODEC.toJson(new SetLevelRequest(level, null)), 0L));
     }
 
-    JsonRpcMessage request(RequestMethod method, JsonObject params, long timeoutMillis) throws IOException {
+    public JsonRpcMessage request(RequestMethod method, JsonObject params, long timeoutMillis) throws IOException {
         requireCapability(method);
         if (!connected) {
             return JsonRpcError.of(new RequestId.NumericId(0), -32002, "Server not initialized");
@@ -584,7 +584,7 @@ public final class McpClient extends JsonRpcEndpoint implements AutoCloseable {
         }
     }
 
-    interface McpClientListener {
+    public interface McpClientListener {
         default void onProgress(ProgressNotification notification) {
         }
 
