@@ -1,4 +1,4 @@
-package com.amannmalik.mcp.api.model;
+package com.amannmalik.mcp.api;
 
 import com.amannmalik.mcp.spi.ResourceTemplate;
 import com.amannmalik.mcp.util.Immutable;

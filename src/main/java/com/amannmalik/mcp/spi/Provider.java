@@ -1,10 +1,12 @@
 package com.amannmalik.mcp.spi;
 
-import com.amannmalik.mcp.api.model.Change;
+import com.amannmalik.mcp.api.Change;
+import com.amannmalik.mcp.core.InMemoryProvider;
+import com.amannmalik.mcp.util.ExecutingProvider;
 
 import java.util.function.Consumer;
 
-public interface Provider<T> extends AutoCloseable {
+public sealed interface Provider<T> extends AutoCloseable permits InMemoryProvider, PromptProvider, ResourceProvider, RootsProvider, ToolProvider, ExecutingProvider {
     Pagination.Page<T> list(String cursor);
 
     default ChangeSubscription subscribe(Consumer<Change> listener) {

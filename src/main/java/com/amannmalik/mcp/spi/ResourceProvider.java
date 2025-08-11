@@ -5,7 +5,7 @@ import java.util.function.Consumer;
 
 /// - [Resources](specification/2025-06-18/server/resources.mdx)
 /// - [Conformance Suite](src/test/resources/com/amannmalik/mcp/mcp.feature)
-public interface ResourceProvider extends Provider<Resource> {
+public non-sealed interface ResourceProvider extends Provider<Resource> {
     ResourceBlock read(String uri);
 
     default Optional<Resource> get(String uri) {

@@ -1,9 +1,9 @@
 package com.amannmalik.mcp.transport;
 
-import com.amannmalik.mcp.spi.Principal;
 import com.amannmalik.mcp.auth.AuthorizationException;
 import com.amannmalik.mcp.auth.AuthorizationManager;
 import com.amannmalik.mcp.core.UnauthorizedException;
+import com.amannmalik.mcp.spi.Principal;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 

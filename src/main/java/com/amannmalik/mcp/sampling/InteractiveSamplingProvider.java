@@ -1,6 +1,5 @@
 package com.amannmalik.mcp.sampling;
 
-import com.amannmalik.mcp.spi.MessageContent;
 import com.amannmalik.mcp.spi.*;
 import jakarta.json.*;
 

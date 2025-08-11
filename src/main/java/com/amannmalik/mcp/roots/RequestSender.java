@@ -1,7 +1,7 @@
 package com.amannmalik.mcp.roots;
 
 import com.amannmalik.mcp.api.JsonRpcMessage;
-import com.amannmalik.mcp.api.model.RequestMethod;
+import com.amannmalik.mcp.api.RequestMethod;
 import jakarta.json.JsonObject;
 
 import java.io.IOException;

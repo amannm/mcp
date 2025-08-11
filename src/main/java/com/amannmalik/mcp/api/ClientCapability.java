@@ -1,4 +1,4 @@
-package com.amannmalik.mcp.api.model;
+package com.amannmalik.mcp.api;
 
 public enum ClientCapability {
     ROOTS,

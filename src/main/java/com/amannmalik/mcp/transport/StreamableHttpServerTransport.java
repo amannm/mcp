@@ -2,10 +2,10 @@ package com.amannmalik.mcp.transport;
 
 import com.amannmalik.mcp.api.McpConfiguration;
 import com.amannmalik.mcp.api.Transport;
-import com.amannmalik.mcp.spi.Principal;
 import com.amannmalik.mcp.auth.AuthorizationManager;
 import com.amannmalik.mcp.core.MessageDispatcher;
 import com.amannmalik.mcp.core.MessageRouter;
+import com.amannmalik.mcp.spi.Principal;
 import com.amannmalik.mcp.util.ValidationUtil;
 import jakarta.json.Json;
 import jakarta.json.JsonObject;

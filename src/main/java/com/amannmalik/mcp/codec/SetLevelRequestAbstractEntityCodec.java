@@ -1,7 +1,7 @@
 package com.amannmalik.mcp.codec;
 
-import com.amannmalik.mcp.api.model.LoggingLevel;
-import com.amannmalik.mcp.api.model.SetLevelRequest;
+import com.amannmalik.mcp.api.LoggingLevel;
+import com.amannmalik.mcp.api.SetLevelRequest;
 import jakarta.json.*;
 
 import java.util.Set;

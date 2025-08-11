@@ -1,7 +1,12 @@
 package com.amannmalik.mcp.core;
 
-import com.amannmalik.mcp.api.model.Change;
+import com.amannmalik.mcp.api.Change;
+import com.amannmalik.mcp.completion.InMemoryCompletionProvider;
+import com.amannmalik.mcp.prompts.InMemoryPromptProvider;
+import com.amannmalik.mcp.resources.InMemoryResourceProvider;
+import com.amannmalik.mcp.roots.InMemoryRootsProvider;
 import com.amannmalik.mcp.spi.*;
+import com.amannmalik.mcp.tools.InMemoryToolProvider;
 import com.amannmalik.mcp.util.ChangeSupport;
 
 import java.util.Collection;
@@ -9,7 +14,12 @@ import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.function.Consumer;
 
-public class InMemoryProvider<T> implements Provider<T> {
+public sealed class InMemoryProvider<T> implements Provider<T> permits
+        InMemoryCompletionProvider,
+        InMemoryPromptProvider,
+        InMemoryResourceProvider,
+        InMemoryRootsProvider,
+        InMemoryToolProvider {
     protected final List<T> items;
     private final ChangeSupport<Change> changeSupport = new ChangeSupport<>();
 

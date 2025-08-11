@@ -1,13 +1,10 @@
 package com.amannmalik.mcp.api;
 
-import com.amannmalik.mcp.api.model.*;
 import com.amannmalik.mcp.codec.*;
 import com.amannmalik.mcp.core.*;
 import com.amannmalik.mcp.jsonrpc.*;
 import com.amannmalik.mcp.resources.ResourceListChangedNotification;
-import com.amannmalik.mcp.roots.RootsListChangedNotification;
 import com.amannmalik.mcp.spi.*;
-import com.amannmalik.mcp.tools.ToolListChangedNotification;
 import com.amannmalik.mcp.transport.Protocol;
 import com.amannmalik.mcp.util.*;
 import jakarta.json.*;
@@ -322,7 +319,7 @@ public final class McpClient extends JsonRpcEndpoint implements AutoCloseable {
             throw new IOException("failed to fetch resource metadata: HTTP " + resp.statusCode());
         }
         try (InputStream body = resp.body(); JsonReader reader = Json.createReader(body)) {
-            resourceMetadata = ResourceMetadata.CODEC.fromJson(reader.readObject());
+            resourceMetadata = new ResourceMetadataJsonCodec().fromJson(reader.readObject());
         }
     }
 
@@ -404,7 +401,7 @@ public final class McpClient extends JsonRpcEndpoint implements AutoCloseable {
             rootsSubscription = roots.subscribe(ignored -> {
                 try {
                     notify(NotificationMethod.ROOTS_LIST_CHANGED,
-                            RootsListChangedNotification.CODEC.toJson(new RootsListChangedNotification()));
+                            AbstractEntityCodec.empty(RootsListChangedNotification::new).toJson(new RootsListChangedNotification()));
                 } catch (IOException ignore) {
                 }
             });

@@ -1,7 +1,7 @@
 package com.amannmalik.mcp.resources;
 
-import com.amannmalik.mcp.spi.*;
 import com.amannmalik.mcp.core.InMemoryProvider;
+import com.amannmalik.mcp.spi.*;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;

@@ -1,7 +1,5 @@
 package com.amannmalik.mcp.api;
 
-import com.amannmalik.mcp.api.model.*;
-import com.amannmalik.mcp.spi.*;
 import com.amannmalik.mcp.codec.*;
 import com.amannmalik.mcp.core.LifecycleState;
 import com.amannmalik.mcp.core.ProgressManager;
@@ -9,6 +7,7 @@ import com.amannmalik.mcp.jsonrpc.*;
 import com.amannmalik.mcp.resources.ReadResourceResult;
 import com.amannmalik.mcp.resources.ResourceListChangedNotification;
 import com.amannmalik.mcp.roots.RootsManager;
+import com.amannmalik.mcp.spi.*;
 import com.amannmalik.mcp.util.*;
 import jakarta.json.*;
 

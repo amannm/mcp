@@ -1,10 +1,7 @@
 package com.amannmalik.mcp.prompts;
 
-import com.amannmalik.mcp.spi.Pagination;
-import com.amannmalik.mcp.spi.PromptProvider;
-import com.amannmalik.mcp.spi.Prompt;
-import com.amannmalik.mcp.spi.PromptInstance;
 import com.amannmalik.mcp.core.InMemoryProvider;
+import com.amannmalik.mcp.spi.*;
 
 import java.util.Comparator;
 import java.util.Map;

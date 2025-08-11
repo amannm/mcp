@@ -1,4 +1,4 @@
-package com.amannmalik.mcp.tools;
+package com.amannmalik.mcp.api;
 
 public record ToolListChangedNotification() {
 }

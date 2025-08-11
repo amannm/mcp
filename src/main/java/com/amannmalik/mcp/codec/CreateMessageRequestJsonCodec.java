@@ -1,8 +1,6 @@
 package com.amannmalik.mcp.codec;
 
-import com.amannmalik.mcp.spi.CreateMessageRequest;
-import com.amannmalik.mcp.spi.SamplingMessage;
-import com.amannmalik.mcp.spi.ModelPreferences;
+import com.amannmalik.mcp.spi.*;
 import jakarta.json.*;
 
 import java.util.List;
@@ -11,13 +9,15 @@ import java.util.Set;
 public class CreateMessageRequestJsonCodec implements JsonCodec<CreateMessageRequest> {
 
     static final JsonCodec<SamplingMessage> SAMPLING_MESSAGE_JSON_CODEC = new SamplingMessageAbstractEntityCodec();
+    static final JsonCodec<ModelPreferences> MODEL_PREFERENCES_JSON_CODEC = new ModelPreferencesJsonCodec();
+
 
     @Override
     public JsonObject toJson(CreateMessageRequest req) {
         JsonArrayBuilder msgs = Json.createArrayBuilder();
         req.messages().forEach(m -> msgs.add(SAMPLING_MESSAGE_JSON_CODEC.toJson(m)));
         JsonObjectBuilder b = Json.createObjectBuilder().add("messages", msgs.build());
-        if (req.modelPreferences() != null) b.add("modelPreferences", ModelPreferences.CODEC.toJson(req.modelPreferences()));
+        if (req.modelPreferences() != null) b.add("modelPreferences", MODEL_PREFERENCES_JSON_CODEC.toJson(req.modelPreferences()));
         if (req.systemPrompt() != null) b.add("systemPrompt", req.systemPrompt());
         if (req.includeContext() != null) b.add("includeContext", switch (req.includeContext()) {
             case NONE -> "none";
@@ -44,7 +44,7 @@ public class CreateMessageRequestJsonCodec implements JsonCodec<CreateMessageReq
                 .map(v -> SAMPLING_MESSAGE_JSON_CODEC.fromJson(v.asJsonObject()))
                 .toList();
         ModelPreferences prefs = obj.containsKey("modelPreferences")
-                ? ModelPreferences.CODEC.fromJson(obj.getJsonObject("modelPreferences"))
+                ? MODEL_PREFERENCES_JSON_CODEC.fromJson(obj.getJsonObject("modelPreferences"))
                 : null;
         String system = obj.getString("systemPrompt", null);
         CreateMessageRequest.IncludeContext ctx = null;

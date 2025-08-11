@@ -1,5 +1,6 @@
 package com.amannmalik.mcp.transport;
 
+import com.amannmalik.mcp.codec.ResourceMetadataJsonCodec;
 import com.amannmalik.mcp.core.ResourceMetadata;
 import jakarta.json.JsonObject;
 import jakarta.servlet.http.*;
@@ -16,7 +17,7 @@ final class MetadataServlet extends HttpServlet {
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws IOException {
         ResourceMetadata meta = new ResourceMetadata(transport.canonicalResource, transport.authorizationServers);
-        JsonObject body = ResourceMetadata.CODEC.toJson(meta);
+        JsonObject body = new ResourceMetadataJsonCodec().toJson(meta);
         resp.setStatus(HttpServletResponse.SC_OK);
         resp.setContentType("application/json");
         resp.setCharacterEncoding("UTF-8");

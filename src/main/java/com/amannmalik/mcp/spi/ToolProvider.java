@@ -6,7 +6,7 @@ import java.util.Optional;
 
 /// - [Tools](specification/2025-06-18/server/tools.mdx)
 /// - [MCP tools specification conformance](src/test/resources/com/amannmalik/mcp/mcp_conformance.feature:38-56)
-public interface ToolProvider extends Provider<Tool> {
+public non-sealed interface ToolProvider extends Provider<Tool> {
     ToolResult call(String name, JsonObject arguments);
 
     default Optional<Tool> find(String name) {

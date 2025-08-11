@@ -1,8 +1,6 @@
 package com.amannmalik.mcp.codec;
 
-import com.amannmalik.mcp.spi.Pagination;
-import com.amannmalik.mcp.spi.ContentBlock;
-import com.amannmalik.mcp.spi.Role;
+import com.amannmalik.mcp.spi.*;
 import jakarta.json.*;
 
 import java.util.Objects;

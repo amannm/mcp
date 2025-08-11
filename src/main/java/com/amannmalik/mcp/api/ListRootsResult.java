@@ -1,4 +1,4 @@
-package com.amannmalik.mcp.api.model;
+package com.amannmalik.mcp.api;
 
 import com.amannmalik.mcp.spi.Root;
 import com.amannmalik.mcp.util.ValidationUtil;

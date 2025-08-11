@@ -1,6 +1,6 @@
 package com.amannmalik.mcp.codec;
 
-import com.amannmalik.mcp.api.model.CancelledNotification;
+import com.amannmalik.mcp.api.CancelledNotification;
 import com.amannmalik.mcp.jsonrpc.RequestId;
 import jakarta.json.*;
 

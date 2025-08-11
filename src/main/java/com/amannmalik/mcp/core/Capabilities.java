@@ -1,7 +1,7 @@
 package com.amannmalik.mcp.core;
 
-import com.amannmalik.mcp.api.model.ClientCapability;
-import com.amannmalik.mcp.api.model.ServerCapability;
+import com.amannmalik.mcp.api.ClientCapability;
+import com.amannmalik.mcp.api.ServerCapability;
 import jakarta.json.JsonObject;
 
 import java.util.*;

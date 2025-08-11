@@ -1,14 +1,11 @@
 package com.amannmalik.mcp.api;
 
-import com.amannmalik.mcp.api.model.*;
 import com.amannmalik.mcp.codec.*;
 import com.amannmalik.mcp.core.*;
-import com.amannmalik.mcp.spi.ElicitationAction;
 import com.amannmalik.mcp.jsonrpc.*;
 import com.amannmalik.mcp.prompts.*;
 import com.amannmalik.mcp.roots.RootsManager;
 import com.amannmalik.mcp.spi.*;
-import com.amannmalik.mcp.tools.ToolListChangedNotification;
 import com.amannmalik.mcp.transport.Protocol;
 import com.amannmalik.mcp.util.*;
 import jakarta.json.*;

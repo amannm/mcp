@@ -1,4 +1,4 @@
-package com.amannmalik.mcp.api.model;
+package com.amannmalik.mcp.api;
 
 import java.util.Arrays;
 import java.util.Map;

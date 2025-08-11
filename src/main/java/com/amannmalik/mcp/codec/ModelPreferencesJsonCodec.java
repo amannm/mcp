@@ -8,12 +8,15 @@ import java.util.List;
 import java.util.Set;
 
 public class ModelPreferencesJsonCodec implements JsonCodec<ModelPreferences> {
+
+    public static final JsonCodec<ModelHint> MODEL_HINT_JSON_CODEC = new ModelHintJsonCodec();
+
     @Override
     public JsonObject toJson(ModelPreferences p) {
         JsonObjectBuilder b = Json.createObjectBuilder();
         if (!p.hints().isEmpty()) {
             JsonArrayBuilder arr = Json.createArrayBuilder();
-            p.hints().forEach(h -> arr.add(ModelHint.CODEC.toJson(h)));
+            p.hints().forEach(h -> arr.add(MODEL_HINT_JSON_CODEC.toJson(h)));
             b.add("hints", arr.build());
         }
         if (p.costPriority() != null) b.add("costPriority", p.costPriority());
@@ -28,7 +31,7 @@ public class ModelPreferencesJsonCodec implements JsonCodec<ModelPreferences> {
         AbstractEntityCodec.requireOnlyKeys(obj, Set.of("hints", "costPriority", "speedPriority", "intelligencePriority"));
         List<ModelHint> hints = obj.containsKey("hints")
                 ? obj.getJsonArray("hints").stream()
-                .map(v -> ModelHint.CODEC.fromJson(v.asJsonObject()))
+                .map(v -> MODEL_HINT_JSON_CODEC.fromJson(v.asJsonObject()))
                 .toList()
                 : List.of();
         Double cost = obj.containsKey("costPriority") ? obj.getJsonNumber("costPriority").doubleValue() : null;

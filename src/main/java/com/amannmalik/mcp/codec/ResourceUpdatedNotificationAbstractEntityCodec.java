@@ -1,6 +1,6 @@
 package com.amannmalik.mcp.codec;
 
-import com.amannmalik.mcp.api.model.ResourceUpdatedNotification;
+import com.amannmalik.mcp.api.ResourceUpdatedNotification;
 import jakarta.json.*;
 
 public final class ResourceUpdatedNotificationAbstractEntityCodec extends AbstractEntityCodec<ResourceUpdatedNotification> {
