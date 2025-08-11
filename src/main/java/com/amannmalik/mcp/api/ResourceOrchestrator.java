@@ -89,14 +89,14 @@ final class ResourceOrchestrator implements AutoCloseable {
             String cursor = sanitizeCursor(lr.cursor());
             progressToken.ifPresent(t -> {
                 try {
-                    progress.send(new ProgressNotification(t, 0.0, null, "Starting resource list"), sender::notify);
+                    progress.send(new ProgressNotification(t, 0.0, null, "Starting resource list"), sender::assNotify);
                 } catch (IOException ignore) {
                 }
             });
             Pagination.Page<Resource> list = resources.list(cursor);
             progressToken.ifPresent(t -> {
                 try {
-                    progress.send(new ProgressNotification(t, 0.5, null, "Filtering resources"), sender::notify);
+                    progress.send(new ProgressNotification(t, 0.5, null, "Filtering resources"), sender::assNotify);
                 } catch (IOException ignore) {
                 }
             });
@@ -105,7 +105,7 @@ final class ResourceOrchestrator implements AutoCloseable {
                     .toList();
             progressToken.ifPresent(t -> {
                 try {
-                    progress.send(new ProgressNotification(t, 1.0, null, "Completed resource list"), sender::notify);
+                    progress.send(new ProgressNotification(t, 1.0, null, "Completed resource list"), sender::assNotify);
                 } catch (IOException ignore) {
                 }
             });
@@ -177,7 +177,7 @@ final class ResourceOrchestrator implements AutoCloseable {
                 AutoCloseable sub = resources.subscribe(uri, update -> {
                     try {
                         ResourceUpdatedNotification n = new ResourceUpdatedNotification(update.uri(), update.title());
-                        sender.notify(NotificationMethod.RESOURCES_UPDATED,
+                        sender.assNotify(NotificationMethod.RESOURCES_UPDATED,
                                 RESOURCE_UPDATED_NOTIFICATION_JSON_CODEC.toJson(n));
                     } catch (IOException ignore) {
                     }
@@ -260,7 +260,7 @@ final class ResourceOrchestrator implements AutoCloseable {
             return factory.subscribe(ignored -> {
                 if (state.get() != LifecycleState.OPERATION) return;
                 try {
-                    sender.notify(method, payload);
+                    sender.assNotify(method, payload);
                 } catch (IOException ignore) {
                 }
             });
@@ -276,6 +276,6 @@ final class ResourceOrchestrator implements AutoCloseable {
 
     @FunctionalInterface
     public interface Sender {
-        void notify(NotificationMethod method, JsonObject payload) throws IOException;
+        void assNotify(NotificationMethod method, JsonObject payload) throws IOException;
     }
 }

@@ -129,7 +129,7 @@ public final class McpServer extends JsonRpcEndpoint implements AutoCloseable {
         this.principal = principal;
         this.rootsManager = new RootsManager(this::negotiatedClientCapabilities, this::request);
         this.resourceOrchestrator = resources == null ? null :
-                new ResourceOrchestrator(resources, resourceAccess, principal, rootsManager, this::state, this::notify, progress);
+                new ResourceOrchestrator(resources, resourceAccess, principal, rootsManager, this::state, (method, params) -> send(new JsonRpcNotification(method.method(), params)), progress);
 
         if (tools != null && tools.supportsListChanged()) {
             toolListSubscription = subscribeListChanges(
@@ -211,7 +211,7 @@ public final class McpServer extends JsonRpcEndpoint implements AutoCloseable {
             return factory.subscribe(ignored -> {
                 if (state() != LifecycleState.OPERATION) return;
                 try {
-                    notify(method, payload);
+                    send(new JsonRpcNotification(method.method(), payload));
                 } catch (IOException ignore) {
                 }
             });
@@ -546,8 +546,8 @@ public final class McpServer extends JsonRpcEndpoint implements AutoCloseable {
         if (rateLimit(logLimiter, note.logger() == null ? "" : note.logger()).isPresent() ||
                 note.level().ordinal() < logLevel.ordinal()) return;
         requireServerCapability(ServerCapability.LOGGING);
-        notify(NotificationMethod.MESSAGE,
-                LOGGING_MESSAGE_NOTIFICATION_JSON_CODEC.toJson(note));
+        JsonObject params = LOGGING_MESSAGE_NOTIFICATION_JSON_CODEC.toJson(note);
+        send(new JsonRpcNotification(NotificationMethod.MESSAGE.method(), params));
     }
 
     private void sendLog(LoggingLevel level, String logger, JsonValue data) throws IOException {
@@ -605,8 +605,8 @@ public final class McpServer extends JsonRpcEndpoint implements AutoCloseable {
             }
             if (System.currentTimeMillis() >= end) {
                 try {
-                    notify(NotificationMethod.CANCELLED,
-                            CANCELLED_NOTIFICATION_JSON_CODEC.toJson(new CancelledNotification(id, "timeout")));
+                    JsonObject cancelParams = CANCELLED_NOTIFICATION_JSON_CODEC.toJson(new CancelledNotification(id, "timeout"));
+                    send(new JsonRpcNotification(NotificationMethod.CANCELLED.method(), cancelParams));
                 } catch (IOException ignore) {
                 }
                 pending.remove(id);

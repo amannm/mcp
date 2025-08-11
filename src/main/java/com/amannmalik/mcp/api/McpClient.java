@@ -225,7 +225,7 @@ final class McpClient extends JsonRpcEndpoint implements AutoCloseable {
 
     public void sendNotification(NotificationMethod method, JsonObject params) throws IOException {
         if (!connected) throw new IllegalStateException("not connected");
-        super.notify(method, params);
+        send(new JsonRpcNotification(method.method(), params));
     }
 
     @Override
@@ -411,7 +411,7 @@ final class McpClient extends JsonRpcEndpoint implements AutoCloseable {
     }
 
     private void notifyInitialized() throws IOException {
-        notify(NotificationMethod.INITIALIZED, null);
+        send(new JsonRpcNotification(NotificationMethod.INITIALIZED.method(), null));
     }
 
     private void subscribeRootsIfNeeded() throws IOException {
@@ -419,8 +419,8 @@ final class McpClient extends JsonRpcEndpoint implements AutoCloseable {
         try {
             rootsSubscription = roots.subscribe(ignored -> {
                 try {
-                    notify(NotificationMethod.ROOTS_LIST_CHANGED,
-                            AbstractEntityCodec.empty(RootsListChangedNotification::new).toJson(new RootsListChangedNotification()));
+                    JsonObject params = AbstractEntityCodec.empty(RootsListChangedNotification::new).toJson(new RootsListChangedNotification());
+                    send(new JsonRpcNotification(NotificationMethod.ROOTS_LIST_CHANGED.method(), params));
                 } catch (IOException ignore) {
                 }
             });
