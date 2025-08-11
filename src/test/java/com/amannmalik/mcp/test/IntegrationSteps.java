@@ -1,24 +1,40 @@
 package com.amannmalik.mcp.test;
 
+import com.amannmalik.mcp.api.McpHost;
 import io.cucumber.datatable.DataTable;
 import io.cucumber.java.PendingException;
 import io.cucumber.java.en.*;
 
+import java.io.IOException;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
+
 public final class IntegrationSteps {
+    private McpHost host;
+    private final Set<String> servers = new HashSet<>();
 
     @Given("I am an MCP host managing multiple client connections for development assistance")
     public void iAmAnMcpHostManagingMultipleClientConnectionsForDevelopmentAssistance() {
-        throw new PendingException();
+        try {
+            host = new McpHost(Map.of(), false);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     @Given("I have configured security policies with explicit user consent for all operations")
     public void iHaveConfiguredSecurityPoliciesWithExplicitUserConsentForAllOperations() {
-        throw new PendingException();
+        host.grantConsent("filesystem");
+        host.allowSampling();
     }
 
     @Given("I have registered multiple MCP servers: {string}, {string}, {string}, {string}")
     public void iHaveRegisteredMultipleMcpServers(String server1, String server2, String server3, String server4) {
-        throw new PendingException();
+        servers.add(server1);
+        servers.add(server2);
+        servers.add(server3);
+        servers.add(server4);
     }
 
     @When("I initialize the MCP connection with the filesystem server")
