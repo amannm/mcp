@@ -1,8 +1,8 @@
-package com.amannmalik.mcp.core;
+package com.amannmalik.mcp.api;
 
-import com.amannmalik.mcp.api.*;
 import com.amannmalik.mcp.codec.CancelledNotificationJsonCodec;
 import com.amannmalik.mcp.codec.JsonRpcMessageJsonCodec;
+import com.amannmalik.mcp.core.ProgressManager;
 import com.amannmalik.mcp.jsonrpc.*;
 import jakarta.json.JsonObject;
 
@@ -13,7 +13,7 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
-public sealed class JsonRpcEndpoint implements AutoCloseable permits McpClient, McpServer {
+sealed class JsonRpcEndpoint implements AutoCloseable permits McpClient, McpServer {
     protected static final JsonRpcMessageJsonCodec CODEC = new JsonRpcMessageJsonCodec();
     protected static final CancelledNotificationJsonCodec CANCEL_CODEC = new CancelledNotificationJsonCodec();
     protected final Transport transport;
@@ -42,21 +42,7 @@ public sealed class JsonRpcEndpoint implements AutoCloseable permits McpClient, 
         notifications.put(method, handler);
     }
 
-    protected JsonRpcMessage request(RequestMethod method, JsonObject params, long timeoutMillis) throws IOException {
-        RequestId id = nextId();
-        CompletableFuture<JsonRpcMessage> future = new CompletableFuture<>();
-        pending.put(id, future);
-        progress.register(id, params);
-        send(new JsonRpcRequest(id, method.method(), params));
-        try {
-            return await(id, future, timeoutMillis);
-        } finally {
-            pending.remove(id);
-            progress.release(id);
-        }
-    }
-
-    private JsonRpcMessage await(RequestId id, CompletableFuture<JsonRpcMessage> future, long timeoutMillis) throws IOException {
+    protected JsonRpcMessage await(RequestId id, CompletableFuture<JsonRpcMessage> future, long timeoutMillis) throws IOException {
         try {
             return future.get(timeoutMillis, TimeUnit.MILLISECONDS);
         } catch (InterruptedException e) {
@@ -76,7 +62,7 @@ public sealed class JsonRpcEndpoint implements AutoCloseable permits McpClient, 
         }
     }
 
-    protected void notify(String method, JsonObject params) throws IOException {
+    protected final void notify(String method, JsonObject params) throws IOException {
         send(new JsonRpcNotification(method, params));
     }
 

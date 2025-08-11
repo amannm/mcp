@@ -3,6 +3,7 @@ package com.amannmalik.mcp.codec;
 import com.amannmalik.mcp.api.*;
 import com.amannmalik.mcp.core.Capabilities;
 import com.amannmalik.mcp.core.ClientFeatures;
+import com.amannmalik.mcp.util.InitializeRequest;
 import jakarta.json.*;
 
 import java.util.*;

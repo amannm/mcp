@@ -5,7 +5,6 @@ import com.amannmalik.mcp.core.*;
 import com.amannmalik.mcp.elicitation.ElicitationAction;
 import com.amannmalik.mcp.jsonrpc.*;
 import com.amannmalik.mcp.prompts.*;
-import com.amannmalik.mcp.core.ResourceOrchestrator;
 import com.amannmalik.mcp.roots.RootsManager;
 import com.amannmalik.mcp.tools.ToolListChangedNotification;
 import com.amannmalik.mcp.transport.Protocol;
@@ -31,6 +30,16 @@ public final class McpServer extends JsonRpcEndpoint implements AutoCloseable {
     private static final CompleteRequestJsonCodec COMPLETE_REQUEST_JSON_CODEC = new CompleteRequestJsonCodec();
     private static final JsonCodec<SetLevelRequest> SET_LEVEL_REQUEST_JSON_CODEC = new SetLevelRequestAbstractEntityCodec();
     private static final CancelledNotificationJsonCodec CANCELLED_NOTIFICATION_JSON_CODEC = new CancelledNotificationJsonCodec();
+
+    private static final JsonCodec<ListToolsResult> LIST_TOOLS_RESULT_JSON_CODEC =
+            AbstractEntityCodec.paginatedResult(
+                    "tools",
+                    "tool",
+                    r -> new Pagination.Page<>(r.tools(), r.nextCursor()),
+                    ListToolsResult::_meta,
+                    new ToolAbstractEntityCodec(),
+                    (page, meta) -> new ListToolsResult(page.items(), page.nextCursor(), meta));
+
     private static final JsonCodec<ListPromptsResult> LIST_PROMPTS_RESULT_CODEC =
             AbstractEntityCodec.paginatedResult(
                     "prompts",
@@ -388,7 +397,7 @@ public final class McpServer extends JsonRpcEndpoint implements AutoCloseable {
                     ListToolsRequest::new).fromJson(req.params());
             String cursor = sanitizeCursor(ltr.cursor());
             Pagination.Page<Tool> page = tools.list(cursor);
-            JsonObject json = ListToolsResult.LIST_TOOLS_RESULT_JSON_CODEC.toJson(new ListToolsResult(page.items(), page.nextCursor(), null));
+            JsonObject json = LIST_TOOLS_RESULT_JSON_CODEC.toJson(new ListToolsResult(page.items(), page.nextCursor(), null));
             return new JsonRpcResponse(req.id(), json);
         } catch (IllegalArgumentException e) {
             return JsonRpcError.of(req.id(), JsonRpcErrorCode.INVALID_PARAMS, e.getMessage());
@@ -525,8 +534,8 @@ public final class McpServer extends JsonRpcEndpoint implements AutoCloseable {
         }
     }
 
-    @Override
-    protected JsonRpcMessage request(RequestMethod method, JsonObject params, long timeoutMillis) throws IOException {
+
+    private JsonRpcMessage request(RequestMethod method, JsonObject params, long timeoutMillis) throws IOException {
         RequestId id = nextId();
         CompletableFuture<JsonRpcMessage> future = new CompletableFuture<>();
         pending.put(id, future);

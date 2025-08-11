@@ -4,7 +4,6 @@ import com.amannmalik.mcp.util.ValidationUtil;
 import jakarta.json.JsonObject;
 
 public record ElicitRequest(String message, JsonObject requestedSchema, JsonObject _meta) {
-
     public ElicitRequest(String message, JsonObject requestedSchema, JsonObject _meta) {
         if (message == null || requestedSchema == null) {
             throw new IllegalArgumentException("message and requestedSchema are required");
@@ -15,5 +14,4 @@ public record ElicitRequest(String message, JsonObject requestedSchema, JsonObje
         ValidationUtil.requireMeta(_meta);
         this._meta = _meta;
     }
-
 }

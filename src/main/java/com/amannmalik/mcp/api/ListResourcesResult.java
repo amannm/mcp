@@ -9,7 +9,6 @@ import java.util.List;
 public record ListResourcesResult(List<Resource> resources,
                                   String nextCursor,
                                   JsonObject _meta) {
-
     public ListResourcesResult {
         resources = Immutable.list(resources);
         ValidationUtil.requireMeta(_meta);

@@ -20,6 +20,15 @@ import java.util.stream.Collectors;
 public final class McpHost implements AutoCloseable {
     private static final CallToolRequestAbstractEntityCodec CALL_TOOL_REQUEST_CODEC = new CallToolRequestAbstractEntityCodec();
     private static final JsonCodec<ToolResult> TOOL_RESULT_ABSTRACT_ENTITY_CODEC = new ToolResultAbstractEntityCodec();
+    private static final JsonCodec<ListToolsResult> LIST_TOOLS_RESULT_JSON_CODEC =
+            AbstractEntityCodec.paginatedResult(
+                    "tools",
+                    "tool",
+                    r -> new Pagination.Page<>(r.tools(), r.nextCursor()),
+                    ListToolsResult::_meta,
+                    new ToolAbstractEntityCodec(),
+                    (page, meta) -> new ListToolsResult(page.items(), page.nextCursor(), meta));
+
     private final Map<String, McpClient> clients = new ConcurrentHashMap<>();
     private final Predicate<McpClient> policy;
     private final ConsentController consents;
@@ -152,7 +161,7 @@ public final class McpHost implements AutoCloseable {
                         ListToolsRequest::new).toJson(new ListToolsRequest(cursor, null)),
                 0L
         ));
-        return ListToolsResult.LIST_TOOLS_RESULT_JSON_CODEC.fromJson(resp.result());
+        return LIST_TOOLS_RESULT_JSON_CODEC.fromJson(resp.result());
     }
 
     public ToolResult callTool(String clientId, String name, JsonObject args) throws IOException {
