@@ -1,6 +1,7 @@
 package com.amannmalik.mcp.api;
 
 
+import java.util.Map;
 import java.util.Optional;
 
 public enum NotificationMethod implements JsonRpcMethod {
@@ -28,9 +29,13 @@ public enum NotificationMethod implements JsonRpcMethod {
         return method;
     }
 
+    private static final Map<NotificationMethod, ClientCapability> CLIENT_CAPABILITIES = Map.of(
+            ROOTS_LIST_CHANGED, ClientCapability.ROOTS
+    );
+
     @Override
     public Optional<ClientCapability> clientCapability() {
-        return this == ROOTS_LIST_CHANGED ? Optional.of(ClientCapability.ROOTS) : Optional.empty();
+        return Optional.ofNullable(CLIENT_CAPABILITIES.get(this));
     }
 }
 

@@ -1,7 +1,10 @@
 package com.amannmalik.mcp.api;
 
 
+import java.util.Map;
 import java.util.Optional;
+
+import static java.util.Map.entry;
 
 public enum RequestMethod implements JsonRpcMethod {
     INITIALIZE("initialize"),
@@ -35,25 +38,32 @@ public enum RequestMethod implements JsonRpcMethod {
         return method;
     }
 
+    private static final Map<RequestMethod, ServerCapability> SERVER_CAPABILITIES = Map.ofEntries(
+            entry(RESOURCES_LIST, ServerCapability.RESOURCES),
+            entry(RESOURCES_TEMPLATES_LIST, ServerCapability.RESOURCES),
+            entry(RESOURCES_READ, ServerCapability.RESOURCES),
+            entry(RESOURCES_SUBSCRIBE, ServerCapability.RESOURCES),
+            entry(RESOURCES_UNSUBSCRIBE, ServerCapability.RESOURCES),
+            entry(TOOLS_LIST, ServerCapability.TOOLS),
+            entry(TOOLS_CALL, ServerCapability.TOOLS),
+            entry(PROMPTS_LIST, ServerCapability.PROMPTS),
+            entry(PROMPTS_GET, ServerCapability.PROMPTS),
+            entry(LOGGING_SET_LEVEL, ServerCapability.LOGGING),
+            entry(COMPLETION_COMPLETE, ServerCapability.COMPLETIONS)
+    );
+
     public Optional<ServerCapability> serverCapability() {
-        return switch (this) {
-            case RESOURCES_LIST, RESOURCES_TEMPLATES_LIST, RESOURCES_READ, RESOURCES_SUBSCRIBE, RESOURCES_UNSUBSCRIBE ->
-                    Optional.of(ServerCapability.RESOURCES);
-            case TOOLS_LIST, TOOLS_CALL -> Optional.of(ServerCapability.TOOLS);
-            case PROMPTS_LIST, PROMPTS_GET -> Optional.of(ServerCapability.PROMPTS);
-            case LOGGING_SET_LEVEL -> Optional.of(ServerCapability.LOGGING);
-            case COMPLETION_COMPLETE -> Optional.of(ServerCapability.COMPLETIONS);
-            default -> Optional.empty();
-        };
+        return Optional.ofNullable(SERVER_CAPABILITIES.get(this));
     }
+
+    private static final Map<RequestMethod, ClientCapability> CLIENT_CAPABILITIES = Map.of(
+            ROOTS_LIST, ClientCapability.ROOTS,
+            SAMPLING_CREATE_MESSAGE, ClientCapability.SAMPLING,
+            ELICITATION_CREATE, ClientCapability.ELICITATION
+    );
 
     @Override
     public Optional<ClientCapability> clientCapability() {
-        return switch (this) {
-            case ROOTS_LIST -> Optional.of(ClientCapability.ROOTS);
-            case SAMPLING_CREATE_MESSAGE -> Optional.of(ClientCapability.SAMPLING);
-            case ELICITATION_CREATE -> Optional.of(ClientCapability.ELICITATION);
-            default -> Optional.empty();
-        };
+        return Optional.ofNullable(CLIENT_CAPABILITIES.get(this));
     }
 }
