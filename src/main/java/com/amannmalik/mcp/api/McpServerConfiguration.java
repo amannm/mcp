@@ -8,49 +8,34 @@ import java.util.List;
 import java.util.Set;
 
 public record McpServerConfiguration(
-        // Protocol configuration
         String version,
         String compatibilityVersion,
         long defaultTimeoutMs,
         long initialRequestId,
         List<String> supportedVersions,
-
-        // Rate limiting configuration
         int toolsPerSecond,
         int completionsPerSecond,
         int logsPerSecond,
         int progressPerSecond,
         long rateLimiterWindowMs,
         int rateLimitErrorCode,
-
-        // Server identity configuration
         String serverName,
         String serverDescription,
         String serverVersion,
-
-        // Error handling configuration
         String errorProcessing,
         String errorNotInitialized,
         String errorParse,
         String errorInvalidRequest,
         String errorAccessDenied,
         String errorTimeout,
-
-        // Logging configuration
         String serverLoggerName,
         String parserLoggerName,
         String cancellationLoggerName,
         LoggingLevel initialLogLevel,
-
-        // Access policy configuration
         ToolAccessPolicy toolAccessPolicy,
         SamplingAccessPolicy samplingAccessPolicy,
-
-        // Default principal for server operations
         String defaultPrincipal,
         String defaultBoundary,
-
-        // Transport configuration
         String transportType,
         int serverPort,
         List<String> allowedOrigins,
@@ -59,24 +44,16 @@ public record McpServerConfiguration(
         List<String> authServers,
         boolean insecure,
         boolean verbose,
-
-        // Server bind configuration
         String bindAddress,
         Set<String> servletPaths,
         String resourceMetadataPath,
         String resourceMetadataUrlTemplate,
-
-        // Session configuration
         int sessionIdByteLength,
         Duration initializeRequestTimeout,
         boolean strictVersionValidation,
-
-        // SSE configuration
         int sseClientPrefixByteLength,
         boolean sseEnableHistoryReplay,
         Duration sseClientTimeout,
-
-        // Servlet configuration
         List<String> servletAcceptedContentTypes,
         List<String> servletProducedContentTypes,
         boolean servletEnableAsyncProcessing

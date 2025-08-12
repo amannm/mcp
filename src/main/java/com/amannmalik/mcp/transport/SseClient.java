@@ -13,8 +13,8 @@ import java.util.concurrent.atomic.AtomicLong;
 
 public final class SseClient implements AutoCloseable {
     private static final SecureRandom RANDOM = new SecureRandom();
-    private final long historyLimit;
     final String prefix;
+    private final long historyLimit;
     private final Deque<SseEvent> history = new ArrayDeque<>();
     private final AtomicLong nextId = new AtomicLong(1);
     private AsyncContext context;

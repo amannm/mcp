@@ -3,28 +3,17 @@ package com.amannmalik.mcp.api;
 import java.util.*;
 
 public record McpHostConfiguration(
-        // Protocol configuration
         String protocolVersion,
         String compatibilityVersion,
-
-        // Host identity (when host acts as a client to other MCP systems)
         String hostClientName,
         String hostClientDisplayName,
         String hostClientVersion,
         Set<ClientCapability> hostClientCapabilities,
-
-        // Security configuration
         String hostPrincipal,
-
-        // Global process configuration
         int processWaitSeconds,
         int defaultPageSize,
         int maxCompletionValues,
-
-        // Global behavior
         boolean globalVerbose,
-
-        // Managed client configurations
         List<McpClientConfiguration> clientConfigurations
 ) {
 

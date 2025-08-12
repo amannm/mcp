@@ -1,7 +1,7 @@
 package com.amannmalik.mcp.api;
 
-import java.util.*;
-import java.util.stream.Collectors;
+import java.util.EnumSet;
+import java.util.Optional;
 
 public enum NotificationMethod implements JsonRpcMethod {
     INITIALIZED("notifications/initialized"),
