@@ -3,7 +3,9 @@ package com.amannmalik.mcp.api;
 import com.amannmalik.mcp.spi.SamplingAccessPolicy;
 import com.amannmalik.mcp.spi.ToolAccessPolicy;
 
+import java.time.Duration;
 import java.util.List;
+import java.util.Set;
 
 public record McpServerConfiguration(
         // Protocol configuration
@@ -56,13 +58,37 @@ public record McpServerConfiguration(
         String resourceMetadataUrl,
         List<String> authServers,
         boolean insecure,
-        boolean verbose
+        boolean verbose,
+
+        // Server bind configuration
+        String bindAddress,
+        Set<String> servletPaths,
+        String resourceMetadataPath,
+        String resourceMetadataUrlTemplate,
+
+        // Session configuration
+        int sessionIdByteLength,
+        Duration initializeRequestTimeout,
+        boolean strictVersionValidation,
+
+        // SSE configuration
+        int sseClientPrefixByteLength,
+        boolean sseEnableHistoryReplay,
+        Duration sseClientTimeout,
+
+        // Servlet configuration
+        List<String> servletAcceptedContentTypes,
+        List<String> servletProducedContentTypes,
+        boolean servletEnableAsyncProcessing
 ) {
 
     public McpServerConfiguration {
         supportedVersions = List.copyOf(supportedVersions);
         allowedOrigins = List.copyOf(allowedOrigins);
         authServers = List.copyOf(authServers);
+        servletPaths = Set.copyOf(servletPaths);
+        servletAcceptedContentTypes = List.copyOf(servletAcceptedContentTypes);
+        servletProducedContentTypes = List.copyOf(servletProducedContentTypes);
         if (supportedVersions.isEmpty())
             throw new IllegalArgumentException("Supported versions required");
         if (defaultTimeoutMs <= 0 || initialRequestId < 0)
@@ -77,6 +103,14 @@ public record McpServerConfiguration(
             throw new IllegalArgumentException("Invalid policy configuration");
         if (serverPort < 0 || serverPort > 65_535)
             throw new IllegalArgumentException("Invalid port number");
+        if (bindAddress == null || bindAddress.isBlank())
+            throw new IllegalArgumentException("Bind address required");
+        if (sessionIdByteLength <= 0)
+            throw new IllegalArgumentException("Session ID byte length must be positive");
+        if (initializeRequestTimeout.isNegative() || initializeRequestTimeout.isZero())
+            throw new IllegalArgumentException("Initialize request timeout must be positive");
+        if (sseClientPrefixByteLength <= 0)
+            throw new IllegalArgumentException("Client prefix byte length must be positive");
     }
 
     public static McpServerConfiguration defaultConfiguration() {
@@ -116,7 +150,20 @@ public record McpServerConfiguration(
                 null,
                 List.of(),
                 false,
-                false
+                false,
+                "127.0.0.1",
+                Set.of("/", "/.well-known/oauth-protected-resource"),
+                "/.well-known/oauth-protected-resource",
+                "http://%s:%d/.well-known/oauth-protected-resource",
+                32,
+                Duration.ofSeconds(30),
+                true,
+                8,
+                true,
+                Duration.ofMinutes(5),
+                List.of("application/json", "text/event-stream"),
+                List.of("application/json", "text/event-stream"),
+                true
         );
     }
 
@@ -164,7 +211,20 @@ public record McpServerConfiguration(
                 resourceMetadataUrl,
                 authServers,
                 insecure,
-                verbose
+                verbose,
+                bindAddress,
+                servletPaths,
+                resourceMetadataPath,
+                resourceMetadataUrlTemplate,
+                sessionIdByteLength,
+                initializeRequestTimeout,
+                strictVersionValidation,
+                sseClientPrefixByteLength,
+                sseEnableHistoryReplay,
+                sseClientTimeout,
+                servletAcceptedContentTypes,
+                servletProducedContentTypes,
+                servletEnableAsyncProcessing
         );
     }
 }

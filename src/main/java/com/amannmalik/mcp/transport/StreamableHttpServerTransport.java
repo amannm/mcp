@@ -34,7 +34,7 @@ public final class StreamableHttpServerTransport implements Transport {
     final BlockingQueue<JsonObject> incoming = new LinkedBlockingQueue<>();
     final SseClients clients = new SseClients();
     final SessionManager sessions;
-    final ServerConfiguration serverConfig;
+    final McpServerConfiguration config;
     private final Server server;
     private final int port;
     private final Set<String> allowedOrigins;
@@ -42,54 +42,41 @@ public final class StreamableHttpServerTransport implements Transport {
     private final MessageDispatcher dispatcher;
     private volatile boolean closed;
 
-    public StreamableHttpServerTransport(int port,
-                                         Set<String> allowedOrigins,
-                                         AuthorizationManager auth,
-                                         String resourceMetadataUrl,
-                                         List<String> authorizationServers) throws Exception {
-        this(port, allowedOrigins, auth, resourceMetadataUrl, authorizationServers, ServerConfiguration.defaultConfiguration());
-    }
+    public StreamableHttpServerTransport(McpServerConfiguration config,
+                                         AuthorizationManager auth) throws Exception {
+        this.config = config;
+        this.sessions = new SessionManager(COMPATIBILITY_VERSION, config.sessionIdByteLength());
 
-    public StreamableHttpServerTransport(int port,
-                                         Set<String> allowedOrigins,
-                                         AuthorizationManager auth,
-                                         String resourceMetadataUrl,
-                                         List<String> authorizationServers,
-                                         ServerConfiguration serverConfig) throws Exception {
-        this.serverConfig = serverConfig;
-        this.sessions = new SessionManager(COMPATIBILITY_VERSION, serverConfig.session());
-        
-        server = new Server(new InetSocketAddress(serverConfig.serverBind().bindAddress(), port));
+        server = new Server(new InetSocketAddress(config.bindAddress(), config.serverPort()));
         ServletContextHandler ctx = new ServletContextHandler();
-        
-        for (String path : serverConfig.serverBind().servletPaths()) {
+        for (String path : config.servletPaths()) {
             if (path.equals("/")) {
                 ctx.addServlet(new ServletHolder(new McpServlet(this)), "/");
-            } else if (path.equals(serverConfig.serverBind().resourceMetadataPath())) {
+            } else if (path.equals(config.resourceMetadataPath())) {
                 ctx.addServlet(new ServletHolder(new MetadataServlet(this)), path);
             }
         }
-        
+
         server.setHandler(ctx);
         server.start();
         this.port = ((ServerConnector) server.getConnectors()[0]).getLocalPort();
-        this.allowedOrigins = ValidationUtil.requireAllowedOrigins(allowedOrigins);
+        this.allowedOrigins = ValidationUtil.requireAllowedOrigins(Set.copyOf(config.allowedOrigins()));
         this.authManager = auth;
-        
-        if (resourceMetadataUrl == null || resourceMetadataUrl.isBlank()) {
+
+        if (config.resourceMetadataUrl() == null || config.resourceMetadataUrl().isBlank()) {
             this.resourceMetadataUrl = String.format(
-                    serverConfig.serverBind().resourceMetadataUrlTemplate(),
-                    serverConfig.serverBind().bindAddress(),
+                    config.resourceMetadataUrlTemplate(),
+                    config.bindAddress(),
                     this.port);
         } else {
-            this.resourceMetadataUrl = resourceMetadataUrl;
+            this.resourceMetadataUrl = config.resourceMetadataUrl();
         }
-        
-        this.canonicalResource = "http://" + serverConfig.serverBind().bindAddress() + ":" + this.port;
-        if (authorizationServers == null || authorizationServers.isEmpty()) {
+
+        this.canonicalResource = "http://" + config.bindAddress() + ":" + this.port;
+        if (config.authServers().isEmpty()) {
             this.authorizationServers = List.of();
         } else {
-            this.authorizationServers = List.copyOf(authorizationServers);
+            this.authorizationServers = List.copyOf(config.authServers());
         }
         var router = new MessageRouter(
                 clients.request,
@@ -115,7 +102,7 @@ public final class StreamableHttpServerTransport implements Transport {
 
     @Override
     public JsonObject receive() throws IOException {
-        return receive(McpServerConfiguration.defaultConfiguration().defaultTimeoutMs());
+        return receive(config.defaultTimeoutMs());
     }
 
     @Override

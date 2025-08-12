@@ -1,7 +1,5 @@
 package com.amannmalik.mcp.transport;
 
-import com.amannmalik.mcp.api.McpHostConfiguration;
-import com.amannmalik.mcp.api.ServerConfiguration;
 import com.amannmalik.mcp.util.Base64Util;
 import jakarta.json.JsonObject;
 import jakarta.servlet.AsyncContext;
@@ -23,8 +21,8 @@ public final class SseClient implements AutoCloseable {
     private PrintWriter out;
     private volatile boolean closed;
 
-    public SseClient(AsyncContext context, ServerConfiguration.SseConfig config) throws IOException {
-        byte[] bytes = new byte[config.clientPrefixByteLength()];
+    public SseClient(AsyncContext context, int clientPrefixByteLength) throws IOException {
+        byte[] bytes = new byte[clientPrefixByteLength];
         RANDOM.nextBytes(bytes);
         this.prefix = Base64Util.encodeUrl(bytes);
         attach(context, 0);

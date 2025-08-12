@@ -1,6 +1,6 @@
 package com.amannmalik.mcp.transport;
 
-import com.amannmalik.mcp.api.ServerConfiguration;
+import com.amannmalik.mcp.api.McpServerConfiguration;
 import com.amannmalik.mcp.spi.Principal;
 import com.amannmalik.mcp.util.Base64Util;
 import com.amannmalik.mcp.util.ValidationUtil;
@@ -18,16 +18,16 @@ final class SessionManager {
     private final AtomicReference<SessionState> current = new AtomicReference<>();
     private final AtomicReference<String> lastSessionId = new AtomicReference<>();
     private final String compatibilityVersion;
-    private final ServerConfiguration.SessionConfig sessionConfig;
+    private final int sessionIdByteLength;
     private volatile String protocolVersion;
 
     SessionManager(String compatibilityVersion) {
-        this(compatibilityVersion, ServerConfiguration.SessionConfig.defaultConfig());
+        this(compatibilityVersion, McpServerConfiguration.defaultConfiguration().sessionIdByteLength());
     }
 
-    SessionManager(String compatibilityVersion, ServerConfiguration.SessionConfig sessionConfig) {
+    SessionManager(String compatibilityVersion, int sessionIdByteLength) {
         this.compatibilityVersion = compatibilityVersion;
-        this.sessionConfig = sessionConfig;
+        this.sessionIdByteLength = sessionIdByteLength;
         this.protocolVersion = compatibilityVersion;
     }
 
@@ -88,7 +88,7 @@ final class SessionManager {
     private boolean createSession(HttpServletRequest req,
                                   HttpServletResponse resp,
                                   Principal principal) {
-        byte[] bytes = new byte[sessionConfig.sessionIdByteLength()];
+        byte[] bytes = new byte[sessionIdByteLength];
         RANDOM.nextBytes(bytes);
         String id = Base64Util.encodeUrl(bytes);
         current.set(new SessionState(id, req.getRemoteAddr(), principal));
