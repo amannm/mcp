@@ -38,7 +38,7 @@ Feature: MCP Security and Error Handling
     Given server exposes potentially dangerous tools
     When client evaluates tool descriptions
     Then client treats tool annotations as untrusted
-    Unless server is verified as trusted
+    But server is verified as trusted
     When user attempts to execute tool
     Then client shows clear warning about tool capabilities
     And client requires explicit user confirmation
