@@ -177,8 +177,7 @@ public final class McpServer extends JsonRpcEndpoint implements AutoCloseable {
         return switch (config.transportType()) {
             case "stdio" -> new StdioTransport(System.in, System.out);
             case "http" -> {
-                List<String> auth = config.insecure() ? List.of() : config.authServers();
-                if (!config.insecure() && auth.isEmpty()) {
+                if (!config.insecure() && config.authServers().isEmpty()) {
                     throw new IllegalArgumentException("auth server must be specified");
                 }
                 AuthorizationManager authManager = null;
@@ -190,11 +189,8 @@ public final class McpServer extends JsonRpcEndpoint implements AutoCloseable {
                     authManager = new AuthorizationManager(List.of(new BearerTokenAuthorizationStrategy(tokenValidator)));
                 }
                 StreamableHttpServerTransport ht = new StreamableHttpServerTransport(
-                        config.serverPort(),
-                        Set.copyOf(config.allowedOrigins()),
-                        authManager,
-                        config.resourceMetadataUrl(),
-                        auth);
+                        config,
+                        authManager);
                 if (config.verbose()) System.err.println("Listening on http://127.0.0.1:" + ht.port());
                 yield ht;
             }
