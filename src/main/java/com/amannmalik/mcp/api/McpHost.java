@@ -43,10 +43,7 @@ public final class McpHost implements AutoCloseable {
         this.samplingAccess = new SamplingAccessController();
         for (McpClientConfiguration clientConfig : config.clientConfigurations()) {
             grantConsent(clientConfig.clientId());
-
             SamplingProvider samplingProvider = new InteractiveSamplingProvider(clientConfig.interactiveSampling());
-
-            // Create roots from configured directories
             List<Root> roots = clientConfig.rootDirectories().stream()
                     .map(dir -> new Root("file://" + dir, dir, null))
                     .toList();
