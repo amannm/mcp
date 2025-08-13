@@ -1,145 +1,143 @@
 @protocol
-Feature: MCP Protocol Lifecycle
-  Ensure MCP implementations correctly handle protocol initialization,
-  capability negotiation, and JSON-RPC messaging for secure, interoperable connections
+Feature: MCP Connection Lifecycle
+  As an MCP client application
+  I want to establish secure, reliable connections with MCP servers
+  So that I can access external context and tools for AI workflows
 
   Background:
     Given a clean MCP environment
-    And JSON-RPC transport is available
+    And a transport mechanism is available
 
-  @initialization @smoke
-  Scenario: Successful protocol initialization
-    Given a client requesting protocol version "2025-06-18"
-    And client declares capabilities "sampling, roots, elicitation"
-    When initialize request is sent
-    Then server responds with compatible version
-    And server declares its capabilities
-    And server provides implementation information
-    When initialized notification is sent
-    Then connection becomes operational
-    And message exchange is possible
+  @connection @smoke
+  Scenario: Successful connection establishment
+    Given I want to connect using protocol version "2025-06-18"
+    And I can provide "sampling, roots, elicitation" capabilities
+    When I establish a connection with the server
+    Then the connection should be established successfully
+    And both parties should agree on capabilities
+    And I should be able to exchange messages
 
-  @version-negotiation
-  Scenario: Protocol version negotiation with supported version
-    Given server supports versions "2024-11-05, 2025-06-18"
-    When client requests version "2025-06-18"
-    Then server accepts the requested version
+  @connection @version-compatibility
+  Scenario: Compatible version negotiation
+    Given the server supports versions "2024-11-05, 2025-06-18"
+    When I request connection with version "2025-06-18"
+    Then the server should accept my version request
 
-  @version-negotiation
-  Scenario: Protocol version negotiation with unsupported version
-    Given server supports versions "2024-11-05, 2025-06-18"
-    When client requests unsupported version "1.0.0"
-    Then server responds with its latest supported version
-    And client decides whether to continue
+  @connection @version-compatibility
+  Scenario: Incompatible version fallback
+    Given the server supports versions "2024-11-05, 2025-06-18" 
+    When I request connection with unsupported version "1.0.0"
+    Then the server should offer its latest supported version
+    And I should be able to decide whether to proceed
 
-  @capability-negotiation
+  @capabilities
   Scenario Outline: Server capability discovery
-    Given server declares capabilities "<server_capabilities>"
-    When initialization completes
-    Then server features "<available_features>" are available
-    And server features "<unavailable_features>" are unavailable
+    Given the server offers "<server_capabilities>" features
+    When I complete the connection handshake
+    Then I should have access to "<available_features>" features
+    And "<unavailable_features>" features should not be available
 
     Examples:
-      | server_capabilities             | available_features              | unavailable_features    |
-      | resources,tools                 | resources,tools                 | prompts,logging         |
-      | prompts                         | prompts                         | resources,tools,logging |
-      | resources,tools,prompts,logging | resources,tools,prompts,logging | none                    |
+      | server_capabilities             | available_features              | unavailable_features           |
+      | resources,tools                 | resources,tools                 | prompts,logging               |
+      | prompts                         | prompts                         | resources,tools,logging       |
+      | resources,tools,prompts,logging | resources,tools,prompts,logging | none                          |
       | none                            | none                            | resources,tools,prompts,logging |
 
-  @jsonrpc @message-format
-  Scenario: JSON-RPC request format compliance
-    Given an operational MCP connection
-    When request is sent with id "test-123"
-    Then request contains required JSON-RPC 2.0 fields
-    And request id is not null and unique
-    When server responds
-    Then response id matches request id "test-123"
-    And response contains either result or error
+  @messaging
+  Scenario: Request-response communication
+    Given I have an established MCP connection
+    When I send a request with identifier "test-123"
+    Then the request should use proper message format
+    And the request should have a unique identifier
+    When the server responds
+    Then the response should match my request identifier
+    And the response should contain valid result data
 
-  @jsonrpc @message-format  
-  Scenario: JSON-RPC notification format compliance
-    Given an operational MCP connection
-    When notification is sent
-    Then notification has no id field
-    And notification contains method and optional params
+  @messaging
+  Scenario: Notification communication
+    Given I have an established MCP connection
+    When I send a notification message
+    Then the notification should use proper format
+    And no response should be expected
 
-  @jsonrpc @error-handling
-  Scenario Outline: JSON-RPC standard error responses
-    Given an operational MCP connection
-    When "<error_condition>" occurs
-    Then server returns "<error_message>" with code <error_code>
+  @error-handling
+  Scenario Outline: Server error responses
+    Given I have an established MCP connection
+    When "<error_situation>" occurs during communication
+    Then I should receive a proper error response indicating "<error_type>"
 
     Examples:
-      | error_condition          | error_message         | error_code |
-      | malformed request        | Parse error           | -32700     |
-      | invalid method request   | Method not found      | -32601     |
-      | invalid parameters       | Invalid params        | -32602     |
-      | server internal error    | Internal error        | -32603     |
+      | error_situation              | error_type           |
+      | malformed request            | Parse error          |
+      | invalid method request       | Method not found     |
+      | invalid parameters           | Invalid params       |
+      | server internal error        | Internal error       |
 
-  @lifecycle @shutdown
-  Scenario: Graceful stdio connection shutdown
-    Given an operational MCP connection with "stdio" transport
-    When client closes input stream
-    And waits for graceful server exit
-    Then connection terminates cleanly
+  @connection @cleanup
+  Scenario: Graceful connection termination
+    Given I have an established MCP connection using "stdio" transport
+    When I close the connection
+    And wait for the server to shut down gracefully
+    Then the connection should terminate cleanly
 
-  @lifecycle @shutdown
-  Scenario: Graceful HTTP connection shutdown
-    Given an operational MCP connection with "http" transport
-    When client closes HTTP connection
-    Then connection terminates cleanly
+  @connection @cleanup
+  Scenario: HTTP connection termination  
+    Given I have an established MCP connection using "http" transport
+    When I close the HTTP connection
+    Then the connection should terminate cleanly
 
-  @meta-fields
-  Scenario: Client _meta field preservation
-    Given an operational MCP connection
-    When request contains _meta field
-    Then server preserves _meta data unchanged
+  @messaging @metadata
+  Scenario: Message metadata preservation
+    Given I have an established MCP connection
+    When I include metadata in my request
+    Then the server should preserve my metadata unchanged
 
-  @meta-fields
-  Scenario: Server _meta field handling
-    Given an operational MCP connection
-    When server sends response with reserved "_meta_reserved" prefix
-    Then client handles MCP-reserved fields correctly
-    When server sends response with custom "_custom" prefix
-    Then client treats as implementation-specific data
+  @messaging @metadata
+  Scenario: Server metadata handling
+    Given I have an established MCP connection
+    When the server includes reserved metadata in responses
+    Then I should handle MCP-reserved fields correctly
+    When the server includes custom metadata in responses  
+    Then I should treat it as implementation-specific data
 
-  @timeouts @cancellation
+  @messaging @timeouts
   Scenario: Request timeout and cancellation
-    Given an operational MCP connection with "5" second timeout
-    When request exceeds timeout duration
-    Then client sends cancellation notification
-    And client stops waiting for response
+    Given I have an established MCP connection with 5 second timeout
+    When my request exceeds the timeout duration
+    Then I should send a cancellation notification
+    And stop waiting for the response
 
-  @timeouts @progress
-  Scenario: Progress-based timeout extension
-    Given an operational MCP connection
-    When request sends progress notifications
-    Then timeout may be extended
-    But maximum timeout is enforced
+  @messaging @progress
+  Scenario: Long-running request progress tracking
+    Given I have an established MCP connection
+    When my request sends progress notifications
+    Then the timeout should be extended appropriately
+    But a maximum timeout should still be enforced
 
-  @initialization-errors
-  Scenario: Unsupported protocol version error
-    Given client requests protocol version "2025-06-18"
-    When server supports only incompatible versions
-    Then server returns protocol version error
-    And error includes server's supported versions
+  @connection @error-handling
+  Scenario: Incompatible protocol version handling
+    Given I request protocol version "2025-06-18"
+    When the server only supports incompatible versions
+    Then I should receive a clear protocol version error
+    And the error should list the server's supported versions
 
-  @initialization-errors
+  @connection @state-management
   Scenario: Premature request handling
-    Given connection is initialized but not ready
-    When client sends non-ping request
-    Then server may reject or queue the request
+    Given my connection is initialized but not fully ready
+    When I send a non-ping request
+    Then the server should handle the request appropriately
 
-  @security
-  Scenario: Implementation information disclosure
-    Given an operational MCP connection
-    When server provides implementation info
-    Then sensitive information is not exposed
-    And version information is appropriate
+  @security @information-disclosure  
+  Scenario: Safe implementation information sharing
+    Given I have an established MCP connection
+    When the server provides implementation information
+    Then sensitive information should not be exposed
+    And version information should be appropriate for sharing
 
-  @security @sampling
-  Scenario: Sampling request authorization
-    Given an operational MCP connection with sampling capability
-    When server requests LLM sampling
-    Then client requires explicit user approval
-    And client controls prompt visibility
+  @security @authorization
+  Scenario: LLM sampling authorization
+    Given I have an established MCP connection with sampling capability
+    When the server requests LLM sampling
+    Then I should require explicit user approval
+    And maintain control over prompt visibility

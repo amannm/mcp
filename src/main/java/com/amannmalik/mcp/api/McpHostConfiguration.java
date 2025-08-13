@@ -60,7 +60,7 @@ public record McpHostConfiguration(
                 "1.0.0",
                 defaultHostClientCapabilities(),
                 "user",
-                0,
+                2,
                 100,
                 100,
                 false,
