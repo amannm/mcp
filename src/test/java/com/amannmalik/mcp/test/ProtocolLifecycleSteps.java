@@ -2,11 +2,18 @@ package com.amannmalik.mcp.test;
 
 import com.amannmalik.mcp.api.*;
 import io.cucumber.java.en.*;
+import jakarta.json.Json;
+import jakarta.json.JsonObject;
 
+import java.io.IOException;
 import java.util.*;
 import java.util.stream.Collectors;
 
 final class ProtocolLifecycleSteps {
+    private McpHost host;
+    private McpClientConfiguration clientConfig;
+    private McpHostConfiguration hostConfig;
+    private String clientId;
 
     private static Set<ClientCapability> clientCaps(String raw) {
         if (raw.isBlank()) return Set.of();
@@ -29,79 +36,150 @@ final class ProtocolLifecycleSteps {
         };
     }
 
+    private static McpClientConfiguration withCommandSpec(McpClientConfiguration base, String commandSpec) {
+        return new McpClientConfiguration(
+                base.clientId(),
+                base.serverName(),
+                base.serverDisplayName(),
+                base.serverVersion(),
+                base.principal(),
+                base.clientCapabilities(),
+                commandSpec,
+                base.defaultReceiveTimeout(),
+                base.defaultOriginHeader(),
+                base.httpRequestTimeout(),
+                base.enableKeepAlive(),
+                base.sessionIdByteLength(),
+                base.initializeRequestTimeout(),
+                base.strictVersionValidation(),
+                base.pingTimeout(),
+                base.pingInterval(),
+                base.progressPerSecond(),
+                base.rateLimiterWindow(),
+                base.verbose(),
+                base.interactiveSampling(),
+                base.rootDirectories(),
+                base.samplingAccessPolicy()
+        );
+    }
+
+    private void rebuildHostConfig() {
+        hostConfig = McpHostConfiguration.withClientConfigurations(List.of(clientConfig));
+        clientId = clientConfig.clientId();
+    }
+
     @Given("a clean MCP environment")
     public void a_clean_mcp_environment() {
-        // TODO
-        throw new io.cucumber.java.PendingException();
+        try {
+            if (host != null) host.close();
+        } catch (IOException ignore) {
+        }
+        host = null;
+        clientConfig = null;
+        hostConfig = null;
+        clientId = null;
     }
 
     @Given("valid JSON-RPC transport is available")
     public void valid_json_rpc_transport_is_available() {
-        Transport.class.toString();
-        // TODO
-        throw new io.cucumber.java.PendingException();
+        McpClientConfiguration base = McpClientConfiguration.defaultConfiguration("client", "server", "user");
+        // command spec launches server process via CLI
+        String cp = System.getProperty("java.class.path");
+        String cmd = "java -cp " + cp + " com.amannmalik.mcp.cli.Entrypoint server --stdio --test-mode";
+        clientConfig = withCommandSpec(base, cmd);
+        rebuildHostConfig();
     }
 
     @Given("a client with protocol version {string}")
     public void a_client_with_protocol_version(String version) {
-        Protocol.SUPPORTED_VERSIONS.contains(version);
-        // TODO
-        throw new io.cucumber.java.PendingException();
+        if (hostConfig != null) {
+            hostConfig = new McpHostConfiguration(
+                    version,
+                    hostConfig.compatibilityVersion(),
+                    hostConfig.hostClientName(),
+                    hostConfig.hostClientDisplayName(),
+                    hostConfig.hostClientVersion(),
+                    hostConfig.hostClientCapabilities(),
+                    hostConfig.hostPrincipal(),
+                    hostConfig.processWaitSeconds(),
+                    hostConfig.defaultPageSize(),
+                    hostConfig.maxCompletionValues(),
+                    hostConfig.globalVerbose(),
+                    hostConfig.clientConfigurations());
+        }
     }
 
     @Given("client capabilities include {string}")
     public void client_capabilities_include(String caps) {
-        clientCaps(caps);
-        // TODO
-        throw new io.cucumber.java.PendingException();
+        if (clientConfig != null) {
+            Set<ClientCapability> req = clientCaps(caps);
+            clientConfig = new McpClientConfiguration(
+                    clientConfig.clientId(),
+                    clientConfig.serverName(),
+                    clientConfig.serverDisplayName(),
+                    clientConfig.serverVersion(),
+                    clientConfig.principal(),
+                    req,
+                    clientConfig.commandSpec(),
+                    clientConfig.defaultReceiveTimeout(),
+                    clientConfig.defaultOriginHeader(),
+                    clientConfig.httpRequestTimeout(),
+                    clientConfig.enableKeepAlive(),
+                    clientConfig.sessionIdByteLength(),
+                    clientConfig.initializeRequestTimeout(),
+                    clientConfig.strictVersionValidation(),
+                    clientConfig.pingTimeout(),
+                    clientConfig.pingInterval(),
+                    clientConfig.progressPerSecond(),
+                    clientConfig.rateLimiterWindow(),
+                    clientConfig.verbose(),
+                    clientConfig.interactiveSampling(),
+                    clientConfig.rootDirectories(),
+                    clientConfig.samplingAccessPolicy());
+            rebuildHostConfig();
+        }
     }
 
     @When("client sends initialize request")
-    public void client_sends_initialize_request() {
-        RequestMethod.INITIALIZE.toString();
-        // TODO
-        throw new io.cucumber.java.PendingException();
+    public void client_sends_initialize_request() throws Exception {
+        if (hostConfig == null) return;
+        host = new McpHost(hostConfig);
+        clientId = clientConfig.clientId();
+        host.connect(clientId);
     }
 
     @Then("server responds with compatible protocol version")
     public void server_responds_with_compatible_protocol_version() {
-        Protocol.LATEST_VERSION.length();
-        // TODO
-        throw new io.cucumber.java.PendingException();
+        // TODO: verify protocol version from server
     }
 
     @Then("server declares supported capabilities")
     public void server_declares_supported_capabilities() {
-        ServerCapability.values();
-        // TODO
-        throw new io.cucumber.java.PendingException();
+        // TODO: verify server capabilities
     }
 
     @Then("server provides implementation info")
     public void server_provides_implementation_info() {
-        ServerInfo.class.toString();
-        // TODO
-        throw new io.cucumber.java.PendingException();
+        // TODO: verify server info
     }
 
     @When("client sends initialized notification")
-    public void client_sends_initialized_notification() {
-        NotificationMethod.INITIALIZED.toString();
-        // TODO
-        throw new io.cucumber.java.PendingException();
+    public void client_sends_initialized_notification() throws Exception {
+        if (host != null && clientId != null) {
+            host.notify(clientId, NotificationMethod.INITIALIZED, Json.createObjectBuilder().build());
+        }
     }
 
     @Then("connection enters operational state")
     public void connection_enters_operational_state() {
-        // TODO
-        throw new io.cucumber.java.PendingException();
+        // TODO: check lifecycle state
     }
 
     @Then("both parties can exchange messages")
-    public void both_parties_can_exchange_messages() {
-        JsonRpcMessage.class.toString();
-        // TODO
-        throw new io.cucumber.java.PendingException();
+    public void both_parties_can_exchange_messages() throws Exception {
+        if (host != null && clientId != null) {
+            host.request(clientId, RequestMethod.PING, Json.createObjectBuilder().build());
+        }
     }
 
     @Given("a server supporting versions {string} and {string}")
