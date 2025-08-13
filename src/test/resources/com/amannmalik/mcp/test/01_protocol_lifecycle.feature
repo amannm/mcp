@@ -11,7 +11,11 @@ Feature: MCP Connection Lifecycle
   @connection @smoke
   Scenario: Successful connection establishment
     Given I want to connect using protocol version "2025-06-18"
-    And I can provide "sampling, roots, elicitation" capabilities
+    And I can provide the following capabilities:
+      | capability  |
+      | sampling    |
+      | roots       |
+      | elicitation |
     When I establish a connection with the server
     Then the connection should be established successfully
     And both parties should agree on capabilities
@@ -19,38 +23,57 @@ Feature: MCP Connection Lifecycle
 
   @connection @version-compatibility
   Scenario: Compatible version negotiation
-    Given the server supports versions "2024-11-05, 2025-06-18"
+    Given the server supports the following versions:
+      | version    |
+      | 2024-11-05 |
+      | 2025-06-18 |
     When I request connection with version "2025-06-18"
     Then the server should accept my version request
 
   @connection @version-compatibility
   Scenario: Incompatible version fallback
-    Given the server supports versions "2024-11-05, 2025-06-18" 
+    Given the server supports the following versions:
+      | version    |
+      | 2024-11-05 |
+      | 2025-06-18 | 
     When I request connection with unsupported version "1.0.0"
     Then the server should offer its latest supported version
     And I should be able to decide whether to proceed
 
   @capabilities
-  Scenario Outline: Server capability discovery
-    Given the server offers "<server_capabilities>" features
-    When I complete the connection handshake
-    Then I should have access to "<available_features>" features
-    And "<unavailable_features>" features should not be available
-
-    Examples:
-      | server_capabilities             | available_features              | unavailable_features           |
-      | resources,tools                 | resources,tools                 | prompts,logging               |
-      | prompts                         | prompts                         | resources,tools,logging       |
-      | resources,tools,prompts,logging | resources,tools,prompts,logging | none                          |
-      | none                            | none                            | resources,tools,prompts,logging |
+  Scenario: Server capability discovery
+    Given I test server capability discovery with the following configurations:
+      | server_capability | available_feature | unavailable_feature |
+      | resources         | resources         | prompts             |
+      | resources         | resources         | logging             |
+      | tools             | tools             | prompts             |
+      | tools             | tools             | logging             |
+      | prompts           | prompts           | resources           |
+      | prompts           | prompts           | tools               |
+      | prompts           | prompts           | logging             |
+      | resources         | resources         | none                |
+      | tools             | tools             | none                |
+      | prompts           | prompts           | none                |
+      | logging           | logging           | none                |
+      | none              | none              | resources           |
+      | none              | none              | tools               |
+      | none              | none              | prompts             |
+      | none              | none              | logging             |
+    When I complete the connection handshake for each configuration
+    Then the capability access should match the expected results
 
   @messaging
-  Scenario: Request-response communication
+  Scenario: Request message format validation
     Given I have an established MCP connection
     When I send a request with identifier "test-123"
     Then the request should use proper message format
     And the request should have a unique identifier
-    When the server responds
+
+  @messaging
+  Scenario: Response message validation
+    Given I have an established MCP connection
+    When I send a request with identifier "test-123"
+    And the server responds
     Then the response should match my request identifier
     And the response should contain valid result data
 
@@ -62,17 +85,15 @@ Feature: MCP Connection Lifecycle
     And no response should be expected
 
   @error-handling
-  Scenario Outline: Server error responses
+  Scenario: Server error responses
     Given I have an established MCP connection
-    When "<error_situation>" occurs during communication
-    Then I should receive a proper error response indicating "<error_type>"
-
-    Examples:
+    When I test error handling with the following scenarios:
       | error_situation              | error_type           |
       | malformed request            | Parse error          |
       | invalid method request       | Method not found     |
       | invalid parameters           | Invalid params       |
       | server internal error        | Internal error       |
+    Then I should receive proper error responses for each scenario
 
   @connection @cleanup
   Scenario: Graceful connection termination
@@ -82,7 +103,7 @@ Feature: MCP Connection Lifecycle
     Then the connection should terminate cleanly
 
   @connection @cleanup
-  Scenario: HTTP connection termination  
+  Scenario: HTTP connection termination
     Given I have an established MCP connection using "http" transport
     When I close the HTTP connection
     Then the connection should terminate cleanly
@@ -94,11 +115,15 @@ Feature: MCP Connection Lifecycle
     Then the server should preserve my metadata unchanged
 
   @messaging @metadata
-  Scenario: Server metadata handling
+  Scenario: Server reserved metadata handling
     Given I have an established MCP connection
     When the server includes reserved metadata in responses
     Then I should handle MCP-reserved fields correctly
-    When the server includes custom metadata in responses  
+
+  @messaging @metadata
+  Scenario: Server custom metadata handling
+    Given I have an established MCP connection
+    When the server includes custom metadata in responses
     Then I should treat it as implementation-specific data
 
   @messaging @timeouts
