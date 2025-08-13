@@ -3,6 +3,7 @@ package com.amannmalik.mcp.test;
 import com.amannmalik.mcp.api.*;
 import com.amannmalik.mcp.spi.Cursor;
 import io.cucumber.java.en.*;
+import io.cucumber.datatable.DataTable;
 import jakarta.json.Json;
 import jakarta.json.JsonObject;
 
@@ -33,6 +34,10 @@ public final class ProtocolLifecycleSteps {
     private String lastErrorMessage;
     private int lastErrorCode;
     private Set<RequestId> usedRequestIds = new HashSet<>();
+    
+    private List<Map<String, String>> capabilityConfigurations = new ArrayList<>();
+    private List<Map<String, String>> errorScenarios = new ArrayList<>();
+    private Map<String, String> currentConfiguration;
 
     private Set<ClientCapability> parseClientCapabilities(String capabilities) {
         if (capabilities == null || capabilities.trim().isEmpty()) {
@@ -112,7 +117,20 @@ public final class ProtocolLifecycleSteps {
 
     private void updateHostConfiguration() {
         if (clientConfig != null) {
-            hostConfig = McpHostConfiguration.withClientConfigurations(List.of(clientConfig));
+            hostConfig = new McpHostConfiguration(
+                    "2025-06-18",
+                    "2025-03-26",
+                    "mcp-host",
+                    "MCP Host",
+                    "1.0.0",
+                    Set.of(ClientCapability.SAMPLING, ClientCapability.ROOTS, ClientCapability.ELICITATION),
+                    "default", // Use default principal to match server and client
+                    2,
+                    100,
+                    100,
+                    false,
+                    List.of(clientConfig)
+            );
             clientId = clientConfig.clientId();
         }
     }
@@ -145,11 +163,17 @@ public final class ProtocolLifecycleSteps {
         lastErrorMessage = null;
         lastErrorCode = 0;
         usedRequestIds.clear();
+        
+        if (currentConfiguration == null) {
+            capabilityConfigurations.clear();
+            errorScenarios.clear();
+        }
+        currentConfiguration = null;
     }
 
     @Given("a transport mechanism is available")
     public void a_transport_mechanism_is_available() {
-        McpClientConfiguration base = McpClientConfiguration.defaultConfiguration("client", "server", "user");
+        McpClientConfiguration base = McpClientConfiguration.defaultConfiguration("client", "client", "default");
         String cp = System.getProperty("java.class.path");
         String cmd = "java -cp " + cp + " com.amannmalik.mcp.cli.Entrypoint server --stdio --test-mode";
         clientConfig = configureWithCommand(base, cmd);
@@ -183,6 +207,15 @@ public final class ProtocolLifecycleSteps {
     public void i_establish_a_connection_with_the_server() throws Exception {
         if (hostConfig == null) return;
         activeConnection = new McpHost(hostConfig);
+        
+        // Grant consent for server connection in test environment
+        activeConnection.grantConsent("server");
+        activeConnection.grantConsent("tool:test_tool");
+        activeConnection.grantConsent("tool:error_tool");
+        activeConnection.grantConsent("tool:echo_tool");
+        activeConnection.grantConsent("tool:slow_tool");
+        activeConnection.grantConsent("sampling");
+        
         clientId = clientConfig.clientId();
         activeConnection.connect(clientId);
     }
@@ -632,5 +665,77 @@ public final class ProtocolLifecycleSteps {
     @Then("maintain control over prompt visibility")
     public void maintain_control_over_prompt_visibility() {
         // No-op: prompt visibility is client implementation concern
+    }
+    
+    @Given("I can provide the following capabilities:")
+    public void i_can_provide_the_following_capabilities(DataTable dataTable) {
+        List<String> capabilities = dataTable.asList().stream()
+                .skip(1) // Skip header row
+                .toList();
+        String capabilityString = String.join(",", capabilities);
+        i_can_provide_capabilities(capabilityString);
+    }
+    
+    @Given("I test server capability discovery with the following configurations:")
+    public void i_test_server_capability_discovery_with_the_following_configurations(DataTable dataTable) {
+        capabilityConfigurations.clear();
+        List<Map<String, String>> rows = dataTable.asMaps(String.class, String.class);
+        capabilityConfigurations.addAll(rows);
+    }
+    
+    @When("I complete the connection handshake for each configuration")
+    public void i_complete_the_connection_handshake_for_each_configuration() throws Exception {
+        for (Map<String, String> config : capabilityConfigurations) {
+            currentConfiguration = config;
+            String serverCapability = config.get("server_capability");
+            
+            a_clean_mcp_environment();
+            a_transport_mechanism_is_available();
+            the_server_offers_features(serverCapability);
+            i_complete_the_connection_handshake();
+        }
+    }
+    
+    @Then("the capability access should match the expected results")
+    public void the_capability_access_should_match_the_expected_results() {
+        for (Map<String, String> config : capabilityConfigurations) {
+            String availableFeature = config.get("available_feature");
+            String unavailableFeature = config.get("unavailable_feature");
+            
+            if (!"none".equals(availableFeature)) {
+                i_should_have_access_to_features(availableFeature);
+            }
+            
+            if (!"none".equals(unavailableFeature)) {
+                features_should_not_be_available(unavailableFeature);
+            }
+        }
+    }
+    
+    @When("I test error handling with the following scenarios:")
+    public void i_test_error_handling_with_the_following_scenarios(DataTable dataTable) {
+        errorScenarios.clear();
+        List<Map<String, String>> rows = dataTable.asMaps(String.class, String.class);
+        errorScenarios.addAll(rows);
+    }
+    
+    @Then("I should receive proper error responses for each scenario")
+    public void i_should_receive_proper_error_responses_for_each_scenario() {
+        for (Map<String, String> scenario : errorScenarios) {
+            String errorSituation = scenario.get("error_situation");
+            String errorType = scenario.get("error_type");
+            
+            error_occurs_during_communication(errorSituation);
+            i_should_receive_a_proper_error_response_indicating(errorType);
+        }
+    }
+    
+    @Given("the server supports the following versions:")
+    public void the_server_supports_the_following_versions(DataTable dataTable) {
+        List<String> versions = dataTable.asList().stream()
+                .skip(1) // Skip header row
+                .toList();
+        String versionString = String.join(",", versions);
+        the_server_supports_versions(versionString);
     }
 }

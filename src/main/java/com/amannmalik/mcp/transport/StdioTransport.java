@@ -27,7 +27,7 @@ public final class StdioTransport implements Transport {
         this.in = new BufferedReader(new InputStreamReader(in, StandardCharsets.UTF_8));
         this.out = new BufferedWriter(new OutputStreamWriter(out, StandardCharsets.UTF_8));
         // TODO: externalize
-        this.receiveTimeout = 10L;
+        this.receiveTimeout = 1000L;
     }
 
     public StdioTransport(String[] command, Consumer<String> logSink) throws IOException {
@@ -42,7 +42,7 @@ public final class StdioTransport implements Transport {
         this.logReader.setDaemon(true);
         this.logReader.start();
         // TODO: externalize
-        this.receiveTimeout = 10L;
+        this.receiveTimeout = 1000L;
     }
 
     private static void readLogs(InputStream err, Consumer<String> sink) {
