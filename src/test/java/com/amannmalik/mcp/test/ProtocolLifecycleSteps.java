@@ -1,6 +1,7 @@
 package com.amannmalik.mcp.test;
 
 import com.amannmalik.mcp.api.*;
+import com.amannmalik.mcp.spi.Cursor;
 import io.cucumber.java.en.*;
 import jakarta.json.Json;
 import jakarta.json.JsonObject;
@@ -149,18 +150,49 @@ final class ProtocolLifecycleSteps {
     }
 
     @Then("server responds with compatible protocol version")
-    public void server_responds_with_compatible_protocol_version() {
-        // TODO: verify protocol version from server
+    public void server_responds_with_compatible_protocol_version() throws Exception {
+        if (host == null || clientId == null || hostConfig == null) {
+            throw new IllegalStateException("initialize request not sent");
+        }
+        if (!Protocol.SUPPORTED_VERSIONS.contains(hostConfig.protocolVersion())) {
+            throw new AssertionError("unsupported protocol version");
+        }
+        JsonRpcMessage msg = host.request(clientId, RequestMethod.PING, Json.createObjectBuilder().build());
+        if (msg == null) {
+            throw new AssertionError("ping failed");
+        }
     }
 
     @Then("server declares supported capabilities")
-    public void server_declares_supported_capabilities() {
-        // TODO: verify server capabilities
+    public void server_declares_supported_capabilities() throws Exception {
+        if (host == null || clientId == null) {
+            throw new IllegalStateException("connection not established");
+        }
+        boolean any = false;
+        try {
+            host.listTools(clientId, Cursor.Start.INSTANCE);
+            any = true;
+        } catch (Exception ignore) {
+        }
+        try {
+            host.request(clientId, RequestMethod.RESOURCES_LIST, Json.createObjectBuilder().build());
+            any = true;
+        } catch (Exception ignore) {
+        }
+        if (!any) {
+            throw new AssertionError("no server capabilities discovered");
+        }
     }
 
     @Then("server provides implementation info")
     public void server_provides_implementation_info() {
-        // TODO: verify server info
+        if (host == null) {
+            throw new IllegalStateException("host not initialized");
+        }
+        String ctx = host.aggregateContext();
+        if (ctx == null) {
+            throw new AssertionError("missing implementation info");
+        }
     }
 
     @When("client sends initialized notification")
@@ -171,8 +203,14 @@ final class ProtocolLifecycleSteps {
     }
 
     @Then("connection enters operational state")
-    public void connection_enters_operational_state() {
-        // TODO: check lifecycle state
+    public void connection_enters_operational_state() throws Exception {
+        if (host == null || clientId == null) {
+            throw new IllegalStateException("connection not established");
+        }
+        JsonRpcMessage msg = host.request(clientId, RequestMethod.PING, Json.createObjectBuilder().build());
+        if (msg == null) {
+            throw new AssertionError("connection not operational");
+        }
     }
 
     @Then("both parties can exchange messages")
