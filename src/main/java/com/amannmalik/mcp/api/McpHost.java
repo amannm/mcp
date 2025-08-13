@@ -12,6 +12,7 @@ import com.amannmalik.mcp.spi.*;
 import jakarta.json.JsonObject;
 
 import java.io.IOException;
+import java.time.Duration;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
@@ -99,8 +100,8 @@ public final class McpHost implements AutoCloseable {
         client.setPrincipal(principal);
         client.setSamplingAccessPolicy(samplingAccess);
         client.configurePing(
-                clientConfig.pingInterval().toMillis(),
-                clientConfig.pingTimeout().toMillis());
+                clientConfig.pingInterval(),
+                clientConfig.pingTimeout());
     }
 
     public void connect(String id) throws IOException {
@@ -131,7 +132,7 @@ public final class McpHost implements AutoCloseable {
                         ListToolsRequest::cursor,
                         ListToolsRequest::_meta,
                         ListToolsRequest::new).toJson(new ListToolsRequest(token, null)),
-                0L
+                Duration.ZERO
         ));
         return LIST_TOOLS_RESULT_JSON_CODEC.fromJson(resp.result());
     }
@@ -146,7 +147,7 @@ public final class McpHost implements AutoCloseable {
         JsonRpcResponse resp = JsonRpc.expectResponse(client.request(
                 RequestMethod.TOOLS_CALL,
                 CALL_TOOL_REQUEST_CODEC.toJson(new CallToolRequest(name, args, null)),
-                0L
+                Duration.ZERO
         ));
         return TOOL_RESULT_ABSTRACT_ENTITY_CODEC.fromJson(resp.result());
     }
@@ -168,12 +169,12 @@ public final class McpHost implements AutoCloseable {
         requireCapability(client, ClientCapability.SAMPLING);
         consents.requireConsent(principal, "sampling");
         samplingAccess.requireAllowed(principal);
-        JsonRpcResponse resp = JsonRpc.expectResponse(client.request(RequestMethod.SAMPLING_CREATE_MESSAGE, params, 0L));
+        JsonRpcResponse resp = JsonRpc.expectResponse(client.request(RequestMethod.SAMPLING_CREATE_MESSAGE, params, Duration.ZERO));
         return resp.result();
     }
 
     public JsonRpcMessage request(String id, RequestMethod method, JsonObject params) throws IOException {
-        return requireClientForMethod(id, method).request(method, params, 0L);
+        return requireClientForMethod(id, method).request(method, params, Duration.ZERO);
     }
 
     public void notify(String id, NotificationMethod method, JsonObject params) throws IOException {

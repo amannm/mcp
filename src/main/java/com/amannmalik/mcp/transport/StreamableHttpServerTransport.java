@@ -18,6 +18,7 @@ import org.eclipse.jetty.server.ServerConnector;
 import java.io.EOFException;
 import java.io.IOException;
 import java.net.InetSocketAddress;
+import java.time.Duration;
 import java.util.*;
 import java.util.concurrent.*;
 
@@ -106,9 +107,9 @@ public final class StreamableHttpServerTransport implements Transport {
     }
 
     @Override
-    public JsonObject receive(long timeoutMillis) throws IOException {
+    public JsonObject receive(Duration timeoutMillis) throws IOException {
         try {
-            JsonObject obj = incoming.poll(timeoutMillis, TimeUnit.MILLISECONDS);
+            JsonObject obj = incoming.poll(timeoutMillis.toMillis(), TimeUnit.MILLISECONDS);
             if (obj == null) {
                 throw new IOException("Timeout after " + timeoutMillis + "ms waiting for message");
             }

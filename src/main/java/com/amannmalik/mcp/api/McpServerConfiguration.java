@@ -10,7 +10,7 @@ import java.util.Set;
 public record McpServerConfiguration(
         String version,
         String compatibilityVersion,
-        long defaultTimeoutMs,
+        Duration defaultTimeoutMs,
         long initialRequestId,
         List<String> supportedVersions,
         int toolsPerSecond,
@@ -68,7 +68,7 @@ public record McpServerConfiguration(
         servletProducedContentTypes = List.copyOf(servletProducedContentTypes);
         if (supportedVersions.isEmpty())
             throw new IllegalArgumentException("Supported versions required");
-        if (defaultTimeoutMs <= 0 || initialRequestId < 0)
+        if (defaultTimeoutMs.isNegative() || initialRequestId < 0)
             throw new IllegalArgumentException("Invalid protocol configuration");
         if (toolsPerSecond < 0 || completionsPerSecond < 0 || logsPerSecond < 0 || progressPerSecond < 0)
             throw new IllegalArgumentException("Invalid rate limit configuration");
@@ -94,7 +94,7 @@ public record McpServerConfiguration(
         return new McpServerConfiguration(
                 Protocol.LATEST_VERSION,
                 Protocol.PREVIOUS_VERSION,
-                30_000L,
+                Duration.ofSeconds(30),
                 1L,
                 Protocol.SUPPORTED_VERSIONS,
                 5,

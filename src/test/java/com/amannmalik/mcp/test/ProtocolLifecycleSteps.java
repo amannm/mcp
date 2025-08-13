@@ -8,6 +8,7 @@ import jakarta.json.Json;
 import jakarta.json.JsonObject;
 
 import java.io.IOException;
+import java.time.Duration;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -125,7 +126,7 @@ public final class ProtocolLifecycleSteps {
                     "1.0.0",
                     Set.of(ClientCapability.SAMPLING, ClientCapability.ROOTS, ClientCapability.ELICITATION),
                     "default", // Use default principal to match server and client
-                    2,
+                    Duration.ofSeconds(2),
                     100,
                     100,
                     false,

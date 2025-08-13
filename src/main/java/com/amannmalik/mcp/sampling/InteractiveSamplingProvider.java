@@ -22,7 +22,7 @@ public final class InteractiveSamplingProvider implements SamplingProvider {
     }
 
     @Override
-    public CreateMessageResponse createMessage(CreateMessageRequest request, long timeoutMillis) throws InterruptedException {
+    public CreateMessageResponse createMessage(CreateMessageRequest request, Duration timeoutMillis) throws InterruptedException {
         if (autoApprove) {
             boolean reject = request.messages().stream()
                     .map(SamplingMessage::content)
@@ -114,7 +114,7 @@ public final class InteractiveSamplingProvider implements SamplingProvider {
         };
     }
 
-    private CreateMessageResponse generateResponse(CreateMessageRequest request, long timeoutMillis) throws InterruptedException {
+    private CreateMessageResponse generateResponse(CreateMessageRequest request, Duration timeoutMillis) throws InterruptedException {
         try {
             var ai = openAiResponse(request, timeoutMillis);
             if (ai.isPresent()) {
@@ -140,12 +140,12 @@ public final class InteractiveSamplingProvider implements SamplingProvider {
         );
     }
 
-    private Optional<AiResult> openAiResponse(CreateMessageRequest request, long timeoutMillis) throws IOException, InterruptedException {
+    private Optional<AiResult> openAiResponse(CreateMessageRequest request, Duration timeoutMillis) throws IOException, InterruptedException {
         String apiKey = System.getenv("OPENAI_API_KEY");
         if (apiKey == null || apiKey.isBlank()) return Optional.empty();
 
         HttpClient.Builder clientBuilder = HttpClient.newBuilder();
-        if (timeoutMillis > 0) clientBuilder.connectTimeout(Duration.ofMillis(timeoutMillis));
+        if (timeoutMillis.isPositive()) clientBuilder.connectTimeout(timeoutMillis);
         HttpClient client = clientBuilder.build();
 
         JsonArrayBuilder msgs = Json.createArrayBuilder();
@@ -175,7 +175,7 @@ public final class InteractiveSamplingProvider implements SamplingProvider {
                 .header("Authorization", "Bearer " + apiKey)
                 .header("Content-Type", "application/json")
                 .POST(HttpRequest.BodyPublishers.ofString(body.toString()));
-        if (timeoutMillis > 0) requestBuilder.timeout(Duration.ofMillis(timeoutMillis));
+        if (timeoutMillis.isPositive()) requestBuilder.timeout(timeoutMillis);
         HttpRequest httpRequest = requestBuilder.build();
 
         HttpResponse<String> response = client.send(httpRequest, HttpResponse.BodyHandlers.ofString());
@@ -192,13 +192,13 @@ public final class InteractiveSamplingProvider implements SamplingProvider {
         return Optional.of(new AiResult(content.trim(), model));
     }
 
-    private String readLine(long timeoutMillis) throws IOException, InterruptedException {
-        if (timeoutMillis <= 0) return reader.readLine();
+    private String readLine(Duration timeoutMillis) throws IOException, InterruptedException {
+        if (!timeoutMillis.isPositive()) return reader.readLine();
         ExecutorService executor = Executors.newSingleThreadExecutor();
         try {
             Future<String> future = executor.submit(reader::readLine);
             try {
-                return future.get(timeoutMillis, TimeUnit.MILLISECONDS);
+                return future.get(timeoutMillis.toMillis(), TimeUnit.MILLISECONDS);
             } catch (TimeoutException e) {
                 future.cancel(true);
                 throw new InterruptedException("Timed out waiting for user input");

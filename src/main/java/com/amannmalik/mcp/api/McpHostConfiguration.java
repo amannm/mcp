@@ -1,5 +1,6 @@
 package com.amannmalik.mcp.api;
 
+import java.time.Duration;
 import java.util.*;
 
 public record McpHostConfiguration(
@@ -10,7 +11,7 @@ public record McpHostConfiguration(
         String hostClientVersion,
         Set<ClientCapability> hostClientCapabilities,
         String hostPrincipal,
-        int processWaitSeconds,
+        Duration processWaitSeconds,
         int defaultPageSize,
         int maxCompletionValues,
         boolean globalVerbose,
@@ -20,7 +21,7 @@ public record McpHostConfiguration(
     public McpHostConfiguration {
         hostClientCapabilities = Set.copyOf(hostClientCapabilities);
         clientConfigurations = List.copyOf(clientConfigurations);
-        if (processWaitSeconds <= 0)
+        if (processWaitSeconds.isNegative())
             throw new IllegalArgumentException("Invalid process wait seconds");
         if (defaultPageSize <= 0 || maxCompletionValues <= 0)
             throw new IllegalArgumentException("Invalid pagination configuration");
@@ -35,7 +36,7 @@ public record McpHostConfiguration(
                 "1.0.0",
                 defaultHostClientCapabilities(),
                 "user",
-                2,
+                Duration.ofSeconds(2),
                 100,
                 100,
                 false,
@@ -60,7 +61,7 @@ public record McpHostConfiguration(
                 "1.0.0",
                 defaultHostClientCapabilities(),
                 "user",
-                2,
+                Duration.ofSeconds(2),
                 100,
                 100,
                 false,

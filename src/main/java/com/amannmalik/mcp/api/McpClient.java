@@ -13,6 +13,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
 import java.net.http.*;
+import java.time.Duration;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.function.Consumer;
@@ -49,15 +50,15 @@ final class McpClient extends JsonRpcEndpoint implements AutoCloseable {
     private final ElicitationProvider elicitation;
     private final McpClientListener listener;
     private final Map<String, Consumer<ResourceUpdate>> resourceListeners = new ConcurrentHashMap<>();
-    private final long initializationTimeout;
+    private final Duration initializationTimeout;
     private AutoCloseable rootsSubscription;
     private SamplingAccessPolicy samplingAccess;
     private Principal principal;
     private Thread reader;
     private ScheduledExecutorService pingExec;
     private int pingFailures;
-    private long pingInterval;
-    private long pingTimeout;
+    private Duration pingInterval;
+    private Duration pingTimeout;
     private volatile boolean connected;
     private Set<ServerCapability> serverCapabilities = Set.of();
     private String instructions;
@@ -95,9 +96,9 @@ final class McpClient extends JsonRpcEndpoint implements AutoCloseable {
         this.listener = listener == null ? NOOP_LISTENER : listener;
         this.samplingAccess = config.samplingAccessPolicy();
         this.principal = new Principal(config.principal(), Set.of());
-        this.pingInterval = config.pingInterval().toMillis();
-        this.pingTimeout = config.pingTimeout().toMillis();
-        this.initializationTimeout = config.initializeRequestTimeout().toMillis();
+        this.pingInterval = config.pingInterval();
+        this.pingTimeout = config.pingTimeout();
+        this.initializationTimeout = config.initializeRequestTimeout();
 
         registerRequest(RequestMethod.SAMPLING_CREATE_MESSAGE, this::handleCreateMessage);
         registerRequest(RequestMethod.ROOTS_LIST, this::handleListRoots);
@@ -124,9 +125,9 @@ final class McpClient extends JsonRpcEndpoint implements AutoCloseable {
         });
     }
 
-    public void configurePing(long intervalMillis, long timeoutMillis) {
+    public void configurePing(Duration intervalMillis, Duration timeoutMillis) {
         if (connected) throw new IllegalStateException("already connected");
-        if (intervalMillis < 0 || timeoutMillis <= 0) throw new IllegalArgumentException("invalid ping settings");
+        if (intervalMillis.isNegative() || timeoutMillis.isNegative()) throw new IllegalArgumentException("invalid ping settings");
         this.pingInterval = intervalMillis;
         this.pingTimeout = timeoutMillis;
     }
@@ -194,7 +195,7 @@ final class McpClient extends JsonRpcEndpoint implements AutoCloseable {
         return instructions == null ? "" : instructions;
     }
 
-    public void ping(long timeoutMillis) throws IOException {
+    public void ping(Duration timeoutMillis) throws IOException {
         JsonRpcResponse resp = JsonRpc.expectResponse(request(RequestMethod.PING, null, timeoutMillis));
         if (!resp.result().isEmpty()) {
             throw new IOException("Unexpected ping response");
@@ -204,10 +205,10 @@ final class McpClient extends JsonRpcEndpoint implements AutoCloseable {
     public void setLogLevel(LoggingLevel level) throws IOException {
         if (level == null) throw new IllegalArgumentException("level required");
         JsonRpc.expectResponse(request(RequestMethod.LOGGING_SET_LEVEL,
-                SET_LEVEL_REQUEST_JSON_CODEC.toJson(new SetLevelRequest(level, null)), 0L));
+                SET_LEVEL_REQUEST_JSON_CODEC.toJson(new SetLevelRequest(level, null)), Duration.ZERO));
     }
 
-    public JsonRpcMessage request(RequestMethod method, JsonObject params, long timeoutMillis) throws IOException {
+    public JsonRpcMessage request(RequestMethod method, JsonObject params, Duration timeoutMillis) throws IOException {
         requireCapability(method);
         if (!connected) {
             return JsonRpcError.of(new RequestId.NumericId(0), -32002, "Server not initialized");
@@ -270,7 +271,7 @@ final class McpClient extends JsonRpcEndpoint implements AutoCloseable {
                 AbstractEntityCodec.paginatedRequest(
                         ListResourcesRequest::cursor,
                         ListResourcesRequest::_meta,
-                        ListResourcesRequest::new).toJson(new ListResourcesRequest(token, null)), 0L
+                        ListResourcesRequest::new).toJson(new ListResourcesRequest(token, null)), Duration.ZERO
         ));
         return AbstractEntityCodec.paginatedResult(
                 "resources",
@@ -288,7 +289,7 @@ final class McpClient extends JsonRpcEndpoint implements AutoCloseable {
                 AbstractEntityCodec.paginatedRequest(
                         ListResourceTemplatesRequest::cursor,
                         ListResourceTemplatesRequest::_meta,
-                        ListResourceTemplatesRequest::new).toJson(new ListResourceTemplatesRequest(token, null)), 0L
+                        ListResourceTemplatesRequest::new).toJson(new ListResourceTemplatesRequest(token, null)), Duration.ZERO
         ));
         return AbstractEntityCodec.paginatedResult(
                 "resourceTemplates",
@@ -308,7 +309,7 @@ final class McpClient extends JsonRpcEndpoint implements AutoCloseable {
         }
         JsonRpc.expectResponse(request(
                 RequestMethod.RESOURCES_SUBSCRIBE,
-                SUBSCRIBE_REQUEST_JSON_CODEC.toJson(new SubscribeRequest(uri, null)), 0L
+                SUBSCRIBE_REQUEST_JSON_CODEC.toJson(new SubscribeRequest(uri, null)), Duration.ZERO
         ));
         resourceListeners.put(uri, listener);
         return () -> {
@@ -316,7 +317,7 @@ final class McpClient extends JsonRpcEndpoint implements AutoCloseable {
             try {
                 request(
                         RequestMethod.RESOURCES_UNSUBSCRIBE,
-                        UNSUBSCRIBE_REQUEST_JSON_CODEC.toJson(new UnsubscribeRequest(uri, null)), 0L
+                        UNSUBSCRIBE_REQUEST_JSON_CODEC.toJson(new UnsubscribeRequest(uri, null)), Duration.ZERO
                 );
             } catch (IOException ignore) {
             }
@@ -375,13 +376,13 @@ final class McpClient extends JsonRpcEndpoint implements AutoCloseable {
             }
         });
         try {
-            return future.get(initializationTimeout, TimeUnit.MILLISECONDS);
+            return future.get(initializationTimeout.toMillis(), TimeUnit.MILLISECONDS);
         } catch (TimeoutException e) {
             try {
                 transport.close();
             } catch (IOException ignore) {
             }
-            throw new IOException("Initialization timed out after " + initializationTimeout + " ms");
+            throw new IOException("Initialization timed out after " + initializationTimeout.toMillis() + " ms");
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             throw new IOException(e);
@@ -442,7 +443,7 @@ final class McpClient extends JsonRpcEndpoint implements AutoCloseable {
         reader = new Thread(this::readLoop);
         reader.setDaemon(true);
         reader.start();
-        if (pingInterval > 0) {
+        if (pingInterval.isPositive()) {
             pingExec = Executors.newSingleThreadScheduledExecutor();
             pingFailures = 0;
             pingExec.scheduleAtFixedRate(() -> {
@@ -460,7 +461,7 @@ final class McpClient extends JsonRpcEndpoint implements AutoCloseable {
                         }
                     }
                 }
-            }, pingInterval, pingInterval, TimeUnit.MILLISECONDS);
+            }, pingInterval.toMillis(), pingInterval.toMillis(), TimeUnit.MILLISECONDS);
         }
     }
 

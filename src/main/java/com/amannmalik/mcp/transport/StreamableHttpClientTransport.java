@@ -100,15 +100,15 @@ public final class StreamableHttpClientTransport implements Transport {
 
     @Override
     public JsonObject receive() throws IOException {
-        return receive(defaultReceiveTimeout.toMillis());
+        return receive(defaultReceiveTimeout);
     }
 
     @Override
-    public JsonObject receive(long timeoutMillis) throws IOException {
+    public JsonObject receive(Duration timeoutMillis) throws IOException {
         try {
-            JsonObject result = incoming.poll(timeoutMillis, TimeUnit.MILLISECONDS);
+            JsonObject result = incoming.poll(timeoutMillis.toMillis(), TimeUnit.MILLISECONDS);
             if (result == null) {
-                throw new IOException("Timeout after " + timeoutMillis + "ms waiting for message");
+                throw new IOException("Timeout after " + timeoutMillis.toMillis() + "ms waiting for message");
             }
             return result;
         } catch (InterruptedException e) {

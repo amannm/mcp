@@ -7,6 +7,7 @@ import com.amannmalik.mcp.jsonrpc.*;
 import jakarta.json.JsonObject;
 
 import java.io.IOException;
+import java.time.Duration;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicLong;
@@ -42,9 +43,9 @@ sealed class JsonRpcEndpoint implements AutoCloseable permits McpClient, McpServ
         notifications.put(method, handler);
     }
 
-    protected JsonRpcMessage await(RequestId id, CompletableFuture<JsonRpcMessage> future, long timeoutMillis) throws IOException {
+    protected JsonRpcMessage await(RequestId id, CompletableFuture<JsonRpcMessage> future, Duration timeoutMillis) throws IOException {
         try {
-            return future.get(timeoutMillis, TimeUnit.MILLISECONDS);
+            return future.get(timeoutMillis.toMillis(), TimeUnit.MILLISECONDS);
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             throw new IOException(e);

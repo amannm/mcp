@@ -14,12 +14,12 @@ import java.util.function.Consumer;
 /// - [Transports](specification/2025-06-18/basic/transports.mdx)
 public final class StdioTransport implements Transport {
     // TODO: externalize
-    private static final Duration WAIT = Duration.ofSeconds(McpHostConfiguration.defaultConfiguration().processWaitSeconds());
+    private static final Duration WAIT = McpHostConfiguration.defaultConfiguration().processWaitSeconds();
     private final BufferedReader in;
     private final BufferedWriter out;
     private final Process process;
     private final Thread logReader;
-    private final long receiveTimeout;
+    private final Duration receiveTimeout;
 
     public StdioTransport(InputStream in, OutputStream out) {
         this.process = null;
@@ -27,7 +27,7 @@ public final class StdioTransport implements Transport {
         this.in = new BufferedReader(new InputStreamReader(in, StandardCharsets.UTF_8));
         this.out = new BufferedWriter(new OutputStreamWriter(out, StandardCharsets.UTF_8));
         // TODO: externalize
-        this.receiveTimeout = 1000L;
+        this.receiveTimeout = Duration.ofSeconds(1);
     }
 
     public StdioTransport(String[] command, Consumer<String> logSink) throws IOException {
@@ -42,7 +42,7 @@ public final class StdioTransport implements Transport {
         this.logReader.setDaemon(true);
         this.logReader.start();
         // TODO: externalize
-        this.receiveTimeout = 1000L;
+        this.receiveTimeout = Duration.ofSeconds(1);
     }
 
     private static void readLogs(InputStream err, Consumer<String> sink) {
@@ -70,8 +70,8 @@ public final class StdioTransport implements Transport {
     }
 
     @Override
-    public JsonObject receive(long timeoutMillis) throws IOException {
-        long endTime = System.currentTimeMillis() + timeoutMillis;
+    public JsonObject receive(Duration timeoutMillis) throws IOException {
+        long endTime = System.currentTimeMillis() + timeoutMillis.toMillis();
 
         while (System.currentTimeMillis() < endTime) {
             if (in.ready()) {
