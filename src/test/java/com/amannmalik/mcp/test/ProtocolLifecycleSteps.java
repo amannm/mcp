@@ -4,12 +4,13 @@ import com.amannmalik.mcp.api.*;
 import com.amannmalik.mcp.spi.Cursor;
 import io.cucumber.java.en.*;
 import jakarta.json.Json;
+import jakarta.json.JsonObject;
 
 import java.io.IOException;
 import java.util.*;
 import java.util.stream.Collectors;
 
-final class ProtocolLifecycleSteps {
+public final class ProtocolLifecycleSteps {
     private McpHost host;
     private McpClientConfiguration clientConfig;
     private McpHostConfiguration hostConfig;
