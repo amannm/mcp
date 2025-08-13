@@ -4,6 +4,7 @@ open module mcp.test {
     requires io.cucumber.junit.platform.engine;
     requires io.cucumber.java;
     requires org.junit.jupiter.api;
+    requires io.cucumber.java;
     requires jakarta.json;
     requires io.cucumber.java;
 }
