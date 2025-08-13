@@ -61,11 +61,11 @@ Feature: MCP Integration Scenarios and Edge Cases
     And maintains <system_property>
 
     Examples:
-      | boundary_condition    | operation                  | expected_behavior        | system_property    |
-      | memory limit          | large resource request     | graceful degradation     | memory stability   |
-      | connection limit      | max concurrent connections | connection queueing      | service availability|
-      | timeout boundary      | exactly timed operation    | precise timeout handling | timing accuracy    |
-      | rate limit threshold  | burst of requests          | rate limiting activation | throughput control |
+      | boundary_condition   | operation                  | expected_behavior        | system_property      |
+      | memory limit         | large resource request     | graceful degradation     | memory stability     |
+      | connection limit     | max concurrent connections | connection queueing      | service availability |
+      | timeout boundary     | exactly timed operation    | precise timeout handling | timing accuracy      |
+      | rate limit threshold | burst of requests          | rate limiting activation | throughput control   |
 
   @edge-cases @unicode-handling
   Scenario: Unicode and encoding edge cases
@@ -176,11 +176,11 @@ Feature: MCP Integration Scenarios and Edge Cases
     And <reliability_requirement> is satisfied
 
     Examples:
-      | deployment_context | typical_operation      | performance_requirement | reliability_requirement |
-      | IDE integration    | code resource access   | sub-100ms response      | 99.9% availability      |
-      | chat application   | tool execution         | real-time processing    | graceful error handling |
-      | automation system  | batch operations       | high throughput         | fault tolerance         |
-      | research platform  | data analysis          | complex workflows       | audit trail             |
+      | deployment_context | typical_operation    | performance_requirement | reliability_requirement |
+      | IDE integration    | code resource access | sub-100ms response      | 99.9% availability      |
+      | chat application   | tool execution       | real-time processing    | graceful error handling |
+      | automation system  | batch operations     | high throughput         | fault tolerance         |
+      | research platform  | data analysis        | complex workflows       | audit trail             |
 
   @stress @testing
   Scenario: Stress testing scenarios

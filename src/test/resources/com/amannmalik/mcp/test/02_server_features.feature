@@ -66,10 +66,10 @@ Feature: MCP Server Features - Resources, Tools, and Prompts
     And content follows <format_rules>
 
     Examples:
-      | content_type | expected_fields           | format_rules              |
-      | text         | uri,name,text            | UTF-8 encoded string      |
-      | binary       | uri,name,blob            | base64 encoded data       |
-      | mixed        | uri,name,text,blob       | both text and blob fields |
+      | content_type | expected_fields    | format_rules              |
+      | text         | uri,name,text      | UTF-8 encoded string      |
+      | binary       | uri,name,blob      | base64 encoded data       |
+      | mixed        | uri,name,text,blob | both text and blob fields |
 
   @resources @annotations
   Scenario: Resource annotations for context hints
@@ -111,13 +111,13 @@ Feature: MCP Server Features - Resources, Tools, and Prompts
     And follows <content_format>
 
     Examples:
-      | content_type     | expected_content                    | content_format            |
-      | text             | type:text, text field              | plain text content        |
-      | image            | type:image, data, mimeType         | base64 encoded image      |
-      | audio            | type:audio, data, mimeType         | base64 encoded audio      |
-      | resource_link    | type:resource_link, uri, name      | URI to existing resource  |
-      | embedded_resource| type:resource, resource object     | full resource content     |
-      | structured       | structuredContent JSON object      | schema-validated JSON     |
+      | content_type      | expected_content               | content_format           |
+      | text              | type:text, text field          | plain text content       |
+      | image             | type:image, data, mimeType     | base64 encoded image     |
+      | audio             | type:audio, data, mimeType     | base64 encoded audio     |
+      | resource_link     | type:resource_link, uri, name  | URI to existing resource |
+      | embedded_resource | type:resource, resource object | full resource content    |
+      | structured        | structuredContent JSON object  | schema-validated JSON    |
 
   @tools @annotations
   Scenario: Tool result annotations

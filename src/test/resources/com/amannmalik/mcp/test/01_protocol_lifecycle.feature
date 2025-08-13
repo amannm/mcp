@@ -39,11 +39,11 @@ Feature: MCP Protocol Lifecycle and Capabilities
     And unavailable features are <unavailable_features>
 
     Examples:
-      | client_capabilities           | server_capabilities              | available_features       | unavailable_features |
-      | sampling,roots               | resources,tools,prompts          | none                     | all                  |
-      | sampling                     | sampling                         | none                     | all                  |
-      | roots,elicitation            | resources,tools                  | resources,tools          | sampling             |
-      | sampling,roots,elicitation   | resources,tools,prompts,logging  | all                      | none                 |
+      | client_capabilities        | server_capabilities             | available_features | unavailable_features |
+      | sampling,roots             | resources,tools,prompts         | none               | all                  |
+      | sampling                   | sampling                        | none               | all                  |
+      | roots,elicitation          | resources,tools                 | resources,tools    | sampling             |
+      | sampling,roots,elicitation | resources,tools,prompts,logging | all                | none                 |
 
   @jsonrpc @message-format
   Scenario: JSON-RPC message format compliance

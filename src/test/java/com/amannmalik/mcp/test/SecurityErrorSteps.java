@@ -1,7 +1,8 @@
 package com.amannmalik.mcp.test;
 
+import com.amannmalik.mcp.api.McpHost;
+import com.amannmalik.mcp.api.McpServer;
 import io.cucumber.java.en.*;
-import com.amannmalik.mcp.api.*;
 
 public final class SecurityErrorSteps {
     private McpHost host;

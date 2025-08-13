@@ -1,16 +1,8 @@
 package com.amannmalik.mcp.test;
 
-import com.amannmalik.mcp.api.*;
 import io.cucumber.java.en.*;
 
 public class UtilitiesStepDefinitions {
-    private ProgressNotification progressNotification;
-    private CancelledNotification cancelledNotification;
-    private LoggingMessageNotification loggingNotification;
-    private SetLevelRequest setLevelRequest;
-    private ListResourcesRequest listResourcesRequest;
-    private ListToolsRequest listToolsRequest;
-    private GetPromptRequest getPromptRequest;
 
     @Given("an operational MCP connection")
     public void anOperationalMcpConnection() {

@@ -88,12 +88,12 @@ Feature: MCP Security and Error Handling
     And error data provides <additional_context>
 
     Examples:
-      | error_condition           | error_code | error_description    | additional_context        |
-      | malformed JSON request    | -32700     | parse error          | invalid JSON details      |
-      | unknown method called     | -32601     | method not found     | attempted method name     |
-      | invalid request params    | -32602     | invalid params       | parameter validation info |
-      | internal server error     | -32603     | internal error       | error context if safe     |
-      | resource not found        | -32002     | resource not found   | requested URI             |
+      | error_condition        | error_code | error_description  | additional_context        |
+      | malformed JSON request | -32700     | parse error        | invalid JSON details      |
+      | unknown method called  | -32601     | method not found   | attempted method name     |
+      | invalid request params | -32602     | invalid params     | parameter validation info |
+      | internal server error  | -32603     | internal error     | error context if safe     |
+      | resource not found     | -32002     | resource not found | requested URI             |
 
   @errors @capability
   Scenario: Capability-related errors

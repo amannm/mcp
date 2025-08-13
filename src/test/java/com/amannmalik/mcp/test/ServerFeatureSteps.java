@@ -1,11 +1,9 @@
 package com.amannmalik.mcp.test;
 
-import com.amannmalik.mcp.api.Protocol;
 import io.cucumber.java.PendingException;
 import io.cucumber.java.en.*;
 
 public final class ServerFeatureSteps {
-    private final String protocolVersion = Protocol.LATEST_VERSION;
 
     @Given("an operational MCP connection")
     public void givenAnOperationalMcpConnection() {
