@@ -41,11 +41,11 @@ Feature: MCP Client Features - Sampling, Roots, and Elicitation
     And returns appropriate response format
 
     Examples:
-      | content_type | input_content           | content_format                |
-      | text         | text message            | plain text string             |
-      | image        | base64 image data       | image with mimeType           |
-      | audio        | base64 audio data       | audio with mimeType           |
-      | mixed        | text + image content    | multimodal conversation       |
+      | content_type | input_content        | content_format          |
+      | text         | text message         | plain text string       |
+      | image        | base64 image data    | image with mimeType     |
+      | audio        | base64 audio data    | audio with mimeType     |
+      | mixed        | text + image content | multimodal conversation |
 
   @sampling @human-in-loop
   Scenario: Human-in-the-loop approval workflow
@@ -129,11 +129,11 @@ Feature: MCP Client Features - Sampling, Roots, and Elicitation
     And client validates <response_format>
 
     Examples:
-      | elicitation_type | request_content      | ui_format              | response_format    |
-      | text            | text input request   | text input field       | string response    |
-      | choice          | multiple choice      | selection interface    | chosen option      |
-      | confirmation    | yes/no decision      | confirmation dialog    | boolean response   |
-      | file            | file selection       | file picker dialog     | file content/path  |
+      | elicitation_type | request_content    | ui_format           | response_format   |
+      | text             | text input request | text input field    | string response   |
+      | choice           | multiple choice    | selection interface | chosen option     |
+      | confirmation     | yes/no decision    | confirmation dialog | boolean response  |
+      | file             | file selection     | file picker dialog  | file content/path |
 
   @elicitation @security
   Scenario: Elicitation security and privacy

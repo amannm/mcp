@@ -4,7 +4,6 @@ import com.amannmalik.mcp.api.*;
 import com.amannmalik.mcp.spi.Cursor;
 import io.cucumber.java.en.*;
 import jakarta.json.Json;
-import jakarta.json.JsonObject;
 
 import java.io.IOException;
 import java.util.*;
@@ -249,7 +248,6 @@ final class ProtocolLifecycleSteps {
 
     @Then("server responds with latest supported version")
     public void server_responds_with_latest_supported_version() {
-        Protocol.LATEST_VERSION.toString();
         // TODO
         throw new io.cucumber.java.PendingException();
     }
@@ -303,7 +301,6 @@ final class ProtocolLifecycleSteps {
     @Given("an operational MCP connection with {word} transport")
     public void an_operational_mcp_connection_with_transport(String transport) {
         Transport.class.getSimpleName();
-        transport.toString();
         // TODO
         throw new io.cucumber.java.PendingException();
     }
@@ -407,7 +404,6 @@ final class ProtocolLifecycleSteps {
     @Then("server returns {string} ({int})")
     public void server_returns_error(String msg, int code) {
         RequestMethod.PING.toString();
-        msg.toString();
         // TODO
         throw new io.cucumber.java.PendingException();
     }

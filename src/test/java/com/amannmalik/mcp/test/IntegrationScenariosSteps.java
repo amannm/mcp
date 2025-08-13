@@ -1,15 +1,9 @@
 package com.amannmalik.mcp.test;
-import io.cucumber.java.en.*;
+
 import io.cucumber.java.PendingException;
-import com.amannmalik.mcp.api.*;
+import io.cucumber.java.en.*;
 
 public final class IntegrationScenariosSteps {
-    @SuppressWarnings("unused")
-    private static final Class<?>[] API_TYPES = {
-            McpServer.class,
-            RequestId.class
-    };
-
 
     @Given("a complete MCP implementation")
     public void a_complete_MCP_implementation() {

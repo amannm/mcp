@@ -39,11 +39,11 @@ Feature: MCP Protocol Utilities - Progress, Cancellation, Logging, and Paginatio
     And progress content follows <format_rules>
 
     Examples:
-      | progress_type | progress_fields              | format_rules                    |
-      | percentage    | progress token, percentage   | number between 0-100            |
-      | status        | progress token, status text  | human-readable status message   |
-      | detailed      | progress token, current/total| current count and total count   |
-      | unknown       | progress token only          | indicates work is happening     |
+      | progress_type | progress_fields               | format_rules                  |
+      | percentage    | progress token, percentage    | number between 0-100          |
+      | status        | progress token, status text   | human-readable status message |
+      | detailed      | progress token, current/total | current count and total count |
+      | unknown       | progress token only           | indicates work is happening   |
 
   @cancellation @smoke
   Scenario: Request cancellation
@@ -134,7 +134,7 @@ Feature: MCP Protocol Utilities - Progress, Cancellation, Logging, and Paginatio
     When client requests prompts/list with pagination
     Then server uses consistent pagination approach
     And client can iterate through all prompts
-    Until reaching end of list
+  Until reaching end of list
 
   @pagination @parameters
   Scenario: Pagination parameter handling

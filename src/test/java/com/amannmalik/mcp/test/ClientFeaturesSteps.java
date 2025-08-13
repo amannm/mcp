@@ -3,18 +3,7 @@ package com.amannmalik.mcp.test;
 import com.amannmalik.mcp.api.*;
 import io.cucumber.java.en.*;
 
-import java.io.IOException;
-
 public final class ClientFeaturesSteps {
-    private final McpHost host;
-
-    public ClientFeaturesSteps() {
-        try {
-            host = new McpHost(McpHostConfiguration.defaultConfiguration());
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-    }
 
     @Given("an operational MCP connection")
     @Given("operational MCP connection")
