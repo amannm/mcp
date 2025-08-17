@@ -79,6 +79,14 @@ Feature: MCP Connection Lifecycle
     Then the request should use proper message format
     And the request should have a unique identifier
 
+  @messaging @duplicate-id
+  Scenario: Duplicate request identifier rejection
+    # Tests specification/2025-06-18/basic/index.mdx:48-51 (Request ID requirements)
+    Given I have an established MCP connection
+    When I send a request with identifier "dup-123"
+    And I send a request with identifier "dup-123"
+    Then I should receive a duplicate identifier error
+
   @messaging
   Scenario: Response message validation
     # Tests specification/2025-06-18/basic/index.mdx:54-79 (Response format)
