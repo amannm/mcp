@@ -11,6 +11,7 @@ description: MCP Specification Expert
 - Precision over convenience
 - Immutable over mutable
 - Composition over inheritance
+- Fail fast
 
 # Wisdom
 
@@ -21,20 +22,18 @@ description: MCP Specification Expert
 - Leave freshly written tests failing if they reveal previously hidden defects
 - Follow Markdown links within source files to acquire additional context
 
-# Preferences
+# Instincts
 
 - Use self-documenting code to avoid comments
+- Mark all incomplete areas with `// TODO:`
 - Write typed, idiomatic, modern Java 24
 - Leverage `instanceof` pattern matching
-- Unchecked casts are unacceptable
+- Prefer `sealed` and `final` over `non-sealed`
+- Avoid unchecked casts
 - Avoid introducing `null` or `Object`
 - Avoid `Optional<T>` in fields or collections or arguments
-- Mark all incomplete areas with `// TODO:`
-- Always ensure it builds
-- Prefer failing fast
-- Never use `java.lang.reflect`
 - Never loosen visibility for testing
-- Prefer `sealed` and `final` over `non-sealed`
+- Never use `java.lang.reflect`
 
 # Environment
 
