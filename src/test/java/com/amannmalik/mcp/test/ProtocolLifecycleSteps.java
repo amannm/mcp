@@ -38,6 +38,7 @@ public final class ProtocolLifecycleSteps {
     
     private List<Map<String, String>> capabilityConfigurations = new ArrayList<>();
     private List<Map<String, String>> errorScenarios = new ArrayList<>();
+    private List<Set<ServerCapability>> discoveredCapabilities = new ArrayList<>();
     private Map<String, String> currentConfiguration;
 
     private Set<ClientCapability> parseClientCapabilities(String capabilities) {
@@ -681,6 +682,7 @@ public final class ProtocolLifecycleSteps {
     @Given("I test server capability discovery with the following configurations:")
     public void i_test_server_capability_discovery_with_the_following_configurations(DataTable dataTable) {
         capabilityConfigurations.clear();
+        discoveredCapabilities.clear();
         List<Map<String, String>> rows = dataTable.asMaps(String.class, String.class);
         capabilityConfigurations.addAll(rows);
     }
@@ -690,26 +692,36 @@ public final class ProtocolLifecycleSteps {
         for (Map<String, String> config : capabilityConfigurations) {
             currentConfiguration = config;
             String serverCapability = config.get("server_capability");
-            
+
             a_clean_mcp_environment();
             a_transport_mechanism_is_available();
             the_server_offers_features(serverCapability);
             i_complete_the_connection_handshake();
+            discoveredCapabilities.add(EnumSet.copyOf(availableFeatures));
         }
     }
     
     @Then("the capability access should match the expected results")
     public void the_capability_access_should_match_the_expected_results() {
-        for (Map<String, String> config : capabilityConfigurations) {
+        for (int i = 0; i < capabilityConfigurations.size(); i++) {
+            Map<String, String> config = capabilityConfigurations.get(i);
+            Set<ServerCapability> actual = discoveredCapabilities.get(i);
             String availableFeature = config.get("available_feature");
-            String unavailableFeature = config.get("unavailable_feature");
-            
             if (!"none".equals(availableFeature)) {
-                i_should_have_access_to_features(availableFeature);
+                Set<ServerCapability> expected = parseServerCapabilities(availableFeature);
+                if (!actual.containsAll(expected)) {
+                    throw new AssertionError("Expected features not available: %s".formatted(expected));
+                }
             }
-            
+
+            String unavailableFeature = config.get("unavailable_feature");
             if (!"none".equals(unavailableFeature)) {
-                features_should_not_be_available(unavailableFeature);
+                Set<ServerCapability> expectedUnavailable = parseServerCapabilities(unavailableFeature);
+                Set<ServerCapability> intersection = new HashSet<>(actual);
+                intersection.retainAll(expectedUnavailable);
+                if (!intersection.isEmpty()) {
+                    throw new AssertionError("Expected features should be unavailable but are available: %s".formatted(intersection));
+                }
             }
         }
     }

@@ -28,6 +28,8 @@ public final class ServerCommand {
                         .build())
                 .addOption(OptionSpec.builder("--stdio")
                         .type(boolean.class)
+                        .arity("0")
+                        .defaultValue("false")
                         .description("Use stdio transport")
                         .build())
                 .addOption(OptionSpec.builder("--instructions")
@@ -36,6 +38,8 @@ public final class ServerCommand {
                         .build())
                 .addOption(OptionSpec.builder("-v", "--verbose")
                         .type(boolean.class)
+                        .arity("0")
+                        .defaultValue("false")
                         .description("Verbose logging")
                         .build())
                 .addOption(OptionSpec.builder("--audience")
@@ -54,6 +58,8 @@ public final class ServerCommand {
                         .build())
                 .addOption(OptionSpec.builder("--test-mode")
                         .type(boolean.class)
+                        .arity("0")
+                        .defaultValue("false")
                         .description("Disable auth for testing")
                         .build());
         spec.usageMessage().description("Run MCP server");

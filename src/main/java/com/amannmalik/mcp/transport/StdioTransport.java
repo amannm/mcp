@@ -23,15 +23,22 @@ public final class StdioTransport implements Transport {
     private final Duration receiveTimeout;
 
     public StdioTransport(InputStream in, OutputStream out) {
+        this(in, out, RECEIVE);
+    }
+
+    public StdioTransport(InputStream in, OutputStream out, Duration receiveTimeout) {
         this.process = null;
         this.logReader = null;
         this.in = new BufferedReader(new InputStreamReader(in, StandardCharsets.UTF_8));
         this.out = new BufferedWriter(new OutputStreamWriter(out, StandardCharsets.UTF_8));
-        // TODO: externalize
-        this.receiveTimeout = RECEIVE;
+        this.receiveTimeout = receiveTimeout;
     }
 
     public StdioTransport(String[] command, Consumer<String> logSink) throws IOException {
+        this(command, logSink, RECEIVE);
+    }
+
+    public StdioTransport(String[] command, Consumer<String> logSink, Duration receiveTimeout) throws IOException {
         Objects.requireNonNull(logSink, "logSink");
         if (command.length == 0) throw new IllegalArgumentException("command");
         var builder = new ProcessBuilder(command);
@@ -42,8 +49,7 @@ public final class StdioTransport implements Transport {
         this.logReader = new Thread(() -> readLogs(process.getErrorStream(), logSink));
         this.logReader.setDaemon(true);
         this.logReader.start();
-        // TODO: externalize
-        this.receiveTimeout = RECEIVE;
+        this.receiveTimeout = receiveTimeout;
     }
 
     private static void readLogs(InputStream err, Consumer<String> sink) {

@@ -175,7 +175,7 @@ public final class McpServer extends JsonRpcEndpoint implements AutoCloseable {
 
     private static Transport createTransport(McpServerConfiguration config) throws Exception {
         return switch (config.transportType()) {
-            case "stdio" -> new StdioTransport(System.in, System.out);
+            case "stdio" -> new StdioTransport(System.in, System.out, config.defaultTimeoutMs());
             case "http" -> {
                 if (!config.insecure() && config.authServers().isEmpty()) {
                     throw new IllegalArgumentException("auth server must be specified");
