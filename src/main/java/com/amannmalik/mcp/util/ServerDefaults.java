@@ -40,17 +40,17 @@ public final class ServerDefaults {
                         .add("message", Json.createObjectBuilder().add("type", "string")))
                 .add("required", Json.createArrayBuilder().add("message"))
                 .build();
-        Tool tool = new Tool("test_tool", "Test Tool", null, schema, outSchema,
+        Tool tool = new Tool("test_tool", "Test Tool", "Demonstrates successful execution", schema, outSchema,
                 new ToolAnnotations("Annotated Tool", true, null, null, null), null);
-        Tool errorTool = new Tool("error_tool", "Error Tool", null, schema, null, null, null);
+        Tool errorTool = new Tool("error_tool", "Error Tool", "Always fails", schema, null, null, null);
         var eschema = Json.createObjectBuilder()
                 .add("type", "object")
                 .add("properties", Json.createObjectBuilder()
                         .add("msg", Json.createObjectBuilder().add("type", "string")))
                 .add("required", Json.createArrayBuilder().add("msg"))
                 .build();
-        Tool eliciting = new Tool("echo_tool", "Echo Tool", null, eschema, null, null, null);
-        Tool slow = new Tool("slow_tool", "Slow Tool", null, schema, null, null, null);
+        Tool eliciting = new Tool("echo_tool", "Echo Tool", "Echoes the provided message", eschema, null, null, null);
+        Tool slow = new Tool("slow_tool", "Slow Tool", "Delays before responding", schema, null, null, null);
         TOOLS = new InMemoryToolProvider(
                 List.of(tool, errorTool, eliciting, slow),
                 Map.of(
