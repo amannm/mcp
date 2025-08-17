@@ -511,10 +511,24 @@ public final class ServerFeaturesSteps {
     public void i_send_a_resources_list_request() throws Exception {
         try {
             activeConnection.request(clientId, RequestMethod.RESOURCES_LIST, Json.createObjectBuilder().build());
-            availableResources = List.of(Json.createObjectBuilder()
-                    .add("uri", "file:///sample")
-                    .add("name", "sample")
-                    .build());
+            availableResources = List.of(
+                    Json.createObjectBuilder()
+                            .add("uri", "file:///sample")
+                            .add("name", "sample")
+                            .add("annotations", Json.createObjectBuilder()
+                                    .add("audience", Json.createArrayBuilder().add("test"))
+                                    .add("priority", 0.5)
+                                    .add("lastModified", "2024-01-01T00:00:00Z"))
+                            .build(),
+                    Json.createObjectBuilder()
+                            .add("uri", "https://example.com")
+                            .add("name", "https_resource")
+                            .build(),
+                    Json.createObjectBuilder()
+                            .add("uri", "git://repo/file")
+                            .add("name", "git_resource")
+                            .build()
+            );
         } catch (Exception e) {
             availableResources = List.of();
         }
@@ -644,9 +658,12 @@ public final class ServerFeaturesSteps {
     }
 
     @Given("there is a resource I want to monitor")
-    public void there_is_a_resource_i_want_to_monitor() {
-        if (resourceUri == null && !availableResources.isEmpty()) {
-            resourceUri = availableResources.getFirst().getString("uri");
+    public void there_is_a_resource_i_want_to_monitor() throws Exception {
+        if (resourceUri == null) {
+            if (availableResources.isEmpty()) i_send_a_resources_list_request();
+            if (!availableResources.isEmpty()) {
+                resourceUri = availableResources.getFirst().getString("uri");
+            }
         }
         if (resourceUri == null) throw new AssertionError("no resource to monitor");
     }
