@@ -18,12 +18,12 @@ Feature: MCP Security Error Handling
     Given an MCP server requiring authorization
     When I test authorization scenarios:
       | auth_header              | expected_status | expected_error        | www_authenticate_header |
-      | missing                  | 401             | Unauthorized          | Bearer resource_metadata |
-      | empty_string             | 401             | Unauthorized          | Bearer resource_metadata |
-      | malformed_bearer         | 401             | Unauthorized          | Bearer resource_metadata |
-      | Bearer invalid_token     | 401             | Unauthorized          | Bearer resource_metadata |
-      | Bearer expired_token     | 401             | Unauthorized          | Bearer resource_metadata |
-      | Basic username:password  | 401             | Unauthorized          | Bearer resource_metadata |
+      | missing                  | 401             | Unauthorized          | Bearer resource="https://mcp.example.com/.well-known/oauth-protected-resource" |
+      | empty_string             | 401             | Unauthorized          | Bearer resource="https://mcp.example.com/.well-known/oauth-protected-resource" |
+      | malformed_bearer         | 401             | Unauthorized          | Bearer resource="https://mcp.example.com/.well-known/oauth-protected-resource" |
+      | Bearer invalid_token     | 401             | Unauthorized          | Bearer resource="https://mcp.example.com/.well-known/oauth-protected-resource" |
+      | Bearer expired_token     | 401             | Unauthorized          | Bearer resource="https://mcp.example.com/.well-known/oauth-protected-resource" |
+      | Basic username:password  | 401             | Unauthorized          | Bearer resource="https://mcp.example.com/.well-known/oauth-protected-resource" |
     Then I should receive appropriate HTTP error responses
     And the WWW-Authenticate header should be included for 401 responses
 
