@@ -815,7 +815,7 @@ public final class ServerFeaturesSteps {
         }
     }
 
-    @Then("I should receive appropriate JSON-RPC error responses")
+    @Then("^I should receive appropriate JSON-RPC error responses(?: for (?:each scenario|logging|completion))?$")
     public void i_should_receive_appropriate_json_rpc_error_responses() {
         if (currentErrorScenarios.isEmpty()) {
             throw new AssertionError("no error scenarios");
