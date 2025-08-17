@@ -413,6 +413,13 @@ public final class ClientFeaturesSteps {
         }
     }
 
+    @Then("I should return error code {int} \\(Method not found\\)")
+    public void i_should_return_error_code_method_not_found(int code) {
+        if (lastErrorCode != code) {
+            throw new AssertionError("expected %d but was %d".formatted(code, lastErrorCode));
+        }
+    }
+
     @Then("the error message should indicate \"Roots not supported\"")
     public void the_error_message_should_indicate_roots_not_supported() {
         if (!"Roots not supported".equals(lastErrorMessage)) {
