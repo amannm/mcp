@@ -382,7 +382,6 @@ public final class ProtocolLifecycleSteps {
     public void i_send_a_request_with_identifier(String id) {
         lastRequestId = RequestId.parse(id);
         lastRequest = createRequest(lastRequestId, RequestMethod.PING.method(), Json.createObjectBuilder().build());
-        usedRequestIds.add(lastRequestId);
     }
 
     @Then("the request should use proper message format")
@@ -398,10 +397,7 @@ public final class ProtocolLifecycleSteps {
         if (lastRequestId == null) {
             throw new AssertionError("request id is null");
         }
-        long useCount = usedRequestIds.stream()
-                .filter(id -> id.equals(lastRequestId))
-                .count();
-        if (useCount > 1) {
+        if (!usedRequestIds.add(lastRequestId)) {
             throw new AssertionError("request id reused");
         }
     }
