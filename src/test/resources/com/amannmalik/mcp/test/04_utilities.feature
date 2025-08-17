@@ -205,7 +205,7 @@ Feature: MCP Protocol Utilities
       | expired_cursor    | -32602     | Invalid params |
       | malformed_cursor  | -32602     | Invalid params |
       | unknown_cursor    | -32602     | Invalid params |
-    Then I should return appropriate error responses
+    Then I should return appropriate error responses for utilities
     And use JSON-RPC error code -32602 for invalid parameters
 
   @integration @utility-combinations

@@ -675,7 +675,7 @@ public final class UtilitiesSteps {
         }
     }
 
-    @Then("I should return appropriate error responses")
+    @Then("I should return appropriate error responses for utilities")
     public void i_should_return_appropriate_error_responses() {
         if (paginationErrors.isEmpty()) throw new AssertionError("no errors recorded");
     }
