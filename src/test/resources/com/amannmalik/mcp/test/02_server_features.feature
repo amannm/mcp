@@ -81,7 +81,7 @@ Feature: MCP Server Features
     # Tests specification/2025-06-18/server/tools.mdx:201-296 (Content types)
     Given the server has tools that return different content types
     When I invoke tools with various output formats
-    Then I should receive valid content in supported formats:
+    Then I should receive valid result content in supported formats:
       | content_type     | field_name | encoding |
       | text             | text       | plain    |
       | image            | data       | base64   |
@@ -325,7 +325,7 @@ Feature: MCP Server Features
   Scenario: Resource template argument completion
     # Tests specification/2025-06-18/server/utilities/completion.mdx:124-131 (Reference types)
     Given the server has completion capability enabled
-    And there is a resource template with URI template "file:///{path}"
+    And there is a resource template with URI template "file:///path"
     When I send a "completion/complete" request for resource template argument:
       | ref_type     | ref_uri              | argument_name | argument_value |
       | ref/resource | file:///{path}       | path          | src/           |

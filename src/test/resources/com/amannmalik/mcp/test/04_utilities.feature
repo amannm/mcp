@@ -70,7 +70,7 @@ Feature: MCP Protocol Utilities
   @ping @health-monitoring
   Scenario: Connection health monitoring with ping
     # Tests specification/2025-06-18/basic/utilities/ping.mdx:46-55 (Usage patterns)
-    Given I have an established connection
+    Given I have an established MCP connection for utilities
     When I implement periodic ping monitoring
     Then I should be able to detect connection health
     And configure appropriate ping frequency
@@ -89,7 +89,7 @@ Feature: MCP Protocol Utilities
   @ping @bidirectional
   Scenario: Bidirectional ping support
     # Tests specification/2025-06-18/basic/utilities/ping.mdx:9-15 (Either party can ping)
-    Given I have an established MCP connection
+    Given I have an established MCP connection for utilities
     When both client and server send ping requests:
       | sender | receiver | ping_id     |
       | client | server   | client-ping |

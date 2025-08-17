@@ -263,8 +263,8 @@ public final class UtilitiesSteps {
         if (lastPingResponseId == null) throw new AssertionError("invalid response");
     }
 
-    @Given("I have an established connection")
-    public void i_have_an_established_connection() throws Exception {
+    @Given("I have an established MCP connection for utilities")
+    public void i_have_an_established_connection_for_utilities() throws Exception {
         an_established_mcp_connection();
     }
 

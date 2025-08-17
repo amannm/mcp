@@ -425,8 +425,8 @@ public final class ServerFeaturesSteps {
         }
     }
 
-    @Then("I should receive valid content in supported formats:")
-    public void i_should_receive_valid_content_in_supported_formats(DataTable table) {
+    @Then("I should receive valid result content in supported formats:")
+    public void i_should_receive_valid_result_content_in_supported_formats(DataTable table) {
         for (Map<String, String> row : table.asMaps(String.class, String.class)) {
             String type = row.get("content_type");
             String field = row.get("field_name");
@@ -467,7 +467,7 @@ public final class ServerFeaturesSteps {
         }
     }
 
-    @When("I send a \\\"resources/list\\\" request")
+    @When("I send a \"resources/list\" request")
     public void i_send_a_resources_list_request() throws Exception {
         try {
             activeConnection.request(clientId, RequestMethod.RESOURCES_LIST, Json.createObjectBuilder().build());
@@ -505,7 +505,7 @@ public final class ServerFeaturesSteps {
         resourceUri = uri;
     }
 
-    @When("I send a \\\"resources/read\\\" request for that URI")
+    @When("I send a \"resources/read\" request for that URI")
     public void i_send_a_resources_read_request_for_that_uri() throws Exception {
         try {
             JsonObject params = Json.createObjectBuilder().add("uri", resourceUri).build();
@@ -558,7 +558,7 @@ public final class ServerFeaturesSteps {
         activeConnection.request(clientId, RequestMethod.RESOURCES_TEMPLATES_LIST, Json.createObjectBuilder().build());
     }
 
-    @When("I send a \\\"resources/templates/list\\\" request")
+    @When("I send a \"resources/templates/list\" request")
     public void i_send_a_resources_templates_list_request() throws Exception {
         try {
             activeConnection.request(clientId, RequestMethod.RESOURCES_TEMPLATES_LIST, Json.createObjectBuilder().build());
@@ -611,7 +611,7 @@ public final class ServerFeaturesSteps {
         if (resourceUri == null) throw new AssertionError("no resource to monitor");
     }
 
-    @When("I send a \\\"resources/subscribe\\\" request for the resource URI")
+    @When("I send a \"resources\\/subscribe\" request for the resource URI")
     public void i_send_a_resources_subscribe_request_for_the_resource_uri() throws Exception {
         try {
             JsonObject params = Json.createObjectBuilder().add("uri", resourceUri).build();
@@ -629,7 +629,7 @@ public final class ServerFeaturesSteps {
         }
     }
 
-    @Then("when the resource changes, I should receive \\\"notifications/resources/updated\\\"")
+    @Then("when the resource changes, I should receive \"notifications\\/resources\\/updated\"")
     public void when_the_resource_changes_i_should_receive_notifications_resources_updated() {
         try {
             activeConnection.notify(clientId, NotificationMethod.RESOURCES_UPDATED, Json.createObjectBuilder().build());
@@ -652,7 +652,7 @@ public final class ServerFeaturesSteps {
         }
     }
 
-    @Then("I should receive a \\\"notifications/resources/list_changed\\\" notification")
+    @Then("I should receive a \"notifications\\/resources\\/list_changed\" notification")
     public void i_should_receive_a_notifications_resources_list_changed_notification() {
         if (!resourceListChangedNotification) {
             throw new AssertionError("list_changed notification not received");
@@ -771,7 +771,7 @@ public final class ServerFeaturesSteps {
         }
     }
 
-    @When("I send a \\\"prompts/list\\\" request")
+    @When("I send a \"prompts\\/list\" request")
     public void i_send_a_prompts_list_request() throws Exception {
         try {
             activeConnection.request(clientId, RequestMethod.PROMPTS_LIST, Json.createObjectBuilder().build());
@@ -822,7 +822,7 @@ public final class ServerFeaturesSteps {
         }
     }
 
-    @When("I send a \\\"prompts/get\\\" request with arguments:")
+    @When("I send a \"prompts\\/get\" request with arguments:")
     public void i_send_a_prompts_get_request_with_arguments(DataTable table) throws Exception {
         var b = Json.createObjectBuilder().add("name", promptInstance.getString("name"));
         var args = Json.createObjectBuilder();
@@ -900,7 +900,7 @@ public final class ServerFeaturesSteps {
         }
     }
 
-    @Given("the server has prompts capability with \\\"listChanged\\\" enabled")
+    @Given("the server has prompts capability with \"listChanged\" enabled")
     public void the_server_has_prompts_capability_with_list_changed_enabled() {
         if (!activeConnection.serverFeatures(clientId).contains(ServerFeature.PROMPTS_LIST_CHANGED)) {
             throw new AssertionError("listChanged not enabled");
@@ -917,7 +917,7 @@ public final class ServerFeaturesSteps {
         }
     }
 
-    @Then("I should receive a \\\"notifications/prompts/list_changed\\\" notification")
+    @Then("I should receive a \"notifications\\/prompts\\/list_changed\" notification")
     public void i_should_receive_a_notifications_prompts_list_changed_notification() {
         if (!promptListChangedNotification) {
             throw new AssertionError("prompt list change notification not received");
@@ -978,7 +978,7 @@ public final class ServerFeaturesSteps {
         }
     }
 
-    @When("I send a \\\"logging/setLevel\\\" request with level {string}")
+    @When("I send a \"logging\\/setLevel\" request with level {string}")
     public void i_send_a_logging_set_level_request_with_level(String level) throws Exception {
         try {
             JsonObject params = Json.createObjectBuilder().add("level", level).build();
@@ -1020,7 +1020,7 @@ public final class ServerFeaturesSteps {
         }
     }
 
-    @Then("I should receive \\\"notifications/message\\\" notifications")
+    @Then("I should receive \"notifications\\/message\" notifications")
     public void i_should_receive_notifications_message_notifications() {
         if (logMessages.isEmpty()) {
             throw new AssertionError("no log messages received");
@@ -1092,7 +1092,7 @@ public final class ServerFeaturesSteps {
         // No-op
     }
 
-    @When("I send a \\\"completion/complete\\\" request for prompt argument completion:")
+    @When("I send a \"completion/complete\" request for prompt argument completion:")
     public void i_send_a_completion_complete_request_for_prompt_argument_completion(DataTable table) throws Exception {
         Map<String, String> row = table.asMaps(String.class, String.class).getFirst();
         JsonObject ref = Json.createObjectBuilder()
@@ -1129,12 +1129,12 @@ public final class ServerFeaturesSteps {
         }
     }
 
-    @Given("there is a resource template with URI template \"file:///{path}\"")
+    @Given("there is a resource template with URI template \"file:\\/\\/\\/path\"")
     public void there_is_a_resource_template_with_uri_template_file_path() {
         // No-op
     }
 
-    @When("I send a \\\"completion/complete\\\" request for resource template argument:")
+    @When("I send a \"completion\\/complete\" request for resource template argument:")
     public void i_send_a_completion_complete_request_for_resource_template_argument(DataTable table) throws Exception {
         Map<String, String> row = table.asMaps(String.class, String.class).getFirst();
         JsonObject ref = Json.createObjectBuilder()

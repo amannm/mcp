@@ -210,7 +210,7 @@ public final class ClientFeaturesSteps {
         }
     }
 
-    @When("I receive an elicitation/create request for simple text input:")
+    @When("I receive an elicitation\\/create request for simple text input:")
     public void i_receive_an_elicitation_create_request_for_simple_text_input(DataTable table) {
         List<Map<String, String>> rows = table.asMaps(String.class, String.class);
         if (rows.isEmpty()) {
@@ -221,7 +221,7 @@ public final class ClientFeaturesSteps {
         elicitationResponseAction = "accept";
     }
 
-    @When("I receive an elicitation/create request for structured data:")
+    @When("I receive an elicitation\\/create request for structured data:")
     public void i_receive_an_elicitation_create_request_for_structured_data(DataTable table) {
         structuredElicitationFields.clear();
         for (Map<String, String> row : table.asMaps(String.class, String.class)) {
@@ -268,7 +268,7 @@ public final class ClientFeaturesSteps {
         }
     }
 
-    @When("I receive a roots/list request")
+    @When("I receive a roots\\/list request")
     public void i_receive_a_roots_list_request() {
         returnedRoots.clear();
         if (!clientCapabilities.contains(ClientCapability.ROOTS)) {
@@ -291,7 +291,7 @@ public final class ClientFeaturesSteps {
         rootConfigChanged = true;
     }
 
-    @When("I receive a sampling/createMessage request:")
+    @When("I receive a sampling\\/createMessage request:")
     public void i_receive_a_sampling_create_message_request(DataTable table) {
         List<Map<String, String>> rows = table.asMaps(String.class, String.class);
         if (rows.isEmpty()) {
@@ -637,7 +637,7 @@ public final class ClientFeaturesSteps {
         }
     }
 
-    @Then("each root should have a valid file:// URI")
+    @Then("each root should have a valid file:\\/\\/ URI")
     public void each_root_should_have_a_valid_file_uri() {
         for (Map<String, String> root : returnedRoots) {
             String uri = root.get("uri");
@@ -717,7 +717,7 @@ public final class ClientFeaturesSteps {
         }
     }
 
-    @Then("I should return error code {int} \\(Method not found\\)")
+    @Then("I should return error code {int} \\(Method not found)")
     public void i_should_return_error_code_method_not_found(int code) {
         if (lastErrorCode != code) {
             throw new AssertionError("expected %d but was %d".formatted(code, lastErrorCode));
