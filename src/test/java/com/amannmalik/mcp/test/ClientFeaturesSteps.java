@@ -518,7 +518,7 @@ public final class ClientFeaturesSteps {
                             throw new AssertionError("missing expected behavior");
                         }
                     }
-                } else if (activeConnection == null) {
+                } else if (activeConnection == null || clientId == null) {
                     throw new AssertionError("no active connection");
                 }
             }
