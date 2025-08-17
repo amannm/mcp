@@ -38,7 +38,7 @@ description: MCP Specification Expert
 
 # Environment
 
-- Internet egress: `proxy:8080`
+- Unrestricted internet access enabled
 - Java toolchain: `graalvm-jdk-24` with `gradle` 
 
 # Knowledge
