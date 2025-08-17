@@ -149,7 +149,7 @@ public final class ServerFeaturesSteps {
         }
     }
 
-    @When("I send a \"tools/list\" request")
+    @When("I send a \"tools\\/list\" request")
     public void i_send_a_tools_list_request() throws Exception {
         if (activeConnection == null || clientId == null) {
             throw new IllegalStateException("connection not established");
@@ -206,7 +206,7 @@ public final class ServerFeaturesSteps {
         }
     }
 
-    @When("I send a \"tools/list\" request with pagination parameters")
+    @When("I send a \"tools\\/list\" request with pagination parameters")
     public void i_send_a_tools_list_request_with_pagination_parameters() throws Exception {
         if (activeConnection == null || clientId == null) {
             throw new IllegalStateException("connection not established");
@@ -393,7 +393,7 @@ public final class ServerFeaturesSteps {
         }
     }
 
-    @Then("I should receive a \"notifications/tools/list_changed\" notification")
+    @Then("I should receive a \"notifications\\/tools\\/list_changed\" notification")
     public void i_should_receive_a_notifications_tools_list_changed_notification() {
         if (!toolListChangedNotification) {
             throw new AssertionError("notification not received", lastToolException);
@@ -467,7 +467,7 @@ public final class ServerFeaturesSteps {
         }
     }
 
-    @When("I send a \"resources/list\" request")
+    @When("I send a \"resources\\/list\" request")
     public void i_send_a_resources_list_request() throws Exception {
         try {
             activeConnection.request(clientId, RequestMethod.RESOURCES_LIST, Json.createObjectBuilder().build());
@@ -505,7 +505,7 @@ public final class ServerFeaturesSteps {
         resourceUri = uri;
     }
 
-    @When("I send a \"resources/read\" request for that URI")
+    @When("I send a \"resources\\/read\" request for that URI")
     public void i_send_a_resources_read_request_for_that_uri() throws Exception {
         try {
             JsonObject params = Json.createObjectBuilder().add("uri", resourceUri).build();
@@ -542,7 +542,7 @@ public final class ServerFeaturesSteps {
         }
     }
 
-    @Then("the content should be in valid format (text or blob)")
+    @Then("the content should be in valid format \\(text or blob)")
     public void the_content_should_be_in_valid_format_text_or_blob() {
         if (resourceContents == null) throw new AssertionError("no resource content");
         for (JsonValue v : resourceContents.getJsonArray("contents")) {
@@ -558,7 +558,7 @@ public final class ServerFeaturesSteps {
         activeConnection.request(clientId, RequestMethod.RESOURCES_TEMPLATES_LIST, Json.createObjectBuilder().build());
     }
 
-    @When("I send a \"resources/templates/list\" request")
+    @When("I send a \"resources\\/templates\\/list\" request")
     public void i_send_a_resources_templates_list_request() throws Exception {
         try {
             activeConnection.request(clientId, RequestMethod.RESOURCES_TEMPLATES_LIST, Json.createObjectBuilder().build());
@@ -1092,7 +1092,7 @@ public final class ServerFeaturesSteps {
         // No-op
     }
 
-    @When("I send a \"completion/complete\" request for prompt argument completion:")
+    @When("I send a \"completion\\/complete\" request for prompt argument completion:")
     public void i_send_a_completion_complete_request_for_prompt_argument_completion(DataTable table) throws Exception {
         Map<String, String> row = table.asMaps(String.class, String.class).getFirst();
         JsonObject ref = Json.createObjectBuilder()
