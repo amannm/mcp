@@ -23,6 +23,7 @@ public final class ServerFeaturesSteps {
     private String clientId;
     private final Set<ServerCapability> serverCapabilities = EnumSet.noneOf(ServerCapability.class);
     private final Set<ServerFeature> serverFeatures = EnumSet.noneOf(ServerFeature.class);
+    private ServerCapability lastCapabilityChecked;
     private List<Tool> availableTools = List.of();
     private ListToolsResult firstPage;
     private ListToolsResult secondPage;
@@ -127,6 +128,7 @@ public final class ServerFeaturesSteps {
         if (!serverCapabilities.contains(cap)) {
             throw new AssertionError("Capability not declared: " + capability);
         }
+        lastCapabilityChecked = cap;
     }
 
     @Then("the capability should include {string} configuration")
@@ -134,8 +136,36 @@ public final class ServerFeaturesSteps {
         if (!"listChanged".equals(configuration)) {
             throw new IllegalArgumentException("Unsupported configuration: " + configuration);
         }
-        if (!serverFeatures.contains(ServerFeature.TOOLS_LIST_CHANGED)) {
+        if (lastCapabilityChecked == null) {
+            throw new IllegalStateException("no capability checked");
+        }
+        ServerFeature expected = switch (lastCapabilityChecked) {
+            case TOOLS -> ServerFeature.TOOLS_LIST_CHANGED;
+            case PROMPTS -> ServerFeature.PROMPTS_LIST_CHANGED;
+            case RESOURCES -> ServerFeature.RESOURCES_LIST_CHANGED;
+            default -> throw new IllegalArgumentException("Unsupported capability: " + lastCapabilityChecked);
+        };
+        if (!serverFeatures.contains(expected)) {
             throw new AssertionError("Configuration not present: " + configuration);
+        }
+    }
+
+    @Then("the capability may include optional features:")
+    public void the_capability_may_include_optional_features(DataTable table) {
+        EnumSet<ServerFeature> allowed = EnumSet.noneOf(ServerFeature.class);
+        for (Map<String, String> row : table.asMaps(String.class, String.class)) {
+            String feature = row.get("feature");
+            ServerFeature f = switch (feature) {
+                case "subscribe" -> ServerFeature.RESOURCES_SUBSCRIBE;
+                case "listChanged" -> ServerFeature.RESOURCES_LIST_CHANGED;
+                default -> throw new IllegalArgumentException("Unknown feature: " + feature);
+            };
+            allowed.add(f);
+        }
+        EnumSet<ServerFeature> present = EnumSet.copyOf(serverFeatures);
+        present.retainAll(EnumSet.of(ServerFeature.RESOURCES_SUBSCRIBE, ServerFeature.RESOURCES_LIST_CHANGED));
+        if (!allowed.containsAll(present)) {
+            throw new AssertionError("unexpected resource feature");
         }
     }
 
