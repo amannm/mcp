@@ -51,6 +51,16 @@ public final class ServerFeaturesSteps {
     private boolean promptListChangedNotification;
     private final List<Map<String, String>> promptErrorScenarios = new ArrayList<>();
 
+    private static final Map<String, Integer> LOG_LEVELS = Map.ofEntries(
+            Map.entry("emergency", 0),
+            Map.entry("alert", 1),
+            Map.entry("critical", 2),
+            Map.entry("error", 3),
+            Map.entry("warning", 4),
+            Map.entry("notice", 5),
+            Map.entry("info", 6),
+            Map.entry("debug", 7)
+    );
     private boolean loggingLevelAccepted;
     private final List<JsonObject> logMessages = new ArrayList<>();
     private final List<Map<String, String>> loggingErrorScenarios = new ArrayList<>();
@@ -998,7 +1008,14 @@ public final class ServerFeaturesSteps {
 
     @Then("only messages at {string} level and above should be sent")
     public void only_messages_at_level_and_above_should_be_sent(String level) {
-        // TODO validate log level filtering when accessible
+        int threshold = LOG_LEVELS.getOrDefault(level, Integer.MAX_VALUE);
+        for (JsonObject msg : logMessages) {
+            String lvl = msg.getString("level", "");
+            int value = LOG_LEVELS.getOrDefault(lvl, Integer.MAX_VALUE);
+            if (value < threshold) {
+                throw new AssertionError("log level below threshold: " + lvl);
+            }
+        }
     }
 
     @Given("I have set an appropriate log level")
@@ -1041,14 +1058,27 @@ public final class ServerFeaturesSteps {
     }
 
     @When("I configure different log levels")
-    public void i_configure_different_log_levels(DataTable table) {
+    public void i_configure_different_log_levels() {
         logMessages.clear();
-        logMessages.add(Json.createObjectBuilder().add("level", "debug").build());
+        for (String lvl : LOG_LEVELS.keySet()) {
+            logMessages.add(Json.createObjectBuilder().add("level", lvl).build());
+        }
     }
 
     @Then("the server should respect the severity hierarchy:")
     public void the_server_should_respect_the_severity_hierarchy(DataTable table) {
-        if (table.asMaps().isEmpty()) throw new AssertionError("no log levels configured");
+        for (Map<String, String> row : table.asMaps(String.class, String.class)) {
+            String level = row.get("level");
+            int expected = Integer.parseInt(row.get("numeric_value"));
+            boolean include = Boolean.parseBoolean(row.get("should_include_above"));
+            Integer actual = LOG_LEVELS.get(level);
+            if (actual == null || actual != expected) {
+                throw new AssertionError("numeric mismatch for " + level);
+            }
+            if (!include) {
+                throw new AssertionError("unexpected exclusion for " + level);
+            }
+        }
     }
 
     @Given("the server has logging capability")
