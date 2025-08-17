@@ -233,16 +233,22 @@ public final class McpServer extends JsonRpcEndpoint implements AutoCloseable {
         }
     }
 
-    private Optional<JsonObject> receiveMessage() throws IOException {
+    private Optional<JsonObject> receiveMessage() {
         try {
             return Optional.of(transport.receive());
         } catch (EOFException e) {
             shutdown();
-            return Optional.empty();
         } catch (JsonParsingException e) {
             handleParseError(e);
-            return Optional.empty();
+        } catch (IOException e) {
+            System.err.println(config.errorProcessing() + ": " + e.getMessage());
+            try {
+                sendLog(LoggingLevel.ERROR, config.serverLoggerName(), Json.createValue(e.getMessage()));
+            } catch (IOException ioe) {
+                System.err.println("Failed to send error: " + ioe.getMessage());
+            }
         }
+        return Optional.empty();
     }
 
     private void handleParseError(JsonParsingException e) {
