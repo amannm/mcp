@@ -462,14 +462,15 @@ public final class ProtocolLifecycleSteps {
         }
     }
 
-    @Then("I should receive a proper error response indicating {string}")
-    public void i_should_receive_a_proper_error_response_indicating(String errorType) {
+    @Then("I should receive a proper error response indicating {string} with code {int}")
+    public void i_should_receive_a_proper_error_response_indicating(String errorType, int errorCode) {
         if (!Objects.equals(lastErrorMessage, errorType)) {
             throw new AssertionError("expected error '%s', got '%s'"
                     .formatted(errorType, lastErrorMessage));
         }
-        if (lastErrorCode == 0) {
-            throw new AssertionError("no error code set");
+        if (lastErrorCode != errorCode) {
+            throw new AssertionError("expected error code %d, got %d"
+                    .formatted(errorCode, lastErrorCode));
         }
     }
 
@@ -758,9 +759,10 @@ public final class ProtocolLifecycleSteps {
         for (Map<String, String> scenario : errorScenarios) {
             String errorSituation = scenario.get("error_situation");
             String errorType = scenario.get("error_type");
-            
+            int errorCode = Integer.parseInt(scenario.get("error_code"));
+
             error_occurs_during_communication(errorSituation);
-            i_should_receive_a_proper_error_response_indicating(errorType);
+            i_should_receive_a_proper_error_response_indicating(errorType, errorCode);
         }
     }
     

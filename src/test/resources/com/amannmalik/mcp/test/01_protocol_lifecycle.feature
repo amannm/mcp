@@ -104,11 +104,11 @@ Feature: MCP Connection Lifecycle
     # Tests specification/2025-06-18/basic/index.mdx:64-78 (Error response format)
     Given I have an established MCP connection
     When I test error handling with the following scenarios:
-      | error_situation              | error_type           |
-      | malformed request            | Parse error          |
-      | invalid method request       | Method not found     |
-      | invalid parameters           | Invalid params       |
-      | server internal error        | Internal error       |
+      | error_situation              | error_type       | error_code |
+      | malformed request            | Parse error      | -32700     |
+      | invalid method request       | Method not found | -32601     |
+      | invalid parameters           | Invalid params   | -32602     |
+      | server internal error        | Internal error   | -32603     |
     Then I should receive proper error responses for each scenario
 
   @connection @cleanup
