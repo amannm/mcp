@@ -432,7 +432,8 @@ public final class SecurityErrorsSteps {
     @Then("appropriate error messages should be returned")
     public void appropriate_error_messages_should_be_returned() {
         for (Map<String, String> row : maliciousInputScenarios) {
-            if (row.get("expected_behavior") == null) {
+            String behavior = row.get("expected_behavior");
+            if (behavior == null || behavior.isBlank()) {
                 throw new AssertionError("missing error behaviour");
             }
         }
