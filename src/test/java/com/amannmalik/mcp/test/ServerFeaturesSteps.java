@@ -2,8 +2,12 @@ package com.amannmalik.mcp.test;
 
 import com.amannmalik.mcp.api.*;
 import com.amannmalik.mcp.spi.Cursor;
+import com.amannmalik.mcp.spi.ListToolsResult;
+import com.amannmalik.mcp.spi.Tool;
+import io.cucumber.datatable.DataTable;
 import io.cucumber.java.After;
 import io.cucumber.java.en.*;
+import jakarta.json.JsonObject;
 
 import java.io.IOException;
 import java.nio.file.Path;
@@ -15,6 +19,7 @@ public final class ServerFeaturesSteps {
     private String clientId;
     private final Set<ServerCapability> serverCapabilities = EnumSet.noneOf(ServerCapability.class);
     private final Set<ServerFeature> serverFeatures = EnumSet.noneOf(ServerFeature.class);
+    private List<Tool> availableTools = List.of();
 
     @Given("an established MCP connection with server capabilities")
     public void an_established_mcp_connection_with_server_capabilities() throws Exception {
@@ -88,6 +93,65 @@ public final class ServerFeaturesSteps {
         }
     }
 
+    @Given("the server has tools capability enabled")
+    public void the_server_has_tools_capability_enabled() {
+        if (activeConnection == null || clientId == null) {
+            throw new IllegalStateException("connection not established");
+        }
+        if (!activeConnection.serverCapabilities(clientId).contains(ServerCapability.TOOLS)) {
+            throw new AssertionError("Tools capability not enabled");
+        }
+    }
+
+    @When("I send a \"tools/list\" request")
+    public void i_send_a_tools_list_request() throws Exception {
+        if (activeConnection == null || clientId == null) {
+            throw new IllegalStateException("connection not established");
+        }
+        ListToolsResult result = activeConnection.listTools(clientId, Cursor.Start.INSTANCE);
+        availableTools = result.tools();
+    }
+
+    @Then("I should receive a list of available tools")
+    public void i_should_receive_a_list_of_available_tools() {
+        if (availableTools.isEmpty()) {
+            throw new AssertionError("No tools received");
+        }
+    }
+
+    @Then("each tool should have required fields:")
+    public void each_tool_should_have_required_fields(DataTable table) {
+        List<Map<String, String>> rows = table.asMaps(String.class, String.class);
+        for (Tool tool : availableTools) {
+            for (Map<String, String> row : rows) {
+                String field = row.get("field");
+                String type = row.get("type");
+                boolean required = Boolean.parseBoolean(row.get("required"));
+                Object value = switch (field) {
+                    case "name" -> tool.name();
+                    case "description" -> tool.description();
+                    case "inputSchema" -> tool.inputSchema();
+                    case "title" -> tool.title();
+                    case "outputSchema" -> tool.outputSchema();
+                    default -> throw new IllegalArgumentException("Unknown field: " + field);
+                };
+                if (required && value == null) {
+                    throw new AssertionError("Missing field: " + field);
+                }
+                if (value != null) {
+                    boolean matches = switch (type) {
+                        case "string" -> value instanceof String;
+                        case "object" -> value instanceof JsonObject;
+                        default -> throw new IllegalArgumentException("Unknown type: " + type);
+                    };
+                    if (!matches) {
+                        throw new AssertionError("Field %s not of type %s".formatted(field, type));
+                    }
+                }
+            }
+        }
+    }
+
     @After
     public void closeConnection() throws IOException {
         if (activeConnection != null) {
@@ -96,6 +160,7 @@ public final class ServerFeaturesSteps {
             clientId = null;
             serverCapabilities.clear();
             serverFeatures.clear();
+            availableTools = List.of();
         }
     }
 }
