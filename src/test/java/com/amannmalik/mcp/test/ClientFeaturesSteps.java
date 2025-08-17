@@ -9,6 +9,7 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.time.Duration;
 import java.util.*;
+import java.util.stream.Collectors;
 
 public final class ClientFeaturesSteps {
     private McpHost activeConnection;
@@ -16,6 +17,7 @@ public final class ClientFeaturesSteps {
     private final Set<ClientCapability> clientCapabilities = EnumSet.noneOf(ClientCapability.class);
     private final Map<ClientCapability, Boolean> capabilityOptions = new EnumMap<>(ClientCapability.class);
     private final List<Map<String, String>> configuredRoots = new ArrayList<>();
+    private final List<Map<String, String>> returnedRoots = new ArrayList<>();
     private final List<Map<String, String>> negotiationConfigs = new ArrayList<>();
     private final List<String> negotiationResults = new ArrayList<>();
     private final Set<ClientCapability> undeclaredCapabilities = EnumSet.noneOf(ClientCapability.class);
@@ -87,6 +89,7 @@ public final class ClientFeaturesSteps {
         clientCapabilities.clear();
         capabilityOptions.clear();
         configuredRoots.clear();
+        returnedRoots.clear();
         negotiationConfigs.clear();
         negotiationResults.clear();
         undeclaredCapabilities.clear();
@@ -214,10 +217,13 @@ public final class ClientFeaturesSteps {
 
     @When("I receive a roots/list request")
     public void i_receive_a_roots_list_request() {
+        returnedRoots.clear();
         if (!clientCapabilities.contains(ClientCapability.ROOTS)) {
             lastErrorCode = -32601;
             lastErrorMessage = "Roots not supported";
+            return;
         }
+        returnedRoots.addAll(configuredRoots);
     }
 
     @When("I configure roots for server access")
@@ -342,9 +348,21 @@ public final class ClientFeaturesSteps {
         }
     }
 
+    @Then("I should return all configured roots")
+    public void i_should_return_all_configured_roots() {
+        if (returnedRoots.size() != configuredRoots.size()) {
+            throw new AssertionError("root count mismatch");
+        }
+        var expected = configuredRoots.stream().map(r -> r.get("uri")).collect(Collectors.toSet());
+        var actual = returnedRoots.stream().map(r -> r.get("uri")).collect(Collectors.toSet());
+        if (!expected.equals(actual)) {
+            throw new AssertionError("roots mismatch");
+        }
+    }
+
     @Then("each root should have a valid file:// URI")
     public void each_root_should_have_a_valid_file_uri() {
-        for (Map<String, String> root : configuredRoots) {
+        for (Map<String, String> root : returnedRoots) {
             String uri = root.get("uri");
             if (uri == null || !uri.startsWith("file://")) {
                 throw new AssertionError("invalid uri: " + uri);
@@ -354,7 +372,7 @@ public final class ClientFeaturesSteps {
 
     @Then("each root should include an optional human-readable name")
     public void each_root_should_include_an_optional_human_readable_name() {
-        for (Map<String, String> root : configuredRoots) {
+        for (Map<String, String> root : returnedRoots) {
             if (!root.containsKey("name")) {
                 throw new AssertionError("missing root name");
             }
