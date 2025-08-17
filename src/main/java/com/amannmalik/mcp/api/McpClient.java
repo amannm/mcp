@@ -370,7 +370,7 @@ final class McpClient extends JsonRpcEndpoint implements AutoCloseable {
         }
         CompletableFuture<JsonRpcMessage> future = CompletableFuture.supplyAsync(() -> {
             try {
-                return CODEC.fromJson(transport.receive());
+                return CODEC.fromJson(transport.receive(initializationTimeout));
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }

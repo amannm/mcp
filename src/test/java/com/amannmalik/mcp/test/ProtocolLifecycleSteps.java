@@ -177,8 +177,11 @@ public final class ProtocolLifecycleSteps {
     public void a_transport_mechanism_is_available() {
         McpClientConfiguration base = McpClientConfiguration.defaultConfiguration("client", "client", "default");
         String java = System.getProperty("java.home") + "/bin/java";
+        String mp = System.getProperty("java.module.path");
         String cp = System.getProperty("java.class.path");
-        String cmd = java + " -cp " + cp + " com.amannmalik.mcp.cli.Entrypoint server --stdio --test-mode";
+        String cmd = (mp != null && !mp.isBlank())
+                ? java + " --module-path " + mp + " -m mcp.main/com.amannmalik.mcp.cli.Entrypoint server --stdio --test-mode"
+                : java + " -cp " + cp + " com.amannmalik.mcp.cli.Entrypoint server --stdio --test-mode";
         clientConfig = configureWithCommand(base, cmd);
         updateHostConfiguration();
     }
