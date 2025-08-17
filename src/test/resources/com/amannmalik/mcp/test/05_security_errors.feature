@@ -17,15 +17,15 @@ Feature: MCP Security Error Handling
     # Tests specification/2025-06-18/basic/authorization.mdx:89-92 (WWW-Authenticate header)
     Given an MCP server requiring authorization
     When I test authorization scenarios:
-      | auth_header              | expected_status | expected_error        | www_authenticate_header |
-      | missing                  | 401             | Unauthorized          | Bearer resource="https://mcp.example.com/.well-known/oauth-protected-resource" |
-      | empty_string             | 401             | Unauthorized          | Bearer resource="https://mcp.example.com/.well-known/oauth-protected-resource" |
-      | malformed_bearer         | 401             | Unauthorized          | Bearer resource="https://mcp.example.com/.well-known/oauth-protected-resource" |
-      | Bearer invalid_token     | 401             | Unauthorized          | Bearer resource="https://mcp.example.com/.well-known/oauth-protected-resource" |
-      | Bearer expired_token     | 401             | Unauthorized          | Bearer resource="https://mcp.example.com/.well-known/oauth-protected-resource" |
-      | Basic username:password  | 401             | Unauthorized          | Bearer resource="https://mcp.example.com/.well-known/oauth-protected-resource" |
+      | auth_header              | expected_status | expected_error |
+      | missing                  | 401             | Unauthorized   |
+      | empty_string             | 401             | Unauthorized   |
+      | malformed_bearer         | 401             | Unauthorized   |
+      | Bearer invalid_token     | 401             | Unauthorized   |
+      | Bearer expired_token     | 401             | Unauthorized   |
+      | Basic username:password  | 401             | Unauthorized   |
     Then I should receive appropriate HTTP error responses
-    And the WWW-Authenticate header should be included for 401 responses
+    And the WWW-Authenticate header should be "Bearer resource=https://mcp.example.com/.well-known/oauth-protected-resource" for 401 responses
 
   @authorization @token-validation
   Scenario: Token audience validation errors
