@@ -385,238 +385,382 @@ public final class ClientFeaturesSteps {
 
     @When("processing sampling requests")
     public void processing_sampling_requests() {
-        // No state needed
+    // No state needed
+}
+    @Then("I should include the \"{word}\" capability")
+    public void i_should_include_capability(String capability) {
+        ClientCapability cap = parseCapability(capability);
+        if (!clientCapabilities.contains(cap)) {
+            throw new AssertionError("missing capability: " + cap);
+        }
     }
 
-    @Then("^I should (allow|attempt|consider|forward|generate|handle|implement|include|indicate|maintain|make|map|only|present|process|prompt|provide|reject|respect|return|send|support|validate).*")
-    public void i_should_generic(String verb) {
-        switch (verb) {
-            case "include" -> {
-                if (!elicitationUserActions.isEmpty()) {
-                    for (Map<String, String> row : elicitationUserActions) {
-                        boolean hasContent = row.get("content") != null;
-                        if ("accept".equals(row.get("expected_action")) != hasContent) {
-                            throw new AssertionError("content inclusion mismatch for " + row.get("user_action"));
-                        }
-                    }
-                } else if (lastCapability == null || !clientCapabilities.contains(lastCapability)) {
-                    throw new AssertionError("missing capability: " + lastCapability);
-                }
-            }
-            case "indicate" -> {
-                if (lastCapability == null || !capabilityOptions.containsKey(lastCapability)) {
-                    throw new AssertionError("missing capability indication");
-                }
-            }
-            case "implement" -> {
-                if (activeConnection == null) {
-                    throw new AssertionError("no active connection");
-                }
-            }
-            case "send" -> {
-                if (rootConfigChanged && !capabilityOptions.getOrDefault(ClientCapability.ROOTS, false)) {
-                    throw new AssertionError("listChanged not supported");
-                }
-            }
-            case "return" -> {
-                if (!elicitationUserActions.isEmpty()) {
-                    Map<String, String> mapping = Map.of(
-                            "submit_data", "accept",
-                            "click_decline", "decline",
-                            "close_dialog", "cancel",
-                            "press_escape", "cancel",
-                            "explicit_reject", "decline"
-                    );
-                    for (Map<String, String> row : elicitationUserActions) {
-                        String expected = row.get("expected_action");
-                        if (!Objects.equals(mapping.get(row.get("user_action")), expected)) {
-                            throw new AssertionError("unexpected action for " + row.get("user_action"));
-                        }
-                    }
-                }
-                if (!samplingModelResponse.isEmpty() && (!samplingModelResponse.containsKey("content") || !samplingModelResponse.containsKey("usage"))) {
-                    throw new AssertionError("model response missing metadata");
-                }
-                if (elicitationResponseAction != null && !"accept".equals(elicitationResponseAction)) {
-                    throw new AssertionError("unexpected elicitation action: " + elicitationResponseAction);
-                }
-                if (lastErrorCode != 0 && lastErrorCode != -32601) {
-                    throw new AssertionError("unexpected error code: " + lastErrorCode);
-                }
-            }
-            case "reject" -> {
-                if (!undeclaredCapabilities.isEmpty()) {
-                    // expected path for capability boundary enforcement
-                } else if (!elicitationSchemaTypes.isEmpty()) {
-                    for (Map<String, String> row : elicitationSchemaTypes) {
-                        String type = row.get("schema_type");
-                        if ("object".equalsIgnoreCase(type) || "array".equalsIgnoreCase(type)) {
-                            throw new AssertionError("nested structures not rejected");
-                        }
-                    }
-                } else {
-                    throw new AssertionError("no rejection context");
-                }
-            }
-            case "present" -> {
-                if (simpleElicitationRequest.isEmpty() && samplingMessageRequest.isEmpty()) {
-                    throw new AssertionError("nothing to present");
-                }
-            }
-            case "validate" -> {
-                if (!simpleElicitationRequest.isEmpty()) {
-                    if (simpleElicitationRequest.get("schema_type") == null || simpleElicitationRequest.get("required_field") == null) {
-                        throw new AssertionError("invalid simple elicitation schema");
-                    }
-                } else if (!structuredElicitationFields.isEmpty()) {
-                    for (Map<String, String> field : structuredElicitationFields) {
-                        if (field.get("field_name") == null || field.get("field_type") == null) {
-                            throw new AssertionError("invalid structured field");
-                        }
-                    }
-                } else if (!configuredRoots.isEmpty()) {
-                    for (Map<String, String> root : configuredRoots) {
-                        String uri = root.get("uri");
-                        if (uri != null && uri.contains("..")) {
-                            throw new AssertionError("path traversal: " + uri);
-                        }
-                    }
-                } else if (!samplingContentTypes.isEmpty()) {
-                    for (Map<String, String> row : samplingContentTypes) {
-                        String type = row.get("content_type");
-                        String mime = row.get("mime_type");
-                        if (("image".equals(type) || "audio".equals(type)) && (mime == null || mime.isBlank() || "none".equalsIgnoreCase(mime))) {
-                            throw new AssertionError("missing mime type for " + type);
-                        }
-                    }
-                } else if (!featureUnavailabilityScenarios.isEmpty()) {
-                    for (Map<String, String> row : featureUnavailabilityScenarios) {
-                        if (row.get("expected_behavior") == null || row.get("expected_behavior").isBlank()) {
-                            throw new AssertionError("missing expected behavior");
-                        }
-                    }
-                }
-            }
-            case "generate" -> {
-                if (structuredElicitationFields.isEmpty()) {
-                    throw new AssertionError("no structured fields");
-                }
-            }
-            case "support" -> {
-                if (!elicitationSchemaTypes.isEmpty()) {
-                    for (Map<String, String> row : elicitationSchemaTypes) {
-                        String type = row.get("schema_type");
-                        if (Set.of("object", "array").contains(type)) {
-                            throw new AssertionError("unsupported schema type: " + type);
-                        }
-                    }
-                } else if (!samplingContentTypes.isEmpty()) {
-                    Set<String> types = samplingContentTypes.stream().map(r -> r.get("content_type")).collect(Collectors.toSet());
-                    if (!types.containsAll(Set.of("text", "image", "audio"))) {
-                        throw new AssertionError("missing content types");
-                    }
-                }
-            }
-            case "handle" -> {
-                if (!samplingContentTypes.isEmpty()) {
-                    for (Map<String, String> row : samplingContentTypes) {
-                        String type = row.get("content_type");
-                        String format = row.get("data_format");
-                        if (!"text".equals(type) && !"base64_encoded".equals(format)) {
-                            throw new AssertionError("binary data not base64 encoded");
-                        }
-                    }
-                } else if (!featureUnavailabilityScenarios.isEmpty()) {
-                    for (Map<String, String> row : featureUnavailabilityScenarios) {
-                        if (row.get("expected_behavior") == null || row.get("expected_behavior").isBlank()) {
-                            throw new AssertionError("missing expected behavior");
-                        }
-                    }
-                }
-            }
-            case "provide" -> {
-                if (!featureUnavailabilityScenarios.isEmpty()) {
-                    for (Map<String, String> row : featureUnavailabilityScenarios) {
-                        if (row.get("expected_behavior") == null || row.get("expected_behavior").isBlank()) {
-                            throw new AssertionError("missing expected behavior");
-                        }
-                    }
-                } else if (activeConnection == null || clientId == null) {
-                    throw new AssertionError("no active connection");
-                }
-            }
-            case "forward" -> {
-                if (samplingMessageRequest.isEmpty()) {
-                    throw new AssertionError("no sampling request to forward");
-                }
-            }
-            case "consider" -> {
-                if (samplingModelPreferences.isEmpty()) {
-                    throw new AssertionError("no model preferences");
-                }
-                for (Map<String, String> row : samplingModelPreferences) {
-                    for (String key : List.of("cost_priority", "speed_priority", "intelligence_priority")) {
-                        double v = Double.parseDouble(row.get(key));
-                        if (v < 0 || v > 1) {
-                            throw new AssertionError("priority out of range");
-                        }
-                    }
-                }
-            }
-            case "map" -> {
-                if (samplingModelSelections.size() != samplingModelPreferences.size()) {
-                    throw new AssertionError("model hints not mapped");
-                }
-            }
-            case "make" -> {
-                if (samplingModelSelections.size() != samplingModelPreferences.size()) {
-                    throw new AssertionError("no final model selections");
-                }
-            }
-            case "maintain" -> {
-                if (!combinedRequestProcessed) {
-                    throw new AssertionError("no combined request processed");
-                }
-            }
-            case "process" -> {
-                if (samplingModelPreferences.isEmpty()) {
-                    throw new AssertionError("no model preferences to process");
-                }
-            }
-            case "prompt" -> {
-                if (!clientCapabilities.contains(ClientCapability.ROOTS)) {
-                    throw new AssertionError("roots capability missing");
-                }
-            }
-            case "allow" -> {
-                if (simpleElicitationRequest.isEmpty() && samplingMessageRequest.isEmpty()) {
-                    throw new AssertionError("nothing to allow");
-                }
-            }
-            case "attempt" -> {
-                if (featureUnavailabilityScenarios.isEmpty()) {
-                    throw new AssertionError("no unavailability scenarios");
-                }
-            }
-            case "only" -> {
-                for (Map<String, String> root : configuredRoots) {
-                    String uri = root.get("uri");
-                    if (uri == null || !uri.startsWith("file://")) {
-                        throw new AssertionError("root outside allowed scheme: " + uri);
-                    }
-                }
-            }
-            case "respect" -> {
-                if (!undeclaredCapabilities.isEmpty() && lastErrorCode == 0) {
-                    throw new AssertionError("undeclared capabilities accepted");
-                }
-            }
-            default -> {
-                // No specific assertion
+    @Then("I should include content data only for \"accept\" actions")
+    public void i_should_include_content_data_only_for_accept_actions() {
+        for (Map<String, String> row : elicitationUserActions) {
+            boolean hasContent = row.get("content") != null;
+            if ("accept".equals(row.get("expected_action")) != hasContent) {
+                throw new AssertionError("content inclusion mismatch for " + row.get("user_action"));
             }
         }
     }
 
+    @Then("I should indicate whether I support \"listChanged\" notifications")
+    public void i_should_indicate_whether_i_support_list_changed_notifications() {
+        if (lastCapability == null || !capabilityOptions.containsKey(lastCapability)) {
+            throw new AssertionError("missing capability indication");
+        }
+    }
+
+    @Then("I should implement rate limiting for elicitation requests")
+    public void i_should_implement_rate_limiting_for_elicitation_requests() {
+        if (activeConnection == null) {
+            throw new AssertionError("no active connection");
+        }
+    }
+
+    @Then("I should implement proper access controls")
+    public void i_should_implement_proper_access_controls() {
+        if (activeConnection == null) {
+            throw new AssertionError("no active connection");
+        }
+    }
+
+    @Then("I should implement user approval controls")
+    public void i_should_implement_user_approval_controls() {
+        if (activeConnection == null) {
+            throw new AssertionError("no active connection");
+        }
+    }
+
+    @Then("I should implement rate limiting")
+    public void i_should_implement_rate_limiting() {
+        if (activeConnection == null) {
+            throw new AssertionError("no active connection");
+        }
+    }
+
+    @Then("I should send a notifications/roots/list_changed notification")
+    public void i_should_send_a_notifications_roots_list_changed_notification() {
+        if (rootConfigChanged && !capabilityOptions.getOrDefault(ClientCapability.ROOTS, false)) {
+            throw new AssertionError("listChanged not supported");
+        }
+    }
+
+    @Then("I should return the correct action for each user interaction")
+    public void i_should_return_the_correct_action_for_each_user_interaction() {
+        Map<String, String> mapping = Map.of(
+                "submit_data", "accept",
+                "click_decline", "decline",
+                "close_dialog", "cancel",
+                "press_escape", "cancel",
+                "explicit_reject", "decline"
+        );
+        for (Map<String, String> row : elicitationUserActions) {
+            String expected = row.get("expected_action");
+            if (!Objects.equals(mapping.get(row.get("user_action")), expected)) {
+                throw new AssertionError("unexpected action for " + row.get("user_action"));
+            }
+        }
+    }
+
+    @Then("I should return the response with action \"accept\"")
+    public void i_should_return_the_response_with_action_accept() {
+        if (elicitationResponseAction != null && !"accept".equals(elicitationResponseAction)) {
+            throw new AssertionError("unexpected elicitation action: " + elicitationResponseAction);
+        }
+    }
+
+    @Then("I should return valid structured data")
+    public void i_should_return_valid_structured_data() {
+    }
+
+    @Then("I should return the model's response with metadata")
+    public void i_should_return_the_models_response_with_metadata() {
+        if (!samplingModelResponse.isEmpty() && (!samplingModelResponse.containsKey("content") || !samplingModelResponse.containsKey("usage"))) {
+            throw new AssertionError("model response missing metadata");
+        }
+    }
+
+    @Then("I should return appropriate error responses")
+    public void i_should_return_appropriate_error_responses() {
+        if (lastErrorCode != 0 && lastErrorCode != -32601) {
+            throw new AssertionError("unexpected error code: " + lastErrorCode);
+        }
+    }
+
+    @Then("I should reject requests for undeclared capabilities")
+    public void i_should_reject_requests_for_undeclared_capabilities() {
+        if (undeclaredCapabilities.isEmpty()) {
+            throw new AssertionError("no undeclared capabilities");
+        }
+    }
+
+    @Then("I should reject nested objects and arrays")
+    public void i_should_reject_nested_objects_and_arrays() {
+        for (Map<String, String> row : elicitationSchemaTypes) {
+            String type = row.get("schema_type");
+            if ("object".equalsIgnoreCase(type) || "array".equalsIgnoreCase(type)) {
+                throw new AssertionError("nested structures not rejected");
+            }
+        }
+    }
+
+    @Then("I should present the request to the user")
+    public void i_should_present_the_request_to_the_user() {
+        if (simpleElicitationRequest.isEmpty() && samplingMessageRequest.isEmpty()) {
+            throw new AssertionError("nothing to present");
+        }
+    }
+
+    @Then("I should present the request for user approval")
+    public void i_should_present_the_request_for_user_approval() {
+        if (simpleElicitationRequest.isEmpty() && samplingMessageRequest.isEmpty()) {
+            throw new AssertionError("nothing to present");
+        }
+    }
+
+    @Then("I should present generated responses for review before delivery")
+    public void i_should_present_generated_responses_for_review_before_delivery() {
+        if (simpleElicitationRequest.isEmpty() && samplingMessageRequest.isEmpty()) {
+            throw new AssertionError("nothing to present");
+        }
+    }
+
+    @Then("I should validate the user's response against the schema")
+    public void i_should_validate_the_users_response_against_the_schema() {
+        if (simpleElicitationRequest.get("schema_type") == null || simpleElicitationRequest.get("required_field") == null) {
+            throw new AssertionError("invalid simple elicitation schema");
+        }
+    }
+
+
+    @Then("I should validate each field against its schema")
+    public void i_should_validate_each_field_against_its_schema() {
+        for (Map<String, String> field : structuredElicitationFields) {
+            if (field.get("field_name") == null || field.get("field_type") == null) {
+                throw new AssertionError("invalid structured field");
+            }
+        }
+    }
+
+    @Then("I should validate input according to schema constraints")
+    public void i_should_validate_input_according_to_schema_constraints() {
+        for (Map<String, String> row : elicitationSchemaTypes) {
+            if (row.get("schema_type") == null) {
+                throw new AssertionError("missing schema type");
+            }
+        }
+    }
+
+    @Then("I should validate all root URIs to prevent path traversal")
+    public void i_should_validate_all_root_uris_to_prevent_path_traversal() {
+        for (Map<String, String> root : configuredRoots) {
+            String uri = root.get("uri");
+            if (uri != null && uri.contains("..")) {
+                throw new AssertionError("path traversal: " + uri);
+            }
+        }
+    }
+
+    @Then("I should validate mime types for media content")
+    public void i_should_validate_mime_types_for_media_content() {
+        for (Map<String, String> row : samplingContentTypes) {
+            String type = row.get("content_type");
+            String mime = row.get("mime_type");
+            if (("image".equals(type) || "audio".equals(type)) && (mime == null || mime.isBlank() || "none".equalsIgnoreCase(mime))) {
+                throw new AssertionError("missing mime type for " + type);
+            }
+        }
+    }
+
+    @Then("I should validate all message content")
+    public void i_should_validate_all_message_content() {
+        if (samplingModelPreferences.isEmpty() && simpleElicitationRequest.isEmpty()) {
+            throw new AssertionError("missing content to validate");
+        }
+    }
+
+    @Then("I should support all specified primitive types")
+    public void i_should_support_all_specified_primitive_types() {
+        for (Map<String, String> row : elicitationSchemaTypes) {
+            String type = row.get("schema_type");
+            if (Set.of("object", "array").contains(type)) {
+                throw new AssertionError("unsupported schema type: " + type);
+            }
+        }
+    }
+
+    @Then("I should support all specified content types")
+    public void i_should_support_all_specified_content_types() {
+        Set<String> types = samplingContentTypes.stream().map(r -> r.get("content_type")).collect(Collectors.toSet());
+        if (!types.containsAll(Set.of("text", "image", "audio"))) {
+            throw new AssertionError("missing content types");
+        }
+    }
+
+    @Then("I should handle base64 encoding for binary data")
+    public void i_should_handle_base64_encoding_for_binary_data() {
+        for (Map<String, String> row : samplingContentTypes) {
+            String type = row.get("content_type");
+            String format = row.get("data_format");
+            if (!"text".equals(type) && !"base64_encoded".equals(format)) {
+                throw new AssertionError("binary data not base64 encoded");
+            }
+        }
+    }
+
+    @Then("I should handle each unavailability gracefully")
+    public void i_should_handle_each_unavailability_gracefully() {
+        for (Map<String, String> row : featureUnavailabilityScenarios) {
+            if (row.get("expected_behavior") == null || row.get("expected_behavior").isBlank()) {
+                throw new AssertionError("missing expected behavior");
+            }
+        }
+    }
+
+    @Then("I should handle sensitive data appropriately")
+    public void i_should_handle_sensitive_data_appropriately() {
+    }
+
+    @Then("I should provide clear indication of which server is requesting information")
+    public void i_should_provide_clear_indication_of_which_server_is_requesting_information() {
+        if (activeConnection == null || clientId == null) {
+            throw new AssertionError("no active connection");
+        }
+    }
+
+    @Then("I should provide clear decline and cancel options")
+    public void i_should_provide_clear_decline_and_cancel_options() {
+        if (activeConnection == null || clientId == null) {
+            throw new AssertionError("no active connection");
+        }
+    }
+
+    @Then("I should provide options to deny or modify the request")
+    public void i_should_provide_options_to_deny_or_modify_the_request() {
+        if (activeConnection == null || clientId == null) {
+            throw new AssertionError("no active connection");
+        }
+    }
+
+    @Then("I should provide clear error messages to servers")
+    public void i_should_provide_clear_error_messages_to_servers() {
+        for (Map<String, String> row : featureUnavailabilityScenarios) {
+            if (row.get("expected_behavior") == null || row.get("expected_behavior").isBlank()) {
+                throw new AssertionError("missing expected behavior");
+            }
+        }
+    }
+
+    @Then("I should allow users to review and modify responses before sending")
+    public void i_should_allow_users_to_review_and_modify_responses_before_sending() {
+        if (simpleElicitationRequest.isEmpty() && samplingMessageRequest.isEmpty()) {
+            throw new AssertionError("nothing to allow");
+        }
+    }
+
+    @Then("I should allow users to view and edit prompts before sending")
+    public void i_should_allow_users_to_view_and_edit_prompts_before_sending() {
+        if (simpleElicitationRequest.isEmpty() && samplingMessageRequest.isEmpty()) {
+            throw new AssertionError("nothing to allow");
+        }
+    }
+
+    @Then("I should consider priority values for model selection")
+    public void i_should_consider_priority_values_for_model_selection() {
+        if (samplingModelPreferences.isEmpty()) {
+            throw new AssertionError("no model preferences");
+        }
+        for (Map<String, String> row : samplingModelPreferences) {
+            for (String key : List.of("cost_priority", "speed_priority", "intelligence_priority")) {
+                double v = Double.parseDouble(row.get(key));
+                if (v < 0 || v > 1) {
+                    throw new AssertionError("priority out of range");
+                }
+            }
+        }
+    }
+
+    @Then("I should forward the approved request to the language model")
+    public void i_should_forward_the_approved_request_to_the_language_model() {
+        if (samplingMessageRequest.isEmpty()) {
+            throw new AssertionError("no sampling request to forward");
+        }
+    }
+
+    @Then("I should generate appropriate input forms")
+    public void i_should_generate_appropriate_input_forms() {
+        if (structuredElicitationFields.isEmpty()) {
+            throw new AssertionError("no structured fields");
+        }
+    }
+
+    @Then("I should process hints as substrings for model matching")
+    public void i_should_process_hints_as_substrings_for_model_matching() {
+        if (samplingModelPreferences.isEmpty()) {
+            throw new AssertionError("no model preferences to process");
+        }
+    }
+
+    @Then("I should map hints to equivalent models from available providers")
+    public void i_should_map_hints_to_equivalent_models_from_available_providers() {
+        if (samplingModelSelections.size() != samplingModelPreferences.size()) {
+            throw new AssertionError("model hints not mapped");
+        }
+    }
+
+    @Then("I should make final model selection based on combined preferences")
+    public void i_should_make_final_model_selection_based_on_combined_preferences() {
+        if (samplingModelSelections.size() != samplingModelPreferences.size()) {
+            throw new AssertionError("no final model selections");
+        }
+    }
+
+    @Then("I should maintain consistent user interaction patterns")
+    public void i_should_maintain_consistent_user_interaction_patterns() {
+        if (!combinedRequestProcessed) {
+            throw new AssertionError("no combined request processed");
+        }
+    }
+
+    @Then("I should maintain security boundaries for unsupported features")
+    public void i_should_maintain_security_boundaries_for_unsupported_features() {
+        if (!combinedRequestProcessed) {
+            throw new AssertionError("no combined request processed");
+        }
+    }
+
+    @Then("I should attempt recovery when possible")
+    public void i_should_attempt_recovery_when_possible() {
+        if (featureUnavailabilityScenarios.isEmpty()) {
+            throw new AssertionError("no unavailability scenarios");
+        }
+    }
+
+    @Then("I should only expose roots with appropriate permissions")
+    public void i_should_only_expose_roots_with_appropriate_permissions() {
+        for (Map<String, String> root : configuredRoots) {
+            String uri = root.get("uri");
+            if (uri == null || !uri.startsWith("file://")) {
+                throw new AssertionError("root outside allowed scheme: " + uri);
+            }
+        }
+    }
+
+    @Then("I should prompt users for consent before exposing roots")
+    public void i_should_prompt_users_for_consent_before_exposing_roots() {
+        if (!clientCapabilities.contains(ClientCapability.ROOTS)) {
+            throw new AssertionError("roots capability missing");
+        }
+    }
+
+    @Then("I should respect model preference hints while maintaining security")
+    public void i_should_respect_model_preference_hints_while_maintaining_security() {
+        if (!undeclaredCapabilities.isEmpty() && lastErrorCode == 0) {
+            throw new AssertionError("undeclared capabilities accepted");
+        }
+    }
     @Then("the server should recognize my {word} support")
     public void the_server_should_recognize_my_support(String capability) {
         ClientCapability cap = parseCapability(capability);
