@@ -959,12 +959,8 @@ public final class ServerFeaturesSteps {
                 .add("mimeType", "audio/wav")
                 .add("encoding", "base64")
                 .build());
-        contentTypeSamples.put("resource_link", Json.createObjectBuilder()
-                .add("type", "resource_link")
-                .add("uri", "test://example")
-                .build());
-        contentTypeSamples.put("embedded_resource", Json.createObjectBuilder()
-                .add("type", "embedded_resource")
+        contentTypeSamples.put("resource", Json.createObjectBuilder()
+                .add("type", "resource")
                 .add("resource", Json.createObjectBuilder()
                         .add("uri", "test://example")
                         .add("name", "example")

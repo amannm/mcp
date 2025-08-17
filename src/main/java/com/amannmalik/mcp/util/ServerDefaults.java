@@ -122,7 +122,7 @@ public final class ServerDefaults {
                         "embedded_tool", a -> new ToolResult(
                                 Json.createArrayBuilder()
                                         .add(Json.createObjectBuilder()
-                                                .add("type", "embedded_resource")
+                                                .add("type", "resource")
                                                 .add("resource", Json.createObjectBuilder()
                                                         .add("uri", r0.uri())
                                                         .add("name", r0.name())
