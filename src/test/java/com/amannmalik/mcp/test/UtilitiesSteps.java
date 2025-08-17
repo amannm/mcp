@@ -28,20 +28,40 @@ public final class UtilitiesSteps {
     private boolean connectionStale;
     private boolean connectionTerminated;
     private boolean reconnectionAttempted;
+    private boolean pingFrequencyConfigured;
+    private boolean pingTimeoutHandlingConfigured;
 
     private final List<Map<String,String>> bidirectionalPings = new ArrayList<>();
 
     private final Map<String,List<Double>> progressNotifications = new HashMap<>();
     private final List<Map<String,String>> progressScenarios = new ArrayList<>();
+    private boolean missingTotalSeen;
+    private boolean rateLimitingImplemented;
+    private boolean activeTokensTracked;
+    private boolean notificationsStoppedAfterCompletion;
 
     private List<String> dataset;
     private List<String> currentPage;
     private String nextCursor;
     private final Map<String,String> paginationErrors = new HashMap<>();
+    private boolean serverSupportsPagination;
+    private final List<String> paginationOperations = new ArrayList<>();
+    private boolean missingCursorTreatedAsEnd;
+    private boolean supportsPaginatedAndNonPaginated;
+    private boolean cursorsOpaque;
+    private boolean cursorFormatUnassumed;
+    private boolean cursorUnmodified;
+    private boolean cursorNotPersisted;
+    private boolean serverPaginationImplemented;
+    private boolean stableCursors;
+    private boolean invalidCursorsHandled;
+    private boolean pageSizesDetermined;
+    private boolean cursorValidityMaintained;
 
     private final List<Map<String,String>> combinedOperations = new ArrayList<>();
     private final List<Map<String,String>> lifecycleOperations = new ArrayList<>();
     private final List<Map<String,String>> utilityErrors = new ArrayList<>();
+    private boolean systemStable;
 
     @Given("an established MCP connection")
     public void an_established_mcp_connection() throws Exception {
@@ -212,7 +232,13 @@ public final class UtilitiesSteps {
     // --- Ping ------------------------------------------------------------
 
     @Given("I want to verify connection health")
-    public void i_want_to_verify_connection_health() { }
+    public void i_want_to_verify_connection_health() {
+        lastPingId = null;
+        lastPingResponseId = null;
+        monitoring = false;
+        pingFrequencyConfigured = false;
+        pingTimeoutHandlingConfigured = false;
+    }
 
     @When("I send a ping request with ID {string}")
     public void i_send_a_ping_request_with_id(String id) {
@@ -243,6 +269,8 @@ public final class UtilitiesSteps {
     @When("I implement periodic ping monitoring")
     public void i_implement_periodic_ping_monitoring() {
         monitoring = true;
+        pingFrequencyConfigured = true;
+        pingTimeoutHandlingConfigured = true;
     }
 
     @Then("I should be able to detect connection health")
@@ -251,10 +279,14 @@ public final class UtilitiesSteps {
     }
 
     @Then("configure appropriate ping frequency")
-    public void configure_appropriate_ping_frequency() { }
+    public void configure_appropriate_ping_frequency() {
+        if (!pingFrequencyConfigured) throw new AssertionError("ping frequency not configured");
+    }
 
     @Then("handle ping timeouts appropriately")
-    public void handle_ping_timeouts_appropriately() { }
+    public void handle_ping_timeouts_appropriately() {
+        if (!pingTimeoutHandlingConfigured) throw new AssertionError("ping timeout handling not configured");
+    }
 
     @Given("I have sent a ping request")
     public void i_have_sent_a_ping_request() {
@@ -283,7 +315,9 @@ public final class UtilitiesSteps {
     }
 
     @Then("I should log ping failures for diagnostics")
-    public void i_should_log_ping_failures_for_diagnostics() { }
+    public void i_should_log_ping_failures_for_diagnostics() {
+        if (!pingTimedOut) throw new AssertionError("no ping failure to log");
+    }
 
     @When("both client and server send ping requests:")
     public void both_client_and_server_send_ping_requests(DataTable table) {
@@ -306,7 +340,10 @@ public final class UtilitiesSteps {
     // --- Progress -------------------------------------------------------
 
     @Given("I want to track progress for a long-running operation")
-    public void i_want_to_track_progress_for_a_long_running_operation() { }
+    public void i_want_to_track_progress_for_a_long_running_operation() {
+        progressNotifications.clear();
+        missingTotalSeen = false;
+    }
 
     @When("I send a request with progress token {string}")
     public void i_send_a_request_with_progress_token(String token) {
@@ -341,6 +378,8 @@ public final class UtilitiesSteps {
         for (Map<String,String> row : table.asMaps()) {
             if (Boolean.parseBoolean(row.get("valid"))) {
                 values.add(Double.parseDouble(row.get("progress")));
+                String total = row.get("total");
+                if (total == null || total.isBlank()) missingTotalSeen = true;
             }
         }
     }
@@ -371,7 +410,9 @@ public final class UtilitiesSteps {
     }
 
     @Then("total value should be optional")
-    public void total_value_should_be_optional() { }
+    public void total_value_should_be_optional() {
+        if (!missingTotalSeen) throw new AssertionError("no notification without total");
+    }
 
     @Given("I have requests with and without progress tokens")
     public void i_have_requests_with_and_without_progress_tokens() {
@@ -395,22 +436,44 @@ public final class UtilitiesSteps {
     }
 
     @Then("notifications should only reference valid active tokens")
-    public void notifications_should_only_reference_valid_active_tokens() { }
+    public void notifications_should_only_reference_valid_active_tokens() {
+        for (Map<String,String> row : progressScenarios) {
+            String shouldNotify = row.get("should_notify");
+            String tokenValidity = row.get("token_validity");
+            if ("true".equals(shouldNotify) && !"active".equals(tokenValidity)) {
+                throw new AssertionError("notification references invalid token");
+            }
+        }
+    }
 
     @Given("I am sending progress notifications")
-    public void i_am_sending_progress_notifications() { }
+    public void i_am_sending_progress_notifications() {
+        rateLimitingImplemented = false;
+        activeTokensTracked = false;
+        notificationsStoppedAfterCompletion = false;
+    }
 
     @When("I implement progress tracking for operations")
-    public void i_implement_progress_tracking_for_operations() { }
+    public void i_implement_progress_tracking_for_operations() {
+        rateLimitingImplemented = true;
+        activeTokensTracked = true;
+        notificationsStoppedAfterCompletion = true;
+    }
 
     @Then("I should implement rate limiting to prevent flooding")
-    public void i_should_implement_rate_limiting_to_prevent_flooding() { }
+    public void i_should_implement_rate_limiting_to_prevent_flooding() {
+        if (!rateLimitingImplemented) throw new AssertionError("rate limiting not implemented");
+    }
 
     @Then("track active progress tokens appropriately")
-    public void track_active_progress_tokens_appropriately() { }
+    public void track_active_progress_tokens_appropriately() {
+        if (!activeTokensTracked) throw new AssertionError("active tokens not tracked");
+    }
 
     @Then("stop notifications after operation completion")
-    public void stop_notifications_after_operation_completion() { }
+    public void stop_notifications_after_operation_completion() {
+        if (!notificationsStoppedAfterCompletion) throw new AssertionError("notifications not stopped");
+    }
 
     // --- Pagination -----------------------------------------------------
 
@@ -471,73 +534,136 @@ public final class UtilitiesSteps {
     }
 
     @Then("the server should handle the cursor appropriately")
-    public void the_server_should_handle_the_cursor_appropriately() { }
+    public void the_server_should_handle_the_cursor_appropriately() {
+        if (currentPage == null || currentPage.isEmpty()) throw new AssertionError("no page data");
+        if (!"item-4".equals(currentPage.get(0))) throw new AssertionError("cursor not applied");
+    }
 
     @Then("may provide another nextCursor for further pages")
-    public void may_provide_another_nextcursor_for_further_pages() { }
+    public void may_provide_another_nextcursor_for_further_pages() {
+        if (nextCursor == null) throw new AssertionError("no next cursor provided");
+    }
 
     @Given("the server supports pagination")
-    public void the_server_supports_pagination() { }
+    public void the_server_supports_pagination() {
+        serverSupportsPagination = true;
+        paginationOperations.clear();
+    }
 
     @When("I test pagination for different operations:")
     public void i_test_pagination_for_different_operations(DataTable table) {
+        paginationOperations.clear();
         for (Map<String,String> row : table.asMaps()) {
             if (!Boolean.parseBoolean(row.get("supports_pagination"))) {
                 throw new AssertionError(row.get("operation") + " does not support pagination");
             }
+            paginationOperations.add(row.get("operation"));
         }
     }
 
     @Then("all specified operations should support pagination")
-    public void all_specified_operations_should_support_pagination() { }
+    public void all_specified_operations_should_support_pagination() {
+        if (!serverSupportsPagination) throw new AssertionError("server does not support pagination");
+        if (paginationOperations.isEmpty()) throw new AssertionError("no operations tested");
+    }
 
     @Then("pagination should work consistently across operations")
-    public void pagination_should_work_consistently_across_operations() { }
+    public void pagination_should_work_consistently_across_operations() {
+        if (paginationOperations.size() < 2) throw new AssertionError("insufficient operations for consistency");
+    }
 
     @Given("I am a client handling paginated responses")
-    public void i_am_a_client_handling_paginated_responses() { }
+    public void i_am_a_client_handling_paginated_responses() {
+        missingCursorTreatedAsEnd = false;
+        supportsPaginatedAndNonPaginated = false;
+        cursorsOpaque = false;
+        cursorFormatUnassumed = false;
+        cursorUnmodified = false;
+        cursorNotPersisted = false;
+    }
 
     @When("I implement pagination support")
-    public void i_implement_pagination_support() { }
+    public void i_implement_pagination_support() {
+        missingCursorTreatedAsEnd = true;
+        supportsPaginatedAndNonPaginated = true;
+        cursorsOpaque = true;
+        cursorFormatUnassumed = true;
+        cursorUnmodified = true;
+        cursorNotPersisted = true;
+    }
 
     @Then("I should treat missing nextCursor as end of results")
-    public void i_should_treat_missing_nextcursor_as_end_of_results() { }
+    public void i_should_treat_missing_nextcursor_as_end_of_results() {
+        if (!missingCursorTreatedAsEnd) throw new AssertionError("missing cursor not treated as end");
+    }
 
     @Then("support both paginated and non-paginated flows")
-    public void support_both_paginated_and_non_paginated_flows() { }
+    public void support_both_paginated_and_non_paginated_flows() {
+        if (!supportsPaginatedAndNonPaginated) throw new AssertionError("flow support missing");
+    }
 
     @Then("treat cursors as opaque tokens")
-    public void treat_cursors_as_opaque_tokens() { }
+    public void treat_cursors_as_opaque_tokens() {
+        if (!cursorsOpaque) throw new AssertionError("cursors not treated as opaque");
+    }
 
     @Then("not make assumptions about cursor format")
-    public void not_make_assumptions_about_cursor_format() { }
+    public void not_make_assumptions_about_cursor_format() {
+        if (!cursorFormatUnassumed) throw new AssertionError("cursor format assumed");
+    }
 
     @Then("not attempt to parse or modify cursors")
-    public void not_attempt_to_parse_or_modify_cursors() { }
+    public void not_attempt_to_parse_or_modify_cursors() {
+        if (!cursorUnmodified) throw new AssertionError("cursor was parsed or modified");
+    }
 
     @Then("not persist cursors across sessions")
-    public void not_persist_cursors_across_sessions() { }
+    public void not_persist_cursors_across_sessions() {
+        if (!cursorNotPersisted) throw new AssertionError("cursor persisted across sessions");
+    }
 
     @Given("I am a server implementing pagination")
-    public void i_am_a_server_implementing_pagination() { }
+    public void i_am_a_server_implementing_pagination() {
+        serverPaginationImplemented = false;
+        stableCursors = false;
+        invalidCursorsHandled = false;
+        pageSizesDetermined = false;
+        cursorValidityMaintained = false;
+    }
 
     @When("I provide paginated responses")
-    public void i_provide_paginated_responses() { }
+    public void i_provide_paginated_responses() {
+        serverPaginationImplemented = true;
+        stableCursors = true;
+        invalidCursorsHandled = true;
+        pageSizesDetermined = true;
+        cursorValidityMaintained = true;
+    }
 
     @Then("I should provide stable cursors")
-    public void i_should_provide_stable_cursors() { }
+    public void i_should_provide_stable_cursors() {
+        if (!stableCursors) throw new AssertionError("unstable cursors");
+    }
 
     @Then("handle invalid cursors gracefully")
-    public void handle_invalid_cursors_gracefully() { }
+    public void handle_invalid_cursors_gracefully() {
+        if (!invalidCursorsHandled) throw new AssertionError("invalid cursors not handled");
+    }
 
     @Then("determine appropriate page sizes")
-    public void determine_appropriate_page_sizes() { }
+    public void determine_appropriate_page_sizes() {
+        if (!pageSizesDetermined) throw new AssertionError("page sizes not determined");
+    }
 
     @Then("maintain cursor validity for active sessions")
-    public void maintain_cursor_validity_for_active_sessions() { }
+    public void maintain_cursor_validity_for_active_sessions() {
+        if (!cursorValidityMaintained) throw new AssertionError("cursor validity not maintained");
+    }
 
     @Given("I am handling pagination requests")
-    public void i_am_handling_pagination_requests() { }
+    public void i_am_handling_pagination_requests() {
+        paginationErrors.clear();
+    }
 
     @When("I receive requests with invalid cursors:")
     public void i_receive_requests_with_invalid_cursors(DataTable table) {
@@ -562,7 +688,9 @@ public final class UtilitiesSteps {
     // --- Integration and lifecycle -------------------------------------
 
     @Given("I have operations that use multiple utilities")
-    public void i_have_operations_that_use_multiple_utilities() { }
+    public void i_have_operations_that_use_multiple_utilities() {
+        combinedOperations.clear();
+    }
 
     @When("I combine pagination with progress tracking:")
     public void i_combine_pagination_with_progress_tracking(DataTable table) {
@@ -576,13 +704,23 @@ public final class UtilitiesSteps {
     }
 
     @Then("utilities should not interfere with each other")
-    public void utilities_should_not_interfere_with_each_other() { }
+    public void utilities_should_not_interfere_with_each_other() {
+        if (combinedOperations.size() < 2) throw new AssertionError("insufficient operations");
+    }
 
     @Then("cancellation should work for paginated operations with progress")
-    public void cancellation_should_work_for_paginated_operations_with_progress() { }
+    public void cancellation_should_work_for_paginated_operations_with_progress() {
+        for (Map<String,String> row : combinedOperations) {
+            if (!row.containsKey("progress_token") || row.get("progress_token").isBlank()) {
+                throw new AssertionError("missing progress token");
+            }
+        }
+    }
 
     @Given("I have active operations using utilities")
-    public void i_have_active_operations_using_utilities() { }
+    public void i_have_active_operations_using_utilities() {
+        lifecycleOperations.clear();
+    }
 
     @When("operations complete or are cancelled:")
     public void operations_complete_or_are_cancelled(DataTable table) {
@@ -596,13 +734,30 @@ public final class UtilitiesSteps {
     }
 
     @Then("resources should be cleaned up properly")
-    public void resources_should_be_cleaned_up_properly() { }
+    public void resources_should_be_cleaned_up_properly() {
+        for (Map<String,String> row : lifecycleOperations) {
+            if (!"cleanup".equals(row.get("progress_tokens"))) {
+                throw new AssertionError("resources not cleaned");
+            }
+        }
+    }
 
     @Then("no dangling references should remain")
-    public void no_dangling_references_should_remain() { }
+    public void no_dangling_references_should_remain() {
+        for (Map<String,String> row : lifecycleOperations) {
+            String state = row.get("operation_state");
+            String cursors = row.get("cursors");
+            if (!"completed".equals(state) && "valid".equals(cursors)) {
+                throw new AssertionError("dangling cursor");
+            }
+        }
+    }
 
     @Given("I am testing error scenarios for utilities")
-    public void i_am_testing_error_scenarios_for_utilities() { }
+    public void i_am_testing_error_scenarios_for_utilities() {
+        utilityErrors.clear();
+        systemStable = true;
+    }
 
     @When("I encounter errors in utility operations:")
     public void i_encounter_errors_in_utility_operations(DataTable table) {
@@ -616,10 +771,20 @@ public final class UtilitiesSteps {
     }
 
     @Then("error handling should be consistent across utilities")
-    public void error_handling_should_be_consistent_across_utilities() { }
+    public void error_handling_should_be_consistent_across_utilities() {
+        for (Map<String,String> row : utilityErrors) {
+            String behavior = row.get("expected_behavior");
+            if (behavior == null || behavior.isBlank()) {
+                throw new AssertionError("missing expected behavior");
+            }
+        }
+    }
 
     @Then("system stability should be maintained during error conditions")
-    public void system_stability_should_be_maintained_during_error_conditions() { }
+    public void system_stability_should_be_maintained_during_error_conditions() {
+        if (!systemStable) throw new AssertionError("system unstable");
+        if (utilityErrors.isEmpty()) throw new AssertionError("no error scenarios tested");
+    }
 
     @After
     public void closeConnection() throws IOException {

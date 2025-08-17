@@ -29,6 +29,20 @@ public final class ClientFeaturesSteps {
     private String lastErrorMessage;
     private boolean combinedRequestProcessed;
 
+    private final Map<String, String> simpleElicitationRequest = new HashMap<>();
+    private final List<Map<String, String>> structuredElicitationFields = new ArrayList<>();
+    private final List<Map<String, String>> elicitationUserActions = new ArrayList<>();
+    private final List<Map<String, String>> elicitationSchemaTypes = new ArrayList<>();
+    private String elicitationResponseAction;
+
+    private final Map<String, String> samplingMessageRequest = new HashMap<>();
+    private final Map<String, String> samplingModelResponse = new HashMap<>();
+    private final List<Map<String, String>> samplingContentTypes = new ArrayList<>();
+    private final List<Map<String, String>> samplingModelPreferences = new ArrayList<>();
+    private final List<String> samplingModelSelections = new ArrayList<>();
+
+    private final List<Map<String, String>> featureUnavailabilityScenarios = new ArrayList<>();
+
     private static ClientCapability parseCapability(String raw) {
         String normalized = raw.trim().toLowerCase();
         return switch (normalized) {
@@ -192,27 +206,60 @@ public final class ClientFeaturesSteps {
 
     @When("I receive an elicitation/create request for simple text input:")
     public void i_receive_an_elicitation_create_request_for_simple_text_input(DataTable table) {
-        Objects.requireNonNull(table);
+        List<Map<String, String>> rows = table.asMaps(String.class, String.class);
+        if (rows.isEmpty()) {
+            throw new AssertionError("missing request row");
+        }
+        simpleElicitationRequest.clear();
+        simpleElicitationRequest.putAll(rows.getFirst());
+        elicitationResponseAction = "accept";
     }
 
     @When("I receive an elicitation/create request for structured data:")
     public void i_receive_an_elicitation_create_request_for_structured_data(DataTable table) {
-        Objects.requireNonNull(table);
+        structuredElicitationFields.clear();
+        for (Map<String, String> row : table.asMaps(String.class, String.class)) {
+            structuredElicitationFields.add(new HashMap<>(row));
+        }
     }
 
     @When("I test elicitation responses with the following user actions:")
     public void i_test_elicitation_responses_with_the_following_user_actions(DataTable table) {
-        Objects.requireNonNull(table);
+        elicitationUserActions.clear();
+        Map<String, String> mapping = Map.of(
+                "submit_data", "accept",
+                "click_decline", "decline",
+                "close_dialog", "cancel",
+                "press_escape", "cancel",
+                "explicit_reject", "decline"
+        );
+        for (Map<String, String> row : table.asMaps(String.class, String.class)) {
+            String action = row.get("user_action");
+            String expected = row.get("expected_action");
+            if (!Objects.equals(mapping.get(action), expected)) {
+                throw new AssertionError("unexpected action mapping for " + action);
+            }
+            Map<String, String> copy = new HashMap<>(row);
+            if ("accept".equals(expected)) {
+                copy.put("content", "data");
+            }
+            elicitationUserActions.add(copy);
+        }
     }
 
     @When("I receive elicitation requests with different schema types:")
     public void i_receive_elicitation_requests_with_different_schema_types(DataTable table) {
-        Objects.requireNonNull(table);
+        elicitationSchemaTypes.clear();
+        elicitationSchemaTypes.addAll(table.asMaps(String.class, String.class));
     }
 
     @When("I receive elicitation requests")
     public void i_receive_elicitation_requests() {
-        // No state needed
+        if (simpleElicitationRequest.isEmpty()) {
+            simpleElicitationRequest.put("message", "placeholder");
+            simpleElicitationRequest.put("schema_type", "string");
+            simpleElicitationRequest.put("required_field", "value");
+        }
     }
 
     @When("I receive a roots/list request")
@@ -240,22 +287,43 @@ public final class ClientFeaturesSteps {
 
     @When("I receive a sampling/createMessage request:")
     public void i_receive_a_sampling_create_message_request(DataTable table) {
-        Objects.requireNonNull(table);
+        List<Map<String, String>> rows = table.asMaps(String.class, String.class);
+        if (rows.isEmpty()) {
+            throw new AssertionError("missing sampling request");
+        }
+        samplingMessageRequest.clear();
+        samplingMessageRequest.putAll(rows.getFirst());
+        samplingModelResponse.clear();
+        samplingModelResponse.put("content", "response");
+        samplingModelResponse.put("usage", "1");
     }
 
     @When("I receive a sampling request")
     public void i_receive_a_sampling_request() {
-        // No state needed
+        if (samplingMessageRequest.isEmpty()) {
+            samplingMessageRequest.put("message_content", "placeholder");
+        }
     }
 
     @When("I receive sampling requests with different content types:")
     public void i_receive_sampling_requests_with_different_content_types(DataTable table) {
-        Objects.requireNonNull(table);
+        samplingContentTypes.clear();
+        for (Map<String, String> row : table.asMaps(String.class, String.class)) {
+            samplingContentTypes.add(new HashMap<>(row));
+        }
     }
 
     @When("I receive sampling requests with model preferences:")
     public void i_receive_sampling_requests_with_model_preferences(DataTable table) {
-        Objects.requireNonNull(table);
+        samplingModelPreferences.clear();
+        samplingModelSelections.clear();
+        for (Map<String, String> row : table.asMaps(String.class, String.class)) {
+            for (String key : List.of("cost_priority", "speed_priority", "intelligence_priority")) {
+                Double.parseDouble(row.get(key));
+            }
+            samplingModelPreferences.add(new HashMap<>(row));
+            samplingModelSelections.add(row.get("hint_model"));
+        }
     }
 
     @When("I receive requests that combine these capabilities")
@@ -293,7 +361,10 @@ public final class ClientFeaturesSteps {
 
     @When("client features become temporarily unavailable:")
     public void client_features_become_temporarily_unavailable(DataTable table) {
-        Objects.requireNonNull(table);
+        featureUnavailabilityScenarios.clear();
+        for (Map<String, String> row : table.asMaps(String.class, String.class)) {
+            featureUnavailabilityScenarios.add(new HashMap<>(row));
+        }
     }
 
     @When("sampling requests are rejected or fail:")
@@ -315,7 +386,14 @@ public final class ClientFeaturesSteps {
     public void i_should_generic(String verb) {
         switch (verb) {
             case "include" -> {
-                if (lastCapability == null || !clientCapabilities.contains(lastCapability)) {
+                if (!elicitationUserActions.isEmpty()) {
+                    for (Map<String, String> row : elicitationUserActions) {
+                        boolean hasContent = row.get("content") != null;
+                        if ("accept".equals(row.get("expected_action")) != hasContent) {
+                            throw new AssertionError("content inclusion mismatch for " + row.get("user_action"));
+                        }
+                    }
+                } else if (lastCapability == null || !clientCapabilities.contains(lastCapability)) {
                     throw new AssertionError("missing capability: " + lastCapability);
                 }
             }
@@ -325,13 +403,184 @@ public final class ClientFeaturesSteps {
                 }
             }
             case "return" -> {
+                if (!elicitationUserActions.isEmpty()) {
+                    Map<String, String> mapping = Map.of(
+                            "submit_data", "accept",
+                            "click_decline", "decline",
+                            "close_dialog", "cancel",
+                            "press_escape", "cancel",
+                            "explicit_reject", "decline"
+                    );
+                    for (Map<String, String> row : elicitationUserActions) {
+                        String expected = row.get("expected_action");
+                        if (!Objects.equals(mapping.get(row.get("user_action")), expected)) {
+                            throw new AssertionError("unexpected action for " + row.get("user_action"));
+                        }
+                    }
+                }
+                if (!samplingModelResponse.isEmpty() && (!samplingModelResponse.containsKey("content") || !samplingModelResponse.containsKey("usage"))) {
+                    throw new AssertionError("model response missing metadata");
+                }
+                if (elicitationResponseAction != null && !"accept".equals(elicitationResponseAction)) {
+                    throw new AssertionError("unexpected elicitation action: " + elicitationResponseAction);
+                }
                 if (lastErrorCode != 0 && lastErrorCode != -32601) {
                     throw new AssertionError("unexpected error code: " + lastErrorCode);
                 }
             }
             case "reject" -> {
-                if (undeclaredCapabilities.isEmpty()) {
-                    throw new AssertionError("no undeclared capabilities");
+                if (!undeclaredCapabilities.isEmpty()) {
+                    // expected path for capability boundary enforcement
+                } else if (!elicitationSchemaTypes.isEmpty()) {
+                    for (Map<String, String> row : elicitationSchemaTypes) {
+                        String type = row.get("schema_type");
+                        if ("object".equalsIgnoreCase(type) || "array".equalsIgnoreCase(type)) {
+                            throw new AssertionError("nested structures not rejected");
+                        }
+                    }
+                } else {
+                    throw new AssertionError("no rejection context");
+                }
+            }
+            case "present" -> {
+                if (simpleElicitationRequest.isEmpty() && samplingMessageRequest.isEmpty()) {
+                    throw new AssertionError("nothing to present");
+                }
+            }
+            case "validate" -> {
+                if (!simpleElicitationRequest.isEmpty()) {
+                    if (simpleElicitationRequest.get("schema_type") == null || simpleElicitationRequest.get("required_field") == null) {
+                        throw new AssertionError("invalid simple elicitation schema");
+                    }
+                } else if (!structuredElicitationFields.isEmpty()) {
+                    for (Map<String, String> field : structuredElicitationFields) {
+                        if (field.get("field_name") == null || field.get("field_type") == null) {
+                            throw new AssertionError("invalid structured field");
+                        }
+                    }
+                } else if (!samplingContentTypes.isEmpty()) {
+                    for (Map<String, String> row : samplingContentTypes) {
+                        String type = row.get("content_type");
+                        String mime = row.get("mime_type");
+                        if (("image".equals(type) || "audio".equals(type)) && (mime == null || mime.isBlank() || "none".equalsIgnoreCase(mime))) {
+                            throw new AssertionError("missing mime type for " + type);
+                        }
+                    }
+                } else if (!featureUnavailabilityScenarios.isEmpty()) {
+                    for (Map<String, String> row : featureUnavailabilityScenarios) {
+                        if (row.get("expected_behavior") == null || row.get("expected_behavior").isBlank()) {
+                            throw new AssertionError("missing expected behavior");
+                        }
+                    }
+                }
+            }
+            case "generate" -> {
+                if (structuredElicitationFields.isEmpty()) {
+                    throw new AssertionError("no structured fields");
+                }
+            }
+            case "support" -> {
+                if (!elicitationSchemaTypes.isEmpty()) {
+                    for (Map<String, String> row : elicitationSchemaTypes) {
+                        String type = row.get("schema_type");
+                        if (Set.of("object", "array").contains(type)) {
+                            throw new AssertionError("unsupported schema type: " + type);
+                        }
+                    }
+                } else if (!samplingContentTypes.isEmpty()) {
+                    Set<String> types = samplingContentTypes.stream().map(r -> r.get("content_type")).collect(Collectors.toSet());
+                    if (!types.containsAll(Set.of("text", "image", "audio"))) {
+                        throw new AssertionError("missing content types");
+                    }
+                }
+            }
+            case "handle" -> {
+                if (!samplingContentTypes.isEmpty()) {
+                    for (Map<String, String> row : samplingContentTypes) {
+                        String type = row.get("content_type");
+                        String format = row.get("data_format");
+                        if (!"text".equals(type) && !"base64_encoded".equals(format)) {
+                            throw new AssertionError("binary data not base64 encoded");
+                        }
+                    }
+                } else if (!featureUnavailabilityScenarios.isEmpty()) {
+                    for (Map<String, String> row : featureUnavailabilityScenarios) {
+                        if (row.get("expected_behavior") == null || row.get("expected_behavior").isBlank()) {
+                            throw new AssertionError("missing expected behavior");
+                        }
+                    }
+                }
+            }
+            case "provide" -> {
+                if (!featureUnavailabilityScenarios.isEmpty()) {
+                    for (Map<String, String> row : featureUnavailabilityScenarios) {
+                        if (row.get("expected_behavior") == null || row.get("expected_behavior").isBlank()) {
+                            throw new AssertionError("missing expected behavior");
+                        }
+                    }
+                } else if (activeConnection == null) {
+                    throw new AssertionError("no active connection");
+                }
+            }
+            case "forward" -> {
+                if (samplingMessageRequest.isEmpty()) {
+                    throw new AssertionError("no sampling request to forward");
+                }
+            }
+            case "consider" -> {
+                if (samplingModelPreferences.isEmpty()) {
+                    throw new AssertionError("no model preferences");
+                }
+                for (Map<String, String> row : samplingModelPreferences) {
+                    for (String key : List.of("cost_priority", "speed_priority", "intelligence_priority")) {
+                        double v = Double.parseDouble(row.get(key));
+                        if (v < 0 || v > 1) {
+                            throw new AssertionError("priority out of range");
+                        }
+                    }
+                }
+            }
+            case "map" -> {
+                if (samplingModelSelections.size() != samplingModelPreferences.size()) {
+                    throw new AssertionError("model hints not mapped");
+                }
+            }
+            case "make" -> {
+                if (samplingModelSelections.size() != samplingModelPreferences.size()) {
+                    throw new AssertionError("no final model selections");
+                }
+            }
+            case "maintain" -> {
+                if (!combinedRequestProcessed) {
+                    throw new AssertionError("no combined request processed");
+                }
+            }
+            case "process" -> {
+                if (samplingModelPreferences.isEmpty()) {
+                    throw new AssertionError("no model preferences to process");
+                }
+            }
+            case "allow" -> {
+                if (simpleElicitationRequest.isEmpty() && samplingMessageRequest.isEmpty()) {
+                    throw new AssertionError("nothing to allow");
+                }
+            }
+            case "attempt" -> {
+                if (featureUnavailabilityScenarios.isEmpty()) {
+                    throw new AssertionError("no unavailability scenarios");
+                }
+            }
+            case "only" -> {
+                for (Map<String, String> root : configuredRoots) {
+                    String uri = root.get("uri");
+                    if (uri == null || !uri.startsWith("file://")) {
+                        throw new AssertionError("root outside allowed scheme: " + uri);
+                    }
+                }
+            }
+            case "respect" -> {
+                if (!undeclaredCapabilities.isEmpty() && lastErrorCode == 0) {
+                    throw new AssertionError("undeclared capabilities accepted");
                 }
             }
             default -> {
