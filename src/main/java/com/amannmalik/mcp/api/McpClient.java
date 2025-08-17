@@ -120,9 +120,9 @@ final class McpClient extends JsonRpcEndpoint implements AutoCloseable {
         String[] cmds = spec == null || spec.isBlank() ? new String[0] : spec.split(" ");
         boolean verbose = config.verbose() || globalVerbose;
         return cmds.length == 0
-                ? new StdioTransport(System.in, System.out)
+                ? new StdioTransport(System.in, System.out, config.defaultReceiveTimeout())
                 : new StdioTransport(cmds, verbose ? System.err::println : s -> {
-        });
+        }, config.defaultReceiveTimeout());
     }
 
     public void configurePing(Duration intervalMillis, Duration timeoutMillis) {
