@@ -87,7 +87,7 @@ Feature: MCP Server Features
       | image            | data       | base64   |
       | audio            | data       | base64   |
       | resource_link    | uri        | none     |
-      | embedded_resource| resource   | none     |
+      | resource         | resource   | none     |
 
   @resources @capabilities
   Scenario: Server resources capability declaration
@@ -229,7 +229,7 @@ Feature: MCP Server Features
       | text              | type, text                |
       | image             | type, data, mimeType      |
       | audio             | type, data, mimeType      |
-      | embedded_resource | type, resource            |
+      | resource          | type, resource            |
 
   @prompts @notifications
   Scenario: Prompt list change notifications
@@ -247,7 +247,7 @@ Feature: MCP Server Features
       | invalid prompt name          | -32602     | Invalid params   |
       | missing required arguments   | -32602     | Invalid params   |
       | server internal error        | -32603     | Internal error   |
-    Then I should receive appropriate JSON-RPC error responses for each scenario
+      Then I should receive appropriate JSON-RPC error responses
 
   @logging @capabilities
   Scenario: Server logging capability declaration
@@ -301,7 +301,7 @@ Feature: MCP Server Features
       | scenario              | error_code | error_message     |
       | invalid log level     | -32602     | Invalid params    |
       | configuration error   | -32603     | Internal error    |
-    Then I should receive appropriate JSON-RPC error responses for logging
+      Then I should receive appropriate JSON-RPC error responses
 
   @completion @capabilities
   Scenario: Server completion capability declaration
@@ -365,7 +365,7 @@ Feature: MCP Server Features
       | invalid prompt name           | -32602     | Invalid params        |
       | missing required arguments    | -32602     | Invalid params        |
       | server internal error         | -32603     | Internal error        |
-    Then I should receive appropriate JSON-RPC error responses for completion
+      Then I should receive appropriate JSON-RPC error responses
 
   @security @input-validation
   Scenario: Server input validation and sanitization
