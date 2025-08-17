@@ -47,11 +47,11 @@ Feature: MCP Server Features
   @tools @invocation
   Scenario: Tool invocation with valid parameters
     # Tests specification/2025-06-18/server/tools.mdx:104-140 (Calling tools)
-    Given the server has a tool named "get_weather"
-    And the tool expects required parameter "location"
+    Given the server has a tool named "echo_tool"
+    And the tool expects required parameter "msg"
     When I call the tool with valid arguments:
-      | parameter | value     |
-      | location  | New York  |
+      | parameter | value |
+      | msg       | hello |
     Then the tool should execute successfully
     And I should receive tool result content
     And the result should have "isError" field set to false
@@ -247,7 +247,7 @@ Feature: MCP Server Features
       | invalid prompt name          | -32602     | Invalid params   |
       | missing required arguments   | -32602     | Invalid params   |
       | server internal error        | -32603     | Internal error   |
-    Then I should receive appropriate JSON-RPC error responses
+    Then I should receive appropriate JSON-RPC error responses for each scenario
 
   @logging @capabilities
   Scenario: Server logging capability declaration
@@ -301,7 +301,7 @@ Feature: MCP Server Features
       | scenario              | error_code | error_message     |
       | invalid log level     | -32602     | Invalid params    |
       | configuration error   | -32603     | Internal error    |
-    Then I should receive appropriate JSON-RPC error responses
+    Then I should receive appropriate JSON-RPC error responses for logging
 
   @completion @capabilities
   Scenario: Server completion capability declaration
@@ -365,7 +365,7 @@ Feature: MCP Server Features
       | invalid prompt name           | -32602     | Invalid params        |
       | missing required arguments    | -32602     | Invalid params        |
       | server internal error         | -32603     | Internal error        |
-    Then I should receive appropriate JSON-RPC error responses
+    Then I should receive appropriate JSON-RPC error responses for completion
 
   @security @input-validation
   Scenario: Server input validation and sanitization

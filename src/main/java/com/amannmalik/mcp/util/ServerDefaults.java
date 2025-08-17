@@ -51,8 +51,12 @@ public final class ServerDefaults {
                 .build();
         Tool eliciting = new Tool("echo_tool", "Echo Tool", "Echoes the provided message", eschema, null, null, null);
         Tool slow = new Tool("slow_tool", "Slow Tool", "Delays before responding", schema, null, null, null);
+        Tool img = new Tool("image_tool", "Image Tool", "Returns image content", schema, null, null, null);
+        Tool audio = new Tool("audio_tool", "Audio Tool", "Returns audio content", schema, null, null, null);
+        Tool link = new Tool("link_tool", "Link Tool", "Returns resource link", schema, null, null, null);
+        Tool embedded = new Tool("embedded_tool", "Embedded Resource Tool", "Returns embedded resource", schema, null, null, null);
         TOOLS = new InMemoryToolProvider(
-                List.of(tool, errorTool, eliciting, slow),
+                List.of(tool, errorTool, eliciting, slow, img, audio, link, embedded),
                 Map.of(
                         "test_tool", a -> new ToolResult(
                                 Json.createArrayBuilder()
@@ -91,7 +95,40 @@ public final class ServerDefaults {
                                                     .build())
                                             .build(),
                                     null, false, null);
-                        }
+                        },
+                        "image_tool", a -> new ToolResult(
+                                Json.createArrayBuilder()
+                                        .add(Json.createObjectBuilder()
+                                                .add("type", "image")
+                                                .add("data", "")
+                                                .add("encoding", "base64")
+                                                .build())
+                                        .build(), null, false, null),
+                        "audio_tool", a -> new ToolResult(
+                                Json.createArrayBuilder()
+                                        .add(Json.createObjectBuilder()
+                                                .add("type", "audio")
+                                                .add("data", "")
+                                                .add("encoding", "base64")
+                                                .build())
+                                        .build(), null, false, null),
+                        "link_tool", a -> new ToolResult(
+                                Json.createArrayBuilder()
+                                        .add(Json.createObjectBuilder()
+                                                .add("type", "resource_link")
+                                                .add("uri", r0.uri())
+                                                .build())
+                                        .build(), null, false, null),
+                        "embedded_tool", a -> new ToolResult(
+                                Json.createArrayBuilder()
+                                        .add(Json.createObjectBuilder()
+                                                .add("type", "embedded_resource")
+                                                .add("resource", Json.createObjectBuilder()
+                                                        .add("uri", r0.uri())
+                                                        .add("name", r0.name())
+                                                        .build())
+                                                .build())
+                                        .build(), null, false, null)
                 ));
 
         InMemoryPromptProvider promptProvider = new InMemoryPromptProvider();
