@@ -440,7 +440,7 @@ public final class ClientFeaturesSteps {
         }
     }
 
-    @Then("I should send a notifications/roots/list_changed notification")
+    @Then("I should send a notifications\\/roots\\/list_changed notification")
     public void i_should_send_a_notifications_roots_list_changed_notification() {
         if (rootConfigChanged && !capabilityOptions.getOrDefault(ClientCapability.ROOTS, false)) {
             throw new AssertionError("listChanged not supported");
