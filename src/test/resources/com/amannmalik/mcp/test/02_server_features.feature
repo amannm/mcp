@@ -261,6 +261,11 @@ Feature: MCP Server Features
     # Tests specification/2025-06-18/server/utilities/logging.mdx:49-64 (Setting log level)
     Given the server has logging capability enabled
     When I send a "logging/setLevel" request with level "info"
+    And the server generates log messages at levels:
+      | level |
+      | debug |
+      | info  |
+      | error |
     Then the server should accept the log level configuration
     And only messages at "info" level and above should be sent
 
