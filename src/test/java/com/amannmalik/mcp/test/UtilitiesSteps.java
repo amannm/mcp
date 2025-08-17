@@ -182,12 +182,14 @@ public final class UtilitiesSteps {
     @Given("I have sent a request that may complete quickly")
     public void i_have_sent_a_request_that_may_complete_quickly() {
         requestStates.put("race", "in_progress");
+        responseIgnored = false;
     }
 
     @When("I send a cancellation notification that arrives after completion")
     public void i_send_a_cancellation_notification_that_arrives_after_completion() {
         requestStates.put("race", "completed");
         cancellationIgnored = true;
+        responseIgnored = true;
     }
 
     @Then("both parties should handle the race condition gracefully")
@@ -202,7 +204,7 @@ public final class UtilitiesSteps {
 
     @Then("any response that arrives should be ignored by the cancellation sender")
     public void any_response_that_arrives_should_be_ignored_by_the_cancellation_sender() {
-        responseIgnored = true;
+        if (!responseIgnored) throw new AssertionError("response not ignored");
     }
 
     private final List<String> invalidCancellationTypes = new ArrayList<>();
