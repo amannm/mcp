@@ -708,6 +708,15 @@ public final class ClientFeaturesSteps {
         }
     }
 
+    @Then("I should return appropriate \"Method not found\" errors")
+    public void i_should_return_appropriate_method_not_found_errors() {
+        if (lastErrorCode != -32601 || !"Method not found".equals(lastErrorMessage)) {
+            throw new AssertionError(
+                    "expected -32601/Method not found but was %d/%s".formatted(lastErrorCode, lastErrorMessage)
+            );
+        }
+    }
+
     @Then("I should return error code {int} \\(Method not found\\)")
     public void i_should_return_error_code_method_not_found(int code) {
         if (lastErrorCode != code) {
