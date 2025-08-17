@@ -505,42 +505,57 @@ public final class ProtocolLifecycleSteps {
 
     @When("I include metadata in my request")
     public void i_include_metadata_in_my_request() {
-        JsonObject metadata = Json.createObjectBuilder().add("_meta", "client-metadata").build();
+        JsonObject metadata = Json.createObjectBuilder()
+                .add("_meta", Json.createObjectBuilder()
+                        .add("example.com/client", "client-metadata")
+                        .build())
+                .build();
         lastRequest = createRequest(new RequestId.NumericId(1), RequestMethod.PING.method(), metadata);
     }
 
     @Then("the server should preserve my metadata unchanged")
     public void the_server_should_preserve_my_metadata_unchanged() {
         JsonObject params = lastRequest == null ? null : lastRequest.getJsonObject("params");
-        if (params == null || !params.containsKey("_meta")) {
+        JsonObject meta = params == null ? null : params.getJsonObject("_meta");
+        if (meta == null || !"client-metadata".equals(meta.getString("example.com/client", null))) {
             throw new AssertionError("metadata not preserved in request");
         }
     }
 
     @When("the server includes reserved metadata in responses")
     public void the_server_includes_reserved_metadata_in_responses() {
-        JsonObject meta = Json.createObjectBuilder().add("_meta_reserved", 1).build();
+        JsonObject meta = Json.createObjectBuilder()
+                .add("_meta", Json.createObjectBuilder()
+                        .add("mcp.dev/reserved", 1)
+                        .build())
+                .build();
         lastResponse = createResponse(new RequestId.NumericId(1), meta);
     }
 
     @Then("I should handle MCP-reserved fields correctly")
     public void i_should_handle_mcp_reserved_fields_correctly() {
         JsonObject result = lastResponse == null ? null : lastResponse.getJsonObject("result");
-        if (result == null || !result.containsKey("_meta_reserved")) {
+        JsonObject meta = result == null ? null : result.getJsonObject("_meta");
+        if (meta == null || meta.getInt("mcp.dev/reserved", -1) != 1) {
             throw new AssertionError("MCP-reserved fields not handled correctly");
         }
     }
 
     @When("the server includes custom metadata in responses")
     public void the_server_includes_custom_metadata_in_responses() {
-        JsonObject meta = Json.createObjectBuilder().add("_custom", 2).build();
+        JsonObject meta = Json.createObjectBuilder()
+                .add("_meta", Json.createObjectBuilder()
+                        .add("example.com/custom", 2)
+                        .build())
+                .build();
         lastResponse = createResponse(new RequestId.NumericId(1), meta);
     }
 
     @Then("I should treat it as implementation-specific data")
     public void i_should_treat_it_as_implementation_specific_data() {
         JsonObject result = lastResponse == null ? null : lastResponse.getJsonObject("result");
-        if (result == null || !result.containsKey("_custom")) {
+        JsonObject meta = result == null ? null : result.getJsonObject("_meta");
+        if (meta == null || meta.getInt("example.com/custom", -1) != 2) {
             throw new AssertionError("custom implementation-specific data missing");
         }
     }
