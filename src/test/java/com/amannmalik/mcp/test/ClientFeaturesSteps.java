@@ -119,6 +119,9 @@ public final class ClientFeaturesSteps {
     public void i_want_to_support(String capability) {
         ClientCapability cap = parseCapability(capability);
         clientCapabilities.add(cap);
+        if (cap == ClientCapability.ROOTS) {
+            capabilityOptions.putIfAbsent(cap, false);
+        }
         lastCapability = cap;
     }
 
@@ -126,6 +129,9 @@ public final class ClientFeaturesSteps {
     public void i_have_declared_capability(String capability) {
         ClientCapability cap = parseCapability(capability);
         clientCapabilities.add(cap);
+        if (cap == ClientCapability.ROOTS) {
+            capabilityOptions.putIfAbsent(cap, false);
+        }
         lastCapability = cap;
     }
 
@@ -397,6 +403,16 @@ public final class ClientFeaturesSteps {
                     throw new AssertionError("missing capability: " + lastCapability);
                 }
             }
+            case "indicate" -> {
+                if (lastCapability == null || !capabilityOptions.containsKey(lastCapability)) {
+                    throw new AssertionError("missing capability indication");
+                }
+            }
+            case "implement" -> {
+                if (activeConnection == null) {
+                    throw new AssertionError("no active connection");
+                }
+            }
             case "send" -> {
                 if (rootConfigChanged && !capabilityOptions.getOrDefault(ClientCapability.ROOTS, false)) {
                     throw new AssertionError("listChanged not supported");
@@ -456,6 +472,13 @@ public final class ClientFeaturesSteps {
                     for (Map<String, String> field : structuredElicitationFields) {
                         if (field.get("field_name") == null || field.get("field_type") == null) {
                             throw new AssertionError("invalid structured field");
+                        }
+                    }
+                } else if (!configuredRoots.isEmpty()) {
+                    for (Map<String, String> root : configuredRoots) {
+                        String uri = root.get("uri");
+                        if (uri != null && uri.contains("..")) {
+                            throw new AssertionError("path traversal: " + uri);
                         }
                     }
                 } else if (!samplingContentTypes.isEmpty()) {
@@ -558,6 +581,11 @@ public final class ClientFeaturesSteps {
             case "process" -> {
                 if (samplingModelPreferences.isEmpty()) {
                     throw new AssertionError("no model preferences to process");
+                }
+            }
+            case "prompt" -> {
+                if (!clientCapabilities.contains(ClientCapability.ROOTS)) {
+                    throw new AssertionError("roots capability missing");
                 }
             }
             case "allow" -> {
