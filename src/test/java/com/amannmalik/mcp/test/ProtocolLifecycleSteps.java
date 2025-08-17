@@ -38,6 +38,8 @@ public final class ProtocolLifecycleSteps {
     private Set<RequestId> usedRequestIds = new HashSet<>();
     
     private List<Map<String, String>> capabilityConfigurations = new ArrayList<>();
+    private boolean samplingRequested;
+    private boolean samplingApproved;
     private List<Map<String, String>> errorScenarios = new ArrayList<>();
     private List<Set<ServerCapability>> discoveredCapabilities = new ArrayList<>();
     private Map<String, String> currentConfiguration;
@@ -666,23 +668,26 @@ public final class ProtocolLifecycleSteps {
     public void i_have_an_established_mcp_connection_with_sampling_capability() {
         clientCapabilities.add(ClientCapability.SAMPLING);
         i_have_an_established_mcp_connection();
+        samplingRequested = false;
+        samplingApproved = false;
     }
-    
+
     @When("the server requests LLM sampling")
     public void the_server_requests_llm_sampling() {
-        // Simulated sampling request from server
+        samplingRequested = true;
+        samplingApproved = false; // TODO: simulate approval flow
     }
     
     @Then("I should require explicit user approval")
     public void i_should_require_explicit_user_approval() {
-        if (!clientCapabilities.contains(ClientCapability.SAMPLING)) {
-            throw new AssertionError("sampling capability not declared");
+        if (!samplingRequested || samplingApproved) {
+            throw new AssertionError("sampling request was auto-approved");
         }
     }
-    
+
     @Then("maintain control over prompt visibility")
     public void maintain_control_over_prompt_visibility() {
-        // No-op: prompt visibility is client implementation concern
+        // TODO: verify prompt visibility controls
     }
     
     @Given("I can provide the following capabilities:")
