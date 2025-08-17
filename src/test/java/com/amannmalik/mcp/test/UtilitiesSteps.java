@@ -113,8 +113,15 @@ public final class UtilitiesSteps {
 
     @When("I send a cancellation notification:")
     public void i_send_a_cancellation_notification(DataTable table) {
-        lastCancellation = table.asMaps().getFirst();
-        String id = lastCancellation.get("requestId");
+        lastCancellation = new HashMap<>();
+        for (final Map<String,String> row : table.asMaps()) {
+            final String field = row.get("field");
+            final String value = row.get("value");
+            if (field != null && value != null) {
+                lastCancellation.put(field, value);
+            }
+        }
+        final String id = lastCancellation.get("requestId");
         if (id != null && requestStates.containsKey(id)) {
             requestStates.put(id, "cancelled");
         }
