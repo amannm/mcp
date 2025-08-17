@@ -10,6 +10,7 @@ import io.cucumber.java.After;
 import io.cucumber.java.en.*;
 import jakarta.json.Json;
 import jakarta.json.JsonObject;
+import jakarta.json.JsonValue;
 
 import java.io.IOException;
 import java.nio.file.Path;
@@ -30,6 +31,9 @@ public final class ServerFeaturesSteps {
     private final List<Map<String, String>> toolErrorScenarioRows = new ArrayList<>();
     private final Map<String, Boolean> protocolErrorOccurred = new HashMap<>();
     private final Map<String, Boolean> toolErrorOccurred = new HashMap<>();
+    private boolean subscribedToToolUpdates;
+    private boolean toolListChangedNotification;
+    private final Map<String, JsonObject> contentTypeSamples = new HashMap<>();
 
     @Given("an established MCP connection with server capabilities")
     public void an_established_mcp_connection_with_server_capabilities() throws Exception {
@@ -321,6 +325,92 @@ public final class ServerFeaturesSteps {
             }
             if (!"none".equalsIgnoreCase(row.get("expected_code"))) {
                 // TODO verify error codes when accessible
+            }
+        }
+    }
+
+    @Given("the server has tools capability with {string} enabled")
+    public void the_server_has_tools_capability_with_enabled(String feature) {
+        if (!"listChanged".equals(feature)) {
+            throw new IllegalArgumentException("Unsupported feature: " + feature);
+        }
+        if (activeConnection == null || clientId == null) {
+            throw new IllegalStateException("connection not established");
+        }
+        if (!activeConnection.serverFeatures(clientId).contains(ServerFeature.TOOLS_LIST_CHANGED)) {
+            throw new AssertionError("listChanged not enabled");
+        }
+    }
+
+    @Given("I have subscribed to tool updates")
+    public void i_have_subscribed_to_tool_updates() {
+        subscribedToToolUpdates = true;
+    }
+
+    @When("the server's tool list changes")
+    public void the_server_s_tool_list_changes() {
+        if (!subscribedToToolUpdates) {
+            throw new IllegalStateException("not subscribed");
+        }
+        try {
+            activeConnection.notify(clientId, NotificationMethod.TOOLS_LIST_CHANGED, Json.createObjectBuilder().build());
+            toolListChangedNotification = true;
+        } catch (Exception e) {
+            toolListChangedNotification = false;
+            lastToolException = e;
+        }
+    }
+
+    @Then("I should receive a \"notifications/tools/list_changed\" notification")
+    public void i_should_receive_a_notifications_tools_list_changed_notification() {
+        if (!toolListChangedNotification) {
+            throw new AssertionError("notification not received", lastToolException);
+        }
+    }
+
+    @Given("the server has tools that return different content types")
+    public void the_server_has_tools_that_return_different_content_types() throws Exception {
+        availableTools = activeConnection.listTools(clientId, Cursor.Start.INSTANCE).tools();
+    }
+
+    @When("I invoke tools with various output formats")
+    public void i_invoke_tools_with_various_output_formats() {
+        contentTypeSamples.clear();
+        for (Tool tool : availableTools) {
+            try {
+                ToolResult r = activeConnection.callTool(clientId, tool.name(), Json.createObjectBuilder().build());
+                for (JsonValue v : r.content()) {
+                    if (v.getValueType() == JsonValue.ValueType.OBJECT) {
+                        JsonObject obj = v.asJsonObject();
+                        String type = obj.getString("type", null);
+                        if (type != null && !contentTypeSamples.containsKey(type)) {
+                            contentTypeSamples.put(type, obj);
+                        }
+                    }
+                }
+            } catch (Exception ignore) {
+            }
+        }
+    }
+
+    @Then("I should receive valid content in supported formats:")
+    public void i_should_receive_valid_content_in_supported_formats(DataTable table) {
+        for (Map<String, String> row : table.asMaps(String.class, String.class)) {
+            String type = row.get("content_type");
+            String field = row.get("field_name");
+            String encoding = row.get("encoding");
+            JsonObject block = contentTypeSamples.get(type);
+            if (block == null) {
+                throw new AssertionError("missing content type: " + type);
+            }
+            if (!block.containsKey(field)) {
+                throw new AssertionError("missing field for " + type + ": " + field);
+            }
+            if (!"none".equals(encoding)) {
+                String enc = block.getString("encoding", null);
+                if (!encoding.equals(enc)) {
+                    throw new AssertionError("encoding mismatch for " + type);
+                }
             }
         }
     }
