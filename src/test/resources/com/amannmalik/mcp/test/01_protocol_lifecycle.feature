@@ -194,7 +194,7 @@ Feature: MCP Connection Lifecycle
   @security @authorization
   Scenario: LLM sampling authorization
     # Tests specification/2025-06-18/client/sampling.mdx:28-36 (Human-in-the-loop requirements)
-    # Tests specification/2025-06-18/client/sampling.mdx:164-167 (Authorization controls)
+    # Tests specification/2025-06-18/client/sampling.mdx:236-240 (Authorization controls)
     Given I have an established MCP connection with sampling capability
     When the server requests LLM sampling
     Then I should require explicit user approval
