@@ -404,6 +404,13 @@ public final class ProtocolLifecycleSteps {
         }
     }
 
+    @Then("I should receive a duplicate identifier error")
+    public void i_should_receive_a_duplicate_identifier_error() {
+        if (lastErrorCode != -32600 || lastErrorMessage == null || !lastErrorMessage.toLowerCase().contains("duplicate")) {
+            throw new AssertionError("expected duplicate request id error");
+        }
+    }
+
     @When("the server responds")
     public void the_server_responds() {
         lastResponse = createResponse(lastRequestId, Json.createObjectBuilder().build());
