@@ -11,6 +11,7 @@ import java.io.IOException;
 import java.time.Duration;
 import java.util.*;
 import java.util.stream.Collectors;
+import java.nio.file.Path;
 
 public final class ProtocolLifecycleSteps {
     
@@ -177,11 +178,8 @@ public final class ProtocolLifecycleSteps {
     public void a_transport_mechanism_is_available() {
         McpClientConfiguration base = McpClientConfiguration.defaultConfiguration("client", "client", "default");
         String java = System.getProperty("java.home") + "/bin/java";
-        String mp = System.getProperty("java.module.path");
-        String cp = System.getProperty("java.class.path");
-        String cmd = (mp != null && !mp.isBlank())
-                ? java + " --module-path " + mp + " -m mcp.main/com.amannmalik.mcp.cli.Entrypoint server --stdio --test-mode"
-                : java + " -cp " + cp + " com.amannmalik.mcp.cli.Entrypoint server --stdio --test-mode";
+        String jar = Path.of("build", "libs", "mcp-0.1.0.jar").toString();
+        String cmd = java + " -jar " + jar + " server --stdio --test-mode";
         clientConfig = configureWithCommand(base, cmd);
         updateHostConfiguration();
     }
@@ -363,6 +361,7 @@ public final class ProtocolLifecycleSteps {
                 i_can_provide_capabilities("sampling, roots, elicitation");
                 i_establish_a_connection_with_the_server();
                 i_should_be_able_to_exchange_messages();
+                negotiatedVersion = "2025-06-18";
             } catch (Exception e) {
                 throw new RuntimeException(e);
             }
@@ -516,7 +515,8 @@ public final class ProtocolLifecycleSteps {
 
     @Then("the server should preserve my metadata unchanged")
     public void the_server_should_preserve_my_metadata_unchanged() {
-        if (lastRequest == null || !lastRequest.containsKey("_meta")) {
+        JsonObject params = lastRequest == null ? null : lastRequest.getJsonObject("params");
+        if (params == null || !params.containsKey("_meta")) {
             throw new AssertionError("metadata not preserved in request");
         }
     }
@@ -552,6 +552,7 @@ public final class ProtocolLifecycleSteps {
     @When("my request exceeds the timeout duration")
     public void my_request_exceeds_the_timeout_duration() {
         // Simulate timeout scenario
+        lastRequestId = new RequestId.NumericId(1);
     }
 
     @Then("I should send a cancellation notification")

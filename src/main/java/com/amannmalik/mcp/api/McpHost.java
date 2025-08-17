@@ -29,6 +29,7 @@ public final class McpHost implements AutoCloseable {
                     new ToolAbstractEntityCodec(),
                     (page, meta) -> new ListToolsResult(page.items(), page.nextCursor(), meta));
 
+    private static final Duration TIMEOUT = Duration.ofSeconds(5);
     private final Map<String, McpClient> clients = new ConcurrentHashMap<>();
     private final ConsentController consents;
     private final Principal principal;
@@ -132,7 +133,7 @@ public final class McpHost implements AutoCloseable {
                         ListToolsRequest::cursor,
                         ListToolsRequest::_meta,
                         ListToolsRequest::new).toJson(new ListToolsRequest(token, null)),
-                Duration.ZERO
+                TIMEOUT
         ));
         return LIST_TOOLS_RESULT_JSON_CODEC.fromJson(resp.result());
     }
@@ -147,7 +148,7 @@ public final class McpHost implements AutoCloseable {
         JsonRpcResponse resp = JsonRpc.expectResponse(client.request(
                 RequestMethod.TOOLS_CALL,
                 CALL_TOOL_REQUEST_CODEC.toJson(new CallToolRequest(name, args, null)),
-                Duration.ZERO
+                TIMEOUT
         ));
         return TOOL_RESULT_ABSTRACT_ENTITY_CODEC.fromJson(resp.result());
     }
@@ -169,12 +170,12 @@ public final class McpHost implements AutoCloseable {
         requireCapability(client, ClientCapability.SAMPLING);
         consents.requireConsent(principal, "sampling");
         samplingAccess.requireAllowed(principal);
-        JsonRpcResponse resp = JsonRpc.expectResponse(client.request(RequestMethod.SAMPLING_CREATE_MESSAGE, params, Duration.ZERO));
+        JsonRpcResponse resp = JsonRpc.expectResponse(client.request(RequestMethod.SAMPLING_CREATE_MESSAGE, params, TIMEOUT));
         return resp.result();
     }
 
     public JsonRpcMessage request(String id, RequestMethod method, JsonObject params) throws IOException {
-        return requireClientForMethod(id, method).request(method, params, Duration.ZERO);
+        return requireClientForMethod(id, method).request(method, params, TIMEOUT);
     }
 
     public void notify(String id, NotificationMethod method, JsonObject params) throws IOException {

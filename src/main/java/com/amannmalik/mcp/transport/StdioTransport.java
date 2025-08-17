@@ -89,6 +89,16 @@ public final class StdioTransport implements Transport {
                 }
             }
 
+            if (process != null && !process.isAlive()) {
+                int code;
+                try {
+                    code = process.exitValue();
+                } catch (IllegalThreadStateException ignore) {
+                    code = -1;
+                }
+                throw new IOException("Process exited with code " + code);
+            }
+
             try {
                 Thread.sleep(10);
             } catch (InterruptedException e) {

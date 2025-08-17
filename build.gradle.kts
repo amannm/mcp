@@ -58,6 +58,7 @@ tasks.withType<JavaCompile>().configureEach {
 tasks.test {
     useJUnitPlatform()
     javaLauncher.set(javaToolchains.launcherFor(java.toolchain))
+    dependsOn(tasks.jar)
     finalizedBy(tasks.jacocoTestReport)
     val agentFile = configurations.jacocoAgent.get().singleFile.absolutePath.replace(".jar", "-runtime.jar")
     systemProperty("jacoco.agent.jar", agentFile)
