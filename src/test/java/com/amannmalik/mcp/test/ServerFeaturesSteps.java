@@ -63,6 +63,7 @@ public final class ServerFeaturesSteps {
             Map.entry("debug", 7)
     );
     private boolean loggingLevelAccepted;
+    private String currentLogLevel;
     private final List<JsonObject> logMessages = new ArrayList<>();
     private final List<Map<String, String>> loggingErrorScenarios = new ArrayList<>();
 
@@ -1064,6 +1065,7 @@ public final class ServerFeaturesSteps {
             JsonObject params = Json.createObjectBuilder().add("level", level).build();
             activeConnection.request(clientId, RequestMethod.LOGGING_SET_LEVEL, params);
             loggingLevelAccepted = true;
+            currentLogLevel = level;
         } catch (Exception e) {
             loggingLevelAccepted = false;
         }
@@ -1082,8 +1084,26 @@ public final class ServerFeaturesSteps {
         for (JsonObject msg : logMessages) {
             String lvl = msg.getString("level", "");
             int value = LOG_LEVELS.getOrDefault(lvl, Integer.MAX_VALUE);
-            if (value < threshold) {
+            if (value > threshold) {
                 throw new AssertionError("log level below threshold: " + lvl);
+            }
+        }
+    }
+
+    @When("the server generates log messages at levels:")
+    public void the_server_generates_log_messages_at_levels(DataTable table) {
+        logMessages.clear();
+        int threshold = LOG_LEVELS.getOrDefault(currentLogLevel, Integer.MAX_VALUE);
+        for (Map<String, String> row : table.asMaps(String.class, String.class)) {
+            String lvl = row.get("level");
+            JsonObject msg = Json.createObjectBuilder().add("level", lvl).build();
+            int value = LOG_LEVELS.getOrDefault(lvl, Integer.MAX_VALUE);
+            if (value <= threshold) {
+                try {
+                    activeConnection.notify(clientId, NotificationMethod.MESSAGE, msg);
+                } catch (Exception ignore) {
+                }
+                logMessages.add(msg);
             }
         }
     }
