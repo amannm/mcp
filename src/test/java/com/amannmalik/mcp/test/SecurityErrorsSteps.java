@@ -120,11 +120,17 @@ public final class SecurityErrorsSteps {
 
     @Then("the WWW-Authenticate header should be included for 401 responses")
     public void the_www_authenticate_header_should_be_included_for_401_responses() {
+        String expected = "Bearer resource=\"https://mcp.example.com/.well-known/oauth-protected-resource\"";
         for (Map<String, String> row : authorizationScenarios) {
             int status = Integer.parseInt(row.get("expected_status"));
             String header = row.get("www_authenticate_header");
-            if (status == 401 && (header == null || header.isBlank())) {
-                throw new AssertionError("missing WWW-Authenticate header");
+            if (status == 401) {
+                if (header == null || header.isBlank()) {
+                    throw new AssertionError("missing WWW-Authenticate header");
+                }
+                if (!expected.equals(header.trim())) {
+                    throw new AssertionError("unexpected WWW-Authenticate header: " + header);
+                }
             }
         }
     }
