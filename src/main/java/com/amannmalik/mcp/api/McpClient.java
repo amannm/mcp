@@ -191,6 +191,14 @@ final class McpClient extends JsonRpcEndpoint implements AutoCloseable {
         return Set.copyOf(capabilities);
     }
 
+    public Set<ServerCapability> serverCapabilities() {
+        return Set.copyOf(serverCapabilities);
+    }
+
+    public Set<ServerFeature> serverFeatures() {
+        return Set.copyOf(serverFeatures);
+    }
+
     public String context() {
         return instructions == null ? "" : instructions;
     }
@@ -247,10 +255,6 @@ final class McpClient extends JsonRpcEndpoint implements AutoCloseable {
 
     public ServerInfo serverInfo() {
         return serverInfo;
-    }
-
-    public Set<ServerCapability> serverCapabilities() {
-        return serverCapabilities;
     }
 
     public Set<String> serverCapabilityNames() {

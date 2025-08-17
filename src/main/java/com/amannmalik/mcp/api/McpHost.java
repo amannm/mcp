@@ -224,6 +224,14 @@ public final class McpHost implements AutoCloseable {
         return client;
     }
 
+    public Set<ServerCapability> serverCapabilities(String id) {
+        return EnumSet.copyOf(requireClient(id).serverCapabilities());
+    }
+
+    public Set<ServerFeature> serverFeatures(String id) {
+        return EnumSet.copyOf(requireClient(id).serverFeatures());
+    }
+
     private McpClient requireConnectedClient(String id) {
         McpClient client = requireClient(id);
         if (!client.connected()) throw new IllegalStateException("Client not connected: " + id);

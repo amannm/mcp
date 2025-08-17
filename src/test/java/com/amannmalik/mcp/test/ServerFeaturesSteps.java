@@ -1,6 +1,7 @@
 package com.amannmalik.mcp.test;
 
 import com.amannmalik.mcp.api.*;
+import com.amannmalik.mcp.spi.Cursor;
 import io.cucumber.java.After;
 import io.cucumber.java.en.*;
 
@@ -13,6 +14,7 @@ public final class ServerFeaturesSteps {
     private McpHost activeConnection;
     private String clientId;
     private final Set<ServerCapability> serverCapabilities = EnumSet.noneOf(ServerCapability.class);
+    private final Set<ServerFeature> serverFeatures = EnumSet.noneOf(ServerFeature.class);
 
     @Given("an established MCP connection with server capabilities")
     public void an_established_mcp_connection_with_server_capabilities() throws Exception {
@@ -49,25 +51,41 @@ public final class ServerFeaturesSteps {
     }
 
     @Given("the server supports tools functionality")
-    public void the_server_supports_tools_functionality() {
-        // TODO verify tools capability support
+    public void the_server_supports_tools_functionality() throws Exception {
+        if (activeConnection == null || clientId == null) {
+            throw new IllegalStateException("connection not established");
+        }
+        activeConnection.listTools(clientId, Cursor.Start.INSTANCE);
     }
 
     @When("I check server capabilities during initialization")
     public void i_check_server_capabilities_during_initialization() {
-        // TODO capture server capabilities from initialization
+        if (activeConnection == null || clientId == null) {
+            throw new IllegalStateException("connection not established");
+        }
+        serverCapabilities.clear();
+        serverCapabilities.addAll(activeConnection.serverCapabilities(clientId));
+        serverFeatures.clear();
+        serverFeatures.addAll(activeConnection.serverFeatures(clientId));
     }
 
     @Then("the server should declare the {string} capability")
     public void the_server_should_declare_the_capability(String capability) {
-        // TODO assert declared capabilities contain capability
-        throw new io.cucumber.java.PendingException();
+        ServerCapability cap = ServerCapability.from(capability)
+                .orElseThrow(() -> new IllegalArgumentException("Unknown capability: " + capability));
+        if (!serverCapabilities.contains(cap)) {
+            throw new AssertionError("Capability not declared: " + capability);
+        }
     }
 
     @Then("the capability should include {string} configuration")
     public void the_capability_should_include_configuration(String configuration) {
-        // TODO verify capability configuration
-        throw new io.cucumber.java.PendingException();
+        if (!"listChanged".equals(configuration)) {
+            throw new IllegalArgumentException("Unsupported configuration: " + configuration);
+        }
+        if (!serverFeatures.contains(ServerFeature.TOOLS_LIST_CHANGED)) {
+            throw new AssertionError("Configuration not present: " + configuration);
+        }
     }
 
     @After
@@ -77,6 +95,7 @@ public final class ServerFeaturesSteps {
             activeConnection = null;
             clientId = null;
             serverCapabilities.clear();
+            serverFeatures.clear();
         }
     }
 }
