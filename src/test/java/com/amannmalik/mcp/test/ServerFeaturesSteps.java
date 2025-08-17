@@ -68,6 +68,7 @@ public final class ServerFeaturesSteps {
 
     private JsonObject lastCompletion;
     private final List<Map<String, String>> completionErrorScenarios = new ArrayList<>();
+    private final List<Map<String, String>> currentErrorScenarios = new ArrayList<>();
 
     private boolean integrationWorked;
     private boolean maliciousInputSanitized;
@@ -360,6 +361,8 @@ public final class ServerFeaturesSteps {
         protocolErrorOccurred.clear();
         toolErrorOccurred.clear();
         toolErrorScenarioRows.addAll(table.asMaps(String.class, String.class));
+        currentErrorScenarios.clear();
+        currentErrorScenarios.addAll(toolErrorScenarioRows);
         for (Map<String, String> row : toolErrorScenarioRows) {
             String scenario = row.get("scenario");
             try {
@@ -782,6 +785,8 @@ public final class ServerFeaturesSteps {
     public void i_test_resource_error_scenarios(DataTable table) {
         resourceErrorScenarios.clear();
         resourceErrorScenarios.addAll(table.asMaps(String.class, String.class));
+        currentErrorScenarios.clear();
+        currentErrorScenarios.addAll(resourceErrorScenarios);
         for (Map<String, String> row : resourceErrorScenarios) {
             String scenario = row.get("scenario");
             try {
@@ -806,7 +811,7 @@ public final class ServerFeaturesSteps {
 
     @Then("I should receive appropriate JSON-RPC error responses")
     public void i_should_receive_appropriate_json_rpc_error_responses() {
-        if (resourceErrorScenarios.isEmpty()) {
+        if (currentErrorScenarios.isEmpty()) {
             throw new AssertionError("no error scenarios");
         }
     }
@@ -992,6 +997,8 @@ public final class ServerFeaturesSteps {
     public void i_test_prompt_error_scenarios(DataTable table) {
         promptErrorScenarios.clear();
         promptErrorScenarios.addAll(table.asMaps(String.class, String.class));
+        currentErrorScenarios.clear();
+        currentErrorScenarios.addAll(promptErrorScenarios);
         for (Map<String, String> row : promptErrorScenarios) {
             String scenario = row.get("scenario");
             try {
@@ -1011,13 +1018,6 @@ public final class ServerFeaturesSteps {
                 }
             } catch (Exception ignore) {
             }
-        }
-    }
-
-    @Then("I should receive appropriate JSON-RPC error responses for each scenario")
-    public void i_should_receive_appropriate_json_rpc_error_responses_for_each_prompt_scenario() {
-        if (promptErrorScenarios.isEmpty()) {
-            throw new AssertionError("no prompt error scenarios");
         }
     }
 
@@ -1139,13 +1139,8 @@ public final class ServerFeaturesSteps {
     public void i_test_logging_error_scenarios(DataTable table) {
         loggingErrorScenarios.clear();
         loggingErrorScenarios.addAll(table.asMaps(String.class, String.class));
-    }
-
-    @Then("I should receive appropriate JSON-RPC error responses for logging")
-    public void i_should_receive_appropriate_json_rpc_error_responses_for_logging() {
-        if (loggingErrorScenarios.isEmpty()) {
-            throw new AssertionError("no logging error scenarios");
-        }
+        currentErrorScenarios.clear();
+        currentErrorScenarios.addAll(loggingErrorScenarios);
     }
 
     // --- Completion -----------------------------------------------------
@@ -1322,13 +1317,8 @@ public final class ServerFeaturesSteps {
     public void i_test_completion_error_scenarios(DataTable table) {
         completionErrorScenarios.clear();
         completionErrorScenarios.addAll(table.asMaps(String.class, String.class));
-    }
-
-    @Then("I should receive appropriate JSON-RPC error responses for completion")
-    public void i_should_receive_appropriate_json_rpc_error_responses_for_completion() {
-        if (completionErrorScenarios.isEmpty()) {
-            throw new AssertionError("no completion error scenarios");
-        }
+        currentErrorScenarios.clear();
+        currentErrorScenarios.addAll(completionErrorScenarios);
     }
 
     // --- Security ------------------------------------------------------
