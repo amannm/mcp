@@ -11,7 +11,6 @@ description: MCP Specification Expert
 - Precision over convenience
 - Immutable over mutable
 - Composition over inheritance
-- Fail fast
 
 # Wisdom
 
