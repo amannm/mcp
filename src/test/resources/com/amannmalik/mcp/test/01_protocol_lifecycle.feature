@@ -68,7 +68,8 @@ Scenario: HTTP Accept header enforcement
     | GET    | none                                | false         |
     | GET    | application/json                    | false         |
     | GET    | text/event-stream                   | true          |
-  Then each request should be handled according to Accept header requirements
+    | GET    | application/json, text/event-stream | true          |
+    Then each request should be handled according to Accept header requirements
 
 @connection @http @accept-header
 Scenario: HTTP Accept header case insensitivity
@@ -79,7 +80,17 @@ Scenario: HTTP Accept header case insensitivity
     | method | accept_header                               | should_accept |
     | POST   | APPLICATION/JSON, TEXT/EVENT-STREAM         | true          |
     | GET    | TEXT/EVENT-STREAM                           | true          |
-  Then each request should be handled according to Accept header requirements
+    Then each request should be handled according to Accept header requirements
+
+@connection @http @get-response
+Scenario: HTTP GET response handling
+  # Tests specification/2025-06-18/basic/transports.mdx:120-131 (Listening for Messages from the Server)
+  Given an MCP server using "http" transport
+  When I send HTTP GET requests with the following SSE support configurations:
+    | server_supports_sse | expected_status | expected_content_type |
+    | true                | 200             | text/event-stream     |
+    | false               | 405             | none                  |
+  Then each GET request should be handled according to SSE support
 
   @connection @http @origin-header
   Scenario: HTTP Origin header enforcement
