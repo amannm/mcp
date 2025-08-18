@@ -20,6 +20,8 @@ public final class UtilitiesSteps {
     private final List<Map<String, String>> cancellationChecks = new ArrayList<>();
     private final List<Map<String, String>> bidirectionalPings = new ArrayList<>();
     private final Map<String, List<Double>> progressNotifications = new HashMap<>();
+    private int invalidProgressNotifications;
+    private int totalProgressNotifications;
     private final List<Map<String, String>> progressScenarios = new ArrayList<>();
     private final List<Map<String, String>> progressTokenTypeScenarios = new ArrayList<>();
     private final Map<String, String> activeProgressTokens = new HashMap<>();
@@ -506,6 +508,8 @@ public final class UtilitiesSteps {
     @Given("I am receiving progress notifications for token {string}")
     public void i_am_receiving_progress_notifications_for_token(String token) {
         progressNotifications.put(token, new ArrayList<>());
+        invalidProgressNotifications = 0;
+        totalProgressNotifications = 0;
     }
 
     @When("I receive progress notifications with different data:")
@@ -513,6 +517,7 @@ public final class UtilitiesSteps {
         String token = progressNotifications.keySet().iterator().next();
         List<Double> values = progressNotifications.get(token);
         for (Map<String, String> row : table.asMaps()) {
+            totalProgressNotifications++;
             if (Boolean.parseBoolean(row.get("valid"))) {
                 values.add(Double.parseDouble(row.get("progress")));
                 String total = row.get("total");
@@ -520,6 +525,8 @@ public final class UtilitiesSteps {
                 String message = row.get("message");
                 if (message == null || message.isBlank()) missingMessageSeen = true;
                 else messageSeen = true;
+            } else {
+                invalidProgressNotifications++;
             }
         }
     }
@@ -538,6 +545,15 @@ public final class UtilitiesSteps {
                 if (v <= prev) throw new AssertionError("progress not increasing");
                 prev = v;
             }
+        }
+    }
+
+    @Then("invalid progress notifications should be ignored")
+    public void invalid_progress_notifications_should_be_ignored() {
+        long validCount = progressNotifications.values().stream().mapToLong(List::size).sum();
+        if (invalidProgressNotifications == 0) throw new AssertionError("no invalid notifications");
+        if (validCount != totalProgressNotifications - invalidProgressNotifications) {
+            throw new AssertionError("invalid notifications not ignored");
         }
     }
 
