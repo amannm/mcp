@@ -274,6 +274,20 @@ Scenario: HTTP GET response handling
     When I receive an error response with non-string message 123
     Then I should detect an invalid error message
 
+  @messaging @error-format
+  Scenario: Missing error code rejection
+    # Tests specification/2025-06-18/basic/index.mdx:64-78 (Error code requirements)
+    Given I have an established MCP connection
+    When I receive an error response missing code
+    Then I should detect an invalid error code
+
+  @messaging @error-format
+  Scenario: Missing error message rejection
+    # Tests specification/2025-06-18/basic/index.mdx:64-78 (Error message requirements)
+    Given I have an established MCP connection
+    When I receive an error response missing message
+    Then I should detect an invalid error message
+
   @connection @cleanup
   Scenario: Graceful connection termination
     # Tests specification/2025-06-18/basic/lifecycle.mdx:183-200 (Shutdown - stdio)
