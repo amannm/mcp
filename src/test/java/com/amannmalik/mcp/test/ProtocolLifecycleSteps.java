@@ -7,6 +7,7 @@ import io.cucumber.java.en.*;
 import jakarta.json.Json;
 import jakarta.json.JsonObject;
 import jakarta.json.JsonValue;
+import jakarta.json.JsonNumber;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -1398,8 +1399,10 @@ public final class ProtocolLifecycleSteps {
                 .add("error", Json.createObjectBuilder().add("code", code).add("message", "oops").build())
                 .build();
         try {
-            response.getJsonObject("error").getInt("code");
-            invalidResponseError = null;
+            JsonValue value = response.getJsonObject("error").get("code");
+            invalidResponseError = value instanceof JsonNumber number && number.isIntegral()
+                    ? null
+                    : new IllegalArgumentException("non-integer error code");
         } catch (Exception e) {
             invalidResponseError = e;
         }
