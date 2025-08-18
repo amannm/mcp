@@ -89,28 +89,13 @@ final class ResourceOrchestrator implements AutoCloseable {
                     ListResourcesRequest::_meta,
                     ListResourcesRequest::new).fromJson(req.params());
             Cursor cursor = sanitizeCursor(lr.cursor());
-            progressToken.ifPresent(t -> {
-                try {
-                    progress.send(new ProgressNotification(t, 0.0, null, "Starting resource list"), sender::sendNotification);
-                } catch (IOException ignore) {
-                }
-            });
+            progressToken.ifPresent(t -> sendProgress(t, 0.0, "Starting resource list"));
             Pagination.Page<Resource> list = resources.list(cursor);
-            progressToken.ifPresent(t -> {
-                try {
-                    progress.send(new ProgressNotification(t, 0.5, null, "Filtering resources"), sender::sendNotification);
-                } catch (IOException ignore) {
-                }
-            });
+            progressToken.ifPresent(t -> sendProgress(t, 0.5, "Filtering resources"));
             List<Resource> filtered = list.items().stream()
                     .filter(r -> allowed(r.annotations()) && withinRoots(r.uri()))
                     .toList();
-            progressToken.ifPresent(t -> {
-                try {
-                    progress.send(new ProgressNotification(t, 1.0, null, "Completed resource list"), sender::sendNotification);
-                } catch (IOException ignore) {
-                }
-            });
+            progressToken.ifPresent(t -> sendProgress(t, 1.0, "Completed resource list"));
             ListResourcesResult result = new ListResourcesResult(filtered, list.nextCursor(), null);
             return new JsonRpcResponse(req.id(), AbstractEntityCodec.paginatedResult(
                     "resources",
@@ -240,6 +225,13 @@ final class ResourceOrchestrator implements AutoCloseable {
         if (cursor == null) return Cursor.Start.INSTANCE;
         String clean = ValidationUtil.cleanNullable(cursor);
         return new Cursor.Token(clean);
+    }
+
+    private void sendProgress(ProgressToken token, double current, String message) {
+        try {
+            progress.send(new ProgressNotification(token, current, null, message), sender::sendNotification);
+        } catch (IOException ignore) {
+        }
     }
 
     private JsonRpcMessage withAccessibleUri(JsonRpcRequest req, String uri, Supplier<JsonRpcMessage> action) {
