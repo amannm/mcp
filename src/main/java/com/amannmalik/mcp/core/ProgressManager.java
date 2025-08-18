@@ -27,6 +27,9 @@ public final class ProgressManager {
 
     public Optional<ProgressToken> register(RequestId id, JsonObject params) {
         if (!used.add(id) || !active.add(id)) throw new DuplicateRequestException(id);
+        if (params != null && params.containsKey("progressToken")) {
+            throw new IllegalArgumentException("progressToken must be in _meta");
+        }
         Optional<ProgressToken> token = ProgressToken.fromMeta(params);
         token.ifPresent(t -> {
             Double prev = progress.putIfAbsent(t, Double.NEGATIVE_INFINITY);
