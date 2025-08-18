@@ -105,13 +105,6 @@ public final class PerformanceSteps {
     private List<String> performanceRegressions = new ArrayList<>();
     private List<String> optimizationRecommendations = new ArrayList<>();
 
-
-    @Given("a clean MCP environment")
-    public void a_clean_mcp_environment() {
-        // Reset performance tracking state
-        clearPerformanceMetrics();
-    }
-
     @Given("performance monitoring is enabled")
     public void performance_monitoring_is_enabled() {
         performanceMonitoringEnabled = true;
