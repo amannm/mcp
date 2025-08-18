@@ -34,6 +34,9 @@ public final class SecurityErrorsSteps {
     private boolean securityFailsafeMechanisms;
     private boolean standardsComplianceClaimed;
 
+    private String resourceMetadataUrl;
+    private final List<String> discoveredAuthServers = new ArrayList<>();
+
     private final List<Map<String, String>> authorizationScenarios = new ArrayList<>();
     private final List<Map<String, String>> tokenAudienceScenarios = new ArrayList<>();
     private final List<Map<String, String>> jsonRpcErrorScenarios = new ArrayList<>();
@@ -137,6 +140,39 @@ public final class SecurityErrorsSteps {
                 if (!expectedValue.equals(header.trim())) {
                     throw new AssertionError("unexpected WWW-Authenticate header: " + header);
                 }
+            }
+        }
+    }
+
+    @When("I retrieve the protected resource metadata")
+    public void i_retrieve_the_protected_resource_metadata() {
+        McpServerConfiguration config = McpServerConfiguration.defaultConfiguration();
+        resourceMetadataUrl = config.resourceMetadataUrl();
+        discoveredAuthServers.clear();
+        discoveredAuthServers.addAll(config.authServers());
+    }
+
+    @Then("the metadata should include authorization servers:")
+    public void the_metadata_should_include_authorization_servers(DataTable table) {
+        if (resourceMetadataUrl == null || resourceMetadataUrl.isBlank()) {
+            throw new AssertionError("missing resource metadata URL");
+        }
+        List<String> expected = table.asList().stream().skip(1).toList();
+        if (!discoveredAuthServers.containsAll(expected)) {
+            throw new AssertionError("missing authorization server");
+        }
+    }
+
+    @Then("the authorization server metadata should include required fields:")
+    public void the_authorization_server_metadata_should_include_required_fields(DataTable table) {
+        if (discoveredAuthServers.isEmpty()) {
+            throw new AssertionError("no authorization servers discovered");
+        }
+        // TODO implement real metadata retrieval
+        Map<String, String> metadata = Map.of();
+        for (String field : table.asList().stream().skip(1).toList()) {
+            if (!metadata.containsKey(field)) {
+                throw new AssertionError("missing field " + field);
             }
         }
     }
@@ -814,6 +850,8 @@ public final class SecurityErrorsSteps {
         securityMonitoringEnabled = false;
         securityFailsafeMechanisms = false;
         standardsComplianceClaimed = false;
+        resourceMetadataUrl = null;
+        discoveredAuthServers.clear();
 
         authorizationScenarios.clear();
         tokenAudienceScenarios.clear();
