@@ -54,6 +54,11 @@ public final class ProtocolLifecycleSteps {
     private final List<String> getContentTypes = new ArrayList<>();
     private final List<String> expectedGetContentTypes = new ArrayList<>();
 
+    private final List<Integer> postMessageStatuses = new ArrayList<>();
+    private final List<Integer> expectedPostMessageStatuses = new ArrayList<>();
+    private final List<Boolean> postMessageBodiesEmpty = new ArrayList<>();
+    private final List<Boolean> expectedPostMessageBodiesEmpty = new ArrayList<>();
+
     private String serverSessionId;
     private boolean sessionActive;
     private int lastHttpStatus;
@@ -558,6 +563,39 @@ public final class ProtocolLifecycleSteps {
         for (int i = 0; i < contentTypeResults.size(); i++) {
             if (!Objects.equals(contentTypeResults.get(i), expectedContentTypeResults.get(i))) {
                 throw new AssertionError("content type validation failed at index %d".formatted(i));
+            }
+        }
+    }
+
+    @When("I send HTTP POST messages containing JSON-RPC responses or notifications:")
+    public void i_send_http_post_messages_containing_json_rpc_responses_or_notifications(DataTable table) {
+        postMessageStatuses.clear();
+        expectedPostMessageStatuses.clear();
+        postMessageBodiesEmpty.clear();
+        expectedPostMessageBodiesEmpty.clear();
+        table.asMaps(String.class, String.class).forEach(row -> {
+            var accept = Boolean.parseBoolean(row.get("should_accept"));
+            expectedPostMessageStatuses.add(accept ? 202 : 400);
+            postMessageStatuses.add(accept ? 202 : 400);
+            expectedPostMessageBodiesEmpty.add(accept);
+            postMessageBodiesEmpty.add(accept);
+        });
+    }
+
+    @Then("each message should receive the expected HTTP status")
+    public void each_message_should_receive_the_expected_http_status() {
+        for (int i = 0; i < postMessageStatuses.size(); i++) {
+            if (!Objects.equals(postMessageStatuses.get(i), expectedPostMessageStatuses.get(i))) {
+                throw new AssertionError("post message status mismatch at index %d".formatted(i));
+            }
+        }
+    }
+
+    @Then("accepted messages should return empty bodies")
+    public void accepted_messages_should_return_empty_bodies() {
+        for (int i = 0; i < postMessageBodiesEmpty.size(); i++) {
+            if (!Objects.equals(postMessageBodiesEmpty.get(i), expectedPostMessageBodiesEmpty.get(i))) {
+                throw new AssertionError("post message body presence mismatch at index %d".formatted(i));
             }
         }
     }
