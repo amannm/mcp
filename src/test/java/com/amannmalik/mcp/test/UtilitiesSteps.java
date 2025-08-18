@@ -575,6 +575,30 @@ public final class UtilitiesSteps {
         if (!messageSeen || !missingMessageSeen) throw new AssertionError("message field not optional");
     }
 
+    @Given("I am validating progress notification required fields")
+    public void i_am_validating_progress_notification_required_fields() {
+        progressNotificationRejected = false;
+    }
+
+    @When("I create progress notifications with missing fields:")
+    public void i_create_progress_notifications_with_missing_fields(DataTable table) {
+        progressNotificationRejected = true;
+        for (final var row : table.asMaps()) {
+            ProgressToken token = row.get("token") == null || row.get("token").isBlank()
+                    ? null
+                    : new ProgressToken.StringToken(row.get("token"));
+            double progress = row.get("progress") == null || row.get("progress").isBlank()
+                    ? Double.NaN
+                    : Double.parseDouble(row.get("progress"));
+            try {
+                new ProgressNotification(token, progress, null, null);
+                progressNotificationRejected = false;
+            } catch (IllegalArgumentException e) {
+                // TODO
+            }
+        }
+    }
+
     @Given("I am validating progress notification totals")
     public void i_am_validating_progress_notification_totals() {
         progressNotificationRejected = false;
