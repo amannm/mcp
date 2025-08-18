@@ -35,7 +35,8 @@ public final class ProtocolLifecycleSteps {
     private JsonObject lastNotification;
     private String lastErrorMessage;
     private int lastErrorCode;
-    private Set<RequestId> usedRequestIds = new HashSet<>();
+    private final Set<RequestId> usedRequestIds = new HashSet<>();
+    private final Set<RequestId> sentRequestIds = new HashSet<>();
     
     private List<Map<String, String>> capabilityConfigurations = new ArrayList<>();
     private boolean samplingRequested;
@@ -168,6 +169,7 @@ public final class ProtocolLifecycleSteps {
         lastErrorMessage = null;
         lastErrorCode = 0;
         usedRequestIds.clear();
+        sentRequestIds.clear();
         
         if (currentConfiguration == null) {
             capabilityConfigurations.clear();
@@ -383,6 +385,13 @@ public final class ProtocolLifecycleSteps {
     @When("I send a request with identifier {string}")
     public void i_send_a_request_with_identifier(String id) {
         lastRequestId = RequestId.parse(id);
+        if (!sentRequestIds.add(lastRequestId)) {
+            lastErrorCode = -32600;
+            lastErrorMessage = "Duplicate request identifier";
+        } else {
+            lastErrorCode = 0;
+            lastErrorMessage = null;
+        }
         lastRequest = createRequest(lastRequestId, RequestMethod.PING.method(), Json.createObjectBuilder().build());
     }
 
