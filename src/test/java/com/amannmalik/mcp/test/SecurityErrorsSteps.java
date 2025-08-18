@@ -211,7 +211,7 @@ public final class SecurityErrorsSteps {
             String aud = row.get("token_audience");
             boolean matches = aud != null && Arrays.stream(aud.split(","))
                     .map(String::trim)
-                    .anyMatch(a -> a.equals(resourceUri));
+                    .anyMatch(a -> a.equalsIgnoreCase(resourceUri));
             int status = Integer.parseInt(row.get("expected_status"));
             String error = row.get("expected_error");
             if (matches) {

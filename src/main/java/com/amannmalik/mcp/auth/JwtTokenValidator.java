@@ -98,11 +98,11 @@ public final class JwtTokenValidator implements TokenValidator {
 
     private boolean mismatch(JsonValue val) {
         return switch (val.getValueType()) {
-            case STRING -> !expectedAudience.equals(((JsonString) val).getString());
+            case STRING -> !expectedAudience.equalsIgnoreCase(((JsonString) val).getString());
             case ARRAY -> val.asJsonArray()
                     .getValuesAs(JsonString.class)
                     .stream()
-                    .noneMatch(js -> expectedAudience.equals(js.getString()));
+                    .noneMatch(js -> expectedAudience.equalsIgnoreCase(js.getString()));
             default -> true;
         };
     }
