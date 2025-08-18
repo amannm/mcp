@@ -134,6 +134,16 @@ Feature: MCP Protocol Utilities
     Then behavior should match specification requirements
     And notifications should only reference valid active tokens
 
+  @progress @token-uniqueness
+  Scenario: Progress token uniqueness enforcement
+    # Tests specification/2025-06-18/basic/utilities/progress.mdx:16-18 (Unique tokens)
+    Given I have active requests with progress tokens:
+      | request_id | progress_token |
+      | req-1      | dup-token      |
+      | req-2      | dup-token      |
+    When I validate progress token uniqueness
+    Then the system should reject duplicate progress tokens
+
   @progress @rate-limiting
   Scenario: Progress notification rate limiting
     # Tests specification/2025-06-18/basic/utilities/progress.mdx:89-93 (Implementation notes)
