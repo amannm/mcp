@@ -86,7 +86,7 @@ public record McpClientConfiguration(
                 10,
                 Duration.ofMinutes(1),
                 false,
-                true,
+                false,
                 List.of(),
                 SamplingAccessPolicy.PERMISSIVE
         );
