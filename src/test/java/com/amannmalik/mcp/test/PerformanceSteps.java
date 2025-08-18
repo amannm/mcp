@@ -162,26 +162,16 @@ public final class PerformanceSteps {
         int successfulPings = 0;
         long intervalMs = 1000L / frequencyHz;
 
-        Instant startTime = Instant.now();
         for (int i = 0; i < totalPings; i++) {
             try {
                 Instant pingStart = Instant.now();
-                
-                Thread.sleep(1); 
+                Thread.sleep(1);
                 Instant pingEnd = Instant.now();
-
                 latencyMeasurements.add(Duration.between(pingStart, pingEnd));
                 successfulPings++;
-
-                
                 Thread.sleep(Math.max(0, intervalMs - Duration.between(pingStart, pingEnd).toMillis()));
-
-                
-                if (Duration.between(startTime, Instant.now()).toSeconds() >= durationSeconds) {
-                    break;
-                }
             } catch (Exception e) {
-                
+                // TODO: handle interruption scenarios
             }
         }
 
@@ -708,10 +698,11 @@ public final class PerformanceSteps {
     }
 
     private long parseMemory(String value) {
-        if (value.endsWith("MB")) {
-            return Long.parseLong(value.replace("MB", "")) * 1024 * 1024;
+        String v = value.replace("<", "");
+        if (v.endsWith("MB")) {
+            return Long.parseLong(v.replace("MB", "")) * 1024 * 1024;
         }
-        return Long.parseLong(value);
+        return Long.parseLong(v);
     }
 
     @Then("memory usage should remain within established baselines")
@@ -765,13 +756,14 @@ public final class PerformanceSteps {
     }
 
     private double parseTime(String value) {
-        if (value.endsWith("ms")) {
-            return Double.parseDouble(value.replace("ms", ""));
+        String v = value.replace("<", "");
+        if (v.endsWith("ms")) {
+            return Double.parseDouble(v.replace("ms", ""));
         }
-        if (value.endsWith("s")) {
-            return Double.parseDouble(value.replace("s", "")) * 1000;
+        if (v.endsWith("s")) {
+            return Double.parseDouble(v.replace("s", "")) * 1000;
         }
-        return Double.parseDouble(value);
+        return Double.parseDouble(v);
     }
 
     @Then("error recovery should occur within specified time limits")

@@ -52,7 +52,7 @@ public final class McpHost implements AutoCloseable {
         this.privacyBoundary = new ResourceAccessController();
         this.samplingAccess = new SamplingAccessController();
         for (McpClientConfiguration clientConfig : config.clientConfigurations()) {
-            grantConsent(clientConfig.clientId());
+            grantConsent(clientConfig.serverName());
             SamplingProvider samplingProvider = new InteractiveSamplingProvider(clientConfig.interactiveSampling());
             List<Root> roots = clientConfig.rootDirectories().stream()
                     .map(dir -> new Root("file://" + dir, dir, null))
