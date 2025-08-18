@@ -286,7 +286,10 @@ public final class ClientFeaturesSteps {
 
     @When("I check access for URI {string}")
     public void i_check_access_for_uri(String uri) {
-        rootAccessAllowed = configuredRoots.isEmpty();
+        rootAccessAllowed = configuredRoots.stream()
+                .map(r -> r.get("uri"))
+                .filter(Objects::nonNull)
+                .anyMatch(uri::startsWith);
     }
 
     @When("I configure roots for server access")
