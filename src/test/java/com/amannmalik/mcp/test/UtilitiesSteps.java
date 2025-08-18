@@ -143,7 +143,7 @@ public final class UtilitiesSteps {
     public void the_notification_should_be_properly_formatted() {
         if (lastCancellation == null) throw new AssertionError("no cancellation");
         if (!lastCancellation.containsKey("requestId")) throw new AssertionError("requestId missing");
-        if (!lastCancellation.containsKey("reason")) throw new AssertionError("reason missing");
+        // reason is optional according to the specification
     }
 
     @Then("the receiver should stop processing the request")
