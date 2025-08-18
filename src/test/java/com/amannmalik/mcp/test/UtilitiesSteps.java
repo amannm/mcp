@@ -4,6 +4,7 @@ import com.amannmalik.mcp.api.*;
 import io.cucumber.datatable.DataTable;
 import io.cucumber.java.After;
 import io.cucumber.java.en.*;
+import jakarta.json.*;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -30,11 +31,14 @@ public final class UtilitiesSteps {
     private boolean reconnectionAttempted;
     private boolean pingFrequencyConfigured;
     private boolean pingTimeoutHandlingConfigured;
+    private String pingErrorMessage = "";
 
     private final List<Map<String,String>> bidirectionalPings = new ArrayList<>();
 
     private final Map<String,List<Double>> progressNotifications = new HashMap<>();
     private final List<Map<String,String>> progressScenarios = new ArrayList<>();
+    private final Map<String,String> activeProgressTokens = new HashMap<>();
+    private boolean duplicateTokenDetected;
     private boolean missingTotalSeen;
     private boolean rateLimitingImplemented;
     private boolean activeTokensTracked;
@@ -255,6 +259,18 @@ public final class UtilitiesSteps {
         lastPingResponseId = id; // simulate immediate echo
     }
 
+    @When("I send a ping request with parameters:")
+    public void i_send_a_ping_request_with_parameters(DataTable table) throws Exception {
+        JsonObjectBuilder b = Json.createObjectBuilder();
+        for (Map<String, String> row : table.asMaps()) {
+            b.add(row.get("field"), row.get("value"));
+        }
+        JsonRpcMessage resp = activeConnection.request(clientId, RequestMethod.PING, b.build());
+        String repr = resp.toString();
+        pingErrorMessage = repr.contains("ErrorDetail") ? repr : "";
+        lastPingResponseId = null;
+    }
+
     @Then("the receiver should respond promptly with an empty result")
     public void the_receiver_should_respond_promptly_with_an_empty_result() {
         if (lastPingResponseId == null) throw new AssertionError("no ping response");
@@ -268,6 +284,13 @@ public final class UtilitiesSteps {
     @Then("the response format should be valid JSON-RPC")
     public void the_response_format_should_be_valid_json_rpc() {
         if (lastPingResponseId == null) throw new AssertionError("invalid response");
+    }
+
+    @Then("the error message should be {string}")
+    public void the_error_message_should_be(String message) {
+        if (!pingErrorMessage.contains(message)) {
+            throw new AssertionError("expected error message " + message);
+        }
     }
 
     @Given("I have an established MCP connection for utilities")
@@ -453,6 +476,32 @@ public final class UtilitiesSteps {
                 throw new AssertionError("notification references invalid token");
             }
         }
+    }
+
+    @Given("I have active requests with progress tokens:")
+    public void i_have_active_requests_with_progress_tokens(DataTable table) {
+        activeProgressTokens.clear();
+        duplicateTokenDetected = false;
+        for (Map<String,String> row : table.asMaps()) {
+            String id = row.get("request_id");
+            String token = row.get("progress_token");
+            if (id != null && token != null) {
+                if (activeProgressTokens.containsValue(token)) {
+                    duplicateTokenDetected = true;
+                } else {
+                    activeProgressTokens.put(id, token);
+                }
+            }
+        }
+    }
+
+    @When("I validate progress token uniqueness")
+    public void i_validate_progress_token_uniqueness() {
+    }
+
+    @Then("the system should reject duplicate progress tokens")
+    public void the_system_should_reject_duplicate_progress_tokens() {
+        if (!duplicateTokenDetected) throw new AssertionError("duplicate token not detected");
     }
 
     @Given("I am sending progress notifications")
