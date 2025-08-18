@@ -34,7 +34,11 @@ public sealed interface RequestId permits
         }
         return switch (value.getValueType()) {
             case STRING -> new StringId(((JsonString) value).getString());
-            case NUMBER -> new NumericId(((JsonNumber) value).longValue());
+            case NUMBER -> {
+                JsonNumber num = (JsonNumber) value;
+                if (!num.isIntegral()) throw new IllegalArgumentException("id must be an integer");
+                yield new NumericId(num.longValue());
+            }
             default -> throw new IllegalArgumentException("Invalid id type");
         };
     }
