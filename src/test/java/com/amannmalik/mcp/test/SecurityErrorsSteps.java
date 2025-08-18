@@ -1008,6 +1008,7 @@ public final class SecurityErrorsSteps {
             case "invalid_json" -> "parse_error_32700";
             case "missing_required_field" -> "invalid_request_32600";
             case "invalid_field_type" -> "parse_error_32700";
+            case "invalid_jsonrpc_version" -> "invalid_request_32600";
             case "oversized_id_field" -> "invalid_request_32600";
             case "null_id_field" -> "invalid_request_32600";
             case "invalid_method_type" -> "invalid_request_32600";

@@ -304,14 +304,15 @@ Feature: MCP Security Error Handling
     # Tests specification/2025-06-18/basic/index.mdx:33-95 (Message format validation)
     Given an MCP server with strict input validation
     When I send malformed JSON-RPC messages:
-      | malformation_type      | malformed_content                          | expected_response     |
-      | invalid_json           | {"jsonrpc": "2.0", "id": 1,                | parse_error_32700     |
-      | missing_required_field | {"id": 1, "method": "ping"}                | invalid_request_32600 |
-      | invalid_field_type     | {"jsonrpc": 2.0, "id": 1}                  | parse_error_32700     |
-      | oversized_id_field     | {"jsonrpc": "2.0", "id": "x" * 1000}       | invalid_request_32600 |
-      | null_id_field          | {"jsonrpc": "2.0", "id": null}             | invalid_request_32600 |
-      | invalid_method_type    | {"jsonrpc": "2.0", "id": 1, "method": 123} | invalid_request_32600 |
-      | oversized_message      | 100MB+ message payload                     | message_too_large     |
+      | malformation_type        | malformed_content                    | expected_response        |
+      | invalid_json             | {"jsonrpc": "2.0", "id": 1,         | parse_error_32700        |
+      | missing_required_field   | {"id": 1, "method": "ping"}          | invalid_request_32600    |
+      | invalid_field_type       | {"jsonrpc": 2.0, "id": 1}           | parse_error_32700        |
+      | invalid_jsonrpc_version | {"jsonrpc": "1.0", "id": 1, "method": "ping"} | invalid_request_32600 |
+      | oversized_id_field       | {"jsonrpc": "2.0", "id": "x" * 1000} | invalid_request_32600   |
+      | null_id_field           | {"jsonrpc": "2.0", "id": null}       | invalid_request_32600    |
+      | invalid_method_type     | {"jsonrpc": "2.0", "id": 1, "method": 123} | invalid_request_32600 |
+      | oversized_message       | 100MB+ message payload               | message_too_large        |
     Then each malformed message should be rejected with appropriate error codes
     And the connection should remain stable after malformed input
     And error responses should not expose internal implementation details
