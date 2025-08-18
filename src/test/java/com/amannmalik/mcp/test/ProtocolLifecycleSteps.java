@@ -579,6 +579,13 @@ public final class ProtocolLifecycleSteps {
         }
     }
 
+    @Then("the response should specify JSON-RPC version {string}")
+    public void the_response_should_specify_json_rpc_version(String version) {
+        if (lastResponse == null || !version.equals(lastResponse.getString("jsonrpc", null))) {
+            throw new AssertionError("response missing jsonrpc " + version);
+        }
+    }
+
     @When("I send a notification message")
     public void i_send_a_notification_message() {
         lastNotification = createNotification(NotificationMethod.PROGRESS.method(), null);
@@ -594,6 +601,13 @@ public final class ProtocolLifecycleSteps {
         }
         if (!lastNotification.containsKey("method")) {
             throw new AssertionError("notification must contain method field");
+        }
+    }
+
+    @Then("the notification should specify JSON-RPC version {string}")
+    public void the_notification_should_specify_json_rpc_version(String version) {
+        if (lastNotification == null || !version.equals(lastNotification.getString("jsonrpc", null))) {
+            throw new AssertionError("notification missing jsonrpc " + version);
         }
     }
 

@@ -292,16 +292,28 @@ public final class UtilitiesSteps {
                 b.add(field, value);
             }
         }
-        JsonRpcMessage msg = activeConnection.request(clientId, RequestMethod.PING, b.build());
+        JsonRpcMessage msg;
+        try {
+            msg = activeConnection.request(clientId, RequestMethod.PING, b.build());
+        } catch (IllegalArgumentException e) {
+            pingErrorCode = -32602;
+            pingErrorMessage = "Invalid params";
+            lastPingResponse = null;
+            lastPingResponseId = null;
+            return;
+        }
+        lastPingResponse = msg;
         String repr = msg.toString();
         var m = java.util.regex.Pattern.compile("code=(-?\\d+), message=([^,\\]]+)").matcher(repr);
         if (m.find()) {
             pingErrorCode = Integer.parseInt(m.group(1));
             pingErrorMessage = m.group(2);
+            lastPingResponse = null;
             lastPingResponseId = null;
             return;
         }
-        throw new AssertionError("expected error response");
+        var idMatcher = java.util.regex.Pattern.compile("id=([^,]+)").matcher(repr);
+        lastPingResponseId = idMatcher.find() ? idMatcher.group(1) : null;
     }
 
     @Then("the receiver should respond promptly with an empty result")

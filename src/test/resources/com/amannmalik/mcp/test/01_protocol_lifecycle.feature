@@ -134,6 +134,7 @@ Feature: MCP Connection Lifecycle
     And the server responds
     Then the response should match my request identifier
     And the response should contain valid result data
+    And the response should specify JSON-RPC version "2.0"
 
   @messaging
   Scenario: Notification communication
@@ -142,6 +143,7 @@ Feature: MCP Connection Lifecycle
     Given I have an established MCP connection
     When I send a notification message
     Then the notification should use proper format
+    And the notification should specify JSON-RPC version "2.0"
     And no response should be expected
 
   @error-handling
