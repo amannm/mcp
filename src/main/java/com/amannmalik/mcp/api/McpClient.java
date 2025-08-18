@@ -222,11 +222,16 @@ final class McpClient extends JsonRpcEndpoint implements AutoCloseable {
 
     public JsonRpcMessage request(RequestId id, RequestMethod method, JsonObject params, Duration timeoutMillis) throws IOException {
         requireCapability(method);
-        if (params != null && params.containsKey("_meta")) {
-            try {
-                ValidationUtil.requireMeta(params.getJsonObject("_meta"));
-            } catch (ClassCastException e) {
-                throw new IllegalArgumentException(e.getMessage(), e);
+        if (params != null) {
+            if (params.containsKey("progressToken")) {
+                throw new IllegalArgumentException("progressToken must be in _meta");
+            }
+            if (params.containsKey("_meta")) {
+                try {
+                    ValidationUtil.requireMeta(params.getJsonObject("_meta"));
+                } catch (ClassCastException e) {
+                    throw new IllegalArgumentException(e.getMessage(), e);
+                }
             }
         }
         if (!connected) {
