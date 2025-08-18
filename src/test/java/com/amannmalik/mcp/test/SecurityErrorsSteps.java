@@ -33,6 +33,7 @@ public final class SecurityErrorsSteps {
     private String clientId;
     private boolean securityControlsEnabled;
     private boolean loggingConfigured;
+    private boolean authorizationRequired;
     private String resourceUri;
     private boolean resourceAccessControls;
     private boolean limitedPrincipal;
@@ -106,7 +107,7 @@ public final class SecurityErrorsSteps {
         activeConnection.grantConsent("server");
         clientId = clientConfig.clientId();
         activeConnection.connect(clientId);
-        // TODO enable authorization requirements
+        authorizationRequired = true;
     }
 
     @When("I test authorization scenarios:")
@@ -856,6 +857,7 @@ public final class SecurityErrorsSteps {
         }
         securityControlsEnabled = false;
         loggingConfigured = false;
+        authorizationRequired = false;
         resourceUri = null;
         resourceAccessControls = false;
         limitedPrincipal = false;
