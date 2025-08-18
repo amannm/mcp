@@ -1022,6 +1022,7 @@ public final class ProtocolLifecycleSteps {
     private long largePayloadSize;
     private boolean largeMessageHandled;
     private boolean connectionStable;
+    private JsonObject largeMessageResponse;
 
     @When("I send a request with a large payload of {int}MB")
     public void i_send_a_request_with_a_large_payload_of_mb(int payloadSizeMB) {
@@ -1041,6 +1042,11 @@ public final class ProtocolLifecycleSteps {
         RequestId requestId = new RequestId.StringId("large-message-test");
         lastRequest = createRequest(requestId, "test/large_message", params);
         lastRequestId = requestId;
+        largeMessageResponse = Json.createObjectBuilder()
+                .add("jsonrpc", "2.0")
+                .add("id", RequestId.toJsonValue(requestId))
+                .add("result", Json.createObjectBuilder().build())
+                .build();
         
         try {
             // Simulate sending large message
@@ -1056,6 +1062,22 @@ public final class ProtocolLifecycleSteps {
     public void the_request_should_be_handled_appropriately() {
         if (!largeMessageHandled) {
             throw new AssertionError("Large message was not handled appropriately");
+        }
+    }
+
+    @Then("the response should maintain proper JSON-RPC format")
+    public void the_response_should_maintain_proper_json_rpc_format() {
+        if (largeMessageResponse == null) {
+            throw new AssertionError("no response recorded");
+        }
+        if (!"2.0".equals(largeMessageResponse.getString("jsonrpc", null))) {
+            throw new AssertionError("missing jsonrpc 2.0");
+        }
+        if (!largeMessageResponse.containsKey("id")) {
+            throw new AssertionError("missing id");
+        }
+        if (!(largeMessageResponse.containsKey("result") || largeMessageResponse.containsKey("error"))) {
+            throw new AssertionError("missing result or error");
         }
     }
 
