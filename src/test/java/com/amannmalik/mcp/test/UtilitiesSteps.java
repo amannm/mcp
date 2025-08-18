@@ -57,6 +57,7 @@ public final class UtilitiesSteps {
     private boolean rateLimitingImplemented;
     private boolean activeTokensTracked;
     private boolean notificationsStoppedAfterCompletion;
+    private boolean progressNotificationRejected;
     private JsonObject misplacedProgressParams;
     private int progressTokenErrorCode;
     private String progressTokenErrorMessage;
@@ -572,6 +573,25 @@ public final class UtilitiesSteps {
     @Then("message field should be optional")
     public void message_field_should_be_optional() {
         if (!messageSeen || !missingMessageSeen) throw new AssertionError("message field not optional");
+    }
+
+    @Given("I am validating progress notification totals")
+    public void i_am_validating_progress_notification_totals() {
+        progressNotificationRejected = false;
+    }
+
+    @When("I create a progress notification with progress {double} and total {double}")
+    public void i_create_a_progress_notification_with_progress_and_total(double progress, double total) {
+        try {
+            new ProgressNotification(new ProgressToken.StringToken("token"), progress, total, null);
+        } catch (IllegalArgumentException ex) {
+            progressNotificationRejected = true;
+        }
+    }
+
+    @Then("the progress notification should be rejected")
+    public void the_progress_notification_should_be_rejected() {
+        if (!progressNotificationRejected) throw new AssertionError("progress notification accepted");
     }
 
     @Given("I have requests with and without progress tokens")

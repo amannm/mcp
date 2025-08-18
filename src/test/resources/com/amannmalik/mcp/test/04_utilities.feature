@@ -193,6 +193,14 @@ Feature: MCP Protocol Utilities
     And progress values should increase with each notification
     And invalid progress notifications should be ignored
 
+  @progress @validation
+  Scenario: Progress value exceeding total is rejected
+    # Tests specification/2025-06-18/basic/utilities/progress.mdx:35-53 (Notification format)
+    Given I am validating progress notification totals
+    When I create a progress notification with progress 150 and total 100
+    Then the progress notification should be rejected
+
+
   @progress @behavior-requirements
   Scenario: Progress notification behavior requirements
     # Tests specification/2025-06-18/basic/utilities/progress.mdx:60-71 (Behavior requirements)
