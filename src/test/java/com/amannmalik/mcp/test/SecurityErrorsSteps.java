@@ -912,6 +912,11 @@ public final class SecurityErrorsSteps {
         strictTlsValidation = false;
     }
 
+
+    // New step definitions for resource exhaustion attacks
+    private final Set<String> resourceExhaustionLogs = new HashSet<>();
+
+
     @Given("an MCP server with resource protection enabled")
     public void an_mcp_server_with_resource_protection_enabled() {
         resourceProtectionEnabled = true;
@@ -1043,6 +1048,10 @@ public final class SecurityErrorsSteps {
             }
         }
     }
+
+    // New step definitions for TLS/Certificate validation errors
+    private final Set<String> certificateLogs = new HashSet<>();
+
 
     @Given("an MCP client with strict TLS validation enabled")
     public void an_mcp_client_with_strict_tls_validation_enabled() {

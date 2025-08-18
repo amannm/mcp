@@ -15,12 +15,13 @@ Feature: MCP Security Error Handling
   Scenario: Authorization header validation
     # Tests specification/2025-06-18/basic/authorization.mdx:236-250 (Token requirements)
     # Tests specification/2025-06-18/basic/authorization.mdx:89-92 (WWW-Authenticate header)
+    # Tests specification/2025-06-18/basic/authorization.mdx:283-295 (Authorization error status codes)
     Given an MCP server requiring authorization
     When I test authorization scenarios:
-      | auth_header             | expected_status | expected_error | www_authenticate_header                                                      |
+      | auth_header             | expected_status | expected_error | www_authenticate_header |
       | missing                 | 401             | Unauthorized   | Bearer resource=https://mcp.example.com/.well-known/oauth-protected-resource |
       | empty_string            | 401             | Unauthorized   | Bearer resource=https://mcp.example.com/.well-known/oauth-protected-resource |
-      | malformed_bearer        | 401             | Unauthorized   | Bearer resource=https://mcp.example.com/.well-known/oauth-protected-resource |
+      | malformed_bearer        | 400             | Bad Request    | none |
       | Bearer invalid_token    | 401             | Unauthorized   | Bearer resource=https://mcp.example.com/.well-known/oauth-protected-resource |
       | Bearer expired_token    | 401             | Unauthorized   | Bearer resource=https://mcp.example.com/.well-known/oauth-protected-resource |
       | Basic username:password | 401             | Unauthorized   | Bearer resource=https://mcp.example.com/.well-known/oauth-protected-resource |
@@ -54,6 +55,7 @@ Feature: MCP Security Error Handling
       | multiple_wrong_audiences   | https://other1.com,other2   | 401             | Unauthorized   |
       | partially_correct_audience | https://mcp.example.com,bad | 200             | none           |
       | correct_audience           | https://mcp.example.com     | 200             | none           |
+      | uppercase_audience         | https://MCP.EXAMPLE.COM     | 200             | none           |
     Then the server should validate token audience correctly
     And only accept tokens issued specifically for the server
 
