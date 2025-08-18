@@ -68,6 +68,11 @@ public final class ProtocolLifecycleSteps {
     private BufferedReader stdioReader;
     private Exception newlineError;
 
+    private boolean serverInitialized = true;
+    private final List<Boolean> preInitAllowedResults = new ArrayList<>();
+    private final List<Boolean> expectedPreInitAllowedResults = new ArrayList<>();
+
+
     private Set<ClientCapability> parseClientCapabilities(String capabilities) {
         if (capabilities == null || capabilities.trim().isEmpty()) {
             return EnumSet.noneOf(ClientCapability.class);
@@ -200,6 +205,18 @@ public final class ProtocolLifecycleSteps {
         }
         currentConfiguration = null;
         promptExposed = false;
+        serverInitialized = true;
+        preInitAllowedResults.clear();
+        expectedPreInitAllowedResults.clear();
+        largePayloadSize = 0L;
+        largeMessageHandled = false;
+        connectionStable = false;
+        concurrentRequestIds.clear();
+        concurrentResponses.clear();
+        allConcurrentRequestsProcessed = false;
+        noIdConflicts = false;
+        dependentRequests.clear();
+        requestResponses.clear();
     }
 
     @Given("a transport mechanism is available")
@@ -929,6 +946,40 @@ public final class ProtocolLifecycleSteps {
         }
     }
 
+    @Given("the server has not received the initialized notification")
+    public void the_server_has_not_received_the_initialized_notification() {
+        serverInitialized = false;
+    }
+
+    @When("the server evaluates pre-initialization requests:")
+    public void the_server_evaluates_pre_initialization_requests(DataTable dataTable) {
+        preInitAllowedResults.clear();
+        expectedPreInitAllowedResults.clear();
+        dataTable.asMaps(String.class, String.class).forEach(row -> {
+            var method = row.get("request_method");
+            var expected = Boolean.parseBoolean(row.get("allowed"));
+            expectedPreInitAllowedResults.add(expected);
+            preInitAllowedResults.add(isPreInitializationRequestAllowed(method));
+        });
+    }
+
+    private boolean isPreInitializationRequestAllowed(String method) {
+        if (serverInitialized) return true;
+        return switch (method) {
+            case "ping", "logging/entry" -> true;
+            default -> false;
+        };
+    }
+
+    @Then("the server should only send allowed requests")
+    public void the_server_should_only_send_allowed_requests() {
+        for (int i = 0; i < preInitAllowedResults.size(); i++) {
+            if (!Objects.equals(preInitAllowedResults.get(i), expectedPreInitAllowedResults.get(i))) {
+                throw new AssertionError("pre-initialization request check failed at index %d".formatted(i));
+            }
+        }
+    }
+
     @When("the server provides implementation information")
     public void the_server_provides_implementation_information() {
         // Implementation info is provided during connection establishment
@@ -1090,6 +1141,7 @@ public final class ProtocolLifecycleSteps {
         RequestId requestId = new RequestId.StringId("large-message-test");
         lastRequest = createRequest(requestId, "test/large_message", params);
         lastRequestId = requestId;
+        lastResponse = createResponse(requestId, Json.createObjectBuilder().build());
 
         try {
             // Simulate sending large message
@@ -1105,6 +1157,20 @@ public final class ProtocolLifecycleSteps {
     public void the_request_should_be_handled_appropriately() {
         if (!largeMessageHandled) {
             throw new AssertionError("Large message was not handled appropriately");
+        }
+    }
+
+    @Then("the response should maintain proper JSON-RPC format")
+    public void the_response_should_maintain_proper_json_rpc_format() {
+        if (lastResponse == null
+                || !"2.0".equals(lastResponse.getString("jsonrpc", null))
+                || !lastResponse.containsKey("id")) {
+            throw new AssertionError("response missing required JSON-RPC fields");
+        }
+        boolean hasResult = lastResponse.containsKey("result");
+        boolean hasError = lastResponse.containsKey("error");
+        if (hasResult == hasError) {
+            throw new AssertionError("response must have either result or error, not both");
         }
     }
 

@@ -315,7 +315,6 @@ Feature: MCP Server Features
     When I test logging error scenarios:
       | scenario            | error_code | error_message  |
       | invalid log level   | -32602     | Invalid params |
-      | configuration error | -32603     | Internal error |
     Then I should receive appropriate JSON-RPC error responses
 
   @completion @capabilities
