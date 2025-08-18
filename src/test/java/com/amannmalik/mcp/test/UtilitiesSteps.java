@@ -33,6 +33,7 @@ public final class UtilitiesSteps {
     private boolean pingFrequencyConfigured;
     private boolean pingTimeoutHandlingConfigured;
     private String pingErrorMessage = "";
+    private int pingErrorCode;
 
     private final List<Map<String,String>> bidirectionalPings = new ArrayList<>();
 
@@ -256,6 +257,8 @@ public final class UtilitiesSteps {
         monitoring = false;
         pingFrequencyConfigured = false;
         pingTimeoutHandlingConfigured = false;
+        pingErrorMessage = "";
+        pingErrorCode = 0;
     }
 
     @When("I send a ping request with ID {string}")
@@ -270,10 +273,16 @@ public final class UtilitiesSteps {
         for (Map<String, String> row : table.asMaps()) {
             b.add(row.get("field"), row.get("value"));
         }
-        JsonRpcMessage resp = activeConnection.request(clientId, RequestMethod.PING, b.build());
-        String repr = resp.toString();
-        pingErrorMessage = repr.contains("ErrorDetail") ? repr : "";
-        lastPingResponseId = null;
+        JsonRpcMessage msg = activeConnection.request(clientId, RequestMethod.PING, b.build());
+        String repr = msg.toString();
+        var m = java.util.regex.Pattern.compile("code=(-?\\d+), message=([^,\\]]+)").matcher(repr);
+        if (m.find()) {
+            pingErrorCode = Integer.parseInt(m.group(1));
+            pingErrorMessage = m.group(2);
+            lastPingResponseId = null;
+            return;
+        }
+        throw new AssertionError("expected error response");
     }
 
     @Then("the receiver should respond promptly with an empty result")
@@ -295,6 +304,13 @@ public final class UtilitiesSteps {
     public void the_error_message_should_be(String message) {
         if (!pingErrorMessage.contains(message)) {
             throw new AssertionError("expected error message " + message);
+        }
+    }
+
+    @Then("the error code should be {int}")
+    public void the_error_code_should_be(int code) {
+        if (pingErrorCode != code) {
+            throw new AssertionError("expected error code " + code);
         }
     }
 
@@ -494,22 +510,31 @@ public final class UtilitiesSteps {
     @Given("I have active requests with progress tokens:")
     public void i_have_active_requests_with_progress_tokens(DataTable table) {
         activeProgressTokens.clear();
-        duplicateTokenDetected = false;
         for (Map<String,String> row : table.asMaps()) {
             String id = row.get("request_id");
             String token = row.get("progress_token");
             if (id != null && token != null) {
-                if (activeProgressTokens.containsValue(token)) {
-                    duplicateTokenDetected = true;
-                } else {
-                    activeProgressTokens.put(id, token);
-                }
+                activeProgressTokens.put(id, token);
             }
         }
+        duplicateTokenDetected = false;
     }
 
     @When("I validate progress token uniqueness")
     public void i_validate_progress_token_uniqueness() {
+        for (Map.Entry<String,String> e : activeProgressTokens.entrySet()) {
+            try {
+                RequestId id = RequestId.parse(e.getKey());
+                JsonObject params = Json.createObjectBuilder().add("progressToken", e.getValue()).build();
+                JsonRpcMessage msg = activeConnection.request(clientId, id, RequestMethod.PING, params);
+                if ("JsonRpcError".equals(msg.getClass().getSimpleName())) {
+                    duplicateTokenDetected = true;
+                }
+            } catch (IllegalArgumentException ex) {
+                duplicateTokenDetected = true;
+            } catch (Exception ignore) {
+            }
+        }
     }
 
     @Then("the system should reject duplicate progress tokens")
