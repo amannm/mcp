@@ -27,6 +27,7 @@ public final class PerformanceSteps {
     private boolean connectionStabilityMaintained;
     private boolean memoryWithinBounds;
     private boolean noResourceLeaks;
+    private long baselineMemoryUsage;
 
     
     private long resourceSize;
@@ -158,8 +159,8 @@ public final class PerformanceSteps {
             expectedSuccessRate = Double.parseDouble(scenario.get("expected_success_rate").replace("%", "")) / 100.0;
 
             actualSuccessRate = performHighFrequencyPings(pingFrequency, pingDuration);
-            connectionStabilityMaintained = actualSuccessRate > 0.8; 
-            memoryWithinBounds = checkMemoryUsage() < 100_000_000; 
+            connectionStabilityMaintained = actualSuccessRate > 0.8;
+            memoryWithinBounds = checkMemoryUsage() - baselineMemoryUsage < 50_000_000L;
             noResourceLeaks = !detectResourceLeaks();
         }
     }
@@ -312,6 +313,7 @@ public final class PerformanceSteps {
         throughputMetrics.clear();
         memoryUsageMetrics.clear();
         performanceResults.clear();
+        baselineMemoryUsage = checkMemoryUsage();
     }
 
     private void setupBaselineMetrics() {
