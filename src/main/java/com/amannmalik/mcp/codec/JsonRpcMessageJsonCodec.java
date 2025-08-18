@@ -45,15 +45,17 @@ public class JsonRpcMessageJsonCodec implements JsonCodec<JsonRpcMessage> {
     }
 
     static JsonRpcError.ErrorDetail errorDetail(JsonObject obj) {
-        var value = obj.get("code");
-        if (!(value instanceof JsonNumber number) || !number.isIntegral()) throw new IllegalArgumentException("error code must be integer");
+        var codeValue = obj.get("code");
+        if (!(codeValue instanceof JsonNumber number) || !number.isIntegral()) throw new IllegalArgumentException("error code must be integer");
         int code;
         try {
             code = number.intValueExact();
         } catch (ArithmeticException e) {
             throw new IllegalArgumentException("error code must be integer", e);
         }
-        return new JsonRpcError.ErrorDetail(code, obj.getString("message"), obj.get("data"));
+        var messageValue = obj.get("message");
+        if (!(messageValue instanceof JsonString msg)) throw new IllegalArgumentException("error message must be string");
+        return new JsonRpcError.ErrorDetail(code, msg.getString(), obj.get("data"));
     }
 
     @Override
