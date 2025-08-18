@@ -214,6 +214,20 @@ Scenario: HTTP Accept header case insensitivity
       | server internal error  | Internal error   | -32603     |
     Then I should receive proper error responses for each scenario
 
+  @messaging @invalid-response
+  Scenario: Response containing both result and error is rejected
+    # Tests specification/2025-06-18/basic/index.mdx:72-78 (Response format)
+    Given I have an established MCP connection
+    When I receive a response containing both result and error
+    Then I should detect an invalid response
+
+  @messaging @error-format
+  Scenario: Non-integer error code rejection
+    # Tests specification/2025-06-18/basic/index.mdx:72-78 (Error code requirements)
+    Given I have an established MCP connection
+    When I receive an error response with non-integer code 3.14
+    Then I should detect an invalid error code
+
   @connection @cleanup
   Scenario: Graceful connection termination
     # Tests specification/2025-06-18/basic/lifecycle.mdx:183-200 (Shutdown - stdio)

@@ -67,6 +67,7 @@ public final class ProtocolLifecycleSteps {
     private final Map<String, JsonObject> requestResponses = new HashMap<>();
     private BufferedReader stdioReader;
     private Exception newlineError;
+    private Exception invalidResponseError;
 
     private boolean serverInitialized = true;
     private final List<Boolean> preInitAllowedResults = new ArrayList<>();
@@ -1272,6 +1273,44 @@ public final class ProtocolLifecycleSteps {
         if (dependentRequests.isEmpty()) {
             throw new AssertionError("No dependent requests were configured for timing test");
         }
+    }
+
+    @When("I receive a response containing both result and error")
+    public void i_receive_a_response_containing_both_result_and_error() {
+        JsonObject response = Json.createObjectBuilder()
+                .add("jsonrpc", "2.0")
+                .add("id", RequestId.toJsonValue(new RequestId.NumericId(1)))
+                .add("result", Json.createObjectBuilder().build())
+                .add("error", Json.createObjectBuilder().add("code", -1).add("message", "oops").build())
+                .build();
+        invalidResponseError = response.containsKey("result") && response.containsKey("error")
+                ? new IllegalArgumentException("response cannot contain both result and error")
+                : null;
+    }
+
+    @When("I receive an error response with non-integer code {double}")
+    public void i_receive_an_error_response_with_non_integer_code(double code) {
+        JsonObject response = Json.createObjectBuilder()
+                .add("jsonrpc", "2.0")
+                .add("id", RequestId.toJsonValue(new RequestId.NumericId(1)))
+                .add("error", Json.createObjectBuilder().add("code", code).add("message", "oops").build())
+                .build();
+        try {
+            response.getJsonObject("error").getInt("code");
+            invalidResponseError = null;
+        } catch (Exception e) {
+            invalidResponseError = e;
+        }
+    }
+
+    @Then("I should detect an invalid response")
+    public void i_should_detect_an_invalid_response() {
+        if (invalidResponseError == null) throw new AssertionError("expected invalid response");
+    }
+
+    @Then("I should detect an invalid error code")
+    public void i_should_detect_an_invalid_error_code() {
+        if (invalidResponseError == null) throw new AssertionError("expected invalid error code");
     }
 
     @Given("a stdio transport with a message containing an embedded newline")
