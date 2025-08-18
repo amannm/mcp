@@ -41,6 +41,7 @@ public final class ProtocolLifecycleSteps {
     private List<Map<String, String>> capabilityConfigurations = new ArrayList<>();
     private boolean samplingRequested;
     private boolean samplingApproved;
+    private boolean promptExposed;
     private List<Map<String, String>> errorScenarios = new ArrayList<>();
     private List<Set<ServerCapability>> discoveredCapabilities = new ArrayList<>();
     private Map<String, String> currentConfiguration;
@@ -161,7 +162,7 @@ public final class ProtocolLifecycleSteps {
         clientCapabilities = EnumSet.noneOf(ClientCapability.class);
         serverCapabilities = EnumSet.noneOf(ServerCapability.class);
         availableFeatures = EnumSet.noneOf(ServerCapability.class);
-        
+
         lastRequestId = null;
         lastRequest = null;
         lastResponse = null;
@@ -170,12 +171,13 @@ public final class ProtocolLifecycleSteps {
         lastErrorCode = 0;
         usedRequestIds.clear();
         sentRequestIds.clear();
-        
+
         if (currentConfiguration == null) {
             capabilityConfigurations.clear();
             errorScenarios.clear();
         }
         currentConfiguration = null;
+        promptExposed = false;
     }
 
     @Given("a transport mechanism is available")
@@ -734,7 +736,9 @@ public final class ProtocolLifecycleSteps {
     @When("the server requests LLM sampling")
     public void the_server_requests_llm_sampling() {
         samplingRequested = true;
-        samplingApproved = false; // TODO: simulate approval flow
+        McpClientConfiguration cfg = McpClientConfiguration.defaultConfiguration("client", "server", "principal");
+        samplingApproved = cfg.interactiveSampling();
+        promptExposed = samplingApproved;
     }
     
     @Then("I should require explicit user approval")
@@ -746,7 +750,9 @@ public final class ProtocolLifecycleSteps {
 
     @Then("maintain control over prompt visibility")
     public void maintain_control_over_prompt_visibility() {
-        // TODO: verify prompt visibility controls
+        if (promptExposed) {
+            throw new AssertionError("sampling request exposed prompts");
+        }
     }
     
     @Given("I can provide the following capabilities:")
