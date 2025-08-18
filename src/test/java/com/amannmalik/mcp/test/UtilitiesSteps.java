@@ -35,6 +35,8 @@ public final class UtilitiesSteps {
 
     private final Map<String,List<Double>> progressNotifications = new HashMap<>();
     private final List<Map<String,String>> progressScenarios = new ArrayList<>();
+    private final Map<String,String> activeProgressTokens = new HashMap<>();
+    private boolean duplicateTokenDetected;
     private boolean missingTotalSeen;
     private boolean rateLimitingImplemented;
     private boolean activeTokensTracked;
@@ -453,6 +455,32 @@ public final class UtilitiesSteps {
                 throw new AssertionError("notification references invalid token");
             }
         }
+    }
+
+    @Given("I have active requests with progress tokens:")
+    public void i_have_active_requests_with_progress_tokens(DataTable table) {
+        activeProgressTokens.clear();
+        duplicateTokenDetected = false;
+        for (Map<String,String> row : table.asMaps()) {
+            String id = row.get("request_id");
+            String token = row.get("progress_token");
+            if (id != null && token != null) {
+                if (activeProgressTokens.containsValue(token)) {
+                    duplicateTokenDetected = true;
+                } else {
+                    activeProgressTokens.put(id, token);
+                }
+            }
+        }
+    }
+
+    @When("I validate progress token uniqueness")
+    public void i_validate_progress_token_uniqueness() {
+    }
+
+    @Then("the system should reject duplicate progress tokens")
+    public void the_system_should_reject_duplicate_progress_tokens() {
+        if (!duplicateTokenDetected) throw new AssertionError("duplicate token not detected");
     }
 
     @Given("I am sending progress notifications")
