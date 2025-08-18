@@ -171,6 +171,7 @@ public final class StreamableHttpClientTransport implements Transport {
         private final InputStream input;
         private final BlockingQueue<JsonObject> queue;
         private final Set<SseReader> container;
+        private final EventBuffer buffer = new EventBuffer();
         private volatile boolean closed;
         private String lastEventId;
 
@@ -184,29 +185,16 @@ public final class StreamableHttpClientTransport implements Transport {
         public void run() {
             try (BufferedReader br = new BufferedReader(new InputStreamReader(input, StandardCharsets.UTF_8))) {
                 String line;
-                var data = new StringBuilder();
-                String eventId = null;
                 while (!closed && (line = br.readLine()) != null) {
                     if (line.isEmpty()) {
-                        if (!data.isEmpty()) {
-                            dispatch(data.toString(), eventId);
-                            data.setLength(0);
-                            eventId = null;
-                        }
+                        buffer.flush();
                         continue;
                     }
                     int idx = line.indexOf(':');
                     if (idx < 0) continue;
-                    var field = line.substring(0, idx);
-                    var value = line.substring(idx + 1).trim();
-                    switch (field) {
-                        case "id" -> eventId = value;
-                        case "data" -> {
-                            if (!data.isEmpty()) data.append('\n');
-                            data.append(value);
-                        }
-                    }
+                    buffer.field(line.substring(0, idx), line.substring(idx + 1).trim());
                 }
+                buffer.flush();
             } catch (IOException ignore) {
             } finally {
                 if (container != null) container.remove(this);
@@ -232,6 +220,28 @@ public final class StreamableHttpClientTransport implements Transport {
 
         String lastEventId() {
             return lastEventId;
+        }
+
+        private final class EventBuffer {
+            private final StringBuilder data = new StringBuilder();
+            private String eventId;
+
+            void field(String name, String value) {
+                switch (name) {
+                    case "id" -> eventId = value;
+                    case "data" -> {
+                        if (!data.isEmpty()) data.append('\n');
+                        data.append(value);
+                    }
+                }
+            }
+
+            void flush() {
+                if (data.isEmpty()) return;
+                dispatch(data.toString(), eventId);
+                data.setLength(0);
+                eventId = null;
+            }
         }
     }
 }
