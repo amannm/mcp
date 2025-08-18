@@ -47,6 +47,8 @@ public final class ServerFeaturesSteps {
     private boolean resourceListChangedNotification;
     private List<JsonObject> resourceAnnotations = List.of();
     private final List<Map<String, String>> resourceErrorScenarios = new ArrayList<>();
+    private record ErrorCheck(String scenario, int expectedCode, String expectedMessage, int actualCode, String actualMessage) {}
+    private final List<ErrorCheck> resourceErrorResults = new ArrayList<>();
 
     private List<JsonObject> availablePrompts = List.of();
     private JsonObject promptInstance;
@@ -819,32 +821,51 @@ public final class ServerFeaturesSteps {
     public void i_test_resource_error_scenarios(DataTable table) {
         resourceErrorScenarios.clear();
         resourceErrorScenarios.addAll(table.asMaps(String.class, String.class));
+        resourceErrorResults.clear();
         currentErrorScenarios.clear();
         currentErrorScenarios.addAll(resourceErrorScenarios);
         for (Map<String, String> row : resourceErrorScenarios) {
             String scenario = row.get("scenario");
+            int expectedCode = Integer.parseInt(row.get("error_code"));
+            String expectedMessage = row.get("error_message");
+            int actualCode = 0;
+            String actualMessage = null;
             try {
-                switch (scenario) {
+                JsonRpcMessage msg = switch (scenario) {
                     case "nonexistent resource" -> {
                         JsonObject params = Json.createObjectBuilder().add("uri", "file:///nope").build();
-                        activeConnection.request(clientId, RequestMethod.RESOURCES_READ, params);
+                        yield activeConnection.request(clientId, RequestMethod.RESOURCES_READ, params);
                     }
                     case "invalid URI format" -> {
                         JsonObject params = Json.createObjectBuilder().add("uri", "not_a_uri").build();
-                        activeConnection.request(clientId, RequestMethod.RESOURCES_READ, params);
-                    }
-                    case "server internal error" -> {
-                        activeConnection.request(clientId, RequestMethod.RESOURCES_READ, Json.createObjectBuilder().build());
+                        yield activeConnection.request(clientId, RequestMethod.RESOURCES_READ, params);
                     }
                     default -> throw new IllegalArgumentException("Unknown scenario: " + scenario);
+                };
+                String repr = msg.toString();
+                var m = java.util.regex.Pattern.compile("code=(-?\\d+), message=([^,\\]]+)").matcher(repr);
+                if (m.find()) {
+                    actualCode = Integer.parseInt(m.group(1));
+                    actualMessage = m.group(2);
                 }
             } catch (Exception ignore) {
             }
+            resourceErrorResults.add(new ErrorCheck(scenario, expectedCode, expectedMessage, actualCode, actualMessage));
         }
     }
 
     @Then("^I should receive appropriate JSON-RPC error responses(?: for (?:each scenario|logging|completion))?$")
     public void i_should_receive_appropriate_json_rpc_error_responses() {
+        if (!resourceErrorResults.isEmpty()) {
+            for (ErrorCheck ec : resourceErrorResults) {
+                if (ec.actualCode != ec.expectedCode || !Objects.equals(ec.expectedMessage, ec.actualMessage)) {
+                    throw new AssertionError(
+                            ec.scenario + " expected code " + ec.expectedCode + " message " + ec.expectedMessage +
+                                    " but got code " + ec.actualCode + " message " + ec.actualMessage);
+                }
+            }
+            return;
+        }
         if (currentErrorScenarios.isEmpty()) {
             throw new AssertionError("no error scenarios");
         }
