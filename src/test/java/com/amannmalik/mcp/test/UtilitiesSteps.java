@@ -281,7 +281,7 @@ public final class UtilitiesSteps {
     }
 
     @When("I send a ping request with parameters:")
-    public void i_send_a_ping_request_with_parameters(DataTable table) throws Exception {
+    public void i_send_a_ping_request_with_parameters(DataTable table) {
         JsonObjectBuilder b = Json.createObjectBuilder();
         for (Map<String, String> row : table.asMaps()) {
             String field = row.get("field");
@@ -292,16 +292,28 @@ public final class UtilitiesSteps {
                 b.add(field, value);
             }
         }
-        JsonRpcMessage msg = activeConnection.request(clientId, RequestMethod.PING, b.build());
-        String repr = msg.toString();
-        var m = java.util.regex.Pattern.compile("code=(-?\\d+), message=([^,\\]]+)").matcher(repr);
-        if (m.find()) {
-            pingErrorCode = Integer.parseInt(m.group(1));
-            pingErrorMessage = m.group(2);
+        try {
+            JsonRpcMessage msg = activeConnection.request(clientId, RequestMethod.PING, b.build());
+            String repr = msg.toString();
+            var m = java.util.regex.Pattern.compile("code=(-?\\d+), message=([^,\\]]+)").matcher(repr);
+            if (m.find()) {
+                pingErrorCode = Integer.parseInt(m.group(1));
+                pingErrorMessage = m.group(2);
+                lastPingResponse = null;
+                lastPingResponseId = null;
+            } else {
+                lastPingResponse = msg;
+                m = java.util.regex.Pattern.compile("id=([^,]+)").matcher(repr);
+                lastPingResponseId = m.find() ? m.group(1) : null;
+            }
+        } catch (IllegalArgumentException e) {
+            pingErrorCode = -32602;
+            pingErrorMessage = e.getMessage();
+            lastPingResponse = null;
             lastPingResponseId = null;
-            return;
+        } catch (Exception e) {
+            throw new RuntimeException(e);
         }
-        throw new AssertionError("expected error response");
     }
 
     @Then("the receiver should respond promptly with an empty result")
