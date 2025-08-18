@@ -4,11 +4,13 @@ import com.amannmalik.mcp.util.ValidationUtil;
 import jakarta.json.JsonObject;
 import jakarta.json.JsonValue;
 
+import java.math.BigInteger;
 import java.util.Optional;
 
 public sealed interface ProgressToken permits
         ProgressToken.StringToken,
         ProgressToken.NumericToken {
+
     static Optional<ProgressToken> fromMeta(JsonObject params) {
         if (params == null || !params.containsKey("_meta")) return Optional.empty();
         JsonObject meta = params.getJsonObject("_meta");
@@ -22,7 +24,7 @@ public sealed interface ProgressToken permits
                 if (!num.isIntegral()) {
                     throw new IllegalArgumentException("progressToken must be a string or integer");
                 }
-                yield new ProgressToken.NumericToken(num.longValueExact());
+                yield new ProgressToken.NumericToken(num.bigIntegerValueExact());
             }
             default -> throw new IllegalArgumentException("progressToken must be a string or number");
         };
@@ -47,15 +49,15 @@ public sealed interface ProgressToken permits
         }
     }
 
-    record NumericToken(long value) implements ProgressToken {
+    record NumericToken(BigInteger value) implements ProgressToken {
         @Override
         public String asString() {
-            return Long.toString(value);
+            return value.toString();
         }
 
         @Override
         public String toString() {
-            return Long.toString(value);
+            return value.toString();
         }
     }
 }

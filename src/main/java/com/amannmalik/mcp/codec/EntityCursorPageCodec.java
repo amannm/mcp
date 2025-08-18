@@ -30,6 +30,14 @@ public final class EntityCursorPageCodec<T> extends AbstractEntityCodec<T> {
     public T fromJson(JsonObject obj) {
         if (obj == null) return from.apply(null, null);
         requireOnlyKeys(obj, REQUEST_KEYS);
-        return from.apply(obj.getString("cursor", null), obj.getJsonObject("_meta"));
+        String c = null;
+        if (obj.containsKey("cursor")) {
+            try {
+                c = obj.getString("cursor");
+            } catch (ClassCastException e) {
+                throw new IllegalArgumentException("cursor must be a string");
+            }
+        }
+        return from.apply(c, obj.getJsonObject("_meta"));
     }
 }

@@ -28,7 +28,7 @@ public class ProgressNotificationJsonCodec implements JsonCodec<ProgressNotifica
                 if (!num.isIntegral()) {
                     throw new IllegalArgumentException("progressToken must be an integer");
                 }
-                yield new ProgressToken.NumericToken(num.longValue());
+                yield new ProgressToken.NumericToken(num.bigIntegerValueExact());
             }
             default -> throw new IllegalArgumentException("progressToken must be string or number");
         };
