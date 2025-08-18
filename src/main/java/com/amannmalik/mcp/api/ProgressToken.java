@@ -19,11 +19,9 @@ public sealed interface ProgressToken permits
         ProgressToken token = switch (val.getValueType()) {
             case STRING -> new ProgressToken.StringToken(ValidationUtil.requireClean(meta.getString("progressToken")));
             case NUMBER -> {
-                JsonNumber num = meta.getJsonNumber("progressToken");
-                if (!num.isIntegral()) {
-                    throw new IllegalArgumentException("progressToken must be an integer");
-                }
-                yield new ProgressToken.NumericToken(num.longValue());
+                var num = meta.getJsonNumber("progressToken");
+                if (!num.isIntegral()) throw new IllegalArgumentException("progressToken must be integer");
+                yield new ProgressToken.NumericToken(num.longValueExact());
             }
             default -> throw new IllegalArgumentException("progressToken must be a string or number");
         };
