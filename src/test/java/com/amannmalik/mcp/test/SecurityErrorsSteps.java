@@ -11,9 +11,26 @@ import java.time.Duration;
 import java.util.*;
 
 public final class SecurityErrorsSteps {
+    private final List<String> discoveredAuthServers = new ArrayList<>();
+    private final List<Map<String, String>> authorizationScenarios = new ArrayList<>();
+    private final List<Map<String, String>> tokenAudienceScenarios = new ArrayList<>();
+    private final List<Map<String, String>> jsonRpcErrorScenarios = new ArrayList<>();
+    private final List<Map<String, String>> accessControlScenarios = new ArrayList<>();
+    private final List<Map<String, String>> rateLimitingScenarios = new ArrayList<>();
+    private final List<Map<String, String>> sessionSecurityScenarios = new ArrayList<>();
+    private final List<Map<String, String>> transportScenarios = new ArrayList<>();
+    private final List<Map<String, String>> maliciousInputScenarios = new ArrayList<>();
+    private final List<Map<String, String>> confusedDeputyScenarios = new ArrayList<>();
+    private final List<Map<String, String>> tokenPassthroughScenarios = new ArrayList<>();
+    private final List<Map<String, String>> authFlowScenarios = new ArrayList<>();
+    private final List<Map<String, String>> redirectScenarios = new ArrayList<>();
+    private final List<Map<String, String>> disclosureScenarios = new ArrayList<>();
+    private final List<Map<String, String>> capabilityBoundaryScenarios = new ArrayList<>();
+    private final List<Map<String, String>> securityLoggingScenarios = new ArrayList<>();
+    private final List<Map<String, String>> securityFailsafeScenarios = new ArrayList<>();
+    private final List<Map<String, String>> complianceScenarios = new ArrayList<>();
     private McpHost activeConnection;
     private String clientId;
-
     private boolean securityControlsEnabled;
     private boolean loggingConfigured;
     private String resourceUri;
@@ -33,27 +50,19 @@ public final class SecurityErrorsSteps {
     private boolean securityMonitoringEnabled;
     private boolean securityFailsafeMechanisms;
     private boolean standardsComplianceClaimed;
-
     private String resourceMetadataUrl;
-    private final List<String> discoveredAuthServers = new ArrayList<>();
-
-    private final List<Map<String, String>> authorizationScenarios = new ArrayList<>();
-    private final List<Map<String, String>> tokenAudienceScenarios = new ArrayList<>();
-    private final List<Map<String, String>> jsonRpcErrorScenarios = new ArrayList<>();
-    private final List<Map<String, String>> accessControlScenarios = new ArrayList<>();
-    private final List<Map<String, String>> rateLimitingScenarios = new ArrayList<>();
-    private final List<Map<String, String>> sessionSecurityScenarios = new ArrayList<>();
-    private final List<Map<String, String>> transportScenarios = new ArrayList<>();
-    private final List<Map<String, String>> maliciousInputScenarios = new ArrayList<>();
-    private final List<Map<String, String>> confusedDeputyScenarios = new ArrayList<>();
-    private final List<Map<String, String>> tokenPassthroughScenarios = new ArrayList<>();
-    private final List<Map<String, String>> authFlowScenarios = new ArrayList<>();
-    private final List<Map<String, String>> redirectScenarios = new ArrayList<>();
-    private final List<Map<String, String>> disclosureScenarios = new ArrayList<>();
-    private final List<Map<String, String>> capabilityBoundaryScenarios = new ArrayList<>();
-    private final List<Map<String, String>> securityLoggingScenarios = new ArrayList<>();
-    private final List<Map<String, String>> securityFailsafeScenarios = new ArrayList<>();
-    private final List<Map<String, String>> complianceScenarios = new ArrayList<>();
+    // New step definitions for resource exhaustion attacks
+    private boolean resourceProtectionEnabled;
+    private final List<Map<String, String>> resourceExhaustionScenarios = new ArrayList<>();
+    private final Map<String, Boolean> resourceExhaustionResults = new HashMap<>();
+    // New step definitions for malformed JSON-RPC boundary testing
+    private boolean strictInputValidation;
+    private final List<Map<String, String>> malformedMessageScenarios = new ArrayList<>();
+    private final Map<String, String> malformedMessageResults = new HashMap<>();
+    // New step definitions for TLS/Certificate validation errors
+    private boolean strictTlsValidation;
+    private final List<Map<String, String>> certificateScenarios = new ArrayList<>();
+    private final Map<String, String> certificateResults = new HashMap<>();
 
     @Given("security controls are enabled")
     public void security_controls_are_enabled() {
@@ -908,15 +917,14 @@ public final class SecurityErrorsSteps {
         resourceExhaustionScenarios.clear();
         resourceExhaustionResults.clear();
         resourceExhaustionLogs.clear();
-        
         List<Map<String, String>> scenarios = dataTable.asMaps(String.class, String.class);
         resourceExhaustionScenarios.addAll(scenarios);
-        
+
         for (Map<String, String> scenario : scenarios) {
             String attackType = scenario.get("attack_type");
             String attackMethod = scenario.get("attack_method");
             String expectedBehavior = scenario.get("expected_behavior");
-            
+
             boolean attackBlocked = simulateResourceExhaustionAttack(attackType, attackMethod, expectedBehavior);
             resourceExhaustionResults.put(attackType, attackBlocked);
             resourceExhaustionLogs.add(attackType);
@@ -960,11 +968,6 @@ public final class SecurityErrorsSteps {
         }
     }
 
-    // New step definitions for malformed JSON-RPC boundary testing
-    private boolean strictInputValidation;
-    private List<Map<String, String>> malformedMessageScenarios = new ArrayList<>();
-    private Map<String, String> malformedMessageResults = new HashMap<>();
-
     @Given("an MCP server with strict input validation")
     public void an_mcp_server_with_strict_input_validation() {
         strictInputValidation = true;
@@ -974,15 +977,15 @@ public final class SecurityErrorsSteps {
     public void i_send_malformed_json_rpc_messages(DataTable dataTable) {
         malformedMessageScenarios.clear();
         malformedMessageResults.clear();
-        
+
         List<Map<String, String>> scenarios = dataTable.asMaps(String.class, String.class);
         malformedMessageScenarios.addAll(scenarios);
-        
+
         for (Map<String, String> scenario : scenarios) {
             String malformationType = scenario.get("malformation_type");
             String malformedContent = scenario.get("malformed_content");
             String expectedResponse = scenario.get("expected_response");
-            
+
             String actualResponse = simulateMalformedMessage(malformationType, malformedContent);
             malformedMessageResults.put(malformationType, actualResponse);
         }
@@ -1007,10 +1010,10 @@ public final class SecurityErrorsSteps {
             String malformationType = scenario.get("malformation_type");
             String expectedResponse = scenario.get("expected_response");
             String actualResponse = malformedMessageResults.get(malformationType);
-            
+
             if (!expectedResponse.equals(actualResponse)) {
                 throw new AssertionError("Malformed message %s: expected %s, got %s"
-                    .formatted(malformationType, expectedResponse, actualResponse));
+                        .formatted(malformationType, expectedResponse, actualResponse));
             }
         }
     }
@@ -1048,15 +1051,15 @@ public final class SecurityErrorsSteps {
         certificateScenarios.clear();
         certificateResults.clear();
         certificateLogs.clear();
-        
+
         List<Map<String, String>> scenarios = dataTable.asMaps(String.class, String.class);
         certificateScenarios.addAll(scenarios);
-        
+
         for (Map<String, String> scenario : scenarios) {
             String certificateIssue = scenario.get("certificate_issue");
             String testScenario = scenario.get("test_scenario");
             String expectedBehavior = scenario.get("expected_behavior");
-            
+
             String actualBehavior = simulateCertificateValidation(certificateIssue, testScenario);
             certificateResults.put(certificateIssue, actualBehavior);
             certificateLogs.add(certificateIssue);

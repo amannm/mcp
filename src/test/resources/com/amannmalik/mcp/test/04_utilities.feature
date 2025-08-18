@@ -18,9 +18,9 @@ Feature: MCP Protocol Utilities
     Given I have sent a request with ID "request-123"
     And the request is still in progress
     When I send a cancellation notification:
-      | field     | value                        |
-      | requestId | request-123                  |
-      | reason    | User requested cancellation  |
+      | field     | value                       |
+      | requestId | request-123                 |
+      | reason    | User requested cancellation |
     Then the notification should be properly formatted
     And the receiver should stop processing the request
     And no response should be sent for the cancelled request
@@ -30,11 +30,11 @@ Feature: MCP Protocol Utilities
     # Tests specification/2025-06-18/basic/utilities/cancellation.mdx:32-48 (Behavior requirements)
     Given I have active requests and completed requests
     When I test cancellation scenarios:
-      | scenario                    | request_state | should_cancel | expected_behavior     |
-      | cancel in-progress request  | in_progress   | true          | stop processing       |
-      | cancel completed request    | completed     | false         | ignore notification   |
-      | cancel unknown request      | unknown       | false         | ignore notification   |
-      | cancel initialize request   | in_progress   | false         | must not cancel       |
+      | scenario                   | request_state | should_cancel | expected_behavior   |
+      | cancel in-progress request | in_progress   | true          | stop processing     |
+      | cancel completed request   | completed     | false         | ignore notification |
+      | cancel unknown request     | unknown       | false         | ignore notification |
+      | cancel initialize request  | in_progress   | false         | must not cancel     |
     Then each scenario should behave according to specification requirements
 
   @cancellation @race-conditions
@@ -51,10 +51,10 @@ Feature: MCP Protocol Utilities
     # Tests specification/2025-06-18/basic/utilities/cancellation.mdx:76-85 (Error handling)
     Given I am receiving cancellation notifications
     When I receive invalid cancellation notifications:
-      | invalid_type           | description                    |
-      | unknown_request_id     | Request ID not found           |
-      | malformed_notification | Invalid notification format    |
-      | already_completed      | Request already completed      |
+      | invalid_type           | description                 |
+      | unknown_request_id     | Request ID not found        |
+      | malformed_notification | Invalid notification format |
+      | already_completed      | Request already completed   |
     Then I should ignore all invalid notifications
     And maintain the fire-and-forget nature of notifications
 
@@ -124,7 +124,7 @@ Feature: MCP Protocol Utilities
     Given I have an established MCP connection for utilities
     And I want to verify connection health
     When I send a ping request with parameters:
-      | field | value |
+      | field | value   |
       | _meta | invalid |
     Then the error message should be "Invalid params"
     And the error code should be -32602
@@ -143,11 +143,11 @@ Feature: MCP Protocol Utilities
     # Tests specification/2025-06-18/basic/utilities/progress.mdx:35-53 (Notification format)
     Given I am receiving progress notifications for token "abc123"
     When I receive progress notifications with different data:
-      | progress | total | message                  | valid |
-      | 25       | 100   | Processing files...      | true  |
-      | 50.5     |       |                          | true  |
-      | 75       | 100   | Nearly done              | true  |
-      | 100      | 100   | Operation complete       | true  |
+      | progress | total | message             | valid |
+      | 25       | 100   | Processing files... | true  |
+      | 50.5     |       |                     | true  |
+      | 75       | 100   | Nearly done         | true  |
+      | 100      | 100   | Operation complete  | true  |
     Then all valid notifications should be properly formatted
     And progress values should increase with each notification
     And floating point values should be supported
@@ -159,11 +159,11 @@ Feature: MCP Protocol Utilities
     # Tests specification/2025-06-18/basic/utilities/progress.mdx:60-71 (Behavior requirements)
     Given I have requests with and without progress tokens
     When I test progress notification scenarios:
-      | scenario                      | has_token | should_notify | token_validity |
-      | request with valid token      | true      | optional      | active         |
-      | request without token         | false     | false         | none           |
-      | token from completed request  | true      | false         | inactive       |
-      | unknown token                 | true      | false         | invalid        |
+      | scenario                     | has_token | should_notify | token_validity |
+      | request with valid token     | true      | optional      | active         |
+      | request without token        | false     | false         | none           |
+      | token from completed request | true      | false         | inactive       |
+      | unknown token                | true      | false         | invalid        |
     Then behavior should match specification requirements
     And notifications should only reference valid active tokens
 
@@ -181,11 +181,11 @@ Feature: MCP Protocol Utilities
   Scenario: Progress token type requirements
     # Tests specification/2025-06-18/basic/utilities/progress.mdx:14-22 (Token type)
     Given I have requests with progress tokens of different types:
-      | token   | valid |
+      | token    | valid |
       | "abc123" | true  |
-      | 42      | true  |
-      | 1.5     | false |
-      | true    | false |
+      | 42       | true  |
+      | 1.5      | false |
+      | true     | false |
     When I validate progress token types
     Then only valid progress token types should be accepted
 
@@ -271,10 +271,10 @@ Feature: MCP Protocol Utilities
     # Tests specification/2025-06-18/server/utilities/pagination.mdx:98-100 (Error handling)
     Given I am handling pagination requests
     When I receive requests with invalid cursors:
-      | cursor_type       | error_code | error_message  |
-      | expired_cursor    | -32602     | Invalid params |
-      | malformed_cursor  | -32602     | Invalid params |
-      | unknown_cursor    | -32602     | Invalid params |
+      | cursor_type      | error_code | error_message  |
+      | expired_cursor   | -32602     | Invalid params |
+      | malformed_cursor | -32602     | Invalid params |
+      | unknown_cursor   | -32602     | Invalid params |
     Then I should return appropriate error responses for utilities
     And use JSON-RPC error code -32602 for invalid parameters
 
@@ -309,11 +309,11 @@ Feature: MCP Protocol Utilities
     # Tests error handling across all utility features
     Given I am testing error scenarios for utilities
     When I encounter errors in utility operations:
-      | utility     | error_scenario           | expected_behavior     |
-      | cancellation| malformed notification   | ignore gracefully     |
-      | ping        | timeout exceeded         | connection failure    |
-      | progress    | invalid token reference  | ignore notification   |
-      | pagination  | cursor expired           | invalid params error  |
+      | utility      | error_scenario          | expected_behavior    |
+      | cancellation | malformed notification  | ignore gracefully    |
+      | ping         | timeout exceeded        | connection failure   |
+      | progress     | invalid token reference | ignore notification  |
+      | pagination   | cursor expired          | invalid params error |
     Then each utility should handle errors according to specification
     And error handling should be consistent across utilities
     And system stability should be maintained during error conditions
