@@ -222,6 +222,9 @@ final class McpClient extends JsonRpcEndpoint implements AutoCloseable {
 
     public JsonRpcMessage request(RequestId id, RequestMethod method, JsonObject params, Duration timeoutMillis) throws IOException {
         requireCapability(method);
+        if (id instanceof RequestId.NullId) {
+            throw new IllegalArgumentException("id is required");
+        }
         if (params != null) {
             if (params.containsKey("progressToken")) {
                 throw new IllegalArgumentException("progressToken must be in _meta");
