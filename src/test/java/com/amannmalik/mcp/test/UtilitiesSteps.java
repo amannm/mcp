@@ -612,11 +612,22 @@ public final class UtilitiesSteps {
         for (int i = 1; i <= 10; i++) dataset.add("item-" + i);
     }
 
+    @Given("the server has no further results after the current page")
+    public void the_server_has_no_further_results_after_the_current_page() {
+        dataset = new ArrayList<>();
+        for (int i = 1; i <= 3; i++) dataset.add("item-" + i);
+    }
+
     @When("I request a paginated list operation")
     public void i_request_a_paginated_list_operation() {
-        currentPage = dataset.subList(0, 3);
-        String cursorJson = "{\"page\":3}";
-        nextCursor = Base64.getEncoder().encodeToString(cursorJson.getBytes(StandardCharsets.UTF_8));
+        int pageSize = Math.min(3, dataset.size());
+        currentPage = dataset.subList(0, pageSize);
+        if (dataset.size() > pageSize) {
+            String cursorJson = "{\"page\":" + pageSize + "}";
+            nextCursor = Base64.getEncoder().encodeToString(cursorJson.getBytes(StandardCharsets.UTF_8));
+        } else {
+            nextCursor = null;
+        }
     }
 
     @Then("the response should include the current page of results")
@@ -627,6 +638,11 @@ public final class UtilitiesSteps {
     @Then("include a nextCursor if more results exist")
     public void include_a_nextcursor_if_more_results_exist() {
         if (nextCursor == null) throw new AssertionError("missing cursor");
+    }
+
+    @Then("the response should not include a nextCursor field")
+    public void the_response_should_not_include_a_nextcursor_field() {
+        if (nextCursor != null) throw new AssertionError("unexpected cursor");
     }
 
     @Then("the cursor should be an opaque string token")
