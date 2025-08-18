@@ -6,7 +6,5 @@ open module mcp.test {
     requires org.junit.platform.suite.api;
     requires org.junit.jupiter.api;
     requires jakarta.json;
-    requires jdk.httpserver;
-    requires java.net.http;
 
 }

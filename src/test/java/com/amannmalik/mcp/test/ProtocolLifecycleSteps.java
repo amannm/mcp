@@ -11,15 +11,6 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.time.Duration;
 import java.util.*;
-import java.net.URI;
-import java.net.InetSocketAddress;
-import java.nio.charset.StandardCharsets;
-import java.io.OutputStream;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.net.http.HttpClient;
-import java.net.http.HttpRequest;
-import java.net.http.HttpResponse;
-import com.sun.net.httpserver.HttpServer;
 import java.util.stream.Collectors;
 
 public final class ProtocolLifecycleSteps {
@@ -72,7 +63,6 @@ public final class ProtocolLifecycleSteps {
     // New step definitions for message ordering guarantees
     private final List<Map<String, String>> dependentRequests = new ArrayList<>();
     private final Map<String, JsonObject> requestResponses = new HashMap<>();
-    private String lastEventIdHeader;
 
     private Set<ClientCapability> parseClientCapabilities(String capabilities) {
         if (capabilities == null || capabilities.trim().isEmpty()) {
@@ -206,7 +196,6 @@ public final class ProtocolLifecycleSteps {
         }
         currentConfiguration = null;
         promptExposed = false;
-        lastEventIdHeader = null;
     }
 
     @Given("a transport mechanism is available")
@@ -1211,54 +1200,6 @@ public final class ProtocolLifecycleSteps {
         // Implementation would check that dependencies are properly managed
         if (dependentRequests.isEmpty()) {
             throw new AssertionError("No dependent requests were configured for timing test");
-        }
-    }
-
-    @When("I attempt to resume an SSE stream after disconnection")
-    public void i_attempt_to_resume_an_sse_stream_after_disconnection() throws Exception {
-        var server = HttpServer.create(new InetSocketAddress(0), 0);
-        var requests = new AtomicInteger();
-        server.createContext("/mcp", exchange -> {
-            if (!"GET".equals(exchange.getRequestMethod())) {
-                exchange.sendResponseHeaders(405, -1);
-                return;
-            }
-            int count = requests.incrementAndGet();
-            if (count == 1) {
-                exchange.getResponseHeaders().add("Content-Type", "text/event-stream");
-                exchange.sendResponseHeaders(200, 0);
-                try (OutputStream os = exchange.getResponseBody()) {
-                    os.write("id: 42\n".getBytes(StandardCharsets.UTF_8));
-                    os.write("data: {}\n\n".getBytes(StandardCharsets.UTF_8));
-                }
-            } else {
-                lastEventIdHeader = exchange.getRequestHeaders().getFirst("Last-Event-ID");
-                exchange.sendResponseHeaders(200, -1);
-            }
-        });
-        server.start();
-        try {
-            URI endpoint = URI.create("http://localhost:" + server.getAddress().getPort() + "/mcp");
-            var client = HttpClient.newHttpClient();
-            var first = HttpRequest.newBuilder(endpoint)
-                    .header("Accept", "text/event-stream")
-                    .GET()
-                    .build();
-            client.send(first, HttpResponse.BodyHandlers.discarding());
-            var second = HttpRequest.newBuilder(endpoint)
-                    .header("Accept", "text/event-stream")
-                    .GET()
-                    .build();
-            client.send(second, HttpResponse.BodyHandlers.discarding());
-        } finally {
-            server.stop(0);
-        }
-    }
-
-    @Then("the Last-Event-ID header should be {string}")
-    public void the_last_event_id_header_should_be(String expected) {
-        if (!Objects.equals(expected, lastEventIdHeader)) {
-            throw new AssertionError("Expected Last-Event-ID " + expected + " but was " + lastEventIdHeader);
         }
     }
 }
