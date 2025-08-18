@@ -226,12 +226,9 @@ final class McpClient extends JsonRpcEndpoint implements AutoCloseable {
             if (params.containsKey("progressToken")) {
                 throw new IllegalArgumentException("progressToken must be in _meta");
             }
-            if (params.containsKey("_meta")) {
-                try {
-                    ValidationUtil.requireMeta(params.getJsonObject("_meta"));
-                } catch (ClassCastException e) {
-                    throw new IllegalArgumentException(e.getMessage(), e);
-                }
+            if (params.containsKey("_meta") &&
+                    params.get("_meta").getValueType() == JsonValue.ValueType.OBJECT) {
+                ValidationUtil.requireMeta(params.getJsonObject("_meta"));
             }
         }
         if (!connected) {
@@ -564,7 +561,7 @@ final class McpClient extends JsonRpcEndpoint implements AutoCloseable {
             try {
                 ValidationUtil.requireMeta(params.getJsonObject("_meta"));
             } catch (IllegalArgumentException | ClassCastException e) {
-                return JsonRpcError.of(req.id(), JsonRpcErrorCode.INVALID_PARAMS, e.getMessage());
+                return JsonRpcError.of(req.id(), JsonRpcErrorCode.INVALID_PARAMS, "Invalid params");
             }
         }
         return new JsonRpcResponse(req.id(), Json.createObjectBuilder().build());

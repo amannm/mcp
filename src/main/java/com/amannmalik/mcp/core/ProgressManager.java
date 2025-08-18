@@ -27,7 +27,12 @@ public final class ProgressManager {
 
     public Optional<ProgressToken> register(RequestId id, JsonObject params) {
         if (!used.add(id) || !active.add(id)) throw new DuplicateRequestException(id);
-        Optional<ProgressToken> token = ProgressToken.fromMeta(params);
+        final Optional<ProgressToken> token;
+        try {
+            token = ProgressToken.fromMeta(params);
+        } catch (IllegalArgumentException | ClassCastException e) {
+            return Optional.empty();
+        }
         token.ifPresent(t -> {
             Double prev = progress.putIfAbsent(t, Double.NEGATIVE_INFINITY);
             if (prev != null) throw new IllegalArgumentException("Duplicate token: " + t);

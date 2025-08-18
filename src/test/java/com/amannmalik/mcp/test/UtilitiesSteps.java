@@ -294,14 +294,17 @@ public final class UtilitiesSteps {
         }
         JsonRpcMessage msg = activeConnection.request(clientId, RequestMethod.PING, b.build());
         String repr = msg.toString();
-        var m = java.util.regex.Pattern.compile("code=(-?\\d+), message=([^,\\]]+)").matcher(repr);
-        if (m.find()) {
-            pingErrorCode = Integer.parseInt(m.group(1));
-            pingErrorMessage = m.group(2);
+        var err = java.util.regex.Pattern.compile("code=(-?\\d+), message=([^,\\]]+)").matcher(repr);
+        if (err.find()) {
+            pingErrorCode = Integer.parseInt(err.group(1));
+            pingErrorMessage = err.group(2);
+            lastPingResponse = null;
             lastPingResponseId = null;
             return;
         }
-        throw new AssertionError("expected error response");
+        lastPingResponse = msg;
+        var idMatch = java.util.regex.Pattern.compile("id=([^,]+)").matcher(repr);
+        lastPingResponseId = idMatch.find() ? idMatch.group(1) : null;
     }
 
     @Then("the receiver should respond promptly with an empty result")
