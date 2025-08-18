@@ -54,6 +54,7 @@ Feature: MCP Security Error Handling
       | multiple_wrong_audiences   | https://other1.com,other2   | 401             | Unauthorized   |
       | partially_correct_audience | https://mcp.example.com,bad | 200             | none           |
       | correct_audience           | https://mcp.example.com     | 200             | none           |
+      | uppercase_audience         | https://MCP.EXAMPLE.COM     | 200             | none           |
     Then the server should validate token audience correctly
     And only accept tokens issued specifically for the server
 
