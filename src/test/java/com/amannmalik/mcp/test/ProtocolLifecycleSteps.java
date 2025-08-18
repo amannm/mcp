@@ -661,6 +661,23 @@ public final class ProtocolLifecycleSteps {
         i_send_a_request_with_identifier(Long.toString(id));
     }
 
+    @When("I send a request with fractional identifier {double}")
+    public void i_send_a_request_with_fractional_identifier(double id) {
+        lastRequest = Json.createObjectBuilder()
+                .add("jsonrpc", "2.0")
+                .add("id", id)
+                .add("method", RequestMethod.PING.method())
+                .build();
+        try {
+            RequestId.from(Json.createValue(id));
+            lastErrorCode = 0;
+            lastErrorMessage = null;
+        } catch (RuntimeException e) {
+            lastErrorCode = -32600;
+            lastErrorMessage = e.getMessage();
+        }
+    }
+
     @Then("the request should use proper message format")
     public void the_request_should_use_proper_message_format() {
         if (lastRequest == null || !"2.0".equals(lastRequest.getString("jsonrpc", null))
