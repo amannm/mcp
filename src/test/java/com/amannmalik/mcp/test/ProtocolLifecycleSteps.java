@@ -48,6 +48,8 @@ public final class ProtocolLifecycleSteps {
     private String serverTransport = "";
     private final List<Boolean> acceptHeaderResults = new ArrayList<>();
     private final List<Boolean> acceptHeaderExpectations = new ArrayList<>();
+    private final List<Boolean> originHeaderResults = new ArrayList<>();
+    private final List<Boolean> originHeaderExpectations = new ArrayList<>();
 
     private Set<ClientCapability> parseClientCapabilities(String capabilities) {
         if (capabilities == null || capabilities.trim().isEmpty()) {
@@ -430,6 +432,36 @@ public final class ProtocolLifecycleSteps {
             return types.contains("application/json") && types.contains("text/event-stream");
         }
         return "GET".equalsIgnoreCase(method) && types.contains("text/event-stream");
+    }
+
+    @When("I send HTTP requests with the following Origin headers:")
+    public void i_send_http_requests_with_the_following_origin_headers(DataTable table) {
+        originHeaderResults.clear();
+        originHeaderExpectations.clear();
+        for (Map<String, String> row : table.asMaps(String.class, String.class)) {
+            String origin = row.get("origin");
+            boolean expected = Boolean.parseBoolean(row.get("should_accept"));
+            boolean actual = validateOriginHeader(origin);
+            originHeaderResults.add(actual);
+            originHeaderExpectations.add(expected);
+        }
+    }
+
+    @Then("each request should be handled according to Origin header requirements")
+    public void each_request_should_be_handled_according_to_origin_header_requirements() {
+        for (int i = 0; i < originHeaderResults.size(); i++) {
+            if (originHeaderResults.get(i) != originHeaderExpectations.get(i)) {
+                throw new AssertionError("Origin header handling mismatch at index " + i);
+            }
+        }
+    }
+
+    private boolean validateOriginHeader(String origin) {
+        if (origin == null || origin.isBlank() || "none".equalsIgnoreCase(origin)) {
+            return false;
+        }
+        String lower = origin.toLowerCase();
+        return lower.startsWith("http://127.0.0.1") || lower.startsWith("http://localhost");
     }
 
     @When("I send a request with identifier {string}")
