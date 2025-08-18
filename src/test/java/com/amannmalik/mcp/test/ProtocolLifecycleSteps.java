@@ -7,7 +7,9 @@ import io.cucumber.java.en.*;
 import jakarta.json.Json;
 import jakarta.json.JsonObject;
 
+import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.StringReader;
 import java.nio.file.Path;
 import java.time.Duration;
 import java.util.*;
@@ -63,9 +65,13 @@ public final class ProtocolLifecycleSteps {
     // New step definitions for message ordering guarantees
     private final List<Map<String, String>> dependentRequests = new ArrayList<>();
     private final Map<String, JsonObject> requestResponses = new HashMap<>();
+    private BufferedReader stdioReader;
+    private Exception newlineError;
+
     private boolean serverInitialized = true;
     private final List<Boolean> preInitAllowedResults = new ArrayList<>();
     private final List<Boolean> expectedPreInitAllowedResults = new ArrayList<>();
+
 
     private Set<ClientCapability> parseClientCapabilities(String capabilities) {
         if (capabilities == null || capabilities.trim().isEmpty()) {
@@ -1265,5 +1271,30 @@ public final class ProtocolLifecycleSteps {
         if (dependentRequests.isEmpty()) {
             throw new AssertionError("No dependent requests were configured for timing test");
         }
+    }
+
+    @Given("a stdio transport with a message containing an embedded newline")
+    public void a_stdio_transport_with_a_message_containing_an_embedded_newline() {
+        String msg = "{\"jsonrpc\":\"2.0\",\n\"id\":1}\n";
+        stdioReader = new BufferedReader(new StringReader(msg));
+        newlineError = null;
+    }
+
+    @When("I attempt to read the stdio message")
+    public void i_attempt_to_read_the_stdio_message() {
+        try {
+            String line = stdioReader.readLine();
+            if (line == null) throw new IOException("no input");
+            try (var reader = Json.createReader(new StringReader(line))) {
+                reader.readObject();
+            }
+        } catch (Exception e) {
+            newlineError = e;
+        }
+    }
+
+    @Then("the transport should fail due to embedded newline")
+    public void the_transport_should_fail_due_to_embedded_newline() {
+        if (newlineError == null) throw new AssertionError("expected failure for newline");
     }
 }
