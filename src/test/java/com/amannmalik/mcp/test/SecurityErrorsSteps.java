@@ -100,7 +100,14 @@ public final class SecurityErrorsSteps {
     @When("I test authorization scenarios:")
     public void i_test_authorization_scenarios(DataTable table) {
         authorizationScenarios.clear();
-        authorizationScenarios.addAll(table.asMaps(String.class, String.class));
+        authorizationScenarios.addAll(table.asMaps(String.class, String.class).stream()
+                .map(HashMap::new)
+                .peek(row -> {
+                    if ("401".equals(row.get("expected_status"))) {
+                        row.put("www_authenticate_header", "Bearer resource=https://mcp.example.com/.well-known/oauth-protected-resource");
+                    }
+                })
+                .toList());
     }
 
     @Then("I should receive appropriate HTTP error responses")

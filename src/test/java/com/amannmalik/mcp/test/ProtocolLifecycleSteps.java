@@ -384,6 +384,16 @@ public final class ProtocolLifecycleSteps {
     public void i_send_a_request_with_identifier(String id) {
         lastRequestId = RequestId.parse(id);
         lastRequest = createRequest(lastRequestId, RequestMethod.PING.method(), Json.createObjectBuilder().build());
+        try {
+            activeConnection.request(clientId, lastRequestId, RequestMethod.PING, Json.createObjectBuilder().build());
+            lastErrorCode = 0;
+            lastErrorMessage = null;
+        } catch (IllegalArgumentException e) {
+            lastErrorCode = -32600;
+            lastErrorMessage = e.getMessage();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     @Then("the request should use proper message format")

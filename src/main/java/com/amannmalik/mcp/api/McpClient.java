@@ -217,12 +217,15 @@ final class McpClient extends JsonRpcEndpoint implements AutoCloseable {
     }
 
     public JsonRpcMessage request(RequestMethod method, JsonObject params, Duration timeoutMillis) throws IOException {
+        return request(nextId(), method, params, timeoutMillis);
+    }
+
+    public JsonRpcMessage request(RequestId id, RequestMethod method, JsonObject params, Duration timeoutMillis) throws IOException {
         requireCapability(method);
         if (!connected) {
             return JsonRpcError.of(new RequestId.NumericId(0), -32002, "Server not initialized");
         }
         try {
-            RequestId id = nextId();
             CompletableFuture<JsonRpcMessage> future = new CompletableFuture<>();
             pending.put(id, future);
             progress.register(id, params);
