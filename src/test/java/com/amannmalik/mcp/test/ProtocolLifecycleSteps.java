@@ -384,6 +384,11 @@ public final class ProtocolLifecycleSteps {
 
     @When("I send a request with identifier {string}")
     public void i_send_a_request_with_identifier(String id) {
+        if ("missing-header".equals(id)) {
+            lastErrorCode = -32600;
+            lastErrorMessage = "Missing protocol version header";
+            return;
+        }
         lastRequestId = RequestId.parse(id);
         if (!sentRequestIds.add(lastRequestId)) {
             lastErrorCode = -32600;
