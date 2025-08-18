@@ -23,15 +23,13 @@ public final class ServerDefaults {
     static {
         Annotations ann = new Annotations(Set.of(Role.USER), 0.5, Instant.parse("2024-01-01T00:00:00Z"));
         Resource r0 = new Resource("test://example", "example", null, null, "text/plain", 5L, ann, null);
-        Resource r1 = new Resource("test://example1", "example1", null, null, "text/plain", 5L, ann, null);
-        Resource r2 = new Resource("test://example2", "example2", null, null, "text/plain", 5L, ann, null);
+        Resource sample = new Resource("file:///sample", "sample", null, null, "text/plain", 6L, ann, null);
         Map<String, ResourceBlock> content = Map.of(
                 r0.uri(), new ResourceBlock.Text(r0.uri(), "text/plain", "hello", null),
-                r1.uri(), new ResourceBlock.Text(r1.uri(), "text/plain", "hello", null),
-                r2.uri(), new ResourceBlock.Text(r2.uri(), "text/plain", "hello", null)
+                sample.uri(), new ResourceBlock.Text(sample.uri(), "text/plain", "sample", null)
         );
         ResourceTemplate template = new ResourceTemplate("test://template", "example_template", null, null, "text/plain", null, null);
-        RESOURCES = new InMemoryResourceProvider(List.of(r0), content, List.of(template));
+        RESOURCES = new InMemoryResourceProvider(List.of(r0, sample), content, List.of(template));
 
         var schema = Json.createObjectBuilder().add("type", "object").build();
         var outSchema = Json.createObjectBuilder()
