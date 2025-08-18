@@ -54,21 +54,32 @@ Feature: MCP Connection Lifecycle
     When I send a request with identifier "missing-header"
     Then the connection should be rejected due to missing protocol version header
 
-  @connection @http @accept-header
-  Scenario: HTTP Accept header enforcement
-    # Tests specification/2025-06-18/basic/transports.mdx:90-91 (POST Accept header requirement)
-    # Tests specification/2025-06-18/basic/transports.mdx:126-127 (GET Accept header requirement)
-    Given an MCP server using "http" transport
-    When I send HTTP requests with the following Accept headers:
-      | method | accept_header                       | should_accept |
-      | POST   | none                                | false         |
-      | POST   | application/json                    | false         |
-      | POST   | text/event-stream                   | false         |
-      | POST   | application/json, text/event-stream | true          |
-      | GET    | none                                | false         |
-      | GET    | application/json                    | false         |
-      | GET    | text/event-stream                   | true          |
-    Then each request should be handled according to Accept header requirements
+@connection @http @accept-header
+Scenario: HTTP Accept header enforcement
+  # Tests specification/2025-06-18/basic/transports.mdx:90-91 (POST Accept header requirement)
+  # Tests specification/2025-06-18/basic/transports.mdx:126-127 (GET Accept header requirement)
+  Given an MCP server using "http" transport
+  When I send HTTP requests with the following Accept headers:
+    | method | accept_header                       | should_accept |
+    | POST   | none                                | false         |
+    | POST   | application/json                    | false         |
+    | POST   | text/event-stream                   | false         |
+    | POST   | application/json, text/event-stream | true          |
+    | GET    | none                                | false         |
+    | GET    | application/json                    | false         |
+    | GET    | text/event-stream                   | true          |
+  Then each request should be handled according to Accept header requirements
+
+@connection @http @accept-header
+Scenario: HTTP Accept header case insensitivity
+  # Tests specification/2025-06-18/basic/transports.mdx:88-96 (POST Accept header requirement)
+  # Tests specification/2025-06-18/basic/transports.mdx:124-131 (GET Accept header requirement)
+  Given an MCP server using "http" transport
+  When I send HTTP requests with the following Accept headers:
+    | method | accept_header                               | should_accept |
+    | POST   | APPLICATION/JSON, TEXT/EVENT-STREAM         | true          |
+    | GET    | TEXT/EVENT-STREAM                           | true          |
+  Then each request should be handled according to Accept header requirements
 
   @connection @http @content-type
   Scenario: HTTP response Content-Type enforcement
