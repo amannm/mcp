@@ -280,3 +280,38 @@ Feature: MCP Connection Lifecycle
     When the server requests LLM sampling
     Then I should require explicit user approval
     And maintain control over prompt visibility
+
+  @messaging @large-messages
+  Scenario: Large message handling
+    # Tests protocol resilience with large message payloads
+    # Tests specification/2025-06-18/basic/index.mdx:33-52 (Message format handling)
+    Given I have an established MCP connection
+    When I send a request with a large payload of 10MB
+    Then the request should be handled appropriately
+    And the response should maintain proper JSON-RPC format
+    And connection stability should be preserved
+
+  @messaging @concurrency
+  Scenario: Concurrent request processing
+    # Tests protocol behavior under concurrent load
+    # Tests specification/2025-06-18/basic/index.mdx:48-51 (Request ID uniqueness under load)
+    Given I have an established MCP connection
+    When I send 100 concurrent requests with unique IDs
+    Then all requests should be processed successfully
+    And no request ID conflicts should occur
+    And all responses should match their corresponding request IDs
+    And the order of responses may differ from request order
+
+  @messaging @ordering
+  Scenario: Message ordering guarantees
+    # Tests protocol message ordering behavior
+    # Tests specification/2025-06-18/basic/index.mdx:33-79 (Request/response correlation)
+    Given I have an established MCP connection
+    When I send a sequence of dependent requests:
+      | request_id | depends_on | method        |
+      | req-1      |            | tools/list    |
+      | req-2      | req-1      | tools/call    |
+      | req-3      | req-2      | ping          |
+    Then responses may arrive in any order
+    And each response should correctly match its request ID
+    And dependent operations should handle response timing appropriately

@@ -281,3 +281,56 @@ Feature: MCP Security Error Handling
     Then all required security standards should be implemented
     And optional security enhancements should be documented
     And compliance should be verifiable through testing
+
+  @resource-exhaustion @dos-protection
+  Scenario: Resource exhaustion attacks
+    # Tests protection against denial-of-service attacks via resource exhaustion
+    # Tests specification/2025-06-18/basic/security_best_practices.mdx (Resource limits)
+    Given an MCP server with resource protection enabled
+    When I test resource exhaustion scenarios:
+      | attack_type           | attack_method                | expected_behavior        |
+      | memory_exhaustion     | massive_message_flood        | memory_limit_enforced    |
+      | connection_exhaustion | excessive_connections        | connection_limit_applied |
+      | cpu_exhaustion        | complex_computation_requests | processing_limit_set     |
+      | disk_exhaustion       | large_file_operations        | disk_quota_enforced      |
+      | bandwidth_exhaustion  | high_volume_data_transfer    | bandwidth_throttling     |
+    Then the server should reject excessive resource requests
+    And maintain service availability for legitimate users
+    And log resource exhaustion attempts appropriately
+
+  @malformed-input @boundary-testing
+  Scenario: Malformed JSON-RPC boundary testing
+    # Tests handling of malformed JSON-RPC messages at protocol boundaries
+    # Tests specification/2025-06-18/basic/index.mdx:33-95 (Message format validation)
+    Given an MCP server with strict input validation
+    When I send malformed JSON-RPC messages:
+      | malformation_type        | malformed_content                    | expected_response        |
+      | invalid_json             | {"jsonrpc": "2.0", "id": 1,         | parse_error_32700        |
+      | missing_required_field   | {"id": 1, "method": "ping"}          | invalid_request_32600    |
+      | invalid_field_type       | {"jsonrpc": 2.0, "id": 1}           | parse_error_32700        |
+      | oversized_id_field       | {"jsonrpc": "2.0", "id": "x" * 1000} | invalid_request_32600   |
+      | null_id_field           | {"jsonrpc": "2.0", "id": null}       | invalid_request_32600    |
+      | invalid_method_type     | {"jsonrpc": "2.0", "id": 1, "method": 123} | invalid_request_32600 |
+      | oversized_message       | 100MB+ message payload               | message_too_large        |
+    Then each malformed message should be rejected with appropriate error codes
+    And the connection should remain stable after malformed input
+    And error responses should not expose internal implementation details
+
+  @transport-security @certificate-validation
+  Scenario: TLS/Certificate validation errors
+    # Tests TLS certificate validation and transport security error handling
+    # Tests specification/2025-06-18/basic/authorization.mdx:315-323 (Communication security)
+    Given an MCP client with strict TLS validation enabled
+    When I test TLS certificate validation scenarios:
+      | certificate_issue        | test_scenario              | expected_behavior        |
+      | expired_certificate      | past_expiration_date       | connection_rejected      |
+      | self_signed_certificate  | untrusted_ca_authority     | connection_rejected      |
+      | wrong_hostname          | certificate_hostname_mismatch | connection_rejected   |
+      | revoked_certificate     | certificate_in_crl         | connection_rejected      |
+      | weak_cipher_suite       | deprecated_encryption      | connection_rejected      |
+      | invalid_certificate_chain | broken_trust_path        | connection_rejected      |
+      | missing_certificate     | no_server_certificate      | connection_rejected      |
+    Then TLS handshake should fail for invalid certificates
+    And appropriate SSL/TLS error messages should be provided
+    And fallback to insecure connections should not occur
+    And certificate validation errors should be logged securely

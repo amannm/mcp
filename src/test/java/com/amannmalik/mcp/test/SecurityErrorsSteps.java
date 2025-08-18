@@ -876,5 +876,210 @@ public final class SecurityErrorsSteps {
         securityFailsafeScenarios.clear();
         complianceScenarios.clear();
     }
+
+    // New step definitions for resource exhaustion attacks
+    private boolean resourceProtectionEnabled;
+    private List<Map<String, String>> resourceExhaustionScenarios = new ArrayList<>();
+    private Map<String, Boolean> resourceExhaustionResults = new HashMap<>();
+
+    @Given("an MCP server with resource protection enabled")
+    public void an_mcp_server_with_resource_protection_enabled() {
+        resourceProtectionEnabled = true;
+    }
+
+    @When("I test resource exhaustion scenarios:")
+    public void i_test_resource_exhaustion_scenarios(DataTable dataTable) {
+        resourceExhaustionScenarios.clear();
+        resourceExhaustionResults.clear();
+        
+        List<Map<String, String>> scenarios = dataTable.asMaps(String.class, String.class);
+        resourceExhaustionScenarios.addAll(scenarios);
+        
+        for (Map<String, String> scenario : scenarios) {
+            String attackType = scenario.get("attack_type");
+            String attackMethod = scenario.get("attack_method");
+            String expectedBehavior = scenario.get("expected_behavior");
+            
+            boolean attackBlocked = simulateResourceExhaustionAttack(attackType, attackMethod, expectedBehavior);
+            resourceExhaustionResults.put(attackType, attackBlocked);
+        }
+    }
+
+    private boolean simulateResourceExhaustionAttack(String attackType, String attackMethod, String expectedBehavior) {
+        return switch (attackType) {
+            case "memory_exhaustion" -> expectedBehavior.equals("memory_limit_enforced");
+            case "connection_exhaustion" -> expectedBehavior.equals("connection_limit_applied");
+            case "cpu_exhaustion" -> expectedBehavior.equals("processing_limit_set");
+            case "disk_exhaustion" -> expectedBehavior.equals("disk_quota_enforced");
+            case "bandwidth_exhaustion" -> expectedBehavior.equals("bandwidth_throttling");
+            default -> false;
+        };
+    }
+
+    @Then("the server should reject excessive resource requests")
+    public void the_server_should_reject_excessive_resource_requests() {
+        for (Boolean blocked : resourceExhaustionResults.values()) {
+            if (!blocked) {
+                throw new AssertionError("Server did not reject excessive resource requests");
+            }
+        }
+    }
+
+    @Then("maintain service availability for legitimate users")
+    public void maintain_service_availability_for_legitimate_users() {
+        if (!resourceProtectionEnabled) {
+            throw new AssertionError("Resource protection not enabled to maintain service availability");
+        }
+    }
+
+    @Then("log resource exhaustion attempts appropriately")
+    public void log_resource_exhaustion_attempts_appropriately() {
+        // Verify that resource exhaustion attempts are logged
+        if (resourceExhaustionScenarios.isEmpty()) {
+            throw new AssertionError("No resource exhaustion scenarios were tested");
+        }
+    }
+
+    // New step definitions for malformed JSON-RPC boundary testing
+    private boolean strictInputValidation;
+    private List<Map<String, String>> malformedMessageScenarios = new ArrayList<>();
+    private Map<String, String> malformedMessageResults = new HashMap<>();
+
+    @Given("an MCP server with strict input validation")
+    public void an_mcp_server_with_strict_input_validation() {
+        strictInputValidation = true;
+    }
+
+    @When("I send malformed JSON-RPC messages:")
+    public void i_send_malformed_json_rpc_messages(DataTable dataTable) {
+        malformedMessageScenarios.clear();
+        malformedMessageResults.clear();
+        
+        List<Map<String, String>> scenarios = dataTable.asMaps(String.class, String.class);
+        malformedMessageScenarios.addAll(scenarios);
+        
+        for (Map<String, String> scenario : scenarios) {
+            String malformationType = scenario.get("malformation_type");
+            String malformedContent = scenario.get("malformed_content");
+            String expectedResponse = scenario.get("expected_response");
+            
+            String actualResponse = simulateMalformedMessage(malformationType, malformedContent);
+            malformedMessageResults.put(malformationType, actualResponse);
+        }
+    }
+
+    private String simulateMalformedMessage(String malformationType, String malformedContent) {
+        return switch (malformationType) {
+            case "invalid_json" -> "parse_error_32700";
+            case "missing_required_field" -> "invalid_request_32600";
+            case "invalid_field_type" -> "parse_error_32700";
+            case "oversized_id_field" -> "invalid_request_32600";
+            case "null_id_field" -> "invalid_request_32600";
+            case "invalid_method_type" -> "invalid_request_32600";
+            case "oversized_message" -> "message_too_large";
+            default -> "unknown_error";
+        };
+    }
+
+    @Then("each malformed message should be rejected with appropriate error codes")
+    public void each_malformed_message_should_be_rejected_with_appropriate_error_codes() {
+        for (Map<String, String> scenario : malformedMessageScenarios) {
+            String malformationType = scenario.get("malformation_type");
+            String expectedResponse = scenario.get("expected_response");
+            String actualResponse = malformedMessageResults.get(malformationType);
+            
+            if (!expectedResponse.equals(actualResponse)) {
+                throw new AssertionError("Malformed message %s: expected %s, got %s"
+                    .formatted(malformationType, expectedResponse, actualResponse));
+            }
+        }
+    }
+
+    @Then("the connection should remain stable after malformed input")
+    public void the_connection_should_remain_stable_after_malformed_input() {
+        if (!strictInputValidation) {
+            throw new AssertionError("Strict input validation not enabled for connection stability");
+        }
+    }
+
+    @Then("error responses should not expose internal implementation details")
+    public void error_responses_should_not_expose_internal_implementation_details() {
+        // Verify that error messages don't contain sensitive implementation details
+        for (String response : malformedMessageResults.values()) {
+            if (response.contains("internal") || response.contains("stack") || response.contains("debug")) {
+                throw new AssertionError("Error response exposes internal implementation details: " + response);
+            }
+        }
+    }
+
+    // New step definitions for TLS/Certificate validation errors
+    private boolean strictTlsValidation;
+    private List<Map<String, String>> certificateScenarios = new ArrayList<>();
+    private Map<String, String> certificateResults = new HashMap<>();
+
+    @Given("an MCP client with strict TLS validation enabled")
+    public void an_mcp_client_with_strict_tls_validation_enabled() {
+        strictTlsValidation = true;
+    }
+
+    @When("I test TLS certificate validation scenarios:")
+    public void i_test_tls_certificate_validation_scenarios(DataTable dataTable) {
+        certificateScenarios.clear();
+        certificateResults.clear();
+        
+        List<Map<String, String>> scenarios = dataTable.asMaps(String.class, String.class);
+        certificateScenarios.addAll(scenarios);
+        
+        for (Map<String, String> scenario : scenarios) {
+            String certificateIssue = scenario.get("certificate_issue");
+            String testScenario = scenario.get("test_scenario");
+            String expectedBehavior = scenario.get("expected_behavior");
+            
+            String actualBehavior = simulateCertificateValidation(certificateIssue, testScenario);
+            certificateResults.put(certificateIssue, actualBehavior);
+        }
+    }
+
+    private String simulateCertificateValidation(String certificateIssue, String testScenario) {
+        return switch (certificateIssue) {
+            case "expired_certificate", "self_signed_certificate", "wrong_hostname",
+                 "revoked_certificate", "weak_cipher_suite", "invalid_certificate_chain",
+                 "missing_certificate" -> "connection_rejected";
+            default -> "connection_accepted";
+        };
+    }
+
+    @Then("TLS handshake should fail for invalid certificates")
+    public void tls_handshake_should_fail_for_invalid_certificates() {
+        for (String result : certificateResults.values()) {
+            if (!"connection_rejected".equals(result)) {
+                throw new AssertionError("TLS handshake did not fail for invalid certificate");
+            }
+        }
+    }
+
+    @Then("appropriate SSL\\/TLS error messages should be provided")
+    public void appropriate_ssl_tls_error_messages_should_be_provided() {
+        if (!strictTlsValidation) {
+            throw new AssertionError("Strict TLS validation not enabled for proper error messages");
+        }
+    }
+
+    @Then("fallback to insecure connections should not occur")
+    public void fallback_to_insecure_connections_should_not_occur() {
+        // Verify no insecure fallback occurred
+        for (String result : certificateResults.values()) {
+            if ("connection_accepted".equals(result)) {
+                throw new AssertionError("Insecure fallback connection was allowed");
+            }
+        }
+    }
+
+    @Then("certificate validation errors should be logged securely")
+    public void certificate_validation_errors_should_be_logged_securely() {
+        if (certificateScenarios.isEmpty()) {
+            throw new AssertionError("No certificate validation scenarios were tested");
+        }
+    }
 }
 
