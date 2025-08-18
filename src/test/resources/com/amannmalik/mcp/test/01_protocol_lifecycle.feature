@@ -93,6 +93,13 @@ Feature: MCP Connection Lifecycle
       | none              | false         |
     Then each response should be handled according to Content-Type requirements
 
+  @connection @stdio @newline
+  Scenario: Stdio transport rejects messages with embedded newlines
+    # Tests specification/2025-06-18/basic/transports.mdx:30 (Messages must not contain embedded newlines)
+    Given a stdio transport with a message containing an embedded newline
+    When I attempt to read the stdio message
+    Then the transport should fail due to embedded newline
+
   @connection @http @session
   Scenario: HTTP session ID requirement
     # Tests specification/2025-06-18/basic/transports.mdx:177-205 (Session management)
