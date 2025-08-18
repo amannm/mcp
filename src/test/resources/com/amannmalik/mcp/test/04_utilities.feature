@@ -276,6 +276,15 @@ Feature: MCP Protocol Utilities
     And track active progress tokens appropriately
     And stop notifications after operation completion
 
+  @progress @token-lifecycle
+  Scenario: Progress token remains active until completion
+    # Tests specification/2025-06-18/basic/utilities/progress.mdx:14-57 (Progress flow)
+    Given a registered progress token "lifecycle-token"
+    When I record a progress notification with progress 50 and total 100
+    Then the token should be active
+    When I record a progress notification with progress 100 and total 100
+    Then the token should be removed
+
   @progress @unknown-token
   Scenario: Progress notification with unknown token is ignored
     # Tests specification/2025-06-18/basic/utilities/progress.mdx:62-66 (Behavior requirements)

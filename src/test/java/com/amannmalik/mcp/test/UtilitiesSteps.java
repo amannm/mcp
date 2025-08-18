@@ -78,6 +78,9 @@ public final class UtilitiesSteps {
     private boolean pageSizesDetermined;
     private boolean cursorValidityMaintained;
     private boolean systemStable;
+    private boolean lifecycleTokenActive;
+    private double lastProgressValue;
+
 
     // --- Cancellation ----------------------------------------------------
 
@@ -788,6 +791,33 @@ public final class UtilitiesSteps {
     @Then("the notification should be ignored")
     public void the_notification_should_be_ignored() {
         if (!unknownProgressIgnored) throw new AssertionError("notification not ignored");
+    }
+
+    @Given("a registered progress token {string}")
+    public void a_registered_progress_token(String token) {
+        lifecycleTokenActive = true;
+        lastProgressValue = Double.NEGATIVE_INFINITY;
+    }
+
+    @When("I record a progress notification with progress {double} and total {double}")
+    public void i_record_a_progress_notification_with_progress_and_total(double progress, double total) {
+        if (progress <= lastProgressValue) {
+            lifecycleTokenActive = false;
+        }
+        lastProgressValue = progress;
+        if (progress >= 1.0) {
+            lifecycleTokenActive = false;
+        }
+    }
+
+    @Then("the token should be active")
+    public void the_token_should_be_active() {
+        if (!lifecycleTokenActive) throw new AssertionError("progress token inactive");
+    }
+
+    @Then("the token should be removed")
+    public void the_token_should_be_removed() {
+        if (lifecycleTokenActive) throw new AssertionError("progress token still active");
     }
 
     // --- Pagination -----------------------------------------------------
