@@ -243,7 +243,8 @@ final class ResourceOrchestrator implements AutoCloseable {
 
     private JsonRpcMessage withAccessibleUri(JsonRpcRequest req, String uri, Supplier<JsonRpcMessage> action) {
         if (!canAccessResource(uri)) {
-            return JsonRpcError.of(req.id(), JsonRpcErrorCode.INTERNAL_ERROR, "Access denied");
+            return JsonRpcError.of(req.id(), -32002, "Resource not found",
+                    Json.createObjectBuilder().add("uri", uri).build());
         }
         return action.get();
     }
