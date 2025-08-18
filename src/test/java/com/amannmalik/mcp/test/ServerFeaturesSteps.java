@@ -42,6 +42,7 @@ public final class ServerFeaturesSteps {
     private JsonObject resourceContents;
     private List<JsonObject> resourceTemplates = List.of();
     private boolean resourceSubscriptionConfirmed;
+    private boolean resourceUnsubscriptionConfirmed;
     private boolean resourceUpdatedNotification;
     private boolean resourceListChangedNotification;
     private List<JsonObject> resourceAnnotations = List.of();
@@ -706,6 +707,32 @@ public final class ServerFeaturesSteps {
         }
         if (!resourceUpdatedNotification) {
             throw new AssertionError("update notification not received");
+        }
+    }
+
+    @When("I send a \"resources\\/unsubscribe\" request for the resource URI")
+    public void i_send_a_resources_unsubscribe_request_for_the_resource_uri() throws Exception {
+        try {
+            JsonObject params = Json.createObjectBuilder().add("uri", resourceUri).build();
+            resourceUnsubscriptionConfirmed = !"JsonRpcError".equals(activeConnection.request(clientId, RequestMethod.RESOURCES_UNSUBSCRIBE, params).getClass().getSimpleName());
+        } catch (Exception e) {
+            resourceUnsubscriptionConfirmed = false;
+        }
+    }
+
+    @Then("I should receive unsubscription confirmation")
+    public void i_should_receive_unsubscription_confirmation() {
+        if (!resourceUnsubscriptionConfirmed) {
+            throw new AssertionError("unsubscription not confirmed");
+        }
+    }
+
+    @Then("a subsequent \"resources\\/unsubscribe\" request should result in error")
+    public void a_subsequent_resources_unsubscribe_request_should_result_in_error() throws Exception {
+        JsonObject params = Json.createObjectBuilder().add("uri", resourceUri).build();
+        String type = activeConnection.request(clientId, RequestMethod.RESOURCES_UNSUBSCRIBE, params).getClass().getSimpleName();
+        if (!"JsonRpcError".equals(type)) {
+            throw new AssertionError("expected no active subscription error");
         }
     }
 

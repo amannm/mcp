@@ -146,6 +146,17 @@ Feature: MCP Server Features
     Then I should receive subscription confirmation
     And when the resource changes, I should receive "notifications/resources/updated"
 
+  @resources @subscriptions
+  Scenario: Resource unsubscription
+    # Tests specification/2025-06-18/server/resources.mdx:211-240 (Subscriptions)
+    # Tests specification/2025-06-18/schema.ts:473-481 (resources/unsubscribe)
+    Given the server has resources capability with "subscribe" enabled
+    And there is a resource I want to monitor
+    And I send a "resources/subscribe" request for the resource URI
+    When I send a "resources/unsubscribe" request for the resource URI
+    Then I should receive unsubscription confirmation
+    And a subsequent "resources/unsubscribe" request should result in error
+
   @resources @notifications
   Scenario: Resource list change notifications
     # Tests specification/2025-06-18/server/resources.mdx:199-209 (List changed notification)
