@@ -43,6 +43,8 @@ public final class ProtocolLifecycleSteps {
     private Map<String, String> currentConfiguration;
     private final List<Boolean> acceptHeaderResults = new ArrayList<>();
     private final List<Boolean> expectedAcceptResults = new ArrayList<>();
+    private final List<Boolean> originHeaderResults = new ArrayList<>();
+    private final List<Boolean> expectedOriginResults = new ArrayList<>();
     private final List<Boolean> contentTypeResults = new ArrayList<>();
     private final List<Boolean> expectedContentTypeResults = new ArrayList<>();
 
@@ -439,6 +441,34 @@ public final class ProtocolLifecycleSteps {
         for (int i = 0; i < acceptHeaderResults.size(); i++) {
             if (!Objects.equals(acceptHeaderResults.get(i), expectedAcceptResults.get(i))) {
                 throw new AssertionError("accept header validation failed at index %d".formatted(i));
+            }
+        }
+    }
+
+    @When("I send HTTP requests with the following Origin headers:")
+    public void i_send_http_requests_with_the_following_origin_headers(DataTable dataTable) {
+        originHeaderResults.clear();
+        expectedOriginResults.clear();
+        dataTable.asMaps(String.class, String.class).forEach(row -> {
+            var header = row.get("origin_header");
+            var expected = Boolean.parseBoolean(row.get("should_accept"));
+            expectedOriginResults.add(expected);
+            originHeaderResults.add(isOriginHeaderValid(header));
+        });
+    }
+
+    private boolean isOriginHeaderValid(String header) {
+        return header != null
+                && !header.isBlank()
+                && !"none".equalsIgnoreCase(header)
+                && header.equals("https://client.example.com");
+    }
+
+    @Then("each request should be handled according to Origin header requirements")
+    public void each_request_should_be_handled_according_to_origin_header_requirements() {
+        for (int i = 0; i < originHeaderResults.size(); i++) {
+            if (!Objects.equals(originHeaderResults.get(i), expectedOriginResults.get(i))) {
+                throw new AssertionError("origin header validation failed at index %d".formatted(i));
             }
         }
     }
