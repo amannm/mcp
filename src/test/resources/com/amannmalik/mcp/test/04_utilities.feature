@@ -240,6 +240,16 @@ Feature: MCP Protocol Utilities
     When I validate progress token types
     Then only valid progress token types should be accepted
 
+  @progress @token-limits
+  Scenario: Progress tokens support large integer values
+    # Tests specification/2025-06-18/basic/utilities/progress.mdx:14-22 (Token type)
+    Given I have requests with progress tokens of different types:
+      | token               | valid |
+      | 9223372036854775808 | true  |
+      | -9223372036854775808 | true  |
+    When I validate progress token types
+    Then only valid progress token types should be accepted
+
   @progress @token-location
   Scenario: Progress token placement in request metadata
     # Tests specification/2025-06-18/basic/utilities/progress.mdx:14-22 (Token placement)
