@@ -1409,12 +1409,46 @@ public final class ProtocolLifecycleSteps {
         }
     }
 
+    @When("I receive an error response missing code")
+    public void i_receive_an_error_response_missing_code() {
+        var response = Json.createObjectBuilder()
+                .add("jsonrpc", "2.0")
+                .add("id", RequestId.toJsonValue(new RequestId.NumericId(1)))
+                .add("error", Json.createObjectBuilder().add("message", "oops").build())
+                .build();
+        try {
+            var value = response.getJsonObject("error").get("code");
+            if (!(value instanceof JsonNumber number) || !number.isIntegral()) throw new IllegalArgumentException();
+            number.intValueExact();
+            invalidResponseError = null;
+        } catch (Exception e) {
+            invalidResponseError = e;
+        }
+    }
+
     @When("I receive an error response with non-string message {int}")
     public void i_receive_an_error_response_with_non_string_message(int message) {
         var response = Json.createObjectBuilder()
                 .add("jsonrpc", "2.0")
                 .add("id", RequestId.toJsonValue(new RequestId.NumericId(1)))
                 .add("error", Json.createObjectBuilder().add("code", -1).add("message", message).build())
+                .build();
+        try {
+            var value = response.getJsonObject("error").get("message");
+            if (!(value instanceof JsonString string)) throw new IllegalArgumentException();
+            string.getString();
+            invalidResponseError = null;
+        } catch (Exception e) {
+            invalidResponseError = e;
+        }
+    }
+
+    @When("I receive an error response missing message")
+    public void i_receive_an_error_response_missing_message() {
+        var response = Json.createObjectBuilder()
+                .add("jsonrpc", "2.0")
+                .add("id", RequestId.toJsonValue(new RequestId.NumericId(1)))
+                .add("error", Json.createObjectBuilder().add("code", -1).build())
                 .build();
         try {
             var value = response.getJsonObject("error").get("message");
