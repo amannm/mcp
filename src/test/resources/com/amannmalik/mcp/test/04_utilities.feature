@@ -154,6 +154,18 @@ Feature: MCP Protocol Utilities
     When I validate progress token uniqueness
     Then the system should reject duplicate progress tokens
 
+  @progress @token-types
+  Scenario: Progress token type requirements
+    # Tests specification/2025-06-18/basic/utilities/progress.mdx:14-22 (Token type)
+    Given I have requests with progress tokens of different types:
+      | token   | valid |
+      | "abc123" | true  |
+      | 42      | true  |
+      | 1.5     | false |
+      | true    | false |
+    When I validate progress token types
+    Then only valid progress token types should be accepted
+
   @progress @rate-limiting
   Scenario: Progress notification rate limiting
     # Tests specification/2025-06-18/basic/utilities/progress.mdx:89-93 (Implementation notes)
