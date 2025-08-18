@@ -263,6 +263,17 @@ Feature: MCP Connection Lifecycle
     When I send a non-ping request
     Then the server should handle the request appropriately
 
+  @connection @state-management @server
+  Scenario: Server request restrictions before initialization
+    # Tests specification/2025-06-18/basic/lifecycle.mdx:119-125 (Premature request constraints)
+    Given the server has not received the initialized notification
+    When the server evaluates pre-initialization requests:
+      | request_method | allowed |
+      | ping           | true    |
+      | logging/entry  | true    |
+      | tools/list     | false   |
+    Then the server should only send allowed requests
+
   @security @information-disclosure  
   Scenario: Safe implementation information sharing
     # Tests specification/2025-06-18/basic/security_best_practices.mdx (General security principles)
