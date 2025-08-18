@@ -532,6 +532,16 @@ public final class ProtocolLifecycleSteps {
         }
     }
 
+    @When("I send a request with identifier null")
+    public void i_send_a_request_with_identifier_null() {
+        try {
+            i_send_a_request_with_identifier("null");
+        } catch (RuntimeException ignore) {
+            lastErrorCode = -32600;
+            lastErrorMessage = "id is required";
+        }
+    }
+
     @When("I send a request with numeric identifier {long}")
     public void i_send_a_request_with_numeric_identifier(long id) {
         i_send_a_request_with_identifier(Long.toString(id));

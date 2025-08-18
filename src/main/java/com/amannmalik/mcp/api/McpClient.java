@@ -230,7 +230,7 @@ final class McpClient extends JsonRpcEndpoint implements AutoCloseable {
                 try {
                     ValidationUtil.requireMeta(params.getJsonObject("_meta"));
                 } catch (ClassCastException e) {
-                    throw new IllegalArgumentException(e.getMessage(), e);
+                    throw new IllegalArgumentException("Invalid params", e);
                 }
             }
         }

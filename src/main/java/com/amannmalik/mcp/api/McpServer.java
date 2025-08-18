@@ -364,7 +364,11 @@ public final class McpServer extends JsonRpcEndpoint implements AutoCloseable {
     private JsonRpcMessage ping(JsonRpcRequest req) {
         JsonObject params = req.params();
         if (params != null && !params.isEmpty()) {
-            return JsonRpcError.of(req.id(), JsonRpcErrorCode.INVALID_PARAMS, "Invalid params");
+            if (!(params.size() == 1 &&
+                    params.containsKey("_meta") &&
+                    params.get("_meta").getValueType() == JsonValue.ValueType.OBJECT)) {
+                return JsonRpcError.of(req.id(), JsonRpcErrorCode.INVALID_PARAMS, "Invalid params");
+            }
         }
         return new JsonRpcResponse(req.id(), Json.createObjectBuilder().build());
     }
