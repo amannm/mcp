@@ -6,6 +6,7 @@ import io.cucumber.datatable.DataTable;
 import io.cucumber.java.en.*;
 import jakarta.json.Json;
 import jakarta.json.JsonObject;
+import jakarta.json.JsonValue;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -671,6 +672,28 @@ public final class ProtocolLifecycleSteps {
                 .build();
         try {
             RequestId.from(Json.createValue(id));
+            lastErrorCode = 0;
+            lastErrorMessage = null;
+        } catch (RuntimeException e) {
+            lastErrorCode = -32600;
+            lastErrorMessage = e.getMessage();
+        }
+    }
+
+    @When("I send a request with boolean identifier {word}")
+    public void i_send_a_request_with_boolean_identifier(String value) {
+        var id = switch (value.toLowerCase(Locale.ROOT)) {
+            case "true" -> JsonValue.TRUE;
+            case "false" -> JsonValue.FALSE;
+            default -> throw new IllegalArgumentException("invalid boolean value");
+        };
+        lastRequest = Json.createObjectBuilder()
+                .add("jsonrpc", "2.0")
+                .add("id", id)
+                .add("method", RequestMethod.PING.method())
+                .build();
+        try {
+            RequestId.from(id);
             lastErrorCode = 0;
             lastErrorMessage = null;
         } catch (RuntimeException e) {
