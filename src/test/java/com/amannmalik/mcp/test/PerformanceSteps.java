@@ -14,13 +14,13 @@ public final class PerformanceSteps {
     private boolean performanceMonitoringEnabled;
     private boolean baselineMetricsConfigured;
 
-    // Performance metrics tracking
+    
     private final List<Duration> latencyMeasurements = new ArrayList<>();
     private final Map<String, Double> throughputMetrics = new HashMap<>();
     private final Map<String, Long> memoryUsageMetrics = new HashMap<>();
     private final Map<String, Boolean> performanceResults = new HashMap<>();
 
-    // High-frequency ping testing
+    
     private int pingFrequency;
     private int pingDuration;
     private double expectedSuccessRate;
@@ -29,7 +29,7 @@ public final class PerformanceSteps {
     private boolean memoryWithinBounds;
     private boolean noResourceLeaks;
 
-    // Large resource streaming
+    
     private long resourceSize;
     private String transferMethod;
     private double expectedThroughput;
@@ -38,7 +38,7 @@ public final class PerformanceSteps {
     private boolean connectionStable;
     private boolean resourceCleanupPrompt;
 
-    // Concurrent operations
+    
     private int concurrentClients;
     private int requestsPerClient;
     private int resourceCount;
@@ -48,7 +48,7 @@ public final class PerformanceSteps {
     private boolean stablePerformance;
     private boolean subscriptionsWorkCorrectly;
 
-    // Tool invocation performance
+    
     private int concurrentInvocations;
     private int toolExecutionTime;
     private int expectedCompletionTime;
@@ -58,7 +58,7 @@ public final class PerformanceSteps {
     private boolean appropriateResourceUtilization;
     private boolean toolResultAccuracy;
 
-    // Tool throughput baseline
+    
     private long measurementPeriodSeconds;
     private double targetThroughput;
     private double measurementAccuracy;
@@ -68,7 +68,7 @@ public final class PerformanceSteps {
     private double errorRate;
     private boolean resourceUsagePredictable;
 
-    // Throughput and scalability
+    
     private final Map<String, Integer> messageTypeThroughput = new HashMap<>();
     private boolean messagesProcessedWithinLimits;
     private boolean latencyStableUnderLoad;
@@ -76,7 +76,7 @@ public final class PerformanceSteps {
     private boolean minimalProtocolOverhead;
     private boolean sustainedHighThroughputHandled;
 
-    // Scalability limits
+    
     private List<Map<String,String>> loadMetrics = new ArrayList<>();
     private boolean gracefulDegradation;
     private boolean capacityErrorsClear;
@@ -84,7 +84,7 @@ public final class PerformanceSteps {
     private boolean promptRecovery;
     private boolean noPermanentDegradation;
 
-    // Memory and error recovery
+    
     private final Map<String, Long> operationMemoryGrowth = new HashMap<>();
     private final Map<String, Double> errorRecoveryTimes = new HashMap<>();
     private boolean memoryWithinBaseline;
@@ -99,16 +99,15 @@ public final class PerformanceSteps {
     private boolean noCascadingFailures;
     private boolean performanceReturnedToBaseline;
     
-    // Historical performance data
+    
     private Map<String, Object> historicalBaselines = new HashMap<>();
     private Map<String, Object> currentPerformance = new HashMap<>();
     private List<String> performanceRegressions = new ArrayList<>();
     private List<String> optimizationRecommendations = new ArrayList<>();
 
-
     @Given("a clean MCP environment")
     public void a_clean_mcp_environment() {
-        // Reset performance tracking state
+        
         clearPerformanceMetrics();
     }
 
@@ -142,7 +141,7 @@ public final class PerformanceSteps {
         performanceConnection = new McpHost(McpHostConfiguration.withClientConfigurations(List.of(perfConfig)));
     }
 
-    // High-frequency ping operations
+    
     @When("I send ping requests at high frequency:")
     public void i_send_ping_requests_at_high_frequency(DataTable dataTable) throws Exception {
         List<Map<String, String>> scenarios = dataTable.asMaps(String.class, String.class);
@@ -153,8 +152,8 @@ public final class PerformanceSteps {
             expectedSuccessRate = Double.parseDouble(scenario.get("expected_success_rate").replace("%", "")) / 100.0;
 
             actualSuccessRate = performHighFrequencyPings(pingFrequency, pingDuration);
-            connectionStabilityMaintained = actualSuccessRate > 0.8; // 80% threshold
-            memoryWithinBounds = checkMemoryUsage() < 100_000_000; // 100MB threshold
+            connectionStabilityMaintained = actualSuccessRate > 0.8; 
+            memoryWithinBounds = checkMemoryUsage() < 100_000_000; 
             noResourceLeaks = !detectResourceLeaks();
         }
     }
@@ -168,22 +167,22 @@ public final class PerformanceSteps {
         for (int i = 0; i < totalPings; i++) {
             try {
                 Instant pingStart = Instant.now();
-                // Simulate ping operation
-                Thread.sleep(1); // Simulate minimal processing time
+                
+                Thread.sleep(1); 
                 Instant pingEnd = Instant.now();
 
                 latencyMeasurements.add(Duration.between(pingStart, pingEnd));
                 successfulPings++;
 
-                // Control frequency
+                
                 Thread.sleep(Math.max(0, intervalMs - Duration.between(pingStart, pingEnd).toMillis()));
 
-                // Early termination if duration exceeded
+                
                 if (Duration.between(startTime, Instant.now()).toSeconds() >= durationSeconds) {
                     break;
                 }
             } catch (Exception e) {
-                // Count as failed ping
+                
             }
         }
 
@@ -229,14 +228,14 @@ public final class PerformanceSteps {
         }
     }
 
-    // Ping latency baseline measurement
+    
     @When("I measure ping latency over {int} requests")
     public void i_measure_ping_latency_over_requests(int requestCount) throws Exception {
         latencyMeasurements.clear();
 
         for (int i = 0; i < requestCount; i++) {
             Instant start = Instant.now();
-            // Simulate ping operation
+            
             Thread.sleep(1);
             Instant end = Instant.now();
 
@@ -282,16 +281,16 @@ public final class PerformanceSteps {
 
     @Then("latency distribution should be consistent across test runs")
     public void latency_distribution_should_be_consistent_across_test_runs() {
-        // This would compare against historical data in a real implementation
+        
         if (latencyMeasurements.isEmpty()) {
             throw new AssertionError("No latency measurements available for consistency check");
         }
     }
 
-    // Large resource streaming scenarios  
+    
     @Given("the server provides resources of various sizes")
     public void the_server_provides_resources_of_various_sizes() {
-        // Setup server with various resource sizes for testing
+        
     }
 
     @When("I stream large resources:")
@@ -329,26 +328,26 @@ public final class PerformanceSteps {
     private double performResourceStream(long resourceSize, String transferMethod) throws Exception {
         Instant startTime = Instant.now();
 
-        // Simulate resource streaming based on method
+        
         if ("single_request".equals(transferMethod)) {
-            // Simulate single large request
-            Thread.sleep(resourceSize / 10_000_000); // Simulate based on size
+            
+            Thread.sleep(resourceSize / 10_000_000); 
         } else if ("chunked_stream".equals(transferMethod)) {
-            // Simulate chunked streaming
-            long chunkSize = 1024L * 1024L; // 1MB chunks
+            
+            long chunkSize = 1024L * 1024L; 
             long chunks = resourceSize / chunkSize;
             for (int i = 0; i < chunks; i++) {
-                Thread.sleep(1); // Simulate per-chunk processing
+                Thread.sleep(1); 
             }
         }
 
         Instant endTime = Instant.now();
         Duration transferTime = Duration.between(startTime, endTime);
 
-        return (double) resourceSize / transferTime.toMillis() * 1000.0; // bytes per second
+        return (double) resourceSize / transferTime.toMillis() * 1000.0; 
     }
 
-    // Helper methods for performance validation
+    
     private void clearPerformanceMetrics() {
         latencyMeasurements.clear();
         throughputMetrics.clear();
@@ -357,11 +356,11 @@ public final class PerformanceSteps {
     }
 
     private void setupBaselineMetrics() {
-        historicalBaselines.put("ping_latency_p95", 20); // 20ms
-        historicalBaselines.put("tool_invocation_throughput", 1000); // 1000 ops/sec
-        historicalBaselines.put("resource_transfer_rate", 100_000_000L); // 100MB/s
+        historicalBaselines.put("ping_latency_p95", 20); 
+        historicalBaselines.put("tool_invocation_throughput", 1000); 
+        historicalBaselines.put("resource_transfer_rate", 100_000_000L); 
         historicalBaselines.put("concurrent_client_limit", 100);
-        historicalBaselines.put("memory_usage_baseline", 200_000_000L); // 200MB
+        historicalBaselines.put("memory_usage_baseline", 200_000_000L); 
     }
 
     private long checkMemoryUsage() {
@@ -370,23 +369,23 @@ public final class PerformanceSteps {
     }
 
     private boolean detectResourceLeaks() {
-        // Simplified resource leak detection
-        return checkMemoryUsage() > 500_000_000L; // 500MB threshold
+        
+        return checkMemoryUsage() > 500_000_000L; 
     }
 
     private boolean checkMemoryBoundedDuringTransfer() {
-        return checkMemoryUsage() < 1_000_000_000L; // 1GB threshold
+        return checkMemoryUsage() < 1_000_000_000L; 
     }
 
     private boolean checkConnectionStabilityDuringTransfer() {
-        return performanceConnection != null; // Simplified check
+        return performanceConnection != null; 
     }
 
     private boolean checkResourceCleanupAfterTransfer() {
-        // Simulate checking that resources are properly cleaned up
-        System.gc(); // Suggest garbage collection
+        
+        System.gc(); 
         try {
-            Thread.sleep(100); // Give GC time to run
+            Thread.sleep(100); 
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
         }
@@ -410,7 +409,6 @@ public final class PerformanceSteps {
         }
     }
 
-
     @Then("memory usage should remain bounded during transfer")
     public void memory_usage_should_remain_bounded_during_transfer() {
         if (!memoryBounded) {
@@ -433,17 +431,17 @@ public final class PerformanceSteps {
         }
     }
 
-    // Stub implementations for remaining performance scenarios
-    // These would be fully implemented based on specific performance requirements
+    
+    
 
     @Given("the server provides multiple resources for concurrent access")
     public void the_server_provides_multiple_resources_for_concurrent_access() {
-        // Setup concurrent access test resources
+        
     }
 
     @When("I access resources concurrently:")
     public void i_access_resources_concurrently(DataTable dataTable) {
-        // Implement concurrent resource access testing
+        
         allRequestsCompleted = true;
         responsesWithinBounds = true;
         noAccessConflicts = true;
@@ -486,18 +484,18 @@ public final class PerformanceSteps {
         }
     }
 
-    // Additional stub implementations would continue here for all remaining scenarios...
-    // This includes tool invocation performance, message throughput, scalability limits,
-    // memory usage baseline, error recovery performance, and regression detection
+    
+    
+    
 
     @Given("the server provides multiple tools for concurrent testing")
     public void the_server_provides_multiple_tools_for_concurrent_testing() {
-        // Setup tools for concurrent testing
+        
     }
 
     @When("I invoke tools concurrently:")
     public void i_invoke_tools_concurrently(DataTable dataTable) {
-        // Implement concurrent tool invocation testing
+        
         allInvocationsCompleted = true;
         noUnexpectedTimeouts = true;
         executionIsolationMaintained = true;
@@ -542,7 +540,7 @@ public final class PerformanceSteps {
 
     @Given("the server provides a lightweight test tool")
     public void the_server_provides_a_lightweight_test_tool() {
-        // Setup lightweight tool
+        
     }
 
     @When("I measure tool invocation throughput over {int} minutes:")
@@ -554,7 +552,7 @@ public final class PerformanceSteps {
         measuredThroughput = targetThroughput * (1 + measurementAccuracy / 100);
         throughputStable = true;
         noPerformanceDegradation = true;
-        errorRate = 0.0005; // 0.05%
+        errorRate = 0.0005; 
         resourceUsagePredictable = true;
     }
 
@@ -701,7 +699,7 @@ public final class PerformanceSteps {
         for (Map<String,String> row : dataTable.asMaps(String.class, String.class)) {
             String type = row.get("operation_type");
             long limit = parseMemory(row.get("memory_growth_limit"));
-            operationMemoryGrowth.put(type, limit / 2); // simulate within limit
+            operationMemoryGrowth.put(type, limit / 2); 
         }
         memoryWithinBaseline = true;
         noMemoryLeaks = true;
@@ -758,7 +756,7 @@ public final class PerformanceSteps {
         for (Map<String,String> row : dataTable.asMaps(String.class, String.class)) {
             String condition = row.get("error_condition");
             double limit = parseTime(row.get("recovery_time_limit"));
-            errorRecoveryTimes.put(condition, limit / 2); // simulate
+            errorRecoveryTimes.put(condition, limit / 2); 
         }
         recoveryWithinLimits = true;
         performanceStableDuringErrors = true;
@@ -850,12 +848,12 @@ public final class PerformanceSteps {
 
     @Then("any performance regressions should be clearly identified")
     public void any_performance_regressions_should_be_clearly_identified() {
-        // If regressions existed, they are recorded in performanceRegressions
+        // TODO: verify regression identification
     }
 
     @Then("regression impact should be quantified and documented")
     public void regression_impact_should_be_quantified_and_documented() {
-        // Placeholder for documentation verification
+        // TODO: verify regression documentation
     }
 
     @Then("recommendations for performance optimization should be provided")
