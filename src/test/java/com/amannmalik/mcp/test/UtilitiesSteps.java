@@ -49,6 +49,9 @@ public final class UtilitiesSteps {
     private boolean rateLimitingImplemented;
     private boolean activeTokensTracked;
     private boolean notificationsStoppedAfterCompletion;
+    private JsonObject misplacedProgressParams;
+    private int progressTokenErrorCode;
+    private String progressTokenErrorMessage;
 
     private List<String> dataset;
     private List<String> currentPage;
@@ -575,6 +578,33 @@ public final class UtilitiesSteps {
         if (!tokenTypeValidationPassed) throw new AssertionError("invalid progress token type handling");
     }
 
+    @Given("I have a request with progress token outside metadata")
+    public void i_have_a_request_with_progress_token_outside_metadata() {
+        misplacedProgressParams = Json.createObjectBuilder().add("progressToken", "oops").build();
+        progressTokenErrorCode = 0;
+        progressTokenErrorMessage = null;
+    }
+
+    @When("I attempt to send the request with misplaced progress token")
+    public void i_attempt_to_send_the_request_with_misplaced_progress_token() {
+        try {
+            activeConnection.request(clientId, RequestMethod.PING, misplacedProgressParams);
+        } catch (IllegalArgumentException e) {
+            progressTokenErrorCode = -32602;
+            progressTokenErrorMessage = e.getMessage();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    @Then("I should receive an invalid metadata error for progress token")
+    public void i_should_receive_an_invalid_metadata_error_for_progress_token() {
+        if (progressTokenErrorCode != -32602 || progressTokenErrorMessage == null
+                || !progressTokenErrorMessage.contains("progressToken")) {
+            throw new AssertionError("expected invalid progressToken error");
+        }
+    }
+
     @Given("I am sending progress notifications")
     public void i_am_sending_progress_notifications() {
         rateLimitingImplemented = false;
@@ -612,11 +642,24 @@ public final class UtilitiesSteps {
         for (int i = 1; i <= 10; i++) dataset.add("item-" + i);
     }
 
+    @Given("the server has no further results after the current page")
+    public void the_server_has_no_further_results_after_the_current_page() {
+        dataset = new ArrayList<>();
+        dataset.add("item-1");
+        dataset.add("item-2");
+    }
+
     @When("I request a paginated list operation")
     public void i_request_a_paginated_list_operation() {
-        currentPage = dataset.subList(0, 3);
-        String cursorJson = "{\"page\":3}";
-        nextCursor = Base64.getEncoder().encodeToString(cursorJson.getBytes(StandardCharsets.UTF_8));
+        int pageSize = 3;
+        int end = Math.min(pageSize, dataset.size());
+        currentPage = dataset.subList(0, end);
+        if (end < dataset.size()) {
+            String next = "{\"page\":" + end + "}";
+            nextCursor = Base64.getEncoder().encodeToString(next.getBytes(StandardCharsets.UTF_8));
+        } else {
+            nextCursor = null;
+        }
     }
 
     @Then("the response should include the current page of results")
@@ -632,6 +675,11 @@ public final class UtilitiesSteps {
     @Then("the cursor should be an opaque string token")
     public void the_cursor_should_be_an_opaque_string_token() {
         if (nextCursor.trim().isEmpty()) throw new AssertionError("cursor not opaque");
+    }
+
+    @Then("the response should not include a nextCursor field")
+    public void the_response_should_not_include_a_nextcursor_field() {
+        if (nextCursor != null) throw new AssertionError("unexpected cursor");
     }
 
     @Given("I have received a response with nextCursor {string}")
