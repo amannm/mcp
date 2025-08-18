@@ -6,7 +6,7 @@ Feature: MCP Performance Baseline Testing
   So that I can ensure acceptable performance under various load conditions
 
   Background:
-    Given a clean MCP environment
+    Given a clean MCP environment for performance testing
     And performance monitoring is enabled
     And baseline metrics are configured
 
