@@ -309,6 +309,33 @@ public final class UtilitiesSteps {
         }
     }
 
+    @When("I send a ping request with empty parameters")
+    public void i_send_a_ping_request_with_empty_parameters() {
+        try {
+            JsonObject params = Json.createObjectBuilder().build();
+            JsonRpcMessage msg = activeConnection.request(clientId, RequestMethod.PING, params);
+            String repr = msg.toString();
+            var m = java.util.regex.Pattern.compile("code=(-?\\d+), message=([^,\\]]+)").matcher(repr);
+            if (m.find()) {
+                pingErrorCode = Integer.parseInt(m.group(1));
+                pingErrorMessage = m.group(2);
+                lastPingResponse = null;
+                lastPingResponseId = null;
+            } else {
+                lastPingResponse = msg;
+                m = java.util.regex.Pattern.compile("id=([^,]+)").matcher(repr);
+                lastPingResponseId = m.find() ? m.group(1) : null;
+            }
+        } catch (IllegalArgumentException e) {
+            pingErrorCode = -32602;
+            pingErrorMessage = e.getMessage();
+            lastPingResponse = null;
+            lastPingResponseId = null;
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
     @Then("the receiver should respond promptly with an empty result")
     public void the_receiver_should_respond_promptly_with_an_empty_result() {
         if (lastPingResponse == null) throw new AssertionError("no ping response");

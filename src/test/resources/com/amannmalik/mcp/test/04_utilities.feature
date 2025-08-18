@@ -108,6 +108,15 @@ Feature: MCP Protocol Utilities
     Then the error message should be "Invalid params"
     And the error code should be -32602
 
+  @ping @validation
+  Scenario: Ping request with empty parameters
+    # Tests specification/2025-06-18/basic/utilities/ping.mdx:19-27 (Message format)
+    Given I have an established MCP connection for utilities
+    And I want to verify connection health
+    When I send a ping request with empty parameters
+    Then the error message should be "Invalid params"
+    And the error code should be -32602
+
   @ping @meta-parameter
   Scenario: Ping request with reserved meta parameter
     # Tests specification/2025-06-18/basic/utilities/ping.mdx:17-27 (Message format)
