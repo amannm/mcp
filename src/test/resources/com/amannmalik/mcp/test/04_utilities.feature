@@ -214,6 +214,7 @@ Feature: MCP Protocol Utilities
       | 9223372036854775808 | true  |
       | null                | false |
       | 1.5      | false |
+      | 1.0      | false |
       | true     | false |
     When I validate progress token types
     Then only valid progress token types should be accepted
