@@ -447,7 +447,7 @@ public final class ProtocolLifecycleSteps {
         var types = (header == null || header.isBlank() || "none".equalsIgnoreCase(header))
                 ? Set.<String>of()
                 : Arrays.stream(header.split(","))
-                .map(String::trim)
+                .map(s -> s.trim().toLowerCase(Locale.ROOT))
                 .filter(s -> !s.isEmpty())
                 .collect(Collectors.toSet());
         return switch (method) {
