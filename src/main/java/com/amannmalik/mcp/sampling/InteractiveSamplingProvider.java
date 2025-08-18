@@ -23,86 +23,92 @@ public final class InteractiveSamplingProvider implements SamplingProvider {
 
     @Override
     public CreateMessageResponse createMessage(CreateMessageRequest request, Duration timeoutMillis) throws InterruptedException {
-        if (autoApprove) {
-            boolean reject = request.messages().stream()
-                    .map(SamplingMessage::content)
-                    .filter(ContentBlock.Text.class::isInstance)
-                    .map(ContentBlock.Text.class::cast)
-                    .map(ContentBlock.Text::text)
-                    .anyMatch(t -> t.equalsIgnoreCase("reject"));
-            if (reject) throw new InterruptedException("User rejected sampling request");
-            return new CreateMessageResponse(
-                    Role.ASSISTANT,
-                    new ContentBlock.Text("ok", null, null),
-                    "mock-model",
-                    "endTurn",
-                    null);
-        }
+        return autoApprove ? autoApprove(request) : interactive(request, timeoutMillis);
+    }
 
+    private CreateMessageResponse autoApprove(CreateMessageRequest request) throws InterruptedException {
+        boolean reject = request.messages().stream()
+                .map(SamplingMessage::content)
+                .filter(ContentBlock.Text.class::isInstance)
+                .map(ContentBlock.Text.class::cast)
+                .map(ContentBlock.Text::text)
+                .anyMatch(t -> t.equalsIgnoreCase("reject"));
+        if (reject) throw new InterruptedException("User rejected sampling request");
+        return new CreateMessageResponse(
+                Role.ASSISTANT,
+                new ContentBlock.Text("ok", null, null),
+                "mock-model",
+                "endTurn",
+                null);
+    }
+
+    private CreateMessageResponse interactive(CreateMessageRequest request, Duration timeoutMillis) throws InterruptedException {
         try {
-            System.err.println("\n=== MCP Sampling Request ===");
-            System.err.println("System prompt: " + (request.systemPrompt() != null ? request.systemPrompt() : "(none)"));
-            System.err.println("Max tokens: " + request.maxTokens());
-
-            if (request.modelPreferences() != null) {
-                var prefs = request.modelPreferences();
-                System.err.println("Model preferences:");
-                if (prefs.hints() != null && !prefs.hints().isEmpty()) {
-                    System.err.print("  Hints: ");
-                    prefs.hints().forEach(hint -> System.err.print(hint.name() + " "));
-                    System.err.println();
-                }
-                if (prefs.costPriority() != null) {
-                    System.err.println("  Cost priority: " + prefs.costPriority());
-                }
-                if (prefs.speedPriority() != null) {
-                    System.err.println("  Speed priority: " + prefs.speedPriority());
-                }
-                if (prefs.intelligencePriority() != null) {
-                    System.err.println("  Intelligence priority: " + prefs.intelligencePriority());
-                }
-            }
-
-            System.err.println("\nMessages:");
-            List<SamplingMessage> messages = request.messages();
-            for (int i = 0; i < messages.size(); i++) {
-                SamplingMessage msg = messages.get(i);
-                System.err.println("  " + (i + 1) + ". [" + msg.role() + "] " + formatContent(msg.content()));
-            }
-
-            System.err.print("\nApprove this sampling request? [y/N/edit]: ");
-            String response = readLine(timeoutMillis);
-
+            printRequest(request);
+            String response = prompt("\nApprove this sampling request? [y/N/edit]: ", timeoutMillis);
             if (response == null || response.trim().isEmpty() || response.toLowerCase().startsWith("n")) {
                 throw new InterruptedException("User rejected sampling request");
             }
-
             if (response.toLowerCase().startsWith("e")) {
                 System.err.println("Edit mode not implemented in this version. Proceeding with original request.");
             }
 
             System.err.println("Generating response...");
             CreateMessageResponse result = generateResponse(request, timeoutMillis);
+            printResponse(result);
 
-            System.err.println("\n=== Generated Response ===");
-            System.err.println("Role: " + result.role());
-            System.err.println("Content: " + formatContent(result.content()));
-            System.err.println("Model: " + (result.model() != null ? result.model() : "(unknown)"));
-            System.err.println("Stop reason: " + (result.stopReason() != null ? result.stopReason() : "(unknown)"));
-
-            System.err.print("\nApprove this response? [Y/n]: ");
-            String approveResponse = readLine(timeoutMillis);
-
+            String approveResponse = prompt("\nApprove this response? [Y/n]: ", timeoutMillis);
             if (approveResponse != null && approveResponse.toLowerCase().startsWith("n")) {
                 throw new InterruptedException("User rejected response");
             }
-
             System.err.println("Response approved and sent.\n");
             return result;
-
         } catch (IOException e) {
             throw new InterruptedException("IO error during user interaction: " + e.getMessage());
         }
+    }
+
+    private void printRequest(CreateMessageRequest request) {
+        System.err.println("\n=== MCP Sampling Request ===");
+        System.err.println("System prompt: " + (request.systemPrompt() != null ? request.systemPrompt() : "(none)"));
+        System.err.println("Max tokens: " + request.maxTokens());
+        if (request.modelPreferences() != null) {
+            var prefs = request.modelPreferences();
+            System.err.println("Model preferences:");
+            if (prefs.hints() != null && !prefs.hints().isEmpty()) {
+                System.err.print("  Hints: ");
+                prefs.hints().forEach(hint -> System.err.print(hint.name() + " "));
+                System.err.println();
+            }
+            if (prefs.costPriority() != null) {
+                System.err.println("  Cost priority: " + prefs.costPriority());
+            }
+            if (prefs.speedPriority() != null) {
+                System.err.println("  Speed priority: " + prefs.speedPriority());
+            }
+            if (prefs.intelligencePriority() != null) {
+                System.err.println("  Intelligence priority: " + prefs.intelligencePriority());
+            }
+        }
+        System.err.println("\nMessages:");
+        List<SamplingMessage> messages = request.messages();
+        for (int i = 0; i < messages.size(); i++) {
+            SamplingMessage msg = messages.get(i);
+            System.err.println("  " + (i + 1) + ". [" + msg.role() + "] " + formatContent(msg.content()));
+        }
+    }
+
+    private void printResponse(CreateMessageResponse result) {
+        System.err.println("\n=== Generated Response ===");
+        System.err.println("Role: " + result.role());
+        System.err.println("Content: " + formatContent(result.content()));
+        System.err.println("Model: " + (result.model() != null ? result.model() : "(unknown)"));
+        System.err.println("Stop reason: " + (result.stopReason() != null ? result.stopReason() : "(unknown)"));
+    }
+
+    private String prompt(String message, Duration timeoutMillis) throws IOException, InterruptedException {
+        System.err.print(message);
+        return readLine(timeoutMillis);
     }
 
     private String formatContent(MessageContent content) {
