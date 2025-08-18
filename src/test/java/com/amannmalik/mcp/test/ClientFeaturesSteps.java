@@ -286,10 +286,29 @@ public final class ClientFeaturesSteps {
 
     @When("I check access for URI {string}")
     public void i_check_access_for_uri(String uri) {
-        rootAccessAllowed = configuredRoots.stream()
-                .map(r -> r.get("uri"))
-                .filter(Objects::nonNull)
-                .anyMatch(uri::startsWith);
+        try {
+            java.net.URI target = java.net.URI.create(uri);
+            if (!"file".equalsIgnoreCase(target.getScheme())) {
+                rootAccessAllowed = true;
+                return;
+            }
+            java.nio.file.Path targetPath = java.nio.file.Paths.get(target).toRealPath();
+            rootAccessAllowed = configuredRoots.stream()
+                    .map(r -> r.get("uri"))
+                    .filter(Objects::nonNull)
+                    .map(java.net.URI::create)
+                    .map(java.nio.file.Paths::get)
+                    .map(p -> {
+                        try {
+                            return p.toRealPath();
+                        } catch (Exception e) {
+                            return p.toAbsolutePath().normalize();
+                        }
+                    })
+                    .anyMatch(targetPath::startsWith);
+        } catch (Exception e) {
+            rootAccessAllowed = false;
+        }
     }
 
     @When("I configure roots for server access")
