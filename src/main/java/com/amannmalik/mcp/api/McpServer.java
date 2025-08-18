@@ -465,48 +465,51 @@ public final class McpServer extends JsonRpcEndpoint implements AutoCloseable {
         if (limit.isPresent()) {
             return JsonRpcError.of(req.id(), config.rateLimitErrorCode(), limit.get());
         }
-        Optional<Tool> tool = tools.find(callRequest.name());
-        if (tool.isEmpty()) {
+        Tool tool = tools.find(callRequest.name()).orElse(null);
+        if (tool == null) {
             return JsonRpcError.of(req.id(), JsonRpcErrorCode.INVALID_PARAMS, "Unknown tool: " + callRequest.name());
         }
         try {
-            toolAccess.requireAllowed(principal, tool.get());
+            toolAccess.requireAllowed(principal, tool);
         } catch (SecurityException e) {
             return JsonRpcError.of(req.id(), JsonRpcErrorCode.INTERNAL_ERROR, config.errorAccessDenied());
         }
+        return invokeTool(req, tool, callRequest.arguments());
+    }
+
+    private JsonRpcMessage invokeTool(JsonRpcRequest req, Tool tool, JsonObject args) {
         try {
-            ToolResult result = tools.call(callRequest.name(), callRequest.arguments());
+            ToolResult result = tools.call(tool.name(), args);
             return new JsonRpcResponse(req.id(), TOOL_RESULT_ABSTRACT_ENTITY_CODEC.toJson(result));
         } catch (IllegalArgumentException e) {
-            return handleToolCallFailure(req, callRequest, e);
+            return recoverFromToolFailure(req, tool, e);
         }
     }
 
-    private JsonRpcMessage handleToolCallFailure(JsonRpcRequest req, CallToolRequest callRequest, IllegalArgumentException e) {
-        Optional<Tool> tool = tools.find(callRequest.name());
-        if (tool.isPresent() && negotiatedClientCapabilities().contains(ClientCapability.ELICITATION)) {
-            try {
-                ElicitRequest er = new ElicitRequest(
-                        "Provide arguments for tool '" + tool.get().name() + "'",
-                        tool.get().inputSchema(),
-                        null);
-                ElicitResult res = elicit(er);
-                if (res.action() == ElicitationAction.ACCEPT) {
-                    try {
-                        ToolResult result = tools.call(callRequest.name(), res.content());
-                        return new JsonRpcResponse(req.id(), TOOL_RESULT_ABSTRACT_ENTITY_CODEC.toJson(result));
-                    } catch (IllegalArgumentException ex) {
-                        return JsonRpcError.of(req.id(), JsonRpcErrorCode.INVALID_PARAMS, ex.getMessage());
-                    }
-                }
-                return JsonRpcError.of(req.id(), JsonRpcErrorCode.INVALID_PARAMS, "Tool invocation cancelled");
-            } catch (IllegalArgumentException ex) {
-                return JsonRpcError.of(req.id(), JsonRpcErrorCode.INVALID_PARAMS, ex.getMessage());
-            } catch (Exception ex) {
-                return JsonRpcError.of(req.id(), JsonRpcErrorCode.INTERNAL_ERROR, ex.getMessage());
-            }
+    private JsonRpcMessage recoverFromToolFailure(JsonRpcRequest req, Tool tool, IllegalArgumentException failure) {
+        if (!negotiatedClientCapabilities().contains(ClientCapability.ELICITATION)) {
+            return JsonRpcError.of(req.id(), JsonRpcErrorCode.INVALID_PARAMS, failure.getMessage());
         }
-        return JsonRpcError.of(req.id(), JsonRpcErrorCode.INVALID_PARAMS, e.getMessage());
+        try {
+            ElicitRequest er = new ElicitRequest(
+                    "Provide arguments for tool '" + tool.name() + "'",
+                    tool.inputSchema(),
+                    null);
+            ElicitResult res = elicit(er);
+            if (res.action() != ElicitationAction.ACCEPT) {
+                return JsonRpcError.of(req.id(), JsonRpcErrorCode.INVALID_PARAMS, "Tool invocation cancelled");
+            }
+            try {
+                ToolResult result = tools.call(tool.name(), res.content());
+                return new JsonRpcResponse(req.id(), TOOL_RESULT_ABSTRACT_ENTITY_CODEC.toJson(result));
+            } catch (IllegalArgumentException e) {
+                return JsonRpcError.of(req.id(), JsonRpcErrorCode.INVALID_PARAMS, e.getMessage());
+            }
+        } catch (IllegalArgumentException e) {
+            return JsonRpcError.of(req.id(), JsonRpcErrorCode.INVALID_PARAMS, e.getMessage());
+        } catch (Exception e) {
+            return JsonRpcError.of(req.id(), JsonRpcErrorCode.INTERNAL_ERROR, e.getMessage());
+        }
     }
 
     private JsonRpcMessage listPrompts(JsonRpcRequest req) {
