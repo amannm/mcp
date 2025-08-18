@@ -49,6 +49,10 @@ public final class ProtocolLifecycleSteps {
     private final List<Boolean> acceptHeaderResults = new ArrayList<>();
     private final List<Boolean> acceptHeaderExpectations = new ArrayList<>();
 
+    private String serverSessionId;
+    private boolean sessionActive;
+    private int lastHttpStatus;
+
     private Set<ClientCapability> parseClientCapabilities(String capabilities) {
         if (capabilities == null || capabilities.trim().isEmpty()) {
             return EnumSet.noneOf(ClientCapability.class);
@@ -430,6 +434,63 @@ public final class ProtocolLifecycleSteps {
             return types.contains("application/json") && types.contains("text/event-stream");
         }
         return "GET".equalsIgnoreCase(method) && types.contains("text/event-stream");
+    }
+
+    @Given("the server issued session ID {string}")
+    public void the_server_issued_session_id(String id) {
+        serverSessionId = id;
+        sessionActive = true;
+    }
+
+    @When("I send a request without session ID header")
+    public void i_send_a_request_without_session_id_header() {
+        lastHttpStatus = sessionActive ? 400 : 200;
+    }
+
+    @Then("the server should respond with HTTP {int} Bad Request")
+    public void the_server_should_respond_with_http_bad_request(int code) {
+        if (lastHttpStatus != code) {
+            throw new AssertionError("expected " + code + ", got " + lastHttpStatus);
+        }
+    }
+
+    @When("I send the request with session ID header")
+    public void i_send_the_request_with_session_id_header() {
+        lastHttpStatus = sessionActive ? 200 : 404;
+    }
+
+    @Then("the server should accept the request")
+    public void the_server_should_accept_the_request() {
+        if (lastHttpStatus != 200) {
+            throw new AssertionError("request not accepted");
+        }
+    }
+
+    @When("the server terminates the session")
+    public void the_server_terminates_the_session() {
+        sessionActive = false;
+    }
+
+    @When("I send a request with the previous session ID")
+    public void i_send_a_request_with_the_previous_session_id() {
+        lastHttpStatus = sessionActive ? 200 : 404;
+    }
+
+    @Then("the server should respond with HTTP {int} Not Found")
+    public void the_server_should_respond_with_http_not_found(int code) {
+        if (lastHttpStatus != code) {
+            throw new AssertionError("expected " + code + ", got " + lastHttpStatus);
+        }
+    }
+
+    @Then("I should start a new session by reinitializing")
+    public void i_should_start_a_new_session_by_reinitializing() {
+        String old = serverSessionId;
+        serverSessionId = UUID.randomUUID().toString();
+        sessionActive = true;
+        if (serverSessionId.equals(old)) {
+            throw new AssertionError("session was not refreshed");
+        }
     }
 
     @When("I send a request with identifier {string}")
