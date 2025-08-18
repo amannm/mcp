@@ -1,6 +1,8 @@
 package com.amannmalik.mcp.test;
 
 import com.amannmalik.mcp.api.*;
+import com.amannmalik.mcp.spi.Cursor;
+import java.util.regex.Pattern;
 import io.cucumber.datatable.DataTable;
 import io.cucumber.java.After;
 import io.cucumber.java.en.*;
@@ -872,7 +874,23 @@ public final class UtilitiesSteps {
     public void i_receive_requests_with_invalid_cursors(DataTable table) {
         paginationErrors.clear();
         for (Map<String, String> row : table.asMaps()) {
-            paginationErrors.put(row.get("cursor_type"), row.get("error_code"));
+            String type = row.get("cursor_type");
+            JsonObjectBuilder b = Json.createObjectBuilder();
+            switch (type) {
+                case "expired_cursor" -> b.add("cursor", "expired");
+                case "malformed_cursor" -> b.add("cursor", "%%%" );
+                case "unknown_cursor" -> b.add("cursor", Cursor.fromIndex(999).value());
+                case "non_string_cursor" -> b.add("cursor", 123);
+                default -> throw new IllegalArgumentException("unknown cursor type: " + type);
+            }
+            try {
+                JsonRpcMessage msg = activeConnection.request(clientId, RequestMethod.TOOLS_LIST, b.build());
+                String repr = msg.toString();
+                var m = Pattern.compile("code=(-?\\d+), message=([^,\\]]+)").matcher(repr);
+                paginationErrors.put(type, m.find() ? m.group(1) : "0");
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
         }
     }
 
