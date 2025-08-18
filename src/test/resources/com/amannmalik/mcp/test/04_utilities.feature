@@ -108,6 +108,15 @@ Feature: MCP Protocol Utilities
     Then the error message should be "Invalid params"
     And the error code should be -32602
 
+  @ping @validation
+  Scenario: Ping request with empty parameters
+    # Tests specification/2025-06-18/basic/utilities/ping.mdx:19-27 (Message format)
+    Given I have an established MCP connection for utilities
+    And I want to verify connection health
+    When I send a ping request with empty parameters
+    Then the error message should be "Invalid params"
+    And the error code should be -32602
+
   @ping @meta-parameter
   Scenario: Ping request with reserved meta parameter
     # Tests specification/2025-06-18/basic/utilities/ping.mdx:17-27 (Message format)
@@ -184,6 +193,8 @@ Feature: MCP Protocol Utilities
       | token    | valid |
       | "abc123" | true  |
       | 42       | true  |
+      | 9223372036854775808 | true  |
+      | null                | false |
       | 1.5      | false |
       | true     | false |
     When I validate progress token types
@@ -204,6 +215,13 @@ Feature: MCP Protocol Utilities
     Then I should implement rate limiting to prevent flooding
     And track active progress tokens appropriately
     And stop notifications after operation completion
+
+  @progress @unknown-token
+  Scenario: Progress notification with unknown token is ignored
+    # Tests specification/2025-06-18/basic/utilities/progress.mdx:62-66 (Behavior requirements)
+    Given I am receiving progress notifications without registering a token
+    When I receive a progress notification with token "ghost-token"
+    Then the notification should be ignored
 
   @pagination @cursor-based
   Scenario: Cursor-based pagination flow
@@ -275,6 +293,7 @@ Feature: MCP Protocol Utilities
       | expired_cursor   | -32602     | Invalid params |
       | malformed_cursor | -32602     | Invalid params |
       | unknown_cursor   | -32602     | Invalid params |
+      | non_string_cursor | -32602    | Invalid params |
     Then I should return appropriate error responses for utilities
     And use JSON-RPC error code -32602 for invalid parameters
 

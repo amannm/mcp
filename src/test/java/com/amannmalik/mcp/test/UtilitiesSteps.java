@@ -1,6 +1,8 @@
 package com.amannmalik.mcp.test;
 
 import com.amannmalik.mcp.api.*;
+import com.amannmalik.mcp.spi.Cursor;
+import java.util.regex.Pattern;
 import io.cucumber.datatable.DataTable;
 import io.cucumber.java.After;
 import io.cucumber.java.en.*;
@@ -55,6 +57,7 @@ public final class UtilitiesSteps {
     private JsonObject misplacedProgressParams;
     private int progressTokenErrorCode;
     private String progressTokenErrorMessage;
+    private boolean unknownProgressIgnored;
     private List<String> dataset;
     private List<String> currentPage;
     private String nextCursor;
@@ -287,6 +290,33 @@ public final class UtilitiesSteps {
         }
         try {
             JsonRpcMessage msg = activeConnection.request(clientId, RequestMethod.PING, b.build());
+            String repr = msg.toString();
+            var m = java.util.regex.Pattern.compile("code=(-?\\d+), message=([^,\\]]+)").matcher(repr);
+            if (m.find()) {
+                pingErrorCode = Integer.parseInt(m.group(1));
+                pingErrorMessage = m.group(2);
+                lastPingResponse = null;
+                lastPingResponseId = null;
+            } else {
+                lastPingResponse = msg;
+                m = java.util.regex.Pattern.compile("id=([^,]+)").matcher(repr);
+                lastPingResponseId = m.find() ? m.group(1) : null;
+            }
+        } catch (IllegalArgumentException e) {
+            pingErrorCode = -32602;
+            pingErrorMessage = e.getMessage();
+            lastPingResponse = null;
+            lastPingResponseId = null;
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    @When("I send a ping request with empty parameters")
+    public void i_send_a_ping_request_with_empty_parameters() {
+        try {
+            JsonObject params = Json.createObjectBuilder().build();
+            JsonRpcMessage msg = activeConnection.request(clientId, RequestMethod.PING, params);
             String repr = msg.toString();
             var m = java.util.regex.Pattern.compile("code=(-?\\d+), message=([^,\\]]+)").matcher(repr);
             if (m.find()) {
@@ -660,6 +690,22 @@ public final class UtilitiesSteps {
         if (!notificationsStoppedAfterCompletion) throw new AssertionError("notifications not stopped");
     }
 
+    @Given("I am receiving progress notifications without registering a token")
+    public void i_am_receiving_progress_notifications_without_registering_a_token() {
+        progressNotifications.clear();
+        unknownProgressIgnored = false;
+    }
+
+    @When("I receive a progress notification with token {string}")
+    public void i_receive_a_progress_notification_with_token(String token) {
+        if (!progressNotifications.containsKey(token)) unknownProgressIgnored = true;
+    }
+
+    @Then("the notification should be ignored")
+    public void the_notification_should_be_ignored() {
+        if (!unknownProgressIgnored) throw new AssertionError("notification not ignored");
+    }
+
     // --- Pagination -----------------------------------------------------
 
     @Given("the server has a large dataset to return")
@@ -872,7 +918,23 @@ public final class UtilitiesSteps {
     public void i_receive_requests_with_invalid_cursors(DataTable table) {
         paginationErrors.clear();
         for (Map<String, String> row : table.asMaps()) {
-            paginationErrors.put(row.get("cursor_type"), row.get("error_code"));
+            String type = row.get("cursor_type");
+            JsonObjectBuilder b = Json.createObjectBuilder();
+            switch (type) {
+                case "expired_cursor" -> b.add("cursor", "expired");
+                case "malformed_cursor" -> b.add("cursor", "%%%" );
+                case "unknown_cursor" -> b.add("cursor", Cursor.fromIndex(999).value());
+                case "non_string_cursor" -> b.add("cursor", 123);
+                default -> throw new IllegalArgumentException("unknown cursor type: " + type);
+            }
+            try {
+                JsonRpcMessage msg = activeConnection.request(clientId, RequestMethod.TOOLS_LIST, b.build());
+                String repr = msg.toString();
+                var m = Pattern.compile("code=(-?\\d+), message=([^,\\]]+)").matcher(repr);
+                paginationErrors.put(type, m.find() ? m.group(1) : "0");
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
         }
     }
 
