@@ -884,7 +884,28 @@ public final class SecurityErrorsSteps {
         securityLoggingScenarios.clear();
         securityFailsafeScenarios.clear();
         complianceScenarios.clear();
+
+        resourceExhaustionScenarios.clear();
+        resourceExhaustionResults.clear();
+        resourceExhaustionLogs.clear();
+
+        malformedMessageScenarios.clear();
+        malformedMessageResults.clear();
+
+        certificateScenarios.clear();
+        certificateResults.clear();
+        certificateLogs.clear();
+
+        resourceProtectionEnabled = false;
+        strictInputValidation = false;
+        strictTlsValidation = false;
     }
+
+    // New step definitions for resource exhaustion attacks
+    private boolean resourceProtectionEnabled;
+    private final List<Map<String, String>> resourceExhaustionScenarios = new ArrayList<>();
+    private final Map<String, Boolean> resourceExhaustionResults = new HashMap<>();
+    private final Set<String> resourceExhaustionLogs = new HashSet<>();
 
     @Given("an MCP server with resource protection enabled")
     public void an_mcp_server_with_resource_protection_enabled() {
@@ -895,7 +916,7 @@ public final class SecurityErrorsSteps {
     public void i_test_resource_exhaustion_scenarios(DataTable dataTable) {
         resourceExhaustionScenarios.clear();
         resourceExhaustionResults.clear();
-
+        resourceExhaustionLogs.clear();
         List<Map<String, String>> scenarios = dataTable.asMaps(String.class, String.class);
         resourceExhaustionScenarios.addAll(scenarios);
 
@@ -906,6 +927,7 @@ public final class SecurityErrorsSteps {
 
             boolean attackBlocked = simulateResourceExhaustionAttack(attackType, attackMethod, expectedBehavior);
             resourceExhaustionResults.put(attackType, attackBlocked);
+            resourceExhaustionLogs.add(attackType);
         }
     }
 
@@ -938,9 +960,11 @@ public final class SecurityErrorsSteps {
 
     @Then("log resource exhaustion attempts appropriately")
     public void log_resource_exhaustion_attempts_appropriately() {
-        // Verify that resource exhaustion attempts are logged
-        if (resourceExhaustionScenarios.isEmpty()) {
-            throw new AssertionError("No resource exhaustion scenarios were tested");
+        for (Map<String, String> scenario : resourceExhaustionScenarios) {
+            String attackType = scenario.get("attack_type");
+            if (!resourceExhaustionLogs.contains(attackType)) {
+                throw new AssertionError("No log entry for " + attackType);
+            }
         }
     }
 
@@ -1011,6 +1035,12 @@ public final class SecurityErrorsSteps {
         }
     }
 
+    // New step definitions for TLS/Certificate validation errors
+    private boolean strictTlsValidation;
+    private final List<Map<String, String>> certificateScenarios = new ArrayList<>();
+    private final Map<String, String> certificateResults = new HashMap<>();
+    private final Set<String> certificateLogs = new HashSet<>();
+
     @Given("an MCP client with strict TLS validation enabled")
     public void an_mcp_client_with_strict_tls_validation_enabled() {
         strictTlsValidation = true;
@@ -1020,6 +1050,7 @@ public final class SecurityErrorsSteps {
     public void i_test_tls_certificate_validation_scenarios(DataTable dataTable) {
         certificateScenarios.clear();
         certificateResults.clear();
+        certificateLogs.clear();
 
         List<Map<String, String>> scenarios = dataTable.asMaps(String.class, String.class);
         certificateScenarios.addAll(scenarios);
@@ -1031,6 +1062,7 @@ public final class SecurityErrorsSteps {
 
             String actualBehavior = simulateCertificateValidation(certificateIssue, testScenario);
             certificateResults.put(certificateIssue, actualBehavior);
+            certificateLogs.add(certificateIssue);
         }
     }
 
@@ -1071,8 +1103,11 @@ public final class SecurityErrorsSteps {
 
     @Then("certificate validation errors should be logged securely")
     public void certificate_validation_errors_should_be_logged_securely() {
-        if (certificateScenarios.isEmpty()) {
-            throw new AssertionError("No certificate validation scenarios were tested");
+        for (Map<String, String> scenario : certificateScenarios) {
+            String issue = scenario.get("certificate_issue");
+            if (!certificateLogs.contains(issue)) {
+                throw new AssertionError("No log entry for " + issue);
+            }
         }
     }
 }
