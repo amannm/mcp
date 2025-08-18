@@ -7,6 +7,7 @@ import io.cucumber.java.en.*;
 import jakarta.json.*;
 
 import java.io.IOException;
+import java.io.StringReader;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.time.Duration;
@@ -37,8 +38,10 @@ public final class UtilitiesSteps {
 
     private final Map<String,List<Double>> progressNotifications = new HashMap<>();
     private final List<Map<String,String>> progressScenarios = new ArrayList<>();
+    private final List<Map<String,String>> progressTokenTypeScenarios = new ArrayList<>();
     private final Map<String,String> activeProgressTokens = new HashMap<>();
     private boolean duplicateTokenDetected;
+    private boolean tokenTypeValidationPassed;
     private boolean missingTotalSeen;
     private boolean rateLimitingImplemented;
     private boolean activeTokensTracked;
@@ -502,6 +505,39 @@ public final class UtilitiesSteps {
     @Then("the system should reject duplicate progress tokens")
     public void the_system_should_reject_duplicate_progress_tokens() {
         if (!duplicateTokenDetected) throw new AssertionError("duplicate token not detected");
+    }
+
+    @Given("I have requests with progress tokens of different types:")
+    public void i_have_requests_with_progress_tokens_of_different_types(DataTable table) {
+        progressTokenTypeScenarios.clear();
+        progressTokenTypeScenarios.addAll(table.asMaps());
+    }
+
+    @When("I validate progress token types")
+    public void i_validate_progress_token_types() {
+        tokenTypeValidationPassed = true;
+        for (Map<String,String> row : progressTokenTypeScenarios) {
+            String literal = row.get("token");
+            boolean expected = Boolean.parseBoolean(row.get("valid"));
+            JsonValue tokenValue;
+            try (JsonReader reader = Json.createReader(new StringReader(literal))) {
+                tokenValue = reader.readValue();
+            }
+            JsonObject params = Json.createObjectBuilder()
+                    .add("_meta", Json.createObjectBuilder().add("progressToken", tokenValue))
+                    .build();
+            try {
+                ProgressToken.fromMeta(params).orElseThrow();
+                if (!expected) tokenTypeValidationPassed = false;
+            } catch (Exception ex) {
+                if (expected) tokenTypeValidationPassed = false;
+            }
+        }
+    }
+
+    @Then("only valid progress token types should be accepted")
+    public void only_valid_progress_token_types_should_be_accepted() {
+        if (!tokenTypeValidationPassed) throw new AssertionError("invalid progress token type handling");
     }
 
     @Given("I am sending progress notifications")
