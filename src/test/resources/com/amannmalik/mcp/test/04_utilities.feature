@@ -106,6 +106,7 @@ Feature: MCP Protocol Utilities
       | field | value |
       | extra | data  |
     Then the error message should be "Invalid params"
+    And the error code should be -32602
 
   @progress @token-tracking
   Scenario: Progress tracking with progress tokens
