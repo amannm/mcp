@@ -168,6 +168,13 @@ Feature: MCP Protocol Utilities
     When I validate progress token types
     Then only valid progress token types should be accepted
 
+  @progress @token-location
+  Scenario: Progress token placement in request metadata
+    # Tests specification/2025-06-18/basic/utilities/progress.mdx:14-22 (Token placement)
+    Given I have a request with progress token outside metadata
+    When I attempt to send the request with misplaced progress token
+    Then I should receive an invalid metadata error for progress token
+
   @progress @rate-limiting
   Scenario: Progress notification rate limiting
     # Tests specification/2025-06-18/basic/utilities/progress.mdx:89-93 (Implementation notes)
