@@ -47,6 +47,8 @@ public final class ProtocolLifecycleSteps {
     private Map<String, String> currentConfiguration;
     private List<Boolean> acceptHeaderResults = new ArrayList<>();
     private List<Boolean> expectedAcceptResults = new ArrayList<>();
+    private List<Boolean> contentTypeResults = new ArrayList<>();
+    private List<Boolean> expectedContentTypeResults = new ArrayList<>();
 
     private String serverSessionId;
     private boolean sessionActive;
@@ -445,6 +447,34 @@ public final class ProtocolLifecycleSteps {
             return types.contains("application/json") && types.contains("text/event-stream");
         }
         return "GET".equalsIgnoreCase(method) && types.contains("text/event-stream");
+    }
+
+    @When("I validate server HTTP POST responses with the following Content-Types:")
+    public void i_validate_server_http_post_responses_with_the_following_content_types(DataTable table) {
+        contentTypeResults.clear();
+        expectedContentTypeResults.clear();
+        table.asMaps(String.class, String.class).forEach(row -> {
+            var ct = row.get("content_type");
+            var expected = Boolean.parseBoolean(row.get("should_accept"));
+            expectedContentTypeResults.add(expected);
+            contentTypeResults.add(isContentTypeValid(ct));
+        });
+    }
+
+    private boolean isContentTypeValid(String ct) {
+        if (ct == null || ct.isBlank() || "none".equalsIgnoreCase(ct)) {
+            return false;
+        }
+        return ct.startsWith("application/json") || ct.startsWith("text/event-stream");
+    }
+
+    @Then("each response should be handled according to Content-Type requirements")
+    public void each_response_should_be_handled_according_to_content_type_requirements() {
+        for (int i = 0; i < contentTypeResults.size(); i++) {
+            if (!Objects.equals(contentTypeResults.get(i), expectedContentTypeResults.get(i))) {
+                throw new AssertionError("content type validation failed at index %d".formatted(i));
+            }
+        }
     }
 
     @Given("the server issued session ID {string}")
