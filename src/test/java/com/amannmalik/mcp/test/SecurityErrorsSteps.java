@@ -911,9 +911,6 @@ public final class SecurityErrorsSteps {
     }
 
     // New step definitions for resource exhaustion attacks
-    private boolean resourceProtectionEnabled;
-    private final List<Map<String, String>> resourceExhaustionScenarios = new ArrayList<>();
-    private final Map<String, Boolean> resourceExhaustionResults = new HashMap<>();
     private final Set<String> resourceExhaustionLogs = new HashSet<>();
 
     @Given("an MCP server with resource protection enabled")
@@ -1049,9 +1046,6 @@ public final class SecurityErrorsSteps {
     }
 
     // New step definitions for TLS/Certificate validation errors
-    private boolean strictTlsValidation;
-    private final List<Map<String, String>> certificateScenarios = new ArrayList<>();
-    private final Map<String, String> certificateResults = new HashMap<>();
     private final Set<String> certificateLogs = new HashSet<>();
 
     @Given("an MCP client with strict TLS validation enabled")
