@@ -46,6 +46,7 @@ public final class UtilitiesSteps {
     private boolean pingTimeoutHandlingConfigured;
     private String pingErrorMessage = "";
     private int pingErrorCode;
+    private boolean pingConfigurationFailed;
     private boolean duplicateTokenDetected;
     private boolean tokenTypeValidationPassed;
     private boolean missingTotalSeen;
@@ -357,6 +358,29 @@ public final class UtilitiesSteps {
         if (lastPingResponse == null || !lastPingResponse.toString().startsWith("JsonRpcResponse")) {
             throw new AssertionError("invalid response");
         }
+    }
+
+    @When("I create a client configuration with ping interval {int}ms")
+    public void i_create_a_client_configuration_with_ping_interval_ms(int interval) {
+        McpClientConfiguration base = McpClientConfiguration.defaultConfiguration("client", "client", "principal");
+        try {
+            new McpClientConfiguration(
+                    base.clientId(), base.serverName(), base.serverDisplayName(), base.serverVersion(),
+                    base.principal(), base.clientCapabilities(), base.commandSpec(), base.defaultReceiveTimeout(),
+                    base.defaultOriginHeader(), base.httpRequestTimeout(), base.enableKeepAlive(),
+                    base.sessionIdByteLength(), base.initializeRequestTimeout(), base.strictVersionValidation(),
+                    base.pingTimeout(), Duration.ofMillis(interval), base.progressPerSecond(), base.rateLimiterWindow(),
+                    base.verbose(), base.interactiveSampling(), base.rootDirectories(), base.samplingAccessPolicy()
+            );
+            pingConfigurationFailed = false;
+        } catch (IllegalArgumentException ex) {
+            pingConfigurationFailed = true;
+        }
+    }
+
+    @Then("the ping configuration should fail")
+    public void the_ping_configuration_should_fail() {
+        if (!pingConfigurationFailed) throw new AssertionError("ping configuration succeeded");
     }
 
     @Then("the error message should be {string}")
