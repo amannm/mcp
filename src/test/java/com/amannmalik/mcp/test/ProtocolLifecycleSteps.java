@@ -8,51 +8,59 @@ import jakarta.json.Json;
 import jakarta.json.JsonObject;
 
 import java.io.IOException;
+import java.nio.file.Path;
 import java.time.Duration;
 import java.util.*;
 import java.util.stream.Collectors;
-import java.nio.file.Path;
 
 public final class ProtocolLifecycleSteps {
-    
+
+    private final Set<RequestId> usedRequestIds = new HashSet<>();
+    private final Set<RequestId> sentRequestIds = new HashSet<>();
     private McpClientConfiguration clientConfig;
     private McpHostConfiguration hostConfig;
     private McpHost activeConnection;
     private String clientId;
-    
     private boolean connectionClosed = false;
     private String requestedVersion;
     private String negotiatedVersion;
-    private List<String> serverSupportedVersions = new ArrayList<>();
-    
+    private final List<String> serverSupportedVersions = new ArrayList<>();
     private Set<ClientCapability> clientCapabilities = EnumSet.noneOf(ClientCapability.class);
     private Set<ServerCapability> serverCapabilities = EnumSet.noneOf(ServerCapability.class);
     private Set<ServerCapability> availableFeatures = EnumSet.noneOf(ServerCapability.class);
-    
     private RequestId lastRequestId;
     private JsonObject lastRequest;
     private JsonObject lastResponse;
     private JsonObject lastNotification;
     private String lastErrorMessage;
     private int lastErrorCode;
-    private final Set<RequestId> usedRequestIds = new HashSet<>();
-    private final Set<RequestId> sentRequestIds = new HashSet<>();
-    
-    private List<Map<String, String>> capabilityConfigurations = new ArrayList<>();
+    private final List<Map<String, String>> capabilityConfigurations = new ArrayList<>();
     private boolean samplingRequested;
     private boolean samplingApproved;
     private boolean promptExposed;
-    private List<Map<String, String>> errorScenarios = new ArrayList<>();
-    private List<Set<ServerCapability>> discoveredCapabilities = new ArrayList<>();
+    private final List<Map<String, String>> errorScenarios = new ArrayList<>();
+    private final List<Set<ServerCapability>> discoveredCapabilities = new ArrayList<>();
     private Map<String, String> currentConfiguration;
-    private List<Boolean> acceptHeaderResults = new ArrayList<>();
-    private List<Boolean> expectedAcceptResults = new ArrayList<>();
-    private List<Boolean> contentTypeResults = new ArrayList<>();
-    private List<Boolean> expectedContentTypeResults = new ArrayList<>();
+    private final List<Boolean> acceptHeaderResults = new ArrayList<>();
+    private final List<Boolean> expectedAcceptResults = new ArrayList<>();
+    private final List<Boolean> contentTypeResults = new ArrayList<>();
+    private final List<Boolean> expectedContentTypeResults = new ArrayList<>();
 
     private String serverSessionId;
     private boolean sessionActive;
     private int lastHttpStatus;
+    // New step definitions for large message handling
+    private long largePayloadSize;
+    private boolean largeMessageHandled;
+    private boolean connectionStable;
+    // New step definitions for concurrent request processing
+    private final List<RequestId> concurrentRequestIds = new ArrayList<>();
+    private final Map<RequestId, JsonObject> concurrentResponses = new HashMap<>();
+    private boolean allConcurrentRequestsProcessed;
+    private boolean noIdConflicts;
+    // New step definitions for message ordering guarantees
+    private final List<Map<String, String>> dependentRequests = new ArrayList<>();
+    private final Map<String, JsonObject> requestResponses = new HashMap<>();
 
     private Set<ClientCapability> parseClientCapabilities(String capabilities) {
         if (capabilities == null || capabilities.trim().isEmpty()) {
@@ -89,7 +97,7 @@ public final class ProtocolLifecycleSteps {
         }
         return builder.build();
     }
-    
+
     private JsonObject createResponse(RequestId id, JsonObject result) {
         return Json.createObjectBuilder()
                 .add("jsonrpc", "2.0")
@@ -97,7 +105,7 @@ public final class ProtocolLifecycleSteps {
                 .add("result", result != null ? result : Json.createObjectBuilder().build())
                 .build();
     }
-    
+
     private JsonObject createNotification(String method, JsonObject params) {
         var builder = Json.createObjectBuilder()
                 .add("jsonrpc", "2.0")
@@ -118,7 +126,7 @@ public final class ProtocolLifecycleSteps {
                 base.verbose(), base.interactiveSampling(), base.rootDirectories(), base.samplingAccessPolicy()
         );
     }
-    
+
     private McpClientConfiguration configureWithCapabilities(McpClientConfiguration base, Set<ClientCapability> capabilities) {
         return new McpClientConfiguration(
                 base.clientId(), base.serverName(), base.serverDisplayName(), base.serverVersion(),
@@ -156,17 +164,17 @@ public final class ProtocolLifecycleSteps {
             if (activeConnection != null) activeConnection.close();
         } catch (IOException ignore) {
         }
-        
+
         activeConnection = null;
         clientId = null;
         clientConfig = null;
         hostConfig = null;
         connectionClosed = false;
-        
+
         requestedVersion = null;
         negotiatedVersion = null;
         serverSupportedVersions.clear();
-        
+
         clientCapabilities = EnumSet.noneOf(ClientCapability.class);
         serverCapabilities = EnumSet.noneOf(ServerCapability.class);
         availableFeatures = EnumSet.noneOf(ServerCapability.class);
@@ -225,7 +233,7 @@ public final class ProtocolLifecycleSteps {
     public void i_establish_a_connection_with_the_server() throws Exception {
         if (hostConfig == null) return;
         activeConnection = new McpHost(hostConfig);
-        
+
         // Grant consent for server connection in test environment
         activeConnection.grantConsent("server");
         activeConnection.grantConsent("tool:test_tool");
@@ -233,7 +241,7 @@ public final class ProtocolLifecycleSteps {
         activeConnection.grantConsent("tool:echo_tool");
         activeConnection.grantConsent("tool:slow_tool");
         activeConnection.grantConsent("sampling");
-        
+
         clientId = clientConfig.clientId();
         activeConnection.connect(clientId);
     }
@@ -254,7 +262,7 @@ public final class ProtocolLifecycleSteps {
         if (activeConnection == null || clientId == null) {
             throw new IllegalStateException("connection not established");
         }
-        
+
         boolean hasServerCapabilities = false;
         try {
             activeConnection.listTools(clientId, Cursor.Start.INSTANCE);
@@ -268,9 +276,9 @@ public final class ProtocolLifecycleSteps {
             hasServerCapabilities = true;
         } catch (Exception ignore) {
         }
-        
+
         availableFeatures.addAll(serverCapabilities);
-        
+
         String context = activeConnection.aggregateContext();
         if (context == null) {
             throw new AssertionError("missing server implementation info");
@@ -282,9 +290,9 @@ public final class ProtocolLifecycleSteps {
         if (activeConnection == null || clientId == null) {
             throw new IllegalStateException("connection not established");
         }
-        
+
         activeConnection.notify(clientId, NotificationMethod.INITIALIZED, Json.createObjectBuilder().build());
-        
+
         JsonRpcMessage response = activeConnection.request(clientId, RequestMethod.PING, Json.createObjectBuilder().build());
         if (response == null) {
             throw new AssertionError("message exchange failed");
@@ -659,10 +667,22 @@ public final class ProtocolLifecycleSteps {
     @When("{string} occurs during communication")
     public void error_occurs_during_communication(String errorSituation) {
         switch (errorSituation) {
-            case "malformed request" -> { lastErrorCode = -32700; lastErrorMessage = "Parse error"; }
-            case "invalid method request" -> { lastErrorCode = -32601; lastErrorMessage = "Method not found"; }
-            case "invalid parameters" -> { lastErrorCode = -32602; lastErrorMessage = "Invalid params"; }
-            case "server internal error" -> { lastErrorCode = -32603; lastErrorMessage = "Internal error"; }
+            case "malformed request" -> {
+                lastErrorCode = -32700;
+                lastErrorMessage = "Parse error";
+            }
+            case "invalid method request" -> {
+                lastErrorCode = -32601;
+                lastErrorMessage = "Method not found";
+            }
+            case "invalid parameters" -> {
+                lastErrorCode = -32602;
+                lastErrorMessage = "Invalid params";
+            }
+            case "server internal error" -> {
+                lastErrorCode = -32603;
+                lastErrorMessage = "Internal error";
+            }
             default -> throw new IllegalArgumentException("Unknown error situation: " + errorSituation);
         }
     }
@@ -703,7 +723,7 @@ public final class ProtocolLifecycleSteps {
             throw new RuntimeException(e);
         }
     }
-    
+
     @Then("the connection should terminate cleanly")
     public void the_connection_should_terminate_cleanly() {
         if (!connectionClosed) {
@@ -874,12 +894,12 @@ public final class ProtocolLifecycleSteps {
             throw new AssertionError("no request was sent");
         }
     }
-    
+
     @When("the server provides implementation information")
     public void the_server_provides_implementation_information() {
         // Implementation info is provided during connection establishment
     }
-    
+
     @Then("sensitive information should not be exposed")
     public void sensitive_information_should_not_be_exposed() {
         if (activeConnection != null) {
@@ -889,14 +909,14 @@ public final class ProtocolLifecycleSteps {
             }
         }
     }
-    
+
     @Then("version information should be appropriate for sharing")
     public void version_information_should_be_appropriate_for_sharing() {
         if (negotiatedVersion == null || negotiatedVersion.isEmpty()) {
             throw new AssertionError("no version information available");
         }
     }
-    
+
     @Given("I have an established MCP connection with sampling capability")
     public void i_have_an_established_mcp_connection_with_sampling_capability() {
         clientCapabilities.add(ClientCapability.SAMPLING);
@@ -912,7 +932,7 @@ public final class ProtocolLifecycleSteps {
         samplingApproved = cfg.interactiveSampling();
         promptExposed = samplingApproved;
     }
-    
+
     @Then("I should require explicit user approval")
     public void i_should_require_explicit_user_approval() {
         if (!samplingRequested || samplingApproved) {
@@ -926,7 +946,7 @@ public final class ProtocolLifecycleSteps {
             throw new AssertionError("sampling request exposed prompts");
         }
     }
-    
+
     @Given("I can provide the following capabilities:")
     public void i_can_provide_the_following_capabilities(DataTable dataTable) {
         List<String> capabilities = dataTable.asList().stream()
@@ -935,7 +955,7 @@ public final class ProtocolLifecycleSteps {
         String capabilityString = String.join(",", capabilities);
         i_can_provide_capabilities(capabilityString);
     }
-    
+
     @Given("I test server capability discovery with the following configurations:")
     public void i_test_server_capability_discovery_with_the_following_configurations(DataTable dataTable) {
         capabilityConfigurations.clear();
@@ -943,7 +963,7 @@ public final class ProtocolLifecycleSteps {
         List<Map<String, String>> rows = dataTable.asMaps(String.class, String.class);
         capabilityConfigurations.addAll(rows);
     }
-    
+
     @When("I complete the connection handshake for each configuration")
     public void i_complete_the_connection_handshake_for_each_configuration() throws Exception {
         for (Map<String, String> config : capabilityConfigurations) {
@@ -957,7 +977,7 @@ public final class ProtocolLifecycleSteps {
             discoveredCapabilities.add(EnumSet.copyOf(availableFeatures));
         }
     }
-    
+
     @Then("the capability access should match the expected results")
     public void the_capability_access_should_match_the_expected_results() {
         for (int i = 0; i < capabilityConfigurations.size(); i++) {
@@ -982,14 +1002,14 @@ public final class ProtocolLifecycleSteps {
             }
         }
     }
-    
+
     @When("I test error handling with the following scenarios:")
     public void i_test_error_handling_with_the_following_scenarios(DataTable dataTable) {
         errorScenarios.clear();
         List<Map<String, String>> rows = dataTable.asMaps(String.class, String.class);
         errorScenarios.addAll(rows);
     }
-    
+
     @Then("I should receive proper error responses for each scenario")
     public void i_should_receive_proper_error_responses_for_each_scenario() {
         for (Map<String, String> scenario : errorScenarios) {
@@ -1001,7 +1021,7 @@ public final class ProtocolLifecycleSteps {
             i_should_receive_a_proper_error_response_indicating(errorType, errorCode);
         }
     }
-    
+
     @Given("the server supports the following versions:")
     public void the_server_supports_the_following_versions(DataTable dataTable) {
         List<String> versions = dataTable.asList().stream()
@@ -1018,30 +1038,25 @@ public final class ProtocolLifecycleSteps {
         }
     }
 
-    // New step definitions for large message handling
-    private long largePayloadSize;
-    private boolean largeMessageHandled;
-    private boolean connectionStable;
-
     @When("I send a request with a large payload of {int}MB")
     public void i_send_a_request_with_a_large_payload_of_mb(int payloadSizeMB) {
         largePayloadSize = payloadSizeMB * 1024L * 1024L; // Convert to bytes
-        
+
         // Create a large test payload
         StringBuilder largePayload = new StringBuilder();
         String chunk = "x".repeat(1024); // 1KB chunk
         for (int i = 0; i < payloadSizeMB * 1024; i++) {
             largePayload.append(chunk);
         }
-        
+
         JsonObject params = Json.createObjectBuilder()
                 .add("largeData", largePayload.toString())
                 .build();
-        
+
         RequestId requestId = new RequestId.StringId("large-message-test");
         lastRequest = createRequest(requestId, "test/large_message", params);
         lastRequestId = requestId;
-        
+
         try {
             // Simulate sending large message
             largeMessageHandled = true;
@@ -1066,26 +1081,20 @@ public final class ProtocolLifecycleSteps {
         }
     }
 
-    // New step definitions for concurrent request processing
-    private List<RequestId> concurrentRequestIds = new ArrayList<>();
-    private Map<RequestId, JsonObject> concurrentResponses = new HashMap<>();
-    private boolean allConcurrentRequestsProcessed;
-    private boolean noIdConflicts;
-
     @When("I send {int} concurrent requests with unique IDs")
     public void i_send_concurrent_requests_with_unique_ids(int requestCount) {
         concurrentRequestIds.clear();
         concurrentResponses.clear();
-        
+
         for (int i = 0; i < requestCount; i++) {
             RequestId requestId = new RequestId.StringId("concurrent-req-" + i);
             concurrentRequestIds.add(requestId);
-            
+
             JsonObject request = createRequest(requestId, "ping", null);
             JsonObject response = createResponse(requestId, Json.createObjectBuilder().build());
             concurrentResponses.put(requestId, response);
         }
-        
+
         allConcurrentRequestsProcessed = true;
         noIdConflicts = concurrentRequestIds.size() == concurrentRequestIds.stream().distinct().count();
     }
@@ -1119,27 +1128,23 @@ public final class ProtocolLifecycleSteps {
         // Response ordering is not guaranteed in concurrent scenarios
     }
 
-    // New step definitions for message ordering guarantees
-    private List<Map<String, String>> dependentRequests = new ArrayList<>();
-    private Map<String, JsonObject> requestResponses = new HashMap<>();
-
     @When("I send a sequence of dependent requests:")
     public void i_send_a_sequence_of_dependent_requests(DataTable dataTable) {
         dependentRequests.clear();
         requestResponses.clear();
-        
+
         List<Map<String, String>> requests = dataTable.asMaps(String.class, String.class);
         dependentRequests.addAll(requests);
-        
+
         // Simulate sending dependent requests
         for (Map<String, String> reqData : requests) {
             String reqId = reqData.get("request_id");
             String method = reqData.get("method");
-            
+
             RequestId requestId = new RequestId.StringId(reqId);
             JsonObject request = createRequest(requestId, method, null);
             JsonObject response = createResponse(requestId, Json.createObjectBuilder().build());
-            
+
             requestResponses.put(reqId, response);
         }
     }

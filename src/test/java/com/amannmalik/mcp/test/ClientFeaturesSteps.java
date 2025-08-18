@@ -12,8 +12,6 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 public final class ClientFeaturesSteps {
-    private McpHost activeConnection;
-    private String clientId;
     private final Set<ClientCapability> clientCapabilities = EnumSet.noneOf(ClientCapability.class);
     private final Map<ClientCapability, Boolean> capabilityOptions = new EnumMap<>(ClientCapability.class);
     private final List<Map<String, String>> configuredRoots = new ArrayList<>();
@@ -23,25 +21,26 @@ public final class ClientFeaturesSteps {
     private final Set<ClientCapability> undeclaredCapabilities = EnumSet.noneOf(ClientCapability.class);
     private final List<Map<String, String>> samplingErrorScenarios = new ArrayList<>();
     private final List<Map<String, String>> combinedCapabilityRows = new ArrayList<>();
-    private ClientCapability lastCapability;
-    private boolean rootConfigChanged;
-    private int lastErrorCode;
-    private String lastErrorMessage;
-    private boolean combinedRequestProcessed;
+    private boolean rootAccessAllowed;
 
     private final Map<String, String> simpleElicitationRequest = new HashMap<>();
     private final List<Map<String, String>> structuredElicitationFields = new ArrayList<>();
     private final List<Map<String, String>> elicitationUserActions = new ArrayList<>();
     private final List<Map<String, String>> elicitationSchemaTypes = new ArrayList<>();
-    private String elicitationResponseAction;
-
     private final Map<String, String> samplingMessageRequest = new HashMap<>();
     private final Map<String, String> samplingModelResponse = new HashMap<>();
     private final List<Map<String, String>> samplingContentTypes = new ArrayList<>();
     private final List<Map<String, String>> samplingModelPreferences = new ArrayList<>();
     private final List<String> samplingModelSelections = new ArrayList<>();
-
     private final List<Map<String, String>> featureUnavailabilityScenarios = new ArrayList<>();
+    private McpHost activeConnection;
+    private String clientId;
+    private ClientCapability lastCapability;
+    private boolean rootConfigChanged;
+    private int lastErrorCode;
+    private String lastErrorMessage;
+    private boolean combinedRequestProcessed;
+    private String elicitationResponseAction;
 
     private static ClientCapability parseCapability(String raw) {
         String normalized = raw.trim().toLowerCase();
@@ -197,6 +196,12 @@ public final class ClientFeaturesSteps {
         lastCapability = ClientCapability.ROOTS;
     }
 
+    @Given("I have declared roots capability with no configured roots")
+    public void i_have_declared_roots_capability_with_no_configured_roots() {
+        clientCapabilities.add(ClientCapability.ROOTS);
+        configuredRoots.clear();
+    }
+
     @Given("I want to test capability negotiation with different configurations:")
     public void i_want_to_test_capability_negotiation_with_different_configurations(DataTable table) {
         negotiationConfigs.clear();
@@ -277,6 +282,11 @@ public final class ClientFeaturesSteps {
             return;
         }
         returnedRoots.addAll(configuredRoots);
+    }
+
+    @When("I check access for URI {string}")
+    public void i_check_access_for_uri(String uri) {
+        rootAccessAllowed = configuredRoots.isEmpty();
     }
 
     @When("I configure roots for server access")
@@ -389,6 +399,7 @@ public final class ClientFeaturesSteps {
             samplingMessageRequest.put("message_content", "placeholder");
         }
     }
+
     @Then("I should include the \"{word}\" capability")
     public void i_should_include_capability(String capability) {
         ClientCapability cap = parseCapability(capability);
@@ -766,6 +777,7 @@ public final class ClientFeaturesSteps {
             throw new AssertionError("undeclared capabilities accepted");
         }
     }
+
     @Then("the server should recognize my {word} support")
     public void the_server_should_recognize_my_support(String capability) {
         ClientCapability cap = parseCapability(capability);
@@ -877,6 +889,13 @@ public final class ClientFeaturesSteps {
     public void the_error_message_should_indicate_roots_not_supported() {
         if (!"Roots not supported".equals(lastErrorMessage)) {
             throw new AssertionError("unexpected error message: " + lastErrorMessage);
+        }
+    }
+
+    @Then("the URI should be considered outside allowed roots")
+    public void the_uri_should_be_considered_outside_allowed_roots() {
+        if (rootAccessAllowed) {
+            throw new AssertionError("unexpected root access");
         }
     }
 
