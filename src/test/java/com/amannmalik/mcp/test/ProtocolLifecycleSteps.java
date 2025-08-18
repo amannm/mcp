@@ -8,6 +8,7 @@ import jakarta.json.Json;
 import jakarta.json.JsonObject;
 import jakarta.json.JsonValue;
 import jakarta.json.JsonNumber;
+import jakarta.json.JsonString;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -1408,6 +1409,23 @@ public final class ProtocolLifecycleSteps {
         }
     }
 
+    @When("I receive an error response with non-string message {int}")
+    public void i_receive_an_error_response_with_non_string_message(int message) {
+        var response = Json.createObjectBuilder()
+                .add("jsonrpc", "2.0")
+                .add("id", RequestId.toJsonValue(new RequestId.NumericId(1)))
+                .add("error", Json.createObjectBuilder().add("code", -1).add("message", message).build())
+                .build();
+        try {
+            var value = response.getJsonObject("error").get("message");
+            if (!(value instanceof JsonString string)) throw new IllegalArgumentException();
+            string.getString();
+            invalidResponseError = null;
+        } catch (Exception e) {
+            invalidResponseError = e;
+        }
+    }
+
     @Then("I should detect an invalid response")
     public void i_should_detect_an_invalid_response() {
         if (invalidResponseError == null) throw new AssertionError("expected invalid response");
@@ -1416,6 +1434,11 @@ public final class ProtocolLifecycleSteps {
     @Then("I should detect an invalid error code")
     public void i_should_detect_an_invalid_error_code() {
         if (invalidResponseError == null) throw new AssertionError("expected invalid error code");
+    }
+
+    @Then("I should detect an invalid error message")
+    public void i_should_detect_an_invalid_error_message() {
+        if (invalidResponseError == null) throw new AssertionError("expected invalid error message");
     }
 
     @Given("a stdio transport with a message containing an embedded newline")
