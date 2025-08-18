@@ -96,6 +96,12 @@ Feature: MCP Connection Lifecycle
     Then the server should respond with HTTP 404 Not Found
     And I should start a new session by reinitializing
 
+  @connection @http @sse @resumption
+  Scenario: SSE stream resumption with Last-Event-ID header
+    # Tests specification/2025-06-18/basic/transports.mdx:151-167 (Resumability and redelivery)
+    When I attempt to resume an SSE stream after disconnection
+    Then the Last-Event-ID header should be "42"
+
   @capabilities
   Scenario: Server capability discovery
     # Tests specification/2025-06-18/basic/lifecycle.mdx:146-171 (Capability negotiation)
