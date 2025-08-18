@@ -673,7 +673,7 @@ public final class ProtocolLifecycleSteps {
             RequestId.from(Json.createValue(id));
             lastErrorCode = 0;
             lastErrorMessage = null;
-        } catch (RuntimeException e) {
+        } catch (IllegalArgumentException e) {
             lastErrorCode = -32600;
             lastErrorMessage = e.getMessage();
         }
