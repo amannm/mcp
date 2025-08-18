@@ -108,6 +108,17 @@ Feature: MCP Protocol Utilities
     Then the error message should be "Invalid params"
     And the error code should be -32602
 
+  @ping @meta-parameter
+  Scenario: Ping request with reserved meta parameter
+    # Tests specification/2025-06-18/basic/utilities/ping.mdx:17-27 (Message format)
+    Given I have an established MCP connection for utilities
+    And I want to verify connection health
+    When I send a ping request with parameters:
+      | field | value |
+      | _meta | {}    |
+    Then the error message should be "Invalid params"
+    And the error code should be -32602
+
   @progress @token-tracking
   Scenario: Progress tracking with progress tokens
     # Tests specification/2025-06-18/basic/utilities/progress.mdx:14-33 (Progress flow)
