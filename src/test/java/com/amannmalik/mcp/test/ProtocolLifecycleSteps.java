@@ -7,6 +7,7 @@ import io.cucumber.java.en.*;
 import jakarta.json.Json;
 import jakarta.json.JsonObject;
 import jakarta.json.JsonValue;
+import jakarta.json.JsonNumber;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -1392,13 +1393,15 @@ public final class ProtocolLifecycleSteps {
 
     @When("I receive an error response with non-integer code {double}")
     public void i_receive_an_error_response_with_non_integer_code(double code) {
-        JsonObject response = Json.createObjectBuilder()
+        var response = Json.createObjectBuilder()
                 .add("jsonrpc", "2.0")
                 .add("id", RequestId.toJsonValue(new RequestId.NumericId(1)))
                 .add("error", Json.createObjectBuilder().add("code", code).add("message", "oops").build())
                 .build();
         try {
-            response.getJsonObject("error").getInt("code");
+            var value = response.getJsonObject("error").get("code");
+            if (!(value instanceof JsonNumber number) || !number.isIntegral()) throw new IllegalArgumentException();
+            number.intValueExact();
             invalidResponseError = null;
         } catch (Exception e) {
             invalidResponseError = e;
