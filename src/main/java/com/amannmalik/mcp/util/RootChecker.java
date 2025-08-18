@@ -20,7 +20,8 @@ public final class RootChecker {
         } catch (IllegalArgumentException e) {
             return false;
         }
-        if (!"file".equalsIgnoreCase(target.getScheme()) || roots.isEmpty()) return true;
+        if (!"file".equalsIgnoreCase(target.getScheme())) return true;
+        if (roots.isEmpty()) return false;
 
         final Path targetPath;
         try {
