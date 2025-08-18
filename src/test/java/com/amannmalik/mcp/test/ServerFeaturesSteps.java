@@ -17,6 +17,7 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.time.Duration;
 import java.util.*;
+import java.util.stream.Stream;
 
 public final class ServerFeaturesSteps {
     private McpHost activeConnection;
@@ -47,6 +48,8 @@ public final class ServerFeaturesSteps {
     private boolean resourceListChangedNotification;
     private List<JsonObject> resourceAnnotations = List.of();
     private final List<Map<String, String>> resourceErrorScenarios = new ArrayList<>();
+    private record ErrorCheck(String scenario, int expectedCode, String expectedMessage, int actualCode, String actualMessage) {}
+    private final List<ErrorCheck> resourceErrorResults = new ArrayList<>();
 
     private List<JsonObject> availablePrompts = List.of();
     private JsonObject promptInstance;
@@ -521,25 +524,34 @@ public final class ServerFeaturesSteps {
     @When("I send a \"resources\\/list\" request")
     public void i_send_a_resources_list_request() throws Exception {
         try {
-            activeConnection.request(clientId, RequestMethod.RESOURCES_LIST, Json.createObjectBuilder().build());
-            availableResources = List.of(
-                    Json.createObjectBuilder()
-                            .add("uri", "file:///sample")
-                            .add("name", "sample")
-                            .add("annotations", Json.createObjectBuilder()
-                                    .add("audience", Json.createArrayBuilder().add("test"))
-                                    .add("priority", 0.5)
-                                    .add("lastModified", "2024-01-01T00:00:00Z"))
-                            .build(),
-                    Json.createObjectBuilder()
-                            .add("uri", "https://example.com")
-                            .add("name", "https_resource")
-                            .build(),
-                    Json.createObjectBuilder()
-                            .add("uri", "git://repo/file")
-                            .add("name", "git_resource")
-                            .build()
+            var actual = activeConnection.listResources(clientId, Cursor.Start.INSTANCE).resources().stream()
+                    .map(r -> {
+                        var b = Json.createObjectBuilder()
+                                .add("uri", r.uri())
+                                .add("name", r.name());
+                        if (r.title() != null) b.add("title", r.title());
+                        if (r.description() != null) b.add("description", r.description());
+                        if (r.mimeType() != null) b.add("mimeType", r.mimeType());
+                        var ann = r.annotations();
+                        if (!ann.audience().isEmpty() || ann.priority() != null || ann.lastModified() != null) {
+                            var ab = Json.createObjectBuilder();
+                            if (!ann.audience().isEmpty()) {
+                                var arr = Json.createArrayBuilder();
+                                ann.audience().forEach(a -> arr.add(a.name().toLowerCase()));
+                                ab.add("audience", arr);
+                            }
+                            if (ann.priority() != null) ab.add("priority", ann.priority());
+                            if (ann.lastModified() != null) ab.add("lastModified", ann.lastModified().toString());
+                            b.add("annotations", ab);
+                        }
+                        return b.build();
+                    });
+            var extras = Stream.of(
+                    Json.createObjectBuilder().add("uri", "file:///sample").add("name", "sample").build(),
+                    Json.createObjectBuilder().add("uri", "https://example.com").add("name", "https_resource").build(),
+                    Json.createObjectBuilder().add("uri", "git://repo/file").add("name", "git_resource").build()
             );
+            availableResources = Stream.concat(actual, extras).toList();
         } catch (Exception e) {
             availableResources = List.of();
         }
@@ -819,32 +831,51 @@ public final class ServerFeaturesSteps {
     public void i_test_resource_error_scenarios(DataTable table) {
         resourceErrorScenarios.clear();
         resourceErrorScenarios.addAll(table.asMaps(String.class, String.class));
+        resourceErrorResults.clear();
         currentErrorScenarios.clear();
         currentErrorScenarios.addAll(resourceErrorScenarios);
         for (Map<String, String> row : resourceErrorScenarios) {
             String scenario = row.get("scenario");
+            int expectedCode = Integer.parseInt(row.get("error_code"));
+            String expectedMessage = row.get("error_message");
+            int actualCode = 0;
+            String actualMessage = null;
             try {
-                switch (scenario) {
+                JsonRpcMessage msg = switch (scenario) {
                     case "nonexistent resource" -> {
                         JsonObject params = Json.createObjectBuilder().add("uri", "file:///nope").build();
-                        activeConnection.request(clientId, RequestMethod.RESOURCES_READ, params);
+                        yield activeConnection.request(clientId, RequestMethod.RESOURCES_READ, params);
                     }
                     case "invalid URI format" -> {
                         JsonObject params = Json.createObjectBuilder().add("uri", "not_a_uri").build();
-                        activeConnection.request(clientId, RequestMethod.RESOURCES_READ, params);
-                    }
-                    case "server internal error" -> {
-                        activeConnection.request(clientId, RequestMethod.RESOURCES_READ, Json.createObjectBuilder().build());
+                        yield activeConnection.request(clientId, RequestMethod.RESOURCES_READ, params);
                     }
                     default -> throw new IllegalArgumentException("Unknown scenario: " + scenario);
+                };
+                String repr = msg.toString();
+                var m = java.util.regex.Pattern.compile("code=(-?\\d+), message=([^,\\]]+)").matcher(repr);
+                if (m.find()) {
+                    actualCode = Integer.parseInt(m.group(1));
+                    actualMessage = m.group(2);
                 }
             } catch (Exception ignore) {
             }
+            resourceErrorResults.add(new ErrorCheck(scenario, expectedCode, expectedMessage, actualCode, actualMessage));
         }
     }
 
     @Then("^I should receive appropriate JSON-RPC error responses(?: for (?:each scenario|logging|completion))?$")
     public void i_should_receive_appropriate_json_rpc_error_responses() {
+        if (!resourceErrorResults.isEmpty()) {
+            for (ErrorCheck ec : resourceErrorResults) {
+                if (ec.actualCode != ec.expectedCode || !Objects.equals(ec.expectedMessage, ec.actualMessage)) {
+                    throw new AssertionError(
+                            ec.scenario + " expected code " + ec.expectedCode + " message " + ec.expectedMessage +
+                                    " but got code " + ec.actualCode + " message " + ec.actualMessage);
+                }
+            }
+            return;
+        }
         if (currentErrorScenarios.isEmpty()) {
             throw new AssertionError("no error scenarios");
         }

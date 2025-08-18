@@ -1,6 +1,7 @@
 package com.amannmalik.mcp.api;
 
 import com.amannmalik.mcp.util.ValidationUtil;
+import jakarta.json.JsonNumber;
 import jakarta.json.JsonObject;
 import jakarta.json.JsonValue;
 
@@ -22,7 +23,7 @@ public sealed interface ProgressToken permits
                 if (!num.isIntegral()) {
                     throw new IllegalArgumentException("progressToken must be a string or integer");
                 }
-                yield new ProgressToken.NumericToken(num.longValue());
+                yield new ProgressToken.NumericToken(num.longValueExact());
             }
             default -> throw new IllegalArgumentException("progressToken must be a string or number");
         };

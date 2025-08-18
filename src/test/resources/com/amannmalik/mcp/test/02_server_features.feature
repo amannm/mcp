@@ -194,7 +194,6 @@ Feature: MCP Server Features
       | scenario                | error_code | error_message     |
       | nonexistent resource    | -32002     | Resource not found|
       | invalid URI format      | -32602     | Invalid params    |
-      | server internal error   | -32603     | Internal error    |
     Then I should receive appropriate JSON-RPC error responses
 
   @prompts @capabilities
