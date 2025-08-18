@@ -165,6 +165,13 @@ Feature: MCP Connection Lifecycle
     When the server includes custom metadata in responses
     Then I should treat it as implementation-specific data
 
+  @messaging @metadata @validation
+  Scenario: Client reserved metadata prefix rejection
+    # Tests specification/2025-06-18/basic/index.mdx:136-144 (_meta reserved prefixes)
+    Given I have an established MCP connection
+    When I include reserved metadata prefix in my request
+    Then I should receive an invalid metadata error
+
   @messaging @timeouts
   Scenario: Request timeout and cancellation
     # Tests specification/2025-06-18/basic/lifecycle.mdx:207-212 (Timeout implementation)
