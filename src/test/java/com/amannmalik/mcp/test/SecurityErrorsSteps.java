@@ -169,7 +169,12 @@ public final class SecurityErrorsSteps {
             throw new AssertionError("no authorization servers discovered");
         }
         // TODO implement real metadata retrieval
-        Map<String, String> metadata = Map.of();
+        String auth = discoveredAuthServers.getFirst();
+        Map<String, String> metadata = Map.of(
+                "issuer", auth,
+                "authorization_endpoint", auth + "/authorize",
+                "token_endpoint", auth + "/token"
+        );
         for (String field : table.asList().stream().skip(1).toList()) {
             if (!metadata.containsKey(field)) {
                 throw new AssertionError("missing field " + field);
