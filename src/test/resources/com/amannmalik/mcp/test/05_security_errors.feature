@@ -15,12 +15,13 @@ Feature: MCP Security Error Handling
   Scenario: Authorization header validation
     # Tests specification/2025-06-18/basic/authorization.mdx:236-250 (Token requirements)
     # Tests specification/2025-06-18/basic/authorization.mdx:89-92 (WWW-Authenticate header)
+    # Tests specification/2025-06-18/basic/authorization.mdx:283-295 (Authorization error status codes)
     Given an MCP server requiring authorization
     When I test authorization scenarios:
-      | auth_header             | expected_status | expected_error | www_authenticate_header                                                      |
+      | auth_header             | expected_status | expected_error | www_authenticate_header |
       | missing                 | 401             | Unauthorized   | Bearer resource=https://mcp.example.com/.well-known/oauth-protected-resource |
       | empty_string            | 401             | Unauthorized   | Bearer resource=https://mcp.example.com/.well-known/oauth-protected-resource |
-      | malformed_bearer        | 401             | Unauthorized   | Bearer resource=https://mcp.example.com/.well-known/oauth-protected-resource |
+      | malformed_bearer        | 400             | Bad Request    | none |
       | Bearer invalid_token    | 401             | Unauthorized   | Bearer resource=https://mcp.example.com/.well-known/oauth-protected-resource |
       | Bearer expired_token    | 401             | Unauthorized   | Bearer resource=https://mcp.example.com/.well-known/oauth-protected-resource |
       | Basic username:password | 401             | Unauthorized   | Bearer resource=https://mcp.example.com/.well-known/oauth-protected-resource |
