@@ -545,7 +545,7 @@ public final class McpServer extends JsonRpcEndpoint implements AutoCloseable {
             logLevel = SET_LEVEL_REQUEST_JSON_CODEC.fromJson(params).level();
             return new JsonRpcResponse(req.id(), JsonValue.EMPTY_JSON_OBJECT);
         } catch (IllegalArgumentException e) {
-            return JsonRpcError.of(req.id(), JsonRpcErrorCode.INVALID_PARAMS, e.getMessage());
+            return JsonRpcError.of(req.id(), JsonRpcErrorCode.INVALID_PARAMS, "Invalid params");
         }
     }
 
