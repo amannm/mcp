@@ -169,7 +169,11 @@ final class ResourceOrchestrator implements AutoCloseable {
             return JsonRpcError.of(req.id(), JsonRpcErrorCode.INVALID_PARAMS, e.getMessage());
         }
         String uri = sr.uri();
-        return withExistingResource(req, uri, block -> {
+        return withAccessibleUri(req, uri, () -> {
+            if (resources.get(uri).isEmpty()) {
+                return JsonRpcError.of(req.id(), -32002, "Resource not found",
+                        Json.createObjectBuilder().add("uri", uri).build());
+            }
             if (subscriptions.containsKey(uri)) {
                 return JsonRpcError.of(req.id(), -32602, "Already subscribed to resource",
                         Json.createObjectBuilder().add("uri", uri).build());
