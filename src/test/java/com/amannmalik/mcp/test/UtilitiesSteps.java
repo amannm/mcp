@@ -25,6 +25,7 @@ public final class UtilitiesSteps {
 
     private String lastPingId;
     private String lastPingResponseId;
+    private JsonRpcMessage lastPingResponse;
     private boolean monitoring;
     private boolean pingTimedOut;
     private boolean connectionStale;
@@ -257,6 +258,7 @@ public final class UtilitiesSteps {
     public void i_want_to_verify_connection_health() {
         lastPingId = null;
         lastPingResponseId = null;
+        lastPingResponse = null;
         monitoring = false;
         pingFrequencyConfigured = false;
         pingTimeoutHandlingConfigured = false;
@@ -265,16 +267,30 @@ public final class UtilitiesSteps {
     }
 
     @When("I send a ping request with ID {string}")
-    public void i_send_a_ping_request_with_id(String id) {
+    public void i_send_a_ping_request_with_id(String id) throws Exception {
         lastPingId = id;
-        lastPingResponseId = id; // simulate immediate echo
+        lastPingResponse = activeConnection.request(
+                clientId,
+                new RequestId.StringId(id),
+                RequestMethod.PING,
+                null
+        );
+        var m = java.util.regex.Pattern.compile("id=([^,]+)")
+                .matcher(lastPingResponse.toString());
+        lastPingResponseId = m.find() ? m.group(1) : null;
     }
 
     @When("I send a ping request with parameters:")
     public void i_send_a_ping_request_with_parameters(DataTable table) throws Exception {
         JsonObjectBuilder b = Json.createObjectBuilder();
         for (Map<String, String> row : table.asMaps()) {
-            b.add(row.get("field"), row.get("value"));
+            String field = row.get("field");
+            String value = row.get("value");
+            try (JsonReader r = Json.createReader(new StringReader(value))) {
+                b.add(field, r.readValue());
+            } catch (Exception ex) {
+                b.add(field, value);
+            }
         }
         JsonRpcMessage msg = activeConnection.request(clientId, RequestMethod.PING, b.build());
         String repr = msg.toString();
@@ -290,7 +306,10 @@ public final class UtilitiesSteps {
 
     @Then("the receiver should respond promptly with an empty result")
     public void the_receiver_should_respond_promptly_with_an_empty_result() {
-        if (lastPingResponseId == null) throw new AssertionError("no ping response");
+        if (lastPingResponse == null) throw new AssertionError("no ping response");
+        if (!lastPingResponse.toString().contains("result={}")) {
+            throw new AssertionError("ping result not empty");
+        }
     }
 
     @Then("the response should have the same ID {string}")
@@ -300,7 +319,9 @@ public final class UtilitiesSteps {
 
     @Then("the response format should be valid JSON-RPC")
     public void the_response_format_should_be_valid_json_rpc() {
-        if (lastPingResponseId == null) throw new AssertionError("invalid response");
+        if (lastPingResponse == null || !lastPingResponse.toString().startsWith("JsonRpcResponse")) {
+            throw new AssertionError("invalid response");
+        }
     }
 
     @Then("the error message should be {string}")
