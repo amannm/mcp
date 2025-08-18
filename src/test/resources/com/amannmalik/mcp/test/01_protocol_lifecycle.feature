@@ -70,6 +70,20 @@ Feature: MCP Connection Lifecycle
       | GET    | text/event-stream                   | true          |
     Then each request should be handled according to Accept header requirements
 
+  @connection @http @session
+  Scenario: HTTP session ID requirement
+    # Tests specification/2025-06-18/basic/transports.mdx:177-205 (Session management)
+    Given I have an established MCP connection using "http" transport
+    And the server issued session ID "abc123"
+    When I send a request without session ID header
+    Then the server should respond with HTTP 400 Bad Request
+    When I send the request with session ID header
+    Then the server should accept the request
+    When the server terminates the session
+    And I send a request with the previous session ID
+    Then the server should respond with HTTP 404 Not Found
+    And I should start a new session by reinitializing
+
   @capabilities
   Scenario: Server capability discovery
     # Tests specification/2025-06-18/basic/lifecycle.mdx:146-171 (Capability negotiation)
