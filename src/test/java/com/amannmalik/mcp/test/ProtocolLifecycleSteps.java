@@ -449,6 +449,7 @@ public final class ProtocolLifecycleSteps {
                 : Arrays.stream(header.split(","))
                 .map(String::trim)
                 .filter(s -> !s.isEmpty())
+                .map(s -> s.toLowerCase(Locale.ROOT))
                 .collect(Collectors.toSet());
         return switch (method) {
             case "POST" -> types.contains("application/json") && types.contains("text/event-stream");
