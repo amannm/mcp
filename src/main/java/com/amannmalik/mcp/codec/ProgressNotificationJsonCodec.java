@@ -23,7 +23,13 @@ public class ProgressNotificationJsonCodec implements JsonCodec<ProgressNotifica
     public ProgressNotification fromJson(JsonObject obj) {
         ProgressToken token = switch (obj.get("progressToken").getValueType()) {
             case STRING -> new ProgressToken.StringToken(ValidationUtil.requireClean(obj.getString("progressToken")));
-            case NUMBER -> new ProgressToken.NumericToken(obj.getJsonNumber("progressToken").longValue());
+            case NUMBER -> {
+                JsonNumber num = obj.getJsonNumber("progressToken");
+                if (!num.isIntegral()) {
+                    throw new IllegalArgumentException("progressToken must be an integer");
+                }
+                yield new ProgressToken.NumericToken(num.longValue());
+            }
             default -> throw new IllegalArgumentException("progressToken must be string or number");
         };
         double progress = obj.getJsonNumber("progress").doubleValue();
