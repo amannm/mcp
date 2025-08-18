@@ -800,4 +800,11 @@ public final class ProtocolLifecycleSteps {
         String versionString = String.join(",", versions);
         the_server_supports_versions(versionString);
     }
+
+    @Then("the connection should be rejected due to missing protocol version header")
+    public void the_connection_should_be_rejected_due_to_missing_protocol_version_header() {
+        if (lastErrorCode == 0) {
+            throw new AssertionError("missing protocol version header not rejected");
+        }
+    }
 }

@@ -41,10 +41,18 @@ Feature: MCP Connection Lifecycle
     Given the server supports the following versions:
       | version    |
       | 2024-11-05 |
-      | 2025-06-18 | 
+      | 2025-06-18 |
     When I request connection with unsupported version "1.0.0"
     Then the server should offer its latest supported version
     And I should be able to decide whether to proceed
+
+  @connection @http @version-header
+  Scenario: Missing protocol version header on HTTP request
+    # Tests specification/2025-06-18/basic/lifecycle.mdx:140-144 (Protocol version header requirement)
+    # Tests specification/2025-06-18/basic/transports.mdx:244-259 (Protocol version header enforcement)
+    Given I have an established MCP connection using "http" transport
+    When I send a request with identifier "missing-header"
+    Then the connection should be rejected due to missing protocol version header
 
   @capabilities
   Scenario: Server capability discovery
