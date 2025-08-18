@@ -45,6 +45,8 @@ public final class ProtocolLifecycleSteps {
     private List<Map<String, String>> errorScenarios = new ArrayList<>();
     private List<Set<ServerCapability>> discoveredCapabilities = new ArrayList<>();
     private Map<String, String> currentConfiguration;
+    private List<Boolean> acceptHeaderResults = new ArrayList<>();
+    private List<Boolean> expectedAcceptResults = new ArrayList<>();
 
     private Set<ClientCapability> parseClientCapabilities(String capabilities) {
         if (capabilities == null || capabilities.trim().isEmpty()) {
@@ -382,6 +384,49 @@ public final class ProtocolLifecycleSteps {
     @Given("I have an established MCP connection with {int} second timeout")
     public void i_have_an_established_mcp_connection_with_timeout(int timeoutSeconds) {
         i_have_an_established_mcp_connection();
+    }
+
+    @Given("an MCP server using {string} transport")
+    public void an_mcp_server_using_transport(String transport) {
+        if (!"http".equalsIgnoreCase(transport)) {
+            throw new AssertionError("unsupported transport: %s".formatted(transport));
+        }
+    }
+
+    @When("I send HTTP requests with the following Accept headers:")
+    public void i_send_http_requests_with_the_following_accept_headers(DataTable dataTable) {
+        acceptHeaderResults.clear();
+        expectedAcceptResults.clear();
+        dataTable.asMaps(String.class, String.class).forEach(row -> {
+            var method = row.get("method");
+            var header = row.get("accept_header");
+            var expected = Boolean.parseBoolean(row.get("should_accept"));
+            expectedAcceptResults.add(expected);
+            acceptHeaderResults.add(isAcceptHeaderValid(method, header));
+        });
+    }
+
+    private boolean isAcceptHeaderValid(String method, String header) {
+        var types = (header == null || header.isBlank() || "none".equalsIgnoreCase(header))
+                ? Set.<String>of()
+                : Arrays.stream(header.split(","))
+                .map(String::trim)
+                .filter(s -> !s.isEmpty())
+                .collect(Collectors.toSet());
+        return switch (method) {
+            case "POST" -> types.contains("application/json") && types.contains("text/event-stream");
+            case "GET" -> types.size() == 1 && types.contains("text/event-stream");
+            default -> false;
+        };
+    }
+
+    @Then("each request should be handled according to Accept header requirements")
+    public void each_request_should_be_handled_according_to_accept_header_requirements() {
+        for (int i = 0; i < acceptHeaderResults.size(); i++) {
+            if (!Objects.equals(acceptHeaderResults.get(i), expectedAcceptResults.get(i))) {
+                throw new AssertionError("accept header validation failed at index %d".formatted(i));
+            }
+        }
     }
 
     @When("I send a request with identifier {string}")
