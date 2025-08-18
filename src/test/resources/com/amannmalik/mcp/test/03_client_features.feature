@@ -25,7 +25,7 @@ Feature: MCP Client Features
     # Tests specification/2025-06-18/client/elicitation.mdx:63-100 (Simple text request flow)
     Given I have declared elicitation capability
     When I receive an elicitation/create request for simple text input:
-      | message                            | schema_type | required_field |
+      | message                             | schema_type | required_field |
       | Please provide your GitHub username | object      | name           |
     Then I should present the request to the user
     And I should validate the user's response against the schema
@@ -49,12 +49,12 @@ Feature: MCP Client Features
     # Tests specification/2025-06-18/client/elicitation.mdx:284-322 (Response action model)
     Given I have declared elicitation capability
     When I test elicitation responses with the following user actions:
-      | user_action      | expected_action |
-      | submit_data      | accept          |
-      | click_decline    | decline         |
-      | close_dialog     | cancel          |
-      | press_escape     | cancel          |
-      | explicit_reject  | decline         |
+      | user_action     | expected_action |
+      | submit_data     | accept          |
+      | click_decline   | decline         |
+      | close_dialog    | cancel          |
+      | press_escape    | cancel          |
+      | explicit_reject | decline         |
     Then I should return the correct action for each user interaction
     And I should include content data only for "accept" actions
 
@@ -63,13 +63,13 @@ Feature: MCP Client Features
     # Tests specification/2025-06-18/client/elicitation.mdx:222-282 (Supported schema types)
     Given I have declared elicitation capability
     When I receive elicitation requests with different schema types:
-      | schema_type | format     | validation_rules      |
-      | string      | email      | format validation     |
-      | string      | uri        | URI format            |
-      | number      | none       | min/max constraints   |
-      | integer     | none       | integer validation    |
-      | boolean     | none       | true/false values     |
-      | string      | enum       | allowed values only   |
+      | schema_type | format | validation_rules    |
+      | string      | email  | format validation   |
+      | string      | uri    | URI format          |
+      | number      | none   | min/max constraints |
+      | integer     | none   | integer validation  |
+      | boolean     | none   | true/false values   |
+      | string      | enum   | allowed values only |
     Then I should support all specified primitive types
     And I should validate input according to schema constraints
     And I should reject nested objects and arrays
@@ -98,8 +98,8 @@ Feature: MCP Client Features
     # Tests specification/2025-06-18/client/roots.mdx:47-76 (Listing roots)
     Given I have declared roots capability
     And I have configured the following roots:
-      | uri                                  | name              |
-      | file:///home/user/projects/myproject | My Project        |
+      | uri                                  | name                |
+      | file:///home/user/projects/myproject | My Project          |
       | file:///home/user/repos/frontend     | Frontend Repository |
     When I receive a roots/list request
     Then I should return all configured roots
@@ -146,7 +146,7 @@ Feature: MCP Client Features
     # Tests specification/2025-06-18/client/sampling.mdx:53-105 (Creating messages)
     Given I have declared sampling capability
     When I receive a sampling/createMessage request:
-      | message_content                | system_prompt              | max_tokens |
+      | message_content                | system_prompt               | max_tokens |
       | What is the capital of France? | You are a helpful assistant | 100        |
     Then I should present the request for user approval
     And I should forward the approved request to the language model
@@ -157,10 +157,10 @@ Feature: MCP Client Features
     # Tests specification/2025-06-18/client/sampling.mdx:136-168 (Data types - content)
     Given I have declared sampling capability
     When I receive sampling requests with different content types:
-      | content_type | data_format        | mime_type   |
-      | text         | plain_text         | none        |
-      | image        | base64_encoded     | image/jpeg  |
-      | audio        | base64_encoded     | audio/wav   |
+      | content_type | data_format    | mime_type  |
+      | text         | plain_text     | none       |
+      | image        | base64_encoded | image/jpeg |
+      | audio        | base64_encoded | audio/wav  |
     Then I should support all specified content types
     And I should handle base64 encoding for binary data
     And I should validate mime types for media content
@@ -194,11 +194,11 @@ Feature: MCP Client Features
     # Tests specification/2025-06-18/client/sampling.mdx:217-232 (Error handling)
     Given I have declared sampling capability
     When sampling requests are rejected or fail:
-      | failure_reason           | expected_error                    |
-      | user_rejection           | User rejected sampling request    |
-      | model_unavailable        | Requested model not available     |
-      | rate_limit_exceeded      | Rate limit exceeded               |
-      | invalid_content_type     | Unsupported content type          |
+      | failure_reason       | expected_error                 |
+      | user_rejection       | User rejected sampling request |
+      | model_unavailable    | Requested model not available  |
+      | rate_limit_exceeded  | Rate limit exceeded            |
+      | invalid_content_type | Unsupported content type       |
     Then I should return appropriate error responses
     And error messages should be clear and actionable
 
@@ -217,10 +217,10 @@ Feature: MCP Client Features
   Scenario: Multiple client capabilities integration
     # Tests integration between client features
     Given I have declared multiple client capabilities:
-      | capability  | features           |
-      | roots       | listChanged: true  |
-      | sampling    | {}                 |
-      | elicitation | {}                 |
+      | capability  | features          |
+      | roots       | listChanged: true |
+      | sampling    | {}                |
+      | elicitation | {}                |
     When I receive requests that combine these capabilities
     Then each capability should function independently
     And capabilities should not interfere with each other
@@ -230,11 +230,11 @@ Feature: MCP Client Features
   Scenario: Client capability negotiation
     # Tests specification/2025-06-18/basic/lifecycle.mdx:146-171 (Capability negotiation)
     Given I want to test capability negotiation with different configurations:
-      | declared_capabilities    | server_expectations      | negotiation_result |
-      | roots,sampling          | roots                    | success            |
-      | elicitation             | elicitation,sampling     | partial            |
-      | none                    | roots                    | degraded           |
-      | roots,sampling,elicitation | none                  | unused             |
+      | declared_capabilities      | server_expectations  | negotiation_result |
+      | roots,sampling             | roots                | success            |
+      | elicitation                | elicitation,sampling | partial            |
+      | none                       | roots                | degraded           |
+      | roots,sampling,elicitation | none                 | unused             |
     When I complete capability negotiation for each configuration
     Then the agreed capabilities should match the intersection of client and server support
     And both parties should respect the negotiated capability boundaries
@@ -244,9 +244,9 @@ Feature: MCP Client Features
     # Tests that servers respect declared client capabilities
     Given I have declared only specific client capabilities:
       | declared_capability | undeclared_capability |
-      | roots              | sampling              |
-      | sampling           | elicitation           |
-      | elicitation        | roots                 |
+      | roots               | sampling              |
+      | sampling            | elicitation           |
+      | elicitation         | roots                 |
     When the server attempts to use undeclared capabilities
     Then I should reject requests for undeclared capabilities
     And I should return appropriate "Method not found" errors
@@ -257,10 +257,10 @@ Feature: MCP Client Features
     # Tests client behavior when features become unavailable
     Given I have declared client capabilities
     When client features become temporarily unavailable:
-      | feature_type | unavailability_reason    | expected_behavior        |
-      | roots        | filesystem_disconnected  | error with retry option  |
-      | sampling     | model_service_down       | clear error message      |
-      | elicitation  | ui_component_failure     | fallback interaction     |
+      | feature_type | unavailability_reason   | expected_behavior       |
+      | roots        | filesystem_disconnected | error with retry option |
+      | sampling     | model_service_down      | clear error message     |
+      | elicitation  | ui_component_failure    | fallback interaction    |
     Then I should handle each unavailability gracefully
     And I should provide clear error messages to servers
     And I should attempt recovery when possible

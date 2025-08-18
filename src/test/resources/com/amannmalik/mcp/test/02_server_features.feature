@@ -28,12 +28,12 @@ Feature: MCP Server Features
     When I send a "tools/list" request
     Then I should receive a list of available tools
     And each tool should have required fields:
-      | field       | type   | required |
-      | name        | string | true     |
-      | description | string | true     |
-      | inputSchema | object | true     |
-      | title       | string | false    |
-      | outputSchema| object | false    |
+      | field        | type   | required |
+      | name         | string | true     |
+      | description  | string | true     |
+      | inputSchema  | object | true     |
+      | title        | string | false    |
+      | outputSchema | object | false    |
 
   @tools @pagination
   Scenario: Tools listing with pagination
@@ -61,11 +61,11 @@ Feature: MCP Server Features
     # Tests specification/2025-06-18/server/tools.mdx:381-425 (Error handling)
     Given the server has tools available
     When I test tool error scenarios:
-      | scenario                    | error_type        | expected_code |
-      | invalid tool name           | Protocol error    | -32602        |
-      | missing required parameters | Protocol error    | -32602        |
-      | invalid parameter types     | Protocol error    | -32602        |
-      | tool execution failure      | Tool error        | none          |
+      | scenario                    | error_type     | expected_code |
+      | invalid tool name           | Protocol error | -32602        |
+      | missing required parameters | Protocol error | -32602        |
+      | invalid parameter types     | Protocol error | -32602        |
+      | tool execution failure      | Tool error     | none          |
     Then I should receive appropriate error responses for each scenario
 
   @tools @notifications
@@ -82,12 +82,12 @@ Feature: MCP Server Features
     Given the server has tools that return different content types
     When I invoke tools with various output formats
     Then I should receive valid result content in supported formats:
-      | content_type     | field_name | encoding |
-      | text             | text       | plain    |
-      | image            | data       | base64   |
-      | audio            | data       | base64   |
-      | resource_link    | uri        | none     |
-      | resource         | resource   | none     |
+      | content_type  | field_name | encoding |
+      | text          | text       | plain    |
+      | image         | data       | base64   |
+      | audio         | data       | base64   |
+      | resource_link | uri        | none     |
+      | resource      | resource   | none     |
 
   @resources @capabilities
   Scenario: Server resources capability declaration
@@ -96,9 +96,9 @@ Feature: MCP Server Features
     When I check server capabilities during initialization
     Then the server should declare the "resources" capability
     And the capability may include optional features:
-      | feature     | description                    |
-      | subscribe   | Resource change subscriptions  |
-      | listChanged | List change notifications      |
+      | feature     | description                   |
+      | subscribe   | Resource change subscriptions |
+      | listChanged | List change notifications     |
 
   @resources @listing
   Scenario: Resources discovery and listing
@@ -130,12 +130,12 @@ Feature: MCP Server Features
     When I send a "resources/templates/list" request
     Then I should receive a list of available resource templates
     And each template should have required fields:
-      | field        | type   | required |
-      | uriTemplate  | string | true     |
-      | name         | string | true     |
-      | title        | string | false    |
-      | description  | string | false    |
-      | mimeType     | string | false    |
+      | field       | type   | required |
+      | uriTemplate | string | true     |
+      | name        | string | true     |
+      | title       | string | false    |
+      | description | string | false    |
+      | mimeType    | string | false    |
 
   @resources @subscriptions
   Scenario: Resource change subscriptions
@@ -173,7 +173,7 @@ Feature: MCP Server Features
       | annotation   | type      | description                     |
       | audience     | array     | Intended audience specification |
       | priority     | number    | Importance from 0.0 to 1.0      |
-      | lastModified | timestamp | ISO 8601 modification time     |
+      | lastModified | timestamp | ISO 8601 modification time      |
 
   @resources @uri-schemes
   Scenario: Standard URI scheme support
@@ -181,19 +181,19 @@ Feature: MCP Server Features
     Given the server exposes resources with different URI schemes
     When I request resources using standard schemes
     Then the server should handle these URI schemes appropriately:
-      | scheme   | description                    |
-      | https    | Web-accessible resources       |
-      | file     | Filesystem-like resources      |
-      | git      | Git version control resources  |
+      | scheme | description                   |
+      | https  | Web-accessible resources      |
+      | file   | Filesystem-like resources     |
+      | git    | Git version control resources |
 
   @resources @error-handling
   Scenario: Resource error handling
     # Tests specification/2025-06-18/server/resources.mdx:374-395 (Error handling)
     Given the server has resources capability
     When I test resource error scenarios:
-      | scenario                | error_code | error_message     |
-      | nonexistent resource    | -32002     | Resource not found|
-      | invalid URI format      | -32602     | Invalid params    |
+      | scenario             | error_code | error_message      |
+      | nonexistent resource | -32002     | Resource not found |
+      | invalid URI format   | -32602     | Invalid params     |
     Then I should receive appropriate JSON-RPC error responses
 
   @prompts @capabilities
@@ -223,7 +223,7 @@ Feature: MCP Server Features
     Given the server has a prompt named "code_review"
     And the prompt accepts argument "code"
     When I send a "prompts/get" request with arguments:
-      | argument | value                          |
+      | argument | value                            |
       | code     | def hello():\n    print('world') |
     Then I should receive the prompt content
     And the response should contain message array
@@ -235,11 +235,11 @@ Feature: MCP Server Features
     Given the server has prompts with various content types
     When I retrieve prompts with different message content
     Then I should receive valid content in supported formats:
-      | content_type      | required_fields           |
-      | text              | type, text                |
-      | image             | type, data, mimeType      |
-      | audio             | type, data, mimeType      |
-      | resource          | type, resource            |
+      | content_type | required_fields      |
+      | text         | type, text           |
+      | image        | type, data, mimeType |
+      | audio        | type, data, mimeType |
+      | resource     | type, resource       |
 
   @prompts @notifications
   Scenario: Prompt list change notifications
@@ -253,11 +253,11 @@ Feature: MCP Server Features
     # Tests specification/2025-06-18/server/prompts.mdx:265-272 (Error handling)
     Given the server has prompts capability
     When I test prompt error scenarios:
-      | scenario                     | error_code | error_message    |
-      | invalid prompt name          | -32602     | Invalid params   |
-      | missing required arguments   | -32602     | Invalid params   |
-      | server internal error        | -32603     | Internal error   |
-      Then I should receive appropriate JSON-RPC error responses
+      | scenario                   | error_code | error_message  |
+      | invalid prompt name        | -32602     | Invalid params |
+      | missing required arguments | -32602     | Invalid params |
+      | server internal error      | -32603     | Internal error |
+    Then I should receive appropriate JSON-RPC error responses
 
   @logging @capabilities
   Scenario: Server logging capability declaration
@@ -287,10 +287,10 @@ Feature: MCP Server Features
     When the server generates log messages
     Then I should receive "notifications/message" notifications
     And each notification should include:
-      | field  | type   | required | description              |
-      | level  | string | true     | Severity level           |
-      | logger | string | false    | Optional logger name     |
-      | data   | object | true     | JSON-serializable data   |
+      | field  | type   | required | description            |
+      | level  | string | true     | Severity level         |
+      | logger | string | false    | Optional logger name   |
+      | data   | object | true     | JSON-serializable data |
 
   @logging @severity-levels
   Scenario: Log severity level handling
@@ -313,10 +313,10 @@ Feature: MCP Server Features
     # Tests specification/2025-06-18/server/utilities/logging.mdx:110-116 (Error handling)
     Given the server has logging capability
     When I test logging error scenarios:
-      | scenario              | error_code | error_message     |
-      | invalid log level     | -32602     | Invalid params    |
-      | configuration error   | -32603     | Internal error    |
-      Then I should receive appropriate JSON-RPC error responses
+      | scenario            | error_code | error_message  |
+      | invalid log level   | -32602     | Invalid params |
+      | configuration error | -32603     | Internal error |
+    Then I should receive appropriate JSON-RPC error responses
 
   @completion @capabilities
   Scenario: Server completion capability declaration
@@ -331,8 +331,8 @@ Feature: MCP Server Features
     Given the server has completion capability enabled
     And there is a prompt "code_review" with argument "language"
     When I send a "completion/complete" request for prompt argument completion:
-      | ref_type    | ref_name    | argument_name | argument_value |
-      | ref/prompt  | code_review | language      | py             |
+      | ref_type   | ref_name    | argument_name | argument_value |
+      | ref/prompt | code_review | language      | py             |
     Then I should receive completion suggestions
     And the response should include matching values like "python"
 
@@ -342,8 +342,8 @@ Feature: MCP Server Features
     Given the server has completion capability enabled
     And there is a resource template with URI template "file:///path"
     When I send a "completion/complete" request for resource template argument:
-      | ref_type     | ref_uri              | argument_name | argument_value |
-      | ref/resource | file:///{path}       | path          | src/           |
+      | ref_type     | ref_uri        | argument_name | argument_value |
+      | ref/resource | file:///{path} | path          | src/           |
     Then I should receive completion suggestions for available paths
 
   @completion @contextual
@@ -352,9 +352,9 @@ Feature: MCP Server Features
     Given the server has completion capability enabled
     And there is a prompt with multiple arguments
     When I request completion with context from previous arguments:
-      | argument     | value  |
-      | language     | python |
-      | framework    | fla    |
+      | argument  | value  |
+      | language  | python |
+      | framework | fla    |
     Then the server should provide contextually relevant suggestions
     And the suggestions should be filtered based on previous context
 
@@ -365,22 +365,22 @@ Feature: MCP Server Features
     When I request completions that have many matches
     Then the response should respect the maximum of 100 items
     And include metadata about total matches and whether more exist:
-      | field   | type    | description                    |
-      | values  | array   | Maximum 100 completion values  |
-      | total   | number  | Optional total available       |
-      | hasMore | boolean | Whether more results exist     |
+      | field   | type    | description                   |
+      | values  | array   | Maximum 100 completion values |
+      | total   | number  | Optional total available      |
+      | hasMore | boolean | Whether more results exist    |
 
   @completion @error-handling
   Scenario: Completion error handling
     # Tests specification/2025-06-18/server/utilities/completion.mdx:175-183 (Error handling)
     Given the server has completion capability
     When I test completion error scenarios:
-      | scenario                      | error_code | error_message         |
-      | capability not supported      | -32601     | Method not found      |
-      | invalid prompt name           | -32602     | Invalid params        |
-      | missing required arguments    | -32602     | Invalid params        |
-      | server internal error         | -32603     | Internal error        |
-      Then I should receive appropriate JSON-RPC error responses
+      | scenario                   | error_code | error_message    |
+      | capability not supported   | -32601     | Method not found |
+      | invalid prompt name        | -32602     | Invalid params   |
+      | missing required arguments | -32602     | Invalid params   |
+      | server internal error      | -32603     | Internal error   |
+    Then I should receive appropriate JSON-RPC error responses
 
   @security @input-validation
   Scenario: Server input validation and sanitization
@@ -407,11 +407,11 @@ Feature: MCP Server Features
     Given the server handles sensitive information
     When the server generates logs, tool results, or other outputs
     Then sensitive information should not be exposed:
-      | sensitive_type           | should_be_filtered |
-      | credentials              | true               |
-      | secrets                  | true               |
-      | personal information     | true               |
-      | internal system details  | true               |
+      | sensitive_type          | should_be_filtered |
+      | credentials             | true               |
+      | secrets                 | true               |
+      | personal information    | true               |
+      | internal system details | true               |
 
   @integration @multi-capability
   Scenario: Combined server feature interaction
