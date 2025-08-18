@@ -562,6 +562,23 @@ public final class ProtocolLifecycleSteps {
         }
     }
 
+    @When("I send a request with identifier null")
+    public void i_send_a_request_with_identifier_null() {
+        lastRequestId = RequestId.NullId.INSTANCE;
+        lastRequest = createRequest(lastRequestId, RequestMethod.PING.method(), Json.createObjectBuilder().build());
+        try {
+            activeConnection.request(clientId, lastRequestId, RequestMethod.PING, Json.createObjectBuilder().build());
+            lastErrorCode = 0;
+            lastErrorMessage = null;
+        } catch (IllegalArgumentException e) {
+            lastErrorCode = -32600;
+            lastErrorMessage = e.getMessage();
+        } catch (IOException e) {
+            lastErrorCode = -32603;
+            lastErrorMessage = e.getMessage();
+        }
+    }
+
     @When("I send a request with numeric identifier {long}")
     public void i_send_a_request_with_numeric_identifier(long id) {
         i_send_a_request_with_identifier(Long.toString(id));
