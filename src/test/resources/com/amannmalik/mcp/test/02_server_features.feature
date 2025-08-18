@@ -114,6 +114,15 @@ Feature: MCP Server Features
       | description | string | false    |
       | mimeType    | string | false    |
 
+  @resources @pagination
+  Scenario: Resources listing with pagination
+    # Tests specification/2025-06-18/server/resources.mdx:85-105 (Listing resources with pagination)
+    # Tests specification/2025-06-18/server/utilities/pagination.mdx (Pagination flow)
+    Given the server has multiple resources available
+    When I send a "resources/list" request with pagination parameters
+    Then I should receive paginated resource results
+    And the response should include appropriate resource cursor information
+
   @resources @reading
   Scenario: Resource content reading
     # Tests specification/2025-06-18/server/resources.mdx:126-161 (Reading resources)

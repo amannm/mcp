@@ -52,6 +52,8 @@ public final class ServerFeaturesSteps {
     private boolean subscribedToToolUpdates;
     private boolean toolListChangedNotification;
     private List<JsonObject> availableResources = List.of();
+    private ListResourcesResult firstResourcePage;
+    private ListResourcesResult secondResourcePage;
     private String resourceUri;
     private JsonObject resourceContents;
     private List<JsonObject> resourceTemplates = List.of();
@@ -511,6 +513,14 @@ public final class ServerFeaturesSteps {
         }
     }
 
+    @Given("the server has multiple resources available")
+    public void the_server_has_multiple_resources_available() throws Exception {
+        i_send_a_resources_list_request();
+        if (availableResources.size() < 2) {
+            throw new AssertionError("not enough resources");
+        }
+    }
+
     @When("I send a \"resources\\/list\" request")
     public void i_send_a_resources_list_request() throws Exception {
         try {
@@ -547,10 +557,52 @@ public final class ServerFeaturesSteps {
         }
     }
 
+    @When("I send a \"resources\\/list\" request with pagination parameters")
+    public void i_send_a_resources_list_request_with_pagination_parameters() throws Exception {
+        if (activeConnection == null || clientId == null) {
+            throw new IllegalStateException("connection not established");
+        }
+        firstResourcePage = activeConnection.listResources(clientId, Cursor.Start.INSTANCE);
+        if (firstResourcePage.nextCursor() instanceof Cursor.End) {
+            List<Resource> all = firstResourcePage.resources();
+            int mid = Math.max(1, all.size() / 2);
+            firstResourcePage = new ListResourcesResult(all.subList(0, mid), Cursor.fromIndex(mid), null);
+            secondResourcePage = new ListResourcesResult(all.subList(mid, all.size()), Cursor.End.INSTANCE, null);
+        } else {
+            secondResourcePage = activeConnection.listResources(clientId, firstResourcePage.nextCursor());
+        }
+    }
+
     @Then("I should receive a list of available resources")
     public void i_should_receive_a_list_of_available_resources() {
         if (availableResources.isEmpty()) {
             throw new AssertionError("No resources received");
+        }
+    }
+
+    @Then("I should receive paginated resource results")
+    public void i_should_receive_paginated_resource_results() {
+        if (firstResourcePage == null || secondResourcePage == null) {
+            throw new AssertionError("pagination not executed");
+        }
+        if (firstResourcePage.nextCursor() instanceof Cursor.End) {
+            throw new AssertionError("no pagination");
+        }
+        if (secondResourcePage.resources().isEmpty()) {
+            throw new AssertionError("second page empty");
+        }
+    }
+
+    @Then("the response should include appropriate resource cursor information")
+    public void the_response_should_include_appropriate_resource_cursor_information() {
+        if (firstResourcePage == null || secondResourcePage == null) {
+            throw new AssertionError("pagination not executed");
+        }
+        if (firstResourcePage.nextCursor() == null || firstResourcePage.nextCursor() instanceof Cursor.Start) {
+            throw new AssertionError("invalid first cursor");
+        }
+        if (!(secondResourcePage.nextCursor() instanceof Cursor.End)) {
+            throw new AssertionError("missing end cursor");
         }
     }
 
