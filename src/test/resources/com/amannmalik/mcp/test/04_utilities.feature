@@ -116,6 +116,16 @@ Feature: MCP Protocol Utilities
     When I send a ping request with parameters:
       | field | value |
       | _meta | {}    |
+    Then the receiver should respond promptly with an empty result
+
+  @ping @meta-validation
+  Scenario: Ping request with invalid meta parameter
+    # Tests specification/2025-06-18/basic/utilities/ping.mdx:17-27 (Message format)
+    Given I have an established MCP connection for utilities
+    And I want to verify connection health
+    When I send a ping request with parameters:
+      | field | value |
+      | _meta | invalid |
     Then the error message should be "Invalid params"
     And the error code should be -32602
 
