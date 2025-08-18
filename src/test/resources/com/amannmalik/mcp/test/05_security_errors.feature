@@ -308,6 +308,7 @@ Feature: MCP Security Error Handling
       | invalid_json             | {"jsonrpc": "2.0", "id": 1,         | parse_error_32700        |
       | missing_required_field   | {"id": 1, "method": "ping"}          | invalid_request_32600    |
       | invalid_field_type       | {"jsonrpc": 2.0, "id": 1}           | parse_error_32700        |
+      | invalid_jsonrpc_version | {"jsonrpc": "1.0", "id": 1, "method": "ping"} | invalid_request_32600 |
       | oversized_id_field       | {"jsonrpc": "2.0", "id": "x" * 1000} | invalid_request_32600   |
       | null_id_field           | {"jsonrpc": "2.0", "id": null}       | invalid_request_32600    |
       | invalid_method_type     | {"jsonrpc": "2.0", "id": 1, "method": 123} | invalid_request_32600 |
