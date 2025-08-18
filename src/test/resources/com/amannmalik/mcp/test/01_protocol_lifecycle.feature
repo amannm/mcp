@@ -115,6 +115,18 @@ Scenario: HTTP GET response handling
       | none              | false         |
     Then each response should be handled according to Content-Type requirements
 
+  @connection @http @post-responses
+  Scenario: HTTP POST notifications and responses
+    # Tests specification/2025-06-18/basic/transports.mdx:93-98 (Notification/response POST handling)
+    Given an MCP server using "http" transport
+    When I send HTTP POST messages containing JSON-RPC responses or notifications:
+      | message_type        | should_accept |
+      | notification        | true          |
+      | response            | true          |
+      | invalid_notification| false         |
+    Then each message should receive the expected HTTP status
+    And accepted messages should return empty bodies
+
   @connection @stdio @newline
   Scenario: Stdio transport rejects messages with embedded newlines
     # Tests specification/2025-06-18/basic/transports.mdx:30 (Messages must not contain embedded newlines)
