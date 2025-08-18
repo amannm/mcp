@@ -301,9 +301,12 @@ public final class SecurityErrorsSteps {
 
     @Then("the server should log access control violations")
     public void the_server_should_log_access_control_violations() {
-        boolean found = accessControlScenarios.stream()
+        if (!loggingConfigured) {
+            throw new AssertionError("logging not configured");
+        }
+        boolean logged = accessControlScenarios.stream()
                 .anyMatch(row -> Integer.parseInt(row.get("expected_status")) == 403);
-        if (!found) {
+        if (!logged) {
             throw new AssertionError("no access control violation logged");
         }
     }
@@ -733,6 +736,9 @@ public final class SecurityErrorsSteps {
 
     @Then("security events should be logged appropriately")
     public void security_events_should_be_logged_appropriately() {
+        if (!securityMonitoringEnabled) {
+            throw new AssertionError("security monitoring not enabled");
+        }
         for (Map<String, String> row : securityLoggingScenarios) {
             if (row.get("should_include") == null || row.get("should_include").isBlank()) {
                 throw new AssertionError("missing include fields");
@@ -775,6 +781,9 @@ public final class SecurityErrorsSteps {
 
     @Then("the system should fail securely")
     public void the_system_should_fail_securely() {
+        if (!securityFailsafeMechanisms) {
+            throw new AssertionError("failsafe mechanisms disabled");
+        }
         for (Map<String, String> row : securityFailsafeScenarios) {
             String behavior = row.get("expected_behavior");
             if (behavior == null || behavior.isBlank()) {
@@ -944,6 +953,9 @@ public final class SecurityErrorsSteps {
 
     @Then("the server should reject excessive resource requests")
     public void the_server_should_reject_excessive_resource_requests() {
+        if (!resourceProtectionEnabled) {
+            throw new AssertionError("resource protection not enabled");
+        }
         for (Boolean blocked : resourceExhaustionResults.values()) {
             if (!blocked) {
                 throw new AssertionError("Server did not reject excessive resource requests");
