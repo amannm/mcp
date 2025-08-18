@@ -181,6 +181,18 @@ Feature: MCP Protocol Utilities
     And total value should be optional
     And message field should be optional
 
+  @progress @invalid
+  Scenario: Progress notification with decreasing value is ignored
+    # Tests specification/2025-06-18/basic/utilities/progress.mdx:55-57 (Progress value must increase)
+    Given I am receiving progress notifications for token "dec-test"
+    When I receive progress notifications with different data:
+      | progress | total | message | valid |
+      | 10       | 100   | start   | true  |
+      | 5        | 100   | back    | false |
+    Then all valid notifications should be properly formatted
+    And progress values should increase with each notification
+    And invalid progress notifications should be ignored
+
   @progress @behavior-requirements
   Scenario: Progress notification behavior requirements
     # Tests specification/2025-06-18/basic/utilities/progress.mdx:60-71 (Behavior requirements)
