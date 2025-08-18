@@ -67,6 +67,7 @@ Feature: MCP Protocol Utilities
       | unknown_request_id     | Request ID not found        |
       | malformed_notification | Invalid notification format |
       | already_completed      | Request already completed   |
+      | invalid_reason_type    | Reason not a string         |
     Then I should ignore all invalid notifications
     And maintain the fire-and-forget nature of notifications
 
