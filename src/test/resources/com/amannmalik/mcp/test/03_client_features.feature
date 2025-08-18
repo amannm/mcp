@@ -106,6 +106,13 @@ Feature: MCP Client Features
     And each root should have a valid file:// URI
     And each root should include an optional human-readable name
 
+  @roots @listing @empty
+  Scenario: Roots listing with no configured roots
+    # Tests specification/2025-06-18/client/roots.mdx:47-76 (Listing roots)
+    Given I have declared roots capability with no configured roots
+    When I receive a roots/list request
+    Then I should return no roots
+
   @roots @change-notifications
   Scenario: Roots list change notifications
     # Tests specification/2025-06-18/client/roots.mdx:78-104 (Root list changes)

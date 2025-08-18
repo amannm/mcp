@@ -820,6 +820,13 @@ public final class ClientFeaturesSteps {
         }
     }
 
+    @Then("I should return no roots")
+    public void i_should_return_no_roots() {
+        if (!returnedRoots.isEmpty()) {
+            throw new AssertionError("expected no roots");
+        }
+    }
+
     @Then("each root should have a valid file:\\/\\/ URI")
     public void each_root_should_have_a_valid_file_uri() {
         for (Map<String, String> root : returnedRoots) {
