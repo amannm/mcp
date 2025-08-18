@@ -123,13 +123,14 @@ Feature: MCP Protocol Utilities
     When I receive progress notifications with different data:
       | progress | total | message                  | valid |
       | 25       | 100   | Processing files...      | true  |
-      | 50.5     | 100.0 | Halfway complete         | true  |
-      | 75       |       | Nearly done              | true  |
+      | 50.5     |       |                          | true  |
+      | 75       | 100   | Nearly done              | true  |
       | 100      | 100   | Operation complete       | true  |
     Then all valid notifications should be properly formatted
     And progress values should increase with each notification
     And floating point values should be supported
     And total value should be optional
+    And message field should be optional
 
   @progress @behavior-requirements
   Scenario: Progress notification behavior requirements

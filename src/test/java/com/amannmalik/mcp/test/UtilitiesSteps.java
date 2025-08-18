@@ -43,6 +43,8 @@ public final class UtilitiesSteps {
     private boolean duplicateTokenDetected;
     private boolean tokenTypeValidationPassed;
     private boolean missingTotalSeen;
+    private boolean messageSeen;
+    private boolean missingMessageSeen;
     private boolean rateLimitingImplemented;
     private boolean activeTokensTracked;
     private boolean notificationsStoppedAfterCompletion;
@@ -415,6 +417,9 @@ public final class UtilitiesSteps {
                 values.add(Double.parseDouble(row.get("progress")));
                 String total = row.get("total");
                 if (total == null || total.isBlank()) missingTotalSeen = true;
+                String message = row.get("message");
+                if (message == null || message.isBlank()) missingMessageSeen = true;
+                else messageSeen = true;
             }
         }
     }
@@ -447,6 +452,11 @@ public final class UtilitiesSteps {
     @Then("total value should be optional")
     public void total_value_should_be_optional() {
         if (!missingTotalSeen) throw new AssertionError("no notification without total");
+    }
+
+    @Then("message field should be optional")
+    public void message_field_should_be_optional() {
+        if (!messageSeen || !missingMessageSeen) throw new AssertionError("message field not optional");
     }
 
     @Given("I have requests with and without progress tokens")
