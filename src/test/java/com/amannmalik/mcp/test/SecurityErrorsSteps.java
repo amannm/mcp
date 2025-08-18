@@ -55,6 +55,7 @@ public final class SecurityErrorsSteps {
     private boolean resourceProtectionEnabled;
     private final List<Map<String, String>> resourceExhaustionScenarios = new ArrayList<>();
     private final Map<String, Boolean> resourceExhaustionResults = new HashMap<>();
+    private final Set<String> resourceExhaustionLogs = new HashSet<>();
     // New step definitions for malformed JSON-RPC boundary testing
     private boolean strictInputValidation;
     private final List<Map<String, String>> malformedMessageScenarios = new ArrayList<>();
@@ -63,6 +64,7 @@ public final class SecurityErrorsSteps {
     private boolean strictTlsValidation;
     private final List<Map<String, String>> certificateScenarios = new ArrayList<>();
     private final Map<String, String> certificateResults = new HashMap<>();
+    private final Set<String> certificateLogs = new HashSet<>();
 
     @Given("security controls are enabled")
     public void security_controls_are_enabled() {
@@ -910,8 +912,10 @@ public final class SecurityErrorsSteps {
         strictTlsValidation = false;
     }
 
+
     // New step definitions for resource exhaustion attacks
     private final Set<String> resourceExhaustionLogs = new HashSet<>();
+
 
     @Given("an MCP server with resource protection enabled")
     public void an_mcp_server_with_resource_protection_enabled() {
@@ -1047,6 +1051,7 @@ public final class SecurityErrorsSteps {
 
     // New step definitions for TLS/Certificate validation errors
     private final Set<String> certificateLogs = new HashSet<>();
+
 
     @Given("an MCP client with strict TLS validation enabled")
     public void an_mcp_client_with_strict_tls_validation_enabled() {
