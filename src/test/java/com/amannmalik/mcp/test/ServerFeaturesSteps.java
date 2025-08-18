@@ -1207,9 +1207,27 @@ public final class ServerFeaturesSteps {
         for (JsonObject msg : logMessages) {
             for (Map<String, String> row : table.asMaps(String.class, String.class)) {
                 String field = row.get("field");
+                String type = row.get("type");
                 boolean required = Boolean.parseBoolean(row.get("required"));
-                if (required && !msg.containsKey(field)) {
-                    throw new AssertionError("missing field: " + field);
+                if (!msg.containsKey(field)) {
+                    if (required) {
+                        throw new AssertionError("missing field: " + field);
+                    }
+                    continue;
+                }
+                JsonValue.ValueType valueType = msg.get(field).getValueType();
+                switch (type) {
+                    case "string" -> {
+                        if (valueType != JsonValue.ValueType.STRING) {
+                            throw new AssertionError("field " + field + " should be a string");
+                        }
+                    }
+                    case "object" -> {
+                        if (valueType != JsonValue.ValueType.OBJECT) {
+                            throw new AssertionError("field " + field + " should be an object");
+                        }
+                    }
+                    default -> throw new IllegalArgumentException("Unsupported type: " + type);
                 }
             }
         }

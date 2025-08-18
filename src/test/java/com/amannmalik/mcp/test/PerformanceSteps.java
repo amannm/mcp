@@ -108,6 +108,14 @@ public final class PerformanceSteps {
     @Given("a clean MCP environment for performance testing")
     public void a_clean_mcp_environment_for_performance_testing() {
         clearPerformanceMetrics();
+        if (performanceConnection != null) {
+            try {
+                performanceConnection.close();
+            } catch (Exception e) {
+                // Ignore cleanup errors
+            }
+            performanceConnection = null;
+        }
     }
   
     @Given("performance monitoring is enabled")
@@ -126,7 +134,7 @@ public final class PerformanceSteps {
         McpClientConfiguration base = McpClientConfiguration.defaultConfiguration("perf-client", "perf-server", "performance");
         String java = System.getProperty("java.home") + "/bin/java";
         String jar = "build/libs/mcp-0.1.0.jar";
-        String cmd = java + " -jar " + jar + " server --stdio --test-mode --performance-mode";
+        String cmd = java + " -jar " + jar + " server --stdio --test-mode";
 
         McpClientConfiguration perfConfig = new McpClientConfiguration(
                 base.clientId(), base.serverName(), base.serverDisplayName(), base.serverVersion(),
@@ -138,6 +146,12 @@ public final class PerformanceSteps {
         );
 
         performanceConnection = new McpHost(McpHostConfiguration.withClientConfigurations(List.of(perfConfig)));
+        
+        try {
+            Thread.sleep(2000);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        }
     }
 
     
@@ -320,7 +334,7 @@ public final class PerformanceSteps {
         
         if ("single_request".equals(transferMethod)) {
             
-            Thread.sleep(resourceSize / 10_000_000); 
+            Thread.sleep(Math.min(resourceSize / 10_000_000, 1000)); 
         } else if ("chunked_stream".equals(transferMethod)) {
             
             long chunkSize = 1024L * 1024L; 

@@ -182,6 +182,16 @@ Feature: MCP Protocol Utilities
     And total value should be optional
     And message field should be optional
 
+  @progress @missing-fields
+  Scenario: Progress notification missing required fields is rejected
+    # Tests specification/2025-06-18/basic/utilities/progress.mdx:35-40 (Notification format requirements)
+    Given I am validating progress notification required fields
+    When I create progress notifications with missing fields:
+      | token | progress |
+      |       | 5        |
+      | abc   |          |
+    Then the progress notification should be rejected
+
   @progress @invalid
   Scenario: Progress notification with decreasing value is ignored
     # Tests specification/2025-06-18/basic/utilities/progress.mdx:55-57 (Progress value must increase)
