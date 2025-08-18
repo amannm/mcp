@@ -55,6 +55,7 @@ public final class UtilitiesSteps {
     private JsonObject misplacedProgressParams;
     private int progressTokenErrorCode;
     private String progressTokenErrorMessage;
+    private boolean unknownProgressIgnored;
     private List<String> dataset;
     private List<String> currentPage;
     private String nextCursor;
@@ -658,6 +659,22 @@ public final class UtilitiesSteps {
     @Then("stop notifications after operation completion")
     public void stop_notifications_after_operation_completion() {
         if (!notificationsStoppedAfterCompletion) throw new AssertionError("notifications not stopped");
+    }
+
+    @Given("I am receiving progress notifications without registering a token")
+    public void i_am_receiving_progress_notifications_without_registering_a_token() {
+        progressNotifications.clear();
+        unknownProgressIgnored = false;
+    }
+
+    @When("I receive a progress notification with token {string}")
+    public void i_receive_a_progress_notification_with_token(String token) {
+        if (!progressNotifications.containsKey(token)) unknownProgressIgnored = true;
+    }
+
+    @Then("the notification should be ignored")
+    public void the_notification_should_be_ignored() {
+        if (!unknownProgressIgnored) throw new AssertionError("notification not ignored");
     }
 
     // --- Pagination -----------------------------------------------------

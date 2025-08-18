@@ -184,6 +184,8 @@ Feature: MCP Protocol Utilities
       | token    | valid |
       | "abc123" | true  |
       | 42       | true  |
+      | 9223372036854775808 | true  |
+      | null                | false |
       | 1.5      | false |
       | true     | false |
     When I validate progress token types
@@ -204,6 +206,13 @@ Feature: MCP Protocol Utilities
     Then I should implement rate limiting to prevent flooding
     And track active progress tokens appropriately
     And stop notifications after operation completion
+
+  @progress @unknown-token
+  Scenario: Progress notification with unknown token is ignored
+    # Tests specification/2025-06-18/basic/utilities/progress.mdx:62-66 (Behavior requirements)
+    Given I am receiving progress notifications without registering a token
+    When I receive a progress notification with token "ghost-token"
+    Then the notification should be ignored
 
   @pagination @cursor-based
   Scenario: Cursor-based pagination flow
