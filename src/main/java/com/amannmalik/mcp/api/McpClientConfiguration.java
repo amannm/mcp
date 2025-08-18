@@ -54,8 +54,8 @@ public record McpClientConfiguration(
             throw new IllegalArgumentException("Initialize request timeout must be positive");
         if (pingTimeout == null || pingTimeout.isNegative() || pingTimeout.isZero())
             throw new IllegalArgumentException("Ping timeout must be positive");
-        if (pingInterval == null || pingInterval.isNegative())
-            throw new IllegalArgumentException("Ping interval must be non-negative");
+        if (pingInterval == null || pingInterval.isNegative() || pingInterval.isZero())
+            throw new IllegalArgumentException("Ping interval must be positive");
         if (progressPerSecond < 0)
             throw new IllegalArgumentException("Progress per second must be non-negative");
         if (rateLimiterWindow == null || rateLimiterWindow.isNegative() || rateLimiterWindow.isZero())

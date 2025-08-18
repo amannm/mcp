@@ -127,7 +127,10 @@ final class McpClient extends JsonRpcEndpoint implements AutoCloseable {
 
     public void configurePing(Duration intervalMillis, Duration timeoutMillis) {
         if (connected) throw new IllegalStateException("already connected");
-        if (intervalMillis.isNegative() || timeoutMillis.isNegative()) throw new IllegalArgumentException("invalid ping settings");
+        if (intervalMillis.isNegative() || intervalMillis.isZero() ||
+                timeoutMillis.isNegative() || timeoutMillis.isZero()) {
+            throw new IllegalArgumentException("invalid ping settings");
+        }
         this.pingInterval = intervalMillis;
         this.pingTimeout = timeoutMillis;
     }
@@ -556,16 +559,8 @@ final class McpClient extends JsonRpcEndpoint implements AutoCloseable {
     }
 
     private JsonRpcMessage handlePing(JsonRpcRequest req) {
-        final JsonObject params = req.params();
-        if (params != null && !params.isEmpty()) {
-            if (params.size() != 1 || !params.containsKey("_meta")) {
-                return JsonRpcError.of(req.id(), JsonRpcErrorCode.INVALID_PARAMS, "Invalid params");
-            }
-            try {
-                ValidationUtil.requireMeta(params.getJsonObject("_meta"));
-            } catch (IllegalArgumentException | ClassCastException e) {
-                return JsonRpcError.of(req.id(), JsonRpcErrorCode.INVALID_PARAMS, e.getMessage());
-            }
+        if (req.params() != null) {
+            return JsonRpcError.of(req.id(), JsonRpcErrorCode.INVALID_PARAMS, "Invalid params");
         }
         return new JsonRpcResponse(req.id(), Json.createObjectBuilder().build());
     }

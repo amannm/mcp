@@ -137,7 +137,8 @@ Feature: MCP Protocol Utilities
     When I send a ping request with parameters:
       | field | value |
       | _meta | {}    |
-    Then the receiver should respond promptly with an empty result
+    Then the error message should be "Invalid params"
+    And the error code should be -32602
 
   @ping @meta-validation
   Scenario: Ping request with invalid meta parameter
