@@ -12,6 +12,7 @@ import com.amannmalik.mcp.util.*;
 import jakarta.json.*;
 
 import java.io.IOException;
+import java.net.URI;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
@@ -242,6 +243,11 @@ final class ResourceOrchestrator implements AutoCloseable {
     }
 
     private JsonRpcMessage withAccessibleUri(JsonRpcRequest req, String uri, Supplier<JsonRpcMessage> action) {
+        try {
+            URI.create(uri);
+        } catch (Exception e) {
+            return JsonRpcError.of(req.id(), JsonRpcErrorCode.INVALID_PARAMS, "Invalid params");
+        }
         if (!canAccessResource(uri)) {
             return JsonRpcError.of(req.id(), -32002, "Resource not found",
                     Json.createObjectBuilder().add("uri", uri).build());
@@ -249,15 +255,22 @@ final class ResourceOrchestrator implements AutoCloseable {
         return action.get();
     }
 
+
     private JsonRpcMessage withExistingResource(JsonRpcRequest req, String uri, Function<ResourceBlock, JsonRpcMessage> action) {
-        return withAccessibleUri(req, uri, () -> {
-            ResourceBlock block = resources.read(uri);
-            if (block == null) {
-                return JsonRpcError.of(req.id(), -32002, "Resource not found",
-                        Json.createObjectBuilder().add("uri", uri).build());
-            }
-            return action.apply(block);
-        });
+        try {
+            URI.create(uri);
+        } catch (Exception e) {
+            return JsonRpcError.of(req.id(), JsonRpcErrorCode.INVALID_PARAMS, "Invalid params");
+        }
+        ResourceBlock block = resources.read(uri);
+        if (block == null) {
+            return JsonRpcError.of(req.id(), -32002, "Resource not found",
+                    Json.createObjectBuilder().add("uri", uri).build());
+        }
+        if (!canAccessResource(uri)) {
+            return JsonRpcError.of(req.id(), JsonRpcErrorCode.INTERNAL_ERROR, "Access denied");
+        }
+        return action.apply(block);
     }
 
     private AutoCloseable subscribeListChanges(
