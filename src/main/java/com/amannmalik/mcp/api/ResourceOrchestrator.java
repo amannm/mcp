@@ -128,7 +128,7 @@ final class ResourceOrchestrator implements AutoCloseable {
         try {
             rrr = ((JsonCodec<ReadResourceRequest>) new ReadResourceRequestAbstractEntityCodec()).fromJson(req.params());
         } catch (IllegalArgumentException e) {
-            return JsonRpcError.of(req.id(), JsonRpcErrorCode.INVALID_PARAMS, e.getMessage());
+            return JsonRpcError.of(req.id(), JsonRpcErrorCode.INVALID_PARAMS, "Invalid params");
         }
         return withExistingResource(req, rrr.uri(), block -> {
             ReadResourceResult result = new ReadResourceResult(List.of(block), null);
