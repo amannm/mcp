@@ -70,6 +70,18 @@ Feature: MCP Connection Lifecycle
       | GET    | text/event-stream                   | true          |
     Then each request should be handled according to Accept header requirements
 
+  @connection @http @content-type
+  Scenario: HTTP response Content-Type enforcement
+    # Tests specification/2025-06-18/basic/transports.mdx:100-101 (POST response Content-Type)
+    Given an MCP server using "http" transport
+    When I validate server HTTP POST responses with the following Content-Types:
+      | content_type      | should_accept |
+      | application/json  | true          |
+      | text/event-stream | true          |
+      | text/plain        | false         |
+      | none              | false         |
+    Then each response should be handled according to Content-Type requirements
+
   @connection @http @session
   Scenario: HTTP session ID requirement
     # Tests specification/2025-06-18/basic/transports.mdx:177-205 (Session management)
