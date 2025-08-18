@@ -205,6 +205,13 @@ Feature: MCP Protocol Utilities
     And track active progress tokens appropriately
     And stop notifications after operation completion
 
+  @progress @unknown-token
+  Scenario: Progress notification with unknown token is ignored
+    # Tests specification/2025-06-18/basic/utilities/progress.mdx:62-66 (Behavior requirements)
+    Given I am receiving progress notifications without registering a token
+    When I receive a progress notification with token "ghost-token"
+    Then the notification should be ignored
+
   @pagination @cursor-based
   Scenario: Cursor-based pagination flow
     # Tests specification/2025-06-18/server/utilities/pagination.mdx:26-41 (Response format)
