@@ -9,6 +9,7 @@ import jakarta.json.JsonObject;
 
 import java.io.IOException;
 import java.time.Duration;
+import java.net.URI;
 import java.util.*;
 import java.util.stream.Collectors;
 import java.nio.file.Path;
@@ -49,6 +50,8 @@ public final class ProtocolLifecycleSteps {
     private List<Boolean> expectedAcceptResults = new ArrayList<>();
     private List<Boolean> contentTypeResults = new ArrayList<>();
     private List<Boolean> expectedContentTypeResults = new ArrayList<>();
+    private List<Boolean> originHeaderResults = new ArrayList<>();
+    private List<Boolean> expectedOriginResults = new ArrayList<>();
 
     private String serverSessionId;
     private boolean sessionActive;
@@ -447,6 +450,40 @@ public final class ProtocolLifecycleSteps {
             return types.contains("application/json") && types.contains("text/event-stream");
         }
         return "GET".equalsIgnoreCase(method) && types.contains("text/event-stream");
+    }
+
+    @When("I send HTTP requests with the following Origin headers:")
+    public void i_send_http_requests_with_the_following_origin_headers(DataTable table) {
+        originHeaderResults.clear();
+        expectedOriginResults.clear();
+        var allowed = Set.of("http://localhost", "http://127.0.0.1");
+        table.asMaps(String.class, String.class).forEach(row -> {
+            var header = row.get("origin_header");
+            var expected = Boolean.parseBoolean(row.get("should_accept"));
+            expectedOriginResults.add(expected);
+            originHeaderResults.add(isOriginHeaderValid(header, allowed));
+        });
+    }
+
+    private boolean isOriginHeaderValid(String header, Set<String> allowed) {
+        if (header == null || header.isBlank() || "none".equalsIgnoreCase(header)) return false;
+        try {
+            var parsed = URI.create(header).normalize();
+            var norm = parsed.getScheme() + "://" + parsed.getAuthority();
+            return allowed.contains(norm);
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
+
+    @Then("each request should be handled according to Origin header requirements")
+    public void each_request_should_be_handled_according_to_origin_header_requirements() {
+        for (int i = 0; i < originHeaderResults.size(); i++) {
+            if (!Objects.equals(originHeaderResults.get(i), expectedOriginResults.get(i))) {
+                throw new AssertionError("origin header validation failed at index %d".formatted(i));
+            }
+        }
     }
 
     @When("I validate server HTTP POST responses with the following Content-Types:")

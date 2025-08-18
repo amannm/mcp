@@ -70,6 +70,18 @@ Feature: MCP Connection Lifecycle
       | GET    | text/event-stream                   | true          |
     Then each request should be handled according to Accept header requirements
 
+@connection @http @origin-header
+  Scenario: HTTP Origin header validation
+    # Tests specification/2025-06-18/basic/transports.mdx:76-80 (Origin header validation)
+    Given an MCP server using "http" transport
+    When I send HTTP requests with the following Origin headers:
+      | origin_header    | should_accept |
+      | none             | false         |
+      | http://localhost | true          |
+      | http://evil.com   | false         |
+      | http://LOCALHOST | true          |
+    Then each request should be handled according to Origin header requirements
+
   @connection @http @content-type
   Scenario: HTTP response Content-Type enforcement
     # Tests specification/2025-06-18/basic/transports.mdx:100-101 (POST response Content-Type)
