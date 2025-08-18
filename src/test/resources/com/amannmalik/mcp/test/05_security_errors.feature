@@ -27,6 +27,20 @@ Feature: MCP Security Error Handling
     Then I should receive appropriate HTTP error responses
     And the WWW-Authenticate header should be "Bearer resource=https://mcp.example.com/.well-known/oauth-protected-resource" for 401 responses
 
+  @authorization @metadata-discovery
+  Scenario: Authorization server metadata discovery
+    # Tests specification/2025-06-18/basic/authorization.mdx:70-107 (Authorization server discovery)
+    Given an MCP server requiring authorization
+    When I retrieve the protected resource metadata
+    Then the metadata should include authorization servers:
+      | authorization_server     |
+      | https://auth.example.com |
+    And the authorization server metadata should include required fields:
+      | field                  |
+      | issuer                 |
+      | authorization_endpoint |
+      | token_endpoint         |
+
   @authorization @token-validation
   Scenario: Token audience validation errors
     # Tests specification/2025-06-18/basic/authorization.mdx:294-302 (Token audience binding)
