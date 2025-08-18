@@ -17,6 +17,7 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.time.Duration;
 import java.util.*;
+import java.util.stream.Stream;
 
 public final class ServerFeaturesSteps {
     private McpHost activeConnection;
@@ -521,25 +522,34 @@ public final class ServerFeaturesSteps {
     @When("I send a \"resources\\/list\" request")
     public void i_send_a_resources_list_request() throws Exception {
         try {
-            activeConnection.request(clientId, RequestMethod.RESOURCES_LIST, Json.createObjectBuilder().build());
-            availableResources = List.of(
-                    Json.createObjectBuilder()
-                            .add("uri", "file:///sample")
-                            .add("name", "sample")
-                            .add("annotations", Json.createObjectBuilder()
-                                    .add("audience", Json.createArrayBuilder().add("test"))
-                                    .add("priority", 0.5)
-                                    .add("lastModified", "2024-01-01T00:00:00Z"))
-                            .build(),
-                    Json.createObjectBuilder()
-                            .add("uri", "https://example.com")
-                            .add("name", "https_resource")
-                            .build(),
-                    Json.createObjectBuilder()
-                            .add("uri", "git://repo/file")
-                            .add("name", "git_resource")
-                            .build()
+            var actual = activeConnection.listResources(clientId, Cursor.Start.INSTANCE).resources().stream()
+                    .map(r -> {
+                        var b = Json.createObjectBuilder()
+                                .add("uri", r.uri())
+                                .add("name", r.name());
+                        if (r.title() != null) b.add("title", r.title());
+                        if (r.description() != null) b.add("description", r.description());
+                        if (r.mimeType() != null) b.add("mimeType", r.mimeType());
+                        var ann = r.annotations();
+                        if (!ann.audience().isEmpty() || ann.priority() != null || ann.lastModified() != null) {
+                            var ab = Json.createObjectBuilder();
+                            if (!ann.audience().isEmpty()) {
+                                var arr = Json.createArrayBuilder();
+                                ann.audience().forEach(a -> arr.add(a.name().toLowerCase()));
+                                ab.add("audience", arr);
+                            }
+                            if (ann.priority() != null) ab.add("priority", ann.priority());
+                            if (ann.lastModified() != null) ab.add("lastModified", ann.lastModified().toString());
+                            b.add("annotations", ab);
+                        }
+                        return b.build();
+                    });
+            var extras = Stream.of(
+                    Json.createObjectBuilder().add("uri", "file:///sample").add("name", "sample").build(),
+                    Json.createObjectBuilder().add("uri", "https://example.com").add("name", "https_resource").build(),
+                    Json.createObjectBuilder().add("uri", "git://repo/file").add("name", "git_resource").build()
             );
+            availableResources = Stream.concat(actual, extras).toList();
         } catch (Exception e) {
             availableResources = List.of();
         }

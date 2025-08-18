@@ -28,6 +28,14 @@ public final class McpHost implements AutoCloseable {
                     ListToolsResult::_meta,
                     new ToolAbstractEntityCodec(),
                     (page, meta) -> new ListToolsResult(page.items(), page.nextCursor(), meta));
+    private static final JsonCodec<ListResourcesResult> LIST_RESOURCES_RESULT_JSON_CODEC =
+            AbstractEntityCodec.paginatedResult(
+                    "resources",
+                    "resource",
+                    r -> new Pagination.Page<>(r.resources(), r.nextCursor()),
+                    ListResourcesResult::_meta,
+                    new ResourceAbstractEntityCodec(),
+                    (page, meta) -> new ListResourcesResult(page.items(), page.nextCursor(), meta));
 
     private static final Duration TIMEOUT = Duration.ofSeconds(5);
     private final Map<String, McpClient> clients = new ConcurrentHashMap<>();
@@ -121,6 +129,21 @@ public final class McpHost implements AutoCloseable {
         return clients.values().stream()
                 .map(McpClient::context)
                 .collect(Collectors.joining(System.lineSeparator()));
+    }
+
+    public ListResourcesResult listResources(String clientId, Cursor cursor) throws IOException {
+        McpClient client = requireClient(clientId);
+        requireCapability(client, ServerCapability.RESOURCES);
+        String token = cursor instanceof Cursor.Token(var value) ? value : null;
+        JsonRpcResponse resp = JsonRpc.expectResponse(client.request(
+                RequestMethod.RESOURCES_LIST,
+                AbstractEntityCodec.paginatedRequest(
+                        ListResourcesRequest::cursor,
+                        ListResourcesRequest::_meta,
+                        ListResourcesRequest::new).toJson(new ListResourcesRequest(token, null)),
+                TIMEOUT
+        ));
+        return LIST_RESOURCES_RESULT_JSON_CODEC.fromJson(resp.result());
     }
 
     public ListToolsResult listTools(String clientId, Cursor cursor) throws IOException {
