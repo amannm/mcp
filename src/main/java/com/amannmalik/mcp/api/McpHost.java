@@ -178,6 +178,10 @@ public final class McpHost implements AutoCloseable {
         return requireClientForMethod(id, method).request(method, params, TIMEOUT);
     }
 
+    public JsonRpcMessage request(String id, RequestId reqId, RequestMethod method, JsonObject params) throws IOException {
+        return requireClientForMethod(id, method).request(reqId, method, params, TIMEOUT);
+    }
+
     public void notify(String id, NotificationMethod method, JsonObject params) throws IOException {
         requireClientForMethod(id, method).sendNotification(method, params);
     }

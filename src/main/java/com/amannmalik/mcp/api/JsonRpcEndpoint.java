@@ -3,6 +3,7 @@ package com.amannmalik.mcp.api;
 import com.amannmalik.mcp.codec.CancelledNotificationJsonCodec;
 import com.amannmalik.mcp.codec.JsonRpcMessageJsonCodec;
 import com.amannmalik.mcp.core.ProgressManager;
+import com.amannmalik.mcp.core.DuplicateRequestException;
 import com.amannmalik.mcp.jsonrpc.*;
 import jakarta.json.JsonObject;
 
@@ -93,6 +94,9 @@ sealed class JsonRpcEndpoint implements AutoCloseable permits McpClient, McpServ
         final Optional<ProgressToken> token;
         try {
             token = progress.register(req.id(), req.params());
+        } catch (DuplicateRequestException e) {
+            progress.release(req.id());
+            return Optional.of(JsonRpcError.of(req.id(), JsonRpcErrorCode.INVALID_REQUEST, e.getMessage()));
         } catch (IllegalArgumentException e) {
             progress.release(req.id());
             return Optional.of(JsonRpcError.of(req.id(), JsonRpcErrorCode.INVALID_PARAMS, e.getMessage()));

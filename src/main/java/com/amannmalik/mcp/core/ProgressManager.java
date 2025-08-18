@@ -14,6 +14,7 @@ public final class ProgressManager {
     private final Map<ProgressToken, Double> progress = new ConcurrentHashMap<>();
     private final Map<RequestId, ProgressToken> tokens = new ConcurrentHashMap<>();
     private final Set<RequestId> active = ConcurrentHashMap.newKeySet();
+    private final Set<RequestId> used = ConcurrentHashMap.newKeySet();
     private final Map<RequestId, String> cancelled = new ConcurrentHashMap<>();
     private final RateLimiter limiter;
 
@@ -25,7 +26,7 @@ public final class ProgressManager {
     }
 
     public Optional<ProgressToken> register(RequestId id, JsonObject params) {
-        if (!active.add(id)) throw new IllegalArgumentException("Duplicate request: " + id);
+        if (!used.add(id) || !active.add(id)) throw new DuplicateRequestException(id);
         Optional<ProgressToken> token = ProgressToken.fromMeta(params);
         token.ifPresent(t -> {
             Double prev = progress.putIfAbsent(t, Double.NEGATIVE_INFINITY);

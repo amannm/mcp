@@ -26,7 +26,7 @@ final class AuthorizationUtil {
             return Optional.of(manager.authorize(req.getHeader("Authorization")));
         } catch (AuthorizationException e) {
             if (resourceMetadataUrl != null) {
-                resp.setHeader("WWW-Authenticate", "Bearer resource_metadata=\"" + resourceMetadataUrl + "\"");
+                resp.setHeader("WWW-Authenticate", "Bearer resource=" + resourceMetadataUrl);
             }
             resp.sendError(HttpServletResponse.SC_UNAUTHORIZED);
             return Optional.empty();
