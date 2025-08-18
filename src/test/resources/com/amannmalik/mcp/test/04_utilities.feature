@@ -129,6 +129,12 @@ Feature: MCP Protocol Utilities
     Then the error message should be "Invalid params"
     And the error code should be -32602
 
+  @ping @configuration
+  Scenario: Ping interval must be positive
+    # Tests specification/2025-06-18/basic/utilities/ping.mdx:59-62 (Ping frequency configuration)
+    When I create a client configuration with ping interval 0ms
+    Then the ping configuration should fail
+
   @progress @token-tracking
   Scenario: Progress tracking with progress tokens
     # Tests specification/2025-06-18/basic/utilities/progress.mdx:14-33 (Progress flow)
