@@ -1,6 +1,7 @@
 package com.amannmalik.mcp.api;
 
 import com.amannmalik.mcp.util.ValidationUtil;
+import jakarta.json.JsonNumber;
 import jakarta.json.JsonObject;
 import jakarta.json.JsonValue;
 
@@ -17,7 +18,13 @@ public sealed interface ProgressToken permits
         JsonValue val = meta.get("progressToken");
         ProgressToken token = switch (val.getValueType()) {
             case STRING -> new ProgressToken.StringToken(ValidationUtil.requireClean(meta.getString("progressToken")));
-            case NUMBER -> new ProgressToken.NumericToken(meta.getJsonNumber("progressToken").longValue());
+            case NUMBER -> {
+                JsonNumber num = meta.getJsonNumber("progressToken");
+                if (!num.isIntegral()) {
+                    throw new IllegalArgumentException("progressToken must be an integer");
+                }
+                yield new ProgressToken.NumericToken(num.longValue());
+            }
             default -> throw new IllegalArgumentException("progressToken must be a string or number");
         };
         return Optional.of(token);
