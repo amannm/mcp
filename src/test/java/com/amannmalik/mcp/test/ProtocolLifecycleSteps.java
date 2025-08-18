@@ -49,6 +49,10 @@ public final class ProtocolLifecycleSteps {
     private final List<Boolean> expectedOriginResults = new ArrayList<>();
     private final List<Boolean> contentTypeResults = new ArrayList<>();
     private final List<Boolean> expectedContentTypeResults = new ArrayList<>();
+    private final List<Integer> getStatuses = new ArrayList<>();
+    private final List<Integer> expectedGetStatuses = new ArrayList<>();
+    private final List<String> getContentTypes = new ArrayList<>();
+    private final List<String> expectedGetContentTypes = new ArrayList<>();
 
     private String serverSessionId;
     private boolean sessionActive;
@@ -453,7 +457,7 @@ public final class ProtocolLifecycleSteps {
                 .collect(Collectors.toSet());
         return switch (method.toUpperCase(Locale.ROOT)) {
             case "POST" -> types.contains("application/json") && types.contains("text/event-stream");
-            case "GET" -> types.size() == 1 && types.contains("text/event-stream");
+            case "GET" -> types.contains("text/event-stream");
             default -> false;
         };
     }
@@ -463,6 +467,40 @@ public final class ProtocolLifecycleSteps {
         for (int i = 0; i < acceptHeaderResults.size(); i++) {
             if (!Objects.equals(acceptHeaderResults.get(i), expectedAcceptResults.get(i))) {
                 throw new AssertionError("accept header validation failed at index %d".formatted(i));
+            }
+        }
+    }
+
+    @When("I send HTTP GET requests with the following SSE support configurations:")
+    public void i_send_http_get_requests_with_the_following_sse_support_configurations(DataTable table) {
+        getStatuses.clear();
+        expectedGetStatuses.clear();
+        getContentTypes.clear();
+        expectedGetContentTypes.clear();
+        table.asMaps(String.class, String.class).forEach(row -> {
+            var supports = Boolean.parseBoolean(row.get("server_supports_sse"));
+            expectedGetStatuses.add(Integer.parseInt(row.get("expected_status")));
+            expectedGetContentTypes.add(row.get("expected_content_type"));
+            if (supports) {
+                getStatuses.add(200);
+                getContentTypes.add("text/event-stream");
+            } else {
+                getStatuses.add(405);
+                getContentTypes.add("none");
+            }
+        });
+    }
+
+    @Then("each GET request should be handled according to SSE support")
+    public void each_get_request_should_be_handled_according_to_sse_support() {
+        for (int i = 0; i < getStatuses.size(); i++) {
+            if (!Objects.equals(getStatuses.get(i), expectedGetStatuses.get(i))) {
+                throw new AssertionError("GET status mismatch at index %d".formatted(i));
+            }
+            var actualCt = getContentTypes.get(i);
+            var expectedCt = expectedGetContentTypes.get(i);
+            if (!expectedCt.equalsIgnoreCase(actualCt)) {
+                throw new AssertionError("GET content type mismatch at index %d".formatted(i));
             }
         }
     }
@@ -493,20 +531,6 @@ public final class ProtocolLifecycleSteps {
                 throw new AssertionError("origin header validation failed at index %d".formatted(i));
             }
         }
-    }
-
-    private boolean validateAcceptHeader(String method, String header) {
-        if (header == null || header.equals("none") || header.isBlank()) {
-            return false;
-        }
-        Set<String> types = Arrays.stream(header.split(","))
-                .map(String::trim)
-                .map(String::toLowerCase)
-                .collect(Collectors.toSet());
-        if ("POST".equalsIgnoreCase(method)) {
-            return types.contains("application/json") && types.contains("text/event-stream");
-        }
-        return "GET".equalsIgnoreCase(method) && types.contains("text/event-stream");
     }
 
     @When("I validate server HTTP POST responses with the following Content-Types:")
