@@ -97,6 +97,16 @@ Feature: MCP Protocol Utilities
     Then both should respond appropriately
     And ping functionality should work in both directions
 
+  @ping @validation
+  Scenario: Ping request with invalid parameters
+    # Tests specification/2025-06-18/basic/utilities/ping.mdx:17-27 (Message format)
+    Given I have an established MCP connection for utilities
+    And I want to verify connection health
+    When I send a ping request with parameters:
+      | field | value |
+      | extra | data  |
+    Then the error message should be "Invalid params"
+
   @progress @token-tracking
   Scenario: Progress tracking with progress tokens
     # Tests specification/2025-06-18/basic/utilities/progress.mdx:14-33 (Progress flow)
