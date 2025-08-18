@@ -125,6 +125,13 @@ Feature: MCP Client Features
     And I should implement proper access controls
     And I should prompt users for consent before exposing roots
 
+  @roots @security
+  Scenario: No roots configured blocks access
+    # Tests specification/2025-06-18/client/roots.mdx:174-177 (Respecting root boundaries)
+    Given I have declared roots capability with no configured roots
+    When I check access for URI "file:///etc/passwd"
+    Then the URI should be considered outside allowed roots
+
   @roots @error-handling
   Scenario: Roots error responses
     # Tests specification/2025-06-18/client/roots.mdx:142-163 (Error handling)
