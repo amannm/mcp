@@ -103,6 +103,22 @@ Feature: MCP Connection Lifecycle
     Then the request should use proper message format
     And the request should have a unique identifier
 
+  @messaging
+  Scenario: Numeric request identifier handling
+    # Tests specification/2025-06-18/basic/index.mdx:33-52 (Request format)
+    # Tests specification/2025-06-18/basic/index.mdx:48-51 (Request ID requirements)
+    Given I have an established MCP connection
+    When I send a request with numeric identifier 42
+    Then the request should use proper message format
+    And the request should have a unique identifier
+
+  @messaging @invalid-id
+  Scenario: Null request identifier rejection
+    # Tests specification/2025-06-18/basic/index.mdx:48-51 (Request ID requirements)
+    Given I have an established MCP connection
+    When I send a request with identifier null
+    Then I should receive an invalid identifier error
+
   @messaging @duplicate-id
   Scenario: Duplicate request identifier rejection
     # Tests specification/2025-06-18/basic/index.mdx:48-51 (Request ID requirements)

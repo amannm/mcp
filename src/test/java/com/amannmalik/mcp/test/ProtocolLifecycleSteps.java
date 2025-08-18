@@ -457,6 +457,11 @@ public final class ProtocolLifecycleSteps {
         }
     }
 
+    @When("I send a request with numeric identifier {long}")
+    public void i_send_a_request_with_numeric_identifier(long id) {
+        i_send_a_request_with_identifier(Long.toString(id));
+    }
+
     @Then("the request should use proper message format")
     public void the_request_should_use_proper_message_format() {
         if (lastRequest == null || !"2.0".equals(lastRequest.getString("jsonrpc", null))
@@ -479,6 +484,13 @@ public final class ProtocolLifecycleSteps {
     public void i_should_receive_a_duplicate_identifier_error() {
         if (lastErrorCode != -32600 || lastErrorMessage == null || !lastErrorMessage.toLowerCase().contains("duplicate")) {
             throw new AssertionError("expected duplicate request id error");
+        }
+    }
+
+    @Then("I should receive an invalid identifier error")
+    public void i_should_receive_an_invalid_identifier_error() {
+        if (lastErrorCode != -32600 || lastErrorMessage == null || !lastErrorMessage.toLowerCase().contains("id")) {
+            throw new AssertionError("expected invalid request id error");
         }
     }
 
