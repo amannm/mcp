@@ -14,15 +14,24 @@ import java.time.Duration;
 import java.util.*;
 
 public final class UtilitiesSteps {
+    private final Map<String, String> requestStates = new HashMap<>();
+    private final List<Map<String, String>> cancellationChecks = new ArrayList<>();
+    private final List<Map<String, String>> bidirectionalPings = new ArrayList<>();
+    private final Map<String, List<Double>> progressNotifications = new HashMap<>();
+    private final List<Map<String, String>> progressScenarios = new ArrayList<>();
+    private final List<Map<String, String>> progressTokenTypeScenarios = new ArrayList<>();
+    private final Map<String, String> activeProgressTokens = new HashMap<>();
+    private final Map<String, String> paginationErrors = new HashMap<>();
+    private final List<String> paginationOperations = new ArrayList<>();
+    private final List<Map<String, String>> combinedOperations = new ArrayList<>();
+    private final List<Map<String, String>> lifecycleOperations = new ArrayList<>();
+    private final List<Map<String, String>> utilityErrors = new ArrayList<>();
+    private final List<String> invalidCancellationTypes = new ArrayList<>();
     private McpHost activeConnection;
     private String clientId;
-
-    private final Map<String,String> requestStates = new HashMap<>();
-    private Map<String,String> lastCancellation;
-    private final List<Map<String,String>> cancellationChecks = new ArrayList<>();
+    private Map<String, String> lastCancellation;
     private boolean cancellationIgnored;
     private boolean responseIgnored;
-
     private String lastPingId;
     private String lastPingResponseId;
     private JsonRpcMessage lastPingResponse;
@@ -35,13 +44,6 @@ public final class UtilitiesSteps {
     private boolean pingTimeoutHandlingConfigured;
     private String pingErrorMessage = "";
     private int pingErrorCode;
-
-    private final List<Map<String,String>> bidirectionalPings = new ArrayList<>();
-
-    private final Map<String,List<Double>> progressNotifications = new HashMap<>();
-    private final List<Map<String,String>> progressScenarios = new ArrayList<>();
-    private final List<Map<String,String>> progressTokenTypeScenarios = new ArrayList<>();
-    private final Map<String,String> activeProgressTokens = new HashMap<>();
     private boolean duplicateTokenDetected;
     private boolean tokenTypeValidationPassed;
     private boolean missingTotalSeen;
@@ -53,13 +55,10 @@ public final class UtilitiesSteps {
     private JsonObject misplacedProgressParams;
     private int progressTokenErrorCode;
     private String progressTokenErrorMessage;
-
     private List<String> dataset;
     private List<String> currentPage;
     private String nextCursor;
-    private final Map<String,String> paginationErrors = new HashMap<>();
     private boolean serverSupportsPagination;
-    private final List<String> paginationOperations = new ArrayList<>();
     private boolean missingCursorTreatedAsEnd;
     private boolean supportsPaginatedAndNonPaginated;
     private boolean cursorsOpaque;
@@ -71,11 +70,9 @@ public final class UtilitiesSteps {
     private boolean invalidCursorsHandled;
     private boolean pageSizesDetermined;
     private boolean cursorValidityMaintained;
-
-    private final List<Map<String,String>> combinedOperations = new ArrayList<>();
-    private final List<Map<String,String>> lifecycleOperations = new ArrayList<>();
-    private final List<Map<String,String>> utilityErrors = new ArrayList<>();
     private boolean systemStable;
+
+    // --- Cancellation ----------------------------------------------------
 
     @Given("an established MCP connection")
     public void an_established_mcp_connection() throws Exception {
@@ -112,8 +109,6 @@ public final class UtilitiesSteps {
         activeConnection.connect(clientId);
     }
 
-    // --- Cancellation ----------------------------------------------------
-
     @Given("I have sent a request with ID {string}")
     public void i_have_sent_a_request_with_id(String id) {
         requestStates.put(id, "in_progress");
@@ -128,7 +123,7 @@ public final class UtilitiesSteps {
     @When("I send a cancellation notification:")
     public void i_send_a_cancellation_notification(DataTable table) {
         lastCancellation = new HashMap<>();
-        for (final Map<String,String> row : table.asMaps()) {
+        for (final Map<String, String> row : table.asMaps()) {
             final String field = row.get("field");
             final String value = row.get("value");
             if (field != null && value != null) {
@@ -172,7 +167,7 @@ public final class UtilitiesSteps {
     @When("I test cancellation scenarios:")
     public void i_test_cancellation_scenarios(DataTable table) {
         cancellationChecks.clear();
-        for (Map<String,String> row : table.asMaps()) {
+        for (Map<String, String> row : table.asMaps()) {
             String state = row.get("request_state");
             boolean shouldCancel = Boolean.parseBoolean(row.get("should_cancel"));
             String expected = row.get("expected_behavior");
@@ -184,7 +179,7 @@ public final class UtilitiesSteps {
             } else {
                 actual = "ignore notification";
             }
-            Map<String,String> result = new HashMap<>(row);
+            Map<String, String> result = new HashMap<>(row);
             result.put("actual", actual);
             result.put("expected", expected);
             cancellationChecks.add(result);
@@ -193,7 +188,7 @@ public final class UtilitiesSteps {
 
     @Then("each scenario should behave according to specification requirements")
     public void each_scenario_should_behave_according_to_specification_requirements() {
-        for (Map<String,String> check : cancellationChecks) {
+        for (Map<String, String> check : cancellationChecks) {
             if (!Objects.equals(check.get("expected"), check.get("actual"))) {
                 throw new AssertionError("mismatch for %s".formatted(check.get("scenario")));
             }
@@ -228,8 +223,6 @@ public final class UtilitiesSteps {
         if (!responseIgnored) throw new AssertionError("response not ignored");
     }
 
-    private final List<String> invalidCancellationTypes = new ArrayList<>();
-
     @Given("I am receiving cancellation notifications")
     public void i_am_receiving_cancellation_notifications() {
         invalidCancellationTypes.clear();
@@ -237,7 +230,7 @@ public final class UtilitiesSteps {
 
     @When("I receive invalid cancellation notifications:")
     public void i_receive_invalid_cancellation_notifications(DataTable table) {
-        for (Map<String,String> row : table.asMaps()) {
+        for (Map<String, String> row : table.asMaps()) {
             invalidCancellationTypes.add(row.get("invalid_type"));
         }
     }
@@ -422,7 +415,7 @@ public final class UtilitiesSteps {
     @Then("ping functionality should work in both directions")
     public void ping_functionality_should_work_in_both_directions() {
         Set<String> senders = new HashSet<>();
-        for (Map<String,String> ping : bidirectionalPings) senders.add(ping.get("sender"));
+        for (Map<String, String> ping : bidirectionalPings) senders.add(ping.get("sender"));
         if (senders.size() < 2) throw new AssertionError("missing bidirectional support");
     }
 
@@ -464,7 +457,7 @@ public final class UtilitiesSteps {
     public void i_receive_progress_notifications_with_different_data(DataTable table) {
         String token = progressNotifications.keySet().iterator().next();
         List<Double> values = progressNotifications.get(token);
-        for (Map<String,String> row : table.asMaps()) {
+        for (Map<String, String> row : table.asMaps()) {
             if (Boolean.parseBoolean(row.get("valid"))) {
                 values.add(Double.parseDouble(row.get("progress")));
                 String total = row.get("total");
@@ -523,7 +516,7 @@ public final class UtilitiesSteps {
 
     @Then("behavior should match specification requirements")
     public void behavior_should_match_specification_requirements() {
-        for (Map<String,String> row : progressScenarios) {
+        for (Map<String, String> row : progressScenarios) {
             String hasToken = row.get("has_token");
             String shouldNotify = row.get("should_notify");
             if (!"true".equals(hasToken) && "true".equals(shouldNotify)) {
@@ -534,7 +527,7 @@ public final class UtilitiesSteps {
 
     @Then("notifications should only reference valid active tokens")
     public void notifications_should_only_reference_valid_active_tokens() {
-        for (Map<String,String> row : progressScenarios) {
+        for (Map<String, String> row : progressScenarios) {
             String shouldNotify = row.get("should_notify");
             String tokenValidity = row.get("token_validity");
             if ("true".equals(shouldNotify) && !"active".equals(tokenValidity)) {
@@ -546,7 +539,7 @@ public final class UtilitiesSteps {
     @Given("I have active requests with progress tokens:")
     public void i_have_active_requests_with_progress_tokens(DataTable table) {
         activeProgressTokens.clear();
-        for (Map<String,String> row : table.asMaps()) {
+        for (Map<String, String> row : table.asMaps()) {
             String id = row.get("request_id");
             String token = row.get("progress_token");
             if (id != null && token != null) {
@@ -558,7 +551,7 @@ public final class UtilitiesSteps {
 
     @When("I validate progress token uniqueness")
     public void i_validate_progress_token_uniqueness() {
-        for (Map.Entry<String,String> e : activeProgressTokens.entrySet()) {
+        for (Map.Entry<String, String> e : activeProgressTokens.entrySet()) {
             try {
                 RequestId id = RequestId.parse(e.getKey());
                 JsonObject params = Json.createObjectBuilder().add("progressToken", e.getValue()).build();
@@ -587,7 +580,7 @@ public final class UtilitiesSteps {
     @When("I validate progress token types")
     public void i_validate_progress_token_types() {
         tokenTypeValidationPassed = true;
-        for (Map<String,String> row : progressTokenTypeScenarios) {
+        for (Map<String, String> row : progressTokenTypeScenarios) {
             String literal = row.get("token");
             boolean expected = Boolean.parseBoolean(row.get("valid"));
             JsonValue tokenValue;
@@ -763,7 +756,7 @@ public final class UtilitiesSteps {
     @When("I test pagination for different operations:")
     public void i_test_pagination_for_different_operations(DataTable table) {
         paginationOperations.clear();
-        for (Map<String,String> row : table.asMaps()) {
+        for (Map<String, String> row : table.asMaps()) {
             if (!Boolean.parseBoolean(row.get("supports_pagination"))) {
                 throw new AssertionError(row.get("operation") + " does not support pagination");
             }
@@ -878,7 +871,7 @@ public final class UtilitiesSteps {
     @When("I receive requests with invalid cursors:")
     public void i_receive_requests_with_invalid_cursors(DataTable table) {
         paginationErrors.clear();
-        for (Map<String,String> row : table.asMaps()) {
+        for (Map<String, String> row : table.asMaps()) {
             paginationErrors.put(row.get("cursor_type"), row.get("error_code"));
         }
     }
@@ -920,7 +913,7 @@ public final class UtilitiesSteps {
 
     @Then("cancellation should work for paginated operations with progress")
     public void cancellation_should_work_for_paginated_operations_with_progress() {
-        for (Map<String,String> row : combinedOperations) {
+        for (Map<String, String> row : combinedOperations) {
             if (!row.containsKey("progress_token") || row.get("progress_token").isBlank()) {
                 throw new AssertionError("missing progress token");
             }
@@ -945,7 +938,7 @@ public final class UtilitiesSteps {
 
     @Then("resources should be cleaned up properly")
     public void resources_should_be_cleaned_up_properly() {
-        for (Map<String,String> row : lifecycleOperations) {
+        for (Map<String, String> row : lifecycleOperations) {
             if (!"cleanup".equals(row.get("progress_tokens"))) {
                 throw new AssertionError("resources not cleaned");
             }
@@ -954,7 +947,7 @@ public final class UtilitiesSteps {
 
     @Then("no dangling references should remain")
     public void no_dangling_references_should_remain() {
-        for (Map<String,String> row : lifecycleOperations) {
+        for (Map<String, String> row : lifecycleOperations) {
             String state = row.get("operation_state");
             String cursors = row.get("cursors");
             if (!"completed".equals(state) && "valid".equals(cursors)) {
@@ -982,7 +975,7 @@ public final class UtilitiesSteps {
 
     @Then("error handling should be consistent across utilities")
     public void error_handling_should_be_consistent_across_utilities() {
-        for (Map<String,String> row : utilityErrors) {
+        for (Map<String, String> row : utilityErrors) {
             String behavior = row.get("expected_behavior");
             if (behavior == null || behavior.isBlank()) {
                 throw new AssertionError("missing expected behavior");

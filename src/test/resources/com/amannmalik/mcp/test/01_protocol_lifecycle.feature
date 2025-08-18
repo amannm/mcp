@@ -178,11 +178,11 @@ Feature: MCP Connection Lifecycle
     # Tests specification/2025-06-18/basic/index.mdx:64-78 (Error response format)
     Given I have an established MCP connection
     When I test error handling with the following scenarios:
-      | error_situation              | error_type       | error_code |
-      | malformed request            | Parse error      | -32700     |
-      | invalid method request       | Method not found | -32601     |
-      | invalid parameters           | Invalid params   | -32602     |
-      | server internal error        | Internal error   | -32603     |
+      | error_situation        | error_type       | error_code |
+      | malformed request      | Parse error      | -32700     |
+      | invalid method request | Method not found | -32601     |
+      | invalid parameters     | Invalid params   | -32602     |
+      | server internal error  | Internal error   | -32603     |
     Then I should receive proper error responses for each scenario
 
   @connection @cleanup
@@ -319,10 +319,10 @@ Feature: MCP Connection Lifecycle
     # Tests specification/2025-06-18/basic/index.mdx:33-79 (Request/response correlation)
     Given I have an established MCP connection
     When I send a sequence of dependent requests:
-      | request_id | depends_on | method        |
-      | req-1      |            | tools/list    |
-      | req-2      | req-1      | tools/call    |
-      | req-3      | req-2      | ping          |
+      | request_id | depends_on | method     |
+      | req-1      |            | tools/list |
+      | req-2      | req-1      | tools/call |
+      | req-3      | req-2      | ping       |
     Then responses may arrive in any order
     And each response should correctly match its request ID
     And dependent operations should handle response timing appropriately

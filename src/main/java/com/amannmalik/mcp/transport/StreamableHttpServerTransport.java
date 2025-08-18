@@ -21,6 +21,7 @@ import java.net.InetSocketAddress;
 import java.time.Duration;
 import java.util.*;
 import java.util.concurrent.*;
+import java.util.stream.Collectors;
 
 public final class StreamableHttpServerTransport implements Transport {
     // Default to the previous protocol revision when the version header is
@@ -162,10 +163,14 @@ public final class StreamableHttpServerTransport implements Transport {
             resp.sendError(HttpServletResponse.SC_NOT_ACCEPTABLE);
             return false;
         }
-        String norm = accept.toLowerCase(Locale.ROOT);
+        var types = Arrays.stream(accept.split(","))
+                .map(String::trim)
+                .filter(s -> !s.isEmpty())
+                .map(s -> s.toLowerCase(Locale.ROOT))
+                .collect(Collectors.toSet());
         boolean ok = post
-                ? norm.contains("application/json") && norm.contains("text/event-stream")
-                : norm.contains("text/event-stream");
+                ? types.size() == 2 && types.contains("application/json") && types.contains("text/event-stream")
+                : types.size() == 1 && types.contains("text/event-stream");
         if (!ok) resp.sendError(HttpServletResponse.SC_NOT_ACCEPTABLE);
         return ok;
     }
