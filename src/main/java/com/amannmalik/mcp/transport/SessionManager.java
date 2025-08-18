@@ -132,10 +132,7 @@ final class SessionManager {
                                     String version,
                                     HttpServletResponse resp) throws IOException {
         if (initializing) return true;
-        // Per spec 2025-06-18, the client should send MCP-Protocol-Version on
-        // subsequent requests. For backwards compatibility, tolerate a
-        // missing header when the negotiated version is already known.
-        if (version != null && !version.equals(protocolVersion)) {
+        if (version == null || !version.equals(protocolVersion)) {
             resp.sendError(HttpServletResponse.SC_BAD_REQUEST);
             return false;
         }
