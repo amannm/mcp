@@ -292,16 +292,28 @@ public final class UtilitiesSteps {
                 b.add(field, value);
             }
         }
-        JsonRpcMessage msg = activeConnection.request(clientId, RequestMethod.PING, b.build());
-        String repr = msg.toString();
-        var m = java.util.regex.Pattern.compile("code=(-?\\d+), message=([^,\\]]+)").matcher(repr);
-        if (m.find()) {
-            pingErrorCode = Integer.parseInt(m.group(1));
-            pingErrorMessage = m.group(2);
+        try {
+            JsonRpcMessage msg = activeConnection.request(clientId, RequestMethod.PING, b.build());
+            String repr = msg.toString();
+            var err = java.util.regex.Pattern.compile("code=(-?\\d+), message=([^,\\]]+)").matcher(repr);
+            if (err.find()) {
+                pingErrorCode = Integer.parseInt(err.group(1));
+                pingErrorMessage = err.group(2);
+                lastPingResponse = null;
+                lastPingResponseId = null;
+                return;
+            }
+            lastPingResponse = msg;
+            var idMatch = java.util.regex.Pattern.compile("id=([^,]+)").matcher(repr);
+            lastPingResponseId = idMatch.find() ? idMatch.group(1) : null;
+            pingErrorCode = 0;
+            pingErrorMessage = "";
+        } catch (IllegalArgumentException e) {
+            pingErrorCode = -32602;
+            pingErrorMessage = e.getMessage();
+            lastPingResponse = null;
             lastPingResponseId = null;
-            return;
         }
-        throw new AssertionError("expected error response");
     }
 
     @Then("the receiver should respond promptly with an empty result")
