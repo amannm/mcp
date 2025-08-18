@@ -32,6 +32,8 @@ public final class ServerFeaturesSteps {
     private final Map<String, JsonObject> contentTypeSamples = new HashMap<>();
     private final List<Map<String, String>> resourceErrorScenarios = new ArrayList<>();
     private final List<ErrorCheck> resourceErrorResults = new ArrayList<>();
+    private final List<ErrorCheck> loggingErrorResults = new ArrayList<>();
+    private final List<ErrorCheck> completionErrorResults = new ArrayList<>();
     private final List<Map<String, String>> promptErrorScenarios = new ArrayList<>();
     private final List<JsonObject> logMessages = new ArrayList<>();
     private final List<Map<String, String>> loggingErrorScenarios = new ArrayList<>();
@@ -827,7 +829,7 @@ public final class ServerFeaturesSteps {
             int expectedCode = Integer.parseInt(row.get("error_code"));
             String expectedMessage = row.get("error_message");
             int actualCode = 0;
-            String actualMessage = null;
+            String actualMessage = "";
             try {
                 JsonRpcMessage msg = switch (scenario) {
                     case "nonexistent resource" -> {
@@ -856,6 +858,26 @@ public final class ServerFeaturesSteps {
     public void i_should_receive_appropriate_json_rpc_error_responses() {
         if (!resourceErrorResults.isEmpty()) {
             for (ErrorCheck ec : resourceErrorResults) {
+                if (ec.actualCode != ec.expectedCode || !Objects.equals(ec.expectedMessage, ec.actualMessage)) {
+                    throw new AssertionError(
+                            ec.scenario + " expected code " + ec.expectedCode + " message " + ec.expectedMessage +
+                                    " but got code " + ec.actualCode + " message " + ec.actualMessage);
+                }
+            }
+            return;
+        }
+        if (!loggingErrorResults.isEmpty()) {
+            for (ErrorCheck ec : loggingErrorResults) {
+                if (ec.actualCode != ec.expectedCode || !Objects.equals(ec.expectedMessage, ec.actualMessage)) {
+                    throw new AssertionError(
+                            ec.scenario + " expected code " + ec.expectedCode + " message " + ec.expectedMessage +
+                                    " but got code " + ec.actualCode + " message " + ec.actualMessage);
+                }
+            }
+            return;
+        }
+        if (!completionErrorResults.isEmpty()) {
+            for (ErrorCheck ec : completionErrorResults) {
                 if (ec.actualCode != ec.expectedCode || !Objects.equals(ec.expectedMessage, ec.actualMessage)) {
                     throw new AssertionError(
                             ec.scenario + " expected code " + ec.expectedCode + " message " + ec.expectedMessage +
@@ -1227,9 +1249,34 @@ public final class ServerFeaturesSteps {
     @When("I test logging error scenarios:")
     public void i_test_logging_error_scenarios(DataTable table) {
         loggingErrorScenarios.clear();
+        loggingErrorResults.clear();
         loggingErrorScenarios.addAll(table.asMaps(String.class, String.class));
         currentErrorScenarios.clear();
         currentErrorScenarios.addAll(loggingErrorScenarios);
+        for (Map<String, String> row : loggingErrorScenarios) {
+            String scenario = row.get("scenario");
+            int expectedCode = Integer.parseInt(row.get("error_code"));
+            String expectedMessage = row.get("error_message");
+            int actualCode = 0;
+            String actualMessage = "";
+            try {
+                JsonRpcMessage msg = switch (scenario) {
+                    case "invalid log level" -> {
+                        JsonObject params = Json.createObjectBuilder().add("level", "invalid").build();
+                        yield activeConnection.request(clientId, RequestMethod.LOGGING_SET_LEVEL, params);
+                    }
+                    default -> throw new IllegalArgumentException("Unknown scenario: " + scenario);
+                };
+                String repr = msg.toString();
+                var m = java.util.regex.Pattern.compile("code=(-?\\d+), message=([^,\\]]+)").matcher(repr);
+                if (m.find()) {
+                    actualCode = Integer.parseInt(m.group(1));
+                    actualMessage = m.group(2);
+                }
+            } catch (Exception ignore) {
+            }
+            loggingErrorResults.add(new ErrorCheck(scenario, expectedCode, expectedMessage, actualCode, actualMessage));
+        }
     }
 
     @Given("the server supports completion functionality")
