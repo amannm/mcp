@@ -594,6 +594,33 @@ public final class ProtocolLifecycleSteps {
         }
     }
 
+    @When("I include reserved metadata prefix in my request")
+    public void i_include_reserved_metadata_prefix_in_my_request() {
+        JsonObject meta = Json.createObjectBuilder()
+                .add("_meta", Json.createObjectBuilder()
+                        .add("mcp.dev/illegal", 0)
+                        .build())
+                .build();
+        try {
+            activeConnection.request(clientId, new RequestId.NumericId(1), RequestMethod.PING, meta);
+            lastErrorCode = 0;
+            lastErrorMessage = null;
+        } catch (IllegalArgumentException e) {
+            lastErrorCode = -32602;
+            lastErrorMessage = e.getMessage();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    @Then("I should receive an invalid metadata error")
+    public void i_should_receive_an_invalid_metadata_error() {
+        if (lastErrorCode != -32602 || lastErrorMessage == null
+                || !lastErrorMessage.contains("Reserved _meta prefix")) {
+            throw new AssertionError("expected invalid _meta error");
+        }
+    }
+
     @When("my request exceeds the timeout duration")
     public void my_request_exceeds_the_timeout_duration() {
         // Simulate timeout scenario
