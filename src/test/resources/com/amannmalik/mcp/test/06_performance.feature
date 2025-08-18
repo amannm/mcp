@@ -46,10 +46,10 @@ Feature: MCP Performance Baseline Testing
     And the server provides resources of various sizes
     When I stream large resources:
       | resource_size | transfer_method | expected_throughput |
-      | 1MB           | single_request  | >10MB/s            |
-      | 10MB          | single_request  | >50MB/s            |
-      | 100MB         | chunked_stream  | >100MB/s           |
-      | 1GB           | chunked_stream  | >200MB/s           |
+      | 1MB           | single_request  | >10MB/s             |
+      | 10MB          | single_request  | >50MB/s             |
+      | 100MB         | chunked_stream  | >100MB/s            |
+      | 1GB           | chunked_stream  | >200MB/s            |
     Then transfer should complete within expected time limits
     And throughput should meet or exceed baseline expectations
     And memory usage should remain bounded during transfer
@@ -97,7 +97,7 @@ Feature: MCP Performance Baseline Testing
     And the server provides a lightweight test tool
     When I measure tool invocation throughput over 5 minutes:
       | measurement_period | target_throughput | measurement_accuracy |
-      | 5_minutes         | >1000_ops/sec     | ±5%                 |
+      | 5_minutes          | >1000_ops/sec     | ±5%                  |
     Then sustained throughput should meet baseline requirements
     And throughput should remain stable throughout measurement period
     And no performance degradation should occur over time
@@ -110,12 +110,12 @@ Feature: MCP Performance Baseline Testing
     # Establishes baseline for general protocol scalability
     Given I have an established MCP connection for performance testing
     When I send various message types at high throughput:
-      | message_type     | messages_per_second | duration_seconds |
-      | ping_requests    | 1000                | 30               |
-      | tool_calls       | 500                 | 60               |
-      | resource_reads   | 200                 | 120              |
-      | prompt_gets      | 100                 | 180              |
-      | mixed_workload   | 800                 | 300              |
+      | message_type   | messages_per_second | duration_seconds |
+      | ping_requests  | 1000                | 30               |
+      | tool_calls     | 500                 | 60               |
+      | resource_reads | 200                 | 120              |
+      | prompt_gets    | 100                 | 180              |
+      | mixed_workload | 800                 | 300              |
     Then all messages should be processed within acceptable time limits
     And message processing latency should remain stable under load
     And no message should be lost or corrupted during high throughput
@@ -128,11 +128,11 @@ Feature: MCP Performance Baseline Testing
     # Establishes maximum supported load characteristics
     Given I have an established MCP connection for performance testing
     When I gradually increase load until system limits are reached:
-      | load_metric        | increment_step | expected_limit | degradation_threshold |
-      | concurrent_clients | 10             | >100           | <50% performance loss |
-      | messages_per_sec   | 100            | >2000          | <50% performance loss |
-      | active_subscriptions | 50           | >1000          | <50% performance loss |
-      | resource_cache_size | 100MB         | >1GB           | <50% performance loss |
+      | load_metric          | increment_step | expected_limit | degradation_threshold |
+      | concurrent_clients   | 10             | >100           | <50% performance loss |
+      | messages_per_sec     | 100            | >2000          | <50% performance loss |
+      | active_subscriptions | 50             | >1000          | <50% performance loss |
+      | resource_cache_size  | 100MB          | >1GB           | <50% performance loss |
     Then system should degrade gracefully approaching limits
     And clear error messages should indicate capacity limits
     And system should remain stable at maximum supported load
@@ -145,11 +145,11 @@ Feature: MCP Performance Baseline Testing
     # Tests for memory leaks and excessive memory consumption
     Given I have an established MCP connection for performance testing
     When I run sustained operations for extended periods:
-      | operation_type      | duration_minutes | memory_growth_limit |
-      | continuous_pings    | 30               | <10MB               |
-      | resource_streaming  | 60               | <50MB               |
-      | tool_invocations    | 90               | <100MB              |
-      | mixed_operations    | 120              | <200MB              |
+      | operation_type     | duration_minutes | memory_growth_limit |
+      | continuous_pings   | 30               | <10MB               |
+      | resource_streaming | 60               | <50MB               |
+      | tool_invocations   | 90               | <100MB              |
+      | mixed_operations   | 120              | <200MB              |
     Then memory usage should remain within established baselines
     And no memory leaks should be detected
     And garbage collection impact should be minimal
@@ -161,11 +161,11 @@ Feature: MCP Performance Baseline Testing
     # Tests performance impact of error conditions and recovery
     Given I have an established MCP connection for performance testing
     When I introduce various error conditions during high-load operations:
-      | error_condition        | error_frequency | recovery_time_limit |
-      | network_interruptions  | 1%              | <1s                 |
-      | malformed_messages     | 0.1%            | <100ms              |
-      | resource_unavailable   | 2%              | <500ms              |
-      | tool_execution_failures| 1%              | <200ms              |
+      | error_condition         | error_frequency | recovery_time_limit |
+      | network_interruptions   | 1%              | <1s                 |
+      | malformed_messages      | 0.1%            | <100ms              |
+      | resource_unavailable    | 2%              | <500ms              |
+      | tool_execution_failures | 1%              | <200ms              |
     Then error recovery should occur within specified time limits
     And overall system performance should not be significantly impacted
     And successful operations should continue during error recovery
@@ -180,12 +180,12 @@ Feature: MCP Performance Baseline Testing
     And I have an established MCP connection for performance testing
     When I run the standard performance benchmark suite
     Then current performance should meet or exceed historical baselines:
-      | metric                  | baseline_value | acceptable_variance |
-      | ping_latency_p95       | 20ms           | ±20%                |
-      | tool_invocation_throughput | 1000_ops/sec | ±15%                |
-      | resource_transfer_rate  | 100MB/s        | ±25%                |
-      | concurrent_client_limit | 100            | ±10%                |
-      | memory_usage_baseline   | 200MB          | ±30%                |
+      | metric                     | baseline_value | acceptable_variance |
+      | ping_latency_p95           | 20ms           | ±20%                |
+      | tool_invocation_throughput | 1000_ops/sec   | ±15%                |
+      | resource_transfer_rate     | 100MB/s        | ±25%                |
+      | concurrent_client_limit    | 100            | ±10%                |
+      | memory_usage_baseline      | 200MB          | ±30%                |
     And any performance regressions should be clearly identified
     And regression impact should be quantified and documented
     And recommendations for performance optimization should be provided

@@ -1,17 +1,11 @@
 package com.amannmalik.mcp.test;
 
 import com.amannmalik.mcp.api.*;
-import com.amannmalik.mcp.spi.Cursor;
-import com.amannmalik.mcp.spi.ListToolsResult;
-import com.amannmalik.mcp.spi.Tool;
-import com.amannmalik.mcp.spi.ToolResult;
+import com.amannmalik.mcp.spi.*;
 import io.cucumber.datatable.DataTable;
 import io.cucumber.java.After;
 import io.cucumber.java.en.*;
-import jakarta.json.Json;
-import jakarta.json.JsonArray;
-import jakarta.json.JsonObject;
-import jakarta.json.JsonValue;
+import jakarta.json.*;
 
 import java.io.IOException;
 import java.nio.file.Path;
@@ -20,42 +14,6 @@ import java.util.*;
 import java.util.stream.Stream;
 
 public final class ServerFeaturesSteps {
-    private McpHost activeConnection;
-    private String clientId;
-    private final Set<ServerCapability> serverCapabilities = EnumSet.noneOf(ServerCapability.class);
-    private final Set<ServerFeature> serverFeatures = EnumSet.noneOf(ServerFeature.class);
-    private ServerCapability lastCapabilityChecked;
-    private List<Tool> availableTools = List.of();
-    private ListToolsResult firstPage;
-    private ListToolsResult secondPage;
-    private Tool targetTool;
-    private ToolResult lastToolResult;
-    private Exception lastToolException;
-    private final List<Map<String, String>> toolErrorScenarioRows = new ArrayList<>();
-    private final Map<String, Boolean> protocolErrorOccurred = new HashMap<>();
-    private final Map<String, Boolean> toolErrorOccurred = new HashMap<>();
-    private boolean subscribedToToolUpdates;
-    private boolean toolListChangedNotification;
-    private final Map<String, JsonObject> contentTypeSamples = new HashMap<>();
-
-    private List<JsonObject> availableResources = List.of();
-    private String resourceUri;
-    private JsonObject resourceContents;
-    private List<JsonObject> resourceTemplates = List.of();
-    private boolean resourceSubscriptionConfirmed;
-    private boolean resourceUnsubscriptionConfirmed;
-    private boolean resourceUpdatedNotification;
-    private boolean resourceListChangedNotification;
-    private List<JsonObject> resourceAnnotations = List.of();
-    private final List<Map<String, String>> resourceErrorScenarios = new ArrayList<>();
-    private record ErrorCheck(String scenario, int expectedCode, String expectedMessage, int actualCode, String actualMessage) {}
-    private final List<ErrorCheck> resourceErrorResults = new ArrayList<>();
-
-    private List<JsonObject> availablePrompts = List.of();
-    private JsonObject promptInstance;
-    private boolean promptListChangedNotification;
-    private final List<Map<String, String>> promptErrorScenarios = new ArrayList<>();
-
     private static final Map<String, Integer> LOG_LEVELS = Map.ofEntries(
             Map.entry("emergency", 0),
             Map.entry("alert", 1),
@@ -66,15 +24,46 @@ public final class ServerFeaturesSteps {
             Map.entry("info", 6),
             Map.entry("debug", 7)
     );
-    private boolean loggingLevelAccepted;
-    private String currentLogLevel;
+    private final Set<ServerCapability> serverCapabilities = EnumSet.noneOf(ServerCapability.class);
+    private final Set<ServerFeature> serverFeatures = EnumSet.noneOf(ServerFeature.class);
+    private final List<Map<String, String>> toolErrorScenarioRows = new ArrayList<>();
+    private final Map<String, Boolean> protocolErrorOccurred = new HashMap<>();
+    private final Map<String, Boolean> toolErrorOccurred = new HashMap<>();
+    private final Map<String, JsonObject> contentTypeSamples = new HashMap<>();
+    private final List<Map<String, String>> resourceErrorScenarios = new ArrayList<>();
+    private final List<ErrorCheck> resourceErrorResults = new ArrayList<>();
+    private final List<Map<String, String>> promptErrorScenarios = new ArrayList<>();
     private final List<JsonObject> logMessages = new ArrayList<>();
     private final List<Map<String, String>> loggingErrorScenarios = new ArrayList<>();
-
-    private JsonObject lastCompletion;
     private final List<Map<String, String>> completionErrorScenarios = new ArrayList<>();
     private final List<Map<String, String>> currentErrorScenarios = new ArrayList<>();
-
+    private final Map<String, Boolean> sensitiveExposure = new HashMap<>();
+    private McpHost activeConnection;
+    private String clientId;
+    private ServerCapability lastCapabilityChecked;
+    private List<Tool> availableTools = List.of();
+    private ListToolsResult firstPage;
+    private ListToolsResult secondPage;
+    private Tool targetTool;
+    private ToolResult lastToolResult;
+    private Exception lastToolException;
+    private boolean subscribedToToolUpdates;
+    private boolean toolListChangedNotification;
+    private List<JsonObject> availableResources = List.of();
+    private String resourceUri;
+    private JsonObject resourceContents;
+    private List<JsonObject> resourceTemplates = List.of();
+    private boolean resourceSubscriptionConfirmed;
+    private boolean resourceUnsubscriptionConfirmed;
+    private boolean resourceUpdatedNotification;
+    private boolean resourceListChangedNotification;
+    private List<JsonObject> resourceAnnotations = List.of();
+    private List<JsonObject> availablePrompts = List.of();
+    private JsonObject promptInstance;
+    private boolean promptListChangedNotification;
+    private boolean loggingLevelAccepted;
+    private String currentLogLevel;
+    private JsonObject lastCompletion;
     private boolean integrationWorked;
     private boolean maliciousInputSanitized;
     private boolean maliciousInputRejected;
@@ -82,7 +71,6 @@ public final class ServerFeaturesSteps {
     private boolean accessControlsConfigured;
     private boolean unauthorizedDenied;
     private boolean errorMessageProvided;
-    private final Map<String, Boolean> sensitiveExposure = new HashMap<>();
 
     @Given("an established MCP connection with server capabilities")
     public void an_established_mcp_connection_with_server_capabilities() throws Exception {
@@ -98,41 +86,41 @@ public final class ServerFeaturesSteps {
                 base.pingTimeout(), base.pingInterval(), base.progressPerSecond(), base.rateLimiterWindow(),
                 base.verbose(), base.interactiveSampling(), base.rootDirectories(), base.samplingAccessPolicy()
         );
-          McpHostConfiguration hostConfig = new McpHostConfiguration(
-                  "2025-06-18",
-                  "2025-03-26",
-                  "mcp-host",
-                  "MCP Host",
-                  "1.0.0",
-                  Set.of(ClientCapability.SAMPLING, ClientCapability.ROOTS, ClientCapability.ELICITATION),
-                  "default",
-                  Duration.ofSeconds(2),
-                  2,
-                  100,
-                  false,
-                  List.of(clientConfig)
-          );
-          activeConnection = new McpHost(hostConfig);
-          activeConnection.grantConsent("server");
-          activeConnection.grantConsent("tool:test_tool");
-          activeConnection.grantConsent("tool:error_tool");
-          activeConnection.grantConsent("tool:echo_tool");
-          activeConnection.grantConsent("tool:slow_tool");
-          activeConnection.grantConsent("tool:image_tool");
-          activeConnection.grantConsent("tool:audio_tool");
-          activeConnection.grantConsent("tool:link_tool");
-          activeConnection.grantConsent("tool:embedded_tool");
-          activeConnection.allowTool("test_tool");
-          activeConnection.allowTool("error_tool");
-          activeConnection.allowTool("echo_tool");
-          activeConnection.allowTool("slow_tool");
-          activeConnection.allowTool("image_tool");
-          activeConnection.allowTool("audio_tool");
-          activeConnection.allowTool("link_tool");
-          activeConnection.allowTool("embedded_tool");
-          clientId = clientConfig.clientId();
-          activeConnection.connect(clientId);
-      }
+        McpHostConfiguration hostConfig = new McpHostConfiguration(
+                "2025-06-18",
+                "2025-03-26",
+                "mcp-host",
+                "MCP Host",
+                "1.0.0",
+                Set.of(ClientCapability.SAMPLING, ClientCapability.ROOTS, ClientCapability.ELICITATION),
+                "default",
+                Duration.ofSeconds(2),
+                2,
+                100,
+                false,
+                List.of(clientConfig)
+        );
+        activeConnection = new McpHost(hostConfig);
+        activeConnection.grantConsent("server");
+        activeConnection.grantConsent("tool:test_tool");
+        activeConnection.grantConsent("tool:error_tool");
+        activeConnection.grantConsent("tool:echo_tool");
+        activeConnection.grantConsent("tool:slow_tool");
+        activeConnection.grantConsent("tool:image_tool");
+        activeConnection.grantConsent("tool:audio_tool");
+        activeConnection.grantConsent("tool:link_tool");
+        activeConnection.grantConsent("tool:embedded_tool");
+        activeConnection.allowTool("test_tool");
+        activeConnection.allowTool("error_tool");
+        activeConnection.allowTool("echo_tool");
+        activeConnection.allowTool("slow_tool");
+        activeConnection.allowTool("image_tool");
+        activeConnection.allowTool("audio_tool");
+        activeConnection.allowTool("link_tool");
+        activeConnection.allowTool("embedded_tool");
+        clientId = clientConfig.clientId();
+        activeConnection.connect(clientId);
+    }
 
     @Given("the server supports tools functionality")
     public void the_server_supports_tools_functionality() throws Exception {
@@ -501,8 +489,6 @@ public final class ServerFeaturesSteps {
         }
     }
 
-    // --- Resources -------------------------------------------------------
-
     @Given("the server supports resources functionality")
     public void the_server_supports_resources_functionality() throws Exception {
         if (activeConnection == null || clientId == null) {
@@ -510,6 +496,8 @@ public final class ServerFeaturesSteps {
         }
         activeConnection.request(clientId, RequestMethod.RESOURCES_LIST, Json.createObjectBuilder().build());
     }
+
+    // --- Resources -------------------------------------------------------
 
     @Given("the server has resources capability enabled")
     public void the_server_has_resources_capability_enabled() {
@@ -881,8 +869,6 @@ public final class ServerFeaturesSteps {
         }
     }
 
-    // --- Prompts --------------------------------------------------------
-
     @Given("the server supports prompts functionality")
     public void the_server_supports_prompts_functionality() throws Exception {
         if (activeConnection == null || clientId == null) {
@@ -890,6 +876,8 @@ public final class ServerFeaturesSteps {
         }
         activeConnection.request(clientId, RequestMethod.PROMPTS_LIST, Json.createObjectBuilder().build());
     }
+
+    // --- Prompts --------------------------------------------------------
 
     @Given("the server has prompts capability enabled")
     public void the_server_has_prompts_capability_enabled() {
@@ -1103,12 +1091,12 @@ public final class ServerFeaturesSteps {
         }
     }
 
-    // --- Logging --------------------------------------------------------
-
     @Given("the server supports logging functionality")
     public void the_server_supports_logging_functionality() throws Exception {
         activeConnection.request(clientId, RequestMethod.LOGGING_SET_LEVEL, Json.createObjectBuilder().add("level", "info").build());
     }
+
+    // --- Logging --------------------------------------------------------
 
     @Given("the server has logging capability enabled")
     public void the_server_has_logging_capability_enabled() {
@@ -1244,14 +1232,14 @@ public final class ServerFeaturesSteps {
         currentErrorScenarios.addAll(loggingErrorScenarios);
     }
 
-    // --- Completion -----------------------------------------------------
-
     @Given("the server supports completion functionality")
     public void the_server_supports_completion_functionality() throws Exception {
         activeConnection.request(clientId, RequestMethod.COMPLETION_COMPLETE, Json.createObjectBuilder()
                 .add("ref", Json.createObjectBuilder().add("type", "ref/prompt").add("name", "test").build())
                 .build());
     }
+
+    // --- Completion -----------------------------------------------------
 
     @Given("the server has completion capability enabled")
     public void the_server_has_completion_capability_enabled() {
@@ -1430,14 +1418,14 @@ public final class ServerFeaturesSteps {
         currentErrorScenarios.addAll(completionErrorScenarios);
     }
 
-    // --- Security ------------------------------------------------------
-
     @Given("the server has security controls enabled")
     public void the_server_has_security_controls_enabled() {
         maliciousInputSanitized = false;
         maliciousInputRejected = false;
         rateLimited = false;
     }
+
+    // --- Security ------------------------------------------------------
 
     @When("I send requests with potentially malicious input")
     public void i_send_requests_with_potentially_malicious_input() {
@@ -1540,8 +1528,6 @@ public final class ServerFeaturesSteps {
         }
     }
 
-    // --- Integration ----------------------------------------------------
-
     @Given("the server supports multiple capabilities")
     public void the_server_supports_multiple_capabilities() {
         Set<ServerCapability> caps = activeConnection.serverCapabilities(clientId);
@@ -1549,6 +1535,8 @@ public final class ServerFeaturesSteps {
             throw new AssertionError("insufficient capabilities");
         }
     }
+
+    // --- Integration ----------------------------------------------------
 
     @When("I use tools that reference resources and prompts")
     public void i_use_tools_that_reference_resources_and_prompts() {
@@ -1592,5 +1580,8 @@ public final class ServerFeaturesSteps {
             serverFeatures.clear();
             availableTools = List.of();
         }
+    }
+
+    private record ErrorCheck(String scenario, int expectedCode, String expectedMessage, int actualCode, String actualMessage) {
     }
 }

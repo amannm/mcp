@@ -11,9 +11,26 @@ import java.time.Duration;
 import java.util.*;
 
 public final class SecurityErrorsSteps {
+    private final List<String> discoveredAuthServers = new ArrayList<>();
+    private final List<Map<String, String>> authorizationScenarios = new ArrayList<>();
+    private final List<Map<String, String>> tokenAudienceScenarios = new ArrayList<>();
+    private final List<Map<String, String>> jsonRpcErrorScenarios = new ArrayList<>();
+    private final List<Map<String, String>> accessControlScenarios = new ArrayList<>();
+    private final List<Map<String, String>> rateLimitingScenarios = new ArrayList<>();
+    private final List<Map<String, String>> sessionSecurityScenarios = new ArrayList<>();
+    private final List<Map<String, String>> transportScenarios = new ArrayList<>();
+    private final List<Map<String, String>> maliciousInputScenarios = new ArrayList<>();
+    private final List<Map<String, String>> confusedDeputyScenarios = new ArrayList<>();
+    private final List<Map<String, String>> tokenPassthroughScenarios = new ArrayList<>();
+    private final List<Map<String, String>> authFlowScenarios = new ArrayList<>();
+    private final List<Map<String, String>> redirectScenarios = new ArrayList<>();
+    private final List<Map<String, String>> disclosureScenarios = new ArrayList<>();
+    private final List<Map<String, String>> capabilityBoundaryScenarios = new ArrayList<>();
+    private final List<Map<String, String>> securityLoggingScenarios = new ArrayList<>();
+    private final List<Map<String, String>> securityFailsafeScenarios = new ArrayList<>();
+    private final List<Map<String, String>> complianceScenarios = new ArrayList<>();
     private McpHost activeConnection;
     private String clientId;
-
     private boolean securityControlsEnabled;
     private boolean loggingConfigured;
     private String resourceUri;
@@ -33,27 +50,19 @@ public final class SecurityErrorsSteps {
     private boolean securityMonitoringEnabled;
     private boolean securityFailsafeMechanisms;
     private boolean standardsComplianceClaimed;
-
     private String resourceMetadataUrl;
-    private final List<String> discoveredAuthServers = new ArrayList<>();
-
-    private final List<Map<String, String>> authorizationScenarios = new ArrayList<>();
-    private final List<Map<String, String>> tokenAudienceScenarios = new ArrayList<>();
-    private final List<Map<String, String>> jsonRpcErrorScenarios = new ArrayList<>();
-    private final List<Map<String, String>> accessControlScenarios = new ArrayList<>();
-    private final List<Map<String, String>> rateLimitingScenarios = new ArrayList<>();
-    private final List<Map<String, String>> sessionSecurityScenarios = new ArrayList<>();
-    private final List<Map<String, String>> transportScenarios = new ArrayList<>();
-    private final List<Map<String, String>> maliciousInputScenarios = new ArrayList<>();
-    private final List<Map<String, String>> confusedDeputyScenarios = new ArrayList<>();
-    private final List<Map<String, String>> tokenPassthroughScenarios = new ArrayList<>();
-    private final List<Map<String, String>> authFlowScenarios = new ArrayList<>();
-    private final List<Map<String, String>> redirectScenarios = new ArrayList<>();
-    private final List<Map<String, String>> disclosureScenarios = new ArrayList<>();
-    private final List<Map<String, String>> capabilityBoundaryScenarios = new ArrayList<>();
-    private final List<Map<String, String>> securityLoggingScenarios = new ArrayList<>();
-    private final List<Map<String, String>> securityFailsafeScenarios = new ArrayList<>();
-    private final List<Map<String, String>> complianceScenarios = new ArrayList<>();
+    // New step definitions for resource exhaustion attacks
+    private boolean resourceProtectionEnabled;
+    private final List<Map<String, String>> resourceExhaustionScenarios = new ArrayList<>();
+    private final Map<String, Boolean> resourceExhaustionResults = new HashMap<>();
+    // New step definitions for malformed JSON-RPC boundary testing
+    private boolean strictInputValidation;
+    private final List<Map<String, String>> malformedMessageScenarios = new ArrayList<>();
+    private final Map<String, String> malformedMessageResults = new HashMap<>();
+    // New step definitions for TLS/Certificate validation errors
+    private boolean strictTlsValidation;
+    private final List<Map<String, String>> certificateScenarios = new ArrayList<>();
+    private final Map<String, String> certificateResults = new HashMap<>();
 
     @Given("security controls are enabled")
     public void security_controls_are_enabled() {
@@ -292,9 +301,12 @@ public final class SecurityErrorsSteps {
 
     @Then("the server should log access control violations")
     public void the_server_should_log_access_control_violations() {
-        boolean found = accessControlScenarios.stream()
+        if (!loggingConfigured) {
+            throw new AssertionError("logging not configured");
+        }
+        boolean logged = accessControlScenarios.stream()
                 .anyMatch(row -> Integer.parseInt(row.get("expected_status")) == 403);
-        if (!found) {
+        if (!logged) {
             throw new AssertionError("no access control violation logged");
         }
     }
@@ -724,6 +736,9 @@ public final class SecurityErrorsSteps {
 
     @Then("security events should be logged appropriately")
     public void security_events_should_be_logged_appropriately() {
+        if (!securityMonitoringEnabled) {
+            throw new AssertionError("security monitoring not enabled");
+        }
         for (Map<String, String> row : securityLoggingScenarios) {
             if (row.get("should_include") == null || row.get("should_include").isBlank()) {
                 throw new AssertionError("missing include fields");
@@ -766,6 +781,9 @@ public final class SecurityErrorsSteps {
 
     @Then("the system should fail securely")
     public void the_system_should_fail_securely() {
+        if (!securityFailsafeMechanisms) {
+            throw new AssertionError("failsafe mechanisms disabled");
+        }
         for (Map<String, String> row : securityFailsafeScenarios) {
             String behavior = row.get("expected_behavior");
             if (behavior == null || behavior.isBlank()) {
@@ -875,12 +893,28 @@ public final class SecurityErrorsSteps {
         securityLoggingScenarios.clear();
         securityFailsafeScenarios.clear();
         complianceScenarios.clear();
+
+        resourceExhaustionScenarios.clear();
+        resourceExhaustionResults.clear();
+        resourceExhaustionLogs.clear();
+
+        malformedMessageScenarios.clear();
+        malformedMessageResults.clear();
+
+        certificateScenarios.clear();
+        certificateResults.clear();
+        certificateLogs.clear();
+
+        resourceProtectionEnabled = false;
+        strictInputValidation = false;
+        strictTlsValidation = false;
     }
 
     // New step definitions for resource exhaustion attacks
     private boolean resourceProtectionEnabled;
-    private List<Map<String, String>> resourceExhaustionScenarios = new ArrayList<>();
-    private Map<String, Boolean> resourceExhaustionResults = new HashMap<>();
+    private final List<Map<String, String>> resourceExhaustionScenarios = new ArrayList<>();
+    private final Map<String, Boolean> resourceExhaustionResults = new HashMap<>();
+    private final Set<String> resourceExhaustionLogs = new HashSet<>();
 
     @Given("an MCP server with resource protection enabled")
     public void an_mcp_server_with_resource_protection_enabled() {
@@ -891,17 +925,18 @@ public final class SecurityErrorsSteps {
     public void i_test_resource_exhaustion_scenarios(DataTable dataTable) {
         resourceExhaustionScenarios.clear();
         resourceExhaustionResults.clear();
-        
+        resourceExhaustionLogs.clear();
         List<Map<String, String>> scenarios = dataTable.asMaps(String.class, String.class);
         resourceExhaustionScenarios.addAll(scenarios);
-        
+
         for (Map<String, String> scenario : scenarios) {
             String attackType = scenario.get("attack_type");
             String attackMethod = scenario.get("attack_method");
             String expectedBehavior = scenario.get("expected_behavior");
-            
+
             boolean attackBlocked = simulateResourceExhaustionAttack(attackType, attackMethod, expectedBehavior);
             resourceExhaustionResults.put(attackType, attackBlocked);
+            resourceExhaustionLogs.add(attackType);
         }
     }
 
@@ -918,6 +953,9 @@ public final class SecurityErrorsSteps {
 
     @Then("the server should reject excessive resource requests")
     public void the_server_should_reject_excessive_resource_requests() {
+        if (!resourceProtectionEnabled) {
+            throw new AssertionError("resource protection not enabled");
+        }
         for (Boolean blocked : resourceExhaustionResults.values()) {
             if (!blocked) {
                 throw new AssertionError("Server did not reject excessive resource requests");
@@ -934,16 +972,13 @@ public final class SecurityErrorsSteps {
 
     @Then("log resource exhaustion attempts appropriately")
     public void log_resource_exhaustion_attempts_appropriately() {
-        // Verify that resource exhaustion attempts are logged
-        if (resourceExhaustionScenarios.isEmpty()) {
-            throw new AssertionError("No resource exhaustion scenarios were tested");
+        for (Map<String, String> scenario : resourceExhaustionScenarios) {
+            String attackType = scenario.get("attack_type");
+            if (!resourceExhaustionLogs.contains(attackType)) {
+                throw new AssertionError("No log entry for " + attackType);
+            }
         }
     }
-
-    // New step definitions for malformed JSON-RPC boundary testing
-    private boolean strictInputValidation;
-    private List<Map<String, String>> malformedMessageScenarios = new ArrayList<>();
-    private Map<String, String> malformedMessageResults = new HashMap<>();
 
     @Given("an MCP server with strict input validation")
     public void an_mcp_server_with_strict_input_validation() {
@@ -954,15 +989,15 @@ public final class SecurityErrorsSteps {
     public void i_send_malformed_json_rpc_messages(DataTable dataTable) {
         malformedMessageScenarios.clear();
         malformedMessageResults.clear();
-        
+
         List<Map<String, String>> scenarios = dataTable.asMaps(String.class, String.class);
         malformedMessageScenarios.addAll(scenarios);
-        
+
         for (Map<String, String> scenario : scenarios) {
             String malformationType = scenario.get("malformation_type");
             String malformedContent = scenario.get("malformed_content");
             String expectedResponse = scenario.get("expected_response");
-            
+
             String actualResponse = simulateMalformedMessage(malformationType, malformedContent);
             malformedMessageResults.put(malformationType, actualResponse);
         }
@@ -987,10 +1022,10 @@ public final class SecurityErrorsSteps {
             String malformationType = scenario.get("malformation_type");
             String expectedResponse = scenario.get("expected_response");
             String actualResponse = malformedMessageResults.get(malformationType);
-            
+
             if (!expectedResponse.equals(actualResponse)) {
                 throw new AssertionError("Malformed message %s: expected %s, got %s"
-                    .formatted(malformationType, expectedResponse, actualResponse));
+                        .formatted(malformationType, expectedResponse, actualResponse));
             }
         }
     }
@@ -1014,8 +1049,9 @@ public final class SecurityErrorsSteps {
 
     // New step definitions for TLS/Certificate validation errors
     private boolean strictTlsValidation;
-    private List<Map<String, String>> certificateScenarios = new ArrayList<>();
-    private Map<String, String> certificateResults = new HashMap<>();
+    private final List<Map<String, String>> certificateScenarios = new ArrayList<>();
+    private final Map<String, String> certificateResults = new HashMap<>();
+    private final Set<String> certificateLogs = new HashSet<>();
 
     @Given("an MCP client with strict TLS validation enabled")
     public void an_mcp_client_with_strict_tls_validation_enabled() {
@@ -1026,17 +1062,19 @@ public final class SecurityErrorsSteps {
     public void i_test_tls_certificate_validation_scenarios(DataTable dataTable) {
         certificateScenarios.clear();
         certificateResults.clear();
-        
+        certificateLogs.clear();
+
         List<Map<String, String>> scenarios = dataTable.asMaps(String.class, String.class);
         certificateScenarios.addAll(scenarios);
-        
+
         for (Map<String, String> scenario : scenarios) {
             String certificateIssue = scenario.get("certificate_issue");
             String testScenario = scenario.get("test_scenario");
             String expectedBehavior = scenario.get("expected_behavior");
-            
+
             String actualBehavior = simulateCertificateValidation(certificateIssue, testScenario);
             certificateResults.put(certificateIssue, actualBehavior);
+            certificateLogs.add(certificateIssue);
         }
     }
 
@@ -1077,8 +1115,11 @@ public final class SecurityErrorsSteps {
 
     @Then("certificate validation errors should be logged securely")
     public void certificate_validation_errors_should_be_logged_securely() {
-        if (certificateScenarios.isEmpty()) {
-            throw new AssertionError("No certificate validation scenarios were tested");
+        for (Map<String, String> scenario : certificateScenarios) {
+            String issue = scenario.get("certificate_issue");
+            if (!certificateLogs.contains(issue)) {
+                throw new AssertionError("No log entry for " + issue);
+            }
         }
     }
 }
