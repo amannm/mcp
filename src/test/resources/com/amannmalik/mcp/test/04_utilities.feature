@@ -25,6 +25,18 @@ Feature: MCP Protocol Utilities
     And the receiver should stop processing the request
     And no response should be sent for the cancelled request
 
+  @cancellation @notifications
+  Scenario: Request cancellation notification without reason
+    # Tests specification/2025-06-18/basic/utilities/cancellation.mdx:14-30 (Cancellation flow)
+    Given I have sent a request with ID "request-456"
+    And the request is still in progress
+    When I send a cancellation notification:
+      | field     | value       |
+      | requestId | request-456 |
+    Then the notification should be properly formatted
+    And the receiver should stop processing the request
+    And no response should be sent for the cancelled request
+
   @cancellation @behavior
   Scenario: Cancellation behavior requirements
     # Tests specification/2025-06-18/basic/utilities/cancellation.mdx:32-48 (Behavior requirements)
