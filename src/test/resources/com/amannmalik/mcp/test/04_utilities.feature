@@ -195,6 +195,14 @@ Feature: MCP Protocol Utilities
     And the server should handle the cursor appropriately
     And may provide another nextCursor for further pages
 
+  @pagination @final-page
+  Scenario: Pagination final page without nextCursor
+    # Tests specification/2025-06-18/server/utilities/pagination.mdx:27-31 (nextCursor omission)
+    Given the server has no further results after the current page
+    When I request a paginated list operation
+    Then the response should include the current page of results
+    And the response should not include a nextCursor field
+
   @pagination @supported-operations
   Scenario: Operations supporting pagination
     # Tests specification/2025-06-18/server/utilities/pagination.mdx:72-80 (Supported operations)
