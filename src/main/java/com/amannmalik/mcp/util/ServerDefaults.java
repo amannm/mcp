@@ -22,14 +22,16 @@ public final class ServerDefaults {
 
     static {
         var ann = new Annotations(Set.of(Role.USER), 0.5, Instant.parse("2024-01-01T00:00:00Z"));
-        var r0 = new Resource("test://example", "example", null, null, "text/plain", 5L, ann, null);
-        var r1 = new Resource("test://sample", "sample", null, null, "text/plain", 6L, ann, null);
+        var r0 = new Resource("file:///sample/example.txt", "example", null, null, "text/plain", 5L, ann, null);
+        var r1 = new Resource("https://example.com/resource", "web", null, null, "text/plain", 6L, ann, null);
+        var r2 = new Resource("git://repo/file", "repo", null, null, "text/plain", 7L, ann, null);
         Map<String, ResourceBlock> content = Map.of(
                 r0.uri(), new ResourceBlock.Text(r0.uri(), "text/plain", "hello", null),
-                r1.uri(), new ResourceBlock.Text(r1.uri(), "text/plain", "sample", null)
+                r1.uri(), new ResourceBlock.Text(r1.uri(), "text/plain", "web", null),
+                r2.uri(), new ResourceBlock.Text(r2.uri(), "text/plain", "repo", null)
         );
-        var template = new ResourceTemplate("test://template", "example_template", null, null, "text/plain", null, null);
-        RESOURCES = new InMemoryResourceProvider(List.of(r0, r1), content, List.of(template));
+        var template = new ResourceTemplate("file:///sample/template", "example_template", null, null, "text/plain", null, null);
+        RESOURCES = new InMemoryResourceProvider(List.of(r0, r1, r2), content, List.of(template));
 
         var schema = Json.createObjectBuilder().add("type", "object").build();
         var outSchema = Json.createObjectBuilder()
