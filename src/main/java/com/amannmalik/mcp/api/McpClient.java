@@ -55,9 +55,7 @@ final class McpClient extends JsonRpcEndpoint implements AutoCloseable {
     private AutoCloseable rootsSubscription;
     private SamplingAccessPolicy samplingAccess;
     private Principal principal;
-    private Thread reader;
-    private ScheduledExecutorService pingExec;
-    private int pingFailures;
+    private ClientBackgroundTasks background;
     private Duration pingInterval;
     private Duration pingTimeout;
     private volatile boolean connected;
@@ -156,7 +154,8 @@ final class McpClient extends JsonRpcEndpoint implements AutoCloseable {
             handleUnauthorized(e);
             throw e;
         }
-        startBackgroundTasks();
+        background = new ClientBackgroundTasks(this, pingInterval, pingTimeout);
+        background.start();
         subscribeRootsIfNeeded();
         notifyInitialized();
     }
@@ -164,23 +163,15 @@ final class McpClient extends JsonRpcEndpoint implements AutoCloseable {
     public synchronized void disconnect() throws IOException {
         if (!connected) return;
         connected = false;
-        if (pingExec != null) {
-            pingExec.shutdownNow();
-            pingExec = null;
+        if (background != null) {
+            background.close();
+            background = null;
         }
         transport.close();
         resourceListeners.clear();
         if (rootsSubscription != null) {
             CloseUtil.closeQuietly(rootsSubscription);
             rootsSubscription = null;
-        }
-        if (reader != null) {
-            try {
-                reader.join(100);
-            } catch (InterruptedException ignore) {
-                Thread.currentThread().interrupt();
-            }
-            reader = null;
         }
     }
 
@@ -459,44 +450,6 @@ final class McpClient extends JsonRpcEndpoint implements AutoCloseable {
             });
         } catch (Exception e) {
             throw new IOException(e);
-        }
-    }
-
-    private void startBackgroundTasks() {
-        reader = new Thread(this::readLoop);
-        reader.setDaemon(true);
-        reader.start();
-        if (pingInterval.isPositive()) {
-            pingExec = Executors.newSingleThreadScheduledExecutor();
-            pingFailures = 0;
-            pingExec.scheduleAtFixedRate(() -> {
-                try {
-                    ping(pingTimeout);
-                    pingFailures = 0;
-                } catch (IOException | RuntimeException e) {
-                    pingFailures++;
-                    System.err.println("Ping failure: " + e.getMessage());
-                    if (pingFailures >= 3) {
-                        pingFailures = 0;
-                        try {
-                            disconnect();
-                        } catch (IOException ignore) {
-                        }
-                    }
-                }
-            }, pingInterval.toMillis(), pingInterval.toMillis(), TimeUnit.MILLISECONDS);
-        }
-    }
-
-    private void readLoop() {
-        while (connected) {
-            try {
-                var msg = CODEC.fromJson(transport.receive());
-                process(msg);
-            } catch (IOException e) {
-                pending.values().forEach(f -> f.completeExceptionally(e));
-                break;
-            }
         }
     }
 
