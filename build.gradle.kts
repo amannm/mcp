@@ -103,7 +103,9 @@ tasks.withType<Jar>().configureEach {
         configurations.runtimeClasspath.get()
             .filter { it.extension == "jar" }
             .map { zipTree(it) }
-    })
+    }) {
+        exclude("META-INF/*.SF", "META-INF/*.DSA", "META-INF/*.RSA")
+    }
 }
 
 tasks.jacocoTestReport {
