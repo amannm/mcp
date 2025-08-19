@@ -195,7 +195,14 @@ public final class McpServer extends JsonRpcEndpoint implements AutoCloseable {
                 StreamableHttpServerTransport ht = new StreamableHttpServerTransport(
                         config,
                         authManager);
-                if (config.verbose()) System.err.println("Listening on http://127.0.0.1:" + ht.port());
+                if (config.verbose()) {
+                    if (config.serverPort() > 0) {
+                        System.err.println("Listening on http://127.0.0.1:" + ht.port());
+                    }
+                    if (config.httpsPort() > 0) {
+                        System.err.println("Listening on https://127.0.0.1:" + ht.httpsPort());
+                    }
+                }
                 yield ht;
             }
             default -> throw new IllegalArgumentException("Unknown transport type: " + config.transportType());
