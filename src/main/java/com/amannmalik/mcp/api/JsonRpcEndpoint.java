@@ -1,9 +1,9 @@
-package com.amannmalik.mcp.jsonrpc;
+package com.amannmalik.mcp.api;
 
-import com.amannmalik.mcp.api.*;
 import com.amannmalik.mcp.codec.CancelledNotificationJsonCodec;
 import com.amannmalik.mcp.codec.JsonRpcMessageJsonCodec;
 import com.amannmalik.mcp.core.*;
+import com.amannmalik.mcp.jsonrpc.*;
 import jakarta.json.JsonObject;
 
 import java.io.IOException;
@@ -13,7 +13,7 @@ import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.*;
 
-public sealed class JsonRpcEndpoint implements AutoCloseable permits McpClient, McpServer {
+sealed class JsonRpcEndpoint implements AutoCloseable permits McpClient, McpServer {
     public static final JsonRpcMessageJsonCodec CODEC = new JsonRpcMessageJsonCodec();
     protected static final CancelledNotificationJsonCodec CANCEL_CODEC = new CancelledNotificationJsonCodec();
     public final Transport transport;

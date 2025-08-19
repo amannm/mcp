@@ -1,7 +1,7 @@
 package com.amannmalik.mcp.core;
 
 
-import com.amannmalik.mcp.jsonrpc.JsonRpcEndpoint;
+import com.amannmalik.mcp.api.JsonRpcEndpoint;
 
 import java.io.IOException;
 import java.time.Duration;
