@@ -3,7 +3,8 @@ package com.amannmalik.mcp.transport;
 import com.amannmalik.mcp.api.Protocol;
 import com.amannmalik.mcp.api.Transport;
 import com.amannmalik.mcp.util.*;
-import jakarta.json.*;
+import jakarta.json.Json;
+import jakarta.json.JsonObject;
 
 import javax.net.ssl.*;
 import java.io.*;
@@ -281,23 +282,23 @@ public final class StreamableHttpClientTransport implements Transport {
     private record PinnedTrustManager(X509TrustManager delegate, Set<String> pins) implements X509TrustManager {
 
         @Override
-            public void checkClientTrusted(X509Certificate[] chain, String authType) throws CertificateException {
-                delegate.checkClientTrusted(chain, authType);
-            }
-
-            @Override
-            public void checkServerTrusted(X509Certificate[] chain, String authType) throws CertificateException {
-                delegate.checkServerTrusted(chain, authType);
-                if (pins.isEmpty()) return;
-                var fp = Certificates.fingerprint(chain[0]);
-                if (!pins.contains(fp)) throw new CertificateException("Certificate pinning failure");
-            }
-
-            @Override
-            public X509Certificate[] getAcceptedIssuers() {
-                return delegate.getAcceptedIssuers();
-            }
+        public void checkClientTrusted(X509Certificate[] chain, String authType) throws CertificateException {
+            delegate.checkClientTrusted(chain, authType);
         }
+
+        @Override
+        public void checkServerTrusted(X509Certificate[] chain, String authType) throws CertificateException {
+            delegate.checkServerTrusted(chain, authType);
+            if (pins.isEmpty()) return;
+            var fp = Certificates.fingerprint(chain[0]);
+            if (!pins.contains(fp)) throw new CertificateException("Certificate pinning failure");
+        }
+
+        @Override
+        public X509Certificate[] getAcceptedIssuers() {
+            return delegate.getAcceptedIssuers();
+        }
+    }
 
     static class SseReader implements Runnable {
         private final InputStream input;

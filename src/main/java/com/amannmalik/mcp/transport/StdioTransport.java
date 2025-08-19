@@ -2,7 +2,8 @@ package com.amannmalik.mcp.transport;
 
 import com.amannmalik.mcp.api.McpHostConfiguration;
 import com.amannmalik.mcp.api.Transport;
-import jakarta.json.*;
+import jakarta.json.Json;
+import jakarta.json.JsonObject;
 
 import java.io.*;
 import java.nio.charset.StandardCharsets;

@@ -2,7 +2,6 @@ package com.amannmalik.mcp.transport;
 
 import com.amannmalik.mcp.codec.ResourceMetadataJsonCodec;
 import com.amannmalik.mcp.core.ResourceMetadata;
-import jakarta.json.JsonObject;
 import jakarta.servlet.http.*;
 
 import java.io.IOException;

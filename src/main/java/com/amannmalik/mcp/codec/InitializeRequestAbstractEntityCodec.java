@@ -5,7 +5,8 @@ import com.amannmalik.mcp.api.ClientInfo;
 import com.amannmalik.mcp.core.Capabilities;
 import com.amannmalik.mcp.core.ClientFeatures;
 import com.amannmalik.mcp.util.InitializeRequest;
-import jakarta.json.*;
+import jakarta.json.Json;
+import jakarta.json.JsonObject;
 
 import java.util.*;
 

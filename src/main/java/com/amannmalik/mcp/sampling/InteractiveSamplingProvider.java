@@ -1,13 +1,12 @@
 package com.amannmalik.mcp.sampling;
 
 import com.amannmalik.mcp.spi.*;
-import jakarta.json.*;
+import jakarta.json.Json;
 
 import java.io.*;
 import java.net.URI;
 import java.net.http.*;
 import java.time.Duration;
-import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.*;
 

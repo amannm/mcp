@@ -1,8 +1,8 @@
 package com.amannmalik.mcp.codec;
 
-import com.amannmalik.mcp.spi.Annotations;
 import com.amannmalik.mcp.spi.ResourceTemplate;
-import jakarta.json.*;
+import jakarta.json.Json;
+import jakarta.json.JsonObject;
 
 public final class ResourceTemplateAbstractEntityCodec extends AbstractEntityCodec<ResourceTemplate> {
     @Override

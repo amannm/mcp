@@ -2,7 +2,8 @@ package com.amannmalik.mcp.codec;
 
 import com.amannmalik.mcp.api.CancelledNotification;
 import com.amannmalik.mcp.api.RequestId;
-import jakarta.json.*;
+import jakarta.json.Json;
+import jakarta.json.JsonObject;
 
 public class CancelledNotificationJsonCodec implements JsonCodec<CancelledNotification> {
     @Override

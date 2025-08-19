@@ -4,7 +4,6 @@ import com.amannmalik.mcp.api.McpClient.McpClientListener;
 import com.amannmalik.mcp.codec.*;
 import com.amannmalik.mcp.elicitation.InteractiveElicitationProvider;
 import com.amannmalik.mcp.jsonrpc.JsonRpc;
-import com.amannmalik.mcp.jsonrpc.JsonRpcResponse;
 import com.amannmalik.mcp.roots.InMemoryRootsProvider;
 import com.amannmalik.mcp.sampling.InteractiveSamplingProvider;
 import com.amannmalik.mcp.security.*;

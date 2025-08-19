@@ -2,7 +2,8 @@ package com.amannmalik.mcp.codec;
 
 import com.amannmalik.mcp.spi.Tool;
 import com.amannmalik.mcp.spi.ToolAnnotations;
-import jakarta.json.*;
+import jakarta.json.Json;
+import jakarta.json.JsonObject;
 
 import java.util.Set;
 

@@ -1,7 +1,8 @@
 package com.amannmalik.mcp.codec;
 
 import com.amannmalik.mcp.spi.Ref;
-import jakarta.json.*;
+import jakarta.json.Json;
+import jakarta.json.JsonObject;
 
 public class RefJsonCodec implements JsonCodec<Ref> {
     @Override

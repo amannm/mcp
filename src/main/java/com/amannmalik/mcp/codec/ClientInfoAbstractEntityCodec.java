@@ -1,7 +1,8 @@
 package com.amannmalik.mcp.codec;
 
 import com.amannmalik.mcp.api.ClientInfo;
-import jakarta.json.*;
+import jakarta.json.Json;
+import jakarta.json.JsonObject;
 
 public final class ClientInfoAbstractEntityCodec extends AbstractEntityCodec<ClientInfo> {
     @Override

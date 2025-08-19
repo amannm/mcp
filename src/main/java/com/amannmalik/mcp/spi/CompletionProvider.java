@@ -3,7 +3,6 @@ package com.amannmalik.mcp.spi;
 import com.amannmalik.mcp.codec.ArgumentJsonCodec;
 import com.amannmalik.mcp.codec.ContextJsonCodec;
 import jakarta.json.Json;
-import jakarta.json.JsonObject;
 
 /// - [Completion](specification/2025-06-18/server/utilities/completion.mdx)
 public non-sealed interface CompletionProvider extends ExecutingProvider<Ref, CompleteResult> {

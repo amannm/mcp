@@ -2,7 +2,8 @@ package com.amannmalik.mcp.codec;
 
 import com.amannmalik.mcp.spi.Cursor;
 import com.amannmalik.mcp.spi.Pagination;
-import jakarta.json.*;
+import jakarta.json.JsonObject;
+import jakarta.json.JsonValue;
 
 import java.util.*;
 import java.util.function.BiFunction;

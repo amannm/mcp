@@ -2,7 +2,6 @@ package com.amannmalik.mcp.core;
 
 import java.io.IOException;
 import java.util.Optional;
-import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public final class UnauthorizedException extends IOException {

@@ -1,7 +1,8 @@
 package com.amannmalik.mcp.codec;
 
 import com.amannmalik.mcp.spi.PromptArgument;
-import jakarta.json.*;
+import jakarta.json.Json;
+import jakarta.json.JsonObject;
 
 import java.util.Set;
 

@@ -7,7 +7,8 @@ import com.amannmalik.mcp.resources.ResourceListChangedNotification;
 import com.amannmalik.mcp.spi.*;
 import com.amannmalik.mcp.transport.StdioTransport;
 import com.amannmalik.mcp.util.*;
-import jakarta.json.*;
+import jakarta.json.Json;
+import jakarta.json.JsonObject;
 
 import java.io.IOException;
 import java.io.InputStream;
