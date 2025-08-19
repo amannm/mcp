@@ -1,5 +1,7 @@
-package com.amannmalik.mcp.api;
+package com.amannmalik.mcp.core;
 
+
+import com.amannmalik.mcp.jsonrpc.JsonRpcEndpoint;
 
 import java.io.IOException;
 import java.time.Duration;
@@ -14,13 +16,13 @@ final class ClientBackgroundTasks implements AutoCloseable {
     private ScheduledExecutorService pinger;
     private int failures;
 
-    ClientBackgroundTasks(McpClient client, Duration interval, Duration timeout) {
+    public ClientBackgroundTasks(McpClient client, Duration interval, Duration timeout) {
         this.client = client;
         this.interval = interval;
         this.timeout = timeout;
     }
 
-    void start() {
+    public void start() {
         reader = new Thread(this::readLoop);
         reader.setDaemon(true);
         reader.start();

@@ -1,10 +1,9 @@
-package com.amannmalik.mcp.api;
+package com.amannmalik.mcp.jsonrpc;
 
+import com.amannmalik.mcp.api.*;
 import com.amannmalik.mcp.codec.CancelledNotificationJsonCodec;
 import com.amannmalik.mcp.codec.JsonRpcMessageJsonCodec;
-import com.amannmalik.mcp.core.DuplicateRequestException;
-import com.amannmalik.mcp.core.ProgressManager;
-import com.amannmalik.mcp.jsonrpc.*;
+import com.amannmalik.mcp.core.*;
 import jakarta.json.JsonObject;
 
 import java.io.IOException;
@@ -14,12 +13,12 @@ import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.*;
 
-sealed class JsonRpcEndpoint implements AutoCloseable permits McpClient, McpServer {
-    protected static final JsonRpcMessageJsonCodec CODEC = new JsonRpcMessageJsonCodec();
+public sealed class JsonRpcEndpoint implements AutoCloseable permits McpClient, McpServer {
+    public static final JsonRpcMessageJsonCodec CODEC = new JsonRpcMessageJsonCodec();
     protected static final CancelledNotificationJsonCodec CANCEL_CODEC = new CancelledNotificationJsonCodec();
-    protected final Transport transport;
+    public final Transport transport;
     protected final ProgressManager progress;
-    protected final Map<RequestId, CompletableFuture<JsonRpcMessage>> pending = new ConcurrentHashMap<>();
+    public final Map<RequestId, CompletableFuture<JsonRpcMessage>> pending = new ConcurrentHashMap<>();
     private final Map<RequestMethod, Function<JsonRpcRequest, JsonRpcMessage>> requests = new EnumMap<>(RequestMethod.class);
     private final Map<NotificationMethod, Consumer<JsonRpcNotification>> notifications = new EnumMap<>(NotificationMethod.class);
     private final AtomicLong counter;
@@ -110,7 +109,7 @@ sealed class JsonRpcEndpoint implements AutoCloseable permits McpClient, McpServ
         transport.send(CODEC.toJson(msg));
     }
 
-    protected final void process(JsonRpcMessage msg) throws IOException {
+    public final void process(JsonRpcMessage msg) throws IOException {
         switch (msg) {
             case JsonRpcRequest req -> handleRequest(req, true)
                     .ifPresent(r -> {

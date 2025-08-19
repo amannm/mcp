@@ -1,7 +1,7 @@
-package com.amannmalik.mcp.api;
+package com.amannmalik.mcp.core;
 
+import com.amannmalik.mcp.api.*;
 import com.amannmalik.mcp.codec.*;
-import com.amannmalik.mcp.core.*;
 import com.amannmalik.mcp.jsonrpc.*;
 import com.amannmalik.mcp.resources.ResourceListChangedNotification;
 import com.amannmalik.mcp.spi.*;
@@ -25,7 +25,7 @@ import java.util.stream.Collectors;
 /// - [Client Features](specification/2025-06-18/client/index.mdx)
 /// - [Sampling](specification/2025-06-18/client/sampling.mdx)
 /// - [Elicitation](specification/2025-06-18/client/elicitation.mdx)
-final class McpClient extends JsonRpcEndpoint implements AutoCloseable {
+public final class McpClient extends JsonRpcEndpoint implements AutoCloseable {
     private static final JsonCodec<ResourceUpdatedNotification> RESOURCE_UPDATED_NOTIFICATION_JSON_CODEC = new ResourceUpdatedNotificationAbstractEntityCodec();
     private static final JsonCodec<ResourceListChangedNotification> RESOURCE_LIST_CHANGED_NOTIFICATION_JSON_CODEC = new ResourceListChangedNotificationJsonCodec();
     private static final JsonCodec<ToolListChangedNotification> TOOL_LIST_CHANGED_NOTIFICATION_JSON_CODEC = new ToolListChangedNotificationJsonCodec();
@@ -67,7 +67,7 @@ final class McpClient extends JsonRpcEndpoint implements AutoCloseable {
     private ServerInfo serverInfo;
     private volatile ResourceMetadata resourceMetadata;
 
-    McpClient(McpClientConfiguration config,
+    public McpClient(McpClientConfiguration config,
               boolean globalVerbose,
               SamplingProvider sampling,
               RootsProvider roots,
@@ -112,7 +112,9 @@ final class McpClient extends JsonRpcEndpoint implements AutoCloseable {
         registerNotification(NotificationMethod.RESOURCES_LIST_CHANGED, this::handleResourcesListChanged);
         registerNotification(NotificationMethod.RESOURCES_UPDATED, this::handleResourceUpdated);
         registerNotification(NotificationMethod.TOOLS_LIST_CHANGED, this::handleToolsListChanged);
-        registerNotification(NotificationMethod.PROMPTS_LIST_CHANGED, n -> listener.onPromptsListChanged());
+        if (listener != null) {
+            registerNotification(NotificationMethod.PROMPTS_LIST_CHANGED, n -> listener.onPromptsListChanged());
+        }
     }
 
     private static Transport createTransport(McpClientConfiguration config,
@@ -471,7 +473,7 @@ final class McpClient extends JsonRpcEndpoint implements AutoCloseable {
     private JsonRpcMessage handlePing(JsonRpcRequest req) {
         final var params = req.params();
         if (params != null) {
-            if (params.isEmpty() || params.size() != 1 || !params.containsKey("_meta")) {
+            if (params.size() != 1 || !params.containsKey("_meta")) {
                 return JsonRpcError.of(req.id(), JsonRpcErrorCode.INVALID_PARAMS, "Invalid params");
             }
             try {
