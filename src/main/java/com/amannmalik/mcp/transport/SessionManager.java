@@ -45,23 +45,23 @@ final class SessionManager {
         if (principal == null) throw new IllegalArgumentException("principal required");
         var state = current.get();
         var last = lastSessionId.get();
-        var header = req.getHeader(TransportHeaders.SESSION_ID);
-        if (header == null) {
-            var cookies = req.getCookies();
-            if (cookies != null) {
-                for (var c : cookies) {
-                    if (TransportHeaders.SESSION_ID.equals(c.getName())) {
-                        header = c.getValue();
-                        break;
-                    }
-                }
-            }
-        }
+        var sessionId = sessionId(req);
         var version = req.getHeader(TransportHeaders.PROTOCOL_VERSION);
-        if (!sanitizeHeaders(header, version, resp)) {
+        if (!sanitizeHeaders(sessionId, version, resp)) {
             return false;
         }
-        return checkSession(req, resp, principal, initializing, state, last, header, version);
+        return checkSession(req, resp, principal, initializing, state, last, sessionId, version);
+    }
+
+    private String sessionId(HttpServletRequest req) {
+        var header = req.getHeader(TransportHeaders.SESSION_ID);
+        if (header != null) return header;
+        var cookies = req.getCookies();
+        if (cookies == null) return null;
+        for (var c : cookies) {
+            if (TransportHeaders.SESSION_ID.equals(c.getName())) return c.getValue();
+        }
+        return null;
     }
 
     private boolean sanitizeHeaders(String sessionHeader,
