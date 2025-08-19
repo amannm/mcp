@@ -2,6 +2,7 @@ package com.amannmalik.mcp.cli;
 
 import com.amannmalik.mcp.api.McpServer;
 import com.amannmalik.mcp.api.McpServerConfiguration;
+import com.amannmalik.mcp.api.TlsConfiguration;
 import com.amannmalik.mcp.util.ServerDefaults;
 import picocli.CommandLine;
 import picocli.CommandLine.Model.CommandSpec;
@@ -169,7 +170,8 @@ public final class ServerCommand {
             var config = stdio
                     ? base.withTransport("stdio", base.serverPort(), base.allowedOrigins(), null, null, List.of(), true, verbose)
                     : base.withTransport("http", httpPort, base.allowedOrigins(), expectedAudience, resourceMetadataUrl, authServers, testMode, verbose);
-            config = config.withTls(httpsPort, keystorePath, keystorePassword, keystoreType, truststorePath, truststorePassword, truststoreType, tlsProtocols, cipherSuites, requireClientAuth);
+            var tlsConfig = new TlsConfiguration(keystorePath, keystorePassword, keystoreType, truststorePath, truststorePassword, truststoreType, tlsProtocols, cipherSuites);
+            config = config.withTls(httpsPort, tlsConfig, requireClientAuth);
             Path instructionsFile = parseResult.matchedOptionValue("--instructions", null);
             var instructions = instructionsFile == null ? null : Files.readString(instructionsFile);
             try (var server = new McpServer(config, ServerDefaults.resources(),

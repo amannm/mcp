@@ -6,7 +6,6 @@ import com.amannmalik.mcp.spi.ToolAccessPolicy;
 import java.time.Duration;
 import java.util.List;
 import java.util.Set;
-import java.util.regex.Pattern;
 
 public record McpServerConfiguration(
         String version,
@@ -46,14 +45,7 @@ public record McpServerConfiguration(
         boolean insecure,
         boolean verbose,
         int httpsPort,
-        String keystorePath,
-        String keystorePassword,
-        String keystoreType,
-        String truststorePath,
-        String truststorePassword,
-        String truststoreType,
-        List<String> tlsProtocols,
-        List<String> cipherSuites,
+        TlsConfiguration tlsConfiguration,
         boolean requireClientAuth,
         HttpsMode httpsMode,
         String bindAddress,
@@ -73,16 +65,11 @@ public record McpServerConfiguration(
         boolean servletEnableAsyncProcessing
 ) {
 
-    private static final Set<String> ALLOWED_PROTOCOLS = Set.of("TLSv1.2", "TLSv1.3");
-    private static final Pattern WEAK_CIPHERS = Pattern.compile(
-            ".*_(NULL|RC4|DES|3DES|MD5|CBC|EXPORT|anon)_.*", Pattern.CASE_INSENSITIVE);
 
     public McpServerConfiguration {
         supportedVersions = List.copyOf(supportedVersions);
         allowedOrigins = List.copyOf(allowedOrigins);
         authServers = List.copyOf(authServers);
-        tlsProtocols = List.copyOf(tlsProtocols);
-        cipherSuites = List.copyOf(cipherSuites);
         servletPaths = Set.copyOf(servletPaths);
         servletAcceptedContentTypes = List.copyOf(servletAcceptedContentTypes);
         servletProducedContentTypes = List.copyOf(servletProducedContentTypes);
@@ -102,15 +89,12 @@ public record McpServerConfiguration(
             throw new IllegalArgumentException("Invalid port number");
         if (httpsPort < 0 || httpsPort > 65_535)
             throw new IllegalArgumentException("Invalid HTTPS port number");
-        if (tlsProtocols.isEmpty() ||
-                tlsProtocols.stream().anyMatch(p -> p.isBlank() || !ALLOWED_PROTOCOLS.contains(p)))
-            throw new IllegalArgumentException("Invalid TLS protocols");
-        if (cipherSuites.isEmpty() || cipherSuites.stream().anyMatch(s -> s.isBlank() || !isStrongCipher(s)))
-            throw new IllegalArgumentException("Invalid cipher suites");
+        if (tlsConfiguration == null)
+            throw new IllegalArgumentException("TLS configuration required");
         if (httpsPort > 0) {
-            if (keystorePath.isBlank() || keystorePassword.isBlank() || keystoreType.isBlank())
+            if (!tlsConfiguration.hasKeystore())
                 throw new IllegalArgumentException("Keystore configuration required");
-            if (requireClientAuth && (truststorePath.isBlank() || truststorePassword.isBlank() || truststoreType.isBlank()))
+            if (requireClientAuth && !tlsConfiguration.hasTruststore())
                 throw new IllegalArgumentException("Truststore configuration required");
             if (resourceMetadataUrl != null && !resourceMetadataUrl.isBlank() && resourceMetadataUrl.startsWith("http://"))
                 throw new IllegalArgumentException("HTTPS required for resource metadata URL");
@@ -135,10 +119,6 @@ public record McpServerConfiguration(
             throw new IllegalArgumentException("HTTP response queue capacity must be positive");
     }
 
-    private static boolean isStrongCipher(String suite) {
-        if (WEAK_CIPHERS.matcher(suite).matches()) return false;
-        return suite.contains("TLS_AES") || suite.contains("_ECDHE_") || suite.contains("_DHE_");
-    }
 
     public static McpServerConfiguration defaultConfiguration() {
         return new McpServerConfiguration(
@@ -179,18 +159,19 @@ public record McpServerConfiguration(
                 false,
                 false,
                 3443,
-                "server.p12",
-                "changeit",
-                "PKCS12",
-                "",
-                "",
-                "PKCS12",
-                List.of("TLSv1.3", "TLSv1.2"),
-                List.of(
-                        "TLS_AES_128_GCM_SHA256",
-                        "TLS_AES_256_GCM_SHA384",
-                        "TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256",
-                        "TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384"),
+                new TlsConfiguration(
+                        "server.p12",
+                        "changeit",
+                        "PKCS12",
+                        "",
+                        "",
+                        "PKCS12",
+                        List.of("TLSv1.3", "TLSv1.2"),
+                        List.of(
+                                "TLS_AES_128_GCM_SHA256",
+                                "TLS_AES_256_GCM_SHA384",
+                                "TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256",
+                                "TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384")),
                 false,
                 HttpsMode.REDIRECT,
                 "127.0.0.1",
@@ -257,14 +238,7 @@ public record McpServerConfiguration(
                 insecure,
                 verbose,
                 httpsPort,
-                keystorePath,
-                keystorePassword,
-                keystoreType,
-                truststorePath,
-                truststorePassword,
-                truststoreType,
-                tlsProtocols,
-                cipherSuites,
+                tlsConfiguration,
                 requireClientAuth,
                 httpsMode,
                 bindAddress,
@@ -286,14 +260,7 @@ public record McpServerConfiguration(
     }
 
     public McpServerConfiguration withTls(int httpsPort,
-                                          String keystorePath,
-                                          String keystorePassword,
-                                          String keystoreType,
-                                          String truststorePath,
-                                          String truststorePassword,
-                                          String truststoreType,
-                                          List<String> tlsProtocols,
-                                          List<String> cipherSuites,
+                                          TlsConfiguration tlsConfiguration,
                                           boolean requireClientAuth) {
         return new McpServerConfiguration(
                 version,
@@ -333,14 +300,7 @@ public record McpServerConfiguration(
                 insecure,
                 verbose,
                 httpsPort,
-                keystorePath,
-                keystorePassword,
-                keystoreType,
-                truststorePath,
-                truststorePassword,
-                truststoreType,
-                tlsProtocols,
-                cipherSuites,
+                tlsConfiguration,
                 requireClientAuth,
                 httpsMode,
                 bindAddress,
@@ -359,5 +319,37 @@ public record McpServerConfiguration(
                 servletProducedContentTypes,
                 servletEnableAsyncProcessing
         );
+    }
+
+    public String keystorePath() {
+        return tlsConfiguration.keystorePath();
+    }
+
+    public String keystorePassword() {
+        return tlsConfiguration.keystorePassword();
+    }
+
+    public String keystoreType() {
+        return tlsConfiguration.keystoreType();
+    }
+
+    public String truststorePath() {
+        return tlsConfiguration.truststorePath();
+    }
+
+    public String truststorePassword() {
+        return tlsConfiguration.truststorePassword();
+    }
+
+    public String truststoreType() {
+        return tlsConfiguration.truststoreType();
+    }
+
+    public List<String> tlsProtocols() {
+        return tlsConfiguration.tlsProtocols();
+    }
+
+    public List<String> cipherSuites() {
+        return tlsConfiguration.cipherSuites();
     }
 }

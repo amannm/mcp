@@ -2,6 +2,7 @@ package com.amannmalik.mcp.test;
 
 import com.amannmalik.mcp.api.*;
 import com.amannmalik.mcp.api.McpClientConfiguration;
+import com.amannmalik.mcp.api.TlsConfiguration;
 import io.cucumber.datatable.DataTable;
 import io.cucumber.java.After;
 import io.cucumber.java.en.*;
@@ -70,6 +71,10 @@ public final class ClientFeaturesSteps {
         var java = System.getProperty("java.home") + "/bin/java";
         var jar = Path.of("build", "libs", "mcp-0.1.0.jar").toString();
         var cmd = java + " -jar " + jar + " server --stdio --test-mode";
+        var tlsConfig = new TlsConfiguration(
+                "", "", "PKCS12", "", "", "PKCS12",
+                List.of("TLSv1.3", "TLSv1.2"), List.of("TLS_AES_128_GCM_SHA256", "TLS_AES_256_GCM_SHA384")
+        );
         var clientConfig = new McpClientConfiguration(
                 base.clientId(), base.serverName(), base.serverDisplayName(), base.serverVersion(),
                 base.principal(), base.clientCapabilities(), cmd, base.defaultReceiveTimeout(),
@@ -77,8 +82,7 @@ public final class ClientFeaturesSteps {
                 base.sessionIdByteLength(), base.initializeRequestTimeout(), base.strictVersionValidation(),
                 base.pingTimeout(), base.pingInterval(), base.progressPerSecond(), base.rateLimiterWindow(),
                 base.verbose(), base.interactiveSampling(), base.rootDirectories(), base.samplingAccessPolicy(),
-                "", "", "PKCS12", "", "", "PKCS12", CertificateValidationMode.STRICT,
-                List.of("TLSv1.3", "TLSv1.2"), List.of("TLS_AES_128_GCM_SHA256", "TLS_AES_256_GCM_SHA384"), List.of(), true
+                tlsConfig, CertificateValidationMode.STRICT, List.of(), true
         );
         var hostConfig = new McpHostConfiguration(
                 "2025-06-18",

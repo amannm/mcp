@@ -2,6 +2,7 @@ package com.amannmalik.mcp.test;
 
 import com.amannmalik.mcp.api.*;
 import com.amannmalik.mcp.api.McpClientConfiguration;
+import com.amannmalik.mcp.api.TlsConfiguration;
 import com.amannmalik.mcp.spi.Cursor;
 import io.cucumber.datatable.DataTable;
 import io.cucumber.java.en.*;
@@ -132,6 +133,10 @@ public final class ProtocolLifecycleSteps {
     }
 
     private McpClientConfiguration configureWithCommand(McpClientConfiguration base, String commandSpec) {
+        var tlsConfig = new TlsConfiguration(
+                "", "", "PKCS12", "", "", "PKCS12",
+                List.of("TLSv1.3", "TLSv1.2"), List.of("TLS_AES_128_GCM_SHA256", "TLS_AES_256_GCM_SHA384")
+        );
         return new McpClientConfiguration(
                 base.clientId(), base.serverName(), base.serverDisplayName(), base.serverVersion(),
                 base.principal(), base.clientCapabilities(), commandSpec, base.defaultReceiveTimeout(),
@@ -139,12 +144,15 @@ public final class ProtocolLifecycleSteps {
                 base.sessionIdByteLength(), base.initializeRequestTimeout(), base.strictVersionValidation(),
                 base.pingTimeout(), base.pingInterval(), base.progressPerSecond(), base.rateLimiterWindow(),
                 base.verbose(), base.interactiveSampling(), base.rootDirectories(), base.samplingAccessPolicy(),
-                "", "", "PKCS12", "", "", "PKCS12", CertificateValidationMode.STRICT,
-                List.of("TLSv1.3", "TLSv1.2"), List.of("TLS_AES_128_GCM_SHA256", "TLS_AES_256_GCM_SHA384"), List.of(), true
+                tlsConfig, CertificateValidationMode.STRICT, List.of(), true
         );
     }
 
     private McpClientConfiguration configureWithCapabilities(McpClientConfiguration base, Set<ClientCapability> capabilities) {
+        var tlsConfig = new TlsConfiguration(
+                "", "", "PKCS12", "", "", "PKCS12",
+                List.of("TLSv1.3", "TLSv1.2"), List.of("TLS_AES_128_GCM_SHA256", "TLS_AES_256_GCM_SHA384")
+        );
         return new McpClientConfiguration(
                 base.clientId(), base.serverName(), base.serverDisplayName(), base.serverVersion(),
                 base.principal(), capabilities, base.commandSpec(), base.defaultReceiveTimeout(),
@@ -152,8 +160,7 @@ public final class ProtocolLifecycleSteps {
                 base.sessionIdByteLength(), base.initializeRequestTimeout(), base.strictVersionValidation(),
                 base.pingTimeout(), base.pingInterval(), base.progressPerSecond(), base.rateLimiterWindow(),
                 base.verbose(), base.interactiveSampling(), base.rootDirectories(), base.samplingAccessPolicy(),
-                "", "", "PKCS12", "", "", "PKCS12", CertificateValidationMode.STRICT,
-                List.of("TLSv1.3", "TLSv1.2"), List.of("TLS_AES_128_GCM_SHA256", "TLS_AES_256_GCM_SHA384"), List.of(), true
+                tlsConfig, CertificateValidationMode.STRICT, List.of(), true
         );
     }
 

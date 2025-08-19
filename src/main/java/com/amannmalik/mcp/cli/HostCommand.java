@@ -196,6 +196,16 @@ public final class HostCommand {
                         .collect(Collectors.toCollection(() -> EnumSet.noneOf(ClientCapability.class)));
             }
 
+            var tlsConfig = new TlsConfiguration(
+                    tls.keystorePath(),
+                    tls.keystorePassword(),
+                    tls.keystoreType(),
+                    tls.truststorePath(),
+                    tls.truststorePassword(),
+                    tls.truststoreType(),
+                    tls.protocols(),
+                    tls.cipherSuites()
+            );
             var config = new McpClientConfiguration(
                     clientId,
                     clientId,
@@ -219,15 +229,8 @@ public final class HostCommand {
                     false,
                     List.of(System.getProperty("user.dir")),
                     SamplingAccessPolicy.PERMISSIVE,
-                    tls.truststorePath(),
-                    tls.truststorePassword(),
-                    tls.truststoreType(),
-                    tls.keystorePath(),
-                    tls.keystorePassword(),
-                    tls.keystoreType(),
+                    tlsConfig,
                     tls.validationMode(),
-                    tls.protocols(),
-                    tls.cipherSuites(),
                     tls.pins(),
                     tls.verifyHostname()
             );

@@ -32,15 +32,8 @@ public record McpClientConfiguration(
         boolean interactiveSampling,
         List<String> rootDirectories,
         SamplingAccessPolicy samplingAccessPolicy,
-        String truststorePath,
-        String truststorePassword,
-        String truststoreType,
-        String keystorePath,
-        String keystorePassword,
-        String keystoreType,
+        TlsConfiguration tlsConfiguration,
         CertificateValidationMode certificateValidationMode,
-        List<String> tlsProtocols,
-        List<String> cipherSuites,
         List<String> certificatePins,
         boolean verifyHostname
 ) {
@@ -74,20 +67,12 @@ public record McpClientConfiguration(
         rootDirectories = List.copyOf(rootDirectories);
         if (samplingAccessPolicy == null)
             throw new IllegalArgumentException("Sampling access policy is required");
-        if (truststorePath == null || truststorePassword == null || truststoreType == null)
-            throw new IllegalArgumentException("truststore configuration required");
-        if (keystorePath == null || keystorePassword == null || keystoreType == null)
-            throw new IllegalArgumentException("keystore configuration required");
+        if (tlsConfiguration == null)
+            throw new IllegalArgumentException("TLS configuration required");
         if (certificateValidationMode == null)
             throw new IllegalArgumentException("certificate validation mode required");
-        if (tlsProtocols == null || tlsProtocols.isEmpty() || tlsProtocols.stream().anyMatch(String::isBlank))
-            throw new IllegalArgumentException("tls protocols required");
-        if (cipherSuites == null || cipherSuites.isEmpty() || cipherSuites.stream().anyMatch(String::isBlank))
-            throw new IllegalArgumentException("cipher suites required");
         if (certificatePins == null)
             throw new IllegalArgumentException("certificate pins required");
-        tlsProtocols = List.copyOf(tlsProtocols);
-        cipherSuites = List.copyOf(cipherSuites);
         certificatePins = List.copyOf(certificatePins);
     }
 
@@ -115,18 +100,51 @@ public record McpClientConfiguration(
                 false,
                 List.of(),
                 SamplingAccessPolicy.PERMISSIVE,
-                "",
-                "",
-                "PKCS12",
-                "",
-                "",
-                "PKCS12",
+                new TlsConfiguration(
+                        "",
+                        "",
+                        "PKCS12",
+                        "",
+                        "",
+                        "PKCS12",
+                        List.of("TLSv1.3", "TLSv1.2"),
+                        List.of("TLS_AES_128_GCM_SHA256", "TLS_AES_256_GCM_SHA384")),
                 CertificateValidationMode.STRICT,
-                List.of("TLSv1.3", "TLSv1.2"),
-                List.of("TLS_AES_128_GCM_SHA256", "TLS_AES_256_GCM_SHA384"),
                 List.of(),
                 true
         );
+    }
+
+    public String truststorePath() {
+        return tlsConfiguration.truststorePath();
+    }
+
+    public String truststorePassword() {
+        return tlsConfiguration.truststorePassword();
+    }
+
+    public String truststoreType() {
+        return tlsConfiguration.truststoreType();
+    }
+
+    public String keystorePath() {
+        return tlsConfiguration.keystorePath();
+    }
+
+    public String keystorePassword() {
+        return tlsConfiguration.keystorePassword();
+    }
+
+    public String keystoreType() {
+        return tlsConfiguration.keystoreType();
+    }
+
+    public List<String> tlsProtocols() {
+        return tlsConfiguration.tlsProtocols();
+    }
+
+    public List<String> cipherSuites() {
+        return tlsConfiguration.cipherSuites();
     }
 }
 
