@@ -52,6 +52,7 @@ final class McpClient extends JsonRpcEndpoint implements AutoCloseable {
     private final McpClientListener listener;
     private final Map<String, Consumer<ResourceUpdate>> resourceListeners = new ConcurrentHashMap<>();
     private final Duration initializationTimeout;
+    private final Duration requestTimeout;
     private AutoCloseable rootsSubscription;
     private SamplingAccessPolicy samplingAccess;
     private Principal principal;
@@ -98,6 +99,7 @@ final class McpClient extends JsonRpcEndpoint implements AutoCloseable {
         this.pingInterval = config.pingInterval();
         this.pingTimeout = config.pingTimeout();
         this.initializationTimeout = config.initializeRequestTimeout();
+        this.requestTimeout = config.defaultReceiveTimeout();
 
         registerRequest(RequestMethod.SAMPLING_CREATE_MESSAGE, this::handleCreateMessage);
         registerRequest(RequestMethod.ROOTS_LIST, this::handleListRoots);
@@ -215,7 +217,7 @@ final class McpClient extends JsonRpcEndpoint implements AutoCloseable {
     public void setLogLevel(LoggingLevel level) throws IOException {
         if (level == null) throw new IllegalArgumentException("level required");
         JsonRpc.expectResponse(request(RequestMethod.LOGGING_SET_LEVEL,
-                SET_LEVEL_REQUEST_JSON_CODEC.toJson(new SetLevelRequest(level, null)), Duration.ZERO));
+                SET_LEVEL_REQUEST_JSON_CODEC.toJson(new SetLevelRequest(level, null)), requestTimeout));
     }
 
     public JsonRpcMessage request(RequestMethod method, JsonObject params, Duration timeoutMillis) throws IOException {
@@ -331,7 +333,7 @@ final class McpClient extends JsonRpcEndpoint implements AutoCloseable {
             Function<JsonObject, T> resultParser) throws IOException {
         var token = cursor instanceof Cursor.Token(var value) ? value : null;
         var params = requestJson.apply(token);
-        var resp = JsonRpc.expectResponse(request(method, params, Duration.ZERO));
+        var resp = JsonRpc.expectResponse(request(method, params, requestTimeout));
         return resultParser.apply(resp.result());
     }
 
@@ -344,7 +346,7 @@ final class McpClient extends JsonRpcEndpoint implements AutoCloseable {
         }
         JsonRpc.expectResponse(request(
                 RequestMethod.RESOURCES_SUBSCRIBE,
-                SUBSCRIBE_REQUEST_JSON_CODEC.toJson(new SubscribeRequest(uri, null)), Duration.ZERO
+                SUBSCRIBE_REQUEST_JSON_CODEC.toJson(new SubscribeRequest(uri, null)), requestTimeout
         ));
         resourceListeners.put(uri, listener);
         return () -> {
@@ -352,7 +354,7 @@ final class McpClient extends JsonRpcEndpoint implements AutoCloseable {
             try {
                 request(
                         RequestMethod.RESOURCES_UNSUBSCRIBE,
-                        UNSUBSCRIBE_REQUEST_JSON_CODEC.toJson(new UnsubscribeRequest(uri, null)), Duration.ZERO
+                        UNSUBSCRIBE_REQUEST_JSON_CODEC.toJson(new UnsubscribeRequest(uri, null)), requestTimeout
                 );
             } catch (IOException ignore) {
             }
