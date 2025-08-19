@@ -2,7 +2,6 @@ package com.amannmalik.mcp.test;
 
 import com.amannmalik.mcp.api.*;
 import com.amannmalik.mcp.spi.Cursor;
-import java.util.regex.Pattern;
 import io.cucumber.datatable.DataTable;
 import io.cucumber.java.After;
 import io.cucumber.java.en.*;
@@ -14,14 +13,13 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.time.Duration;
 import java.util.*;
+import java.util.regex.Pattern;
 
 public final class UtilitiesSteps {
     private final Map<String, String> requestStates = new HashMap<>();
     private final List<Map<String, String>> cancellationChecks = new ArrayList<>();
     private final List<Map<String, String>> bidirectionalPings = new ArrayList<>();
     private final Map<String, List<Double>> progressNotifications = new HashMap<>();
-    private int invalidProgressNotifications;
-    private int totalProgressNotifications;
     private final List<Map<String, String>> progressScenarios = new ArrayList<>();
     private final List<Map<String, String>> progressTokenTypeScenarios = new ArrayList<>();
     private final Map<String, String> activeProgressTokens = new HashMap<>();
@@ -31,6 +29,8 @@ public final class UtilitiesSteps {
     private final List<Map<String, String>> lifecycleOperations = new ArrayList<>();
     private final List<Map<String, String>> utilityErrors = new ArrayList<>();
     private final List<String> invalidCancellationTypes = new ArrayList<>();
+    private int invalidProgressNotifications;
+    private int totalProgressNotifications;
     private McpHost activeConnection;
     private String clientId;
     private Map<String, String> lastCancellation;
@@ -380,7 +380,7 @@ public final class UtilitiesSteps {
                     base.pingTimeout(), Duration.ofMillis(interval), base.progressPerSecond(), base.rateLimiterWindow(),
                     base.verbose(), base.interactiveSampling(), base.rootDirectories(), base.samplingAccessPolicy(),
                     "", "", "PKCS12", "", "", "PKCS12", CertificateValidationMode.STRICT,
-                List.of("TLSv1.3", "TLSv1.2"), List.of("TLS_AES_128_GCM_SHA256", "TLS_AES_256_GCM_SHA384"), List.of(), true
+                    List.of("TLSv1.3", "TLSv1.2"), List.of("TLS_AES_128_GCM_SHA256", "TLS_AES_256_GCM_SHA384"), List.of(), true
             );
             pingConfigurationFailed = false;
         } catch (IllegalArgumentException ex) {
@@ -1041,7 +1041,7 @@ public final class UtilitiesSteps {
             JsonObjectBuilder b = Json.createObjectBuilder();
             switch (type) {
                 case "expired_cursor" -> b.add("cursor", "expired");
-                case "malformed_cursor" -> b.add("cursor", "%%%" );
+                case "malformed_cursor" -> b.add("cursor", "%%%");
                 case "unknown_cursor" -> b.add("cursor", Cursor.fromIndex(999).value());
                 case "non_string_cursor" -> b.add("cursor", 123);
                 default -> throw new IllegalArgumentException("unknown cursor type: " + type);

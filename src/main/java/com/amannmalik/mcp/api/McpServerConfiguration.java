@@ -286,15 +286,15 @@ public record McpServerConfiguration(
     }
 
     public McpServerConfiguration withTls(int httpsPort,
-                                         String keystorePath,
-                                         String keystorePassword,
-                                         String keystoreType,
-                                         String truststorePath,
-                                         String truststorePassword,
-                                         String truststoreType,
-                                         List<String> tlsProtocols,
-                                         List<String> cipherSuites,
-                                         boolean requireClientAuth) {
+                                          String keystorePath,
+                                          String keystorePassword,
+                                          String keystoreType,
+                                          String truststorePath,
+                                          String truststorePassword,
+                                          String truststoreType,
+                                          List<String> tlsProtocols,
+                                          List<String> cipherSuites,
+                                          boolean requireClientAuth) {
         return new McpServerConfiguration(
                 version,
                 compatibilityVersion,

@@ -1,6 +1,7 @@
 package com.amannmalik.mcp.util;
 
 import jakarta.json.*;
+
 import java.util.Set;
 
 public final class ElicitSchemaValidator {
@@ -20,7 +21,8 @@ public final class ElicitSchemaValidator {
             "type", "properties", "required"
     );
 
-    private ElicitSchemaValidator() {}
+    private ElicitSchemaValidator() {
+    }
 
     public static void requireElicitSchema(JsonObject schema) {
         if (schema == null) throw new IllegalArgumentException("schema required");
@@ -99,7 +101,8 @@ public final class ElicitSchemaValidator {
         }
         if (prop.containsKey("format")) {
             switch (prop.getString("format")) {
-                case "email", "uri", "date", "date-time" -> {}
+                case "email", "uri", "date", "date-time" -> {
+                }
                 default -> throw new IllegalArgumentException("invalid format for " + name);
             }
         }

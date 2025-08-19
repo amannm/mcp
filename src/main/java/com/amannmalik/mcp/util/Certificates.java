@@ -1,30 +1,9 @@
 package com.amannmalik.mcp.util;
 
-import java.io.ByteArrayInputStream;
-import java.io.IOException;
-import java.io.StringWriter;
-import java.math.BigInteger;
-import java.security.*;
-import java.security.cert.CertificateEncodingException;
-import java.security.cert.CertificateException;
-import java.security.cert.CertificateFactory;
-import java.security.cert.CertificateParsingException;
-import java.security.cert.X509Certificate;
-import java.security.interfaces.RSAPrivateKey;
-import java.security.spec.ECGenParameterSpec;
-import java.time.Duration;
-import java.util.ArrayList;
-import java.util.Base64;
-import java.util.Collection;
-import java.util.Date;
-import java.util.List;
-import javax.security.auth.x500.X500Principal;
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 import org.bouncycastle.asn1.x500.X500Name;
+import org.bouncycastle.asn1.x509.*;
 import org.bouncycastle.asn1.x509.Extension;
-import org.bouncycastle.asn1.x509.ExtensionsGenerator;
-import org.bouncycastle.asn1.x509.GeneralName;
-import org.bouncycastle.asn1.x509.GeneralNamesBuilder;
 import org.bouncycastle.cert.jcajce.JcaX509CertificateConverter;
 import org.bouncycastle.cert.jcajce.JcaX509v3CertificateBuilder;
 import org.bouncycastle.openssl.jcajce.JcaPEMWriter;
@@ -34,11 +13,19 @@ import org.bouncycastle.operator.jcajce.JcaContentSignerBuilder;
 import org.bouncycastle.pkcs.PKCS10CertificationRequest;
 import org.bouncycastle.pkcs.jcajce.JcaPKCS10CertificationRequestBuilder;
 
+import javax.security.auth.x500.X500Principal;
+import java.io.*;
+import java.math.BigInteger;
+import java.security.*;
+import java.security.cert.*;
+import java.security.interfaces.RSAPrivateKey;
+import java.security.spec.ECGenParameterSpec;
+import java.time.Duration;
+import java.util.*;
+
 public final class Certificates {
     private Certificates() {
     }
-
-    public enum Algorithm { RSA, ECDSA }
 
     public static KeyPair generateKeyPair(Algorithm algorithm) {
         try {
@@ -172,4 +159,6 @@ public final class Certificates {
         var base64 = Base64.getMimeEncoder(64, new byte[]{'\n'}).encodeToString(csr);
         return "-----BEGIN CERTIFICATE REQUEST-----\n" + base64 + "\n-----END CERTIFICATE REQUEST-----\n";
     }
+
+    public enum Algorithm {RSA, ECDSA}
 }

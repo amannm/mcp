@@ -12,9 +12,7 @@ import java.time.Duration;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicLong;
-import java.util.function.Consumer;
-import java.util.function.Function;
-import java.util.function.Supplier;
+import java.util.function.*;
 
 sealed class JsonRpcEndpoint implements AutoCloseable permits McpClient, McpServer {
     protected static final JsonRpcMessageJsonCodec CODEC = new JsonRpcMessageJsonCodec();

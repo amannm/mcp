@@ -4,9 +4,7 @@ import com.amannmalik.mcp.api.McpServerConfiguration;
 import com.amannmalik.mcp.spi.Principal;
 import com.amannmalik.mcp.util.Base64Util;
 import com.amannmalik.mcp.util.ValidationUtil;
-import jakarta.servlet.http.Cookie;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.*;
 
 import java.io.IOException;
 import java.security.SecureRandom;

@@ -4,15 +4,9 @@ import com.amannmalik.mcp.api.*;
 import com.amannmalik.mcp.spi.Cursor;
 import io.cucumber.datatable.DataTable;
 import io.cucumber.java.en.*;
-import jakarta.json.Json;
-import jakarta.json.JsonObject;
-import jakarta.json.JsonValue;
-import jakarta.json.JsonNumber;
-import jakarta.json.JsonString;
+import jakarta.json.*;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.StringReader;
+import java.io.*;
 import java.nio.file.Path;
 import java.time.Duration;
 import java.util.*;
@@ -22,30 +16,10 @@ public final class ProtocolLifecycleSteps {
 
     private final Set<RequestId> usedRequestIds = new HashSet<>();
     private final Set<RequestId> sentRequestIds = new HashSet<>();
-    private McpClientConfiguration clientConfig;
-    private McpHostConfiguration hostConfig;
-    private McpHost activeConnection;
-    private String clientId;
-    private boolean connectionClosed = false;
-    private String requestedVersion;
-    private String negotiatedVersion;
     private final List<String> serverSupportedVersions = new ArrayList<>();
-    private Set<ClientCapability> clientCapabilities = EnumSet.noneOf(ClientCapability.class);
-    private Set<ServerCapability> serverCapabilities = EnumSet.noneOf(ServerCapability.class);
-    private Set<ServerCapability> availableFeatures = EnumSet.noneOf(ServerCapability.class);
-    private RequestId lastRequestId;
-    private JsonObject lastRequest;
-    private JsonObject lastResponse;
-    private JsonObject lastNotification;
-    private String lastErrorMessage;
-    private int lastErrorCode;
     private final List<Map<String, String>> capabilityConfigurations = new ArrayList<>();
-    private boolean samplingRequested;
-    private boolean samplingApproved;
-    private boolean promptExposed;
     private final List<Map<String, String>> errorScenarios = new ArrayList<>();
     private final List<Set<ServerCapability>> discoveredCapabilities = new ArrayList<>();
-    private Map<String, String> currentConfiguration;
     private final List<Boolean> acceptHeaderResults = new ArrayList<>();
     private final List<Boolean> expectedAcceptResults = new ArrayList<>();
     private final List<Boolean> originHeaderResults = new ArrayList<>();
@@ -56,12 +30,38 @@ public final class ProtocolLifecycleSteps {
     private final List<Integer> expectedGetStatuses = new ArrayList<>();
     private final List<String> getContentTypes = new ArrayList<>();
     private final List<String> expectedGetContentTypes = new ArrayList<>();
-
     private final List<Integer> postMessageStatuses = new ArrayList<>();
     private final List<Integer> expectedPostMessageStatuses = new ArrayList<>();
     private final List<Boolean> postMessageBodiesEmpty = new ArrayList<>();
     private final List<Boolean> expectedPostMessageBodiesEmpty = new ArrayList<>();
-
+    // New step definitions for concurrent request processing
+    private final List<RequestId> concurrentRequestIds = new ArrayList<>();
+    private final Map<RequestId, JsonObject> concurrentResponses = new HashMap<>();
+    // New step definitions for message ordering guarantees
+    private final List<Map<String, String>> dependentRequests = new ArrayList<>();
+    private final Map<String, JsonObject> requestResponses = new HashMap<>();
+    private final List<Boolean> preInitAllowedResults = new ArrayList<>();
+    private final List<Boolean> expectedPreInitAllowedResults = new ArrayList<>();
+    private McpClientConfiguration clientConfig;
+    private McpHostConfiguration hostConfig;
+    private McpHost activeConnection;
+    private String clientId;
+    private boolean connectionClosed = false;
+    private String requestedVersion;
+    private String negotiatedVersion;
+    private Set<ClientCapability> clientCapabilities = EnumSet.noneOf(ClientCapability.class);
+    private Set<ServerCapability> serverCapabilities = EnumSet.noneOf(ServerCapability.class);
+    private Set<ServerCapability> availableFeatures = EnumSet.noneOf(ServerCapability.class);
+    private RequestId lastRequestId;
+    private JsonObject lastRequest;
+    private JsonObject lastResponse;
+    private JsonObject lastNotification;
+    private String lastErrorMessage;
+    private int lastErrorCode;
+    private boolean samplingRequested;
+    private boolean samplingApproved;
+    private boolean promptExposed;
+    private Map<String, String> currentConfiguration;
     private String serverSessionId;
     private boolean sessionActive;
     private int lastHttpStatus;
@@ -69,22 +69,12 @@ public final class ProtocolLifecycleSteps {
     private long largePayloadSize;
     private boolean largeMessageHandled;
     private boolean connectionStable;
-    // New step definitions for concurrent request processing
-    private final List<RequestId> concurrentRequestIds = new ArrayList<>();
-    private final Map<RequestId, JsonObject> concurrentResponses = new HashMap<>();
     private boolean allConcurrentRequestsProcessed;
     private boolean noIdConflicts;
-    // New step definitions for message ordering guarantees
-    private final List<Map<String, String>> dependentRequests = new ArrayList<>();
-    private final Map<String, JsonObject> requestResponses = new HashMap<>();
     private BufferedReader stdioReader;
     private Exception newlineError;
     private Exception invalidResponseError;
-
     private boolean serverInitialized = true;
-    private final List<Boolean> preInitAllowedResults = new ArrayList<>();
-    private final List<Boolean> expectedPreInitAllowedResults = new ArrayList<>();
-
 
     private Set<ClientCapability> parseClientCapabilities(String capabilities) {
         if (capabilities == null || capabilities.trim().isEmpty()) {

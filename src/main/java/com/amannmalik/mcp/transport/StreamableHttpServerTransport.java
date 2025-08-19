@@ -12,23 +12,17 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.eclipse.jetty.ee10.servlet.ServletContextHandler;
 import org.eclipse.jetty.ee10.servlet.ServletHolder;
-import org.eclipse.jetty.server.HttpConfiguration;
-import org.eclipse.jetty.server.HttpConnectionFactory;
-import org.eclipse.jetty.server.Server;
-import org.eclipse.jetty.server.ServerConnector;
-import org.eclipse.jetty.server.SslConnectionFactory;
+import org.eclipse.jetty.server.*;
 import org.eclipse.jetty.util.ssl.SslContextFactory;
 
-import java.io.EOFException;
-import java.io.IOException;
-import java.io.InputStream;
-import java.time.Duration;
+import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.security.KeyStore;
 import java.security.cert.X509Certificate;
 import java.security.interfaces.ECKey;
 import java.security.interfaces.RSAKey;
+import java.time.Duration;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.stream.Collectors;
@@ -54,27 +48,6 @@ public final class StreamableHttpServerTransport implements Transport {
     private final String resourceMetadataUrl;
     private final MessageDispatcher dispatcher;
     private volatile boolean closed;
-
-    private static void validateCertificateKeySize(String path, String password, String type) {
-        try (InputStream in = Files.newInputStream(Path.of(path))) {
-            KeyStore ks = KeyStore.getInstance(type);
-            ks.load(in, password.toCharArray());
-            var aliases = ks.aliases();
-            while (aliases.hasMoreElements()) {
-                var cert = ks.getCertificate(aliases.nextElement());
-                if (cert instanceof X509Certificate x509) {
-                    int size = switch (x509.getPublicKey()) {
-                        case RSAKey k -> k.getModulus().bitLength();
-                        case ECKey k -> k.getParams().getCurve().getField().getFieldSize();
-                        default -> 0;
-                    };
-                    if (size < 2048) throw new IllegalArgumentException("Certificate key size too small: " + size);
-                }
-            }
-        } catch (Exception e) {
-            throw new IllegalArgumentException("Failed to validate certificate key size", e);
-        }
-    }
 
     public StreamableHttpServerTransport(McpServerConfiguration config,
                                          AuthorizationManager auth) throws Exception {
@@ -176,6 +149,27 @@ public final class StreamableHttpServerTransport implements Transport {
                 clients.lastGeneral,
                 clients::removeRequest);
         this.dispatcher = new MessageDispatcher(router);
+    }
+
+    private static void validateCertificateKeySize(String path, String password, String type) {
+        try (InputStream in = Files.newInputStream(Path.of(path))) {
+            KeyStore ks = KeyStore.getInstance(type);
+            ks.load(in, password.toCharArray());
+            var aliases = ks.aliases();
+            while (aliases.hasMoreElements()) {
+                var cert = ks.getCertificate(aliases.nextElement());
+                if (cert instanceof X509Certificate x509) {
+                    int size = switch (x509.getPublicKey()) {
+                        case RSAKey k -> k.getModulus().bitLength();
+                        case ECKey k -> k.getParams().getCurve().getField().getFieldSize();
+                        default -> 0;
+                    };
+                    if (size < 2048) throw new IllegalArgumentException("Certificate key size too small: " + size);
+                }
+            }
+        } catch (Exception e) {
+            throw new IllegalArgumentException("Failed to validate certificate key size", e);
+        }
     }
 
     public int port() {

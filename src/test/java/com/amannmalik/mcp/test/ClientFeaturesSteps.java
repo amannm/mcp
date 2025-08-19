@@ -21,8 +21,6 @@ public final class ClientFeaturesSteps {
     private final Set<ClientCapability> undeclaredCapabilities = EnumSet.noneOf(ClientCapability.class);
     private final List<Map<String, String>> samplingErrorScenarios = new ArrayList<>();
     private final List<Map<String, String>> combinedCapabilityRows = new ArrayList<>();
-    private boolean rootAccessAllowed;
-
     private final Map<String, String> simpleElicitationRequest = new HashMap<>();
     private final List<Map<String, String>> structuredElicitationFields = new ArrayList<>();
     private final List<Map<String, String>> elicitationUserActions = new ArrayList<>();
@@ -33,6 +31,7 @@ public final class ClientFeaturesSteps {
     private final List<Map<String, String>> samplingModelPreferences = new ArrayList<>();
     private final List<String> samplingModelSelections = new ArrayList<>();
     private final List<Map<String, String>> featureUnavailabilityScenarios = new ArrayList<>();
+    private boolean rootAccessAllowed;
     private McpHost activeConnection;
     private String clientId;
     private ClientCapability lastCapability;

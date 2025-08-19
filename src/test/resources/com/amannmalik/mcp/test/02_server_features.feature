@@ -322,8 +322,8 @@ Feature: MCP Server Features
     # Tests specification/2025-06-18/server/utilities/logging.mdx:110-116 (Error handling)
     Given the server has logging capability
     When I test logging error scenarios:
-      | scenario            | error_code | error_message  |
-      | invalid log level   | -32602     | Invalid params |
+      | scenario          | error_code | error_message  |
+      | invalid log level | -32602     | Invalid params |
     Then I should receive appropriate JSON-RPC error responses
 
   @completion @capabilities

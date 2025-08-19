@@ -54,53 +54,53 @@ Feature: MCP Connection Lifecycle
     When I send a request with identifier "missing-header"
     Then the connection should be rejected due to missing protocol version header
 
-@connection @http @accept-header
-Scenario: HTTP Accept header enforcement
+  @connection @http @accept-header
+  Scenario: HTTP Accept header enforcement
   # Tests specification/2025-06-18/basic/transports.mdx:90-91 (POST Accept header requirement)
   # Tests specification/2025-06-18/basic/transports.mdx:126-127 (GET Accept header requirement)
-  Given an MCP server using "http" transport
-  When I send HTTP requests with the following Accept headers:
-    | method | accept_header                       | should_accept |
-    | POST   | none                                | false         |
-    | POST   | application/json                    | false         |
-    | POST   | text/event-stream                   | false         |
-    | POST   | application/json, text/event-stream | true          |
-    | GET    | none                                | false         |
-    | GET    | application/json                    | false         |
-    | GET    | text/event-stream                   | true          |
-    | GET    | application/json, text/event-stream | true          |
+    Given an MCP server using "http" transport
+    When I send HTTP requests with the following Accept headers:
+      | method | accept_header                       | should_accept |
+      | POST   | none                                | false         |
+      | POST   | application/json                    | false         |
+      | POST   | text/event-stream                   | false         |
+      | POST   | application/json, text/event-stream | true          |
+      | GET    | none                                | false         |
+      | GET    | application/json                    | false         |
+      | GET    | text/event-stream                   | true          |
+      | GET    | application/json, text/event-stream | true          |
     Then each request should be handled according to Accept header requirements
 
-@connection @http @accept-header
-Scenario: HTTP Accept header case insensitivity
+  @connection @http @accept-header
+  Scenario: HTTP Accept header case insensitivity
   # Tests specification/2025-06-18/basic/transports.mdx:88-96 (POST Accept header requirement)
   # Tests specification/2025-06-18/basic/transports.mdx:124-131 (GET Accept header requirement)
-  Given an MCP server using "http" transport
-  When I send HTTP requests with the following Accept headers:
-    | method | accept_header                               | should_accept |
-    | POST   | APPLICATION/JSON, TEXT/EVENT-STREAM         | true          |
-    | GET    | TEXT/EVENT-STREAM                           | true          |
+    Given an MCP server using "http" transport
+    When I send HTTP requests with the following Accept headers:
+      | method | accept_header                       | should_accept |
+      | POST   | APPLICATION/JSON, TEXT/EVENT-STREAM | true          |
+      | GET    | TEXT/EVENT-STREAM                   | true          |
     Then each request should be handled according to Accept header requirements
 
-@connection @http @get-response
-Scenario: HTTP GET response handling
+  @connection @http @get-response
+  Scenario: HTTP GET response handling
   # Tests specification/2025-06-18/basic/transports.mdx:120-131 (Listening for Messages from the Server)
-  Given an MCP server using "http" transport
-  When I send HTTP GET requests with the following SSE support configurations:
-    | server_supports_sse | expected_status | expected_content_type |
-    | true                | 200             | text/event-stream     |
-    | false               | 405             | none                  |
-  Then each GET request should be handled according to SSE support
+    Given an MCP server using "http" transport
+    When I send HTTP GET requests with the following SSE support configurations:
+      | server_supports_sse | expected_status | expected_content_type |
+      | true                | 200             | text/event-stream     |
+      | false               | 405             | none                  |
+    Then each GET request should be handled according to SSE support
 
   @connection @http @origin-header
   Scenario: HTTP Origin header enforcement
     # Tests specification/2025-06-18/basic/transports.mdx:78 (Origin header validation)
     Given an MCP server using "http" transport
     When I send HTTP requests with the following Origin headers:
-      | origin_header                | should_accept |
-      | https://client.example.com   | true          |
-      | https://evil.example.com     | false         |
-      | none                         | false         |
+      | origin_header              | should_accept |
+      | https://client.example.com | true          |
+      | https://evil.example.com   | false         |
+      | none                       | false         |
     Then each request should be handled according to Origin header requirements
 
   @connection @http @content-type
@@ -120,10 +120,10 @@ Scenario: HTTP GET response handling
     # Tests specification/2025-06-18/basic/transports.mdx:93-98 (Notification/response POST handling)
     Given an MCP server using "http" transport
     When I send HTTP POST messages containing JSON-RPC responses or notifications:
-      | message_type        | should_accept |
-      | notification        | true          |
-      | response            | true          |
-      | invalid_notification| false         |
+      | message_type         | should_accept |
+      | notification         | true          |
+      | response             | true          |
+      | invalid_notification | false         |
     Then each message should receive the expected HTTP status
     And accepted messages should return empty bodies
 
@@ -377,7 +377,7 @@ Scenario: HTTP GET response handling
       | tools/list     | false   |
     Then the server should only send allowed requests
 
-  @security @information-disclosure  
+  @security @information-disclosure
   Scenario: Safe implementation information sharing
     # Tests specification/2025-06-18/basic/security_best_practices.mdx (General security principles)
     # Tests specification/2025-06-18/basic/lifecycle.mdx:99-104 (Implementation info sharing)
