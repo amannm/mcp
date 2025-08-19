@@ -2,6 +2,7 @@ package com.amannmalik.mcp.transport;
 
 import com.amannmalik.mcp.api.Protocol;
 import com.amannmalik.mcp.api.Transport;
+import com.amannmalik.mcp.util.TlsErrors;
 import com.amannmalik.mcp.util.ValidationUtil;
 import com.amannmalik.mcp.util.Certificates;
 import jakarta.json.*;
@@ -199,7 +200,7 @@ public final class StreamableHttpClientTransport implements Transport {
             Thread.currentThread().interrupt();
             throw new IOException(e);
         } catch (SSLException e) {
-            throw new IOException("TLS handshake failed", e);
+            throw TlsErrors.ioException(e);
         }
     }
 
