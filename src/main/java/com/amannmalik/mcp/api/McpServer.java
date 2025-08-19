@@ -16,9 +16,9 @@ import jakarta.json.stream.JsonParsingException;
 import java.io.EOFException;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.time.Duration;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutionException;
 
 /// - [Server](specification/2025-06-18/server/index.mdx)
 /// - [MCP server conformance test](src/test/resources/com/amannmalik/mcp/mcp_conformance.feature:6-34)
@@ -596,44 +596,13 @@ public final class McpServer extends JsonRpcEndpoint implements AutoCloseable {
         CompletableFuture<JsonRpcMessage> future = new CompletableFuture<>();
         pending.put(id, future);
         send(new JsonRpcRequest(id, method.method(), params));
-        return awaitResponse(id, future, timeoutMillis);
-    }
-
-    private JsonRpcMessage awaitResponse(RequestId id, CompletableFuture<JsonRpcMessage> future, long timeoutMillis) throws IOException {
-        long end = System.currentTimeMillis() + timeoutMillis;
-        try {
-            while (true) {
-                if (future.isDone()) {
-                    try {
-                        return future.get();
-                    } catch (InterruptedException e) {
-                        Thread.currentThread().interrupt();
-                        throw new IOException(e);
-                    } catch (ExecutionException e) {
-                        var cause = e.getCause();
-                        if (cause instanceof IOException io) throw io;
-                        throw new IOException(cause);
-                    }
-                }
-                if (System.currentTimeMillis() >= end) {
-                    try {
-                        JsonObject cancelParams = CANCELLED_NOTIFICATION_JSON_CODEC.toJson(new CancelledNotification(id, "timeout"));
-                        send(new JsonRpcNotification(NotificationMethod.CANCELLED.method(), cancelParams));
-                    } catch (IOException ignore) {
-                    }
-                    throw new IOException(config.errorTimeout() + " after " + timeoutMillis + " ms");
-                }
-                var obj = receiveMessage();
-                if (obj.isEmpty()) continue;
-                try {
-                    process(CODEC.fromJson(obj.get()));
-                } catch (IllegalArgumentException ex) {
-                    handleInvalidRequest(ex);
-                }
-            }
-        } finally {
-            pending.remove(id);
-        }
+        return awaitAndProcess(
+                id,
+                future,
+                Duration.ofMillis(timeoutMillis),
+                this::receiveMessage,
+                this::handleInvalidRequest,
+                config.errorTimeout());
     }
 
     private ElicitResult elicit(ElicitRequest req) throws IOException {
