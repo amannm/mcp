@@ -15,18 +15,25 @@ public final class TlsErrors {
     }
 
     private static String message(SSLException e) {
-        if (e instanceof SSLHandshakeException h) {
-            var c = h.getCause();
-            if (c instanceof CertificateException) return "Certificate validation failed";
-            if (c instanceof SSLPeerUnverifiedException) return "Client certificate authentication failed";
-            if (c instanceof SocketTimeoutException) return "TLS handshake timed out";
-            if (c instanceof SSLProtocolException) return "TLS protocol negotiation failed";
-            var m = h.getMessage();
-            if (m != null && m.contains("no cipher suites in common")) return "Cipher suite negotiation failed";
-            return "TLS handshake failed";
-        }
-        if (e instanceof SSLProtocolException) return "TLS protocol negotiation failed";
-        return "TLS error";
+        return switch (e) {
+            case SSLHandshakeException h -> {
+                var c = h.getCause();
+                yield switch (c) {
+                    case CertificateException __ -> "Certificate validation failed";
+                    case SSLPeerUnverifiedException __ -> "Client certificate authentication failed";
+                    case SocketTimeoutException __ -> "TLS handshake timed out";
+                    case SSLProtocolException __ -> "TLS protocol negotiation failed";
+                    case null, default -> {
+                        var m = h.getMessage();
+                        yield m != null && m.contains("no cipher suites in common")
+                                ? "Cipher suite negotiation failed"
+                                : "TLS handshake failed";
+                    }
+                };
+            }
+            case SSLProtocolException __ -> "TLS protocol negotiation failed";
+            default -> "TLS error";
+        };
     }
 }
 
