@@ -20,6 +20,8 @@ import java.security.interfaces.RSAPrivateKey;
 import java.security.spec.ECGenParameterSpec;
 import java.time.Duration;
 import java.util.*;
+import java.util.HexFormat;
+import java.util.Locale;
 
 public final class Certificates {
     private Certificates() {
@@ -110,11 +112,8 @@ public final class Certificates {
 
     public static String fingerprint(X509Certificate cert) throws CertificateException {
         try {
-            var md = MessageDigest.getInstance("SHA-256");
-            var digest = md.digest(cert.getEncoded());
-            var sb = new StringBuilder();
-            for (var b : digest) sb.append(String.format("%02X", b));
-            return sb.toString();
+            var digest = MessageDigest.getInstance("SHA-256").digest(cert.getEncoded());
+            return HexFormat.of().formatHex(digest).toUpperCase(Locale.ROOT);
         } catch (NoSuchAlgorithmException | CertificateEncodingException e) {
             throw new CertificateException(e);
         }
