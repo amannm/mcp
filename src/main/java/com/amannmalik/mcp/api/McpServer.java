@@ -89,22 +89,13 @@ public final class McpServer extends JsonRpcEndpoint implements AutoCloseable {
                         config.rateLimiterWindowMs())),
                 config.initialRequestId());
         this.config = config;
-        var toolLimiter = new RateLimiter(
-                config.toolsPerSecond(),
-                config.rateLimiterWindowMs());
-        this.completionLimiter = new RateLimiter(
+        this.completionLimiter = limiter(
                 config.completionsPerSecond(),
                 config.rateLimiterWindowMs());
-        this.logLimiter = new RateLimiter(
+        this.logLimiter = limiter(
                 config.logsPerSecond(),
                 config.rateLimiterWindowMs());
-        var caps = EnumSet.noneOf(ServerCapability.class);
-        if (resources != null) caps.add(ServerCapability.RESOURCES);
-        if (tools != null) caps.add(ServerCapability.TOOLS);
-        if (prompts != null) caps.add(ServerCapability.PROMPTS);
-        if (completions != null) caps.add(ServerCapability.COMPLETIONS);
-        caps.add(ServerCapability.LOGGING);
-        this.serverCapabilities = EnumSet.copyOf(caps);
+        this.serverCapabilities = capabilities(resources, tools, prompts, completions);
         this.serverInfo = new ServerInfo(
                 config.serverName(),
                 config.serverDescription(),
@@ -119,20 +110,48 @@ public final class McpServer extends JsonRpcEndpoint implements AutoCloseable {
         this.completions = completions;
         this.sampling = sampling;
         this.principal = principal;
-        this.toolHandler = tools == null ? null : new ToolCallHandler(
-                tools,
-                config.toolAccessPolicy(),
-                toolLimiter,
-                principal,
-                config,
-                () -> clientCapabilities,
-                this::elicit);
+        this.toolHandler = createToolHandler(tools, config, principal);
         this.samplingAccess = config.samplingAccessPolicy();
         this.logLevel = config.initialLogLevel();
         this.rootsManager = new RootsManager(this::negotiatedClientCapabilities, this::request);
         this.resourceOrchestrator = resources == null ? null :
                 new ResourceOrchestrator(resources, resourceAccess, principal, rootsManager, this::state, (method, params) -> send(new JsonRpcNotification(method.method(), params)), progress);
+        subscribeListChanges(tools, prompts);
+        registerHandlers(resources, tools, prompts, completions);
+    }
 
+    private static RateLimiter limiter(int perSecond, long windowMs) {
+        return new RateLimiter(perSecond, windowMs);
+    }
+
+    private static Set<ServerCapability> capabilities(ResourceProvider resources,
+                                                      ToolProvider tools,
+                                                      PromptProvider prompts,
+                                                      CompletionProvider completions) {
+        var caps = EnumSet.noneOf(ServerCapability.class);
+        if (resources != null) caps.add(ServerCapability.RESOURCES);
+        if (tools != null) caps.add(ServerCapability.TOOLS);
+        if (prompts != null) caps.add(ServerCapability.PROMPTS);
+        if (completions != null) caps.add(ServerCapability.COMPLETIONS);
+        caps.add(ServerCapability.LOGGING);
+        return EnumSet.copyOf(caps);
+    }
+
+    private ToolCallHandler createToolHandler(ToolProvider tools,
+                                              McpServerConfiguration config,
+                                              Principal principal) {
+        if (tools == null) return null;
+        return new ToolCallHandler(
+                tools,
+                config.toolAccessPolicy(),
+                limiter(config.toolsPerSecond(), config.rateLimiterWindowMs()),
+                principal,
+                config,
+                () -> clientCapabilities,
+                this::elicit);
+    }
+
+    private void subscribeListChanges(ToolProvider tools, PromptProvider prompts) {
         if (tools != null && tools.supportsListChanged()) {
             toolListSubscription = SubscriptionUtil.subscribeListChanges(
                     this::state,
@@ -141,7 +160,6 @@ public final class McpServer extends JsonRpcEndpoint implements AutoCloseable {
                             NotificationMethod.TOOLS_LIST_CHANGED.method(),
                             TOOL_LIST_CHANGED_NOTIFICATION_JSON_CODEC.toJson(new ToolListChangedNotification()))));
         }
-
         if (prompts != null && prompts.supportsListChanged()) {
             promptsSubscription = SubscriptionUtil.subscribeListChanges(
                     this::state,
@@ -150,7 +168,12 @@ public final class McpServer extends JsonRpcEndpoint implements AutoCloseable {
                             NotificationMethod.PROMPTS_LIST_CHANGED.method(),
                             PromptListChangedNotification.CODEC.toJson(new PromptListChangedNotification()))));
         }
+    }
 
+    private void registerHandlers(ResourceProvider resources,
+                                  ToolProvider tools,
+                                  PromptProvider prompts,
+                                  CompletionProvider completions) {
         registerRequest(RequestMethod.INITIALIZE, this::initialize);
         registerNotification(NotificationMethod.INITIALIZED, this::initialized);
         registerRequest(RequestMethod.PING, this::ping);
@@ -160,23 +183,18 @@ public final class McpServer extends JsonRpcEndpoint implements AutoCloseable {
         if (resourceOrchestrator != null) {
             resourceOrchestrator.register(this);
         }
-
         if (tools != null) {
             registerRequest(RequestMethod.TOOLS_LIST, this::listTools);
             registerRequest(RequestMethod.TOOLS_CALL, this::callTool);
         }
-
         if (prompts != null) {
             registerRequest(RequestMethod.PROMPTS_LIST, this::listPrompts);
             registerRequest(RequestMethod.PROMPTS_GET, this::getPrompt);
         }
-
         registerRequest(RequestMethod.LOGGING_SET_LEVEL, this::setLogLevel);
-
         if (completions != null) {
             registerRequest(RequestMethod.COMPLETION_COMPLETE, this::complete);
         }
-
         registerRequest(RequestMethod.SAMPLING_CREATE_MESSAGE, this::handleCreateMessage);
     }
 
