@@ -1227,11 +1227,15 @@ public final class UtilitiesSteps {
     }
 
     @After
-    public void closeConnection() throws IOException {
-        if (activeConnection != null) {
-            activeConnection.close();
-            activeConnection = null;
-            clientId = null;
+    public void closeConnection() {
+        try {
+            if (activeConnection != null) {
+                activeConnection.close();
+                activeConnection = null;
+                clientId = null;
+            }
+        } catch (IOException ex) {
+            throw new IllegalStateException(ex);
         }
     }
 }

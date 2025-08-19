@@ -954,12 +954,16 @@ public final class ClientFeaturesSteps {
     }
 
     @After
-    public void closeConnection() throws IOException {
-        if (activeConnection != null) {
-            activeConnection.close();
-            activeConnection = null;
-            clientId = null;
-            clientCapabilities.clear();
+    public void closeConnection() {
+        try {
+            if (activeConnection != null) {
+                activeConnection.close();
+                activeConnection = null;
+                clientId = null;
+                clientCapabilities.clear();
+            }
+        } catch (IOException ex) {
+            throw new IllegalStateException(ex);
         }
     }
 }

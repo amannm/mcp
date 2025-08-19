@@ -6,6 +6,7 @@ import com.amannmalik.mcp.api.TlsConfiguration;
 import com.amannmalik.mcp.spi.Cursor;
 import io.cucumber.datatable.DataTable;
 import io.cucumber.java.en.*;
+import io.cucumber.java.After;
 import jakarta.json.*;
 
 import java.io.*;
@@ -1521,5 +1522,25 @@ public final class ProtocolLifecycleSteps {
     @Then("the transport should fail due to embedded newline")
     public void the_transport_should_fail_due_to_embedded_newline() {
         if (newlineError == null) throw new AssertionError("expected failure for newline");
+    }
+
+    @After
+    public void tearDown() {
+        try {
+            if (activeConnection != null) {
+                activeConnection.close();
+                activeConnection = null;
+            }
+        } catch (IOException ex) {
+            throw new IllegalStateException(ex);
+        }
+        try {
+            if (stdioReader != null) {
+                stdioReader.close();
+                stdioReader = null;
+            }
+        } catch (IOException ex) {
+            throw new IllegalStateException(ex);
+        }
     }
 }

@@ -1697,15 +1697,19 @@ public final class ServerFeaturesSteps {
     }
 
     @After
-    public void closeConnection() throws IOException {
+    public void closeConnection() {
         if (activeConnection != null) {
-            activeConnection.close();
+            try {
+                activeConnection.close();
+            } catch (IOException ex) {
+                throw new IllegalStateException(ex);
+            }
             activeConnection = null;
-            clientId = null;
-            serverCapabilities.clear();
-            serverFeatures.clear();
-            availableTools = List.of();
         }
+        clientId = null;
+        serverCapabilities.clear();
+        serverFeatures.clear();
+        availableTools = List.of();
     }
 
     private record ErrorCheck(String scenario, int expectedCode, String expectedMessage, int actualCode, String actualMessage) {
