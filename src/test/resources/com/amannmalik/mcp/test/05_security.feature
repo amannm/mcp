@@ -130,6 +130,15 @@ Feature: MCP Security Handling
     Then only secure transports should be accepted
     And appropriate transport security errors should be returned
 
+  @transport-security @tls-defaults
+  Scenario: TLS configuration defaults
+    # Tests specification/2025-06-18/server/configuration.mdx:11-22 (TLS configuration parameters)
+    Given an MCP server configuration
+    When I inspect TLS configuration defaults
+    Then the TLS configuration should be:
+      | https_port | protocols         | cipher_suites                                        | require_client_auth |
+      | 3443       | TLSv1.3,TLSv1.2   | TLS_AES_128_GCM_SHA256,TLS_AES_256_GCM_SHA384       | false              |
+
   @input-validation @injection-attacks
   Scenario: Malicious input validation and sanitization
     # Tests specification/2025-06-18/server/tools.mdx:427-442 (Security considerations)

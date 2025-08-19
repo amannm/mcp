@@ -44,6 +44,16 @@ public record McpServerConfiguration(
         List<String> authServers,
         boolean insecure,
         boolean verbose,
+        int httpsPort,
+        String keystorePath,
+        String keystorePassword,
+        String keystoreType,
+        String truststorePath,
+        String truststorePassword,
+        String truststoreType,
+        List<String> tlsProtocols,
+        List<String> cipherSuites,
+        boolean requireClientAuth,
         String bindAddress,
         Set<String> servletPaths,
         String resourceMetadataPath,
@@ -63,6 +73,8 @@ public record McpServerConfiguration(
         supportedVersions = List.copyOf(supportedVersions);
         allowedOrigins = List.copyOf(allowedOrigins);
         authServers = List.copyOf(authServers);
+        tlsProtocols = List.copyOf(tlsProtocols);
+        cipherSuites = List.copyOf(cipherSuites);
         servletPaths = Set.copyOf(servletPaths);
         servletAcceptedContentTypes = List.copyOf(servletAcceptedContentTypes);
         servletProducedContentTypes = List.copyOf(servletProducedContentTypes);
@@ -80,6 +92,18 @@ public record McpServerConfiguration(
             throw new IllegalArgumentException("Invalid policy configuration");
         if (serverPort < 0 || serverPort > 65_535)
             throw new IllegalArgumentException("Invalid port number");
+        if (httpsPort < 0 || httpsPort > 65_535)
+            throw new IllegalArgumentException("Invalid HTTPS port number");
+        if (tlsProtocols.isEmpty() || tlsProtocols.stream().anyMatch(String::isBlank))
+            throw new IllegalArgumentException("Invalid TLS protocols");
+        if (cipherSuites.isEmpty() || cipherSuites.stream().anyMatch(String::isBlank))
+            throw new IllegalArgumentException("Invalid cipher suites");
+        if (httpsPort > 0) {
+            if (keystorePath.isBlank() || keystorePassword.isBlank() || keystoreType.isBlank())
+                throw new IllegalArgumentException("Keystore configuration required");
+            if (requireClientAuth && (truststorePath.isBlank() || truststorePassword.isBlank() || truststoreType.isBlank()))
+                throw new IllegalArgumentException("Truststore configuration required");
+        }
         if (bindAddress == null || bindAddress.isBlank())
             throw new IllegalArgumentException("Bind address required");
         if (sessionIdByteLength <= 0)
@@ -127,6 +151,16 @@ public record McpServerConfiguration(
                 "https://mcp.example.com/.well-known/oauth-protected-resource",
                 List.of("https://auth.example.com"),
                 false,
+                false,
+                3443,
+                "server.p12",
+                "changeit",
+                "PKCS12",
+                "",
+                "",
+                "PKCS12",
+                List.of("TLSv1.3", "TLSv1.2"),
+                List.of("TLS_AES_128_GCM_SHA256", "TLS_AES_256_GCM_SHA384"),
                 false,
                 "127.0.0.1",
                 Set.of("/", "/.well-known/oauth-protected-resource"),
@@ -189,6 +223,16 @@ public record McpServerConfiguration(
                 authServers,
                 insecure,
                 verbose,
+                httpsPort,
+                keystorePath,
+                keystorePassword,
+                keystoreType,
+                truststorePath,
+                truststorePassword,
+                truststoreType,
+                tlsProtocols,
+                cipherSuites,
+                requireClientAuth,
                 bindAddress,
                 servletPaths,
                 resourceMetadataPath,
