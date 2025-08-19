@@ -95,6 +95,21 @@ public final class HostCommand {
         return spec;
     }
 
+    private record TlsSettings(
+            String truststorePath,
+            String truststorePassword,
+            String truststoreType,
+            String keystorePath,
+            String keystorePassword,
+            String keystoreType,
+            CertificateValidationMode validationMode,
+            List<String> protocols,
+            List<String> cipherSuites,
+            List<String> pins,
+            boolean verifyHostname
+    ) {
+    }
+
     public static int execute(ParseResult parseResult) {
         var helpExitCode = CommandLine.executeHelpRequest(parseResult);
         if (helpExitCode != null) return helpExitCode;
@@ -103,97 +118,10 @@ public final class HostCommand {
             boolean verbose = parseResult.matchedOptionValue("--verbose", false);
             List<String> clientSpecs = parseResult.matchedOptionValue("--client", Collections.emptyList());
             boolean interactive = parseResult.matchedOptionValue("--interactive", false);
-
-            Path truststorePathOpt = parseResult.matchedOptionValue("--client-truststore", null);
-            var truststorePath = truststorePathOpt == null ? "" : truststorePathOpt.toString();
-            var truststorePassword = parseResult.matchedOptionValue("--client-truststore-password", "");
-            String truststorePasswordEnv = parseResult.matchedOptionValue("--client-truststore-password-env", null);
-            if (truststorePasswordEnv != null) {
-                var env = System.getenv(truststorePasswordEnv);
-                if (env != null) truststorePassword = env;
-            }
-            var truststoreType = parseResult.matchedOptionValue("--client-truststore-type", "PKCS12");
-            Path keystorePathOpt = parseResult.matchedOptionValue("--client-keystore", null);
-            var keystorePath = keystorePathOpt == null ? "" : keystorePathOpt.toString();
-            var keystorePassword = parseResult.matchedOptionValue("--client-keystore-password", "");
-            String keystorePasswordEnv = parseResult.matchedOptionValue("--client-keystore-password-env", null);
-            if (keystorePasswordEnv != null) {
-                var env = System.getenv(keystorePasswordEnv);
-                if (env != null) keystorePassword = env;
-            }
-            var keystoreType = parseResult.matchedOptionValue("--client-keystore-type", "PKCS12");
-            boolean verifyCertificates = parseResult.matchedOptionValue("--verify-certificates", true);
-            boolean allowSelfSigned = parseResult.matchedOptionValue("--allow-self-signed", false);
-            var tlsProtocols = parseResult.matchedOptionValue("--tls-protocols", List.of("TLSv1.3", "TLSv1.2"));
-            List<String> certificatePins = parseResult.matchedOptionValue("--certificate-pinning", List.of());
-            var validationMode = !certificatePins.isEmpty() ? CertificateValidationMode.CUSTOM : (!verifyCertificates || allowSelfSigned ? CertificateValidationMode.PERMISSIVE : CertificateValidationMode.STRICT);
-            var verifyHostname = verifyCertificates;
-            var cipherSuites = List.of("TLS_AES_128_GCM_SHA256", "TLS_AES_256_GCM_SHA384");
-
             if (clientSpecs.isEmpty()) throw new IllegalArgumentException("--client required");
 
-            List<McpClientConfiguration> clientConfigs = new ArrayList<>();
-            for (var spec : clientSpecs) {
-                var parts = spec.split(":", -1);
-                if (parts.length < 2) {
-                    throw new IllegalArgumentException("id:command expected: " + spec);
-                }
-
-                var clientId = parts[0];
-                var command = parts[1];
-                var clientVerbose = parts.length > 2 ? Boolean.parseBoolean(parts[2]) : verbose;
-
-                Set<ClientCapability> capabilities = EnumSet.of(
-                        ClientCapability.SAMPLING,
-                        ClientCapability.ROOTS,
-                        ClientCapability.ELICITATION);
-
-                if (parts.length > 3 && !parts[3].isEmpty()) {
-                    capabilities = Arrays.stream(parts[3].split(","))
-                            .map(String::trim)
-                            .map(String::toUpperCase)
-                            .map(ClientCapability::valueOf)
-                            .collect(Collectors.toCollection(() -> EnumSet.noneOf(ClientCapability.class)));
-                }
-
-                var clientConfig = new McpClientConfiguration(
-                        clientId,
-                        clientId,
-                        clientId,
-                        "1.0.0",
-                        McpHostConfiguration.defaultConfiguration().hostPrincipal(),
-                        capabilities,
-                        command,
-                        java.time.Duration.ofSeconds(10),
-                        "http://127.0.0.1",
-                        java.time.Duration.ofSeconds(30),
-                        true,
-                        32,
-                        java.time.Duration.ofSeconds(30),
-                        true,
-                        java.time.Duration.ofMillis(5_000L),
-                        java.time.Duration.ofMillis(0L),
-                        20,
-                        java.time.Duration.ofMillis(1_000L),
-                        clientVerbose,
-                        false,
-                        List.of(System.getProperty("user.dir")),
-                        SamplingAccessPolicy.PERMISSIVE,
-                        truststorePath,
-                        truststorePassword,
-                        truststoreType,
-                        keystorePath,
-                        keystorePassword,
-                        keystoreType,
-                        validationMode,
-                        tlsProtocols,
-                        cipherSuites,
-                        certificatePins,
-                        verifyHostname
-                );
-                clientConfigs.add(clientConfig);
-            }
-
+            var tls = extractTlsSettings(parseResult);
+            var clientConfigs = parseClientConfigs(clientSpecs, verbose, tls);
             var config = McpHostConfiguration.withClientConfigurations(clientConfigs);
 
             try (var host = new McpHost(config)) {
@@ -213,6 +141,113 @@ public final class HostCommand {
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
+    }
+
+    private static TlsSettings extractTlsSettings(ParseResult parseResult) {
+        Path truststorePathOpt = parseResult.matchedOptionValue("--client-truststore", null);
+        var truststorePath = truststorePathOpt == null ? "" : truststorePathOpt.toString();
+        var truststorePassword = parseResult.matchedOptionValue("--client-truststore-password", "");
+        String truststorePasswordEnv = parseResult.matchedOptionValue("--client-truststore-password-env", null);
+        if (truststorePasswordEnv != null) {
+            var env = System.getenv(truststorePasswordEnv);
+            if (env != null) truststorePassword = env;
+        }
+        var truststoreType = parseResult.matchedOptionValue("--client-truststore-type", "PKCS12");
+        Path keystorePathOpt = parseResult.matchedOptionValue("--client-keystore", null);
+        var keystorePath = keystorePathOpt == null ? "" : keystorePathOpt.toString();
+        var keystorePassword = parseResult.matchedOptionValue("--client-keystore-password", "");
+        String keystorePasswordEnv = parseResult.matchedOptionValue("--client-keystore-password-env", null);
+        if (keystorePasswordEnv != null) {
+            var env = System.getenv(keystorePasswordEnv);
+            if (env != null) keystorePassword = env;
+        }
+        var keystoreType = parseResult.matchedOptionValue("--client-keystore-type", "PKCS12");
+        boolean verifyCertificates = parseResult.matchedOptionValue("--verify-certificates", true);
+        boolean allowSelfSigned = parseResult.matchedOptionValue("--allow-self-signed", false);
+        var protocols = parseResult.matchedOptionValue("--tls-protocols", List.of("TLSv1.3", "TLSv1.2"));
+        List<String> pins = parseResult.matchedOptionValue("--certificate-pinning", List.of());
+        var mode = !pins.isEmpty() ? CertificateValidationMode.CUSTOM : (!verifyCertificates || allowSelfSigned ? CertificateValidationMode.PERMISSIVE : CertificateValidationMode.STRICT);
+        var cipherSuites = List.of("TLS_AES_128_GCM_SHA256", "TLS_AES_256_GCM_SHA384");
+        return new TlsSettings(
+                truststorePath,
+                truststorePassword,
+                truststoreType,
+                keystorePath,
+                keystorePassword,
+                keystoreType,
+                mode,
+                protocols,
+                cipherSuites,
+                pins,
+                verifyCertificates
+        );
+    }
+
+    private static List<McpClientConfiguration> parseClientConfigs(List<String> clientSpecs,
+                                                                   boolean verbose,
+                                                                   TlsSettings tls) {
+        List<McpClientConfiguration> configs = new ArrayList<>();
+        for (var spec : clientSpecs) {
+            var parts = spec.split(":", -1);
+            if (parts.length < 2) {
+                throw new IllegalArgumentException("id:command expected: " + spec);
+            }
+
+            var clientId = parts[0];
+            var command = parts[1];
+            var clientVerbose = parts.length > 2 ? Boolean.parseBoolean(parts[2]) : verbose;
+
+            Set<ClientCapability> capabilities = EnumSet.of(
+                    ClientCapability.SAMPLING,
+                    ClientCapability.ROOTS,
+                    ClientCapability.ELICITATION);
+
+            if (parts.length > 3 && !parts[3].isEmpty()) {
+                capabilities = Arrays.stream(parts[3].split(","))
+                        .map(String::trim)
+                        .map(String::toUpperCase)
+                        .map(ClientCapability::valueOf)
+                        .collect(Collectors.toCollection(() -> EnumSet.noneOf(ClientCapability.class)));
+            }
+
+            var config = new McpClientConfiguration(
+                    clientId,
+                    clientId,
+                    clientId,
+                    "1.0.0",
+                    McpHostConfiguration.defaultConfiguration().hostPrincipal(),
+                    capabilities,
+                    command,
+                    java.time.Duration.ofSeconds(10),
+                    "http://127.0.0.1",
+                    java.time.Duration.ofSeconds(30),
+                    true,
+                    32,
+                    java.time.Duration.ofSeconds(30),
+                    true,
+                    java.time.Duration.ofMillis(5_000L),
+                    java.time.Duration.ofMillis(0L),
+                    20,
+                    java.time.Duration.ofMillis(1_000L),
+                    clientVerbose,
+                    false,
+                    List.of(System.getProperty("user.dir")),
+                    SamplingAccessPolicy.PERMISSIVE,
+                    tls.truststorePath(),
+                    tls.truststorePassword(),
+                    tls.truststoreType(),
+                    tls.keystorePath(),
+                    tls.keystorePassword(),
+                    tls.keystoreType(),
+                    tls.validationMode(),
+                    tls.protocols(),
+                    tls.cipherSuites(),
+                    tls.pins(),
+                    tls.verifyHostname()
+            );
+            configs.add(config);
+        }
+        return configs;
     }
 
     private static void runInteractiveMode(McpHost host) throws IOException {
