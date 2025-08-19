@@ -200,34 +200,42 @@ public final class McpServer extends JsonRpcEndpoint implements AutoCloseable {
 
     private static Transport createTransport(McpServerConfiguration config) throws Exception {
         return switch (config.transportType()) {
-            case "stdio" -> new StdioTransport(System.in, System.out, config.defaultTimeoutMs());
-            case "http" -> {
-                if (!config.insecure() && config.authServers().isEmpty()) {
-                    throw new IllegalArgumentException("auth server must be specified");
-                }
-                AuthorizationManager authManager = null;
-                if (config.expectedAudience() != null && !config.expectedAudience().isBlank()) {
-                    var secretEnv = System.getenv("MCP_JWT_SECRET");
-                    var tokenValidator = secretEnv == null || secretEnv.isBlank()
-                            ? new JwtTokenValidator(config.expectedAudience())
-                            : new JwtTokenValidator(config.expectedAudience(), secretEnv.getBytes(StandardCharsets.UTF_8));
-                    authManager = new AuthorizationManager(List.of(new BearerTokenAuthorizationStrategy(tokenValidator)));
-                }
-                var ht = new StreamableHttpServerTransport(
-                        config,
-                        authManager);
-                if (config.verbose()) {
-                    if (config.serverPort() > 0) {
-                        System.err.println("Listening on http://127.0.0.1:" + ht.port());
-                    }
-                    if (config.httpsPort() > 0) {
-                        System.err.println("Listening on https://127.0.0.1:" + ht.httpsPort());
-                    }
-                }
-                yield ht;
-            }
+            case "stdio" -> createStdioTransport(config);
+            case "http" -> createHttpTransport(config);
             default -> throw new IllegalArgumentException("Unknown transport type: " + config.transportType());
         };
+    }
+
+    private static Transport createStdioTransport(McpServerConfiguration config) {
+        return new StdioTransport(System.in, System.out, config.defaultTimeoutMs());
+    }
+
+    private static Transport createHttpTransport(McpServerConfiguration config) throws Exception {
+        if (!config.insecure() && config.authServers().isEmpty()) {
+            throw new IllegalArgumentException("auth server must be specified");
+        }
+        var authManager = authorizationManager(config);
+        var ht = new StreamableHttpServerTransport(config, authManager);
+        if (config.verbose()) {
+            if (config.serverPort() > 0) {
+                System.err.println("Listening on http://127.0.0.1:" + ht.port());
+            }
+            if (config.httpsPort() > 0) {
+                System.err.println("Listening on https://127.0.0.1:" + ht.httpsPort());
+            }
+        }
+        return ht;
+    }
+
+    private static AuthorizationManager authorizationManager(McpServerConfiguration config) {
+        if (config.expectedAudience() == null || config.expectedAudience().isBlank()) {
+            return null;
+        }
+        var secretEnv = System.getenv("MCP_JWT_SECRET");
+        var tokenValidator = (secretEnv == null || secretEnv.isBlank())
+                ? new JwtTokenValidator(config.expectedAudience())
+                : new JwtTokenValidator(config.expectedAudience(), secretEnv.getBytes(StandardCharsets.UTF_8));
+        return new AuthorizationManager(List.of(new BearerTokenAuthorizationStrategy(tokenValidator)));
     }
 
     public void serve() throws IOException {
