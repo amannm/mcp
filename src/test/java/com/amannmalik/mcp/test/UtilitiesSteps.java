@@ -801,11 +801,12 @@ public final class UtilitiesSteps {
 
     @When("I record a progress notification with progress {double} and total {double}")
     public void i_record_a_progress_notification_with_progress_and_total(double progress, double total) {
-        if (progress <= lastProgressValue) {
+        double pct = total <= 0.0 ? progress : progress / total;
+        if (pct <= lastProgressValue) {
             lifecycleTokenActive = false;
         }
-        lastProgressValue = progress;
-        if (progress >= 1.0) {
+        lastProgressValue = pct;
+        if (pct >= 1.0) {
             lifecycleTokenActive = false;
         }
     }

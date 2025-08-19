@@ -82,13 +82,14 @@ public final class ServerFeaturesSteps {
         String java = System.getProperty("java.home") + "/bin/java";
         String jar = Path.of("build", "libs", "mcp-0.1.0.jar").toString();
         String cmd = java + " -jar " + jar + " server --stdio --test-mode";
+        List<String> roots = Stream.concat(base.rootDirectories().stream(), Stream.of("/sample")).toList();
         McpClientConfiguration clientConfig = new McpClientConfiguration(
                 base.clientId(), base.serverName(), base.serverDisplayName(), base.serverVersion(),
                 base.principal(), base.clientCapabilities(), cmd, base.defaultReceiveTimeout(),
                 base.defaultOriginHeader(), base.httpRequestTimeout(), base.enableKeepAlive(),
                 base.sessionIdByteLength(), base.initializeRequestTimeout(), base.strictVersionValidation(),
                 base.pingTimeout(), base.pingInterval(), base.progressPerSecond(), base.rateLimiterWindow(),
-                base.verbose(), base.interactiveSampling(), base.rootDirectories(), base.samplingAccessPolicy()
+                base.verbose(), base.interactiveSampling(), roots, base.samplingAccessPolicy()
         );
         McpHostConfiguration hostConfig = new McpHostConfiguration(
                 "2025-06-18",
@@ -105,6 +106,7 @@ public final class ServerFeaturesSteps {
                 List.of(clientConfig)
         );
         activeConnection = new McpHost(hostConfig);
+        activeConnection.allowAudience(Role.USER);
         activeConnection.grantConsent("server");
         activeConnection.grantConsent("tool:test_tool");
         activeConnection.grantConsent("tool:error_tool");
