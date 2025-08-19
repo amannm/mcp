@@ -6,6 +6,7 @@ import com.amannmalik.mcp.spi.ToolAccessPolicy;
 import java.time.Duration;
 import java.util.List;
 import java.util.Set;
+import java.util.regex.Pattern;
 
 public record McpServerConfiguration(
         String version,
@@ -69,6 +70,10 @@ public record McpServerConfiguration(
         boolean servletEnableAsyncProcessing
 ) {
 
+    private static final Set<String> ALLOWED_PROTOCOLS = Set.of("TLSv1.2", "TLSv1.3");
+    private static final Pattern WEAK_CIPHERS = Pattern.compile(
+            ".*_(NULL|RC4|DES|3DES|MD5|CBC|EXPORT|anon)_.*", Pattern.CASE_INSENSITIVE);
+
     public McpServerConfiguration {
         supportedVersions = List.copyOf(supportedVersions);
         allowedOrigins = List.copyOf(allowedOrigins);
@@ -94,9 +99,10 @@ public record McpServerConfiguration(
             throw new IllegalArgumentException("Invalid port number");
         if (httpsPort < 0 || httpsPort > 65_535)
             throw new IllegalArgumentException("Invalid HTTPS port number");
-        if (tlsProtocols.isEmpty() || tlsProtocols.stream().anyMatch(String::isBlank))
+        if (tlsProtocols.isEmpty() ||
+                tlsProtocols.stream().anyMatch(p -> p.isBlank() || !ALLOWED_PROTOCOLS.contains(p)))
             throw new IllegalArgumentException("Invalid TLS protocols");
-        if (cipherSuites.isEmpty() || cipherSuites.stream().anyMatch(String::isBlank))
+        if (cipherSuites.isEmpty() || cipherSuites.stream().anyMatch(s -> s.isBlank() || !isStrongCipher(s)))
             throw new IllegalArgumentException("Invalid cipher suites");
         if (httpsPort > 0) {
             if (keystorePath.isBlank() || keystorePassword.isBlank() || keystoreType.isBlank())
@@ -112,6 +118,11 @@ public record McpServerConfiguration(
             throw new IllegalArgumentException("Initialize request timeout must be positive");
         if (sseClientPrefixByteLength <= 0)
             throw new IllegalArgumentException("Client prefix byte length must be positive");
+    }
+
+    private static boolean isStrongCipher(String suite) {
+        if (WEAK_CIPHERS.matcher(suite).matches()) return false;
+        return suite.contains("TLS_AES") || suite.contains("_ECDHE_") || suite.contains("_DHE_");
     }
 
     public static McpServerConfiguration defaultConfiguration() {
@@ -160,7 +171,11 @@ public record McpServerConfiguration(
                 "",
                 "PKCS12",
                 List.of("TLSv1.3", "TLSv1.2"),
-                List.of("TLS_AES_128_GCM_SHA256", "TLS_AES_256_GCM_SHA384"),
+                List.of(
+                        "TLS_AES_128_GCM_SHA256",
+                        "TLS_AES_256_GCM_SHA384",
+                        "TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256",
+                        "TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384"),
                 false,
                 "127.0.0.1",
                 Set.of("/", "/.well-known/oauth-protected-resource"),
