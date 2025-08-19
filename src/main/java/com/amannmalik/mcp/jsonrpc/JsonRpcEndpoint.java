@@ -45,20 +45,14 @@ public sealed class JsonRpcEndpoint implements AutoCloseable permits McpClient, 
     protected JsonRpcMessage await(RequestId id, CompletableFuture<JsonRpcMessage> future, Duration timeoutMillis) throws IOException {
         try {
             return future.get(timeoutMillis.toMillis(), TimeUnit.MILLISECONDS);
+        } catch (TimeoutException e) {
+            cancelTimeout(id);
+            throw new IOException(McpServerConfiguration.defaultConfiguration().errorTimeout() + " after " + timeoutMillis + " ms", e);
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             throw new IOException(e);
         } catch (ExecutionException e) {
-            var cause = e.getCause();
-            if (cause instanceof IOException io) throw io;
-            throw new IOException(cause);
-        } catch (TimeoutException e) {
-            try {
-                var params = CANCEL_CODEC.toJson(new CancelledNotification(id, "timeout"));
-                send(new JsonRpcNotification(NotificationMethod.CANCELLED.method(), params));
-            } catch (IOException ignore) {
-            }
-            throw new IOException(McpServerConfiguration.defaultConfiguration().errorTimeout() + " after " + timeoutMillis + " ms", e);
+            throw unwrapExecutionException(e);
         }
     }
 
@@ -71,37 +65,48 @@ public sealed class JsonRpcEndpoint implements AutoCloseable permits McpClient, 
             String timeoutMessage) throws IOException {
         var end = System.currentTimeMillis() + timeout.toMillis();
         try {
-            while (true) {
-                if (future.isDone()) {
-                    try {
-                        return future.get();
-                    } catch (InterruptedException e) {
-                        Thread.currentThread().interrupt();
-                        throw new IOException(e);
-                    } catch (ExecutionException e) {
-                        var cause = e.getCause();
-                        if (cause instanceof IOException io) throw io;
-                        throw new IOException(cause);
-                    }
-                }
+            while (!future.isDone()) {
                 if (System.currentTimeMillis() >= end) {
-                    try {
-                        var params = CANCEL_CODEC.toJson(new CancelledNotification(id, "timeout"));
-                        send(new JsonRpcNotification(NotificationMethod.CANCELLED.method(), params));
-                    } catch (IOException ignore) {
-                    }
+                    cancelTimeout(id);
                     throw new IOException(timeoutMessage + " after " + timeout.toMillis() + " ms");
                 }
                 var obj = receiver.get();
-                if (obj.isEmpty()) continue;
-                try {
-                    process(CODEC.fromJson(obj.get()));
-                } catch (IllegalArgumentException e) {
-                    invalidHandler.accept(e);
+                if (obj.isPresent()) {
+                    try {
+                        process(CODEC.fromJson(obj.get()));
+                    } catch (IllegalArgumentException e) {
+                        invalidHandler.accept(e);
+                    }
                 }
             }
+            return getCompleted(future);
         } finally {
             pending.remove(id);
+        }
+    }
+
+    private static IOException unwrapExecutionException(ExecutionException e) {
+        var cause = e.getCause();
+        if (cause instanceof IOException io) return io;
+        return new IOException(cause);
+    }
+
+    private JsonRpcMessage getCompleted(CompletableFuture<JsonRpcMessage> future) throws IOException {
+        try {
+            return future.get();
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new IOException(e);
+        } catch (ExecutionException e) {
+            throw unwrapExecutionException(e);
+        }
+    }
+
+    private void cancelTimeout(RequestId id) {
+        try {
+            var params = CANCEL_CODEC.toJson(new CancelledNotification(id, "timeout"));
+            send(new JsonRpcNotification(NotificationMethod.CANCELLED.method(), params));
+        } catch (IOException ignore) {
         }
     }
 
