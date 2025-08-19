@@ -85,7 +85,7 @@ public final class StreamableHttpServerTransport implements Transport {
         ServletContextHandler ctx = new ServletContextHandler();
         for (String path : config.servletPaths()) {
             if (path.equals("/")) {
-                ctx.addServlet(new ServletHolder(new McpServlet(this)), "/");
+                ctx.addServlet(new ServletHolder(new McpServlet(this, config.httpResponseQueueCapacity())), "/");
             } else if (path.equals(config.resourceMetadataPath())) {
                 ctx.addServlet(new ServletHolder(new MetadataServlet(this)), path);
             }

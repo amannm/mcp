@@ -17,10 +17,9 @@ final class McpServlet extends HttpServlet {
     private final StreamableHttpServerTransport transport;
     private final int responseQueueCapacity;
 
-    McpServlet(StreamableHttpServerTransport transport) {
+    McpServlet(StreamableHttpServerTransport transport, int responseQueueCapacity) {
         this.transport = transport;
-        // TODO: this config
-        this.responseQueueCapacity = 10;
+        this.responseQueueCapacity = responseQueueCapacity;
     }
 
     private static MessageType classify(JsonObject obj) {
@@ -88,7 +87,7 @@ final class McpServlet extends HttpServlet {
         }
         SseClient client;
         if (found == null) {
-            client = new SseClient(ac, transport.config.sseClientPrefixByteLength());
+            client = new SseClient(ac, transport.config.sseClientPrefixByteLength(), transport.config.sseHistoryLimit());
             transport.clients.byPrefix.put(client.prefix, client);
         } else {
             client = found;
@@ -186,7 +185,7 @@ final class McpServlet extends HttpServlet {
                                      HttpServletRequest req,
                                      HttpServletResponse resp) throws IOException {
         AsyncContext ac = initSse(req, resp);
-        SseClient client = new SseClient(ac, transport.config.sseClientPrefixByteLength());
+        SseClient client = new SseClient(ac, transport.config.sseClientPrefixByteLength(), transport.config.sseHistoryLimit());
         String key = obj.get("id").toString();
         transport.clients.request.put(key, client);
         transport.clients.byPrefix.put(client.prefix, client);

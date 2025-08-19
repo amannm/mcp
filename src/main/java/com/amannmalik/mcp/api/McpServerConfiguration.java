@@ -66,6 +66,8 @@ public record McpServerConfiguration(
         int sseClientPrefixByteLength,
         boolean sseEnableHistoryReplay,
         Duration sseClientTimeout,
+        long sseHistoryLimit,
+        int httpResponseQueueCapacity,
         List<String> servletAcceptedContentTypes,
         List<String> servletProducedContentTypes,
         boolean servletEnableAsyncProcessing
@@ -127,6 +129,10 @@ public record McpServerConfiguration(
             throw new IllegalArgumentException("Initialize request timeout must be positive");
         if (sseClientPrefixByteLength <= 0)
             throw new IllegalArgumentException("Client prefix byte length must be positive");
+        if (sseHistoryLimit < 0)
+            throw new IllegalArgumentException("SSE history limit must be non-negative");
+        if (httpResponseQueueCapacity <= 0)
+            throw new IllegalArgumentException("HTTP response queue capacity must be positive");
     }
 
     private static boolean isStrongCipher(String suite) {
@@ -197,6 +203,8 @@ public record McpServerConfiguration(
                 8,
                 true,
                 Duration.ofMinutes(5),
+                1L,
+                10,
                 List.of("application/json", "text/event-stream"),
                 List.of("application/json", "text/event-stream"),
                 true
@@ -269,6 +277,8 @@ public record McpServerConfiguration(
                 sseClientPrefixByteLength,
                 sseEnableHistoryReplay,
                 sseClientTimeout,
+                sseHistoryLimit,
+                httpResponseQueueCapacity,
                 servletAcceptedContentTypes,
                 servletProducedContentTypes,
                 servletEnableAsyncProcessing
@@ -343,6 +353,8 @@ public record McpServerConfiguration(
                 sseClientPrefixByteLength,
                 sseEnableHistoryReplay,
                 sseClientTimeout,
+                sseHistoryLimit,
+                httpResponseQueueCapacity,
                 servletAcceptedContentTypes,
                 servletProducedContentTypes,
                 servletEnableAsyncProcessing

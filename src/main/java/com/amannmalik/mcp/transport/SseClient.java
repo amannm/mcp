@@ -21,13 +21,12 @@ public final class SseClient implements AutoCloseable {
     private PrintWriter out;
     private volatile boolean closed;
 
-    public SseClient(AsyncContext context, int clientPrefixByteLength) throws IOException {
+    public SseClient(AsyncContext context, int clientPrefixByteLength, long historyLimit) throws IOException {
         byte[] bytes = new byte[clientPrefixByteLength];
         RANDOM.nextBytes(bytes);
         this.prefix = Base64Util.encodeUrl(bytes);
         attach(context, 0);
-        // TODO: config
-        historyLimit = 1L;
+        this.historyLimit = historyLimit;
     }
 
     void attach(AsyncContext ctx, long lastId) throws IOException {
