@@ -90,7 +90,8 @@ public final class ServerFeaturesSteps {
                 base.sessionIdByteLength(), base.initializeRequestTimeout(), base.strictVersionValidation(),
                 base.pingTimeout(), base.pingInterval(), base.progressPerSecond(), base.rateLimiterWindow(),
                 base.verbose(), base.interactiveSampling(), roots, base.samplingAccessPolicy(),
-                McpClientTlsConfiguration.defaultConfiguration()
+                "", "", "PKCS12", "", "", "PKCS12", CertificateValidationMode.STRICT,
+                List.of("TLSv1.3", "TLSv1.2"), List.of("TLS_AES_128_GCM_SHA256", "TLS_AES_256_GCM_SHA384"), List.of(), true
         );
         McpHostConfiguration hostConfig = new McpHostConfiguration(
                 "2025-06-18",

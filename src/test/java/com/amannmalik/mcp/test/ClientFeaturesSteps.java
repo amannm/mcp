@@ -41,7 +41,7 @@ public final class ClientFeaturesSteps {
     private String lastErrorMessage;
     private boolean combinedRequestProcessed;
     private String elicitationResponseAction;
-    private McpClientTlsConfiguration tlsConfig;
+    private McpClientConfiguration defaultConfig;
 
     private static ClientCapability parseCapability(String raw) {
         String normalized = raw.trim().toLowerCase();
@@ -77,7 +77,8 @@ public final class ClientFeaturesSteps {
                 base.sessionIdByteLength(), base.initializeRequestTimeout(), base.strictVersionValidation(),
                 base.pingTimeout(), base.pingInterval(), base.progressPerSecond(), base.rateLimiterWindow(),
                 base.verbose(), base.interactiveSampling(), base.rootDirectories(), base.samplingAccessPolicy(),
-                McpClientTlsConfiguration.defaultConfiguration()
+                "", "", "PKCS12", "", "", "PKCS12", CertificateValidationMode.STRICT,
+                List.of("TLSv1.3", "TLSv1.2"), List.of("TLS_AES_128_GCM_SHA256", "TLS_AES_256_GCM_SHA384"), List.of(), true
         );
         McpHostConfiguration hostConfig = new McpHostConfiguration(
                 "2025-06-18",
@@ -831,19 +832,19 @@ public final class ClientFeaturesSteps {
 
     @When("I inspect the default client TLS configuration")
     public void i_inspect_the_default_client_tls_configuration() {
-        tlsConfig = McpClientTlsConfiguration.defaultConfiguration();
+        defaultConfig = McpClientConfiguration.defaultConfiguration("test-client", "test-server", "test-principal");
     }
 
     @Then("hostname verification should be enabled")
     public void hostname_verification_should_be_enabled() {
-        if (!tlsConfig.verifyHostname()) {
+        if (!defaultConfig.verifyHostname()) {
             throw new AssertionError("hostname verification disabled");
         }
     }
 
     @Then("certificate validation mode should be {string}")
     public void certificate_validation_mode_should_be(String mode) {
-        if (tlsConfig.certificateValidationMode() != CertificateValidationMode.valueOf(mode)) {
+        if (defaultConfig.certificateValidationMode() != CertificateValidationMode.valueOf(mode)) {
             throw new AssertionError("unexpected mode");
         }
     }

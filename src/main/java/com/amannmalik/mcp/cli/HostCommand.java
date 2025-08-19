@@ -104,44 +104,31 @@ public final class HostCommand {
             List<String> clientSpecs = parseResult.matchedOptionValue("--client", Collections.emptyList());
             boolean interactive = parseResult.matchedOptionValue("--interactive", false);
 
-            McpClientTlsConfiguration baseTls = McpClientTlsConfiguration.defaultConfiguration();
             Path truststorePathOpt = parseResult.matchedOptionValue("--client-truststore", null);
-            String truststorePath = truststorePathOpt == null ? baseTls.truststorePath() : truststorePathOpt.toString();
-            String truststorePassword = parseResult.matchedOptionValue("--client-truststore-password", baseTls.truststorePassword());
+            String truststorePath = truststorePathOpt == null ? "" : truststorePathOpt.toString();
+            String truststorePassword = parseResult.matchedOptionValue("--client-truststore-password", "");
             String truststorePasswordEnv = parseResult.matchedOptionValue("--client-truststore-password-env", null);
             if (truststorePasswordEnv != null) {
                 String env = System.getenv(truststorePasswordEnv);
                 if (env != null) truststorePassword = env;
             }
-            String truststoreType = parseResult.matchedOptionValue("--client-truststore-type", baseTls.truststoreType());
+            String truststoreType = parseResult.matchedOptionValue("--client-truststore-type", "PKCS12");
             Path keystorePathOpt = parseResult.matchedOptionValue("--client-keystore", null);
-            String keystorePath = keystorePathOpt == null ? baseTls.keystorePath() : keystorePathOpt.toString();
-            String keystorePassword = parseResult.matchedOptionValue("--client-keystore-password", baseTls.keystorePassword());
+            String keystorePath = keystorePathOpt == null ? "" : keystorePathOpt.toString();
+            String keystorePassword = parseResult.matchedOptionValue("--client-keystore-password", "");
             String keystorePasswordEnv = parseResult.matchedOptionValue("--client-keystore-password-env", null);
             if (keystorePasswordEnv != null) {
                 String env = System.getenv(keystorePasswordEnv);
                 if (env != null) keystorePassword = env;
             }
-            String keystoreType = parseResult.matchedOptionValue("--client-keystore-type", baseTls.keystoreType());
+            String keystoreType = parseResult.matchedOptionValue("--client-keystore-type", "PKCS12");
             boolean verifyCertificates = parseResult.matchedOptionValue("--verify-certificates", true);
             boolean allowSelfSigned = parseResult.matchedOptionValue("--allow-self-signed", false);
-            List<String> tlsProtocols = parseResult.matchedOptionValue("--tls-protocols", baseTls.tlsProtocols());
-            List<String> certificatePins = parseResult.matchedOptionValue("--certificate-pinning", baseTls.certificatePins());
+            List<String> tlsProtocols = parseResult.matchedOptionValue("--tls-protocols", List.of("TLSv1.3", "TLSv1.2"));
+            List<String> certificatePins = parseResult.matchedOptionValue("--certificate-pinning", List.of());
             CertificateValidationMode validationMode = !certificatePins.isEmpty() ? CertificateValidationMode.CUSTOM : (!verifyCertificates || allowSelfSigned ? CertificateValidationMode.PERMISSIVE : CertificateValidationMode.STRICT);
             boolean verifyHostname = verifyCertificates;
-            McpClientTlsConfiguration tlsConfig = new McpClientTlsConfiguration(
-                    truststorePath,
-                    truststorePassword,
-                    truststoreType,
-                    keystorePath,
-                    keystorePassword,
-                    keystoreType,
-                    validationMode,
-                    tlsProtocols,
-                    baseTls.cipherSuites(),
-                    certificatePins,
-                    verifyHostname
-            );
+            List<String> cipherSuites = List.of("TLS_AES_128_GCM_SHA256", "TLS_AES_256_GCM_SHA384");
 
             if (clientSpecs.isEmpty()) throw new IllegalArgumentException("--client required");
 
@@ -192,7 +179,17 @@ public final class HostCommand {
                         false,
                         List.of(System.getProperty("user.dir")),
                         SamplingAccessPolicy.PERMISSIVE,
-                        tlsConfig
+                        truststorePath,
+                        truststorePassword,
+                        truststoreType,
+                        keystorePath,
+                        keystorePassword,
+                        keystoreType,
+                        validationMode,
+                        tlsProtocols,
+                        cipherSuites,
+                        certificatePins,
+                        verifyHostname
                 );
                 clientConfigs.add(clientConfig);
             }
