@@ -348,15 +348,14 @@ public final class McpServer extends JsonRpcEndpoint implements AutoCloseable {
         try {
             baseResp = initialize(init);
         } catch (UnsupportedProtocolVersionException e) {
+            var supported = Json.createArrayBuilder();
+            config.supportedVersions().forEach(supported::add);
             return JsonRpcError.of(
                     req.id(),
                     JsonRpcErrorCode.INVALID_PARAMS,
                     "Unsupported protocol version",
                     Json.createObjectBuilder()
-                            .add("supported", config.supportedVersions().stream()
-                                    .collect(Json::createArrayBuilder, JsonArrayBuilder::add, (a, b) -> {
-                                    })
-                                    .build())
+                            .add("supported", supported.build())
                             .add("requested", e.requested())
                             .build());
         }
