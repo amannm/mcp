@@ -134,17 +134,21 @@ public final class McpServer extends JsonRpcEndpoint implements AutoCloseable {
                 new ResourceOrchestrator(resources, resourceAccess, principal, rootsManager, this::state, (method, params) -> send(new JsonRpcNotification(method.method(), params)), progress);
 
         if (tools != null && tools.supportsListChanged()) {
-            toolListSubscription = subscribeListChanges(
+            toolListSubscription = SubscriptionUtil.subscribeListChanges(
+                    this::state,
                     tools::onListChanged,
-                    NotificationMethod.TOOLS_LIST_CHANGED,
-                    TOOL_LIST_CHANGED_NOTIFICATION_JSON_CODEC.toJson(new ToolListChangedNotification()));
+                    () -> send(new JsonRpcNotification(
+                            NotificationMethod.TOOLS_LIST_CHANGED.method(),
+                            TOOL_LIST_CHANGED_NOTIFICATION_JSON_CODEC.toJson(new ToolListChangedNotification()))));
         }
 
         if (prompts != null && prompts.supportsListChanged()) {
-            promptsSubscription = subscribeListChanges(
+            promptsSubscription = SubscriptionUtil.subscribeListChanges(
+                    this::state,
                     prompts::onListChanged,
-                    NotificationMethod.PROMPTS_LIST_CHANGED,
-                    PromptListChangedNotification.CODEC.toJson(new PromptListChangedNotification()));
+                    () -> send(new JsonRpcNotification(
+                            NotificationMethod.PROMPTS_LIST_CHANGED.method(),
+                            PromptListChangedNotification.CODEC.toJson(new PromptListChangedNotification()))));
         }
 
         registerRequest(RequestMethod.INITIALIZE, this::initialize);
@@ -206,23 +210,6 @@ public final class McpServer extends JsonRpcEndpoint implements AutoCloseable {
             }
             default -> throw new IllegalArgumentException("Unknown transport type: " + config.transportType());
         };
-    }
-
-    private <S extends AutoCloseable> S subscribeListChanges(
-            SubscriptionFactory<S> factory,
-            NotificationMethod method,
-            JsonObject payload) {
-        try {
-            return factory.onListChanged(() -> {
-                if (state() != LifecycleState.OPERATION) return;
-                try {
-                    send(new JsonRpcNotification(method.method(), payload));
-                } catch (IOException ignore) {
-                }
-            });
-        } catch (RuntimeException ignore) {
-            return null;
-        }
     }
 
     public void serve() throws IOException {
@@ -614,10 +601,5 @@ public final class McpServer extends JsonRpcEndpoint implements AutoCloseable {
         if (completions != null) completions.close();
         if (sampling != null) sampling.close();
         transport.close();
-    }
-
-    @FunctionalInterface
-    private interface SubscriptionFactory<S extends AutoCloseable> {
-        S onListChanged(Runnable listener);
     }
 }
