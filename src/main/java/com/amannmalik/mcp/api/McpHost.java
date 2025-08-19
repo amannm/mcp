@@ -14,6 +14,7 @@ import java.io.IOException;
 import java.time.Duration;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 public final class McpHost implements AutoCloseable {
@@ -27,14 +28,6 @@ public final class McpHost implements AutoCloseable {
                     ListToolsResult::_meta,
                     new ToolAbstractEntityCodec(),
                     (page, meta) -> new ListToolsResult(page.items(), page.nextCursor(), meta));
-    private static final JsonCodec<ListResourcesResult> LIST_RESOURCES_RESULT_JSON_CODEC =
-            AbstractEntityCodec.paginatedResult(
-                    "resources",
-                    "resource",
-                    r -> new Pagination.Page<>(r.resources(), r.nextCursor()),
-                    ListResourcesResult::_meta,
-                    new ResourceAbstractEntityCodec(),
-                    (page, meta) -> new ListResourcesResult(page.items(), page.nextCursor(), meta));
 
     private static final Duration TIMEOUT = Duration.ofSeconds(5);
     private final Map<String, McpClient> clients = new ConcurrentHashMap<>();
@@ -133,16 +126,19 @@ public final class McpHost implements AutoCloseable {
     public ListResourcesResult listResources(String clientId, Cursor cursor) throws IOException {
         var client = requireClient(clientId);
         requireCapability(client, ServerCapability.RESOURCES);
-        var token = cursor instanceof Cursor.Token(var value) ? value : null;
-        var resp = JsonRpc.expectResponse(client.request(
-                RequestMethod.RESOURCES_LIST,
-                AbstractEntityCodec.paginatedRequest(
-                        ListResourcesRequest::cursor,
-                        ListResourcesRequest::_meta,
-                        ListResourcesRequest::new).toJson(new ListResourcesRequest(token, null)),
-                TIMEOUT
-        ));
-        return LIST_RESOURCES_RESULT_JSON_CODEC.fromJson(resp.result());
+        return client.listResources(cursor);
+    }
+
+    public ListResourceTemplatesResult listResourceTemplates(String clientId, Cursor cursor) throws IOException {
+        var client = requireClient(clientId);
+        requireCapability(client, ServerCapability.RESOURCES);
+        return client.listResourceTemplates(cursor);
+    }
+
+    public AutoCloseable subscribeToResource(String clientId, String uri, Consumer<ResourceUpdate> listener) throws IOException {
+        var client = requireClient(clientId);
+        requireCapability(client, ServerCapability.RESOURCES);
+        return client.subscribeResource(uri, listener);
     }
 
     public ListToolsResult listTools(String clientId, Cursor cursor) throws IOException {
@@ -194,6 +190,11 @@ public final class McpHost implements AutoCloseable {
         samplingAccess.requireAllowed(principal);
         var resp = JsonRpc.expectResponse(client.request(RequestMethod.SAMPLING_CREATE_MESSAGE, params, TIMEOUT));
         return resp.result();
+    }
+
+    public void setClientLogLevel(String clientId, LoggingLevel level) throws IOException {
+        var client = requireConnectedClient(clientId);
+        client.setLogLevel(level);
     }
 
     public JsonRpcMessage request(String id, RequestMethod method, JsonObject params) throws IOException {
@@ -256,6 +257,22 @@ public final class McpHost implements AutoCloseable {
 
     public Set<ServerFeature> serverFeatures(String id) {
         return EnumSet.copyOf(requireClient(id).serverFeatures());
+    }
+
+    public String getProtocolVersion(String clientId) {
+        return requireClient(clientId).protocolVersion();
+    }
+
+    public ServerInfo getServerInfo(String clientId) {
+        return requireClient(clientId).serverInfo();
+    }
+
+    public Set<String> getServerCapabilityNames(String clientId) {
+        return requireClient(clientId).serverCapabilityNames();
+    }
+
+    public Map<String, String> getServerInfoMap(String clientId) {
+        return requireClient(clientId).serverInfoMap();
     }
 
     private McpClient requireConnectedClient(String id) {
