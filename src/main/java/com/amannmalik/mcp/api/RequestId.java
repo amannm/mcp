@@ -37,7 +37,13 @@ public sealed interface RequestId permits
             case NUMBER -> {
                 var num = (JsonNumber) value;
                 if (!num.isIntegral()) throw new IllegalArgumentException("id must be integer");
-                yield new NumericId(num.longValue());
+                long val;
+                try {
+                    val = num.longValueExact();
+                } catch (ArithmeticException e) {
+                    throw new IllegalArgumentException("id out of range", e);
+                }
+                yield new NumericId(val);
             }
             default -> throw new IllegalArgumentException("Invalid id type");
         };
