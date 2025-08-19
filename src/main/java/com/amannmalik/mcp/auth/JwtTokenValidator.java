@@ -27,24 +27,24 @@ public final class JwtTokenValidator implements TokenValidator {
 
     @Override
     public Principal validate(String token) throws AuthorizationException {
-        JwtParts parts = decode(token);
+        var parts = decode(token);
         verifySignature(parts);
-        JsonObject payload = parsePayload(parts.payloadJson());
-        String subject = extractSubject(payload);
+        var payload = parsePayload(parts.payloadJson());
+        var subject = extractSubject(payload);
         requireAudience(payload, "aud", false, "audience mismatch");
         requireAudience(payload, "resource", true, "resource mismatch");
         validateTimestamps(payload);
-        Set<String> scopes = extractScopes(payload);
+        var scopes = extractScopes(payload);
         return new Principal(subject, scopes);
     }
 
     private JwtParts decode(String token) throws AuthorizationException {
         token = ValidationUtil.requireNonBlank(token);
-        String[] parts = token.split("\\.");
+        var parts = token.split("\\.");
         if (parts.length != 3) throw new AuthorizationException("invalid token format");
         try {
-            String header = new String(Base64Util.decodeUrl(parts[0]));
-            String payload = new String(Base64Util.decodeUrl(parts[1]));
+            var header = new String(Base64Util.decodeUrl(parts[0]));
+            var payload = new String(Base64Util.decodeUrl(parts[1]));
             return new JwtParts(header, payload, parts[2]);
         } catch (IllegalArgumentException e) {
             throw new AuthorizationException("invalid token encoding");
@@ -54,18 +54,18 @@ public final class JwtTokenValidator implements TokenValidator {
     private void verifySignature(JwtParts parts) throws AuthorizationException {
         if (secret == null) return;
         JsonObject header;
-        try (JsonReader hr = Json.createReader(new StringReader(parts.headerJson()))) {
+        try (var hr = Json.createReader(new StringReader(parts.headerJson()))) {
             header = hr.readObject();
         } catch (Exception e) {
             throw new AuthorizationException("invalid token header");
         }
-        String alg = header.getString("alg", null);
+        var alg = header.getString("alg", null);
         if (!"HS256".equals(alg)) throw new AuthorizationException("unsupported alg");
         try {
-            Mac mac = Mac.getInstance("HmacSHA256");
+            var mac = Mac.getInstance("HmacSHA256");
             mac.init(new SecretKeySpec(secret, "HmacSHA256"));
-            byte[] expected = mac.doFinal((parts.headerJson() + "." + parts.payloadJson()).getBytes(StandardCharsets.US_ASCII));
-            byte[] actual = Base64Util.decodeUrl(parts.signature());
+            var expected = mac.doFinal((parts.headerJson() + "." + parts.payloadJson()).getBytes(StandardCharsets.US_ASCII));
+            var actual = Base64Util.decodeUrl(parts.signature());
             if (!MessageDigest.isEqual(expected, actual)) throw new AuthorizationException("invalid signature");
         } catch (NoSuchAlgorithmException | InvalidKeyException e) {
             throw new AuthorizationException("signature verification failed");
@@ -73,7 +73,7 @@ public final class JwtTokenValidator implements TokenValidator {
     }
 
     private JsonObject parsePayload(String payloadJson) throws AuthorizationException {
-        try (JsonReader reader = Json.createReader(new StringReader(payloadJson))) {
+        try (var reader = Json.createReader(new StringReader(payloadJson))) {
             return reader.readObject();
         } catch (Exception e) {
             throw new AuthorizationException("invalid token payload");
@@ -81,14 +81,14 @@ public final class JwtTokenValidator implements TokenValidator {
     }
 
     private String extractSubject(JsonObject payload) throws AuthorizationException {
-        String sub = payload.getString("sub", null);
+        var sub = payload.getString("sub", null);
         if (sub == null || sub.isBlank()) throw new AuthorizationException("subject required");
         return sub;
     }
 
     private void requireAudience(JsonObject payload, String key, boolean optional, String err)
             throws AuthorizationException {
-        JsonValue val = payload.get(key);
+        var val = payload.get(key);
         if (val == null) {
             if (!optional) throw new AuthorizationException(err);
             return;
@@ -108,13 +108,13 @@ public final class JwtTokenValidator implements TokenValidator {
     }
 
     private void validateTimestamps(JsonObject payload) throws AuthorizationException {
-        long now = System.currentTimeMillis() / 1000;
+        var now = System.currentTimeMillis() / 1000;
         if (payload.containsKey("exp") && payload.get("exp").getValueType() == JsonValue.ValueType.NUMBER) {
-            long exp = payload.getJsonNumber("exp").longValue();
+            var exp = payload.getJsonNumber("exp").longValue();
             if (now >= exp) throw new AuthorizationException("token expired");
         }
         if (payload.containsKey("nbf") && payload.get("nbf").getValueType() == JsonValue.ValueType.NUMBER) {
-            long nbf = payload.getJsonNumber("nbf").longValue();
+            var nbf = payload.getJsonNumber("nbf").longValue();
             if (now < nbf) throw new AuthorizationException("token not active");
         }
     }

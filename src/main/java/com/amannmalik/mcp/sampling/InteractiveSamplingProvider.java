@@ -1,13 +1,12 @@
 package com.amannmalik.mcp.sampling;
 
 import com.amannmalik.mcp.spi.*;
-import jakarta.json.*;
+import jakarta.json.Json;
 
 import java.io.*;
 import java.net.URI;
 import java.net.http.*;
 import java.time.Duration;
-import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.*;
 
@@ -27,7 +26,7 @@ public final class InteractiveSamplingProvider implements SamplingProvider {
     }
 
     private CreateMessageResponse autoApprove(CreateMessageRequest request) throws InterruptedException {
-        boolean reject = request.messages().stream()
+        var reject = request.messages().stream()
                 .map(SamplingMessage::content)
                 .filter(ContentBlock.Text.class::isInstance)
                 .map(ContentBlock.Text.class::cast)
@@ -45,7 +44,7 @@ public final class InteractiveSamplingProvider implements SamplingProvider {
     private CreateMessageResponse interactive(CreateMessageRequest request, Duration timeoutMillis) throws InterruptedException {
         try {
             printRequest(request);
-            String response = prompt("\nApprove this sampling request? [y/N/edit]: ", timeoutMillis);
+            var response = prompt("\nApprove this sampling request? [y/N/edit]: ", timeoutMillis);
             if (response == null || response.trim().isEmpty() || response.toLowerCase().startsWith("n")) {
                 throw new InterruptedException("User rejected sampling request");
             }
@@ -54,10 +53,10 @@ public final class InteractiveSamplingProvider implements SamplingProvider {
             }
 
             System.err.println("Generating response...");
-            CreateMessageResponse result = generateResponse(request, timeoutMillis);
+            var result = generateResponse(request, timeoutMillis);
             printResponse(result);
 
-            String approveResponse = prompt("\nApprove this response? [Y/n]: ", timeoutMillis);
+            var approveResponse = prompt("\nApprove this response? [Y/n]: ", timeoutMillis);
             if (approveResponse != null && approveResponse.toLowerCase().startsWith("n")) {
                 throw new InterruptedException("User rejected response");
             }
@@ -91,9 +90,9 @@ public final class InteractiveSamplingProvider implements SamplingProvider {
             }
         }
         System.err.println("\nMessages:");
-        List<SamplingMessage> messages = request.messages();
-        for (int i = 0; i < messages.size(); i++) {
-            SamplingMessage msg = messages.get(i);
+        var messages = request.messages();
+        for (var i = 0; i < messages.size(); i++) {
+            var msg = messages.get(i);
             System.err.println("  " + (i + 1) + ". [" + msg.role() + "] " + formatContent(msg.content()));
         }
     }
@@ -135,7 +134,7 @@ public final class InteractiveSamplingProvider implements SamplingProvider {
         } catch (IOException ignore) {
         }
 
-        String responseText = generateSimpleResponse(request);
+        var responseText = generateSimpleResponse(request);
 
         return new CreateMessageResponse(
                 Role.ASSISTANT,
@@ -147,21 +146,21 @@ public final class InteractiveSamplingProvider implements SamplingProvider {
     }
 
     private Optional<AiResult> openAiResponse(CreateMessageRequest request, Duration timeoutMillis) throws IOException, InterruptedException {
-        String apiKey = System.getenv("OPENAI_API_KEY");
+        var apiKey = System.getenv("OPENAI_API_KEY");
         if (apiKey == null || apiKey.isBlank()) return Optional.empty();
 
-        HttpClient.Builder clientBuilder = HttpClient.newBuilder();
+        var clientBuilder = HttpClient.newBuilder();
         if (timeoutMillis.isPositive()) clientBuilder.connectTimeout(timeoutMillis);
-        HttpClient client = clientBuilder.build();
+        var client = clientBuilder.build();
 
-        JsonArrayBuilder msgs = Json.createArrayBuilder();
+        var msgs = Json.createArrayBuilder();
         if (request.systemPrompt() != null) {
             msgs.add(Json.createObjectBuilder()
                     .add("role", "system")
                     .add("content", request.systemPrompt())
                     .build());
         }
-        for (SamplingMessage m : request.messages()) {
+        for (var m : request.messages()) {
             if (m.content() instanceof ContentBlock.Text t) {
                 msgs.add(Json.createObjectBuilder()
                         .add("role", m.role().name().toLowerCase())
@@ -170,39 +169,39 @@ public final class InteractiveSamplingProvider implements SamplingProvider {
             }
         }
 
-        JsonObject body = Json.createObjectBuilder()
+        var body = Json.createObjectBuilder()
                 .add("model", "gpt-3.5-turbo")
                 .add("messages", msgs)
                 .add("max_tokens", request.maxTokens())
                 .build();
 
-        HttpRequest.Builder requestBuilder = HttpRequest.newBuilder()
+        var requestBuilder = HttpRequest.newBuilder()
                 .uri(URI.create("https://api.openai.com/v1/chat/completions"))
                 .header("Authorization", "Bearer " + apiKey)
                 .header("Content-Type", "application/json")
                 .POST(HttpRequest.BodyPublishers.ofString(body.toString()));
         if (timeoutMillis.isPositive()) requestBuilder.timeout(timeoutMillis);
-        HttpRequest httpRequest = requestBuilder.build();
+        var httpRequest = requestBuilder.build();
 
-        HttpResponse<String> response = client.send(httpRequest, HttpResponse.BodyHandlers.ofString());
+        var response = client.send(httpRequest, HttpResponse.BodyHandlers.ofString());
         if (response.statusCode() / 100 != 2) return Optional.empty();
 
-        JsonObject obj = Json.createReader(new StringReader(response.body())).readObject();
+        var obj = Json.createReader(new StringReader(response.body())).readObject();
         var choices = obj.getJsonArray("choices");
         if (choices == null || choices.isEmpty()) return Optional.empty();
         var msg = choices.getJsonObject(0).getJsonObject("message");
         if (msg == null) return Optional.empty();
-        String content = msg.getString("content", null);
+        var content = msg.getString("content", null);
         if (content == null) return Optional.empty();
-        String model = obj.getString("model", "openai");
+        var model = obj.getString("model", "openai");
         return Optional.of(new AiResult(content.trim(), model));
     }
 
     private String readLine(Duration timeoutMillis) throws IOException, InterruptedException {
         if (!timeoutMillis.isPositive()) return reader.readLine();
-        ExecutorService executor = Executors.newSingleThreadExecutor();
+        var executor = Executors.newSingleThreadExecutor();
         try {
-            Future<String> future = executor.submit(reader::readLine);
+            var future = executor.submit(reader::readLine);
             try {
                 return future.get(timeoutMillis.toMillis(), TimeUnit.MILLISECONDS);
             } catch (TimeoutException e) {
@@ -210,7 +209,7 @@ public final class InteractiveSamplingProvider implements SamplingProvider {
                 throw new InterruptedException("Timed out waiting for user input");
             }
         } catch (ExecutionException e) {
-            Throwable cause = e.getCause();
+            var cause = e.getCause();
             if (cause instanceof IOException io) throw io;
             throw new InterruptedException(cause.toString());
         } finally {
@@ -220,11 +219,11 @@ public final class InteractiveSamplingProvider implements SamplingProvider {
 
     private String generateSimpleResponse(CreateMessageRequest request) {
         // Extract the last user message for context
-        List<SamplingMessage> messages = request.messages();
-        String lastUserMessage = "";
+        var messages = request.messages();
+        var lastUserMessage = "";
 
-        for (int i = messages.size() - 1; i >= 0; i--) {
-            SamplingMessage msg = messages.get(i);
+        for (var i = messages.size() - 1; i >= 0; i--) {
+            var msg = messages.get(i);
             if (msg.role() == Role.USER && msg.content() instanceof ContentBlock.Text text) {
                 lastUserMessage = text.text();
                 break;

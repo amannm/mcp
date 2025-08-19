@@ -1,8 +1,6 @@
 package com.amannmalik.mcp.api;
 
-
 import java.util.Optional;
-
 
 public enum ServerCapability {
     PROMPTS("prompts"),

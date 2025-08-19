@@ -21,13 +21,12 @@ public final class SseClient implements AutoCloseable {
     private PrintWriter out;
     private volatile boolean closed;
 
-    public SseClient(AsyncContext context, int clientPrefixByteLength) throws IOException {
-        byte[] bytes = new byte[clientPrefixByteLength];
+    public SseClient(AsyncContext context, int clientPrefixByteLength, long historyLimit) throws IOException {
+        var bytes = new byte[clientPrefixByteLength];
         RANDOM.nextBytes(bytes);
         this.prefix = Base64Util.encodeUrl(bytes);
         attach(context, 0);
-        // TODO: config
-        historyLimit = 1L;
+        this.historyLimit = historyLimit;
     }
 
     void attach(AsyncContext ctx, long lastId) throws IOException {
@@ -42,7 +41,7 @@ public final class SseClient implements AutoCloseable {
     }
 
     public void send(JsonObject msg) {
-        long id = nextId.getAndIncrement();
+        var id = nextId.getAndIncrement();
         history.addLast(new SseEvent(id, msg));
         while (history.size() > historyLimit) {
             history.removeFirst();
@@ -64,7 +63,7 @@ public final class SseClient implements AutoCloseable {
         if (context == null) {
             return;
         }
-        for (SseEvent ev : history) {
+        for (var ev : history) {
             if (ev.id > lastId) {
                 out.write("id: " + prefix + '-' + ev.id + "\n");
                 out.write("data: " + ev.msg + "\n\n");

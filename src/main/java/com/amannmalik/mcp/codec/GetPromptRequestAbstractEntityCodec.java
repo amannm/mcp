@@ -9,9 +9,9 @@ import java.util.*;
 public final class GetPromptRequestAbstractEntityCodec extends AbstractEntityCodec<GetPromptRequest> {
     @Override
     public JsonObject toJson(GetPromptRequest req) {
-        JsonObjectBuilder b = Json.createObjectBuilder().add("name", req.name());
+        var b = Json.createObjectBuilder().add("name", req.name());
         if (!req.arguments().isEmpty()) {
-            JsonObjectBuilder args = Json.createObjectBuilder();
+            var args = Json.createObjectBuilder();
             req.arguments().forEach(args::add);
             b.add("arguments", args.build());
         }
@@ -23,8 +23,8 @@ public final class GetPromptRequestAbstractEntityCodec extends AbstractEntityCod
     public GetPromptRequest fromJson(JsonObject obj) {
         if (obj == null) throw new IllegalArgumentException("params required");
         requireOnlyKeys(obj, Set.of("name", "arguments", "_meta"));
-        String name = requireString(obj, "name");
-        JsonObject argsObj = obj.getJsonObject("arguments");
+        var name = requireString(obj, "name");
+        var argsObj = obj.getJsonObject("arguments");
         Map<String, String> args = Map.of();
         if (argsObj != null) {
             Map<String, String> tmp = new HashMap<>();
@@ -32,13 +32,13 @@ public final class GetPromptRequestAbstractEntityCodec extends AbstractEntityCod
                 if (v.getValueType() != JsonValue.ValueType.STRING) {
                     throw new IllegalArgumentException("argument values must be strings");
                 }
-                String key = ValidationUtil.requireClean(k);
-                String value = ValidationUtil.requireClean(((JsonString) v).getString());
+                var key = ValidationUtil.requireClean(k);
+                var value = ValidationUtil.requireClean(((JsonString) v).getString());
                 tmp.put(key, value);
             });
             args = Map.copyOf(tmp);
         }
-        JsonObject meta = obj.getJsonObject("_meta");
+        var meta = obj.getJsonObject("_meta");
         return new GetPromptRequest(name, args, meta);
     }
 }

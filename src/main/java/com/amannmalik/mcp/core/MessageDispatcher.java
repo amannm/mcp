@@ -23,7 +23,7 @@ public final class MessageDispatcher {
 
     public void flush() {
         while (true) {
-            JsonObject msg = backlog.peek();
+            var msg = backlog.peek();
             if (msg == null) return;
             if (router.route(msg)) {
                 backlog.poll();

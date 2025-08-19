@@ -2,7 +2,8 @@ package com.amannmalik.mcp.transport;
 
 import com.amannmalik.mcp.api.RequestMethod;
 import com.amannmalik.mcp.spi.Principal;
-import jakarta.json.*;
+import jakarta.json.Json;
+import jakarta.json.JsonObject;
 import jakarta.json.stream.JsonParsingException;
 import jakarta.servlet.AsyncContext;
 import jakarta.servlet.http.*;
@@ -17,18 +18,17 @@ final class McpServlet extends HttpServlet {
     private final StreamableHttpServerTransport transport;
     private final int responseQueueCapacity;
 
-    McpServlet(StreamableHttpServerTransport transport) {
+    McpServlet(StreamableHttpServerTransport transport, int responseQueueCapacity) {
         this.transport = transport;
-        // TODO: this config
-        this.responseQueueCapacity = 10;
+        this.responseQueueCapacity = responseQueueCapacity;
     }
 
     private static MessageType classify(JsonObject obj) {
-        boolean hasMethod = obj.containsKey("method");
-        boolean hasId = obj.containsKey("id");
-        boolean isRequest = hasMethod && hasId;
-        boolean isNotification = hasMethod && !hasId;
-        boolean isResponse = !hasMethod && (obj.containsKey("result") || obj.containsKey("error"));
+        var hasMethod = obj.containsKey("method");
+        var hasId = obj.containsKey("id");
+        var isRequest = hasMethod && hasId;
+        var isNotification = hasMethod && !hasId;
+        var isResponse = !hasMethod && (obj.containsKey("result") || obj.containsKey("error"));
         if (isRequest) return MessageType.REQUEST;
         if (isNotification) return MessageType.NOTIFICATION;
         if (isResponse) return MessageType.RESPONSE;
@@ -43,13 +43,13 @@ final class McpServlet extends HttpServlet {
         var principal = principalOpt.get();
 
         JsonObject obj;
-        try (JsonReader reader = Json.createReader(req.getInputStream())) {
+        try (var reader = Json.createReader(req.getInputStream())) {
             obj = reader.readObject();
         } catch (JsonParsingException e) {
             resp.sendError(HttpServletResponse.SC_BAD_REQUEST);
             return;
         }
-        boolean initializing = RequestMethod.INITIALIZE.method()
+        var initializing = RequestMethod.INITIALIZE.method()
                 .equals(obj.getString("method", null));
 
         if (!transport.validateSession(req, resp, principal, initializing)) return;
@@ -67,15 +67,15 @@ final class McpServlet extends HttpServlet {
         var principalOpt = authorize(req, resp, true, false);
         if (principalOpt.isEmpty()) return;
         if (!transport.validateSession(req, resp, principalOpt.get(), false)) return;
-        AsyncContext ac = initSse(req, resp);
+        var ac = initSse(req, resp);
 
-        String lastEvent = req.getHeader("Last-Event-ID");
+        var lastEvent = req.getHeader("Last-Event-ID");
         SseClient found = null;
         long lastId = 0;
         if (lastEvent != null) {
-            int idx = lastEvent.lastIndexOf('-');
+            var idx = lastEvent.lastIndexOf('-');
             if (idx > 0) {
-                String prefix = lastEvent.substring(0, idx);
+                var prefix = lastEvent.substring(0, idx);
                 try {
                     lastId = Long.parseLong(lastEvent.substring(idx + 1));
                 } catch (NumberFormatException ignore) {
@@ -88,7 +88,7 @@ final class McpServlet extends HttpServlet {
         }
         SseClient client;
         if (found == null) {
-            client = new SseClient(ac, transport.config.sseClientPrefixByteLength());
+            client = new SseClient(ac, transport.config.sseClientPrefixByteLength(), transport.config.sseHistoryLimit());
             transport.clients.byPrefix.put(client.prefix, client);
         } else {
             client = found;
@@ -126,7 +126,7 @@ final class McpServlet extends HttpServlet {
         resp.setHeader("Cache-Control", "no-cache");
         resp.setHeader(TransportHeaders.PROTOCOL_VERSION, transport.sessions.protocolVersion());
         resp.flushBuffer();
-        AsyncContext ac = req.startAsync();
+        var ac = req.startAsync();
         ac.setTimeout(0);
         return ac;
     }
@@ -153,19 +153,19 @@ final class McpServlet extends HttpServlet {
     }
 
     private void handleInitialize(JsonObject obj, HttpServletResponse resp) throws IOException {
-        String id = obj.get("id").toString();
+        var id = obj.get("id").toString();
         BlockingQueue<JsonObject> q = new LinkedBlockingQueue<>(responseQueueCapacity);
         transport.clients.responses.put(id, q);
         try {
             transport.incoming.put(obj);
-            long timeoutSeconds = transport.config.initializeRequestTimeout().toSeconds();
-            JsonObject response = q.poll(timeoutSeconds, TimeUnit.SECONDS);
+            var timeoutSeconds = transport.config.initializeRequestTimeout().toSeconds();
+            var response = q.poll(timeoutSeconds, TimeUnit.SECONDS);
             if (response == null) {
                 resp.sendError(HttpServletResponse.SC_REQUEST_TIMEOUT);
                 return;
             }
             if (response.containsKey("result")) {
-                JsonObject result = response.getJsonObject("result");
+                var result = response.getJsonObject("result");
                 if (result.containsKey("protocolVersion")) {
                     transport.sessions.protocolVersion(result.getString("protocolVersion"));
                 }
@@ -185,9 +185,9 @@ final class McpServlet extends HttpServlet {
     private void handleStreamRequest(JsonObject obj,
                                      HttpServletRequest req,
                                      HttpServletResponse resp) throws IOException {
-        AsyncContext ac = initSse(req, resp);
-        SseClient client = new SseClient(ac, transport.config.sseClientPrefixByteLength());
-        String key = obj.get("id").toString();
+        var ac = initSse(req, resp);
+        var client = new SseClient(ac, transport.config.sseClientPrefixByteLength(), transport.config.sseHistoryLimit());
+        var key = obj.get("id").toString();
         transport.clients.request.put(key, client);
         transport.clients.byPrefix.put(client.prefix, client);
         ac.addListener(transport.clients.requestListener(key, client));

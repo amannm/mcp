@@ -9,18 +9,17 @@ import java.util.Set;
 public class ElicitResultJsonCodec implements JsonCodec<ElicitResult> {
     @Override
     public JsonObject toJson(ElicitResult r) {
-        JsonObjectBuilder b = Json.createObjectBuilder()
+        var b = Json.createObjectBuilder()
                 .add("action", r.action().name().toLowerCase());
         if (r.content() != null) b.add("content", r.content());
-        if (r._meta() != null) b.add("_meta", r._meta());
-        return b.build();
+        return AbstractEntityCodec.addMeta(b, r._meta()).build();
     }
 
     @Override
     public ElicitResult fromJson(JsonObject obj) {
         if (obj == null) throw new IllegalArgumentException("action required");
         AbstractEntityCodec.requireOnlyKeys(obj, Set.of("action", "content", "_meta"));
-        String raw = obj.getString("action", null);
+        var raw = obj.getString("action", null);
         if (raw == null) throw new IllegalArgumentException("action required");
         ElicitationAction action;
         try {
@@ -28,7 +27,7 @@ public class ElicitResultJsonCodec implements JsonCodec<ElicitResult> {
         } catch (IllegalArgumentException e) {
             throw new IllegalArgumentException("invalid action", e);
         }
-        JsonValue c = obj.get("content");
+        var c = obj.get("content");
         JsonObject content = null;
         if (c != null) {
             if (c.getValueType() != JsonValue.ValueType.OBJECT) {
@@ -36,6 +35,6 @@ public class ElicitResultJsonCodec implements JsonCodec<ElicitResult> {
             }
             content = c.asJsonObject();
         }
-        return new ElicitResult(action, content, obj.getJsonObject("_meta"));
+        return new ElicitResult(action, content, AbstractEntityCodec.meta(obj));
     }
 }

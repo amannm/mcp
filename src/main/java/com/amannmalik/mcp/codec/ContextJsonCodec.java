@@ -10,14 +10,14 @@ import java.util.Map;
 public class ContextJsonCodec implements JsonCodec<Context> {
     @Override
     public JsonObject toJson(Context ctx) {
-        JsonObjectBuilder args = Json.createObjectBuilder();
+        var args = Json.createObjectBuilder();
         ctx.arguments().forEach(args::add);
         return Json.createObjectBuilder().add("arguments", args.build()).build();
     }
 
     @Override
     public Context fromJson(JsonObject obj) {
-        JsonObject argsObj = obj.getJsonObject("arguments");
+        var argsObj = obj.getJsonObject("arguments");
         Map<String, String> map = new HashMap<>();
         if (argsObj != null) {
             argsObj.forEach((k, v) -> {

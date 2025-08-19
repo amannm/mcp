@@ -3,7 +3,6 @@ package com.amannmalik.mcp.spi;
 import com.amannmalik.mcp.codec.ArgumentJsonCodec;
 import com.amannmalik.mcp.codec.ContextJsonCodec;
 import jakarta.json.Json;
-import jakarta.json.JsonObject;
 
 /// - [Completion](specification/2025-06-18/server/utilities/completion.mdx)
 public non-sealed interface CompletionProvider extends ExecutingProvider<Ref, CompleteResult> {
@@ -21,10 +20,10 @@ public non-sealed interface CompletionProvider extends ExecutingProvider<Ref, Co
     }
 
     default CompleteResult complete(CompleteRequest request) throws InterruptedException {
-        JsonObject ctx = request.context() == null
+        var ctx = request.context() == null
                 ? Json.createObjectBuilder().build()
                 : new ContextJsonCodec().toJson(request.context());
-        JsonObject args = Json.createObjectBuilder()
+        var args = Json.createObjectBuilder()
                 .add("argument", new ArgumentJsonCodec().toJson(request.argument()))
                 .add("context", ctx)
                 .build();

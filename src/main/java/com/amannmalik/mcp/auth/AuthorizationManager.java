@@ -17,7 +17,7 @@ public final class AuthorizationManager {
     }
 
     public Principal authorize(String authorizationHeader) throws AuthorizationException {
-        for (AuthorizationStrategy strategy : strategies) {
+        for (var strategy : strategies) {
             var result = strategy.authorize(authorizationHeader);
             if (result.isPresent()) return result.get();
         }

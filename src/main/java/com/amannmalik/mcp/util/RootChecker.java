@@ -25,7 +25,7 @@ public final class RootChecker {
 
         final Path targetPath;
         try {
-            Path p = Paths.get(target);
+            var p = Paths.get(target);
             targetPath = normalize(p);
         } catch (Exception e) {
             return false;
@@ -40,7 +40,7 @@ public final class RootChecker {
 
     private static Optional<Path> toPath(String uri) {
         try {
-            URI base = URI.create(uri);
+            var base = URI.create(uri);
             if ("file".equalsIgnoreCase(base.getScheme())) {
                 return Optional.of(normalize(Paths.get(base)));
             }
