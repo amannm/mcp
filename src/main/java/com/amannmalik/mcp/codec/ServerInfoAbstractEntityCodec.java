@@ -1,12 +1,13 @@
 package com.amannmalik.mcp.codec;
 
 import com.amannmalik.mcp.api.ServerInfo;
-import jakarta.json.*;
+import jakarta.json.Json;
+import jakarta.json.JsonObject;
 
 public final class ServerInfoAbstractEntityCodec extends AbstractEntityCodec<ServerInfo> {
     @Override
     public JsonObject toJson(ServerInfo info) {
-        JsonObjectBuilder b = Json.createObjectBuilder()
+        var b = Json.createObjectBuilder()
                 .add("name", info.name())
                 .add("version", info.version());
         if (info.title() != null) b.add("title", info.title());
@@ -16,9 +17,9 @@ public final class ServerInfoAbstractEntityCodec extends AbstractEntityCodec<Ser
     @Override
     public ServerInfo fromJson(JsonObject obj) {
         if (obj == null) throw new IllegalArgumentException("object required");
-        String name = requireString(obj, "name");
-        String version = requireString(obj, "version");
-        String title = obj.getString("title", null);
+        var name = requireString(obj, "name");
+        var version = requireString(obj, "version");
+        var title = obj.getString("title", null);
         return new ServerInfo(name, title, version);
     }
 }

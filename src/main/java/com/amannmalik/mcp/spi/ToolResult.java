@@ -19,11 +19,11 @@ public record ToolResult(JsonArray content,
     }
 
     private static JsonArray sanitize(JsonArray arr) {
-        JsonArrayBuilder b = Json.createArrayBuilder();
-        for (JsonValue v : arr) {
+        var b = Json.createArrayBuilder();
+        for (var v : arr) {
             if (v.getValueType() == JsonValue.ValueType.OBJECT) {
                 try {
-                    ContentBlock c = CONTENT_BLOCK_CODEC.fromJson(v.asJsonObject());
+                    var c = CONTENT_BLOCK_CODEC.fromJson(v.asJsonObject());
                     b.add(CONTENT_BLOCK_CODEC.toJson(c));
                     continue;
                 } catch (IllegalArgumentException ignore) {

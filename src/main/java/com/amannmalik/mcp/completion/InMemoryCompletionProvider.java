@@ -25,7 +25,7 @@ public final class InMemoryCompletionProvider extends InMemoryProvider<Ref> impl
                 b instanceof Ref.PromptRef(var bName, var _, var _)) {
             return aName.equals(bName);
         }
-        if (a instanceof Ref.ResourceRef(String aUri) && b instanceof Ref.ResourceRef(String bUri)) {
+        if (a instanceof Ref.ResourceRef(var aUri) && b instanceof Ref.ResourceRef(var bUri)) {
             return aUri.equals(bUri);
         }
         return false;
@@ -36,7 +36,7 @@ public final class InMemoryCompletionProvider extends InMemoryProvider<Ref> impl
                     Map<String, String> context,
                     List<String> values) {
         argumentName = ValidationUtil.requireClean(argumentName);
-        Map<String, String> ctx = ValidationUtil.requireCleanMap(context);
+        var ctx = ValidationUtil.requireCleanMap(context);
         List<String> vals = values == null ? List.of() : values.stream()
                 .map(ValidationUtil::requireClean)
                 .toList();
@@ -49,9 +49,9 @@ public final class InMemoryCompletionProvider extends InMemoryProvider<Ref> impl
 
     @Override
     public CompleteResult execute(String name, JsonObject args) {
-        Ref ref = CompletionProvider.decode(name);
+        var ref = CompletionProvider.decode(name);
         var arg = ARGUMENT_CODEC.fromJson(args.getJsonObject("argument"));
-        Context ctx = args.containsKey("context")
+        var ctx = args.containsKey("context")
                 ? CONTEXT_CODEC.fromJson(args.getJsonObject("context"))
                 : null;
         return complete(new CompleteRequest(ref, arg, ctx, null));
@@ -60,7 +60,7 @@ public final class InMemoryCompletionProvider extends InMemoryProvider<Ref> impl
     @Override
     public CompleteResult complete(CompleteRequest request) {
         List<Entry> candidates = new ArrayList<>();
-        for (Entry e : entries) {
+        for (var e : entries) {
             if (refEquals(e.ref, request.ref()) && e.argumentName.equals(request.argument().name())) {
                 candidates.add(e);
             }
@@ -70,8 +70,8 @@ public final class InMemoryCompletionProvider extends InMemoryProvider<Ref> impl
         }
 
         List<String> matches = new ArrayList<>();
-        boolean contextSatisfied = false;
-        for (Entry e : candidates) {
+        var contextSatisfied = false;
+        for (var e : candidates) {
             if (request.context() == null || request.context().arguments().entrySet().containsAll(e.context.entrySet())) {
                 contextSatisfied = true;
                 matches.addAll(e.values);
@@ -81,16 +81,16 @@ public final class InMemoryCompletionProvider extends InMemoryProvider<Ref> impl
             throw new IllegalArgumentException("missing arguments");
         }
 
-        String prefix = request.argument().value();
+        var prefix = request.argument().value();
         Set<String> unique = new LinkedHashSet<>(matches);
-        Comparator<String> cmp = Comparator.comparingInt((String v) -> StringMetrics.prefixDistance(prefix, v))
+        var cmp = Comparator.comparingInt((String v) -> StringMetrics.prefixDistance(prefix, v))
                 .thenComparing(String::compareTo);
-        List<String> sorted = unique.stream()
+        var sorted = unique.stream()
                 .sorted(cmp)
                 .limit(MAX_VALUES)
                 .toList();
-        int total = unique.size();
-        boolean hasMore = total > sorted.size();
+        var total = unique.size();
+        var hasMore = total > sorted.size();
         return new CompleteResult(new Completion(sorted, total, hasMore), null);
     }
 

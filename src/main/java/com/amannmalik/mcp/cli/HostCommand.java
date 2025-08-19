@@ -19,7 +19,7 @@ public final class HostCommand {
     }
 
     public static CommandSpec createCommandSpec() {
-        CommandSpec spec = CommandSpec.create()
+        var spec = CommandSpec.create()
                 .name("host")
                 .addOption(OptionSpec.builder("-v", "--verbose")
                         .type(boolean.class)
@@ -96,7 +96,7 @@ public final class HostCommand {
     }
 
     public static int execute(ParseResult parseResult) {
-        Integer helpExitCode = CommandLine.executeHelpRequest(parseResult);
+        var helpExitCode = CommandLine.executeHelpRequest(parseResult);
         if (helpExitCode != null) return helpExitCode;
 
         try {
@@ -105,43 +105,43 @@ public final class HostCommand {
             boolean interactive = parseResult.matchedOptionValue("--interactive", false);
 
             Path truststorePathOpt = parseResult.matchedOptionValue("--client-truststore", null);
-            String truststorePath = truststorePathOpt == null ? "" : truststorePathOpt.toString();
-            String truststorePassword = parseResult.matchedOptionValue("--client-truststore-password", "");
+            var truststorePath = truststorePathOpt == null ? "" : truststorePathOpt.toString();
+            var truststorePassword = parseResult.matchedOptionValue("--client-truststore-password", "");
             String truststorePasswordEnv = parseResult.matchedOptionValue("--client-truststore-password-env", null);
             if (truststorePasswordEnv != null) {
-                String env = System.getenv(truststorePasswordEnv);
+                var env = System.getenv(truststorePasswordEnv);
                 if (env != null) truststorePassword = env;
             }
-            String truststoreType = parseResult.matchedOptionValue("--client-truststore-type", "PKCS12");
+            var truststoreType = parseResult.matchedOptionValue("--client-truststore-type", "PKCS12");
             Path keystorePathOpt = parseResult.matchedOptionValue("--client-keystore", null);
-            String keystorePath = keystorePathOpt == null ? "" : keystorePathOpt.toString();
-            String keystorePassword = parseResult.matchedOptionValue("--client-keystore-password", "");
+            var keystorePath = keystorePathOpt == null ? "" : keystorePathOpt.toString();
+            var keystorePassword = parseResult.matchedOptionValue("--client-keystore-password", "");
             String keystorePasswordEnv = parseResult.matchedOptionValue("--client-keystore-password-env", null);
             if (keystorePasswordEnv != null) {
-                String env = System.getenv(keystorePasswordEnv);
+                var env = System.getenv(keystorePasswordEnv);
                 if (env != null) keystorePassword = env;
             }
-            String keystoreType = parseResult.matchedOptionValue("--client-keystore-type", "PKCS12");
+            var keystoreType = parseResult.matchedOptionValue("--client-keystore-type", "PKCS12");
             boolean verifyCertificates = parseResult.matchedOptionValue("--verify-certificates", true);
             boolean allowSelfSigned = parseResult.matchedOptionValue("--allow-self-signed", false);
-            List<String> tlsProtocols = parseResult.matchedOptionValue("--tls-protocols", List.of("TLSv1.3", "TLSv1.2"));
+            var tlsProtocols = parseResult.matchedOptionValue("--tls-protocols", List.of("TLSv1.3", "TLSv1.2"));
             List<String> certificatePins = parseResult.matchedOptionValue("--certificate-pinning", List.of());
-            CertificateValidationMode validationMode = !certificatePins.isEmpty() ? CertificateValidationMode.CUSTOM : (!verifyCertificates || allowSelfSigned ? CertificateValidationMode.PERMISSIVE : CertificateValidationMode.STRICT);
-            boolean verifyHostname = verifyCertificates;
-            List<String> cipherSuites = List.of("TLS_AES_128_GCM_SHA256", "TLS_AES_256_GCM_SHA384");
+            var validationMode = !certificatePins.isEmpty() ? CertificateValidationMode.CUSTOM : (!verifyCertificates || allowSelfSigned ? CertificateValidationMode.PERMISSIVE : CertificateValidationMode.STRICT);
+            var verifyHostname = verifyCertificates;
+            var cipherSuites = List.of("TLS_AES_128_GCM_SHA256", "TLS_AES_256_GCM_SHA384");
 
             if (clientSpecs.isEmpty()) throw new IllegalArgumentException("--client required");
 
             List<McpClientConfiguration> clientConfigs = new ArrayList<>();
-            for (String spec : clientSpecs) {
-                String[] parts = spec.split(":", -1);
+            for (var spec : clientSpecs) {
+                var parts = spec.split(":", -1);
                 if (parts.length < 2) {
                     throw new IllegalArgumentException("id:command expected: " + spec);
                 }
 
-                String clientId = parts[0];
-                String command = parts[1];
-                boolean clientVerbose = parts.length > 2 ? Boolean.parseBoolean(parts[2]) : verbose;
+                var clientId = parts[0];
+                var command = parts[1];
+                var clientVerbose = parts.length > 2 ? Boolean.parseBoolean(parts[2]) : verbose;
 
                 Set<ClientCapability> capabilities = EnumSet.of(
                         ClientCapability.SAMPLING,
@@ -156,7 +156,7 @@ public final class HostCommand {
                             .collect(Collectors.toCollection(() -> EnumSet.noneOf(ClientCapability.class)));
                 }
 
-                McpClientConfiguration clientConfig = new McpClientConfiguration(
+                var clientConfig = new McpClientConfiguration(
                         clientId,
                         clientId,
                         clientId,
@@ -194,10 +194,10 @@ public final class HostCommand {
                 clientConfigs.add(clientConfig);
             }
 
-            McpHostConfiguration config = McpHostConfiguration.withClientConfigurations(clientConfigs);
+            var config = McpHostConfiguration.withClientConfigurations(clientConfigs);
 
-            try (McpHost host = new McpHost(config)) {
-                for (McpClientConfiguration clientConfig : clientConfigs) {
+            try (var host = new McpHost(config)) {
+                for (var clientConfig : clientConfigs) {
                     host.connect(clientConfig.clientId());
                     if (verbose || clientConfig.verbose()) {
                         System.err.println("Registered client: " + clientConfig.clientId());
@@ -216,17 +216,17 @@ public final class HostCommand {
     }
 
     private static void runInteractiveMode(McpHost host) throws IOException {
-        BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
+        var reader = new BufferedReader(new InputStreamReader(System.in));
         System.out.println("MCP Host Interactive Mode. Type 'help' for commands, 'quit' to exit.");
 
         while (true) {
             System.out.print("mcp> ");
-            String line = reader.readLine();
+            var line = reader.readLine();
             if (line == null || "quit".equals(line.trim())) {
                 break;
             }
 
-            String[] parts = line.trim().split("\\s+");
+            var parts = line.trim().split("\\s+");
             if (parts.length == 0) continue;
 
             try {
@@ -278,8 +278,8 @@ public final class HostCommand {
                         if (parts.length < 2) {
                             System.out.println("Usage: list-tools <client-id> [cursor]");
                         } else {
-                            String token = parts.length > 2 ? parts[2] : null;
-                            Cursor cursor = token == null ? Cursor.Start.INSTANCE : new Cursor.Token(token);
+                            var token = parts.length > 2 ? parts[2] : null;
+                            var cursor = token == null ? Cursor.Start.INSTANCE : new Cursor.Token(token);
                             var page = host.listTools(parts[1], cursor);
                             System.out.println(page);
                         }
@@ -308,7 +308,7 @@ public final class HostCommand {
                             System.out.println("Usage: allow-audience <audience>");
                         } else {
                             try {
-                                Role audience = Role.valueOf(parts[1].toUpperCase());
+                                var audience = Role.valueOf(parts[1].toUpperCase());
                                 host.allowAudience(audience);
                                 System.out.println("Allowed audience: " + audience);
                             } catch (IllegalArgumentException e) {
@@ -321,7 +321,7 @@ public final class HostCommand {
                             System.out.println("Usage: revoke-audience <audience>");
                         } else {
                             try {
-                                Role audience = Role.valueOf(parts[1].toUpperCase());
+                                var audience = Role.valueOf(parts[1].toUpperCase());
                                 host.revokeAudience(audience);
                                 System.out.println("Revoked audience: " + audience);
                             } catch (IllegalArgumentException e) {

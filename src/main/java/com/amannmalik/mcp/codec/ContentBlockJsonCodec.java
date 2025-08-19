@@ -2,7 +2,8 @@ package com.amannmalik.mcp.codec;
 
 import com.amannmalik.mcp.spi.ContentBlock;
 import com.amannmalik.mcp.util.Base64Util;
-import jakarta.json.*;
+import jakarta.json.Json;
+import jakarta.json.JsonObject;
 
 import java.util.Set;
 
@@ -14,7 +15,7 @@ public class ContentBlockJsonCodec implements JsonCodec<ContentBlock> {
 
     @Override
     public JsonObject toJson(ContentBlock content) {
-        JsonObjectBuilder b = Json.createObjectBuilder().add("type", content.type());
+        var b = Json.createObjectBuilder().add("type", content.type());
         if (content.annotations() != null && content.annotations() != AnnotationsJsonCodec.EMPTY) {
             b.add("annotations", ANNOTATIONS_CODEC.toJson(content.annotations()));
         }
@@ -26,7 +27,7 @@ public class ContentBlockJsonCodec implements JsonCodec<ContentBlock> {
             case ContentBlock.Audio a -> b.add("data", Base64Util.encode(a.data()))
                     .add("mimeType", a.mimeType()).build();
             case ContentBlock.ResourceLink l -> {
-                JsonObject obj = RESOURCE_ENTITY_CODEC.toJson(l.resource());
+                var obj = RESOURCE_ENTITY_CODEC.toJson(l.resource());
                 obj.forEach((k, v) -> {
                     if (!"_meta".equals(k)) b.add(k, v);
                 });
@@ -40,7 +41,7 @@ public class ContentBlockJsonCodec implements JsonCodec<ContentBlock> {
     @Override
     public ContentBlock fromJson(JsonObject obj) {
         if (obj == null) throw new IllegalArgumentException("object required");
-        String type = obj.getString("type", null);
+        var type = obj.getString("type", null);
         if (type == null) throw new IllegalArgumentException("type required");
         AbstractEntityCodec.requireOnlyKeys(obj, switch (type) {
             case "text" -> Set.of("type", "text", "annotations", "_meta");

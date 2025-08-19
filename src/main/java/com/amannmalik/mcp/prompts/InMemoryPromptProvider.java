@@ -11,7 +11,7 @@ public final class InMemoryPromptProvider extends InMemoryProvider<Prompt> imple
     private final Map<String, PromptTemplate> templates = new ConcurrentHashMap<>();
 
     public void add(PromptTemplate template) {
-        String name = template.prompt().name();
+        var name = template.prompt().name();
         if (templates.putIfAbsent(name, template) != null) {
             throw new IllegalArgumentException("duplicate prompt name: " + name);
         }
@@ -33,7 +33,7 @@ public final class InMemoryPromptProvider extends InMemoryProvider<Prompt> imple
 
     @Override
     public PromptInstance get(String name, Map<String, String> arguments) {
-        PromptTemplate tmpl = templates.get(name);
+        var tmpl = templates.get(name);
         if (tmpl == null) throw new IllegalArgumentException("unknown prompt: " + name);
         return tmpl.instantiate(arguments);
     }

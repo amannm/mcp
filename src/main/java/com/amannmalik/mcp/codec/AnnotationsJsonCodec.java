@@ -16,9 +16,9 @@ public final class AnnotationsJsonCodec implements JsonCodec<Annotations> {
     @Override
     public JsonObject toJson(Annotations ann) {
         if (ann == null || ann.equals(EMPTY)) return JsonValue.EMPTY_JSON_OBJECT;
-        JsonObjectBuilder b = Json.createObjectBuilder();
+        var b = Json.createObjectBuilder();
         if (!ann.audience().isEmpty()) {
-            JsonArrayBuilder arr = Json.createArrayBuilder();
+            var arr = Json.createArrayBuilder();
             ann.audience().forEach(r -> arr.add(r.name().toLowerCase()));
             b.add("audience", arr);
         }
@@ -36,7 +36,7 @@ public final class AnnotationsJsonCodec implements JsonCodec<Annotations> {
             arr.getValuesAs(JsonString.class)
                     .forEach(js -> audience.add(Role.valueOf(js.getString().toUpperCase())));
         }
-        Double priority = obj.containsKey("priority") ? obj.getJsonNumber("priority").doubleValue() : null;
+        var priority = obj.containsKey("priority") ? obj.getJsonNumber("priority").doubleValue() : null;
         Instant lastModified = null;
         if (obj.containsKey("lastModified")) {
             try {
@@ -45,7 +45,7 @@ public final class AnnotationsJsonCodec implements JsonCodec<Annotations> {
                 throw new IllegalArgumentException("Invalid lastModified", e);
             }
         }
-        Annotations ann = new Annotations(audience, priority, lastModified);
+        var ann = new Annotations(audience, priority, lastModified);
         return ann.audience().isEmpty() && ann.priority() == null && ann.lastModified() == null ? EMPTY : ann;
     }
 }

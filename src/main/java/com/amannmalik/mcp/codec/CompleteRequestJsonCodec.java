@@ -1,7 +1,8 @@
 package com.amannmalik.mcp.codec;
 
-import com.amannmalik.mcp.spi.*;
-import jakarta.json.*;
+import com.amannmalik.mcp.spi.CompleteRequest;
+import jakarta.json.Json;
+import jakarta.json.JsonObject;
 
 public class CompleteRequestJsonCodec implements JsonCodec<CompleteRequest> {
     private static final ArgumentJsonCodec ARGUMENT_CODEC = new ArgumentJsonCodec();
@@ -10,7 +11,7 @@ public class CompleteRequestJsonCodec implements JsonCodec<CompleteRequest> {
 
     @Override
     public JsonObject toJson(CompleteRequest req) {
-        JsonObjectBuilder b = Json.createObjectBuilder()
+        var b = Json.createObjectBuilder()
                 .add("ref", REF_CODEC.toJson(req.ref()))
                 .add("argument", ARGUMENT_CODEC.toJson(req.argument()));
         if (req.context() != null && !req.context().arguments().isEmpty()) {
@@ -22,15 +23,15 @@ public class CompleteRequestJsonCodec implements JsonCodec<CompleteRequest> {
 
     @Override
     public CompleteRequest fromJson(JsonObject obj) {
-        JsonObject refObj = obj.getJsonObject("ref");
-        JsonObject argObj = obj.getJsonObject("argument");
+        var refObj = obj.getJsonObject("ref");
+        var argObj = obj.getJsonObject("argument");
         if (refObj == null || argObj == null) {
             throw new IllegalArgumentException("ref and argument required");
         }
-        Ref ref = REF_CODEC.fromJson(refObj);
-        Argument arg = ARGUMENT_CODEC.fromJson(argObj);
-        Context ctx = obj.containsKey("context") ? CONTEXT_CODEC.fromJson(obj.getJsonObject("context")) : null;
-        JsonObject meta = obj.getJsonObject("_meta");
+        var ref = REF_CODEC.fromJson(refObj);
+        var arg = ARGUMENT_CODEC.fromJson(argObj);
+        var ctx = obj.containsKey("context") ? CONTEXT_CODEC.fromJson(obj.getJsonObject("context")) : null;
+        var meta = obj.getJsonObject("_meta");
         return new CompleteRequest(ref, arg, ctx, meta);
     }
 }

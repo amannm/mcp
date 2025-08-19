@@ -1,6 +1,7 @@
 package com.amannmalik.mcp.roots;
 
-import com.amannmalik.mcp.api.*;
+import com.amannmalik.mcp.api.ClientCapability;
+import com.amannmalik.mcp.api.RequestMethod;
 import com.amannmalik.mcp.codec.*;
 import com.amannmalik.mcp.jsonrpc.JsonRpcError;
 import com.amannmalik.mcp.jsonrpc.JsonRpcResponse;
@@ -30,8 +31,8 @@ public final class RootsManager {
     }
 
     public List<Root> listRoots() throws IOException {
-        List<Root> fetched = fetchRoots();
-        boolean changed = !roots.equals(fetched);
+        var fetched = fetchRoots();
+        var changed = !roots.equals(fetched);
         roots.clear();
         roots.addAll(fetched);
         if (changed) listChangeSupport.notifyListeners();
@@ -48,7 +49,7 @@ public final class RootsManager {
 
     public void refreshAsync() {
         if (!capabilities.get().contains(ClientCapability.ROOTS)) return;
-        Thread t = new Thread(() -> {
+        var t = new Thread(() -> {
             try {
                 listRoots();
             } catch (IOException ignore) {
@@ -64,7 +65,7 @@ public final class RootsManager {
 
     private List<Root> fetchRoots() throws IOException {
         requireClientCapability(ClientCapability.ROOTS);
-        JsonRpcMessage msg = requester.send(RequestMethod.ROOTS_LIST,
+        var msg = requester.send(RequestMethod.ROOTS_LIST,
                 CODEC.toJson(new ListRootsRequest(null)), 0L);
         if (msg instanceof JsonRpcResponse resp) {
             return LIST_RESULTS_CODEC.fromJson(resp.result()).roots();

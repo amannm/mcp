@@ -2,7 +2,8 @@ package com.amannmalik.mcp.codec;
 
 import com.amannmalik.mcp.spi.Cursor;
 import com.amannmalik.mcp.spi.Pagination;
-import jakarta.json.*;
+import jakarta.json.JsonObject;
+import jakarta.json.JsonValue;
 
 import java.util.*;
 import java.util.function.BiFunction;
@@ -33,17 +34,17 @@ public final class ResourceEntityFieldCodec<I, R> extends AbstractEntityCodec<R>
     @Override
     public R fromJson(JsonObject obj) {
         if (obj == null) throw new IllegalArgumentException("object required");
-        JsonArray arr = obj.getJsonArray(field);
+        var arr = obj.getJsonArray(field);
         if (arr == null) throw new IllegalArgumentException(field + " required");
         List<I> items = new ArrayList<>();
-        for (JsonValue v : arr) {
+        for (var v : arr) {
             if (v.getValueType() != JsonValue.ValueType.OBJECT) {
                 throw new IllegalArgumentException(itemName + " must be object");
             }
             items.add(itemCodec.fromJson(v.asJsonObject()));
         }
-        String next = obj.getString("nextCursor", null);
-        JsonObject m = obj.getJsonObject("_meta");
+        var next = obj.getString("nextCursor", null);
+        var m = obj.getJsonObject("_meta");
         requireOnlyKeys(obj, Set.of(field, "nextCursor", "_meta"));
         return from.apply(new Pagination.Page<>(items, Cursor.of(next)), m);
     }

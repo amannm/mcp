@@ -2,7 +2,6 @@ package com.amannmalik.mcp.api;
 
 import com.amannmalik.mcp.util.ValidationUtil;
 import jakarta.json.JsonObject;
-import jakarta.json.JsonValue;
 
 import java.math.BigInteger;
 import java.util.Optional;
@@ -13,10 +12,10 @@ public sealed interface ProgressToken permits
 
     static Optional<ProgressToken> fromMeta(JsonObject params) {
         if (params == null || !params.containsKey("_meta")) return Optional.empty();
-        JsonObject meta = params.getJsonObject("_meta");
+        var meta = params.getJsonObject("_meta");
         ValidationUtil.requireMeta(meta);
         if (!meta.containsKey("progressToken")) return Optional.empty();
-        JsonValue val = meta.get("progressToken");
+        var val = meta.get("progressToken");
         ProgressToken token = switch (val.getValueType()) {
             case STRING -> new ProgressToken.StringToken(ValidationUtil.requireClean(meta.getString("progressToken")));
             case NUMBER -> {

@@ -13,7 +13,8 @@ import jakarta.json.*;
 
 import java.io.IOException;
 import java.net.URI;
-import java.util.*;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -30,7 +31,6 @@ final class ResourceOrchestrator implements AutoCloseable {
     private final ProgressManager progress;
     private final Map<String, AutoCloseable> subscriptions = new ConcurrentHashMap<>();
     private final AutoCloseable listSubscription;
-
 
     public ResourceOrchestrator(ResourceProvider resources,
                                 ResourceAccessPolicy access,
@@ -82,21 +82,21 @@ final class ResourceOrchestrator implements AutoCloseable {
         if (state.get() != LifecycleState.OPERATION) {
             return JsonRpcError.of(req.id(), -32002, "Server not initialized");
         }
-        Optional<ProgressToken> progressToken = ProgressToken.fromMeta(req.params());
+        var progressToken = ProgressToken.fromMeta(req.params());
         try {
-            ListResourcesRequest lr = AbstractEntityCodec.paginatedRequest(
+            var lr = AbstractEntityCodec.paginatedRequest(
                     ListResourcesRequest::cursor,
                     ListResourcesRequest::_meta,
                     ListResourcesRequest::new).fromJson(req.params());
-            Cursor cursor = sanitizeCursor(lr.cursor());
+            var cursor = sanitizeCursor(lr.cursor());
             progressToken.ifPresent(t -> sendProgress(t, 0.0, "Starting resource list"));
-            Pagination.Page<Resource> list = resources.list(cursor);
+            var list = resources.list(cursor);
             progressToken.ifPresent(t -> sendProgress(t, 0.5, "Filtering resources"));
-            List<Resource> filtered = list.items().stream()
+            var filtered = list.items().stream()
                     .filter(r -> allowed(r.annotations()) && withinRoots(r.uri()))
                     .toList();
             progressToken.ifPresent(t -> sendProgress(t, 1.0, "Completed resource list"));
-            ListResourcesResult result = new ListResourcesResult(filtered, list.nextCursor(), null);
+            var result = new ListResourcesResult(filtered, list.nextCursor(), null);
             return new JsonRpcResponse(req.id(), AbstractEntityCodec.paginatedResult(
                     "resources",
                     "resource",
@@ -117,24 +117,24 @@ final class ResourceOrchestrator implements AutoCloseable {
             return JsonRpcError.of(req.id(), JsonRpcErrorCode.INVALID_PARAMS, "Invalid params");
         }
         return withExistingResource(req, rrr.uri(), block -> {
-            ReadResourceResult result = new ReadResourceResult(List.of(block), null);
+            var result = new ReadResourceResult(List.of(block), null);
             return new JsonRpcResponse(req.id(), new ReadResourceResultJsonCodec().toJson(result));
         });
     }
 
     private JsonRpcMessage listTemplates(JsonRpcRequest req) {
         try {
-            ListResourceTemplatesRequest request =
+            var request =
                     AbstractEntityCodec.paginatedRequest(
                             ListResourceTemplatesRequest::cursor,
                             ListResourceTemplatesRequest::_meta,
                             ListResourceTemplatesRequest::new).fromJson(req.params());
-            Cursor cursor = sanitizeCursor(request.cursor());
-            Pagination.Page<ResourceTemplate> page = resources.listTemplates(cursor);
-            List<ResourceTemplate> filtered = page.items().stream()
+            var cursor = sanitizeCursor(request.cursor());
+            var page = resources.listTemplates(cursor);
+            var filtered = page.items().stream()
                     .filter(t -> allowed(t.annotations()))
                     .toList();
-            ListResourceTemplatesResult result = new ListResourceTemplatesResult(filtered, page.nextCursor(), null);
+            var result = new ListResourceTemplatesResult(filtered, page.nextCursor(), null);
             return new JsonRpcResponse(req.id(), AbstractEntityCodec.paginatedResult(
                     "resourceTemplates",
                     "resourceTemplate",
@@ -154,7 +154,7 @@ final class ResourceOrchestrator implements AutoCloseable {
         } catch (IllegalArgumentException e) {
             return JsonRpcError.of(req.id(), JsonRpcErrorCode.INVALID_PARAMS, e.getMessage());
         }
-        String uri = sr.uri();
+        var uri = sr.uri();
         return withAccessibleUri(req, uri, () -> {
             if (resources.get(uri).isEmpty()) {
                 return JsonRpcError.of(req.id(), -32002, "Resource not found",
@@ -165,9 +165,9 @@ final class ResourceOrchestrator implements AutoCloseable {
                         Json.createObjectBuilder().add("uri", uri).build());
             }
             try {
-                AutoCloseable sub = resources.subscribe(uri, update -> {
+                var sub = resources.subscribe(uri, update -> {
                     try {
-                        ResourceUpdatedNotification n = new ResourceUpdatedNotification(update.uri(), update.title());
+                        var n = new ResourceUpdatedNotification(update.uri(), update.title());
                         sender.sendNotification(NotificationMethod.RESOURCES_UPDATED,
                                 RESOURCE_UPDATED_NOTIFICATION_JSON_CODEC.toJson(n));
                     } catch (IOException ignore) {
@@ -188,13 +188,13 @@ final class ResourceOrchestrator implements AutoCloseable {
         } catch (IllegalArgumentException e) {
             return JsonRpcError.of(req.id(), JsonRpcErrorCode.INVALID_PARAMS, e.getMessage());
         }
-        String uri = ur.uri();
+        var uri = ur.uri();
         return withAccessibleUri(req, uri, () -> {
             if (!subscriptions.containsKey(uri)) {
                 return JsonRpcError.of(req.id(), -32602, "No active subscription for resource",
                         Json.createObjectBuilder().add("uri", uri).build());
             }
-            AutoCloseable sub = subscriptions.remove(uri);
+            var sub = subscriptions.remove(uri);
             CloseUtil.closeQuietly(sub);
             return new JsonRpcResponse(req.id(), JsonValue.EMPTY_JSON_OBJECT);
         });
@@ -223,7 +223,7 @@ final class ResourceOrchestrator implements AutoCloseable {
 
     private Cursor sanitizeCursor(String cursor) {
         if (cursor == null) return Cursor.Start.INSTANCE;
-        String clean = ValidationUtil.cleanNullable(cursor);
+        var clean = ValidationUtil.cleanNullable(cursor);
         return new Cursor.Token(clean);
     }
 
@@ -247,14 +247,13 @@ final class ResourceOrchestrator implements AutoCloseable {
         return action.get();
     }
 
-
     private JsonRpcMessage withExistingResource(JsonRpcRequest req, String uri, Function<ResourceBlock, JsonRpcMessage> action) {
         try {
             URI.create(uri);
         } catch (Exception e) {
             return JsonRpcError.of(req.id(), JsonRpcErrorCode.INVALID_PARAMS, "Invalid params");
         }
-        ResourceBlock block = resources.read(uri);
+        var block = resources.read(uri);
         if (block == null) {
             return JsonRpcError.of(req.id(), -32002, "Resource not found",
                     Json.createObjectBuilder().add("uri", uri).build());

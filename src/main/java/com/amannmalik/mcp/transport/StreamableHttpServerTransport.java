@@ -12,23 +12,18 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.eclipse.jetty.ee10.servlet.ServletContextHandler;
 import org.eclipse.jetty.ee10.servlet.ServletHolder;
-import org.eclipse.jetty.server.HttpConfiguration;
-import org.eclipse.jetty.server.HttpConnectionFactory;
-import org.eclipse.jetty.server.Server;
-import org.eclipse.jetty.server.ServerConnector;
-import org.eclipse.jetty.server.SslConnectionFactory;
+import org.eclipse.jetty.server.*;
 import org.eclipse.jetty.util.ssl.SslContextFactory;
 
 import java.io.EOFException;
 import java.io.IOException;
-import java.io.InputStream;
-import java.time.Duration;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.security.KeyStore;
 import java.security.cert.X509Certificate;
 import java.security.interfaces.ECKey;
 import java.security.interfaces.RSAKey;
+import java.time.Duration;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.stream.Collectors;
@@ -55,37 +50,16 @@ public final class StreamableHttpServerTransport implements Transport {
     private final MessageDispatcher dispatcher;
     private volatile boolean closed;
 
-    private static void validateCertificateKeySize(String path, String password, String type) {
-        try (InputStream in = Files.newInputStream(Path.of(path))) {
-            KeyStore ks = KeyStore.getInstance(type);
-            ks.load(in, password.toCharArray());
-            var aliases = ks.aliases();
-            while (aliases.hasMoreElements()) {
-                var cert = ks.getCertificate(aliases.nextElement());
-                if (cert instanceof X509Certificate x509) {
-                    int size = switch (x509.getPublicKey()) {
-                        case RSAKey k -> k.getModulus().bitLength();
-                        case ECKey k -> k.getParams().getCurve().getField().getFieldSize();
-                        default -> 0;
-                    };
-                    if (size < 2048) throw new IllegalArgumentException("Certificate key size too small: " + size);
-                }
-            }
-        } catch (Exception e) {
-            throw new IllegalArgumentException("Failed to validate certificate key size", e);
-        }
-    }
-
     public StreamableHttpServerTransport(McpServerConfiguration config,
                                          AuthorizationManager auth) throws Exception {
         this.config = config;
         this.sessions = new SessionManager(COMPATIBILITY_VERSION, config.sessionIdByteLength());
 
         server = new Server();
-        ServletContextHandler ctx = new ServletContextHandler();
-        for (String path : config.servletPaths()) {
+        var ctx = new ServletContextHandler();
+        for (var path : config.servletPaths()) {
             if (path.equals("/")) {
-                ctx.addServlet(new ServletHolder(new McpServlet(this)), "/");
+                ctx.addServlet(new ServletHolder(new McpServlet(this, config.httpResponseQueueCapacity())), "/");
             } else if (path.equals(config.resourceMetadataPath())) {
                 ctx.addServlet(new ServletHolder(new MetadataServlet(this)), path);
             }
@@ -145,9 +119,9 @@ public final class StreamableHttpServerTransport implements Transport {
         this.allowedOrigins = ValidationUtil.requireAllowedOrigins(Set.copyOf(config.allowedOrigins()));
         this.authManager = auth;
 
-        String scheme = https != null ? "https" : "http";
+        var scheme = https != null ? "https" : "http";
         if (config.resourceMetadataUrl() == null || config.resourceMetadataUrl().isBlank()) {
-            int metaPort = https != null ? this.httpsPort : this.port;
+            var metaPort = https != null ? this.httpsPort : this.port;
             this.resourceMetadataUrl = String.format(
                     config.resourceMetadataUrlTemplate(),
                     scheme,
@@ -178,6 +152,27 @@ public final class StreamableHttpServerTransport implements Transport {
         this.dispatcher = new MessageDispatcher(router);
     }
 
+    private static void validateCertificateKeySize(String path, String password, String type) {
+        try (var in = Files.newInputStream(Path.of(path))) {
+            var ks = KeyStore.getInstance(type);
+            ks.load(in, password.toCharArray());
+            var aliases = ks.aliases();
+            while (aliases.hasMoreElements()) {
+                var cert = ks.getCertificate(aliases.nextElement());
+                if (cert instanceof X509Certificate x509) {
+                    var size = switch (x509.getPublicKey()) {
+                        case RSAKey k -> k.getModulus().bitLength();
+                        case ECKey k -> k.getParams().getCurve().getField().getFieldSize();
+                        default -> 0;
+                    };
+                    if (size < 2048) throw new IllegalArgumentException("Certificate key size too small: " + size);
+                }
+            }
+        } catch (Exception e) {
+            throw new IllegalArgumentException("Failed to validate certificate key size", e);
+        }
+    }
+
     public int port() {
         return port;
     }
@@ -203,7 +198,7 @@ public final class StreamableHttpServerTransport implements Transport {
     @Override
     public JsonObject receive(Duration timeoutMillis) throws IOException {
         try {
-            JsonObject obj = incoming.poll(timeoutMillis.toMillis(), TimeUnit.MILLISECONDS);
+            var obj = incoming.poll(timeoutMillis.toMillis(), TimeUnit.MILLISECONDS);
             if (obj == null) {
                 throw new IOException("Timeout after " + timeoutMillis + "ms waiting for message");
             }
@@ -250,8 +245,8 @@ public final class StreamableHttpServerTransport implements Transport {
         return switch (config.httpsMode()) {
             case MIXED -> true;
             case REDIRECT -> {
-                String url = "https://" + req.getServerName() + ":" + httpsPort + req.getRequestURI();
-                String q = req.getQueryString();
+                var url = "https://" + req.getServerName() + ":" + httpsPort + req.getRequestURI();
+                var q = req.getQueryString();
                 if (q != null && !q.isEmpty()) url += "?" + q;
                 resp.setStatus(HttpServletResponse.SC_MOVED_PERMANENTLY);
                 resp.setHeader("Location", url);
@@ -266,7 +261,7 @@ public final class StreamableHttpServerTransport implements Transport {
     }
 
     boolean verifyOrigin(HttpServletRequest req, HttpServletResponse resp) throws IOException {
-        String origin = req.getHeader("Origin");
+        var origin = req.getHeader("Origin");
         if (!ValidationUtil.isAllowedOrigin(origin, allowedOrigins)) {
             resp.sendError(HttpServletResponse.SC_FORBIDDEN);
             return false;
@@ -276,7 +271,7 @@ public final class StreamableHttpServerTransport implements Transport {
     }
 
     boolean validateAccept(HttpServletRequest req, HttpServletResponse resp, boolean post) throws IOException {
-        String accept = req.getHeader("Accept");
+        var accept = req.getHeader("Accept");
         if (accept == null) {
             resp.sendError(HttpServletResponse.SC_NOT_ACCEPTABLE);
             return false;
@@ -286,7 +281,7 @@ public final class StreamableHttpServerTransport implements Transport {
                 .filter(s -> !s.isEmpty())
                 .map(s -> s.toLowerCase(Locale.ROOT))
                 .collect(Collectors.toSet());
-        boolean ok = post
+        var ok = post
                 ? types.size() == 2 && types.contains("application/json") && types.contains("text/event-stream")
                 : types.size() == 1 && types.contains("text/event-stream");
         if (!ok) resp.sendError(HttpServletResponse.SC_NOT_ACCEPTABLE);

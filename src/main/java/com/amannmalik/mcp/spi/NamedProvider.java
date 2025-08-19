@@ -8,8 +8,8 @@ public sealed interface NamedProvider<T extends DisplayNameProvider> extends Pro
         if (name == null) throw new IllegalArgumentException("name required");
         Cursor cursor = Cursor.Start.INSTANCE;
         do {
-            Pagination.Page<T> page = list(cursor);
-            for (T item : page.items()) {
+            var page = list(cursor);
+            for (var item : page.items()) {
                 if (item.name().equals(name)) {
                     return Optional.of(item);
                 }

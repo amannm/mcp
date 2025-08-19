@@ -15,8 +15,8 @@ public class ArgumentJsonCodec implements JsonCodec<Argument> {
 
     @Override
     public Argument fromJson(JsonObject obj) {
-        String name = obj.getString("name", null);
-        String value = obj.getString("value", null);
+        var name = obj.getString("name", null);
+        var value = obj.getString("value", null);
         if (name == null || value == null) {
             throw new IllegalArgumentException("name and value required");
         }

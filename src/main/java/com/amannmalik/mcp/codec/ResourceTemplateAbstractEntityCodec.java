@@ -1,13 +1,13 @@
 package com.amannmalik.mcp.codec;
 
-import com.amannmalik.mcp.spi.Annotations;
 import com.amannmalik.mcp.spi.ResourceTemplate;
-import jakarta.json.*;
+import jakarta.json.Json;
+import jakarta.json.JsonObject;
 
 public final class ResourceTemplateAbstractEntityCodec extends AbstractEntityCodec<ResourceTemplate> {
     @Override
     public JsonObject toJson(ResourceTemplate t) {
-        JsonObjectBuilder b = Json.createObjectBuilder()
+        var b = Json.createObjectBuilder()
                 .add("uriTemplate", t.uriTemplate())
                 .add("name", t.name());
         if (t.title() != null) b.add("title", t.title());
@@ -23,15 +23,15 @@ public final class ResourceTemplateAbstractEntityCodec extends AbstractEntityCod
     @Override
     public ResourceTemplate fromJson(JsonObject obj) {
         if (obj == null) throw new IllegalArgumentException("object required");
-        String uriTemplate = requireString(obj, "uriTemplate");
-        String name = requireString(obj, "name");
-        String title = obj.getString("title", null);
-        String description = obj.getString("description", null);
-        String mimeType = obj.getString("mimeType", null);
-        Annotations annotations = obj.containsKey("annotations")
+        var uriTemplate = requireString(obj, "uriTemplate");
+        var name = requireString(obj, "name");
+        var title = obj.getString("title", null);
+        var description = obj.getString("description", null);
+        var mimeType = obj.getString("mimeType", null);
+        var annotations = obj.containsKey("annotations")
                 ? new AnnotationsJsonCodec().fromJson(getObject(obj, "annotations"))
                 : AnnotationsJsonCodec.EMPTY;
-        JsonObject meta = obj.getJsonObject("_meta");
+        var meta = obj.getJsonObject("_meta");
         return new ResourceTemplate(uriTemplate, name, title, description, mimeType, annotations, meta);
     }
 }

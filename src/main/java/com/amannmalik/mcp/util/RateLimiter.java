@@ -14,8 +14,8 @@ public final class RateLimiter {
     }
 
     public void requireAllowance(String key) {
-        Window w = windows.computeIfAbsent(key, k -> new Window());
-        long now = System.currentTimeMillis();
+        var w = windows.computeIfAbsent(key, k -> new Window());
+        var now = System.currentTimeMillis();
         synchronized (w) {
             if (now - w.start >= windowMs) {
                 w.start = now;

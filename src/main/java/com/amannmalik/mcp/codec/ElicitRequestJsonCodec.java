@@ -8,7 +8,7 @@ import java.util.Set;
 public class ElicitRequestJsonCodec implements JsonCodec<ElicitRequest> {
     @Override
     public JsonObject toJson(ElicitRequest req) {
-        JsonObjectBuilder b = Json.createObjectBuilder()
+        var b = Json.createObjectBuilder()
                 .add("message", req.message())
                 .add("requestedSchema", req.requestedSchema());
         if (req._meta() != null) b.add("_meta", req._meta());
@@ -19,9 +19,9 @@ public class ElicitRequestJsonCodec implements JsonCodec<ElicitRequest> {
     public ElicitRequest fromJson(JsonObject obj) {
         if (obj == null) throw new IllegalArgumentException("object required");
         AbstractEntityCodec.requireOnlyKeys(obj, Set.of("message", "requestedSchema", "_meta"));
-        String message = obj.getString("message", null);
+        var message = obj.getString("message", null);
         if (message == null) throw new IllegalArgumentException("message required");
-        JsonValue schemaVal = obj.get("requestedSchema");
+        var schemaVal = obj.get("requestedSchema");
         if (schemaVal == null || schemaVal.getValueType() != JsonValue.ValueType.OBJECT) {
             throw new IllegalArgumentException("requestedSchema must be object");
         }

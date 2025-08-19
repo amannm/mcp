@@ -4,7 +4,6 @@ import com.amannmalik.mcp.api.McpClient.McpClientListener;
 import com.amannmalik.mcp.codec.*;
 import com.amannmalik.mcp.elicitation.InteractiveElicitationProvider;
 import com.amannmalik.mcp.jsonrpc.JsonRpc;
-import com.amannmalik.mcp.jsonrpc.JsonRpcResponse;
 import com.amannmalik.mcp.roots.InMemoryRootsProvider;
 import com.amannmalik.mcp.sampling.InteractiveSamplingProvider;
 import com.amannmalik.mcp.security.*;
@@ -51,18 +50,18 @@ public final class McpHost implements AutoCloseable {
         this.toolAccess = new ToolAccessController();
         this.privacyBoundary = new ResourceAccessController();
         this.samplingAccess = new SamplingAccessController();
-        for (McpClientConfiguration clientConfig : config.clientConfigurations()) {
+        for (var clientConfig : config.clientConfigurations()) {
             grantConsent(clientConfig.serverName());
             SamplingProvider samplingProvider = new InteractiveSamplingProvider(clientConfig.interactiveSampling());
-            List<Root> roots = clientConfig.rootDirectories().stream()
+            var roots = clientConfig.rootDirectories().stream()
                     .map(dir -> new Root("file://" + dir, dir, null))
                     .toList();
-            InMemoryRootsProvider rootsProvider = new InMemoryRootsProvider(roots);
+            var rootsProvider = new InMemoryRootsProvider(roots);
 
-            McpClientListener listener = (clientConfig.verbose() || config.globalVerbose()) ? new McpClientListener() {
+            var listener = (clientConfig.verbose() || config.globalVerbose()) ? new McpClientListener() {
                 @Override
                 public void onMessage(LoggingMessageNotification notification) {
-                    String logger = notification.logger() == null ? "" : ":" + notification.logger();
+                    var logger = notification.logger() == null ? "" : ":" + notification.logger();
                     System.err.println("[" + clientConfig.clientId() + "] " +
                             notification.level().name().toLowerCase() + logger + " " + notification.data());
                 }
@@ -70,7 +69,7 @@ public final class McpHost implements AutoCloseable {
 
             ElicitationProvider elicitationProvider = new InteractiveElicitationProvider();
 
-            McpClient client = new McpClient(
+            var client = new McpClient(
                     clientConfig,
                     config.globalVerbose(),
                     samplingProvider,
@@ -96,7 +95,7 @@ public final class McpHost implements AutoCloseable {
 
     @Override
     public void close() throws IOException {
-        for (String id : Set.copyOf(clients.keySet())) {
+        for (var id : Set.copyOf(clients.keySet())) {
             unregister(id);
         }
     }
@@ -114,12 +113,12 @@ public final class McpHost implements AutoCloseable {
     }
 
     public void connect(String id) throws IOException {
-        McpClient client = requireClient(id);
+        var client = requireClient(id);
         client.connect();
     }
 
     public void unregister(String id) throws IOException {
-        McpClient client = clients.remove(id);
+        var client = clients.remove(id);
         if (client != null) {
             client.disconnect();
         }
@@ -132,10 +131,10 @@ public final class McpHost implements AutoCloseable {
     }
 
     public ListResourcesResult listResources(String clientId, Cursor cursor) throws IOException {
-        McpClient client = requireClient(clientId);
+        var client = requireClient(clientId);
         requireCapability(client, ServerCapability.RESOURCES);
-        String token = cursor instanceof Cursor.Token(var value) ? value : null;
-        JsonRpcResponse resp = JsonRpc.expectResponse(client.request(
+        var token = cursor instanceof Cursor.Token(var value) ? value : null;
+        var resp = JsonRpc.expectResponse(client.request(
                 RequestMethod.RESOURCES_LIST,
                 AbstractEntityCodec.paginatedRequest(
                         ListResourcesRequest::cursor,
@@ -147,10 +146,10 @@ public final class McpHost implements AutoCloseable {
     }
 
     public ListToolsResult listTools(String clientId, Cursor cursor) throws IOException {
-        McpClient client = requireClient(clientId);
+        var client = requireClient(clientId);
         requireCapability(client, ServerCapability.TOOLS);
-        String token = cursor instanceof Cursor.Token(var value) ? value : null;
-        JsonRpcResponse resp = JsonRpc.expectResponse(client.request(
+        var token = cursor instanceof Cursor.Token(var value) ? value : null;
+        var resp = JsonRpc.expectResponse(client.request(
                 RequestMethod.TOOLS_LIST,
                 AbstractEntityCodec.paginatedRequest(
                         ListToolsRequest::cursor,
@@ -162,13 +161,13 @@ public final class McpHost implements AutoCloseable {
     }
 
     public ToolResult callTool(String clientId, String name, JsonObject args) throws IOException {
-        McpClient client = requireClient(clientId);
+        var client = requireClient(clientId);
         requireCapability(client, ServerCapability.TOOLS);
         consents.requireConsent(principal, "tool:" + name);
-        Tool tool = findTool(clientId, name)
+        var tool = findTool(clientId, name)
                 .orElseThrow(() -> new IllegalArgumentException("Tool not found: " + name));
         toolAccess.requireAllowed(principal, tool);
-        JsonRpcResponse resp = JsonRpc.expectResponse(client.request(
+        var resp = JsonRpc.expectResponse(client.request(
                 RequestMethod.TOOLS_CALL,
                 CALL_TOOL_REQUEST_CODEC.toJson(new CallToolRequest(name, args, null)),
                 TIMEOUT
@@ -179,8 +178,8 @@ public final class McpHost implements AutoCloseable {
     private Optional<Tool> findTool(String clientId, String name) throws IOException {
         Cursor cursor = Cursor.Start.INSTANCE;
         do {
-            ListToolsResult page = listTools(clientId, cursor);
-            for (Tool t : page.tools()) {
+            var page = listTools(clientId, cursor);
+            for (var t : page.tools()) {
                 if (t.name().equals(name)) return Optional.of(t);
             }
             cursor = page.nextCursor();
@@ -189,11 +188,11 @@ public final class McpHost implements AutoCloseable {
     }
 
     public JsonObject createMessage(String clientId, JsonObject params) throws IOException {
-        McpClient client = requireConnectedClient(clientId);
+        var client = requireConnectedClient(clientId);
         requireCapability(client, ClientCapability.SAMPLING);
         consents.requireConsent(principal, "sampling");
         samplingAccess.requireAllowed(principal);
-        JsonRpcResponse resp = JsonRpc.expectResponse(client.request(RequestMethod.SAMPLING_CREATE_MESSAGE, params, TIMEOUT));
+        var resp = JsonRpc.expectResponse(client.request(RequestMethod.SAMPLING_CREATE_MESSAGE, params, TIMEOUT));
         return resp.result();
     }
 
@@ -246,7 +245,7 @@ public final class McpHost implements AutoCloseable {
     }
 
     private McpClient requireClient(String id) {
-        McpClient client = clients.get(id);
+        var client = clients.get(id);
         if (client == null) throw new IllegalArgumentException("Unknown client: " + id);
         return client;
     }
@@ -260,19 +259,19 @@ public final class McpHost implements AutoCloseable {
     }
 
     private McpClient requireConnectedClient(String id) {
-        McpClient client = requireClient(id);
+        var client = requireClient(id);
         if (!client.connected()) throw new IllegalStateException("Client not connected: " + id);
         return client;
     }
 
     private McpClient requireClientForMethod(String id, JsonRpcMethod method) {
-        McpClient client = requireConnectedClient(id);
+        var client = requireConnectedClient(id);
         if (method instanceof RequestMethod rm) {
-            for (ServerCapability cap : rm.serverCapabilities()) {
+            for (var cap : rm.serverCapabilities()) {
                 requireCapability(client, cap);
             }
         }
-        for (ClientCapability cap : method.clientCapabilities()) {
+        for (var cap : method.clientCapabilities()) {
             requireCapability(client, cap);
         }
         return client;

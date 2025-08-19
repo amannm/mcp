@@ -6,7 +6,7 @@ public interface DisplayNameProvider {
     String title();
 
     default String displayName() {
-        String title = title();
+        var title = title();
         return title == null || title.isBlank() ? name() : title;
     }
 }

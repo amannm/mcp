@@ -1,6 +1,5 @@
 package com.amannmalik.mcp.api;
 
-
 public enum LoggingLevel {
     DEBUG,
     INFO,
