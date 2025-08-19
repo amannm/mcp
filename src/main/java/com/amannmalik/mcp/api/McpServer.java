@@ -426,12 +426,6 @@ public final class McpServer extends JsonRpcEndpoint implements AutoCloseable {
         }
     }
 
-    private Cursor sanitizeCursor(String cursor) {
-        if (cursor == null) return Cursor.Start.INSTANCE;
-        var clean = ValidationUtil.cleanNullable(cursor);
-        return new Cursor.Token(clean);
-    }
-
     private JsonRpcMessage listTools(JsonRpcRequest req) {
         var initCheck = checkInitialized(req.id());
         if (initCheck.isPresent()) return initCheck.get();
@@ -441,7 +435,7 @@ public final class McpServer extends JsonRpcEndpoint implements AutoCloseable {
                     ListToolsRequest::cursor,
                     ListToolsRequest::_meta,
                     ListToolsRequest::new).fromJson(req.params());
-            var cursor = sanitizeCursor(ltr.cursor());
+            var cursor = CursorUtil.sanitize(ltr.cursor());
             var page = tools.list(cursor);
             var json = LIST_TOOLS_RESULT_JSON_CODEC.toJson(new ListToolsResult(page.items(), page.nextCursor(), null));
             return new JsonRpcResponse(req.id(), json);
@@ -461,7 +455,7 @@ public final class McpServer extends JsonRpcEndpoint implements AutoCloseable {
         requireServerCapability(ServerCapability.PROMPTS);
         try {
             var lpr = ListPromptsRequest.CODEC.fromJson(req.params());
-            var cursor = sanitizeCursor(lpr.cursor());
+            var cursor = CursorUtil.sanitize(lpr.cursor());
             var page = prompts.list(cursor);
             return new JsonRpcResponse(req.id(), LIST_PROMPTS_RESULT_CODEC.toJson(new ListPromptsResult(page.items(), page.nextCursor(), null)));
         } catch (IllegalArgumentException e) {

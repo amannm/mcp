@@ -90,7 +90,7 @@ final class ResourceOrchestrator implements AutoCloseable {
                     ListResourcesRequest::cursor,
                     ListResourcesRequest::_meta,
                     ListResourcesRequest::new).fromJson(req.params());
-            var cursor = sanitizeCursor(lr.cursor());
+            var cursor = CursorUtil.sanitize(lr.cursor());
             progressToken.ifPresent(t -> sendProgress(t, 0.0, "Starting resource list"));
             var list = resources.list(cursor);
             progressToken.ifPresent(t -> sendProgress(t, 0.5, "Filtering resources"));
@@ -131,7 +131,7 @@ final class ResourceOrchestrator implements AutoCloseable {
                             ListResourceTemplatesRequest::cursor,
                             ListResourceTemplatesRequest::_meta,
                             ListResourceTemplatesRequest::new).fromJson(req.params());
-            var cursor = sanitizeCursor(request.cursor());
+            var cursor = CursorUtil.sanitize(request.cursor());
             var page = resources.listTemplates(cursor);
             var filtered = page.items().stream()
                     .filter(t -> allowed(t.annotations()))
@@ -221,12 +221,6 @@ final class ResourceOrchestrator implements AutoCloseable {
                 .map(Resource::annotations)
                 .map(this::allowed)
                 .orElse(true);
-    }
-
-    private Cursor sanitizeCursor(String cursor) {
-        if (cursor == null) return Cursor.Start.INSTANCE;
-        var clean = ValidationUtil.cleanNullable(cursor);
-        return new Cursor.Token(clean);
     }
 
     private void sendProgress(ProgressToken token, double current, String message) {
