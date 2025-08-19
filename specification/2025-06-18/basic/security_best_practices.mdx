@@ -12,16 +12,6 @@ This document provides security considerations for the Model Context Protocol (M
 
 The primary audience for this document includes developers implementing MCP authorization flows, MCP server operators, and security professionals evaluating MCP-based systems. This document should be read alongside the MCP Authorization specification and [OAuth 2.0 security best practices](https://datatracker.ietf.org/doc/html/rfc9700).
 
-### Transport Security
-
-MCP implementations **MUST** validate TLS certificates when using HTTPS transports.
-
-- Custom trust stores **SHOULD** be supported for server certificate validation
-- Clients **SHOULD** support client certificates for mutual TLS authentication
-- Certificate validation **MAY** be disabled for development, but **MUST** default to strict mode
-- Implementations **MAY** pin server certificates by SHA-256 fingerprint
-- Server Name Indication (SNI) **MUST** be enabled for HTTPS connections
-
 ## Attacks and Mitigations
 
 This section gives a detailed description of attacks on MCP implementations, along with potential countermeasures.
