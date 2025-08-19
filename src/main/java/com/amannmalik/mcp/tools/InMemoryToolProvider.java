@@ -11,10 +11,13 @@ import java.util.function.Function;
 
 public final class InMemoryToolProvider extends InMemoryProvider<Tool> implements ToolProvider {
     private final Map<String, Function<JsonObject, ToolResult>> handlers;
+    private final Map<String, Tool> byName;
 
     public InMemoryToolProvider(List<Tool> tools, Map<String, Function<JsonObject, ToolResult>> handlers) {
         super(tools);
         this.handlers = handlers == null ? new ConcurrentHashMap<>() : new ConcurrentHashMap<>(handlers);
+        this.byName = new ConcurrentHashMap<>();
+        if (tools != null) tools.forEach(t -> byName.put(t.name(), t));
     }
 
     private static ToolResult withStructuredText(ToolResult result) {
@@ -40,23 +43,17 @@ public final class InMemoryToolProvider extends InMemoryProvider<Tool> implement
     @Override
     public Optional<Tool> find(String name) {
         if (name == null) throw new IllegalArgumentException("name required");
-        for (var t : items) {
-            if (t.name().equals(name)) return Optional.of(t);
-        }
-        return Optional.empty();
+        return Optional.ofNullable(byName.get(name));
     }
 
     @Override
     public ToolResult call(String name, JsonObject arguments) {
-        var f = handlers.get(name);
-        if (f == null) throw new IllegalArgumentException("Unknown tool");
-        var tool = items.stream()
-                .filter(t -> t.name().equals(name))
-                .findFirst()
-                .orElseThrow(() -> new IllegalArgumentException("Unknown tool"));
+        var tool = byName.get(name);
+        var handler = handlers.get(name);
+        if (tool == null || handler == null) throw new IllegalArgumentException("Unknown tool");
         var args = arguments == null ? JsonValue.EMPTY_JSON_OBJECT : arguments;
         JsonSchemaValidator.validate(tool.inputSchema(), args);
-        var result = f.apply(args);
+        var result = handler.apply(args);
         if (tool.outputSchema() != null) {
             if (result.structuredContent() == null) {
                 throw new IllegalStateException("structured result required");
@@ -69,16 +66,18 @@ public final class InMemoryToolProvider extends InMemoryProvider<Tool> implement
 
     public void addTool(Tool tool, Function<JsonObject, ToolResult> handler) {
         if (tool == null) throw new IllegalArgumentException("tool required");
-        if (items.stream().anyMatch(t -> t.name().equals(tool.name()))) {
+        if (byName.containsKey(tool.name())) {
             throw new IllegalArgumentException("Duplicate tool name: " + tool.name());
         }
         items.add(tool);
+        byName.put(tool.name(), tool);
         if (handler != null) handlers.put(tool.name(), handler);
         notifyListChanged();
     }
 
     public void removeTool(String name) {
         items.removeIf(t -> t.name().equals(name));
+        byName.remove(name);
         handlers.remove(name);
         notifyListChanged();
     }
