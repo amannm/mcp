@@ -391,7 +391,6 @@ public final class McpClient extends JsonRpcEndpoint implements AutoCloseable {
         }
     }
 
-
     private void notifyInitialized() throws IOException {
         send(new JsonRpcNotification(NotificationMethod.INITIALIZED.method(), null));
     }
