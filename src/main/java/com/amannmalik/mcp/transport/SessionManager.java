@@ -43,14 +43,17 @@ final class SessionManager {
                      Principal principal,
                      boolean initializing) throws IOException {
         if (principal == null) throw new IllegalArgumentException("principal required");
-        var state = current.get();
-        var last = lastSessionId.get();
-        var sessionId = sessionId(req);
+        var id = sessionId(req);
         var version = req.getHeader(TransportHeaders.PROTOCOL_VERSION);
-        if (!sanitizeHeaders(sessionId, version, resp)) {
-            return false;
+        if (!sanitizeHeaders(id, version, resp)) return false;
+        var state = current.get();
+        if (state == null) {
+            return initializing
+                    ? createSession(req, resp, principal)
+                    : failForMissingSession(resp, id, lastSessionId.get());
         }
-        return checkSession(req, resp, principal, initializing, state, last, sessionId, version);
+        if (!validateExistingSession(req, resp, principal, state, id)) return false;
+        return validateVersion(initializing, version, resp);
     }
 
     private String sessionId(HttpServletRequest req) {
@@ -76,23 +79,6 @@ final class SessionManager {
             return false;
         }
         return true;
-    }
-
-    private boolean checkSession(HttpServletRequest req,
-                                 HttpServletResponse resp,
-                                 Principal principal,
-                                 boolean initializing,
-                                 SessionState state,
-                                 String last,
-                                 String header,
-                                 String version) throws IOException {
-        if (state == null) {
-            return initializing
-                    ? createSession(req, resp, principal)
-                    : failForMissingSession(resp, header, last);
-        }
-        return validateExistingSession(req, resp, principal, state, header)
-                && validateVersion(initializing, version, resp);
     }
 
     private boolean createSession(HttpServletRequest req,
