@@ -553,7 +553,7 @@ public final class McpServer extends JsonRpcEndpoint implements AutoCloseable {
         if (msg instanceof JsonRpcResponse resp) {
             var er = new ElicitResultJsonCodec().fromJson(resp.result());
             if (er.action() == ElicitationAction.ACCEPT) {
-                ValidationUtil.validateSchema(req.requestedSchema(), er.content());
+                JsonSchemaValidator.validate(req.requestedSchema(), er.content());
             }
             return er;
         }
