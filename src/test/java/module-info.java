@@ -6,5 +6,7 @@ open module mcp.test {
     requires org.junit.platform.suite.api;
     requires org.junit.jupiter.api;
     requires jakarta.json;
+    requires org.bouncycastle.pkix;
+    requires org.bouncycastle.provider;
 
 }
