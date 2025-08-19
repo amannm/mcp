@@ -147,7 +147,8 @@ public final class ProtocolLifecycleSteps {
                 base.defaultOriginHeader(), base.httpRequestTimeout(), base.enableKeepAlive(),
                 base.sessionIdByteLength(), base.initializeRequestTimeout(), base.strictVersionValidation(),
                 base.pingTimeout(), base.pingInterval(), base.progressPerSecond(), base.rateLimiterWindow(),
-                base.verbose(), base.interactiveSampling(), base.rootDirectories(), base.samplingAccessPolicy()
+                base.verbose(), base.interactiveSampling(), base.rootDirectories(), base.samplingAccessPolicy(),
+                McpClientTlsConfiguration.defaultConfiguration()
         );
     }
 
@@ -158,7 +159,8 @@ public final class ProtocolLifecycleSteps {
                 base.defaultOriginHeader(), base.httpRequestTimeout(), base.enableKeepAlive(),
                 base.sessionIdByteLength(), base.initializeRequestTimeout(), base.strictVersionValidation(),
                 base.pingTimeout(), base.pingInterval(), base.progressPerSecond(), base.rateLimiterWindow(),
-                base.verbose(), base.interactiveSampling(), base.rootDirectories(), base.samplingAccessPolicy()
+                base.verbose(), base.interactiveSampling(), base.rootDirectories(), base.samplingAccessPolicy(),
+                McpClientTlsConfiguration.defaultConfiguration()
         );
     }
 

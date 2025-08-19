@@ -12,6 +12,12 @@ Feature: MCP Client Features
     And I have established an MCP connection
     And I have declared client capabilities
 
+  @tls @configuration
+  Scenario: Client TLS default configuration
+    When I inspect the default client TLS configuration
+    Then hostname verification should be enabled
+    And certificate validation mode should be "STRICT"
+
   @elicitation @capability
   Scenario: Elicitation capability declaration
     # Tests specification/2025-06-18/client/elicitation.mdx:44-55 (Capability declaration)

@@ -31,7 +31,8 @@ public record McpClientConfiguration(
         boolean verbose,
         boolean interactiveSampling,
         List<String> rootDirectories,
-        SamplingAccessPolicy samplingAccessPolicy
+        SamplingAccessPolicy samplingAccessPolicy,
+        McpClientTlsConfiguration tlsConfiguration
 ) {
 
     public McpClientConfiguration {
@@ -63,6 +64,8 @@ public record McpClientConfiguration(
         rootDirectories = List.copyOf(rootDirectories);
         if (samplingAccessPolicy == null)
             throw new IllegalArgumentException("Sampling access policy is required");
+        if (tlsConfiguration == null)
+            throw new IllegalArgumentException("TLS configuration is required");
     }
 
     public static McpClientConfiguration defaultConfiguration(String clientId, String serverName, String principal) {
@@ -88,7 +91,8 @@ public record McpClientConfiguration(
                 false,
                 false,
                 List.of(),
-                SamplingAccessPolicy.PERMISSIVE
+                SamplingAccessPolicy.PERMISSIVE,
+                McpClientTlsConfiguration.defaultConfiguration()
         );
     }
 }
