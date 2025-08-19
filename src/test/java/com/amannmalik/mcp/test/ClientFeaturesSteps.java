@@ -848,6 +848,26 @@ public final class ClientFeaturesSteps {
         }
     }
 
+    @Then("it should support TLS protocols:")
+    public void it_should_support_tls_protocols(DataTable table) {
+        var expected = table.asList();
+        for (String protocol : expected.subList(1, expected.size())) {
+            if (!tlsConfig.tlsProtocols().contains(protocol)) {
+                throw new AssertionError("missing protocol: " + protocol);
+            }
+        }
+    }
+
+    @Then("it should support cipher suites:")
+    public void it_should_support_cipher_suites(DataTable table) {
+        var expected = table.asList();
+        for (String suite : expected.subList(1, expected.size())) {
+            if (!tlsConfig.cipherSuites().contains(suite)) {
+                throw new AssertionError("missing cipher suite: " + suite);
+            }
+        }
+    }
+
     @Then("each root should have a valid file:\\/\\/ URI")
     public void each_root_should_have_a_valid_file_uri() {
         for (Map<String, String> root : returnedRoots) {

@@ -18,6 +18,18 @@ Feature: MCP Client Features
     Then hostname verification should be enabled
     And certificate validation mode should be "STRICT"
 
+  @tls @defaults
+  Scenario: Client TLS protocol and cipher suite defaults
+    When I inspect the default client TLS configuration
+    Then it should support TLS protocols:
+      | protocol |
+      | TLSv1.3  |
+      | TLSv1.2  |
+    And it should support cipher suites:
+      | suite                  |
+      | TLS_AES_128_GCM_SHA256 |
+      | TLS_AES_256_GCM_SHA384 |
+
   @elicitation @capability
   Scenario: Elicitation capability declaration
     # Tests specification/2025-06-18/client/elicitation.mdx:44-55 (Capability declaration)

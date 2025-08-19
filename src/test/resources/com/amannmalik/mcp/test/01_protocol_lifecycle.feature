@@ -115,6 +115,18 @@ Scenario: HTTP GET response handling
       | none              | false         |
     Then each response should be handled according to Content-Type requirements
 
+  @connection @https @enforcement
+  Scenario: HTTPS enforcement behavior
+    When I evaluate HTTPS enforcement with the following configurations:
+      | mode    | is_secure | expected_status |
+      | MIXED   | false     | 0               |
+      | REDIRECT| false     | 301             |
+      | STRICT  | false     | 426             |
+      | MIXED   | true      | 0               |
+      | REDIRECT| true      | 0               |
+      | STRICT  | true      | 0               |
+    Then the HTTPS enforcement outcomes should match
+
   @connection @http @post-responses
   Scenario: HTTP POST notifications and responses
     # Tests specification/2025-06-18/basic/transports.mdx:93-98 (Notification/response POST handling)

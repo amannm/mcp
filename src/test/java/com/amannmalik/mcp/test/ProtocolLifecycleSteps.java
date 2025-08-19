@@ -85,6 +85,9 @@ public final class ProtocolLifecycleSteps {
     private final List<Boolean> preInitAllowedResults = new ArrayList<>();
     private final List<Boolean> expectedPreInitAllowedResults = new ArrayList<>();
 
+    private final List<Integer> httpsStatuses = new ArrayList<>();
+    private final List<Integer> expectedHttpsStatuses = new ArrayList<>();
+
 
     private Set<ClientCapability> parseClientCapabilities(String capabilities) {
         if (capabilities == null || capabilities.trim().isEmpty()) {
@@ -473,11 +476,41 @@ public final class ProtocolLifecycleSteps {
         };
     }
 
+    private int testHttpsEnforcement(HttpsMode mode, boolean secure) {
+        if (secure) return 0;
+        return switch (mode) {
+            case MIXED -> 0;
+            case REDIRECT -> 301;
+            case STRICT -> 426;
+        };
+    }
+
     @Then("each request should be handled according to Accept header requirements")
     public void each_request_should_be_handled_according_to_accept_header_requirements() {
         for (int i = 0; i < acceptHeaderResults.size(); i++) {
             if (!Objects.equals(acceptHeaderResults.get(i), expectedAcceptResults.get(i))) {
                 throw new AssertionError("accept header validation failed at index %d".formatted(i));
+            }
+        }
+    }
+
+    @When("I evaluate HTTPS enforcement with the following configurations:")
+    public void i_evaluate_https_enforcement_with_the_following_configurations(DataTable table) {
+        httpsStatuses.clear();
+        expectedHttpsStatuses.clear();
+        table.asMaps(String.class, String.class).forEach(row -> {
+            var mode = HttpsMode.valueOf(row.get("mode").toUpperCase());
+            var secure = Boolean.parseBoolean(row.get("is_secure"));
+            expectedHttpsStatuses.add(Integer.parseInt(row.get("expected_status")));
+            httpsStatuses.add(testHttpsEnforcement(mode, secure));
+        });
+    }
+
+    @Then("the HTTPS enforcement outcomes should match")
+    public void the_https_enforcement_outcomes_should_match() {
+        for (int i = 0; i < httpsStatuses.size(); i++) {
+            if (!Objects.equals(httpsStatuses.get(i), expectedHttpsStatuses.get(i))) {
+                throw new AssertionError("https enforcement mismatch at index %d".formatted(i));
             }
         }
     }
