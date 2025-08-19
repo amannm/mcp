@@ -5,7 +5,8 @@ import com.amannmalik.mcp.api.ClientInfo;
 import com.amannmalik.mcp.core.Capabilities;
 import com.amannmalik.mcp.core.ClientFeatures;
 import com.amannmalik.mcp.util.InitializeRequest;
-import jakarta.json.*;
+import jakarta.json.Json;
+import jakarta.json.JsonObject;
 
 import java.util.*;
 
@@ -15,9 +16,9 @@ public final class InitializeRequestAbstractEntityCodec extends AbstractEntityCo
 
     @Override
     public JsonObject toJson(InitializeRequest req) {
-        JsonObjectBuilder caps = Json.createObjectBuilder();
+        var caps = Json.createObjectBuilder();
         for (var c : req.capabilities().client()) {
-            JsonObjectBuilder b = Json.createObjectBuilder();
+            var b = Json.createObjectBuilder();
             if (c == ClientCapability.ROOTS && req.features().rootsListChanged()) {
                 b.add("listChanged", true);
             }
@@ -33,18 +34,18 @@ public final class InitializeRequestAbstractEntityCodec extends AbstractEntityCo
 
     @Override
     public InitializeRequest fromJson(JsonObject obj) {
-        String version = requireString(obj, "protocolVersion");
-        JsonObject capsObj = obj.getJsonObject("capabilities");
+        var version = requireString(obj, "protocolVersion");
+        var capsObj = obj.getJsonObject("capabilities");
         Set<ClientCapability> client = EnumSet.noneOf(ClientCapability.class);
         Map<String, JsonObject> experimental = new HashMap<>();
-        boolean rootsList = false;
+        var rootsList = false;
         if (capsObj != null) {
             for (var entry : capsObj.entrySet()) {
-                String k = entry.getKey();
-                JsonObject v = entry.getValue().asJsonObject();
-                Optional<ClientCapability> cap = ClientCapability.from(k);
+                var k = entry.getKey();
+                var v = entry.getValue().asJsonObject();
+                var cap = ClientCapability.from(k);
                 if (cap.isPresent()) {
-                    ClientCapability c = cap.get();
+                    var c = cap.get();
                     client.add(c);
                     if (c == ClientCapability.ROOTS) {
                         rootsList = v.getBoolean("listChanged", false);
@@ -54,14 +55,14 @@ public final class InitializeRequestAbstractEntityCodec extends AbstractEntityCo
                 }
             }
         }
-        Capabilities caps = new Capabilities(
+        var caps = new Capabilities(
                 client.isEmpty() ? Set.of() : EnumSet.copyOf(client),
                 Set.of(),
                 experimental.isEmpty() ? Map.of() : Map.copyOf(experimental),
                 Map.of()
         );
-        ClientInfo info = CLIENT_INFO_JSON_CODEC.fromJson(getObject(obj, "clientInfo"));
-        ClientFeatures features = new ClientFeatures(rootsList);
+        var info = CLIENT_INFO_JSON_CODEC.fromJson(getObject(obj, "clientInfo"));
+        var features = new ClientFeatures(rootsList);
         return new InitializeRequest(version, caps, info, features);
     }
 }

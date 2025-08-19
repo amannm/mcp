@@ -1,14 +1,15 @@
 package com.amannmalik.mcp.codec;
 
 import com.amannmalik.mcp.spi.ModelHint;
-import jakarta.json.*;
+import jakarta.json.Json;
+import jakarta.json.JsonObject;
 
 import java.util.Set;
 
 public class ModelHintJsonCodec implements JsonCodec<ModelHint> {
     @Override
     public JsonObject toJson(ModelHint h) {
-        JsonObjectBuilder b = Json.createObjectBuilder();
+        var b = Json.createObjectBuilder();
         if (h.name() != null) b.add("name", h.name());
         return b.build();
     }

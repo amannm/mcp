@@ -39,7 +39,7 @@ public final class InMemoryResourceProvider extends InMemoryProvider<Resource> i
 
     @Override
     public Optional<Resource> get(String uri) {
-        for (Resource r : items) {
+        for (var r : items) {
             if (r.uri().equals(uri)) {
                 return Optional.of(r);
             }
@@ -54,13 +54,13 @@ public final class InMemoryResourceProvider extends InMemoryProvider<Resource> i
 
     public void notifyUpdate(String uri) {
         String title = null;
-        for (Resource r : items) {
+        for (var r : items) {
             if (r.uri().equals(uri)) {
                 title = r.title();
                 break;
             }
         }
-        ResourceUpdate update = new ResourceUpdate(uri, title);
+        var update = new ResourceUpdate(uri, title);
         listeners.getOrDefault(uri, List.of()).forEach(l -> l.accept(update));
     }
 
@@ -68,7 +68,7 @@ public final class InMemoryResourceProvider extends InMemoryProvider<Resource> i
         if (resource == null) {
             throw new IllegalArgumentException("resource required");
         }
-        for (Resource r : items) {
+        for (var r : items) {
             if (r.uri().equals(resource.uri())) {
                 throw new IllegalArgumentException("duplicate resource uri: " + resource.uri());
             }
@@ -88,7 +88,7 @@ public final class InMemoryResourceProvider extends InMemoryProvider<Resource> i
         if (template == null) {
             throw new IllegalArgumentException("template required");
         }
-        for (ResourceTemplate t : templates) {
+        for (var t : templates) {
             if (t.name().equals(template.name())) {
                 throw new IllegalArgumentException("duplicate template name: " + template.name());
             }

@@ -11,12 +11,11 @@ public class CreateMessageRequestJsonCodec implements JsonCodec<CreateMessageReq
     static final JsonCodec<SamplingMessage> SAMPLING_MESSAGE_JSON_CODEC = new SamplingMessageAbstractEntityCodec();
     static final JsonCodec<ModelPreferences> MODEL_PREFERENCES_JSON_CODEC = new ModelPreferencesJsonCodec();
 
-
     @Override
     public JsonObject toJson(CreateMessageRequest req) {
-        JsonArrayBuilder msgs = Json.createArrayBuilder();
+        var msgs = Json.createArrayBuilder();
         req.messages().forEach(m -> msgs.add(SAMPLING_MESSAGE_JSON_CODEC.toJson(m)));
-        JsonObjectBuilder b = Json.createObjectBuilder().add("messages", msgs.build());
+        var b = Json.createObjectBuilder().add("messages", msgs.build());
         if (req.modelPreferences() != null) b.add("modelPreferences", MODEL_PREFERENCES_JSON_CODEC.toJson(req.modelPreferences()));
         if (req.systemPrompt() != null) b.add("systemPrompt", req.systemPrompt());
         if (req.includeContext() != null) b.add("includeContext", switch (req.includeContext()) {
@@ -27,7 +26,7 @@ public class CreateMessageRequestJsonCodec implements JsonCodec<CreateMessageReq
         if (req.temperature() != null) b.add("temperature", req.temperature());
         b.add("maxTokens", req.maxTokens());
         if (!req.stopSequences().isEmpty()) {
-            JsonArrayBuilder arr = Json.createArrayBuilder();
+            var arr = Json.createArrayBuilder();
             req.stopSequences().forEach(arr::add);
             b.add("stopSequences", arr.build());
         }
@@ -40,13 +39,13 @@ public class CreateMessageRequestJsonCodec implements JsonCodec<CreateMessageReq
     public CreateMessageRequest fromJson(JsonObject obj) {
         if (obj == null) throw new IllegalArgumentException("object required");
         AbstractEntityCodec.requireOnlyKeys(obj, Set.of("messages", "modelPreferences", "systemPrompt", "includeContext", "temperature", "maxTokens", "stopSequences", "metadata", "_meta"));
-        List<SamplingMessage> messages = obj.getJsonArray("messages").stream()
+        var messages = obj.getJsonArray("messages").stream()
                 .map(v -> SAMPLING_MESSAGE_JSON_CODEC.fromJson(v.asJsonObject()))
                 .toList();
-        ModelPreferences prefs = obj.containsKey("modelPreferences")
+        var prefs = obj.containsKey("modelPreferences")
                 ? MODEL_PREFERENCES_JSON_CODEC.fromJson(obj.getJsonObject("modelPreferences"))
                 : null;
-        String system = obj.getString("systemPrompt", null);
+        var system = obj.getString("systemPrompt", null);
         CreateMessageRequest.IncludeContext ctx = null;
         if (obj.containsKey("includeContext")) {
             ctx = switch (obj.getString("includeContext")) {
@@ -56,14 +55,14 @@ public class CreateMessageRequestJsonCodec implements JsonCodec<CreateMessageReq
                 default -> throw new IllegalArgumentException("Unknown includeContext");
             };
         }
-        Double temp = obj.containsKey("temperature") ? obj.getJsonNumber("temperature").doubleValue() : null;
+        var temp = obj.containsKey("temperature") ? obj.getJsonNumber("temperature").doubleValue() : null;
         if (!obj.containsKey("maxTokens")) throw new IllegalArgumentException("maxTokens required");
-        int max = obj.getInt("maxTokens");
+        var max = obj.getInt("maxTokens");
         List<String> stops = obj.containsKey("stopSequences")
                 ? obj.getJsonArray("stopSequences").getValuesAs(JsonString.class).stream().map(JsonString::getString).toList()
                 : List.of();
-        JsonObject metadata = obj.getJsonObject("metadata");
-        JsonObject meta = obj.containsKey("_meta") ? obj.getJsonObject("_meta") : null;
+        var metadata = obj.getJsonObject("metadata");
+        var meta = obj.containsKey("_meta") ? obj.getJsonObject("_meta") : null;
         return new CreateMessageRequest(messages, prefs, system, ctx, temp, max, stops, metadata, meta);
     }
 }

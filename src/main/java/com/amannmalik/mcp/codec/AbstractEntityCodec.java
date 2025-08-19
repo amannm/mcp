@@ -44,10 +44,10 @@ public sealed abstract class AbstractEntityCodec<T> implements JsonCodec<T> perm
     protected static final Set<String> META_KEYS = Set.of("_meta");
 
     public static <T> JsonObject paginated(String field, Pagination.Page<T> page, Function<T, JsonValue> encoder, JsonObject meta) {
-        JsonArrayBuilder arr = Json.createArrayBuilder();
+        var arr = Json.createArrayBuilder();
         page.items().forEach(item -> arr.add(encoder.apply(item)));
-        JsonObjectBuilder b = Json.createObjectBuilder().add(field, arr.build());
-        if (page.nextCursor() instanceof Cursor.Token(String value)) b.add("nextCursor", value);
+        var b = Json.createObjectBuilder().add(field, arr.build());
+        if (page.nextCursor() instanceof Cursor.Token(var value)) b.add("nextCursor", value);
         if (meta != null) b.add("_meta", meta);
         return b.build();
     }
@@ -81,8 +81,17 @@ public sealed abstract class AbstractEntityCodec<T> implements JsonCodec<T> perm
         return new ResourceEmptyCodec<>(from);
     }
 
+    protected static JsonObjectBuilder addMeta(JsonObjectBuilder b, JsonObject meta) {
+        if (meta != null) b.add("_meta", meta);
+        return b;
+    }
+
+    protected static JsonObject meta(JsonObject obj) {
+        return obj.getJsonObject("_meta");
+    }
+
     protected static String requireString(JsonObject obj, String key) {
-        String val = obj.getString(key, null);
+        var val = obj.getString(key, null);
         if (val == null) throw new IllegalArgumentException(key + " required");
         return val;
     }
@@ -96,7 +105,7 @@ public sealed abstract class AbstractEntityCodec<T> implements JsonCodec<T> perm
     }
 
     protected static ContentBlock requireContent(JsonObject obj) {
-        JsonObject c = getObject(obj, "content");
+        var c = getObject(obj, "content");
         if (c == null) throw new IllegalArgumentException("content required");
         return CONTENT_BLOCK_CODEC.fromJson(c);
     }
@@ -104,7 +113,7 @@ public sealed abstract class AbstractEntityCodec<T> implements JsonCodec<T> perm
     public static void requireOnlyKeys(JsonObject obj, Set<String> allowed) {
         Objects.requireNonNull(obj);
         Objects.requireNonNull(allowed);
-        for (String key : obj.keySet()) {
+        for (var key : obj.keySet()) {
             if (!allowed.contains(key)) throw new IllegalArgumentException("unexpected field: " + key);
         }
     }

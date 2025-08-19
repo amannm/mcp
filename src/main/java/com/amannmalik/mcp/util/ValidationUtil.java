@@ -19,8 +19,8 @@ public final class ValidationUtil {
 
     public static boolean containsNonVisibleAscii(String value) {
         if (value == null) return true;
-        for (int i = 0; i < value.length(); i++) {
-            char c = value.charAt(i);
+        for (var i = 0; i < value.length(); i++) {
+            var c = value.charAt(i);
             if (c < 0x21 || c > 0x7E) return true;
         }
         return false;
@@ -28,8 +28,8 @@ public final class ValidationUtil {
 
     public static String requireClean(String value) {
         if (value == null) throw new IllegalArgumentException("value is required");
-        for (int i = 0; i < value.length(); i++) {
-            char c = value.charAt(i);
+        for (var i = 0; i < value.length(); i++) {
+            var c = value.charAt(i);
             if (c < 0x20 && c != '\n' && c != '\r' && c != '\t') {
                 throw new IllegalArgumentException("Control characters not allowed");
             }
@@ -57,9 +57,9 @@ public final class ValidationUtil {
 
     public static void requireMeta(String key) {
         if (key == null) throw new IllegalArgumentException("key required");
-        int slash = key.indexOf('/');
-        String prefix = slash >= 0 ? key.substring(0, slash) : null;
-        String name = slash >= 0 ? key.substring(slash + 1) : key;
+        var slash = key.indexOf('/');
+        var prefix = slash >= 0 ? key.substring(0, slash) : null;
+        var name = slash >= 0 ? key.substring(slash + 1) : key;
 
         if (slash == 0) {
             throw new IllegalArgumentException("_meta prefix must not be empty: " + key);
@@ -69,9 +69,9 @@ public final class ValidationUtil {
         }
 
         if (prefix != null) {
-            String[] labels = prefix.split("\\.");
-            for (int i = 0; i < labels.length; i++) {
-                String label = labels[i];
+            var labels = prefix.split("\\.");
+            for (var i = 0; i < labels.length; i++) {
+                var label = labels[i];
                 if (!LABEL.matcher(label).matches()) {
                     throw new IllegalArgumentException("Invalid _meta prefix: " + key);
                 }
@@ -88,7 +88,7 @@ public final class ValidationUtil {
 
     public static void requireMeta(JsonObject obj) {
         if (obj == null) return;
-        for (String key : obj.keySet()) requireMeta(key);
+        for (var key : obj.keySet()) requireMeta(key);
     }
 
     public static String requireAbsoluteUri(String uri) {
@@ -109,7 +109,7 @@ public final class ValidationUtil {
     }
 
     public static String requireFileUri(String uri) {
-        String normalized = requireAbsoluteUri(uri);
+        var normalized = requireAbsoluteUri(uri);
         if (!normalized.startsWith("file:")) {
             throw new IllegalArgumentException("URI must start with file:");
         }
@@ -131,7 +131,7 @@ public final class ValidationUtil {
         } catch (Exception e) {
             return false;
         }
-        String norm = parsed.getScheme() + "://" + parsed.getAuthority();
+        var norm = parsed.getScheme() + "://" + parsed.getAuthority();
         return allowedOrigins.contains(norm);
     }
 
@@ -144,7 +144,7 @@ public final class ValidationUtil {
     public static String requireAbsoluteTemplate(String template) {
         if (template == null) throw new IllegalArgumentException("uriTemplate is required");
         checkBraces(template);
-        String replaced = template.replaceAll("\\{[^}]*}", "x");
+        var replaced = template.replaceAll("\\{[^}]*}", "x");
         URI parsed;
         try {
             parsed = URI.create(replaced).normalize();
@@ -161,9 +161,9 @@ public final class ValidationUtil {
     }
 
     private static void checkBraces(String template) {
-        int depth = 0;
-        for (int i = 0; i < template.length(); i++) {
-            char c = template.charAt(i);
+        var depth = 0;
+        for (var i = 0; i < template.length(); i++) {
+            var c = template.charAt(i);
             if (c == '{') depth++;
             else if (c == '}') depth--;
             if (depth < 0) throw new IllegalArgumentException("Unmatched braces in URI template: " + template);
@@ -219,24 +219,24 @@ public final class ValidationUtil {
     }
 
     private static void validateObject(JsonObject schema, JsonObject value) {
-        JsonArray required = schema.getJsonArray("required");
+        var required = schema.getJsonArray("required");
         if (required != null) {
-            for (JsonString r : required.getValuesAs(JsonString.class)) {
+            for (var r : required.getValuesAs(JsonString.class)) {
                 if (!value.containsKey(r.getString())) {
                     throw new IllegalArgumentException("Missing required field: " + r.getString());
                 }
             }
         }
-        JsonObject props = schema.getJsonObject("properties");
+        var props = schema.getJsonObject("properties");
         if (props == null) return;
         for (var e : props.entrySet()) {
-            String name = e.getKey();
+            var name = e.getKey();
             if (!value.containsKey(name)) continue;
-            JsonObject prop = e.getValue().asJsonObject();
-            JsonValue v = value.get(name);
+            var prop = e.getValue().asJsonObject();
+            var v = value.get(name);
             validateProperty(name, prop, v);
         }
-        for (String key : value.keySet()) {
+        for (var key : value.keySet()) {
             if (!props.containsKey(key)) {
                 throw new IllegalArgumentException("Unexpected field: " + key);
             }
@@ -244,7 +244,7 @@ public final class ValidationUtil {
     }
 
     private static void validateProperty(String name, JsonObject schema, JsonValue value) {
-        String t = schema.getString("type", null);
+        var t = schema.getString("type", null);
         if (t == null) return;
         switch (t) {
             case "string" -> validateString(name, value, schema);
@@ -263,7 +263,7 @@ public final class ValidationUtil {
 
     private static void validateString(String field, JsonValue v, JsonObject schema) {
         requireType(v, JsonValue.ValueType.STRING, field);
-        String str = ((JsonString) v).getString();
+        var str = ((JsonString) v).getString();
         if (schema.containsKey("minLength") && str.length() < schema.getInt("minLength")) {
             throw new IllegalArgumentException("minLength violated for " + field);
         }
@@ -271,7 +271,7 @@ public final class ValidationUtil {
             throw new IllegalArgumentException("maxLength violated for " + field);
         }
         if (schema.containsKey("enum")) {
-            boolean match = schema.getJsonArray("enum")
+            var match = schema.getJsonArray("enum")
                     .getValuesAs(JsonString.class)
                     .stream()
                     .anyMatch(js -> js.getString().equals(str));
@@ -286,7 +286,7 @@ public final class ValidationUtil {
 
     private static void validateNumber(String field, JsonValue v, JsonObject schema) {
         requireType(v, JsonValue.ValueType.NUMBER, field);
-        double num = ((JsonNumber) v).doubleValue();
+        var num = ((JsonNumber) v).doubleValue();
         if (schema.containsKey("minimum") && num < schema.getJsonNumber("minimum").doubleValue()) {
             throw new IllegalArgumentException("minimum violated for " + field);
         }
@@ -297,7 +297,7 @@ public final class ValidationUtil {
 
     private static void validateInteger(String field, JsonValue v, JsonObject schema) {
         requireInteger(v, field);
-        long num = ((JsonNumber) v).longValue();
+        var num = ((JsonNumber) v).longValue();
         if (schema.containsKey("minimum") && num < schema.getJsonNumber("minimum").longValue()) {
             throw new IllegalArgumentException("minimum violated for " + field);
         }

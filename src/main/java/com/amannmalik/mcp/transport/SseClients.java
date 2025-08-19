@@ -84,8 +84,8 @@ final class SseClients {
 
     void failPending() {
         responses.forEach((id, q) -> {
-            RequestId reqId = RequestId.parse(id);
-            JsonRpcError err = JsonRpcError.of(reqId, JsonRpcErrorCode.INTERNAL_ERROR, "Transport closed");
+            var reqId = RequestId.parse(id);
+            var err = JsonRpcError.of(reqId, JsonRpcErrorCode.INTERNAL_ERROR, "Transport closed");
             if (!q.offer(CODEC.toJson(err))) {
                 throw new IllegalStateException("queue full");
             }

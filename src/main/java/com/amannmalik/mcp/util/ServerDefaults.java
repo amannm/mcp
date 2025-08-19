@@ -21,14 +21,14 @@ public final class ServerDefaults {
     private static final SamplingProvider SAMPLING;
 
     static {
-        Annotations ann = new Annotations(Set.of(Role.USER), 0.5, Instant.parse("2024-01-01T00:00:00Z"));
-        Resource r0 = new Resource("test://example", "example", null, null, "text/plain", 5L, ann, null);
-        Resource r1 = new Resource("test://sample", "sample", null, null, "text/plain", 6L, ann, null);
+        var ann = new Annotations(Set.of(Role.USER), 0.5, Instant.parse("2024-01-01T00:00:00Z"));
+        var r0 = new Resource("test://example", "example", null, null, "text/plain", 5L, ann, null);
+        var r1 = new Resource("test://sample", "sample", null, null, "text/plain", 6L, ann, null);
         Map<String, ResourceBlock> content = Map.of(
                 r0.uri(), new ResourceBlock.Text(r0.uri(), "text/plain", "hello", null),
                 r1.uri(), new ResourceBlock.Text(r1.uri(), "text/plain", "sample", null)
         );
-        ResourceTemplate template = new ResourceTemplate("test://template", "example_template", null, null, "text/plain", null, null);
+        var template = new ResourceTemplate("test://template", "example_template", null, null, "text/plain", null, null);
         RESOURCES = new InMemoryResourceProvider(List.of(r0, r1), content, List.of(template));
 
         var schema = Json.createObjectBuilder().add("type", "object").build();
@@ -38,21 +38,21 @@ public final class ServerDefaults {
                         .add("message", Json.createObjectBuilder().add("type", "string")))
                 .add("required", Json.createArrayBuilder().add("message"))
                 .build();
-        Tool tool = new Tool("test_tool", "Test Tool", "Demonstrates successful execution", schema, outSchema,
+        var tool = new Tool("test_tool", "Test Tool", "Demonstrates successful execution", schema, outSchema,
                 new ToolAnnotations("Annotated Tool", true, null, null, null), null);
-        Tool errorTool = new Tool("error_tool", "Error Tool", "Always fails", schema, null, null, null);
+        var errorTool = new Tool("error_tool", "Error Tool", "Always fails", schema, null, null, null);
         var eschema = Json.createObjectBuilder()
                 .add("type", "object")
                 .add("properties", Json.createObjectBuilder()
                         .add("msg", Json.createObjectBuilder().add("type", "string")))
                 .add("required", Json.createArrayBuilder().add("msg"))
                 .build();
-        Tool eliciting = new Tool("echo_tool", "Echo Tool", "Echoes the provided message", eschema, null, null, null);
-        Tool slow = new Tool("slow_tool", "Slow Tool", "Delays before responding", schema, null, null, null);
-        Tool img = new Tool("image_tool", "Image Tool", "Returns image content", schema, null, null, null);
-        Tool audio = new Tool("audio_tool", "Audio Tool", "Returns audio content", schema, null, null, null);
-        Tool link = new Tool("link_tool", "Link Tool", "Returns resource link", schema, null, null, null);
-        Tool embedded = new Tool("embedded_tool", "Embedded Resource Tool", "Returns embedded resource", schema, null, null, null);
+        var eliciting = new Tool("echo_tool", "Echo Tool", "Echoes the provided message", eschema, null, null, null);
+        var slow = new Tool("slow_tool", "Slow Tool", "Delays before responding", schema, null, null, null);
+        var img = new Tool("image_tool", "Image Tool", "Returns image content", schema, null, null, null);
+        var audio = new Tool("audio_tool", "Audio Tool", "Returns audio content", schema, null, null, null);
+        var link = new Tool("link_tool", "Link Tool", "Returns resource link", schema, null, null, null);
+        var embedded = new Tool("embedded_tool", "Embedded Resource Tool", "Returns embedded resource", schema, null, null, null);
         TOOLS = new InMemoryToolProvider(
                 List.of(tool, errorTool, eliciting, slow, img, audio, link, embedded),
                 Map.of(
@@ -129,14 +129,14 @@ public final class ServerDefaults {
                                         .build(), null, false, null)
                 ));
 
-        InMemoryPromptProvider promptProvider = new InMemoryPromptProvider();
-        PromptArgument arg = new PromptArgument("test_arg", null, null, true, null);
-        Prompt prompt = new Prompt("test_prompt", "Test Prompt", null, List.of(arg), null);
-        PromptMessageTemplate msg = new PromptMessageTemplate(Role.USER, new ContentBlock.Text("hello", null, null));
+        var promptProvider = new InMemoryPromptProvider();
+        var arg = new PromptArgument("test_arg", null, null, true, null);
+        var prompt = new Prompt("test_prompt", "Test Prompt", null, List.of(arg), null);
+        var msg = new PromptMessageTemplate(Role.USER, new ContentBlock.Text("hello", null, null));
         promptProvider.add(new PromptTemplate(prompt, List.of(msg)));
         PROMPTS = promptProvider;
 
-        InMemoryCompletionProvider completionProvider = new InMemoryCompletionProvider();
+        var completionProvider = new InMemoryCompletionProvider();
         completionProvider.add(new Ref.PromptRef("test_prompt", null, null), "test_arg", Map.of(), List.of("test_completion"));
         COMPLETIONS = completionProvider;
 
@@ -168,7 +168,7 @@ public final class ServerDefaults {
 
     public static ResourceAccessPolicy privacyBoundary(String principalId) {
         var p = new ResourceAccessController();
-        for (Role a : Role.values()) p.allow(principalId, a);
+        for (var a : Role.values()) p.allow(principalId, a);
         return p;
     }
 
