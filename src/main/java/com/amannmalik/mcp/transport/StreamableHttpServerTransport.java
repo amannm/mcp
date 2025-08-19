@@ -12,12 +12,15 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.eclipse.jetty.ee10.servlet.ServletContextHandler;
 import org.eclipse.jetty.ee10.servlet.ServletHolder;
+import org.eclipse.jetty.server.HttpConfiguration;
+import org.eclipse.jetty.server.HttpConnectionFactory;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.ServerConnector;
+import org.eclipse.jetty.server.SslConnectionFactory;
+import org.eclipse.jetty.util.ssl.SslContextFactory;
 
 import java.io.EOFException;
 import java.io.IOException;
-import java.net.InetSocketAddress;
 import java.time.Duration;
 import java.util.*;
 import java.util.concurrent.*;
@@ -39,6 +42,7 @@ public final class StreamableHttpServerTransport implements Transport {
     final McpServerConfiguration config;
     private final Server server;
     private final int port;
+    private final int httpsPort;
     private final Set<String> allowedOrigins;
     private final String resourceMetadataUrl;
     private final MessageDispatcher dispatcher;
@@ -49,7 +53,7 @@ public final class StreamableHttpServerTransport implements Transport {
         this.config = config;
         this.sessions = new SessionManager(COMPATIBILITY_VERSION, config.sessionIdByteLength());
 
-        server = new Server(new InetSocketAddress(config.bindAddress(), config.serverPort()));
+        server = new Server();
         ServletContextHandler ctx = new ServletContextHandler();
         for (String path : config.servletPaths()) {
             if (path.equals("/")) {
@@ -58,23 +62,69 @@ public final class StreamableHttpServerTransport implements Transport {
                 ctx.addServlet(new ServletHolder(new MetadataServlet(this)), path);
             }
         }
-
         server.setHandler(ctx);
-        server.start();
-        this.port = ((ServerConnector) server.getConnectors()[0]).getLocalPort();
+
+        ServerConnector http = null;
+        if (config.serverPort() > 0) {
+            var httpCfg = new HttpConfiguration();
+            http = new ServerConnector(server, new HttpConnectionFactory(httpCfg));
+            http.setHost(config.bindAddress());
+            http.setPort(config.serverPort());
+            server.addConnector(http);
+        }
+
+        ServerConnector https = null;
+        if (config.httpsPort() > 0) {
+            var httpsCfg = new HttpConfiguration();
+            httpsCfg.setSecureScheme("https");
+            httpsCfg.setSecurePort(config.httpsPort());
+            var ssl = new SslContextFactory.Server();
+            ssl.setKeyStorePath(config.keystorePath());
+            ssl.setKeyStorePassword(config.keystorePassword());
+            ssl.setKeyStoreType(config.keystoreType());
+            ssl.setIncludeProtocols(config.tlsProtocols().toArray(String[]::new));
+            ssl.setIncludeCipherSuites(config.cipherSuites().toArray(String[]::new));
+            ssl.setSessionCachingEnabled(true);
+            if (config.requireClientAuth()) {
+                ssl.setNeedClientAuth(true);
+                ssl.setTrustStorePath(config.truststorePath());
+                ssl.setTrustStorePassword(config.truststorePassword());
+                ssl.setTrustStoreType(config.truststoreType());
+            }
+            https = new ServerConnector(
+                    server,
+                    new SslConnectionFactory(ssl, "HTTP/1.1"),
+                    new HttpConnectionFactory(httpsCfg));
+            https.setHost(config.bindAddress());
+            https.setPort(config.httpsPort());
+            server.addConnector(https);
+        }
+
+        try {
+            server.start();
+        } catch (Exception e) {
+            server.stop();
+            server.destroy();
+            throw e;
+        }
+        this.port = http != null ? http.getLocalPort() : https.getLocalPort();
+        this.httpsPort = https != null ? https.getLocalPort() : -1;
         this.allowedOrigins = ValidationUtil.requireAllowedOrigins(Set.copyOf(config.allowedOrigins()));
         this.authManager = auth;
 
         if (config.resourceMetadataUrl() == null || config.resourceMetadataUrl().isBlank()) {
+            int metaPort = https != null ? this.httpsPort : this.port;
             this.resourceMetadataUrl = String.format(
                     config.resourceMetadataUrlTemplate(),
                     config.bindAddress(),
-                    this.port);
+                    metaPort);
         } else {
             this.resourceMetadataUrl = config.resourceMetadataUrl();
         }
 
-        this.canonicalResource = "http://" + config.bindAddress() + ":" + this.port;
+        this.canonicalResource = https != null
+                ? "https://" + config.bindAddress() + ":" + this.httpsPort
+                : "http://" + config.bindAddress() + ":" + this.port;
         if (config.authServers().isEmpty()) {
             this.authorizationServers = List.of();
         } else {
