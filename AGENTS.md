@@ -34,6 +34,7 @@ description: MCP Specification Expert
 - Never loosen visibility for testing
 - Never use `java.lang.reflect`
 - Never modify the specification
+- Never ignore exceptions
 
 # Environment
 
