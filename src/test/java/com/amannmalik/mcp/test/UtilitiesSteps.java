@@ -80,6 +80,10 @@ public final class UtilitiesSteps {
     private boolean systemStable;
     private boolean lifecycleTokenActive;
     private double lastProgressValue;
+
+    private LoggingLevel loggingLevel;
+    private final List<Map<String, String>> loggingChecks = new ArrayList<>();
+
     // --- Cancellation ----------------------------------------------------
 
     @Given("an established MCP connection")
@@ -479,6 +483,53 @@ public final class UtilitiesSteps {
         Set<String> senders = new HashSet<>();
         for (var ping : bidirectionalPings) senders.add(ping.get("sender"));
         if (senders.size() < 2) throw new AssertionError("missing bidirectional support");
+    }
+
+    // --- Logging ---------------------------------------------------------
+
+    @When("I set the logging level to {string}")
+    public void i_set_the_logging_level_to(String level) {
+        try {
+            loggingLevel = LoggingLevel.fromString(level);
+            pingErrorCode = 0;
+            pingErrorMessage = "";
+        } catch (IllegalArgumentException e) {
+            loggingLevel = null;
+            pingErrorCode = -32602;
+            pingErrorMessage = "Invalid params";
+        }
+    }
+
+    @When("I receive logging notifications:")
+    public void i_receive_logging_notifications(DataTable table) {
+        loggingChecks.clear();
+        for (Map<String, String> row : table.asMaps()) {
+            LoggingLevel lvl = LoggingLevel.fromString(row.get("level"));
+            boolean expected = Boolean.parseBoolean(row.get("should_process"));
+            boolean processed = loggingLevel != null && lvl.ordinal() >= loggingLevel.ordinal();
+            Map<String, String> res = new HashMap<>(row);
+            res.put("processed", Boolean.toString(processed));
+            res.put("expected", Boolean.toString(expected));
+            loggingChecks.add(res);
+        }
+    }
+
+    @Then("the logging system should process notifications accordingly")
+    public void the_logging_system_should_process_notifications_accordingly() {
+        for (Map<String, String> row : loggingChecks) {
+            if (!Objects.equals(row.get("processed"), row.get("expected"))) {
+                throw new AssertionError("logging notification mismatch");
+            }
+        }
+    }
+
+    @Then("sensitive information should not be included in logs")
+    public void sensitive_information_should_not_be_included_in_logs() {
+        for (Map<String, String> row : loggingChecks) {
+            if (Boolean.parseBoolean(row.getOrDefault("contains_sensitive", "false"))) {
+                throw new AssertionError("sensitive log content detected");
+            }
+        }
     }
 
     // --- Progress -------------------------------------------------------

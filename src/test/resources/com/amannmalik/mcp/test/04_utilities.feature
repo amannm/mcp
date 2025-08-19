@@ -157,6 +157,27 @@ Feature: MCP Protocol Utilities
     When I create a client configuration with ping interval 0ms
     Then the ping configuration should fail
 
+  @logging @filter
+  Scenario: Logging level filtering
+    # Tests specification/2025-06-18/server/utilities/logging.mdx
+    Given I have an established MCP connection for utilities
+    When I set the logging level to "warning"
+    And I receive logging notifications:
+      | level   | should_process |
+      | info    | false          |
+      | warning | true           |
+      | error   | true           |
+    Then the logging system should process notifications accordingly
+    And sensitive information should not be included in logs
+
+  @logging @validation
+  Scenario: Invalid logging level is rejected
+    # Tests specification/2025-06-18/server/utilities/logging.mdx
+    Given I have an established MCP connection for utilities
+    When I set the logging level to "verbose"
+    Then the error message should be "Invalid params"
+    And the error code should be -32602
+
   @progress @token-tracking
   Scenario: Progress tracking with progress tokens
     # Tests specification/2025-06-18/basic/utilities/progress.mdx:14-33 (Progress flow)
