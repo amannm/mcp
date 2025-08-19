@@ -571,7 +571,6 @@ public final class ClientFeaturesSteps {
         }
     }
 
-
     @Then("I should validate each field against its schema")
     public void i_should_validate_each_field_against_its_schema() {
         for (var field : structuredElicitationFields) {

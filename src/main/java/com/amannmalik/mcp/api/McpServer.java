@@ -71,7 +71,6 @@ public final class McpServer extends JsonRpcEndpoint implements AutoCloseable {
     private AutoCloseable promptsSubscription;
     private volatile LoggingLevel logLevel;
 
-
     public McpServer(McpServerConfiguration config,
                      ResourceProvider resources,
                      ToolProvider tools,
@@ -546,7 +545,6 @@ public final class McpServer extends JsonRpcEndpoint implements AutoCloseable {
             return JsonRpcError.of(req.id(), JsonRpcErrorCode.INTERNAL_ERROR, e.getMessage());
         }
     }
-
 
     private JsonRpcMessage request(RequestMethod method, JsonObject params, long timeoutMillis) throws IOException {
         var id = nextId();

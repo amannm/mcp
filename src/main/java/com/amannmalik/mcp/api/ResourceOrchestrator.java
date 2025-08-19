@@ -32,7 +32,6 @@ final class ResourceOrchestrator implements AutoCloseable {
     private final Map<String, AutoCloseable> subscriptions = new ConcurrentHashMap<>();
     private final AutoCloseable listSubscription;
 
-
     public ResourceOrchestrator(ResourceProvider resources,
                                 ResourceAccessPolicy access,
                                 Principal principal,
@@ -247,7 +246,6 @@ final class ResourceOrchestrator implements AutoCloseable {
         }
         return action.get();
     }
-
 
     private JsonRpcMessage withExistingResource(JsonRpcRequest req, String uri, Function<ResourceBlock, JsonRpcMessage> action) {
         try {

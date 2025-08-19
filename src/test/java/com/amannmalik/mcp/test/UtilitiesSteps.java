@@ -80,8 +80,6 @@ public final class UtilitiesSteps {
     private boolean systemStable;
     private boolean lifecycleTokenActive;
     private double lastProgressValue;
-
-
     // --- Cancellation ----------------------------------------------------
 
     @Given("an established MCP connection")

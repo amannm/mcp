@@ -11,7 +11,6 @@ public final class ListRootsResultAbstractEntityCodec extends AbstractEntityCode
 
     static final JsonCodec<Root> CODEC = new RootAbstractEntityCodec();
 
-
     @Override
     public JsonObject toJson(ListRootsResult result) {
         var arr = Json.createArrayBuilder();
