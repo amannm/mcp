@@ -26,7 +26,6 @@ import java.util.stream.Collectors;
 /// - [Sampling](specification/2025-06-18/client/sampling.mdx)
 /// - [Elicitation](specification/2025-06-18/client/elicitation.mdx)
 final class McpClient extends JsonRpcEndpoint implements AutoCloseable {
-    private static final InitializeRequestAbstractEntityCodec INITIALIZE_REQUEST_CODEC = new InitializeRequestAbstractEntityCodec();
     private static final JsonCodec<ResourceUpdatedNotification> RESOURCE_UPDATED_NOTIFICATION_JSON_CODEC = new ResourceUpdatedNotificationAbstractEntityCodec();
     private static final JsonCodec<ResourceListChangedNotification> RESOURCE_LIST_CHANGED_NOTIFICATION_JSON_CODEC = new ResourceListChangedNotificationJsonCodec();
     private static final JsonCodec<ToolListChangedNotification> TOOL_LIST_CHANGED_NOTIFICATION_JSON_CODEC = new ToolListChangedNotificationJsonCodec();
@@ -146,8 +145,18 @@ final class McpClient extends JsonRpcEndpoint implements AutoCloseable {
 
     public synchronized void connect() throws IOException {
         if (connected) return;
-        var msg = sendInitialization();
-        handleInitialization(msg);
+        ClientHandshake.Result init;
+        try {
+            init = ClientHandshake.perform(nextId(), transport, info, capabilities, rootsListChangedSupported, initializationTimeout);
+        } catch (UnauthorizedException e) {
+            handleUnauthorized(e);
+            throw e;
+        }
+        protocolVersion = init.protocolVersion();
+        serverInfo = init.serverInfo();
+        serverCapabilities = init.capabilities();
+        serverFeatures = init.features();
+        instructions = init.instructions();
         connected = true;
         try {
             transport.listen();
@@ -378,73 +387,6 @@ final class McpClient extends JsonRpcEndpoint implements AutoCloseable {
         }
     }
 
-    private JsonRpcMessage sendInitialization() throws IOException {
-        var init = new InitializeRequest(
-                Protocol.LATEST_VERSION,
-                new Capabilities(capabilities, Set.of(), Map.of(), Map.of()),
-                info,
-                new ClientFeatures(rootsListChangedSupported)
-        );
-        var initJson = INITIALIZE_REQUEST_CODEC.toJson(init);
-        var reqId = nextId();
-        var request = new JsonRpcRequest(reqId, RequestMethod.INITIALIZE.method(), initJson);
-        try {
-            send(request);
-        } catch (UnauthorizedException e) {
-            handleUnauthorized(e);
-            throw e;
-        }
-        var future = CompletableFuture.supplyAsync(() -> {
-            try {
-                return CODEC.fromJson(transport.receive(initializationTimeout));
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
-        });
-        try {
-            return future.get(initializationTimeout.toMillis(), TimeUnit.MILLISECONDS);
-        } catch (TimeoutException e) {
-            try {
-                transport.close();
-            } catch (IOException ignore) {
-            }
-            throw new IOException("Initialization timed out after " + initializationTimeout.toMillis() + " ms");
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            throw new IOException(e);
-        } catch (ExecutionException e) {
-            var cause = e.getCause();
-            if (cause instanceof IOException io) throw io;
-            throw new IOException(cause);
-        }
-    }
-
-    private void handleInitialization(JsonRpcMessage msg) throws IOException {
-        JsonRpcResponse resp;
-        try {
-            resp = JsonRpc.expectResponse(msg);
-        } catch (IOException e) {
-            throw new IOException("Initialization failed: " + e.getMessage(), e);
-        }
-        var ir = ((JsonCodec<InitializeResponse>) new InitializeResponseAbstractEntityCodec()).fromJson(resp.result());
-        var serverVersion = ir.protocolVersion();
-        if (!Protocol.LATEST_VERSION.equals(serverVersion) && !Protocol.PREVIOUS_VERSION.equals(serverVersion)) {
-            try {
-                transport.close();
-            } catch (IOException ignore) {
-            }
-            throw new UnsupportedProtocolVersionException(serverVersion, Protocol.LATEST_VERSION + " or " + Protocol.PREVIOUS_VERSION);
-        }
-        transport.setProtocolVersion(serverVersion);
-        protocolVersion = serverVersion;
-        serverInfo = ir.serverInfo();
-        serverCapabilities = ir.capabilities().server();
-        instructions = ir.instructions();
-        var f = ir.features();
-        if (f != null) {
-            serverFeatures = EnumSet.copyOf(f);
-        }
-    }
 
     private void notifyInitialized() throws IOException {
         send(new JsonRpcNotification(NotificationMethod.INITIALIZED.method(), null));
