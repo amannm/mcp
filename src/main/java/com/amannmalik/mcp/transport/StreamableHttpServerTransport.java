@@ -54,8 +54,29 @@ public final class StreamableHttpServerTransport implements Transport {
                                          AuthorizationManager auth) throws Exception {
         this.config = config;
         this.sessions = new SessionManager(COMPATIBILITY_VERSION, config.sessionIdByteLength());
+        this.server = new Server();
+        server.setHandler(servletContext(config));
+        var http = httpConnector(server, config);
+        var https = httpsConnector(server, config);
+        startServer();
+        this.port = http != null ? http.getLocalPort() : https.getLocalPort();
+        this.httpsPort = https != null ? https.getLocalPort() : -1;
+        this.allowedOrigins = ValidationUtil.requireAllowedOrigins(Set.copyOf(config.allowedOrigins()));
+        this.authManager = auth;
+        var scheme = https != null ? "https" : "http";
+        this.resourceMetadataUrl = metadataUrl(config, scheme, https != null ? this.httpsPort : this.port, https != null);
+        this.canonicalResource = scheme + "://" + config.bindAddress() + ":" + (https != null ? this.httpsPort : this.port);
+        this.authorizationServers = authorizationServers(config, https != null);
+        var router = new MessageRouter(
+                clients.request,
+                clients.responses,
+                clients.general,
+                clients.lastGeneral,
+                clients::removeRequest);
+        this.dispatcher = new MessageDispatcher(router);
+    }
 
-        server = new Server();
+    private ServletContextHandler servletContext(McpServerConfiguration config) {
         var ctx = new ServletContextHandler();
         for (var path : config.servletPaths()) {
             if (path.equals("/")) {
@@ -64,49 +85,53 @@ public final class StreamableHttpServerTransport implements Transport {
                 ctx.addServlet(new ServletHolder(new MetadataServlet(this)), path);
             }
         }
-        server.setHandler(ctx);
+        return ctx;
+    }
 
-        ServerConnector http = null;
-        if (config.serverPort() > 0) {
-            var httpCfg = new HttpConfiguration();
-            http = new ServerConnector(server, new HttpConnectionFactory(httpCfg));
-            http.setHost(config.bindAddress());
-            http.setPort(config.serverPort());
-            server.addConnector(http);
+    private ServerConnector httpConnector(Server server, McpServerConfiguration config) {
+        if (config.serverPort() <= 0) return null;
+        var cfg = new HttpConfiguration();
+        var connector = new ServerConnector(server, new HttpConnectionFactory(cfg));
+        connector.setHost(config.bindAddress());
+        connector.setPort(config.serverPort());
+        server.addConnector(connector);
+        return connector;
+    }
+
+    private ServerConnector httpsConnector(Server server, McpServerConfiguration config) {
+        if (config.httpsPort() <= 0) return null;
+        var cfg = new HttpConfiguration();
+        cfg.setSecureScheme("https");
+        cfg.setSecurePort(config.httpsPort());
+        var ssl = new SslContextFactory.Server();
+        ssl.setKeyStorePath(config.keystorePath());
+        ssl.setKeyStorePassword(config.keystorePassword());
+        ssl.setKeyStoreType(config.keystoreType());
+        validateCertificateKeySize(config.keystorePath(), config.keystorePassword(), config.keystoreType());
+        ssl.setIncludeProtocols(config.tlsProtocols().toArray(String[]::new));
+        ssl.setIncludeCipherSuites(config.cipherSuites().toArray(String[]::new));
+        ssl.setUseCipherSuitesOrder(true);
+        ssl.setRenegotiationAllowed(false);
+        ssl.setEnableOCSP(true);
+        ssl.setSessionCachingEnabled(true);
+        ssl.setSslSessionTimeout((int) Duration.ofMinutes(5).toSeconds());
+        if (config.requireClientAuth()) {
+            ssl.setNeedClientAuth(true);
+            ssl.setTrustStorePath(config.truststorePath());
+            ssl.setTrustStorePassword(config.truststorePassword());
+            ssl.setTrustStoreType(config.truststoreType());
         }
+        var connector = new ServerConnector(
+                server,
+                new SslConnectionFactory(ssl, "HTTP/1.1"),
+                new HttpConnectionFactory(cfg));
+        connector.setHost(config.bindAddress());
+        connector.setPort(config.httpsPort());
+        server.addConnector(connector);
+        return connector;
+    }
 
-        ServerConnector https = null;
-        if (config.httpsPort() > 0) {
-            var httpsCfg = new HttpConfiguration();
-            httpsCfg.setSecureScheme("https");
-            httpsCfg.setSecurePort(config.httpsPort());
-            var ssl = new SslContextFactory.Server();
-            ssl.setKeyStorePath(config.keystorePath());
-            ssl.setKeyStorePassword(config.keystorePassword());
-            ssl.setKeyStoreType(config.keystoreType());
-            validateCertificateKeySize(config.keystorePath(), config.keystorePassword(), config.keystoreType());
-            ssl.setIncludeProtocols(config.tlsProtocols().toArray(String[]::new));
-            ssl.setIncludeCipherSuites(config.cipherSuites().toArray(String[]::new));
-            ssl.setUseCipherSuitesOrder(true);
-            ssl.setRenegotiationAllowed(false);
-            ssl.setEnableOCSP(true);
-            ssl.setSessionCachingEnabled(true);
-            ssl.setSslSessionTimeout((int) Duration.ofMinutes(5).toSeconds());
-            if (config.requireClientAuth()) {
-                ssl.setNeedClientAuth(true);
-                ssl.setTrustStorePath(config.truststorePath());
-                ssl.setTrustStorePassword(config.truststorePassword());
-                ssl.setTrustStoreType(config.truststoreType());
-            }
-            https = new ServerConnector(
-                    server,
-                    new SslConnectionFactory(ssl, "HTTP/1.1"),
-                    new HttpConnectionFactory(httpsCfg));
-            https.setHost(config.bindAddress());
-            https.setPort(config.httpsPort());
-            server.addConnector(https);
-        }
-
+    private void startServer() throws Exception {
         try {
             server.start();
         } catch (Exception e) {
@@ -114,42 +139,31 @@ public final class StreamableHttpServerTransport implements Transport {
             server.destroy();
             throw e;
         }
-        this.port = http != null ? http.getLocalPort() : https.getLocalPort();
-        this.httpsPort = https != null ? https.getLocalPort() : -1;
-        this.allowedOrigins = ValidationUtil.requireAllowedOrigins(Set.copyOf(config.allowedOrigins()));
-        this.authManager = auth;
+    }
 
-        var scheme = https != null ? "https" : "http";
+    private String metadataUrl(McpServerConfiguration config,
+                               String scheme,
+                               int port,
+                               boolean https) {
         if (config.resourceMetadataUrl() == null || config.resourceMetadataUrl().isBlank()) {
-            var metaPort = https != null ? this.httpsPort : this.port;
-            this.resourceMetadataUrl = String.format(
+            return String.format(
                     config.resourceMetadataUrlTemplate(),
                     scheme,
                     config.bindAddress(),
-                    metaPort);
-        } else {
-            this.resourceMetadataUrl = config.resourceMetadataUrl();
-            if (https != null && this.resourceMetadataUrl.startsWith("http://")) {
-                throw new IllegalArgumentException("HTTPS required for resource metadata URL");
-            }
+                    port);
         }
+        if (https && config.resourceMetadataUrl().startsWith("http://")) {
+            throw new IllegalArgumentException("HTTPS required for resource metadata URL");
+        }
+        return config.resourceMetadataUrl();
+    }
 
-        this.canonicalResource = scheme + "://" + config.bindAddress() + ":" + (https != null ? this.httpsPort : this.port);
-        if (config.authServers().isEmpty()) {
-            this.authorizationServers = List.of();
-        } else {
-            if (https != null && config.authServers().stream().anyMatch(u -> u.startsWith("http://"))) {
-                throw new IllegalArgumentException("HTTPS required for authorization server URLs");
-            }
-            this.authorizationServers = List.copyOf(config.authServers());
+    private List<String> authorizationServers(McpServerConfiguration config, boolean https) {
+        if (config.authServers().isEmpty()) return List.of();
+        if (https && config.authServers().stream().anyMatch(u -> u.startsWith("http://"))) {
+            throw new IllegalArgumentException("HTTPS required for authorization server URLs");
         }
-        var router = new MessageRouter(
-                clients.request,
-                clients.responses,
-                clients.general,
-                clients.lastGeneral,
-                clients::removeRequest);
-        this.dispatcher = new MessageDispatcher(router);
+        return List.copyOf(config.authServers());
     }
 
     private static void validateCertificateKeySize(String path, String password, String type) {
