@@ -81,6 +81,15 @@ public sealed abstract class AbstractEntityCodec<T> implements JsonCodec<T> perm
         return new ResourceEmptyCodec<>(from);
     }
 
+    protected static JsonObjectBuilder addMeta(JsonObjectBuilder b, JsonObject meta) {
+        if (meta != null) b.add("_meta", meta);
+        return b;
+    }
+
+    protected static JsonObject meta(JsonObject obj) {
+        return obj.getJsonObject("_meta");
+    }
+
     protected static String requireString(JsonObject obj, String key) {
         var val = obj.getString(key, null);
         if (val == null) throw new IllegalArgumentException(key + " required");
