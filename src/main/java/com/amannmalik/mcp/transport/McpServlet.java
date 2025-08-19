@@ -37,6 +37,7 @@ final class McpServlet extends HttpServlet {
 
     @Override
     protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws IOException {
+        if (!transport.enforceHttps(req, resp)) return;
         var principalOpt = authorize(req, resp, true, true);
         if (principalOpt.isEmpty()) return;
         var principal = principalOpt.get();
@@ -62,6 +63,7 @@ final class McpServlet extends HttpServlet {
 
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws IOException {
+        if (!transport.enforceHttps(req, resp)) return;
         var principalOpt = authorize(req, resp, true, false);
         if (principalOpt.isEmpty()) return;
         if (!transport.validateSession(req, resp, principalOpt.get(), false)) return;
@@ -99,6 +101,7 @@ final class McpServlet extends HttpServlet {
 
     @Override
     protected void doDelete(HttpServletRequest req, HttpServletResponse resp) throws IOException {
+        if (!transport.enforceHttps(req, resp)) return;
         var principalOpt = authorize(req, resp, false, false);
         if (principalOpt.isEmpty()) return;
         if (!transport.validateSession(req, resp, principalOpt.get(), false)) return;

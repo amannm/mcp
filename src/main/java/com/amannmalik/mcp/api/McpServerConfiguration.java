@@ -54,6 +54,7 @@ public record McpServerConfiguration(
         List<String> tlsProtocols,
         List<String> cipherSuites,
         boolean requireClientAuth,
+        HttpsMode httpsMode,
         String bindAddress,
         Set<String> servletPaths,
         String resourceMetadataPath,
@@ -108,6 +109,10 @@ public record McpServerConfiguration(
             if (authServers.stream().anyMatch(u -> u.startsWith("http://")))
                 throw new IllegalArgumentException("HTTPS required for authorization server URLs");
         }
+        if (httpsMode == null)
+            throw new IllegalArgumentException("HTTPS mode required");
+        if (httpsMode != HttpsMode.MIXED && httpsPort <= 0)
+            throw new IllegalArgumentException("HTTPS mode requires HTTPS port");
         if (bindAddress == null || bindAddress.isBlank())
             throw new IllegalArgumentException("Bind address required");
         if (sessionIdByteLength <= 0)
@@ -166,6 +171,7 @@ public record McpServerConfiguration(
                 List.of("TLSv1.3", "TLSv1.2"),
                 List.of("TLS_AES_128_GCM_SHA256", "TLS_AES_256_GCM_SHA384"),
                 false,
+                HttpsMode.REDIRECT,
                 "127.0.0.1",
                 Set.of("/", "/.well-known/oauth-protected-resource"),
                 "/.well-known/oauth-protected-resource",
@@ -237,6 +243,7 @@ public record McpServerConfiguration(
                 tlsProtocols,
                 cipherSuites,
                 requireClientAuth,
+                httpsMode,
                 bindAddress,
                 servletPaths,
                 resourceMetadataPath,
@@ -310,6 +317,7 @@ public record McpServerConfiguration(
                 tlsProtocols,
                 cipherSuites,
                 requireClientAuth,
+                httpsMode,
                 bindAddress,
                 servletPaths,
                 resourceMetadataPath,
