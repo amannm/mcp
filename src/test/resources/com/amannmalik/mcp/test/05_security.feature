@@ -1,5 +1,5 @@
-@security-errors
-Feature: MCP Security Error Handling
+@security
+Feature: MCP Security Handling
   # Verifies conformance to specification/2025-06-18/basic/authorization.mdx
   # and specification/2025-06-18/basic/security_best_practices.mdx
   As an MCP implementation
