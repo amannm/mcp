@@ -15,8 +15,7 @@ public final class GetPromptRequestAbstractEntityCodec extends AbstractEntityCod
             req.arguments().forEach(args::add);
             b.add("arguments", args.build());
         }
-        if (req._meta() != null) b.add("_meta", req._meta());
-        return b.build();
+        return addMeta(b, req._meta()).build();
     }
 
     @Override
@@ -38,7 +37,6 @@ public final class GetPromptRequestAbstractEntityCodec extends AbstractEntityCod
             });
             args = Map.copyOf(tmp);
         }
-        JsonObject meta = obj.getJsonObject("_meta");
-        return new GetPromptRequest(name, args, meta);
+        return new GetPromptRequest(name, args, meta(obj));
     }
 }

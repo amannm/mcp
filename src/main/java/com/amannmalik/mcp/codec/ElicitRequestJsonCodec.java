@@ -11,8 +11,7 @@ public class ElicitRequestJsonCodec implements JsonCodec<ElicitRequest> {
         JsonObjectBuilder b = Json.createObjectBuilder()
                 .add("message", req.message())
                 .add("requestedSchema", req.requestedSchema());
-        if (req._meta() != null) b.add("_meta", req._meta());
-        return b.build();
+        return AbstractEntityCodec.addMeta(b, req._meta()).build();
     }
 
     @Override
@@ -25,6 +24,6 @@ public class ElicitRequestJsonCodec implements JsonCodec<ElicitRequest> {
         if (schemaVal == null || schemaVal.getValueType() != JsonValue.ValueType.OBJECT) {
             throw new IllegalArgumentException("requestedSchema must be object");
         }
-        return new ElicitRequest(message, schemaVal.asJsonObject(), obj.getJsonObject("_meta"));
+        return new ElicitRequest(message, schemaVal.asJsonObject(), AbstractEntityCodec.meta(obj));
     }
 }

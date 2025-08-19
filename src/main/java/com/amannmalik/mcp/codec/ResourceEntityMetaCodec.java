@@ -15,16 +15,13 @@ public final class ResourceEntityMetaCodec<T> extends AbstractEntityCodec<T> {
 
     @Override
     public JsonObject toJson(T value) {
-        JsonObjectBuilder b = Json.createObjectBuilder();
-        JsonObject m = meta.apply(value);
-        if (m != null) b.add("_meta", m);
-        return b.build();
+        return addMeta(Json.createObjectBuilder(), meta.apply(value)).build();
     }
 
     @Override
     public T fromJson(JsonObject obj) {
         if (obj == null) return from.apply(null);
         AbstractEntityCodec.requireOnlyKeys(obj, META_KEYS);
-        return from.apply(obj.getJsonObject("_meta"));
+        return from.apply(meta(obj));
     }
 }

@@ -9,9 +9,10 @@ import java.util.Set;
 public final class SetLevelRequestAbstractEntityCodec extends AbstractEntityCodec<SetLevelRequest> {
     @Override
     public JsonObject toJson(SetLevelRequest req) {
-        JsonObjectBuilder b = Json.createObjectBuilder().add("level", req.level().name().toLowerCase());
-        if (req._meta() != null) b.add("_meta", req._meta());
-        return b.build();
+        return addMeta(
+                Json.createObjectBuilder().add("level", req.level().name().toLowerCase()),
+                req._meta()
+        ).build();
     }
 
     @Override
@@ -20,6 +21,6 @@ public final class SetLevelRequestAbstractEntityCodec extends AbstractEntityCode
         requireOnlyKeys(obj, Set.of("level", "_meta"));
         String raw = requireString(obj, "level");
         LoggingLevel level = LoggingLevel.fromString(raw);
-        return new SetLevelRequest(level, obj.getJsonObject("_meta"));
+        return new SetLevelRequest(level, meta(obj));
     }
 }

@@ -11,7 +11,7 @@ public class ResourceBlockJsonCodec implements JsonCodec<ResourceBlock> {
     public JsonObject toJson(ResourceBlock block) {
         JsonObjectBuilder b = Json.createObjectBuilder().add("uri", block.uri());
         if (block.mimeType() != null) b.add("mimeType", block.mimeType());
-        if (block._meta() != null) b.add("_meta", block._meta());
+        AbstractEntityCodec.addMeta(b, block._meta());
         return switch (block) {
             case ResourceBlock.Text t -> b.add("text", t.text()).build();
             case ResourceBlock.Binary bin -> b.add("blob", Base64Util.encode(bin.blob())).build();
@@ -24,7 +24,7 @@ public class ResourceBlockJsonCodec implements JsonCodec<ResourceBlock> {
         String uri = obj.getString("uri", null);
         if (uri == null) throw new IllegalArgumentException("uri required");
         String mime = obj.getString("mimeType", null);
-        JsonObject meta = obj.getJsonObject("_meta");
+        JsonObject meta = AbstractEntityCodec.meta(obj);
         boolean hasText = obj.containsKey("text");
         boolean hasBlob = obj.containsKey("blob");
         if (hasText == hasBlob) {

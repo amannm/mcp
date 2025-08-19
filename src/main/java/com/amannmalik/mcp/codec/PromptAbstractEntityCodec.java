@@ -12,13 +12,12 @@ public final class PromptAbstractEntityCodec extends AbstractEntityCodec<Prompt>
         JsonObjectBuilder b = Json.createObjectBuilder().add("name", prompt.name());
         if (prompt.title() != null) b.add("title", prompt.title());
         if (prompt.description() != null) b.add("description", prompt.description());
-        if (prompt._meta() != null) b.add("_meta", prompt._meta());
         if (!prompt.arguments().isEmpty()) {
             JsonArrayBuilder arr = Json.createArrayBuilder();
             prompt.arguments().forEach(a -> arr.add(new PromptArgumentAbstractEntityCodec().toJson(a)));
             b.add("arguments", arr.build());
         }
-        return b.build();
+        return addMeta(b, prompt._meta()).build();
     }
 
     @Override
@@ -28,7 +27,6 @@ public final class PromptAbstractEntityCodec extends AbstractEntityCodec<Prompt>
         String name = requireString(obj, "name");
         String title = obj.getString("title", null);
         String description = obj.getString("description", null);
-        JsonObject meta = obj.getJsonObject("_meta");
         JsonArray argsArr = obj.getJsonArray("arguments");
         List<PromptArgument> args = List.of();
         if (argsArr != null && !argsArr.isEmpty()) {
@@ -41,6 +39,6 @@ public final class PromptAbstractEntityCodec extends AbstractEntityCodec<Prompt>
             }
             args = List.copyOf(tmp);
         }
-        return new Prompt(name, title, description, args, meta);
+        return new Prompt(name, title, description, args, meta(obj));
     }
 }

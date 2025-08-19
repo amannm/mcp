@@ -11,8 +11,7 @@ public final class CallToolRequestAbstractEntityCodec extends AbstractEntityCode
         JsonObjectBuilder b = Json.createObjectBuilder()
                 .add("name", req.name())
                 .add("arguments", req.arguments());
-        if (req._meta() != null) b.add("_meta", req._meta());
-        return b.build();
+        return addMeta(b, req._meta()).build();
     }
 
     @Override
@@ -21,7 +20,6 @@ public final class CallToolRequestAbstractEntityCodec extends AbstractEntityCode
         requireOnlyKeys(obj, Set.of("name", "arguments", "_meta"));
         String name = requireString(obj, "name");
         JsonObject arguments = obj.getJsonObject("arguments");
-        JsonObject meta = obj.getJsonObject("_meta");
-        return new CallToolRequest(name, arguments, meta);
+        return new CallToolRequest(name, arguments, meta(obj));
     }
 }

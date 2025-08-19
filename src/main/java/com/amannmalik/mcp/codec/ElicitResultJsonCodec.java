@@ -12,8 +12,7 @@ public class ElicitResultJsonCodec implements JsonCodec<ElicitResult> {
         JsonObjectBuilder b = Json.createObjectBuilder()
                 .add("action", r.action().name().toLowerCase());
         if (r.content() != null) b.add("content", r.content());
-        if (r._meta() != null) b.add("_meta", r._meta());
-        return b.build();
+        return AbstractEntityCodec.addMeta(b, r._meta()).build();
     }
 
     @Override
@@ -36,6 +35,6 @@ public class ElicitResultJsonCodec implements JsonCodec<ElicitResult> {
             }
             content = c.asJsonObject();
         }
-        return new ElicitResult(action, content, obj.getJsonObject("_meta"));
+        return new ElicitResult(action, content, AbstractEntityCodec.meta(obj));
     }
 }

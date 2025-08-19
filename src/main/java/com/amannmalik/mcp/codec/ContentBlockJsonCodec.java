@@ -14,27 +14,35 @@ public class ContentBlockJsonCodec implements JsonCodec<ContentBlock> {
 
     @Override
     public JsonObject toJson(ContentBlock content) {
-        JsonObjectBuilder b = Json.createObjectBuilder().add("type", content.type());
-        if (content.annotations() != null && content.annotations() != AnnotationsJsonCodec.EMPTY) {
-            b.add("annotations", ANNOTATIONS_CODEC.toJson(content.annotations()));
-        }
-        if (content._meta() != null) b.add("_meta", content._meta());
         return switch (content) {
-            case ContentBlock.Text t -> b.add("text", t.text()).build();
-            case ContentBlock.Image i -> b.add("data", Base64Util.encode(i.data()))
+            case ContentBlock.Text t -> AbstractEntityCodec.addMeta(builder(t), t._meta())
+                    .add("text", t.text()).build();
+            case ContentBlock.Image i -> AbstractEntityCodec.addMeta(builder(i), i._meta())
+                    .add("data", Base64Util.encode(i.data()))
                     .add("mimeType", i.mimeType()).build();
-            case ContentBlock.Audio a -> b.add("data", Base64Util.encode(a.data()))
+            case ContentBlock.Audio a -> AbstractEntityCodec.addMeta(builder(a), a._meta())
+                    .add("data", Base64Util.encode(a.data()))
                     .add("mimeType", a.mimeType()).build();
             case ContentBlock.ResourceLink l -> {
+                JsonObjectBuilder b = builder(l);
                 JsonObject obj = RESOURCE_ENTITY_CODEC.toJson(l.resource());
                 obj.forEach((k, v) -> {
                     if (!"_meta".equals(k)) b.add(k, v);
                 });
-                if (l.resource()._meta() != null) b.add("_meta", l.resource()._meta());
+                AbstractEntityCodec.addMeta(b, l.resource()._meta());
                 yield b.build();
             }
-            case ContentBlock.EmbeddedResource r -> b.add("resource", RESOURCE_BLOCK_CODEC.toJson(r.resource())).build();
+            case ContentBlock.EmbeddedResource r -> AbstractEntityCodec.addMeta(builder(r), r._meta())
+                    .add("resource", RESOURCE_BLOCK_CODEC.toJson(r.resource())).build();
         };
+    }
+
+    private JsonObjectBuilder builder(ContentBlock content) {
+        JsonObjectBuilder b = Json.createObjectBuilder().add("type", content.type());
+        if (content.annotations() != null && content.annotations() != AnnotationsJsonCodec.EMPTY) {
+            b.add("annotations", ANNOTATIONS_CODEC.toJson(content.annotations()));
+        }
+        return b;
     }
 
     @Override
@@ -53,21 +61,21 @@ public class ContentBlockJsonCodec implements JsonCodec<ContentBlock> {
             case "text" -> new ContentBlock.Text(
                     obj.getString("text"),
                     obj.containsKey("annotations") ? ANNOTATIONS_CODEC.fromJson(obj.getJsonObject("annotations")) : null,
-                    obj.getJsonObject("_meta"));
+                    AbstractEntityCodec.meta(obj));
             case "image" -> new ContentBlock.Image(
                     Base64Util.decode(obj.getString("data")),
                     obj.getString("mimeType"),
                     obj.containsKey("annotations") ? ANNOTATIONS_CODEC.fromJson(obj.getJsonObject("annotations")) : null,
-                    obj.getJsonObject("_meta"));
+                    AbstractEntityCodec.meta(obj));
             case "audio" -> new ContentBlock.Audio(
                     Base64Util.decode(obj.getString("data")),
                     obj.getString("mimeType"),
                     obj.containsKey("annotations") ? ANNOTATIONS_CODEC.fromJson(obj.getJsonObject("annotations")) : null,
-                    obj.getJsonObject("_meta"));
+                    AbstractEntityCodec.meta(obj));
             case "resource" -> new ContentBlock.EmbeddedResource(
                     RESOURCE_BLOCK_CODEC.fromJson(obj.getJsonObject("resource")),
                     obj.containsKey("annotations") ? ANNOTATIONS_CODEC.fromJson(obj.getJsonObject("annotations")) : null,
-                    obj.getJsonObject("_meta"));
+                    AbstractEntityCodec.meta(obj));
             case "resource_link" -> new ContentBlock.ResourceLink(RESOURCE_ENTITY_CODEC.fromJson(obj));
             default -> throw new IllegalArgumentException("unknown content type: " + type);
         };

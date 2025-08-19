@@ -8,9 +8,7 @@ import java.util.Set;
 public final class SubscribeRequestAbstractEntityCodec extends AbstractEntityCodec<SubscribeRequest> {
     @Override
     public JsonObject toJson(SubscribeRequest req) {
-        JsonObjectBuilder b = Json.createObjectBuilder().add("uri", req.uri());
-        if (req._meta() != null) b.add("_meta", req._meta());
-        return b.build();
+        return addMeta(Json.createObjectBuilder().add("uri", req.uri()), req._meta()).build();
     }
 
     @Override
@@ -18,7 +16,6 @@ public final class SubscribeRequestAbstractEntityCodec extends AbstractEntityCod
         if (obj == null) throw new IllegalArgumentException("object required");
         requireOnlyKeys(obj, Set.of("uri", "_meta"));
         String uri = requireString(obj, "uri");
-        JsonObject meta = obj.getJsonObject("_meta");
-        return new SubscribeRequest(uri, meta);
+        return new SubscribeRequest(uri, meta(obj));
     }
 }

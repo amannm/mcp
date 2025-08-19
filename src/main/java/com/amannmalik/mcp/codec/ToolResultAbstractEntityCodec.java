@@ -12,8 +12,7 @@ public final class ToolResultAbstractEntityCodec extends AbstractEntityCodec<Too
                 .add("content", r.content());
         if (r.isError()) b.add("isError", true);
         if (r.structuredContent() != null) b.add("structuredContent", r.structuredContent());
-        if (r._meta() != null) b.add("_meta", r._meta());
-        return b.build();
+        return addMeta(b, r._meta()).build();
     }
 
     @Override
@@ -24,7 +23,6 @@ public final class ToolResultAbstractEntityCodec extends AbstractEntityCodec<Too
         if (content == null) throw new IllegalArgumentException("content required");
         JsonObject structured = obj.getJsonObject("structuredContent");
         boolean isError = obj.getBoolean("isError", false);
-        JsonObject meta = obj.getJsonObject("_meta");
-        return new ToolResult(content, structured, isError, meta);
+        return new ToolResult(content, structured, isError, meta(obj));
     }
 }
