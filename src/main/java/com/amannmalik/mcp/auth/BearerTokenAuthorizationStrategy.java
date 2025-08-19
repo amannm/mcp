@@ -17,7 +17,7 @@ public final class BearerTokenAuthorizationStrategy implements AuthorizationStra
         String[] parts = authorizationHeader.split("\\s+", 2);
         if (!"bearer".equalsIgnoreCase(parts[0])) return Optional.empty();
         if (parts.length != 2 || parts[1].trim().isEmpty()) {
-            throw new AuthorizationException("Invalid bearer token");
+            throw new AuthorizationException("Invalid bearer token", 400);
         }
         return Optional.of(validator.validate(parts[1].trim()));
     }
