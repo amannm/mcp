@@ -14,6 +14,7 @@ import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.function.Supplier;
 
 sealed class JsonRpcEndpoint implements AutoCloseable permits McpClient, McpServer {
     protected static final JsonRpcMessageJsonCodec CODEC = new JsonRpcMessageJsonCodec();
@@ -61,6 +62,49 @@ sealed class JsonRpcEndpoint implements AutoCloseable permits McpClient, McpServ
             } catch (IOException ignore) {
             }
             throw new IOException(McpServerConfiguration.defaultConfiguration().errorTimeout() + " after " + timeoutMillis + " ms", e);
+        }
+    }
+
+    protected final JsonRpcMessage awaitAndProcess(
+            RequestId id,
+            CompletableFuture<JsonRpcMessage> future,
+            Duration timeout,
+            Supplier<Optional<JsonObject>> receiver,
+            Consumer<IllegalArgumentException> invalidHandler,
+            String timeoutMessage) throws IOException {
+        long end = System.currentTimeMillis() + timeout.toMillis();
+        try {
+            while (true) {
+                if (future.isDone()) {
+                    try {
+                        return future.get();
+                    } catch (InterruptedException e) {
+                        Thread.currentThread().interrupt();
+                        throw new IOException(e);
+                    } catch (ExecutionException e) {
+                        var cause = e.getCause();
+                        if (cause instanceof IOException io) throw io;
+                        throw new IOException(cause);
+                    }
+                }
+                if (System.currentTimeMillis() >= end) {
+                    try {
+                        JsonObject params = CANCEL_CODEC.toJson(new CancelledNotification(id, "timeout"));
+                        send(new JsonRpcNotification(NotificationMethod.CANCELLED.method(), params));
+                    } catch (IOException ignore) {
+                    }
+                    throw new IOException(timeoutMessage + " after " + timeout.toMillis() + " ms");
+                }
+                Optional<JsonObject> obj = receiver.get();
+                if (obj.isEmpty()) continue;
+                try {
+                    process(CODEC.fromJson(obj.get()));
+                } catch (IllegalArgumentException e) {
+                    invalidHandler.accept(e);
+                }
+            }
+        } finally {
+            pending.remove(id);
         }
     }
 
