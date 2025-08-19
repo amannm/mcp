@@ -322,7 +322,7 @@ Feature: MCP Security Handling
   @transport-security @certificate-validation
   Scenario: TLS/Certificate validation errors
     # Tests TLS certificate validation and transport security error handling
-    # Tests specification/2025-06-18/basic/authorization.mdx:315-323 (Communication security)
+    # Tests specification/2025-06-18/basic/security_best_practices.mdx:15-23 (Transport security)
     Given an MCP client with strict TLS validation enabled
     When I test TLS certificate validation scenarios:
       | certificate_issue         | test_scenario                 | expected_behavior   |
@@ -337,3 +337,15 @@ Feature: MCP Security Handling
     And appropriate SSL/TLS error messages should be provided
     And fallback to insecure connections should not occur
     And certificate validation errors should be logged securely
+
+  @transport-security @certificate-pinning
+  Scenario: Certificate pinning validation
+    # Tests specification/2025-06-18/basic/security_best_practices.mdx:17-23 (Transport security)
+    Given an MCP client with certificate pinning configured:
+      | fingerprint |
+      | ABCDEF...   |
+    When I test certificate pinning scenarios:
+      | presented_fingerprint | expected_behavior   |
+      | ABCDEF...             | connection_allowed  |
+      | 123456...             | connection_rejected |
+    Then only servers with pinned certificates should be trusted

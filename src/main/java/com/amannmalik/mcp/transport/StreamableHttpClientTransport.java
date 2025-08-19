@@ -9,15 +9,22 @@ import java.io.*;
 import java.net.URI;
 import java.net.http.*;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.security.*;
+import java.security.cert.*;
 import java.time.Duration;
+import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicReference;
 
+import javax.net.ssl.*;
+
 /// - [Transports](specification/2025-06-18/basic/transports.mdx)
 public final class StreamableHttpClientTransport implements Transport {
-    private final HttpClient client = HttpClient.newHttpClient();
+    private final HttpClient client;
     private final URI endpoint;
     private final BlockingQueue<JsonObject> incoming = new LinkedBlockingQueue<>();
     private final Set<SseReader> streams = ConcurrentHashMap.newKeySet();
@@ -32,6 +39,31 @@ public final class StreamableHttpClientTransport implements Transport {
     }
 
     public StreamableHttpClientTransport(URI endpoint, Duration defaultReceiveTimeout, String defaultOriginHeader) {
+        this(endpoint, defaultReceiveTimeout, defaultOriginHeader, defaultClient(endpoint));
+    }
+
+    public StreamableHttpClientTransport(URI endpoint,
+                                         Duration defaultReceiveTimeout,
+                                         String defaultOriginHeader,
+                                         Path trustStore,
+                                         char[] trustStorePassword,
+                                         Path keyStore,
+                                         char[] keyStorePassword,
+                                         boolean validateCertificates,
+                                         Set<String> pinnedFingerprints) {
+        this(endpoint,
+             defaultReceiveTimeout,
+             defaultOriginHeader,
+             buildClient(endpoint, trustStore, trustStorePassword, keyStore, keyStorePassword, validateCertificates, pinnedFingerprints));
+    }
+
+    private StreamableHttpClientTransport(URI endpoint,
+                                          Duration defaultReceiveTimeout,
+                                          String defaultOriginHeader,
+                                          HttpClient client) {
+        String scheme = endpoint.getScheme();
+        if (!"http".equalsIgnoreCase(scheme) && !"https".equalsIgnoreCase(scheme))
+            throw new IllegalArgumentException("Endpoint must use http or https");
         this.endpoint = endpoint;
         if (defaultReceiveTimeout == null || defaultReceiveTimeout.isNegative() || defaultReceiveTimeout.isZero())
             throw new IllegalArgumentException("Default receive timeout must be positive");
@@ -39,6 +71,7 @@ public final class StreamableHttpClientTransport implements Transport {
             throw new IllegalArgumentException("Default origin header is required");
         this.defaultReceiveTimeout = defaultReceiveTimeout;
         this.defaultOriginHeader = defaultOriginHeader;
+        this.client = client;
     }
 
     public void setProtocolVersion(String version) {
@@ -164,6 +197,126 @@ public final class StreamableHttpClientTransport implements Transport {
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             throw new IOException(e);
+        } catch (SSLException e) {
+            throw new IOException("TLS handshake failed", e);
+        }
+    }
+
+    private static HttpClient defaultClient(URI endpoint) {
+        return buildClient(endpoint, null, null, null, null, true, Set.of());
+    }
+
+    private static HttpClient buildClient(URI endpoint,
+                                          Path trustStore,
+                                          char[] trustStorePassword,
+                                          Path keyStore,
+                                          char[] keyStorePassword,
+                                          boolean validateCertificates,
+                                          Set<String> pinnedFingerprints) {
+        try {
+            KeyManager[] kms = loadKeyManagers(keyStore, keyStorePassword);
+            TrustManager[] tms = validateCertificates
+                    ? loadTrustManagers(trustStore, trustStorePassword, pinnedFingerprints)
+                    : new TrustManager[]{new InsecureTrustManager()};
+            SSLContext ctx = SSLContext.getInstance("TLS");
+            ctx.init(kms, tms, null);
+            SSLParameters params = new SSLParameters();
+            params.setServerNames(List.of(new SNIHostName(endpoint.getHost())));
+            return HttpClient.newBuilder()
+                    .sslContext(ctx)
+                    .sslParameters(params)
+                    .build();
+        } catch (GeneralSecurityException | IOException e) {
+            throw new IllegalArgumentException("TLS configuration failed", e);
+        }
+    }
+
+    private static KeyManager[] loadKeyManagers(Path keyStore, char[] password) throws GeneralSecurityException, IOException {
+        if (keyStore == null) return null;
+        KeyStore ks = KeyStore.getInstance(KeyStore.getDefaultType());
+        try (InputStream in = Files.newInputStream(keyStore)) {
+            ks.load(in, password);
+        }
+        KeyManagerFactory kmf = KeyManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm());
+        kmf.init(ks, password);
+        return kmf.getKeyManagers();
+    }
+
+    private static TrustManager[] loadTrustManagers(Path trustStore,
+                                                    char[] password,
+                                                    Set<String> pins) throws GeneralSecurityException, IOException {
+        TrustManagerFactory tmf = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
+        if (trustStore == null) {
+            tmf.init((KeyStore) null);
+        } else {
+            KeyStore ts = KeyStore.getInstance(KeyStore.getDefaultType());
+            try (InputStream in = Files.newInputStream(trustStore)) {
+                ts.load(in, password);
+            }
+            tmf.init(ts);
+        }
+        TrustManager[] tms = tmf.getTrustManagers();
+        if (pins.isEmpty()) return tms;
+        for (int i = 0; i < tms.length; i++) {
+            if (tms[i] instanceof X509TrustManager x509) {
+                tms[i] = new PinnedTrustManager(x509, pins);
+            }
+        }
+        return tms;
+    }
+
+    private static final class InsecureTrustManager implements X509TrustManager {
+        @Override
+        public void checkClientTrusted(X509Certificate[] chain, String authType) {
+        }
+
+        @Override
+        public void checkServerTrusted(X509Certificate[] chain, String authType) {
+        }
+
+        @Override
+        public X509Certificate[] getAcceptedIssuers() {
+            return new X509Certificate[0];
+        }
+    }
+
+    private static final class PinnedTrustManager implements X509TrustManager {
+        private final X509TrustManager delegate;
+        private final Set<String> pins;
+
+        PinnedTrustManager(X509TrustManager delegate, Set<String> pins) {
+            this.delegate = delegate;
+            this.pins = pins;
+        }
+
+        @Override
+        public void checkClientTrusted(X509Certificate[] chain, String authType) throws CertificateException {
+            delegate.checkClientTrusted(chain, authType);
+        }
+
+        @Override
+        public void checkServerTrusted(X509Certificate[] chain, String authType) throws CertificateException {
+            delegate.checkServerTrusted(chain, authType);
+            if (pins.isEmpty()) return;
+            String fp = fingerprint(chain[0]);
+            if (!pins.contains(fp)) throw new CertificateException("Certificate pinning failure");
+        }
+
+        @Override
+        public X509Certificate[] getAcceptedIssuers() {
+            return delegate.getAcceptedIssuers();
+        }
+    }
+
+    private static String fingerprint(X509Certificate cert) throws CertificateException {
+        try {
+            MessageDigest md = MessageDigest.getInstance("SHA-256");
+            byte[] digest = md.digest(cert.getEncoded());
+            StringBuilder sb = new StringBuilder();
+            for (byte b : digest) sb.append(String.format("%02X", b));
+            return sb.toString();
+        } catch (NoSuchAlgorithmException e) {
+            throw new CertificateException(e);
         }
     }
 
