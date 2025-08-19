@@ -4,6 +4,7 @@ import com.amannmalik.mcp.api.McpServerConfiguration;
 import com.amannmalik.mcp.spi.Principal;
 import com.amannmalik.mcp.util.Base64Util;
 import com.amannmalik.mcp.util.ValidationUtil;
+import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
@@ -47,6 +48,17 @@ final class SessionManager {
         SessionState state = current.get();
         String last = lastSessionId.get();
         String header = req.getHeader(TransportHeaders.SESSION_ID);
+        if (header == null) {
+            Cookie[] cookies = req.getCookies();
+            if (cookies != null) {
+                for (Cookie c : cookies) {
+                    if (TransportHeaders.SESSION_ID.equals(c.getName())) {
+                        header = c.getValue();
+                        break;
+                    }
+                }
+            }
+        }
         String version = req.getHeader(TransportHeaders.PROTOCOL_VERSION);
         if (!sanitizeHeaders(header, version, resp)) {
             return false;
@@ -94,6 +106,11 @@ final class SessionManager {
         current.set(new SessionState(id, req.getRemoteAddr(), principal));
         lastSessionId.set(null);
         resp.setHeader(TransportHeaders.SESSION_ID, id);
+        Cookie cookie = new Cookie(TransportHeaders.SESSION_ID, id);
+        cookie.setHttpOnly(true);
+        cookie.setSecure(req.isSecure());
+        cookie.setPath("/");
+        resp.addCookie(cookie);
         return true;
     }
 

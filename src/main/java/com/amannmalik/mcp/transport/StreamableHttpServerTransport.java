@@ -199,11 +199,36 @@ public final class StreamableHttpServerTransport implements Transport {
                 DEFAULT_PRINCIPAL);
     }
 
+    boolean enforceHttps(HttpServletRequest req, HttpServletResponse resp) throws IOException {
+        if (req.isSecure()) {
+            resp.setHeader("Strict-Transport-Security", "max-age=31536000; includeSubDomains");
+            return true;
+        }
+        return switch (config.httpsMode()) {
+            case MIXED -> true;
+            case REDIRECT -> {
+                String url = "https://" + req.getServerName() + ":" + httpsPort + req.getRequestURI();
+                String q = req.getQueryString();
+                if (q != null && !q.isEmpty()) url += "?" + q;
+                resp.setStatus(HttpServletResponse.SC_MOVED_PERMANENTLY);
+                resp.setHeader("Location", url);
+                yield false;
+            }
+            case STRICT -> {
+                resp.setStatus(HttpServletResponse.SC_UPGRADE_REQUIRED);
+                resp.setHeader("Upgrade", "TLS/1.3");
+                yield false;
+            }
+        };
+    }
+
     boolean verifyOrigin(HttpServletRequest req, HttpServletResponse resp) throws IOException {
-        if (!ValidationUtil.isAllowedOrigin(req.getHeader("Origin"), allowedOrigins)) {
+        String origin = req.getHeader("Origin");
+        if (!ValidationUtil.isAllowedOrigin(origin, allowedOrigins)) {
             resp.sendError(HttpServletResponse.SC_FORBIDDEN);
             return false;
         }
+        if (origin != null) resp.setHeader("Access-Control-Allow-Origin", origin);
         return true;
     }
 
