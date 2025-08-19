@@ -25,8 +25,6 @@ import java.util.concurrent.ExecutionException;
 public final class McpServer extends JsonRpcEndpoint implements AutoCloseable {
     private static final InitializeRequestAbstractEntityCodec INITIALIZE_REQUEST_CODEC = new InitializeRequestAbstractEntityCodec();
     private static final JsonCodec<LoggingMessageNotification> LOGGING_MESSAGE_NOTIFICATION_JSON_CODEC = new LoggingMessageNotificationAbstractEntityCodec();
-    private static final CallToolRequestAbstractEntityCodec CALL_TOOL_REQUEST_CODEC = new CallToolRequestAbstractEntityCodec();
-    private static final JsonCodec<ToolResult> TOOL_RESULT_ABSTRACT_ENTITY_CODEC = new ToolResultAbstractEntityCodec();
     private static final CompleteRequestJsonCodec COMPLETE_REQUEST_JSON_CODEC = new CompleteRequestJsonCodec();
     private static final JsonCodec<SetLevelRequest> SET_LEVEL_REQUEST_JSON_CODEC = new SetLevelRequestAbstractEntityCodec();
     private static final CancelledNotificationJsonCodec CANCELLED_NOTIFICATION_JSON_CODEC = new CancelledNotificationJsonCodec();
@@ -59,11 +57,10 @@ public final class McpServer extends JsonRpcEndpoint implements AutoCloseable {
     private final PromptProvider prompts;
     private final CompletionProvider completions;
     private final SamplingProvider sampling;
+    private final ToolCallHandler toolHandler;
     private final RootsManager rootsManager;
-    private final ToolAccessPolicy toolAccess;
     private final SamplingAccessPolicy samplingAccess;
     private final Principal principal;
-    private final RateLimiter toolLimiter;
     private final RateLimiter completionLimiter;
     private final RateLimiter logLimiter;
     private String protocolVersion;
@@ -93,7 +90,7 @@ public final class McpServer extends JsonRpcEndpoint implements AutoCloseable {
                         config.rateLimiterWindowMs())),
                 config.initialRequestId());
         this.config = config;
-        this.toolLimiter = new RateLimiter(
+        RateLimiter toolLimiter = new RateLimiter(
                 config.toolsPerSecond(),
                 config.rateLimiterWindowMs());
         this.completionLimiter = new RateLimiter(
@@ -122,10 +119,17 @@ public final class McpServer extends JsonRpcEndpoint implements AutoCloseable {
         this.prompts = prompts;
         this.completions = completions;
         this.sampling = sampling;
-        this.toolAccess = config.toolAccessPolicy();
+        this.principal = principal;
+        this.toolHandler = tools == null ? null : new ToolCallHandler(
+                tools,
+                config.toolAccessPolicy(),
+                toolLimiter,
+                principal,
+                config,
+                () -> clientCapabilities,
+                this::elicit);
         this.samplingAccess = config.samplingAccessPolicy();
         this.logLevel = config.initialLogLevel();
-        this.principal = principal;
         this.rootsManager = new RootsManager(this::negotiatedClientCapabilities, this::request);
         this.resourceOrchestrator = resources == null ? null :
                 new ResourceOrchestrator(resources, resourceAccess, principal, rootsManager, this::state, (method, params) -> send(new JsonRpcNotification(method.method(), params)), progress);
@@ -455,61 +459,7 @@ public final class McpServer extends JsonRpcEndpoint implements AutoCloseable {
 
     private JsonRpcMessage callTool(JsonRpcRequest req) {
         requireServerCapability(ServerCapability.TOOLS);
-        CallToolRequest callRequest;
-        try {
-            callRequest = CALL_TOOL_REQUEST_CODEC.fromJson(req.params());
-        } catch (IllegalArgumentException e) {
-            return JsonRpcError.of(req.id(), JsonRpcErrorCode.INVALID_PARAMS, e.getMessage());
-        }
-        Optional<String> limit = rateLimit(toolLimiter, callRequest.name());
-        if (limit.isPresent()) {
-            return JsonRpcError.of(req.id(), config.rateLimitErrorCode(), limit.get());
-        }
-        Tool tool = tools.find(callRequest.name()).orElse(null);
-        if (tool == null) {
-            return JsonRpcError.of(req.id(), JsonRpcErrorCode.INVALID_PARAMS, "Unknown tool: " + callRequest.name());
-        }
-        try {
-            toolAccess.requireAllowed(principal, tool);
-        } catch (SecurityException e) {
-            return JsonRpcError.of(req.id(), JsonRpcErrorCode.INTERNAL_ERROR, config.errorAccessDenied());
-        }
-        return invokeTool(req, tool, callRequest.arguments());
-    }
-
-    private JsonRpcMessage invokeTool(JsonRpcRequest req, Tool tool, JsonObject args) {
-        try {
-            ToolResult result = tools.call(tool.name(), args);
-            return new JsonRpcResponse(req.id(), TOOL_RESULT_ABSTRACT_ENTITY_CODEC.toJson(result));
-        } catch (IllegalArgumentException e) {
-            return recoverFromToolFailure(req, tool, e);
-        }
-    }
-
-    private JsonRpcMessage recoverFromToolFailure(JsonRpcRequest req, Tool tool, IllegalArgumentException failure) {
-        if (!negotiatedClientCapabilities().contains(ClientCapability.ELICITATION)) {
-            return JsonRpcError.of(req.id(), JsonRpcErrorCode.INVALID_PARAMS, failure.getMessage());
-        }
-        try {
-            ElicitRequest er = new ElicitRequest(
-                    "Provide arguments for tool '" + tool.name() + "'",
-                    tool.inputSchema(),
-                    null);
-            ElicitResult res = elicit(er);
-            if (res.action() != ElicitationAction.ACCEPT) {
-                return JsonRpcError.of(req.id(), JsonRpcErrorCode.INVALID_PARAMS, "Tool invocation cancelled");
-            }
-            try {
-                ToolResult result = tools.call(tool.name(), res.content());
-                return new JsonRpcResponse(req.id(), TOOL_RESULT_ABSTRACT_ENTITY_CODEC.toJson(result));
-            } catch (IllegalArgumentException e) {
-                return JsonRpcError.of(req.id(), JsonRpcErrorCode.INVALID_PARAMS, e.getMessage());
-            }
-        } catch (IllegalArgumentException e) {
-            return JsonRpcError.of(req.id(), JsonRpcErrorCode.INVALID_PARAMS, e.getMessage());
-        } catch (Exception e) {
-            return JsonRpcError.of(req.id(), JsonRpcErrorCode.INTERNAL_ERROR, e.getMessage());
-        }
+        return toolHandler.handle(req);
     }
 
     private JsonRpcMessage listPrompts(JsonRpcRequest req) {
