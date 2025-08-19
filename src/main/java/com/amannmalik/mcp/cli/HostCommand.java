@@ -10,6 +10,7 @@ import picocli.CommandLine.Model.OptionSpec;
 import picocli.CommandLine.ParseResult;
 
 import java.io.*;
+import java.nio.file.Path;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -33,6 +34,62 @@ public final class HostCommand {
                 .addOption(OptionSpec.builder("--interactive")
                         .type(boolean.class)
                         .description("Interactive mode for client management")
+                        .build())
+                .addOption(OptionSpec.builder("--client-truststore")
+                        .type(Path.class)
+                        .description("Client truststore path")
+                        .build())
+                .addOption(OptionSpec.builder("--client-truststore-password")
+                        .type(String.class)
+                        .description("Client truststore password")
+                        .build())
+                .addOption(OptionSpec.builder("--client-truststore-password-env")
+                        .type(String.class)
+                        .description("Env var with client truststore password")
+                        .build())
+                .addOption(OptionSpec.builder("--client-truststore-type")
+                        .type(String.class)
+                        .description("Client truststore type")
+                        .build())
+                .addOption(OptionSpec.builder("--client-keystore")
+                        .type(Path.class)
+                        .description("Client keystore path")
+                        .build())
+                .addOption(OptionSpec.builder("--client-keystore-password")
+                        .type(String.class)
+                        .description("Client keystore password")
+                        .build())
+                .addOption(OptionSpec.builder("--client-keystore-password-env")
+                        .type(String.class)
+                        .description("Env var with client keystore password")
+                        .build())
+                .addOption(OptionSpec.builder("--client-keystore-type")
+                        .type(String.class)
+                        .description("Client keystore type")
+                        .build())
+                .addOption(OptionSpec.builder("--verify-certificates")
+                        .type(boolean.class)
+                        .arity("0..1")
+                        .defaultValue("true")
+                        .description("Verify server certificates")
+                        .build())
+                .addOption(OptionSpec.builder("--allow-self-signed")
+                        .type(boolean.class)
+                        .arity("0")
+                        .defaultValue("false")
+                        .description("Allow self-signed certificates")
+                        .build())
+                .addOption(OptionSpec.builder("--tls-protocols")
+                        .type(List.class)
+                        .auxiliaryTypes(String.class)
+                        .splitRegex(",")
+                        .description("Allowed TLS protocols")
+                        .build())
+                .addOption(OptionSpec.builder("--certificate-pinning")
+                        .type(List.class)
+                        .auxiliaryTypes(String.class)
+                        .splitRegex(",")
+                        .description("Certificate pins")
                         .build());
         spec.usageMessage().description("Run MCP host");
         return spec;
@@ -46,6 +103,45 @@ public final class HostCommand {
             boolean verbose = parseResult.matchedOptionValue("--verbose", false);
             List<String> clientSpecs = parseResult.matchedOptionValue("--client", Collections.emptyList());
             boolean interactive = parseResult.matchedOptionValue("--interactive", false);
+
+            McpClientTlsConfiguration baseTls = McpClientTlsConfiguration.defaultConfiguration();
+            Path truststorePathOpt = parseResult.matchedOptionValue("--client-truststore", null);
+            String truststorePath = truststorePathOpt == null ? baseTls.truststorePath() : truststorePathOpt.toString();
+            String truststorePassword = parseResult.matchedOptionValue("--client-truststore-password", baseTls.truststorePassword());
+            String truststorePasswordEnv = parseResult.matchedOptionValue("--client-truststore-password-env", null);
+            if (truststorePasswordEnv != null) {
+                String env = System.getenv(truststorePasswordEnv);
+                if (env != null) truststorePassword = env;
+            }
+            String truststoreType = parseResult.matchedOptionValue("--client-truststore-type", baseTls.truststoreType());
+            Path keystorePathOpt = parseResult.matchedOptionValue("--client-keystore", null);
+            String keystorePath = keystorePathOpt == null ? baseTls.keystorePath() : keystorePathOpt.toString();
+            String keystorePassword = parseResult.matchedOptionValue("--client-keystore-password", baseTls.keystorePassword());
+            String keystorePasswordEnv = parseResult.matchedOptionValue("--client-keystore-password-env", null);
+            if (keystorePasswordEnv != null) {
+                String env = System.getenv(keystorePasswordEnv);
+                if (env != null) keystorePassword = env;
+            }
+            String keystoreType = parseResult.matchedOptionValue("--client-keystore-type", baseTls.keystoreType());
+            boolean verifyCertificates = parseResult.matchedOptionValue("--verify-certificates", true);
+            boolean allowSelfSigned = parseResult.matchedOptionValue("--allow-self-signed", false);
+            List<String> tlsProtocols = parseResult.matchedOptionValue("--tls-protocols", baseTls.tlsProtocols());
+            List<String> certificatePins = parseResult.matchedOptionValue("--certificate-pinning", baseTls.certificatePins());
+            CertificateValidationMode validationMode = !certificatePins.isEmpty() ? CertificateValidationMode.CUSTOM : (!verifyCertificates || allowSelfSigned ? CertificateValidationMode.PERMISSIVE : CertificateValidationMode.STRICT);
+            boolean verifyHostname = verifyCertificates;
+            McpClientTlsConfiguration tlsConfig = new McpClientTlsConfiguration(
+                    truststorePath,
+                    truststorePassword,
+                    truststoreType,
+                    keystorePath,
+                    keystorePassword,
+                    keystoreType,
+                    validationMode,
+                    tlsProtocols,
+                    baseTls.cipherSuites(),
+                    certificatePins,
+                    verifyHostname
+            );
 
             if (clientSpecs.isEmpty()) throw new IllegalArgumentException("--client required");
 
@@ -96,7 +192,7 @@ public final class HostCommand {
                         false,
                         List.of(System.getProperty("user.dir")),
                         SamplingAccessPolicy.PERMISSIVE,
-                        McpClientTlsConfiguration.defaultConfiguration()
+                        tlsConfig
                 );
                 clientConfigs.add(clientConfig);
             }
