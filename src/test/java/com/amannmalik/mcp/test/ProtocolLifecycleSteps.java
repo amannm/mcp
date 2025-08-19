@@ -724,6 +724,27 @@ public final class ProtocolLifecycleSteps {
         }
     }
 
+    @When("I send a request with large numeric identifier {string}")
+    public void i_send_a_request_with_large_numeric_identifier(String literal) {
+        JsonValue idValue;
+        try (var reader = Json.createReader(new StringReader(literal))) {
+            idValue = reader.readValue();
+        }
+        lastRequest = Json.createObjectBuilder()
+                .add("jsonrpc", "2.0")
+                .add("id", idValue)
+                .add("method", RequestMethod.PING.method())
+                .build();
+        try {
+            lastRequestId = RequestId.from(idValue);
+            lastErrorCode = 0;
+            lastErrorMessage = null;
+        } catch (IllegalArgumentException e) {
+            lastErrorCode = -32600;
+            lastErrorMessage = e.getMessage();
+        }
+    }
+
     @When("I send a request with boolean identifier {word}")
     public void i_send_a_request_with_boolean_identifier(String value) {
         var id = switch (value.toLowerCase(Locale.ROOT)) {

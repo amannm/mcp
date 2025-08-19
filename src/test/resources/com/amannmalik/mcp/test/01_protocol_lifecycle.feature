@@ -213,6 +213,13 @@ Scenario: HTTP GET response handling
     When I send a request with boolean identifier true
     Then I should receive an invalid identifier error
 
+  @messaging @invalid-id
+  Scenario: Large numeric request identifier overflow
+    # Tests specification/2025-06-18/basic/index.mdx:48-51 (Request ID requirements)
+    Given I have an established MCP connection
+    When I send a request with large numeric identifier "9223372036854775808"
+    Then I should receive an invalid identifier error
+
   @messaging @duplicate-id
   Scenario: Duplicate request identifier rejection
     # Tests specification/2025-06-18/basic/index.mdx:48-51 (Request ID requirements)
