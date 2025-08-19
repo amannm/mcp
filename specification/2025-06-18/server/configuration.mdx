@@ -1,0 +1,22 @@
+---
+title: Configuration
+---
+
+<Info>**Protocol Revision**: 2025-06-18</Info>
+
+## Transport Layer Security
+
+McpServerConfiguration defines TLS parameters:
+
+- `httpsPort` — HTTPS listener port, defaults to 3443
+- `keystorePath` — path to server keystore
+- `keystorePassword` — password protecting the keystore
+- `keystoreType` — keystore type, defaults to PKCS12
+- `truststorePath` — path to truststore when client certificates are required
+- `truststorePassword` — password protecting the truststore
+- `truststoreType` — truststore type, defaults to PKCS12
+- `tlsProtocols` — allowed TLS protocol versions, defaults to TLSv1.3 and TLSv1.2
+- `cipherSuites` — allowed cipher suites, defaults to modern AES-GCM suites
+- `requireClientAuth` — whether client certificates are mandatory
+
+All lists **MUST** be non-empty and contain no blank values. HTTPS is enabled when `httpsPort` is greater than zero; keystore settings are then mandatory. When `requireClientAuth` is true, truststore settings are mandatory.

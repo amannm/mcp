@@ -33,6 +33,7 @@ description: MCP Specification Expert
 - Avoid `Optional<T>` in fields or collections or arguments
 - Never loosen visibility for testing
 - Never use `java.lang.reflect`
+- Never modify the specification
 
 # Environment
 
