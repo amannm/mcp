@@ -19,8 +19,7 @@ public final class StdioTransport implements Transport {
     private static final Duration RECEIVE = Duration.ofSeconds(5);
     private final BufferedReader in;
     private final BufferedWriter out;
-    private final Process process;
-    private final Thread logReader;
+    private final ProcessResources resources;
     private final Duration receiveTimeout;
 
     public StdioTransport(InputStream in, OutputStream out) {
@@ -28,8 +27,7 @@ public final class StdioTransport implements Transport {
     }
 
     public StdioTransport(InputStream in, OutputStream out, Duration receiveTimeout) {
-        this.process = null;
-        this.logReader = null;
+        this.resources = Detached.INSTANCE;
         this.in = new BufferedReader(new InputStreamReader(in, StandardCharsets.UTF_8));
         this.out = new BufferedWriter(new OutputStreamWriter(out, StandardCharsets.UTF_8));
         this.receiveTimeout = receiveTimeout;
@@ -44,12 +42,13 @@ public final class StdioTransport implements Transport {
         if (command.length == 0) throw new IllegalArgumentException("command");
         var builder = new ProcessBuilder(command);
         builder.redirectErrorStream(false);
-        this.process = builder.start();
+        var process = builder.start();
         this.in = new BufferedReader(new InputStreamReader(process.getInputStream(), StandardCharsets.UTF_8));
         this.out = new BufferedWriter(new OutputStreamWriter(process.getOutputStream(), StandardCharsets.UTF_8));
-        this.logReader = new Thread(() -> readLogs(process.getErrorStream(), logSink));
-        this.logReader.setDaemon(true);
-        this.logReader.start();
+        var logReader = new Thread(() -> readLogs(process.getErrorStream(), logSink));
+        logReader.setDaemon(true);
+        logReader.start();
+        this.resources = new Spawned(process, logReader);
         this.receiveTimeout = receiveTimeout;
     }
 
@@ -90,15 +89,7 @@ public final class StdioTransport implements Transport {
                 }
             }
 
-            if (process != null && !process.isAlive()) {
-                int code;
-                try {
-                    code = process.exitValue();
-                } catch (IllegalThreadStateException ignore) {
-                    code = -1;
-                }
-                throw new IOException("Process exited with code " + code);
-            }
+            resources.checkAlive();
 
             try {
                 Thread.sleep(10);
@@ -124,7 +115,46 @@ public final class StdioTransport implements Transport {
         } catch (IOException e) {
             if (ex == null) ex = e;
         }
-        if (process != null) {
+        try {
+            resources.close();
+        } catch (IOException e) {
+            if (ex == null) ex = e;
+        }
+        if (ex != null) throw ex;
+    }
+
+    private sealed interface ProcessResources extends AutoCloseable permits Detached, Spawned {
+        void checkAlive() throws IOException;
+        @Override
+        void close() throws IOException;
+    }
+
+    private enum Detached implements ProcessResources {
+        INSTANCE;
+        @Override
+        public void checkAlive() {
+        }
+        @Override
+        public void close() {
+        }
+    }
+
+    private record Spawned(Process process, Thread logReader) implements ProcessResources {
+        @Override
+        public void checkAlive() throws IOException {
+            if (!process.isAlive()) {
+                int code;
+                try {
+                    code = process.exitValue();
+                } catch (IllegalThreadStateException ignore) {
+                    code = -1;
+                }
+                throw new IOException("Process exited with code " + code);
+            }
+        }
+
+        @Override
+        public void close() throws IOException {
             process.destroy();
             try {
                 if (!process.waitFor(WAIT.toMillis(), TimeUnit.MILLISECONDS)) {
@@ -134,14 +164,11 @@ public final class StdioTransport implements Transport {
             } catch (InterruptedException ignore) {
                 Thread.currentThread().interrupt();
             }
-        }
-        if (logReader != null) {
             try {
                 logReader.join(100);
             } catch (InterruptedException ignore) {
                 Thread.currentThread().interrupt();
             }
         }
-        if (ex != null) throw ex;
     }
 }
