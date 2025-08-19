@@ -17,6 +17,7 @@ val jmhVersion by extra("1.37")
 val slf4jVersion by extra("2.0.16")
 val jettyVersion by extra("12.0.23")
 val jakartaServletVersion by extra("6.1.0")
+val bouncyCastleVersion by extra("1.78.1")
 
 repositories {
     mavenLocal()
@@ -31,6 +32,8 @@ dependencies {
     implementation("org.eclipse.jetty.ee10:jetty-ee10-servlet:$jettyVersion")
     implementation("org.eclipse.jetty:jetty-util:$jettyVersion")
     implementation("jakarta.servlet:jakarta.servlet-api:$jakartaServletVersion")
+    implementation("org.bouncycastle:bcprov-jdk18on:$bouncyCastleVersion")
+    implementation("org.bouncycastle:bcpkix-jdk18on:$bouncyCastleVersion")
     testImplementation("org.junit.jupiter:junit-jupiter:$junitVersion")
     testImplementation("io.cucumber:cucumber-java:7.23.0")
     testImplementation("io.cucumber:datatable:7.13.0")
