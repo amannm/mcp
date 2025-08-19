@@ -3,6 +3,7 @@ package com.amannmalik.mcp.transport;
 import com.amannmalik.mcp.api.Protocol;
 import com.amannmalik.mcp.api.Transport;
 import com.amannmalik.mcp.util.ValidationUtil;
+import com.amannmalik.mcp.util.Certificates;
 import jakarta.json.*;
 
 import java.io.*;
@@ -298,25 +299,13 @@ public final class StreamableHttpClientTransport implements Transport {
         public void checkServerTrusted(X509Certificate[] chain, String authType) throws CertificateException {
             delegate.checkServerTrusted(chain, authType);
             if (pins.isEmpty()) return;
-            String fp = fingerprint(chain[0]);
+            String fp = Certificates.fingerprint(chain[0]);
             if (!pins.contains(fp)) throw new CertificateException("Certificate pinning failure");
         }
 
         @Override
         public X509Certificate[] getAcceptedIssuers() {
             return delegate.getAcceptedIssuers();
-        }
-    }
-
-    private static String fingerprint(X509Certificate cert) throws CertificateException {
-        try {
-            MessageDigest md = MessageDigest.getInstance("SHA-256");
-            byte[] digest = md.digest(cert.getEncoded());
-            StringBuilder sb = new StringBuilder();
-            for (byte b : digest) sb.append(String.format("%02X", b));
-            return sb.toString();
-        } catch (NoSuchAlgorithmException e) {
-            throw new CertificateException(e);
         }
     }
 

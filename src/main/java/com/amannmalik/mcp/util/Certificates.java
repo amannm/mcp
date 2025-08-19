@@ -5,13 +5,17 @@ import java.io.IOException;
 import java.io.StringWriter;
 import java.math.BigInteger;
 import java.security.*;
+import java.security.cert.CertificateEncodingException;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
+import java.security.cert.CertificateParsingException;
 import java.security.cert.X509Certificate;
 import java.security.interfaces.RSAPrivateKey;
 import java.security.spec.ECGenParameterSpec;
 import java.time.Duration;
+import java.util.ArrayList;
 import java.util.Base64;
+import java.util.Collection;
 import java.util.Date;
 import java.util.List;
 import javax.security.auth.x500.X500Principal;
@@ -116,6 +120,33 @@ public final class Certificates {
             cert.verify(cert.getPublicKey());
         } catch (GeneralSecurityException e) {
             throw new IllegalStateException("Certificate verification failed", e);
+        }
+    }
+
+    public static String fingerprint(X509Certificate cert) throws CertificateException {
+        try {
+            MessageDigest md = MessageDigest.getInstance("SHA-256");
+            byte[] digest = md.digest(cert.getEncoded());
+            StringBuilder sb = new StringBuilder();
+            for (byte b : digest) sb.append(String.format("%02X", b));
+            return sb.toString();
+        } catch (NoSuchAlgorithmException | CertificateEncodingException e) {
+            throw new CertificateException(e);
+        }
+    }
+
+    public static List<String> subjectAltNames(X509Certificate cert) {
+        try {
+            Collection<List<?>> sans = cert.getSubjectAlternativeNames();
+            if (sans == null) return List.of();
+            List<String> out = new ArrayList<>();
+            for (var san : sans) {
+                int type = (Integer) san.get(0);
+                if (type == 2 || type == 7) out.add(san.get(1).toString());
+            }
+            return out;
+        } catch (CertificateParsingException e) {
+            throw new IllegalStateException("SAN parsing failed", e);
         }
     }
 
