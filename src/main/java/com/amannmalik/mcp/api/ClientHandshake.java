@@ -1,0 +1,89 @@
+package com.amannmalik.mcp.api;
+
+import com.amannmalik.mcp.codec.*;
+import com.amannmalik.mcp.core.*;
+import com.amannmalik.mcp.jsonrpc.*;
+import com.amannmalik.mcp.util.*;
+
+import java.io.IOException;
+import java.time.Duration;
+import java.util.EnumSet;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.*;
+
+final class ClientHandshake {
+    private static final InitializeRequestAbstractEntityCodec REQUEST_CODEC = new InitializeRequestAbstractEntityCodec();
+
+    record Result(String protocolVersion,
+                  ServerInfo serverInfo,
+                  Set<ServerCapability> capabilities,
+                  Set<ServerFeature> features,
+                  String instructions) {}
+
+    static Result perform(RequestId id,
+                          Transport transport,
+                          ClientInfo info,
+                          Set<ClientCapability> capabilities,
+                          boolean rootsListChangedSupported,
+                          Duration timeout) throws IOException {
+        var init = new InitializeRequest(
+                Protocol.LATEST_VERSION,
+                new Capabilities(capabilities, Set.of(), Map.of(), Map.of()),
+                info,
+                new ClientFeatures(rootsListChangedSupported));
+        var request = new JsonRpcRequest(id, RequestMethod.INITIALIZE.method(), REQUEST_CODEC.toJson(init));
+        transport.send(JsonRpcEndpoint.CODEC.toJson(request));
+        var future = CompletableFuture.supplyAsync(() -> {
+            try {
+                return JsonRpcEndpoint.CODEC.fromJson(transport.receive(timeout));
+            } catch (IOException e) {
+                throw new CompletionException(e);
+            }
+        });
+        JsonRpcMessage msg;
+        try {
+            msg = future.get(timeout.toMillis(), TimeUnit.MILLISECONDS);
+        } catch (TimeoutException e) {
+            try {
+                transport.close();
+            } catch (IOException ignore) {
+            }
+            throw new IOException("Initialization timed out after " + timeout.toMillis() + " ms", e);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new IOException(e);
+        } catch (ExecutionException e) {
+            var cause = e.getCause();
+            if (cause instanceof IOException io) throw io;
+            throw new IOException(cause);
+        }
+        JsonRpcResponse resp;
+        try {
+            resp = JsonRpc.expectResponse(msg);
+        } catch (IOException e) {
+            throw new IOException("Initialization failed: " + e.getMessage(), e);
+        }
+        var ir = ((JsonCodec<InitializeResponse>) new InitializeResponseAbstractEntityCodec()).fromJson(resp.result());
+        var serverVersion = ir.protocolVersion();
+        if (!Protocol.LATEST_VERSION.equals(serverVersion) && !Protocol.PREVIOUS_VERSION.equals(serverVersion)) {
+            try {
+                transport.close();
+            } catch (IOException ignore) {
+            }
+            throw new UnsupportedProtocolVersionException(serverVersion, Protocol.LATEST_VERSION + " or " + Protocol.PREVIOUS_VERSION);
+        }
+        transport.setProtocolVersion(serverVersion);
+        var features = ir.features();
+        var caps = ir.capabilities().server();
+        return new Result(
+                serverVersion,
+                ir.serverInfo(),
+                caps,
+                features == null ? EnumSet.noneOf(ServerFeature.class) : EnumSet.copyOf(features),
+                ir.instructions());
+    }
+
+    private ClientHandshake() {
+    }
+}
