@@ -29,6 +29,7 @@ public final class UtilitiesSteps {
     private final List<Map<String, String>> lifecycleOperations = new ArrayList<>();
     private final List<Map<String, String>> utilityErrors = new ArrayList<>();
     private final List<String> invalidCancellationTypes = new ArrayList<>();
+    private final List<Map<String, String>> loggingChecks = new ArrayList<>();
     private int invalidProgressNotifications;
     private int totalProgressNotifications;
     private McpHost activeConnection;
@@ -80,9 +81,7 @@ public final class UtilitiesSteps {
     private boolean systemStable;
     private boolean lifecycleTokenActive;
     private double lastProgressValue;
-
     private LoggingLevel loggingLevel;
-    private final List<Map<String, String>> loggingChecks = new ArrayList<>();
 
     // --- Cancellation ----------------------------------------------------
 
@@ -503,10 +502,10 @@ public final class UtilitiesSteps {
     @When("I receive logging notifications:")
     public void i_receive_logging_notifications(DataTable table) {
         loggingChecks.clear();
-        for (Map<String, String> row : table.asMaps()) {
-            LoggingLevel lvl = LoggingLevel.fromString(row.get("level"));
-            boolean expected = Boolean.parseBoolean(row.get("should_process"));
-            boolean processed = loggingLevel != null && lvl.ordinal() >= loggingLevel.ordinal();
+        for (var row : table.asMaps()) {
+            var lvl = LoggingLevel.fromString(row.get("level"));
+            var expected = Boolean.parseBoolean(row.get("should_process"));
+            var processed = loggingLevel != null && lvl.ordinal() >= loggingLevel.ordinal();
             Map<String, String> res = new HashMap<>(row);
             res.put("processed", Boolean.toString(processed));
             res.put("expected", Boolean.toString(expected));
@@ -516,7 +515,7 @@ public final class UtilitiesSteps {
 
     @Then("the logging system should process notifications accordingly")
     public void the_logging_system_should_process_notifications_accordingly() {
-        for (Map<String, String> row : loggingChecks) {
+        for (var row : loggingChecks) {
             if (!Objects.equals(row.get("processed"), row.get("expected"))) {
                 throw new AssertionError("logging notification mismatch");
             }
@@ -525,7 +524,7 @@ public final class UtilitiesSteps {
 
     @Then("sensitive information should not be included in logs")
     public void sensitive_information_should_not_be_included_in_logs() {
-        for (Map<String, String> row : loggingChecks) {
+        for (var row : loggingChecks) {
             if (Boolean.parseBoolean(row.getOrDefault("contains_sensitive", "false"))) {
                 throw new AssertionError("sensitive log content detected");
             }

@@ -3,9 +3,7 @@ package com.amannmalik.mcp.api;
 
 import java.io.IOException;
 import java.time.Duration;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
 
 /// - [Ping](specification/2025-06-18/basic/utilities/ping.mdx)
 final class ClientBackgroundTasks implements AutoCloseable {
@@ -36,7 +34,7 @@ final class ClientBackgroundTasks implements AutoCloseable {
     private void readLoop() {
         while (client.connected()) {
             try {
-                JsonRpcMessage msg = JsonRpcEndpoint.CODEC.fromJson(client.transport.receive());
+                var msg = JsonRpcEndpoint.CODEC.fromJson(client.transport.receive());
                 client.process(msg);
             } catch (IOException e) {
                 client.pending.values().forEach(f -> f.completeExceptionally(e));

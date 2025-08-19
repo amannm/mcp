@@ -2,12 +2,8 @@ package com.amannmalik.mcp.transport;
 
 import jakarta.json.Json;
 import jakarta.json.JsonObject;
-import jakarta.json.JsonReader;
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.StringReader;
+
+import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.util.Set;
 import java.util.concurrent.BlockingQueue;
@@ -28,14 +24,14 @@ final class SseReader implements Runnable {
 
     @Override
     public void run() {
-        try (BufferedReader br = new BufferedReader(new InputStreamReader(input, StandardCharsets.UTF_8))) {
+        try (var br = new BufferedReader(new InputStreamReader(input, StandardCharsets.UTF_8))) {
             String line;
             while (!closed && (line = br.readLine()) != null) {
                 if (line.isEmpty()) {
                     buffer.flush();
                     continue;
                 }
-                int idx = line.indexOf(':');
+                var idx = line.indexOf(':');
                 if (idx < 0) continue;
                 buffer.field(line.substring(0, idx), line.substring(idx + 1).trim());
             }
@@ -48,7 +44,7 @@ final class SseReader implements Runnable {
     }
 
     private void dispatch(String payload, String eventId) {
-        try (JsonReader jr = Json.createReader(new StringReader(payload))) {
+        try (var jr = Json.createReader(new StringReader(payload))) {
             queue.add(jr.readObject());
         } catch (Exception ignore) {
         }

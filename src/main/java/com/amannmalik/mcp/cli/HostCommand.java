@@ -95,21 +95,6 @@ public final class HostCommand {
         return spec;
     }
 
-    private record TlsSettings(
-            String truststorePath,
-            String truststorePassword,
-            String truststoreType,
-            String keystorePath,
-            String keystorePassword,
-            String keystoreType,
-            CertificateValidationMode validationMode,
-            List<String> protocols,
-            List<String> cipherSuites,
-            List<String> pins,
-            boolean verifyHostname
-    ) {
-    }
-
     public static int execute(ParseResult parseResult) {
         var helpExitCode = CommandLine.executeHelpRequest(parseResult);
         if (helpExitCode != null) return helpExitCode;
@@ -414,5 +399,20 @@ public final class HostCommand {
                   notify <client-id> <method> [params]  - Send notification to client
                   quit                              - Exit interactive mode
                 """);
+    }
+
+    private record TlsSettings(
+            String truststorePath,
+            String truststorePassword,
+            String truststoreType,
+            String keystorePath,
+            String keystorePassword,
+            String keystoreType,
+            CertificateValidationMode validationMode,
+            List<String> protocols,
+            List<String> cipherSuites,
+            List<String> pins,
+            boolean verifyHostname
+    ) {
     }
 }

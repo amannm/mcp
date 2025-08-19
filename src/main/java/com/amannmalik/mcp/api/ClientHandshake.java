@@ -3,23 +3,19 @@ package com.amannmalik.mcp.api;
 import com.amannmalik.mcp.codec.*;
 import com.amannmalik.mcp.core.*;
 import com.amannmalik.mcp.jsonrpc.*;
-import com.amannmalik.mcp.util.*;
+import com.amannmalik.mcp.util.InitializeRequest;
+import com.amannmalik.mcp.util.InitializeResponse;
 
 import java.io.IOException;
 import java.time.Duration;
-import java.util.EnumSet;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.*;
 
 final class ClientHandshake {
     private static final InitializeRequestAbstractEntityCodec REQUEST_CODEC = new InitializeRequestAbstractEntityCodec();
 
-    record Result(String protocolVersion,
-                  ServerInfo serverInfo,
-                  Set<ServerCapability> capabilities,
-                  Set<ServerFeature> features,
-                  String instructions) {}
+    private ClientHandshake() {
+    }
 
     static Result perform(RequestId id,
                           Transport transport,
@@ -84,6 +80,10 @@ final class ClientHandshake {
                 ir.instructions());
     }
 
-    private ClientHandshake() {
+    record Result(String protocolVersion,
+                  ServerInfo serverInfo,
+                  Set<ServerCapability> capabilities,
+                  Set<ServerFeature> features,
+                  String instructions) {
     }
 }
