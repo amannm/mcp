@@ -11,12 +11,18 @@ public record Capabilities(Set<ClientCapability> client,
                            Map<String, JsonObject> clientExperimental,
                            Map<String, JsonObject> serverExperimental) {
     public Capabilities {
-        client = client == null ? Set.of() : client.isEmpty() ? Set.of() : EnumSet.copyOf(client);
-        server = server == null ? Set.of() : server.isEmpty() ? Set.of() : EnumSet.copyOf(server);
-        clientExperimental = clientExperimental == null || clientExperimental.isEmpty()
-                ? Map.of() : Map.copyOf(clientExperimental);
-        serverExperimental = serverExperimental == null || serverExperimental.isEmpty()
-                ? Map.of() : Map.copyOf(serverExperimental);
+        client = immutableEnumSet(client);
+        server = immutableEnumSet(server);
+        clientExperimental = immutableMap(clientExperimental);
+        serverExperimental = immutableMap(serverExperimental);
+    }
+
+    private static <E extends Enum<E>> Set<E> immutableEnumSet(Set<E> set) {
+        return set == null || set.isEmpty() ? Set.of() : EnumSet.copyOf(set);
+    }
+
+    private static <K, V> Map<K, V> immutableMap(Map<K, V> map) {
+        return map == null || map.isEmpty() ? Map.of() : Map.copyOf(map);
     }
 
     public Set<ClientCapability> client() {
