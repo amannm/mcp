@@ -31,26 +31,7 @@ final class SseClients {
     }
 
     AsyncListener requestListener(String key, SseClient client) {
-        return new AsyncListener() {
-            @Override
-            public void onComplete(AsyncEvent event) {
-                removeRequest(key, client);
-            }
-
-            @Override
-            public void onTimeout(AsyncEvent event) {
-                removeRequest(key, client);
-            }
-
-            @Override
-            public void onError(AsyncEvent event) {
-                removeRequest(key, client);
-            }
-
-            @Override
-            public void onStartAsync(AsyncEvent event) {
-            }
-        };
+        return listener(() -> removeRequest(key, client));
     }
 
     void removeGeneral(SseClient client) {
@@ -60,20 +41,24 @@ final class SseClients {
     }
 
     AsyncListener generalListener(SseClient client) {
+        return listener(() -> removeGeneral(client));
+    }
+
+    private AsyncListener listener(Runnable cleanup) {
         return new AsyncListener() {
             @Override
             public void onComplete(AsyncEvent event) {
-                removeGeneral(client);
+                cleanup.run();
             }
 
             @Override
             public void onTimeout(AsyncEvent event) {
-                removeGeneral(client);
+                cleanup.run();
             }
 
             @Override
             public void onError(AsyncEvent event) {
-                removeGeneral(client);
+                cleanup.run();
             }
 
             @Override
