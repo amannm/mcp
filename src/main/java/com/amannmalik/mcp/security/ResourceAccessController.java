@@ -18,7 +18,7 @@ public final class ResourceAccessController implements ResourceAccessPolicy {
         if (principal == null) throw new IllegalArgumentException("principal required");
         if (ann == null || ann.audience().isEmpty()) return;
 
-        for (Role r : ann.audience()) {
+        for (var r : ann.audience()) {
             permissions.requirePermission(principal.id(), r, "Audience not permitted: " + ann.audience());
         }
     }

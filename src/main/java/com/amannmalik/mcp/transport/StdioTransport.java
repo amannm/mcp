@@ -62,7 +62,7 @@ public final class StdioTransport implements Transport {
 
     @Override
     public synchronized void send(JsonObject message) throws IOException {
-        String s = message.toString();
+        var s = message.toString();
         if (s.indexOf('\n') >= 0 || s.indexOf('\r') >= 0) {
             throw new IllegalArgumentException("message contains newline");
         }
@@ -78,13 +78,13 @@ public final class StdioTransport implements Transport {
 
     @Override
     public JsonObject receive(Duration timeoutMillis) throws IOException {
-        long endTime = System.currentTimeMillis() + timeoutMillis.toMillis();
+        var endTime = System.currentTimeMillis() + timeoutMillis.toMillis();
 
         while (System.currentTimeMillis() < endTime) {
             if (in.ready()) {
-                String line = in.readLine();
+                var line = in.readLine();
                 if (line == null) throw new EOFException();
-                try (JsonReader reader = Json.createReader(new StringReader(line))) {
+                try (var reader = Json.createReader(new StringReader(line))) {
                     return reader.readObject();
                 }
             }

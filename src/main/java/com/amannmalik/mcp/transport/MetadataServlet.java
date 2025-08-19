@@ -17,8 +17,8 @@ final class MetadataServlet extends HttpServlet {
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws IOException {
         if (!transport.enforceHttps(req, resp)) return;
-        ResourceMetadata meta = new ResourceMetadata(transport.canonicalResource, transport.authorizationServers);
-        JsonObject body = new ResourceMetadataJsonCodec().toJson(meta);
+        var meta = new ResourceMetadata(transport.canonicalResource, transport.authorizationServers);
+        var body = new ResourceMetadataJsonCodec().toJson(meta);
         resp.setStatus(HttpServletResponse.SC_OK);
         resp.setContentType("application/json");
         resp.setCharacterEncoding("UTF-8");

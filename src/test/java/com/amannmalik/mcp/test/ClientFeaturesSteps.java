@@ -43,7 +43,7 @@ public final class ClientFeaturesSteps {
     private McpClientConfiguration defaultConfig;
 
     private static ClientCapability parseCapability(String raw) {
-        String normalized = raw.trim().toLowerCase();
+        var normalized = raw.trim().toLowerCase();
         return switch (normalized) {
             case "roots", "filesystem roots" -> ClientCapability.ROOTS;
             case "sampling", "llm sampling", "llm sampling requests" -> ClientCapability.SAMPLING;
@@ -56,8 +56,8 @@ public final class ClientFeaturesSteps {
         if (raw == null || raw.isBlank() || "none".equalsIgnoreCase(raw.trim())) {
             return EnumSet.noneOf(ClientCapability.class);
         }
-        EnumSet<ClientCapability> set = EnumSet.noneOf(ClientCapability.class);
-        for (String part : raw.split(",")) {
+        var set = EnumSet.noneOf(ClientCapability.class);
+        for (var part : raw.split(",")) {
             set.add(parseCapability(part));
         }
         return set;
@@ -65,11 +65,11 @@ public final class ClientFeaturesSteps {
 
     @Given("I have established an MCP connection")
     public void i_have_established_an_mcp_connection() throws Exception {
-        McpClientConfiguration base = McpClientConfiguration.defaultConfiguration("client", "client", "default");
-        String java = System.getProperty("java.home") + "/bin/java";
-        String jar = Path.of("build", "libs", "mcp-0.1.0.jar").toString();
-        String cmd = java + " -jar " + jar + " server --stdio --test-mode";
-        McpClientConfiguration clientConfig = new McpClientConfiguration(
+        var base = McpClientConfiguration.defaultConfiguration("client", "client", "default");
+        var java = System.getProperty("java.home") + "/bin/java";
+        var jar = Path.of("build", "libs", "mcp-0.1.0.jar").toString();
+        var cmd = java + " -jar " + jar + " server --stdio --test-mode";
+        var clientConfig = new McpClientConfiguration(
                 base.clientId(), base.serverName(), base.serverDisplayName(), base.serverVersion(),
                 base.principal(), base.clientCapabilities(), cmd, base.defaultReceiveTimeout(),
                 base.defaultOriginHeader(), base.httpRequestTimeout(), base.enableKeepAlive(),
@@ -79,7 +79,7 @@ public final class ClientFeaturesSteps {
                 "", "", "PKCS12", "", "", "PKCS12", CertificateValidationMode.STRICT,
                 List.of("TLSv1.3", "TLSv1.2"), List.of("TLS_AES_128_GCM_SHA256", "TLS_AES_256_GCM_SHA384"), List.of(), true
         );
-        McpHostConfiguration hostConfig = new McpHostConfiguration(
+        var hostConfig = new McpHostConfiguration(
                 "2025-06-18",
                 "2025-03-26",
                 "mcp-host",
@@ -118,7 +118,7 @@ public final class ClientFeaturesSteps {
 
     @Given("^I want to support (.+?)(?: requests)?$")
     public void i_want_to_support(String capability) {
-        ClientCapability cap = parseCapability(capability);
+        var cap = parseCapability(capability);
         clientCapabilities.add(cap);
         if (cap == ClientCapability.ROOTS) {
             capabilityOptions.putIfAbsent(cap, false);
@@ -128,7 +128,7 @@ public final class ClientFeaturesSteps {
 
     @Given("I have declared {word} capability")
     public void i_have_declared_capability(String capability) {
-        ClientCapability cap = parseCapability(capability);
+        var cap = parseCapability(capability);
         clientCapabilities.add(cap);
         if (cap == ClientCapability.ROOTS) {
             capabilityOptions.putIfAbsent(cap, false);
@@ -138,7 +138,7 @@ public final class ClientFeaturesSteps {
 
     @Given("I have declared {word} capability with {word} support")
     public void i_have_declared_capability_with_support(String capability, String support) {
-        ClientCapability cap = parseCapability(capability);
+        var cap = parseCapability(capability);
         clientCapabilities.add(cap);
         capabilityOptions.put(cap, true);
         lastCapability = cap;
@@ -146,14 +146,14 @@ public final class ClientFeaturesSteps {
 
     @Given("I have declared multiple client capabilities:")
     public void i_have_declared_multiple_client_capabilities(DataTable table) {
-        List<Map<String, String>> rows = table.asMaps(String.class, String.class);
+        var rows = table.asMaps(String.class, String.class);
         combinedCapabilityRows.clear();
         combinedCapabilityRows.addAll(rows);
-        for (Map<String, String> row : rows) {
-            ClientCapability cap = parseCapability(row.get("capability"));
+        for (var row : rows) {
+            var cap = parseCapability(row.get("capability"));
             clientCapabilities.add(cap);
             lastCapability = cap;
-            String features = row.get("features");
+            var features = row.get("features");
             if (features != null && features.contains("listChanged: true")) {
                 capabilityOptions.put(cap, true);
             }
@@ -164,15 +164,15 @@ public final class ClientFeaturesSteps {
     public void i_have_declared_only_specific_client_capabilities(DataTable table) {
         clientCapabilities.clear();
         undeclaredCapabilities.clear();
-        List<Map<String, String>> rows = table.asMaps(String.class, String.class);
-        for (Map<String, String> row : rows) {
-            String declared = row.get("declared_capability");
+        var rows = table.asMaps(String.class, String.class);
+        for (var row : rows) {
+            var declared = row.get("declared_capability");
             if (declared != null && !declared.isBlank()) {
-                ClientCapability cap = parseCapability(declared);
+                var cap = parseCapability(declared);
                 clientCapabilities.add(cap);
                 lastCapability = cap;
             }
-            String undeclared = row.get("undeclared_capability");
+            var undeclared = row.get("undeclared_capability");
             if (undeclared != null && !undeclared.isBlank()) {
                 undeclaredCapabilities.add(parseCapability(undeclared));
             }
@@ -219,7 +219,7 @@ public final class ClientFeaturesSteps {
 
     @When("I receive an elicitation\\/create request for simple text input:")
     public void i_receive_an_elicitation_create_request_for_simple_text_input(DataTable table) {
-        List<Map<String, String>> rows = table.asMaps(String.class, String.class);
+        var rows = table.asMaps(String.class, String.class);
         if (rows.isEmpty()) {
             throw new AssertionError("missing request row");
         }
@@ -231,7 +231,7 @@ public final class ClientFeaturesSteps {
     @When("I receive an elicitation\\/create request for structured data:")
     public void i_receive_an_elicitation_create_request_for_structured_data(DataTable table) {
         structuredElicitationFields.clear();
-        for (Map<String, String> row : table.asMaps(String.class, String.class)) {
+        for (var row : table.asMaps(String.class, String.class)) {
             structuredElicitationFields.add(new HashMap<>(row));
         }
     }
@@ -239,16 +239,16 @@ public final class ClientFeaturesSteps {
     @When("I test elicitation responses with the following user actions:")
     public void i_test_elicitation_responses_with_the_following_user_actions(DataTable table) {
         elicitationUserActions.clear();
-        Map<String, String> mapping = Map.of(
+        var mapping = Map.of(
                 "submit_data", "accept",
                 "click_decline", "decline",
                 "close_dialog", "cancel",
                 "press_escape", "cancel",
                 "explicit_reject", "decline"
         );
-        for (Map<String, String> row : table.asMaps(String.class, String.class)) {
-            String action = row.get("user_action");
-            String expected = row.get("expected_action");
+        for (var row : table.asMaps(String.class, String.class)) {
+            var action = row.get("user_action");
+            var expected = row.get("expected_action");
             if (!Objects.equals(mapping.get(action), expected)) {
                 throw new AssertionError("unexpected action mapping for " + action);
             }
@@ -289,12 +289,12 @@ public final class ClientFeaturesSteps {
     @When("I check access for URI {string}")
     public void i_check_access_for_uri(String uri) {
         try {
-            java.net.URI target = java.net.URI.create(uri);
+            var target = java.net.URI.create(uri);
             if (!"file".equalsIgnoreCase(target.getScheme())) {
                 rootAccessAllowed = true;
                 return;
             }
-            java.nio.file.Path targetPath = java.nio.file.Paths.get(target).toRealPath();
+            var targetPath = java.nio.file.Paths.get(target).toRealPath();
             rootAccessAllowed = configuredRoots.stream()
                     .map(r -> r.get("uri"))
                     .filter(Objects::nonNull)
@@ -327,7 +327,7 @@ public final class ClientFeaturesSteps {
 
     @When("I receive a sampling\\/createMessage request:")
     public void i_receive_a_sampling_create_message_request(DataTable table) {
-        List<Map<String, String>> rows = table.asMaps(String.class, String.class);
+        var rows = table.asMaps(String.class, String.class);
         if (rows.isEmpty()) {
             throw new AssertionError("missing sampling request");
         }
@@ -348,7 +348,7 @@ public final class ClientFeaturesSteps {
     @When("I receive sampling requests with different content types:")
     public void i_receive_sampling_requests_with_different_content_types(DataTable table) {
         samplingContentTypes.clear();
-        for (Map<String, String> row : table.asMaps(String.class, String.class)) {
+        for (var row : table.asMaps(String.class, String.class)) {
             samplingContentTypes.add(new HashMap<>(row));
         }
     }
@@ -357,8 +357,8 @@ public final class ClientFeaturesSteps {
     public void i_receive_sampling_requests_with_model_preferences(DataTable table) {
         samplingModelPreferences.clear();
         samplingModelSelections.clear();
-        for (Map<String, String> row : table.asMaps(String.class, String.class)) {
-            for (String key : List.of("cost_priority", "speed_priority", "intelligence_priority")) {
+        for (var row : table.asMaps(String.class, String.class)) {
+            for (var key : List.of("cost_priority", "speed_priority", "intelligence_priority")) {
                 Double.parseDouble(row.get(key));
             }
             samplingModelPreferences.add(new HashMap<>(row));
@@ -374,10 +374,10 @@ public final class ClientFeaturesSteps {
     @When("I complete capability negotiation for each configuration")
     public void i_complete_capability_negotiation_for_each_configuration() {
         negotiationResults.clear();
-        for (Map<String, String> cfg : negotiationConfigs) {
-            EnumSet<ClientCapability> declared = parseCapabilities(cfg.get("declared_capabilities"));
-            EnumSet<ClientCapability> server = parseCapabilities(cfg.get("server_expectations"));
-            EnumSet<ClientCapability> intersection = EnumSet.copyOf(declared);
+        for (var cfg : negotiationConfigs) {
+            var declared = parseCapabilities(cfg.get("declared_capabilities"));
+            var server = parseCapabilities(cfg.get("server_expectations"));
+            var intersection = EnumSet.copyOf(declared);
             intersection.retainAll(server);
             String result;
             if (intersection.isEmpty()) {
@@ -402,7 +402,7 @@ public final class ClientFeaturesSteps {
     @When("client features become temporarily unavailable:")
     public void client_features_become_temporarily_unavailable(DataTable table) {
         featureUnavailabilityScenarios.clear();
-        for (Map<String, String> row : table.asMaps(String.class, String.class)) {
+        for (var row : table.asMaps(String.class, String.class)) {
             featureUnavailabilityScenarios.add(new HashMap<>(row));
         }
     }
@@ -426,7 +426,7 @@ public final class ClientFeaturesSteps {
 
     @Then("I should include the \"{word}\" capability")
     public void i_should_include_capability(String capability) {
-        ClientCapability cap = parseCapability(capability);
+        var cap = parseCapability(capability);
         if (!clientCapabilities.contains(cap)) {
             throw new AssertionError("missing capability: " + cap);
         }
@@ -434,8 +434,8 @@ public final class ClientFeaturesSteps {
 
     @Then("I should include content data only for \"accept\" actions")
     public void i_should_include_content_data_only_for_accept_actions() {
-        for (Map<String, String> row : elicitationUserActions) {
-            boolean hasContent = row.get("content") != null;
+        for (var row : elicitationUserActions) {
+            var hasContent = row.get("content") != null;
             if ("accept".equals(row.get("expected_action")) != hasContent) {
                 throw new AssertionError("content inclusion mismatch for " + row.get("user_action"));
             }
@@ -486,15 +486,15 @@ public final class ClientFeaturesSteps {
 
     @Then("I should return the correct action for each user interaction")
     public void i_should_return_the_correct_action_for_each_user_interaction() {
-        Map<String, String> mapping = Map.of(
+        var mapping = Map.of(
                 "submit_data", "accept",
                 "click_decline", "decline",
                 "close_dialog", "cancel",
                 "press_escape", "cancel",
                 "explicit_reject", "decline"
         );
-        for (Map<String, String> row : elicitationUserActions) {
-            String expected = row.get("expected_action");
+        for (var row : elicitationUserActions) {
+            var expected = row.get("expected_action");
             if (!Objects.equals(mapping.get(row.get("user_action")), expected)) {
                 throw new AssertionError("unexpected action for " + row.get("user_action"));
             }
@@ -535,8 +535,8 @@ public final class ClientFeaturesSteps {
 
     @Then("I should reject nested objects and arrays")
     public void i_should_reject_nested_objects_and_arrays() {
-        for (Map<String, String> row : elicitationSchemaTypes) {
-            String type = row.get("schema_type");
+        for (var row : elicitationSchemaTypes) {
+            var type = row.get("schema_type");
             if ("object".equalsIgnoreCase(type) || "array".equalsIgnoreCase(type)) {
                 throw new AssertionError("nested structures not rejected");
             }
@@ -574,7 +574,7 @@ public final class ClientFeaturesSteps {
 
     @Then("I should validate each field against its schema")
     public void i_should_validate_each_field_against_its_schema() {
-        for (Map<String, String> field : structuredElicitationFields) {
+        for (var field : structuredElicitationFields) {
             if (field.get("field_name") == null || field.get("field_type") == null) {
                 throw new AssertionError("invalid structured field");
             }
@@ -583,7 +583,7 @@ public final class ClientFeaturesSteps {
 
     @Then("I should validate input according to schema constraints")
     public void i_should_validate_input_according_to_schema_constraints() {
-        for (Map<String, String> row : elicitationSchemaTypes) {
+        for (var row : elicitationSchemaTypes) {
             if (row.get("schema_type") == null) {
                 throw new AssertionError("missing schema type");
             }
@@ -592,8 +592,8 @@ public final class ClientFeaturesSteps {
 
     @Then("I should validate all root URIs to prevent path traversal")
     public void i_should_validate_all_root_uris_to_prevent_path_traversal() {
-        for (Map<String, String> root : configuredRoots) {
-            String uri = root.get("uri");
+        for (var root : configuredRoots) {
+            var uri = root.get("uri");
             if (uri != null && uri.contains("..")) {
                 throw new AssertionError("path traversal: " + uri);
             }
@@ -602,9 +602,9 @@ public final class ClientFeaturesSteps {
 
     @Then("I should validate mime types for media content")
     public void i_should_validate_mime_types_for_media_content() {
-        for (Map<String, String> row : samplingContentTypes) {
-            String type = row.get("content_type");
-            String mime = row.get("mime_type");
+        for (var row : samplingContentTypes) {
+            var type = row.get("content_type");
+            var mime = row.get("mime_type");
             if (("image".equals(type) || "audio".equals(type)) && (mime == null || mime.isBlank() || "none".equalsIgnoreCase(mime))) {
                 throw new AssertionError("missing mime type for " + type);
             }
@@ -620,8 +620,8 @@ public final class ClientFeaturesSteps {
 
     @Then("I should support all specified primitive types")
     public void i_should_support_all_specified_primitive_types() {
-        for (Map<String, String> row : elicitationSchemaTypes) {
-            String type = row.get("schema_type");
+        for (var row : elicitationSchemaTypes) {
+            var type = row.get("schema_type");
             if (Set.of("object", "array").contains(type)) {
                 throw new AssertionError("unsupported schema type: " + type);
             }
@@ -630,7 +630,7 @@ public final class ClientFeaturesSteps {
 
     @Then("I should support all specified content types")
     public void i_should_support_all_specified_content_types() {
-        Set<String> types = samplingContentTypes.stream().map(r -> r.get("content_type")).collect(Collectors.toSet());
+        var types = samplingContentTypes.stream().map(r -> r.get("content_type")).collect(Collectors.toSet());
         if (!types.containsAll(Set.of("text", "image", "audio"))) {
             throw new AssertionError("missing content types");
         }
@@ -638,9 +638,9 @@ public final class ClientFeaturesSteps {
 
     @Then("I should handle base64 encoding for binary data")
     public void i_should_handle_base64_encoding_for_binary_data() {
-        for (Map<String, String> row : samplingContentTypes) {
-            String type = row.get("content_type");
-            String format = row.get("data_format");
+        for (var row : samplingContentTypes) {
+            var type = row.get("content_type");
+            var format = row.get("data_format");
             if (!"text".equals(type) && !"base64_encoded".equals(format)) {
                 throw new AssertionError("binary data not base64 encoded");
             }
@@ -649,7 +649,7 @@ public final class ClientFeaturesSteps {
 
     @Then("I should handle each unavailability gracefully")
     public void i_should_handle_each_unavailability_gracefully() {
-        for (Map<String, String> row : featureUnavailabilityScenarios) {
+        for (var row : featureUnavailabilityScenarios) {
             if (row.get("expected_behavior") == null || row.get("expected_behavior").isBlank()) {
                 throw new AssertionError("missing expected behavior");
             }
@@ -683,7 +683,7 @@ public final class ClientFeaturesSteps {
 
     @Then("I should provide clear error messages to servers")
     public void i_should_provide_clear_error_messages_to_servers() {
-        for (Map<String, String> row : featureUnavailabilityScenarios) {
+        for (var row : featureUnavailabilityScenarios) {
             if (row.get("expected_behavior") == null || row.get("expected_behavior").isBlank()) {
                 throw new AssertionError("missing expected behavior");
             }
@@ -709,9 +709,9 @@ public final class ClientFeaturesSteps {
         if (samplingModelPreferences.isEmpty()) {
             throw new AssertionError("no model preferences");
         }
-        for (Map<String, String> row : samplingModelPreferences) {
-            for (String key : List.of("cost_priority", "speed_priority", "intelligence_priority")) {
-                double v = Double.parseDouble(row.get(key));
+        for (var row : samplingModelPreferences) {
+            for (var key : List.of("cost_priority", "speed_priority", "intelligence_priority")) {
+                var v = Double.parseDouble(row.get(key));
                 if (v < 0 || v > 1) {
                     throw new AssertionError("priority out of range");
                 }
@@ -780,8 +780,8 @@ public final class ClientFeaturesSteps {
 
     @Then("I should only expose roots with appropriate permissions")
     public void i_should_only_expose_roots_with_appropriate_permissions() {
-        for (Map<String, String> root : configuredRoots) {
-            String uri = root.get("uri");
+        for (var root : configuredRoots) {
+            var uri = root.get("uri");
             if (uri == null || !uri.startsWith("file://")) {
                 throw new AssertionError("root outside allowed scheme: " + uri);
             }
@@ -804,7 +804,7 @@ public final class ClientFeaturesSteps {
 
     @Then("the server should recognize my {word} support")
     public void the_server_should_recognize_my_support(String capability) {
-        ClientCapability cap = parseCapability(capability);
+        var cap = parseCapability(capability);
         if (!clientCapabilities.contains(cap)) {
             throw new AssertionError("capability not recognized: " + cap);
         }
@@ -850,8 +850,8 @@ public final class ClientFeaturesSteps {
 
     @Then("each root should have a valid file:\\/\\/ URI")
     public void each_root_should_have_a_valid_file_uri() {
-        for (Map<String, String> root : returnedRoots) {
-            String uri = root.get("uri");
+        for (var root : returnedRoots) {
+            var uri = root.get("uri");
             if (uri == null || !uri.startsWith("file://")) {
                 throw new AssertionError("invalid uri: " + uri);
             }
@@ -860,7 +860,7 @@ public final class ClientFeaturesSteps {
 
     @Then("each root should include an optional human-readable name")
     public void each_root_should_include_an_optional_human_readable_name() {
-        for (Map<String, String> root : returnedRoots) {
+        for (var root : returnedRoots) {
             if (!root.containsKey("name")) {
                 throw new AssertionError("missing root name");
             }
@@ -876,8 +876,8 @@ public final class ClientFeaturesSteps {
 
     @Then("error messages should be clear and actionable")
     public void error_messages_should_be_clear_and_actionable() {
-        for (Map<String, String> scenario : samplingErrorScenarios) {
-            String msg = scenario.get("expected_error");
+        for (var scenario : samplingErrorScenarios) {
+            var msg = scenario.get("expected_error");
             if (msg == null || msg.isBlank()) {
                 throw new AssertionError("missing error message");
             }
@@ -886,9 +886,9 @@ public final class ClientFeaturesSteps {
 
     @Then("the agreed capabilities should match the intersection of client and server support")
     public void the_agreed_capabilities_should_match_the_intersection() {
-        for (int i = 0; i < negotiationConfigs.size(); i++) {
-            String expected = negotiationConfigs.get(i).get("negotiation_result");
-            String actual = negotiationResults.size() > i ? negotiationResults.get(i) : null;
+        for (var i = 0; i < negotiationConfigs.size(); i++) {
+            var expected = negotiationConfigs.get(i).get("negotiation_result");
+            var actual = negotiationResults.size() > i ? negotiationResults.get(i) : null;
             if (!Objects.equals(expected, actual)) {
                 throw new AssertionError("expected %s but was %s".formatted(expected, actual));
             }

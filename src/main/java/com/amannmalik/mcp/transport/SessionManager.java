@@ -43,13 +43,13 @@ final class SessionManager {
                      Principal principal,
                      boolean initializing) throws IOException {
         if (principal == null) throw new IllegalArgumentException("principal required");
-        SessionState state = current.get();
-        String last = lastSessionId.get();
-        String header = req.getHeader(TransportHeaders.SESSION_ID);
+        var state = current.get();
+        var last = lastSessionId.get();
+        var header = req.getHeader(TransportHeaders.SESSION_ID);
         if (header == null) {
-            Cookie[] cookies = req.getCookies();
+            var cookies = req.getCookies();
             if (cookies != null) {
-                for (Cookie c : cookies) {
+                for (var c : cookies) {
                     if (TransportHeaders.SESSION_ID.equals(c.getName())) {
                         header = c.getValue();
                         break;
@@ -57,7 +57,7 @@ final class SessionManager {
                 }
             }
         }
-        String version = req.getHeader(TransportHeaders.PROTOCOL_VERSION);
+        var version = req.getHeader(TransportHeaders.PROTOCOL_VERSION);
         if (!sanitizeHeaders(header, version, resp)) {
             return false;
         }
@@ -98,13 +98,13 @@ final class SessionManager {
     private boolean createSession(HttpServletRequest req,
                                   HttpServletResponse resp,
                                   Principal principal) {
-        byte[] bytes = new byte[sessionIdByteLength];
+        var bytes = new byte[sessionIdByteLength];
         RANDOM.nextBytes(bytes);
-        String id = Base64Util.encodeUrl(bytes);
+        var id = Base64Util.encodeUrl(bytes);
         current.set(new SessionState(id, req.getRemoteAddr(), principal));
         lastSessionId.set(null);
         resp.setHeader(TransportHeaders.SESSION_ID, id);
-        Cookie cookie = new Cookie(TransportHeaders.SESSION_ID, id);
+        var cookie = new Cookie(TransportHeaders.SESSION_ID, id);
         cookie.setHttpOnly(true);
         cookie.setSecure(req.isSecure());
         cookie.setPath("/");
@@ -155,7 +155,7 @@ final class SessionManager {
     }
 
     void terminate(boolean recordId) {
-        SessionState state = current.getAndSet(null);
+        var state = current.getAndSet(null);
         if (recordId && state != null) {
             lastSessionId.set(state.id());
         } else {

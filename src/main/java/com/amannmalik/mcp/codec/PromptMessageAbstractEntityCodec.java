@@ -19,8 +19,8 @@ public final class PromptMessageAbstractEntityCodec extends AbstractEntityCodec<
     public PromptMessage fromJson(JsonObject obj) {
         if (obj == null) throw new IllegalArgumentException("object required");
         requireOnlyKeys(obj, Set.of("role", "content"));
-        Role role = requireRole(obj);
-        ContentBlock block = requireContent(obj);
+        var role = requireRole(obj);
+        var block = requireContent(obj);
         if (!(block instanceof PromptContent pc)) {
             throw new IllegalArgumentException("content must be prompt-capable");
         }

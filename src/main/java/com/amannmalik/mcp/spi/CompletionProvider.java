@@ -21,10 +21,10 @@ public non-sealed interface CompletionProvider extends ExecutingProvider<Ref, Co
     }
 
     default CompleteResult complete(CompleteRequest request) throws InterruptedException {
-        JsonObject ctx = request.context() == null
+        var ctx = request.context() == null
                 ? Json.createObjectBuilder().build()
                 : new ContextJsonCodec().toJson(request.context());
-        JsonObject args = Json.createObjectBuilder()
+        var args = Json.createObjectBuilder()
                 .add("argument", new ArgumentJsonCodec().toJson(request.argument()))
                 .add("context", ctx)
                 .build();

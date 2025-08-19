@@ -78,12 +78,12 @@ public final class ServerFeaturesSteps {
 
     @Given("an established MCP connection with server capabilities")
     public void an_established_mcp_connection_with_server_capabilities() throws Exception {
-        McpClientConfiguration base = McpClientConfiguration.defaultConfiguration("client", "client", "default");
-        String java = System.getProperty("java.home") + "/bin/java";
-        String jar = Path.of("build", "libs", "mcp-0.1.0.jar").toString();
-        String cmd = java + " -jar " + jar + " server --stdio --test-mode";
-        List<String> roots = Stream.concat(base.rootDirectories().stream(), Stream.of("/sample")).toList();
-        McpClientConfiguration clientConfig = new McpClientConfiguration(
+        var base = McpClientConfiguration.defaultConfiguration("client", "client", "default");
+        var java = System.getProperty("java.home") + "/bin/java";
+        var jar = Path.of("build", "libs", "mcp-0.1.0.jar").toString();
+        var cmd = java + " -jar " + jar + " server --stdio --test-mode";
+        var roots = Stream.concat(base.rootDirectories().stream(), Stream.of("/sample")).toList();
+        var clientConfig = new McpClientConfiguration(
                 base.clientId(), base.serverName(), base.serverDisplayName(), base.serverVersion(),
                 base.principal(), base.clientCapabilities(), cmd, base.defaultReceiveTimeout(),
                 base.defaultOriginHeader(), base.httpRequestTimeout(), base.enableKeepAlive(),
@@ -93,7 +93,7 @@ public final class ServerFeaturesSteps {
                 "", "", "PKCS12", "", "", "PKCS12", CertificateValidationMode.STRICT,
                 List.of("TLSv1.3", "TLSv1.2"), List.of("TLS_AES_128_GCM_SHA256", "TLS_AES_256_GCM_SHA384"), List.of(), true
         );
-        McpHostConfiguration hostConfig = new McpHostConfiguration(
+        var hostConfig = new McpHostConfiguration(
                 "2025-06-18",
                 "2025-03-26",
                 "mcp-host",
@@ -151,7 +151,7 @@ public final class ServerFeaturesSteps {
 
     @Then("the server should declare the {string} capability")
     public void the_server_should_declare_the_capability(String capability) {
-        ServerCapability cap = ServerCapability.from(capability)
+        var cap = ServerCapability.from(capability)
                 .orElseThrow(() -> new IllegalArgumentException("Unknown capability: " + capability));
         if (!serverCapabilities.contains(cap)) {
             throw new AssertionError("Capability not declared: " + capability);
@@ -167,7 +167,7 @@ public final class ServerFeaturesSteps {
         if (lastCapabilityChecked == null) {
             throw new IllegalStateException("no capability checked");
         }
-        ServerFeature expected = switch (lastCapabilityChecked) {
+        var expected = switch (lastCapabilityChecked) {
             case TOOLS -> ServerFeature.TOOLS_LIST_CHANGED;
             case PROMPTS -> ServerFeature.PROMPTS_LIST_CHANGED;
             case RESOURCES -> ServerFeature.RESOURCES_LIST_CHANGED;
@@ -180,17 +180,17 @@ public final class ServerFeaturesSteps {
 
     @Then("the capability may include optional features:")
     public void the_capability_may_include_optional_features(DataTable table) {
-        EnumSet<ServerFeature> allowed = EnumSet.noneOf(ServerFeature.class);
-        for (Map<String, String> row : table.asMaps(String.class, String.class)) {
-            String feature = row.get("feature");
-            ServerFeature f = switch (feature) {
+        var allowed = EnumSet.noneOf(ServerFeature.class);
+        for (var row : table.asMaps(String.class, String.class)) {
+            var feature = row.get("feature");
+            var f = switch (feature) {
                 case "subscribe" -> ServerFeature.RESOURCES_SUBSCRIBE;
                 case "listChanged" -> ServerFeature.RESOURCES_LIST_CHANGED;
                 default -> throw new IllegalArgumentException("Unknown feature: " + feature);
             };
             allowed.add(f);
         }
-        EnumSet<ServerFeature> present = EnumSet.copyOf(serverFeatures);
+        var present = EnumSet.copyOf(serverFeatures);
         present.retainAll(EnumSet.of(ServerFeature.RESOURCES_SUBSCRIBE, ServerFeature.RESOURCES_LIST_CHANGED));
         if (!allowed.containsAll(present)) {
             throw new AssertionError("unexpected resource feature");
@@ -212,7 +212,7 @@ public final class ServerFeaturesSteps {
         if (activeConnection == null || clientId == null) {
             throw new IllegalStateException("connection not established");
         }
-        ListToolsResult result = activeConnection.listTools(clientId, Cursor.Start.INSTANCE);
+        var result = activeConnection.listTools(clientId, Cursor.Start.INSTANCE);
         availableTools = result.tools();
     }
 
@@ -225,13 +225,13 @@ public final class ServerFeaturesSteps {
 
     @Then("each tool should have required fields:")
     public void each_tool_should_have_required_fields(DataTable table) {
-        List<Map<String, String>> rows = table.asMaps(String.class, String.class);
-        for (Tool tool : availableTools) {
-            for (Map<String, String> row : rows) {
-                String field = row.get("field");
-                String type = row.get("type");
-                boolean required = Boolean.parseBoolean(row.get("required"));
-                Object value = switch (field) {
+        var rows = table.asMaps(String.class, String.class);
+        for (var tool : availableTools) {
+            for (var row : rows) {
+                var field = row.get("field");
+                var type = row.get("type");
+                var required = Boolean.parseBoolean(row.get("required"));
+                var value = switch (field) {
                     case "name" -> tool.name();
                     case "description" -> tool.description();
                     case "inputSchema" -> tool.inputSchema();
@@ -243,7 +243,7 @@ public final class ServerFeaturesSteps {
                     throw new AssertionError("Missing field: " + field);
                 }
                 if (value != null) {
-                    boolean matches = switch (type) {
+                    var matches = switch (type) {
                         case "string" -> value instanceof String;
                         case "object" -> value instanceof JsonObject;
                         default -> throw new IllegalArgumentException("Unknown type: " + type);
@@ -271,8 +271,8 @@ public final class ServerFeaturesSteps {
         }
         firstPage = activeConnection.listTools(clientId, Cursor.Start.INSTANCE);
         if (firstPage.nextCursor() instanceof Cursor.End) {
-            List<Tool> all = firstPage.tools();
-            int mid = Math.max(1, all.size() / 2);
+            var all = firstPage.tools();
+            var mid = Math.max(1, all.size() / 2);
             firstPage = new ListToolsResult(all.subList(0, mid), Cursor.fromIndex(mid), null);
             secondPage = new ListToolsResult(all.subList(mid, all.size()), Cursor.End.INSTANCE, null);
         } else {
@@ -317,7 +317,7 @@ public final class ServerFeaturesSteps {
 
     @Given("the tool expects required parameter {string}")
     public void the_tool_expects_required_parameter(String param) {
-        JsonObject schema = targetTool.inputSchema();
+        var schema = targetTool.inputSchema();
         if (schema == null) {
             throw new AssertionError("tool missing schema");
         }
@@ -325,7 +325,7 @@ public final class ServerFeaturesSteps {
         if (required == null || required.stream().noneMatch(v -> v.toString().equals('"' + param + '"'))) {
             throw new AssertionError("required parameter not declared: " + param);
         }
-        JsonObject props = schema.getJsonObject("properties");
+        var props = schema.getJsonObject("properties");
         if (props == null || !props.containsKey(param)) {
             throw new AssertionError("parameter not defined: " + param);
         }
@@ -334,7 +334,7 @@ public final class ServerFeaturesSteps {
     @When("I call the tool with valid arguments:")
     public void i_call_the_tool_with_valid_arguments(DataTable table) {
         var b = Json.createObjectBuilder();
-        for (Map<String, String> row : table.asMaps(String.class, String.class)) {
+        for (var row : table.asMaps(String.class, String.class)) {
             b.add(row.get("parameter"), row.get("value"));
         }
         try {
@@ -383,15 +383,15 @@ public final class ServerFeaturesSteps {
         toolErrorScenarioRows.addAll(table.asMaps(String.class, String.class));
         currentErrorScenarios.clear();
         currentErrorScenarios.addAll(toolErrorScenarioRows);
-        for (Map<String, String> row : toolErrorScenarioRows) {
-            String scenario = row.get("scenario");
+        for (var row : toolErrorScenarioRows) {
+            var scenario = row.get("scenario");
             try {
                 switch (scenario) {
                     case "invalid tool name" -> activeConnection.callTool(clientId, "no_such_tool", Json.createObjectBuilder().build());
                     case "missing required parameters" -> activeConnection.callTool(clientId, "echo_tool", Json.createObjectBuilder().build());
                     case "invalid parameter types" -> activeConnection.callTool(clientId, "echo_tool", Json.createObjectBuilder().add("msg", 5).build());
                     case "tool execution failure" -> {
-                        ToolResult r = activeConnection.callTool(clientId, "error_tool", Json.createObjectBuilder().build());
+                        var r = activeConnection.callTool(clientId, "error_tool", Json.createObjectBuilder().build());
                         toolErrorOccurred.put(scenario, r.isError());
                         continue;
                     }
@@ -458,13 +458,13 @@ public final class ServerFeaturesSteps {
     @When("I invoke tools with various output formats")
     public void i_invoke_tools_with_various_output_formats() {
         contentTypeSamples.clear();
-        for (Tool tool : availableTools) {
+        for (var tool : availableTools) {
             try {
-                ToolResult r = activeConnection.callTool(clientId, tool.name(), Json.createObjectBuilder().build());
-                for (JsonValue v : r.content()) {
+                var r = activeConnection.callTool(clientId, tool.name(), Json.createObjectBuilder().build());
+                for (var v : r.content()) {
                     if (v.getValueType() == JsonValue.ValueType.OBJECT) {
-                        JsonObject obj = v.asJsonObject();
-                        String type = obj.getString("type", null);
+                        var obj = v.asJsonObject();
+                        var type = obj.getString("type", null);
                         if (type != null && !contentTypeSamples.containsKey(type)) {
                             contentTypeSamples.put(type, obj);
                         }
@@ -477,11 +477,11 @@ public final class ServerFeaturesSteps {
 
     @Then("I should receive valid result content in supported formats:")
     public void i_should_receive_valid_result_content_in_supported_formats(DataTable table) {
-        for (Map<String, String> row : table.asMaps(String.class, String.class)) {
-            String type = row.get("content_type");
-            String field = row.get("field_name");
-            String encoding = row.get("encoding");
-            JsonObject block = contentTypeSamples.get(type);
+        for (var row : table.asMaps(String.class, String.class)) {
+            var type = row.get("content_type");
+            var field = row.get("field_name");
+            var encoding = row.get("encoding");
+            var block = contentTypeSamples.get(type);
             if (block == null) {
                 throw new AssertionError("missing content type: " + type);
             }
@@ -489,7 +489,7 @@ public final class ServerFeaturesSteps {
                 throw new AssertionError("missing field for " + type + ": " + field);
             }
             if (!"none".equals(encoding)) {
-                String enc = block.getString("encoding", "plain");
+                var enc = block.getString("encoding", "plain");
                 if (!encoding.equals(enc)) {
                     throw new AssertionError("encoding mismatch for " + type);
                 }
@@ -568,8 +568,8 @@ public final class ServerFeaturesSteps {
         }
         firstResourcePage = activeConnection.listResources(clientId, Cursor.Start.INSTANCE);
         if (firstResourcePage.nextCursor() instanceof Cursor.End) {
-            List<Resource> all = firstResourcePage.resources();
-            int mid = Math.max(1, all.size() / 2);
+            var all = firstResourcePage.resources();
+            var mid = Math.max(1, all.size() / 2);
             firstResourcePage = new ListResourcesResult(all.subList(0, mid), Cursor.fromIndex(mid), null);
             secondResourcePage = new ListResourcesResult(all.subList(mid, all.size()), Cursor.End.INSTANCE, null);
         } else {
@@ -612,10 +612,10 @@ public final class ServerFeaturesSteps {
 
     @Then("each resource should have required fields:")
     public void each_resource_should_have_required_fields(DataTable table) {
-        for (JsonObject res : availableResources) {
-            for (Map<String, String> row : table.asMaps(String.class, String.class)) {
-                String field = row.get("field");
-                boolean required = Boolean.parseBoolean(row.get("required"));
+        for (var res : availableResources) {
+            for (var row : table.asMaps(String.class, String.class)) {
+                var field = row.get("field");
+                var required = Boolean.parseBoolean(row.get("required"));
                 if (required && !res.containsKey(field)) {
                     throw new AssertionError("Missing field: " + field);
                 }
@@ -631,7 +631,7 @@ public final class ServerFeaturesSteps {
     @When("I send a \"resources\\/read\" request for that URI")
     public void i_send_a_resources_read_request_for_that_uri() throws Exception {
         try {
-            JsonObject params = Json.createObjectBuilder().add("uri", resourceUri).build();
+            var params = Json.createObjectBuilder().add("uri", resourceUri).build();
             activeConnection.request(clientId, RequestMethod.RESOURCES_READ, params);
             resourceContents = Json.createObjectBuilder()
                     .add("contents", Json.createArrayBuilder().add(Json.createObjectBuilder()
@@ -654,12 +654,12 @@ public final class ServerFeaturesSteps {
     @Then("the content should match the resource metadata")
     public void the_content_should_match_the_resource_metadata() {
         if (resourceContents == null) throw new AssertionError("no resource content");
-        JsonArray contents = resourceContents.getJsonArray("contents");
+        var contents = resourceContents.getJsonArray("contents");
         if (contents == null || contents.isEmpty()) {
             throw new AssertionError("empty contents");
         }
-        JsonObject block = contents.getJsonObject(0);
-        String uri = block.getString("uri", null);
+        var block = contents.getJsonObject(0);
+        var uri = block.getString("uri", null);
         if (uri != null && resourceUri != null && !resourceUri.equals(uri)) {
             throw new AssertionError("URI mismatch");
         }
@@ -668,8 +668,8 @@ public final class ServerFeaturesSteps {
     @Then("the content should be in valid format \\(text or blob)")
     public void the_content_should_be_in_valid_format_text_or_blob() {
         if (resourceContents == null) throw new AssertionError("no resource content");
-        for (JsonValue v : resourceContents.getJsonArray("contents")) {
-            JsonObject obj = v.asJsonObject();
+        for (var v : resourceContents.getJsonArray("contents")) {
+            var obj = v.asJsonObject();
             if (!obj.containsKey("text") && !obj.containsKey("blob")) {
                 throw new AssertionError("invalid block format");
             }
@@ -703,10 +703,10 @@ public final class ServerFeaturesSteps {
 
     @Then("each template should have required fields:")
     public void each_template_should_have_required_fields(DataTable table) {
-        for (JsonObject tmpl : resourceTemplates) {
-            for (Map<String, String> row : table.asMaps(String.class, String.class)) {
-                String field = row.get("field");
-                boolean required = Boolean.parseBoolean(row.get("required"));
+        for (var tmpl : resourceTemplates) {
+            for (var row : table.asMaps(String.class, String.class)) {
+                var field = row.get("field");
+                var required = Boolean.parseBoolean(row.get("required"));
                 if (required && !tmpl.containsKey(field)) {
                     throw new AssertionError("missing field: " + field);
                 }
@@ -716,7 +716,7 @@ public final class ServerFeaturesSteps {
 
     @Given("the server has resources capability with {string} enabled")
     public void the_server_has_resources_capability_with_enabled(String feature) {
-        ServerFeature f = switch (feature) {
+        var f = switch (feature) {
             case "subscribe" -> ServerFeature.RESOURCES_SUBSCRIBE;
             case "listChanged" -> ServerFeature.RESOURCES_LIST_CHANGED;
             default -> throw new IllegalArgumentException("Unsupported feature: " + feature);
@@ -740,7 +740,7 @@ public final class ServerFeaturesSteps {
     @When("I send a \"resources\\/subscribe\" request for the resource URI")
     public void i_send_a_resources_subscribe_request_for_the_resource_uri() throws Exception {
         try {
-            JsonObject params = Json.createObjectBuilder().add("uri", resourceUri).build();
+            var params = Json.createObjectBuilder().add("uri", resourceUri).build();
             activeConnection.request(clientId, RequestMethod.RESOURCES_SUBSCRIBE, params);
             resourceSubscriptionConfirmed = true;
         } catch (Exception e) {
@@ -771,7 +771,7 @@ public final class ServerFeaturesSteps {
     @When("I send a \"resources\\/unsubscribe\" request for the resource URI")
     public void i_send_a_resources_unsubscribe_request_for_the_resource_uri() throws Exception {
         try {
-            JsonObject params = Json.createObjectBuilder().add("uri", resourceUri).build();
+            var params = Json.createObjectBuilder().add("uri", resourceUri).build();
             resourceUnsubscriptionConfirmed = !"JsonRpcError".equals(activeConnection.request(clientId, RequestMethod.RESOURCES_UNSUBSCRIBE, params).getClass().getSimpleName());
         } catch (Exception e) {
             resourceUnsubscriptionConfirmed = false;
@@ -787,8 +787,8 @@ public final class ServerFeaturesSteps {
 
     @Then("a subsequent \"resources\\/unsubscribe\" request should result in error")
     public void a_subsequent_resources_unsubscribe_request_should_result_in_error() throws Exception {
-        JsonObject params = Json.createObjectBuilder().add("uri", resourceUri).build();
-        String type = activeConnection.request(clientId, RequestMethod.RESOURCES_UNSUBSCRIBE, params).getClass().getSimpleName();
+        var params = Json.createObjectBuilder().add("uri", resourceUri).build();
+        var type = activeConnection.request(clientId, RequestMethod.RESOURCES_UNSUBSCRIBE, params).getClass().getSimpleName();
         if (!"JsonRpcError".equals(type)) {
             throw new AssertionError("expected no active subscription error");
         }
@@ -829,10 +829,10 @@ public final class ServerFeaturesSteps {
 
     @Then("the annotations should include valid metadata:")
     public void the_annotations_should_include_valid_metadata(DataTable table) {
-        for (JsonObject res : resourceAnnotations) {
-            JsonObject ann = res.getJsonObject("annotations");
-            for (Map<String, String> row : table.asMaps(String.class, String.class)) {
-                String key = row.get("annotation");
+        for (var res : resourceAnnotations) {
+            var ann = res.getJsonObject("annotations");
+            for (var row : table.asMaps(String.class, String.class)) {
+                var key = row.get("annotation");
                 if (!ann.containsKey(key)) {
                     throw new AssertionError("missing annotation: " + key);
                 }
@@ -853,13 +853,13 @@ public final class ServerFeaturesSteps {
     @Then("the server should handle these URI schemes appropriately:")
     public void the_server_should_handle_these_uri_schemes_appropriately(DataTable table) {
         Set<String> schemes = new HashSet<>();
-        for (JsonObject res : availableResources) {
-            String uri = res.getString("uri", "");
-            int idx = uri.indexOf(':');
+        for (var res : availableResources) {
+            var uri = res.getString("uri", "");
+            var idx = uri.indexOf(':');
             if (idx > 0) schemes.add(uri.substring(0, idx));
         }
-        for (Map<String, String> row : table.asMaps(String.class, String.class)) {
-            String scheme = row.get("scheme");
+        for (var row : table.asMaps(String.class, String.class)) {
+            var scheme = row.get("scheme");
             if (!schemes.contains(scheme)) {
                 throw new AssertionError("missing scheme: " + scheme);
             }
@@ -880,25 +880,25 @@ public final class ServerFeaturesSteps {
         resourceErrorResults.clear();
         currentErrorScenarios.clear();
         currentErrorScenarios.addAll(resourceErrorScenarios);
-        for (Map<String, String> row : resourceErrorScenarios) {
-            String scenario = row.get("scenario");
-            int expectedCode = Integer.parseInt(row.get("error_code"));
-            String expectedMessage = row.get("error_message");
-            int actualCode = 0;
-            String actualMessage = "";
+        for (var row : resourceErrorScenarios) {
+            var scenario = row.get("scenario");
+            var expectedCode = Integer.parseInt(row.get("error_code"));
+            var expectedMessage = row.get("error_message");
+            var actualCode = 0;
+            var actualMessage = "";
             try {
-                JsonRpcMessage msg = switch (scenario) {
+                var msg = switch (scenario) {
                     case "nonexistent resource" -> {
-                        JsonObject params = Json.createObjectBuilder().add("uri", "file:///nope").build();
+                        var params = Json.createObjectBuilder().add("uri", "file:///nope").build();
                         yield activeConnection.request(clientId, RequestMethod.RESOURCES_READ, params);
                     }
                     case "invalid URI format" -> {
-                        JsonObject params = Json.createObjectBuilder().add("uri", "not_a_uri").build();
+                        var params = Json.createObjectBuilder().add("uri", "not_a_uri").build();
                         yield activeConnection.request(clientId, RequestMethod.RESOURCES_READ, params);
                     }
                     default -> throw new IllegalArgumentException("Unknown scenario: " + scenario);
                 };
-                String repr = msg.toString();
+                var repr = msg.toString();
                 var m = java.util.regex.Pattern.compile("code=(-?\\d+), message=([^,\\]]+)").matcher(repr);
                 if (m.find()) {
                     actualCode = Integer.parseInt(m.group(1));
@@ -913,7 +913,7 @@ public final class ServerFeaturesSteps {
     @Then("^I should receive appropriate JSON-RPC error responses(?: for (?:each scenario|logging|completion))?$")
     public void i_should_receive_appropriate_json_rpc_error_responses() {
         if (!resourceErrorResults.isEmpty()) {
-            for (ErrorCheck ec : resourceErrorResults) {
+            for (var ec : resourceErrorResults) {
                 if (ec.actualCode != ec.expectedCode || !Objects.equals(ec.expectedMessage, ec.actualMessage)) {
                     throw new AssertionError(
                             ec.scenario + " expected code " + ec.expectedCode + " message " + ec.expectedMessage +
@@ -923,7 +923,7 @@ public final class ServerFeaturesSteps {
             return;
         }
         if (!loggingErrorResults.isEmpty()) {
-            for (ErrorCheck ec : loggingErrorResults) {
+            for (var ec : loggingErrorResults) {
                 if (ec.actualCode != ec.expectedCode || !Objects.equals(ec.expectedMessage, ec.actualMessage)) {
                     throw new AssertionError(
                             ec.scenario + " expected code " + ec.expectedCode + " message " + ec.expectedMessage +
@@ -933,7 +933,7 @@ public final class ServerFeaturesSteps {
             return;
         }
         if (!completionErrorResults.isEmpty()) {
-            for (ErrorCheck ec : completionErrorResults) {
+            for (var ec : completionErrorResults) {
                 if (ec.actualCode != ec.expectedCode || !Objects.equals(ec.expectedMessage, ec.actualMessage)) {
                     throw new AssertionError(
                             ec.scenario + " expected code " + ec.expectedCode + " message " + ec.expectedMessage +
@@ -986,10 +986,10 @@ public final class ServerFeaturesSteps {
 
     @Then("each prompt should have required fields:")
     public void each_prompt_should_have_required_fields(DataTable table) {
-        for (JsonObject prompt : availablePrompts) {
-            for (Map<String, String> row : table.asMaps(String.class, String.class)) {
-                String field = row.get("field");
-                boolean required = Boolean.parseBoolean(row.get("required"));
+        for (var prompt : availablePrompts) {
+            for (var row : table.asMaps(String.class, String.class)) {
+                var field = row.get("field");
+                var required = Boolean.parseBoolean(row.get("required"));
                 if (required && !prompt.containsKey(field)) {
                     throw new AssertionError("missing field: " + field);
                 }
@@ -1009,7 +1009,7 @@ public final class ServerFeaturesSteps {
     @Given("the prompt accepts argument {string}")
     public void the_prompt_accepts_argument(String arg) {
         if (promptInstance == null) throw new AssertionError("prompt not selected");
-        JsonArray args = promptInstance.getJsonArray("arguments");
+        var args = promptInstance.getJsonArray("arguments");
         if (args == null || args.stream().map(JsonValue::asJsonObject).noneMatch(o -> arg.equals(o.getString("name", null)))) {
             throw new AssertionError("argument not declared: " + arg);
         }
@@ -1019,7 +1019,7 @@ public final class ServerFeaturesSteps {
     public void i_send_a_prompts_get_request_with_arguments(DataTable table) throws Exception {
         var b = Json.createObjectBuilder().add("name", promptInstance.getString("name"));
         var args = Json.createObjectBuilder();
-        for (Map<String, String> row : table.asMaps(String.class, String.class)) {
+        for (var row : table.asMaps(String.class, String.class)) {
             args.add(row.get("argument"), row.get("value"));
         }
         b.add("arguments", args.build());
@@ -1052,8 +1052,8 @@ public final class ServerFeaturesSteps {
 
     @Then("each message should have role and content fields")
     public void each_message_should_have_role_and_content_fields() {
-        for (JsonValue v : promptInstance.getJsonArray("messages")) {
-            JsonObject msg = v.asJsonObject();
+        for (var v : promptInstance.getJsonArray("messages")) {
+            var msg = v.asJsonObject();
             if (!msg.containsKey("role") || !msg.containsKey("content")) {
                 throw new AssertionError("invalid message");
             }
@@ -1095,14 +1095,14 @@ public final class ServerFeaturesSteps {
 
     @Then("I should receive valid content in supported formats:")
     public void i_should_receive_valid_prompt_content(DataTable table) {
-        for (Map<String, String> row : table.asMaps(String.class, String.class)) {
-            String type = row.get("content_type");
-            String fields = row.get("required_fields");
-            JsonObject block = contentTypeSamples.get(type);
+        for (var row : table.asMaps(String.class, String.class)) {
+            var type = row.get("content_type");
+            var fields = row.get("required_fields");
+            var block = contentTypeSamples.get(type);
             if (block == null) {
                 throw new AssertionError("missing content type: " + type);
             }
-            for (String f : fields.split(",")) {
+            for (var f : fields.split(",")) {
                 if (!block.containsKey(f.trim())) {
                     throw new AssertionError("missing field " + f + " for " + type);
                 }
@@ -1147,16 +1147,16 @@ public final class ServerFeaturesSteps {
         promptErrorScenarios.addAll(table.asMaps(String.class, String.class));
         currentErrorScenarios.clear();
         currentErrorScenarios.addAll(promptErrorScenarios);
-        for (Map<String, String> row : promptErrorScenarios) {
-            String scenario = row.get("scenario");
+        for (var row : promptErrorScenarios) {
+            var scenario = row.get("scenario");
             try {
                 switch (scenario) {
                     case "invalid prompt name" -> {
-                        JsonObject params = Json.createObjectBuilder().add("name", "nope").build();
+                        var params = Json.createObjectBuilder().add("name", "nope").build();
                         activeConnection.request(clientId, RequestMethod.PROMPTS_GET, params);
                     }
                     case "missing required arguments" -> {
-                        JsonObject params = Json.createObjectBuilder().add("name", "code_review").build();
+                        var params = Json.createObjectBuilder().add("name", "code_review").build();
                         activeConnection.request(clientId, RequestMethod.PROMPTS_GET, params);
                     }
                     case "server internal error" -> {
@@ -1186,7 +1186,7 @@ public final class ServerFeaturesSteps {
     @When("I send a \"logging\\/setLevel\" request with level {string}")
     public void i_send_a_logging_set_level_request_with_level(String level) throws Exception {
         try {
-            JsonObject params = Json.createObjectBuilder().add("level", level).build();
+            var params = Json.createObjectBuilder().add("level", level).build();
             activeConnection.request(clientId, RequestMethod.LOGGING_SET_LEVEL, params);
             loggingLevelAccepted = true;
             currentLogLevel = level;
@@ -1205,8 +1205,8 @@ public final class ServerFeaturesSteps {
     @Then("only messages at {string} level and above should be sent")
     public void only_messages_at_level_and_above_should_be_sent(String level) {
         int threshold = LOG_LEVELS.getOrDefault(level, Integer.MAX_VALUE);
-        for (JsonObject msg : logMessages) {
-            String lvl = msg.getString("level", "");
+        for (var msg : logMessages) {
+            var lvl = msg.getString("level", "");
             int value = LOG_LEVELS.getOrDefault(lvl, Integer.MAX_VALUE);
             if (value > threshold) {
                 throw new AssertionError("log level below threshold: " + lvl);
@@ -1218,9 +1218,9 @@ public final class ServerFeaturesSteps {
     public void the_server_generates_log_messages_at_levels(DataTable table) {
         logMessages.clear();
         int threshold = LOG_LEVELS.getOrDefault(currentLogLevel, Integer.MAX_VALUE);
-        for (Map<String, String> row : table.asMaps(String.class, String.class)) {
-            String lvl = row.get("level");
-            JsonObject msg = Json.createObjectBuilder().add("level", lvl).build();
+        for (var row : table.asMaps(String.class, String.class)) {
+            var lvl = row.get("level");
+            var msg = Json.createObjectBuilder().add("level", lvl).build();
             int value = LOG_LEVELS.getOrDefault(lvl, Integer.MAX_VALUE);
             if (value <= threshold) {
                 try {
@@ -1240,7 +1240,7 @@ public final class ServerFeaturesSteps {
     @When("the server generates log messages")
     public void the_server_generates_log_messages() {
         try {
-            JsonObject params = Json.createObjectBuilder()
+            var params = Json.createObjectBuilder()
                     .add("level", "info")
                     .add("logger", "test")
                     .add("data", Json.createObjectBuilder().add("msg", "hello").build())
@@ -1260,18 +1260,18 @@ public final class ServerFeaturesSteps {
 
     @Then("each notification should include:")
     public void each_notification_should_include(DataTable table) {
-        for (JsonObject msg : logMessages) {
-            for (Map<String, String> row : table.asMaps(String.class, String.class)) {
-                String field = row.get("field");
-                String type = row.get("type");
-                boolean required = Boolean.parseBoolean(row.get("required"));
+        for (var msg : logMessages) {
+            for (var row : table.asMaps(String.class, String.class)) {
+                var field = row.get("field");
+                var type = row.get("type");
+                var required = Boolean.parseBoolean(row.get("required"));
                 if (!msg.containsKey(field)) {
                     if (required) {
                         throw new AssertionError("missing field: " + field);
                     }
                     continue;
                 }
-                JsonValue.ValueType valueType = msg.get(field).getValueType();
+                var valueType = msg.get(field).getValueType();
                 switch (type) {
                     case "string" -> {
                         if (valueType != JsonValue.ValueType.STRING) {
@@ -1292,18 +1292,18 @@ public final class ServerFeaturesSteps {
     @When("I configure different log levels")
     public void i_configure_different_log_levels() {
         logMessages.clear();
-        for (String lvl : LOG_LEVELS.keySet()) {
+        for (var lvl : LOG_LEVELS.keySet()) {
             logMessages.add(Json.createObjectBuilder().add("level", lvl).build());
         }
     }
 
     @Then("the server should respect the severity hierarchy:")
     public void the_server_should_respect_the_severity_hierarchy(DataTable table) {
-        for (Map<String, String> row : table.asMaps(String.class, String.class)) {
-            String level = row.get("level");
-            int expected = Integer.parseInt(row.get("numeric_value"));
-            boolean include = Boolean.parseBoolean(row.get("should_include_above"));
-            Integer actual = LOG_LEVELS.get(level);
+        for (var row : table.asMaps(String.class, String.class)) {
+            var level = row.get("level");
+            var expected = Integer.parseInt(row.get("numeric_value"));
+            var include = Boolean.parseBoolean(row.get("should_include_above"));
+            var actual = LOG_LEVELS.get(level);
             if (actual == null || actual != expected) {
                 throw new AssertionError("numeric mismatch for " + level);
             }
@@ -1327,21 +1327,21 @@ public final class ServerFeaturesSteps {
         loggingErrorScenarios.addAll(table.asMaps(String.class, String.class));
         currentErrorScenarios.clear();
         currentErrorScenarios.addAll(loggingErrorScenarios);
-        for (Map<String, String> row : loggingErrorScenarios) {
-            String scenario = row.get("scenario");
-            int expectedCode = Integer.parseInt(row.get("error_code"));
-            String expectedMessage = row.get("error_message");
-            int actualCode = 0;
-            String actualMessage = "";
+        for (var row : loggingErrorScenarios) {
+            var scenario = row.get("scenario");
+            var expectedCode = Integer.parseInt(row.get("error_code"));
+            var expectedMessage = row.get("error_message");
+            var actualCode = 0;
+            var actualMessage = "";
             try {
-                JsonRpcMessage msg = switch (scenario) {
+                var msg = switch (scenario) {
                     case "invalid log level" -> {
-                        JsonObject params = Json.createObjectBuilder().add("level", "invalid").build();
+                        var params = Json.createObjectBuilder().add("level", "invalid").build();
                         yield activeConnection.request(clientId, RequestMethod.LOGGING_SET_LEVEL, params);
                     }
                     default -> throw new IllegalArgumentException("Unknown scenario: " + scenario);
                 };
-                String repr = msg.toString();
+                var repr = msg.toString();
                 var m = java.util.regex.Pattern.compile("code=(-?\\d+), message=([^,\\]]+)").matcher(repr);
                 if (m.find()) {
                     actualCode = Integer.parseInt(m.group(1));
@@ -1376,15 +1376,15 @@ public final class ServerFeaturesSteps {
 
     @When("I send a \"completion\\/complete\" request for prompt argument completion:")
     public void i_send_a_completion_complete_request_for_prompt_argument_completion(DataTable table) throws Exception {
-        Map<String, String> row = table.asMaps(String.class, String.class).getFirst();
-        JsonObject ref = Json.createObjectBuilder()
+        var row = table.asMaps(String.class, String.class).getFirst();
+        var ref = Json.createObjectBuilder()
                 .add("type", row.get("ref_type"))
                 .add("name", row.get("ref_name"))
                 .build();
-        JsonObject args = Json.createObjectBuilder()
+        var args = Json.createObjectBuilder()
                 .add(row.get("argument_name"), row.get("argument_value"))
                 .build();
-        JsonObject params = Json.createObjectBuilder().add("ref", ref).add("arguments", args).build();
+        var params = Json.createObjectBuilder().add("ref", ref).add("arguments", args).build();
         try {
             activeConnection.request(clientId, RequestMethod.COMPLETION_COMPLETE, params);
             lastCompletion = Json.createObjectBuilder()
@@ -1404,8 +1404,8 @@ public final class ServerFeaturesSteps {
 
     @Then("the response should include matching values like {string}")
     public void the_response_should_include_matching_values_like(String value) {
-        JsonArray values = lastCompletion.getJsonObject("completion").getJsonArray("values");
-        boolean match = values.stream().map(JsonValue::toString).anyMatch(v -> v.contains(value));
+        var values = lastCompletion.getJsonObject("completion").getJsonArray("values");
+        var match = values.stream().map(JsonValue::toString).anyMatch(v -> v.contains(value));
         if (!match) {
             throw new AssertionError("missing completion value: " + value);
         }
@@ -1418,15 +1418,15 @@ public final class ServerFeaturesSteps {
 
     @When("I send a \"completion\\/complete\" request for resource template argument:")
     public void i_send_a_completion_complete_request_for_resource_template_argument(DataTable table) throws Exception {
-        Map<String, String> row = table.asMaps(String.class, String.class).getFirst();
-        JsonObject ref = Json.createObjectBuilder()
+        var row = table.asMaps(String.class, String.class).getFirst();
+        var ref = Json.createObjectBuilder()
                 .add("type", row.get("ref_type"))
                 .add("uri", row.get("ref_uri"))
                 .build();
-        JsonObject args = Json.createObjectBuilder()
+        var args = Json.createObjectBuilder()
                 .add(row.get("argument_name"), row.get("argument_value"))
                 .build();
-        JsonObject params = Json.createObjectBuilder().add("ref", ref).add("arguments", args).build();
+        var params = Json.createObjectBuilder().add("ref", ref).add("arguments", args).build();
         try {
             activeConnection.request(clientId, RequestMethod.COMPLETION_COMPLETE, params);
             lastCompletion = Json.createObjectBuilder()
@@ -1452,11 +1452,11 @@ public final class ServerFeaturesSteps {
     @When("I request completion with context from previous arguments:")
     public void i_request_completion_with_context_from_previous_arguments(DataTable table) throws Exception {
         var args = Json.createObjectBuilder();
-        for (Map<String, String> row : table.asMaps(String.class, String.class)) {
+        for (var row : table.asMaps(String.class, String.class)) {
             args.add(row.get("argument"), row.get("value"));
         }
-        JsonObject ref = Json.createObjectBuilder().add("type", "ref/prompt").add("name", "multi").build();
-        JsonObject params = Json.createObjectBuilder().add("ref", ref).add("arguments", args.build()).build();
+        var ref = Json.createObjectBuilder().add("type", "ref/prompt").add("name", "multi").build();
+        var params = Json.createObjectBuilder().add("ref", ref).add("arguments", args.build()).build();
         try {
             activeConnection.request(clientId, RequestMethod.COMPLETION_COMPLETE, params);
             lastCompletion = Json.createObjectBuilder()
@@ -1483,10 +1483,10 @@ public final class ServerFeaturesSteps {
 
     @When("I request completions that have many matches")
     public void i_request_completions_that_have_many_matches() throws Exception {
-        JsonObject ref = Json.createObjectBuilder().add("type", "ref/prompt").add("name", "many").build();
+        var ref = Json.createObjectBuilder().add("type", "ref/prompt").add("name", "many").build();
         try {
             activeConnection.request(clientId, RequestMethod.COMPLETION_COMPLETE, Json.createObjectBuilder().add("ref", ref).build());
-            JsonArray values = Json.createArrayBuilder().add("a").add("b").add("c").build();
+            var values = Json.createArrayBuilder().add("a").add("b").add("c").build();
             lastCompletion = Json.createObjectBuilder()
                     .add("completion", Json.createObjectBuilder()
                             .add("values", values)
@@ -1507,7 +1507,7 @@ public final class ServerFeaturesSteps {
 
     @Then("the response should respect the maximum of 100 items")
     public void the_response_should_respect_the_maximum_of_100_items() {
-        JsonArray values = lastCompletion.getJsonObject("completion").getJsonArray("values");
+        var values = lastCompletion.getJsonObject("completion").getJsonArray("values");
         if (values.size() > 100) {
             throw new AssertionError("too many completion values");
         }
@@ -1515,9 +1515,9 @@ public final class ServerFeaturesSteps {
 
     @Then("include metadata about total matches and whether more exist:")
     public void include_metadata_about_total_matches_and_whether_more_exist(DataTable table) {
-        JsonObject comp = lastCompletion.getJsonObject("completion");
-        for (Map<String, String> row : table.asMaps(String.class, String.class)) {
-            String field = row.get("field");
+        var comp = lastCompletion.getJsonObject("completion");
+        for (var row : table.asMaps(String.class, String.class)) {
+            var field = row.get("field");
             if (!comp.containsKey(field)) {
                 throw new AssertionError("missing field: " + field);
             }
@@ -1591,7 +1591,7 @@ public final class ServerFeaturesSteps {
     @When("I attempt to access restricted resources")
     public void i_attempt_to_access_restricted_resources() {
         try {
-            JsonObject params = Json.createObjectBuilder().add("uri", "file:///restricted").build();
+            var params = Json.createObjectBuilder().add("uri", "file:///restricted").build();
             activeConnection.request(clientId, RequestMethod.RESOURCES_READ, params);
             unauthorizedDenied = true;
             errorMessageProvided = true;
@@ -1639,9 +1639,9 @@ public final class ServerFeaturesSteps {
 
     @Then("sensitive information should not be exposed:")
     public void sensitive_information_should_not_be_exposed(DataTable table) {
-        for (Map<String, String> row : table.asMaps(String.class, String.class)) {
-            String type = row.get("sensitive_type");
-            boolean shouldFilter = Boolean.parseBoolean(row.get("should_be_filtered"));
+        for (var row : table.asMaps(String.class, String.class)) {
+            var type = row.get("sensitive_type");
+            var shouldFilter = Boolean.parseBoolean(row.get("should_be_filtered"));
             boolean exposed = sensitiveExposure.getOrDefault(type, true);
             if (shouldFilter && exposed) {
                 throw new AssertionError("sensitive information exposed: " + type);
@@ -1651,7 +1651,7 @@ public final class ServerFeaturesSteps {
 
     @Given("the server supports multiple capabilities")
     public void the_server_supports_multiple_capabilities() {
-        Set<ServerCapability> caps = activeConnection.serverCapabilities(clientId);
+        var caps = activeConnection.serverCapabilities(clientId);
         if (caps.size() < 2) {
             throw new AssertionError("insufficient capabilities");
         }

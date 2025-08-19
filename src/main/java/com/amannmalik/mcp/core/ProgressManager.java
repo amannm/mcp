@@ -30,9 +30,9 @@ public final class ProgressManager {
         if (params != null && params.containsKey("progressToken")) {
             throw new IllegalArgumentException("progressToken must be in _meta");
         }
-        Optional<ProgressToken> token = ProgressToken.fromMeta(params);
+        var token = ProgressToken.fromMeta(params);
         token.ifPresent(t -> {
-            Double prev = progress.putIfAbsent(t, Double.NEGATIVE_INFINITY);
+            var prev = progress.putIfAbsent(t, Double.NEGATIVE_INFINITY);
             if (prev != null) throw new IllegalArgumentException("Duplicate token: " + t);
             tokens.put(id, t);
         });
@@ -42,7 +42,7 @@ public final class ProgressManager {
     public void release(RequestId id) {
         active.remove(id);
         cancelled.remove(id);
-        ProgressToken t = tokens.remove(id);
+        var t = tokens.remove(id);
         if (t != null) progress.remove(t);
     }
 
@@ -79,7 +79,7 @@ public final class ProgressManager {
     }
 
     public boolean hasProgress(ProgressToken token) {
-        Double p = progress.get(token);
+        var p = progress.get(token);
         return p != null && p > Double.NEGATIVE_INFINITY;
     }
 

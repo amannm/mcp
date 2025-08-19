@@ -13,9 +13,9 @@ public class ModelPreferencesJsonCodec implements JsonCodec<ModelPreferences> {
 
     @Override
     public JsonObject toJson(ModelPreferences p) {
-        JsonObjectBuilder b = Json.createObjectBuilder();
+        var b = Json.createObjectBuilder();
         if (!p.hints().isEmpty()) {
-            JsonArrayBuilder arr = Json.createArrayBuilder();
+            var arr = Json.createArrayBuilder();
             p.hints().forEach(h -> arr.add(MODEL_HINT_JSON_CODEC.toJson(h)));
             b.add("hints", arr.build());
         }
@@ -34,9 +34,9 @@ public class ModelPreferencesJsonCodec implements JsonCodec<ModelPreferences> {
                 .map(v -> MODEL_HINT_JSON_CODEC.fromJson(v.asJsonObject()))
                 .toList()
                 : List.of();
-        Double cost = obj.containsKey("costPriority") ? obj.getJsonNumber("costPriority").doubleValue() : null;
-        Double speed = obj.containsKey("speedPriority") ? obj.getJsonNumber("speedPriority").doubleValue() : null;
-        Double intel = obj.containsKey("intelligencePriority") ? obj.getJsonNumber("intelligencePriority").doubleValue() : null;
+        var cost = obj.containsKey("costPriority") ? obj.getJsonNumber("costPriority").doubleValue() : null;
+        var speed = obj.containsKey("speedPriority") ? obj.getJsonNumber("speedPriority").doubleValue() : null;
+        var intel = obj.containsKey("intelligencePriority") ? obj.getJsonNumber("intelligencePriority").doubleValue() : null;
         return new ModelPreferences(hints, cost, speed, intel);
     }
 }

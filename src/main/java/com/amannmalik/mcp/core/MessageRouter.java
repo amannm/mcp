@@ -31,8 +31,8 @@ public final class MessageRouter {
     }
 
     public boolean route(JsonObject message) {
-        String id = message.containsKey("id") ? message.get("id").toString() : null;
-        String method = message.getString("method", null);
+        var id = message.containsKey("id") ? message.get("id").toString() : null;
+        var method = message.getString("method", null);
         if (id != null) {
             if (sendToRequestStream(id, method, message)) return true;
             if (sendToResponseQueue(id, message)) return true;
@@ -43,7 +43,7 @@ public final class MessageRouter {
     }
 
     private boolean sendToRequestStream(String id, String method, JsonObject message) {
-        SseClient stream = requestStreams.get(id);
+        var stream = requestStreams.get(id);
         if (stream == null) return false;
         stream.send(message);
         if (method == null) remover.accept(id, stream);
@@ -58,7 +58,7 @@ public final class MessageRouter {
     }
 
     private boolean sendToActiveClient(JsonObject message) {
-        for (SseClient c : generalClients) {
+        for (var c : generalClients) {
             if (c.isActive()) {
                 c.send(message);
                 return true;
@@ -68,7 +68,7 @@ public final class MessageRouter {
     }
 
     private boolean sendToPending(JsonObject message) {
-        SseClient pending = lastGeneral.get();
+        var pending = lastGeneral.get();
         if (pending == null) return false;
         pending.send(message);
         return true;

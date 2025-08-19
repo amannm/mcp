@@ -60,7 +60,7 @@ public final class StreamableHttpClientTransport implements Transport {
                                           Duration defaultReceiveTimeout,
                                           String defaultOriginHeader,
                                           HttpClient client) {
-        String scheme = endpoint.getScheme();
+        var scheme = endpoint.getScheme();
         if (!"http".equalsIgnoreCase(scheme) && !"https".equalsIgnoreCase(scheme))
             throw new IllegalArgumentException("Endpoint must use http or https");
         this.endpoint = endpoint;
@@ -85,13 +85,13 @@ public final class StreamableHttpClientTransport implements Transport {
                                           boolean validateCertificates,
                                           Set<String> pinnedFingerprints) {
         try {
-            KeyManager[] kms = loadKeyManagers(keyStore, keyStorePassword);
-            TrustManager[] tms = validateCertificates
+            var kms = loadKeyManagers(keyStore, keyStorePassword);
+            var tms = validateCertificates
                     ? loadTrustManagers(trustStore, trustStorePassword, pinnedFingerprints)
                     : new TrustManager[]{new InsecureTrustManager()};
-            SSLContext ctx = SSLContext.getInstance("TLS");
+            var ctx = SSLContext.getInstance("TLS");
             ctx.init(kms, tms, null);
-            SSLParameters params = new SSLParameters();
+            var params = new SSLParameters();
             params.setServerNames(List.of(new SNIHostName(endpoint.getHost())));
             return HttpClient.newBuilder()
                     .sslContext(ctx)
@@ -104,11 +104,11 @@ public final class StreamableHttpClientTransport implements Transport {
 
     private static KeyManager[] loadKeyManagers(Path keyStore, char[] password) throws GeneralSecurityException, IOException {
         if (keyStore == null) return null;
-        KeyStore ks = KeyStore.getInstance(KeyStore.getDefaultType());
-        try (InputStream in = Files.newInputStream(keyStore)) {
+        var ks = KeyStore.getInstance(KeyStore.getDefaultType());
+        try (var in = Files.newInputStream(keyStore)) {
             ks.load(in, password);
         }
-        KeyManagerFactory kmf = KeyManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm());
+        var kmf = KeyManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm());
         kmf.init(ks, password);
         return kmf.getKeyManagers();
     }
@@ -116,19 +116,19 @@ public final class StreamableHttpClientTransport implements Transport {
     private static TrustManager[] loadTrustManagers(Path trustStore,
                                                     char[] password,
                                                     Set<String> pins) throws GeneralSecurityException, IOException {
-        TrustManagerFactory tmf = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
+        var tmf = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
         if (trustStore == null) {
             tmf.init((KeyStore) null);
         } else {
-            KeyStore ts = KeyStore.getInstance(KeyStore.getDefaultType());
-            try (InputStream in = Files.newInputStream(trustStore)) {
+            var ts = KeyStore.getInstance(KeyStore.getDefaultType());
+            try (var in = Files.newInputStream(trustStore)) {
                 ts.load(in, password);
             }
             tmf.init(ts);
         }
-        TrustManager[] tms = tmf.getTrustManagers();
+        var tms = tmf.getTrustManagers();
         if (pins.isEmpty()) return tms;
-        for (int i = 0; i < tms.length; i++) {
+        for (var i = 0; i < tms.length; i++) {
             if (tms[i] instanceof X509TrustManager x509) {
                 tms[i] = new PinnedTrustManager(x509, pins);
             }
@@ -155,8 +155,8 @@ public final class StreamableHttpClientTransport implements Transport {
                 .build();
         var response = exchange(request);
         AuthorizationUtil.checkUnauthorized(response);
-        int status = response.statusCode();
-        String ct = response.headers().firstValue("Content-Type").orElse("");
+        var status = response.statusCode();
+        var ct = response.headers().firstValue("Content-Type").orElse("");
         if (status != 200 || !ct.startsWith("text/event-stream")) {
             response.body().close();
             throw new IOException("Unexpected response: " + status + " " + ct);
@@ -173,14 +173,14 @@ public final class StreamableHttpClientTransport implements Transport {
                 .build();
         var response = exchange(request);
         AuthorizationUtil.checkUnauthorized(response);
-        int status = response.statusCode();
-        String ct = response.headers().firstValue("Content-Type").orElse("");
+        var status = response.statusCode();
+        var ct = response.headers().firstValue("Content-Type").orElse("");
         if (status == 202) {
             response.body().close();
             return;
         }
         if (ct.startsWith("application/json")) {
-            try (JsonReader reader = Json.createReader(response.body())) {
+            try (var reader = Json.createReader(response.body())) {
                 incoming.add(reader.readObject());
             }
             return;
@@ -201,7 +201,7 @@ public final class StreamableHttpClientTransport implements Transport {
     @Override
     public JsonObject receive(Duration timeoutMillis) throws IOException {
         try {
-            JsonObject result = incoming.poll(timeoutMillis.toMillis(), TimeUnit.MILLISECONDS);
+            var result = incoming.poll(timeoutMillis.toMillis(), TimeUnit.MILLISECONDS);
             if (result == null) {
                 throw new IOException("Timeout after " + timeoutMillis.toMillis() + "ms waiting for message");
             }
@@ -227,9 +227,9 @@ public final class StreamableHttpClientTransport implements Transport {
     }
 
     private void startReader(InputStream body) {
-        SseReader reader = new SseReader(body, incoming, streams);
+        var reader = new SseReader(body, incoming, streams);
         streams.add(reader);
-        Thread t = new Thread(reader);
+        var t = new Thread(reader);
         t.setDaemon(true);
         t.start();
     }
@@ -289,7 +289,7 @@ public final class StreamableHttpClientTransport implements Transport {
             public void checkServerTrusted(X509Certificate[] chain, String authType) throws CertificateException {
                 delegate.checkServerTrusted(chain, authType);
                 if (pins.isEmpty()) return;
-                String fp = Certificates.fingerprint(chain[0]);
+                var fp = Certificates.fingerprint(chain[0]);
                 if (!pins.contains(fp)) throw new CertificateException("Certificate pinning failure");
             }
 
@@ -315,14 +315,14 @@ public final class StreamableHttpClientTransport implements Transport {
 
         @Override
         public void run() {
-            try (BufferedReader br = new BufferedReader(new InputStreamReader(input, StandardCharsets.UTF_8))) {
+            try (var br = new BufferedReader(new InputStreamReader(input, StandardCharsets.UTF_8))) {
                 String line;
                 while (!closed && (line = br.readLine()) != null) {
                     if (line.isEmpty()) {
                         buffer.flush();
                         continue;
                     }
-                    int idx = line.indexOf(':');
+                    var idx = line.indexOf(':');
                     if (idx < 0) continue;
                     buffer.field(line.substring(0, idx), line.substring(idx + 1).trim());
                 }
@@ -335,7 +335,7 @@ public final class StreamableHttpClientTransport implements Transport {
         }
 
         private void dispatch(String payload, String eventId) {
-            try (JsonReader jr = Json.createReader(new StringReader(payload))) {
+            try (var jr = Json.createReader(new StringReader(payload))) {
                 queue.add(jr.readObject());
             } catch (Exception ignore) {
             }

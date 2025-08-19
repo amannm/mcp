@@ -55,7 +55,7 @@ sealed class JsonRpcEndpoint implements AutoCloseable permits McpClient, McpServ
             throw new IOException(cause);
         } catch (TimeoutException e) {
             try {
-                JsonObject params = CANCEL_CODEC.toJson(new CancelledNotification(id, "timeout"));
+                var params = CANCEL_CODEC.toJson(new CancelledNotification(id, "timeout"));
                 send(new JsonRpcNotification(NotificationMethod.CANCELLED.method(), params));
             } catch (IOException ignore) {
             }
@@ -70,7 +70,7 @@ sealed class JsonRpcEndpoint implements AutoCloseable permits McpClient, McpServ
             Supplier<Optional<JsonObject>> receiver,
             Consumer<IllegalArgumentException> invalidHandler,
             String timeoutMessage) throws IOException {
-        long end = System.currentTimeMillis() + timeout.toMillis();
+        var end = System.currentTimeMillis() + timeout.toMillis();
         try {
             while (true) {
                 if (future.isDone()) {
@@ -87,13 +87,13 @@ sealed class JsonRpcEndpoint implements AutoCloseable permits McpClient, McpServ
                 }
                 if (System.currentTimeMillis() >= end) {
                     try {
-                        JsonObject params = CANCEL_CODEC.toJson(new CancelledNotification(id, "timeout"));
+                        var params = CANCEL_CODEC.toJson(new CancelledNotification(id, "timeout"));
                         send(new JsonRpcNotification(NotificationMethod.CANCELLED.method(), params));
                     } catch (IOException ignore) {
                     }
                     throw new IOException(timeoutMessage + " after " + timeout.toMillis() + " ms");
                 }
-                Optional<JsonObject> obj = receiver.get();
+                var obj = receiver.get();
                 if (obj.isEmpty()) continue;
                 try {
                     process(CODEC.fromJson(obj.get()));
@@ -147,7 +147,7 @@ sealed class JsonRpcEndpoint implements AutoCloseable permits McpClient, McpServ
         try {
             token.ifPresent(t -> sendProgress(t, 0.0));
             if (cancellable && progress.isCancelled(req.id())) return Optional.empty();
-            JsonRpcMessage resp = dispatch(req);
+            var resp = dispatch(req);
             if (cancellable && progress.isCancelled(req.id())) return Optional.empty();
             token.ifPresent(t -> sendProgress(t, 1.0));
             return Optional.of(resp);
@@ -181,7 +181,7 @@ sealed class JsonRpcEndpoint implements AutoCloseable permits McpClient, McpServ
     }
 
     private void sendProgress(ProgressToken token, double current) {
-        String msg = current >= 1.0 ? "completed" : "in progress";
+        var msg = current >= 1.0 ? "completed" : "in progress";
         try {
             progress.send(new ProgressNotification(token, current, 1.0, msg), (m, payload) -> {
                 try {

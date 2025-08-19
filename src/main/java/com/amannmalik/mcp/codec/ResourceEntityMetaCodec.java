@@ -15,8 +15,8 @@ public final class ResourceEntityMetaCodec<T> extends AbstractEntityCodec<T> {
 
     @Override
     public JsonObject toJson(T value) {
-        JsonObjectBuilder b = Json.createObjectBuilder();
-        JsonObject m = meta.apply(value);
+        var b = Json.createObjectBuilder();
+        var m = meta.apply(value);
         if (m != null) b.add("_meta", m);
         return b.build();
     }

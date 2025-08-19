@@ -35,7 +35,7 @@ public sealed interface RequestId permits
         return switch (value.getValueType()) {
             case STRING -> new StringId(((JsonString) value).getString());
             case NUMBER -> {
-                JsonNumber num = (JsonNumber) value;
+                var num = (JsonNumber) value;
                 if (!num.isIntegral()) throw new IllegalArgumentException("id must be integer");
                 yield new NumericId(num.longValue());
             }

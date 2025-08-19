@@ -47,11 +47,11 @@ final class ToolCallHandler {
         } catch (IllegalArgumentException e) {
             return JsonRpcError.of(req.id(), JsonRpcErrorCode.INVALID_PARAMS, e.getMessage());
         }
-        Optional<String> limit = rateLimit(callRequest.name());
+        var limit = rateLimit(callRequest.name());
         if (limit.isPresent()) {
             return JsonRpcError.of(req.id(), config.rateLimitErrorCode(), limit.get());
         }
-        Tool tool = tools.find(callRequest.name()).orElse(null);
+        var tool = tools.find(callRequest.name()).orElse(null);
         if (tool == null) {
             return JsonRpcError.of(req.id(), JsonRpcErrorCode.INVALID_PARAMS, "Unknown tool: " + callRequest.name());
         }
@@ -65,7 +65,7 @@ final class ToolCallHandler {
 
     private JsonRpcMessage invoke(JsonRpcRequest req, Tool tool, JsonObject args) {
         try {
-            ToolResult result = tools.call(tool.name(), args);
+            var result = tools.call(tool.name(), args);
             return new JsonRpcResponse(req.id(), RESULT_CODEC.toJson(result));
         } catch (IllegalArgumentException e) {
             return recover(req, tool, e);
@@ -77,16 +77,16 @@ final class ToolCallHandler {
             return JsonRpcError.of(req.id(), JsonRpcErrorCode.INVALID_PARAMS, failure.getMessage());
         }
         try {
-            ElicitRequest er = new ElicitRequest(
+            var er = new ElicitRequest(
                     "Provide arguments for tool '" + tool.name() + "'",
                     tool.inputSchema(),
                     null);
-            ElicitResult res = elicitor.elicit(er);
+            var res = elicitor.elicit(er);
             if (res.action() != ElicitationAction.ACCEPT) {
                 return JsonRpcError.of(req.id(), JsonRpcErrorCode.INVALID_PARAMS, "Tool invocation cancelled");
             }
             try {
-                ToolResult result = tools.call(tool.name(), res.content());
+                var result = tools.call(tool.name(), res.content());
                 return new JsonRpcResponse(req.id(), RESULT_CODEC.toJson(result));
             } catch (IllegalArgumentException e) {
                 return JsonRpcError.of(req.id(), JsonRpcErrorCode.INVALID_PARAMS, e.getMessage());

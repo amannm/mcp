@@ -22,7 +22,7 @@ public final class UnauthorizedException extends IOException {
 
     public Optional<String> resourceMetadata() {
         if (wwwAuthenticate == null) return Optional.empty();
-        Matcher m = RESOURCE_METADATA.matcher(wwwAuthenticate);
+        var m = RESOURCE_METADATA.matcher(wwwAuthenticate);
         if (m.find()) return Optional.of(m.group(1));
         return Optional.empty();
     }

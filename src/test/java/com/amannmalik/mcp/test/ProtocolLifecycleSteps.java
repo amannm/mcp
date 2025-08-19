@@ -228,10 +228,10 @@ public final class ProtocolLifecycleSteps {
 
     @Given("a transport mechanism is available")
     public void a_transport_mechanism_is_available() {
-        McpClientConfiguration base = McpClientConfiguration.defaultConfiguration("client", "client", "default");
-        String java = System.getProperty("java.home") + "/bin/java";
-        String jar = Path.of("build", "libs", "mcp-0.1.0.jar").toString();
-        String cmd = java + " -jar " + jar + " server --stdio --test-mode";
+        var base = McpClientConfiguration.defaultConfiguration("client", "client", "default");
+        var java = System.getProperty("java.home") + "/bin/java";
+        var jar = Path.of("build", "libs", "mcp-0.1.0.jar").toString();
+        var cmd = java + " -jar " + jar + " server --stdio --test-mode";
         clientConfig = configureWithCommand(base, cmd);
         updateHostConfiguration();
     }
@@ -293,7 +293,7 @@ public final class ProtocolLifecycleSteps {
             throw new IllegalStateException("connection not established");
         }
 
-        boolean hasServerCapabilities = false;
+        var hasServerCapabilities = false;
         try {
             activeConnection.listTools(clientId, Cursor.Start.INSTANCE);
             serverCapabilities.add(ServerCapability.TOOLS);
@@ -309,7 +309,7 @@ public final class ProtocolLifecycleSteps {
 
         availableFeatures.addAll(serverCapabilities);
 
-        String context = activeConnection.aggregateContext();
+        var context = activeConnection.aggregateContext();
         if (context == null) {
             throw new AssertionError("missing server implementation info");
         }
@@ -323,7 +323,7 @@ public final class ProtocolLifecycleSteps {
 
         activeConnection.notify(clientId, NotificationMethod.INITIALIZED, Json.createObjectBuilder().build());
 
-        JsonRpcMessage response = activeConnection.request(clientId, RequestMethod.PING, Json.createObjectBuilder().build());
+        var response = activeConnection.request(clientId, RequestMethod.PING, Json.createObjectBuilder().build());
         if (response == null) {
             throw new AssertionError("message exchange failed");
         }
@@ -361,7 +361,7 @@ public final class ProtocolLifecycleSteps {
 
     @Then("the server should offer its latest supported version")
     public void the_server_should_offer_its_latest_supported_version() {
-        String expectedLatest = serverSupportedVersions.stream().max(String::compareTo).orElse(null);
+        var expectedLatest = serverSupportedVersions.stream().max(String::compareTo).orElse(null);
         if (!Objects.equals(negotiatedVersion, expectedLatest)) {
             throw new AssertionError("expected latest version %s, got %s"
                     .formatted(expectedLatest, negotiatedVersion));
@@ -388,7 +388,7 @@ public final class ProtocolLifecycleSteps {
 
     @Then("I should have access to {string} features")
     public void i_should_have_access_to_features(String features) {
-        Set<ServerCapability> expected = parseServerCapabilities(features);
+        var expected = parseServerCapabilities(features);
         if (!availableFeatures.containsAll(expected)) {
             throw new AssertionError("Expected features not available: %s".formatted(expected));
         }
@@ -396,7 +396,7 @@ public final class ProtocolLifecycleSteps {
 
     @Then("{string} features should not be available")
     public void features_should_not_be_available(String features) {
-        Set<ServerCapability> expectedUnavailable = parseServerCapabilities(features);
+        var expectedUnavailable = parseServerCapabilities(features);
         Set<ServerCapability> intersection = new HashSet<>(availableFeatures);
         intersection.retainAll(expectedUnavailable);
         if (!intersection.isEmpty()) {
@@ -467,7 +467,7 @@ public final class ProtocolLifecycleSteps {
 
     @Then("each request should be handled according to Accept header requirements")
     public void each_request_should_be_handled_according_to_accept_header_requirements() {
-        for (int i = 0; i < acceptHeaderResults.size(); i++) {
+        for (var i = 0; i < acceptHeaderResults.size(); i++) {
             if (!Objects.equals(acceptHeaderResults.get(i), expectedAcceptResults.get(i))) {
                 throw new AssertionError("accept header validation failed at index %d".formatted(i));
             }
@@ -496,7 +496,7 @@ public final class ProtocolLifecycleSteps {
 
     @Then("each GET request should be handled according to SSE support")
     public void each_get_request_should_be_handled_according_to_sse_support() {
-        for (int i = 0; i < getStatuses.size(); i++) {
+        for (var i = 0; i < getStatuses.size(); i++) {
             if (!Objects.equals(getStatuses.get(i), expectedGetStatuses.get(i))) {
                 throw new AssertionError("GET status mismatch at index %d".formatted(i));
             }
@@ -529,7 +529,7 @@ public final class ProtocolLifecycleSteps {
 
     @Then("each request should be handled according to Origin header requirements")
     public void each_request_should_be_handled_according_to_origin_header_requirements() {
-        for (int i = 0; i < originHeaderResults.size(); i++) {
+        for (var i = 0; i < originHeaderResults.size(); i++) {
             if (!Objects.equals(originHeaderResults.get(i), expectedOriginResults.get(i))) {
                 throw new AssertionError("origin header validation failed at index %d".formatted(i));
             }
@@ -557,7 +557,7 @@ public final class ProtocolLifecycleSteps {
 
     @Then("each response should be handled according to Content-Type requirements")
     public void each_response_should_be_handled_according_to_content_type_requirements() {
-        for (int i = 0; i < contentTypeResults.size(); i++) {
+        for (var i = 0; i < contentTypeResults.size(); i++) {
             if (!Objects.equals(contentTypeResults.get(i), expectedContentTypeResults.get(i))) {
                 throw new AssertionError("content type validation failed at index %d".formatted(i));
             }
@@ -581,7 +581,7 @@ public final class ProtocolLifecycleSteps {
 
     @Then("each message should receive the expected HTTP status")
     public void each_message_should_receive_the_expected_http_status() {
-        for (int i = 0; i < postMessageStatuses.size(); i++) {
+        for (var i = 0; i < postMessageStatuses.size(); i++) {
             if (!Objects.equals(postMessageStatuses.get(i), expectedPostMessageStatuses.get(i))) {
                 throw new AssertionError("post message status mismatch at index %d".formatted(i));
             }
@@ -590,7 +590,7 @@ public final class ProtocolLifecycleSteps {
 
     @Then("accepted messages should return empty bodies")
     public void accepted_messages_should_return_empty_bodies() {
-        for (int i = 0; i < postMessageBodiesEmpty.size(); i++) {
+        for (var i = 0; i < postMessageBodiesEmpty.size(); i++) {
             if (!Objects.equals(postMessageBodiesEmpty.get(i), expectedPostMessageBodiesEmpty.get(i))) {
                 throw new AssertionError("post message body presence mismatch at index %d".formatted(i));
             }
@@ -646,7 +646,7 @@ public final class ProtocolLifecycleSteps {
 
     @Then("I should start a new session by reinitializing")
     public void i_should_start_a_new_session_by_reinitializing() {
-        String old = serverSessionId;
+        var old = serverSessionId;
         serverSessionId = UUID.randomUUID().toString();
         sessionActive = true;
         if (serverSessionId.equals(old)) {
@@ -783,8 +783,8 @@ public final class ProtocolLifecycleSteps {
     @Then("the response should contain valid result data")
     public void the_response_should_contain_valid_result_data() {
         if (lastResponse == null) throw new AssertionError("no response received");
-        boolean hasResult = lastResponse.containsKey("result");
-        boolean hasError = lastResponse.containsKey("error");
+        var hasResult = lastResponse.containsKey("result");
+        var hasError = lastResponse.containsKey("error");
         if (hasResult == hasError) {
             throw new AssertionError("response must have either result or error, not both");
         }
@@ -884,7 +884,7 @@ public final class ProtocolLifecycleSteps {
 
     @When("I include metadata in my request")
     public void i_include_metadata_in_my_request() {
-        JsonObject metadata = Json.createObjectBuilder()
+        var metadata = Json.createObjectBuilder()
                 .add("_meta", Json.createObjectBuilder()
                         .add("example.com/client", "client-metadata")
                         .build())
@@ -894,8 +894,8 @@ public final class ProtocolLifecycleSteps {
 
     @Then("the server should preserve my metadata unchanged")
     public void the_server_should_preserve_my_metadata_unchanged() {
-        JsonObject params = lastRequest == null ? null : lastRequest.getJsonObject("params");
-        JsonObject meta = params == null ? null : params.getJsonObject("_meta");
+        var params = lastRequest == null ? null : lastRequest.getJsonObject("params");
+        var meta = params == null ? null : params.getJsonObject("_meta");
         if (meta == null || !"client-metadata".equals(meta.getString("example.com/client", null))) {
             throw new AssertionError("metadata not preserved in request");
         }
@@ -903,7 +903,7 @@ public final class ProtocolLifecycleSteps {
 
     @When("the server includes reserved metadata in responses")
     public void the_server_includes_reserved_metadata_in_responses() {
-        JsonObject meta = Json.createObjectBuilder()
+        var meta = Json.createObjectBuilder()
                 .add("_meta", Json.createObjectBuilder()
                         .add("mcp.dev/reserved", 1)
                         .build())
@@ -913,8 +913,8 @@ public final class ProtocolLifecycleSteps {
 
     @Then("I should handle MCP-reserved fields correctly")
     public void i_should_handle_mcp_reserved_fields_correctly() {
-        JsonObject result = lastResponse == null ? null : lastResponse.getJsonObject("result");
-        JsonObject meta = result == null ? null : result.getJsonObject("_meta");
+        var result = lastResponse == null ? null : lastResponse.getJsonObject("result");
+        var meta = result == null ? null : result.getJsonObject("_meta");
         if (meta == null || meta.getInt("mcp.dev/reserved", -1) != 1) {
             throw new AssertionError("MCP-reserved fields not handled correctly");
         }
@@ -922,7 +922,7 @@ public final class ProtocolLifecycleSteps {
 
     @When("the server includes custom metadata in responses")
     public void the_server_includes_custom_metadata_in_responses() {
-        JsonObject meta = Json.createObjectBuilder()
+        var meta = Json.createObjectBuilder()
                 .add("_meta", Json.createObjectBuilder()
                         .add("example.com/custom", 2)
                         .build())
@@ -932,8 +932,8 @@ public final class ProtocolLifecycleSteps {
 
     @Then("I should treat it as implementation-specific data")
     public void i_should_treat_it_as_implementation_specific_data() {
-        JsonObject result = lastResponse == null ? null : lastResponse.getJsonObject("result");
-        JsonObject meta = result == null ? null : result.getJsonObject("_meta");
+        var result = lastResponse == null ? null : lastResponse.getJsonObject("result");
+        var meta = result == null ? null : result.getJsonObject("_meta");
         if (meta == null || meta.getInt("example.com/custom", -1) != 2) {
             throw new AssertionError("custom implementation-specific data missing");
         }
@@ -941,7 +941,7 @@ public final class ProtocolLifecycleSteps {
 
     @When("I include reserved metadata prefix in my request")
     public void i_include_reserved_metadata_prefix_in_my_request() {
-        JsonObject meta = Json.createObjectBuilder()
+        var meta = Json.createObjectBuilder()
                 .add("_meta", Json.createObjectBuilder()
                         .add("mcp.dev/illegal", 0)
                         .build())
@@ -974,7 +974,7 @@ public final class ProtocolLifecycleSteps {
 
     @Then("I should send a cancellation notification")
     public void i_should_send_a_cancellation_notification() {
-        JsonObject params = Json.createObjectBuilder()
+        var params = Json.createObjectBuilder()
                 .add("id", RequestId.toJsonValue(lastRequestId))
                 .build();
         lastNotification = createNotification(NotificationMethod.CANCELLED.method(), params);
@@ -987,7 +987,7 @@ public final class ProtocolLifecycleSteps {
 
     @When("my request sends progress notifications")
     public void my_request_sends_progress_notifications() {
-        JsonObject params = Json.createObjectBuilder().add("progress", 0.5).build();
+        var params = Json.createObjectBuilder().add("progress", 0.5).build();
         lastNotification = createNotification(NotificationMethod.PROGRESS.method(), params);
     }
 
@@ -1073,7 +1073,7 @@ public final class ProtocolLifecycleSteps {
 
     @Then("the server should only send allowed requests")
     public void the_server_should_only_send_allowed_requests() {
-        for (int i = 0; i < preInitAllowedResults.size(); i++) {
+        for (var i = 0; i < preInitAllowedResults.size(); i++) {
             if (!Objects.equals(preInitAllowedResults.get(i), expectedPreInitAllowedResults.get(i))) {
                 throw new AssertionError("pre-initialization request check failed at index %d".formatted(i));
             }
@@ -1088,7 +1088,7 @@ public final class ProtocolLifecycleSteps {
     @Then("sensitive information should not be exposed")
     public void sensitive_information_should_not_be_exposed() {
         if (activeConnection != null) {
-            String context = activeConnection.aggregateContext();
+            var context = activeConnection.aggregateContext();
             if (context != null && context.toLowerCase().contains("password")) {
                 throw new AssertionError("sensitive information exposed in implementation info");
             }
@@ -1113,7 +1113,7 @@ public final class ProtocolLifecycleSteps {
     @When("the server requests LLM sampling")
     public void the_server_requests_llm_sampling() {
         samplingRequested = true;
-        McpClientConfiguration cfg = McpClientConfiguration.defaultConfiguration("client", "server", "principal");
+        var cfg = McpClientConfiguration.defaultConfiguration("client", "server", "principal");
         samplingApproved = cfg.interactiveSampling();
         promptExposed = samplingApproved;
     }
@@ -1134,10 +1134,10 @@ public final class ProtocolLifecycleSteps {
 
     @Given("I can provide the following capabilities:")
     public void i_can_provide_the_following_capabilities(DataTable dataTable) {
-        List<String> capabilities = dataTable.asList().stream()
+        var capabilities = dataTable.asList().stream()
                 .skip(1) // Skip header row
                 .toList();
-        String capabilityString = String.join(",", capabilities);
+        var capabilityString = String.join(",", capabilities);
         i_can_provide_capabilities(capabilityString);
     }
 
@@ -1145,15 +1145,15 @@ public final class ProtocolLifecycleSteps {
     public void i_test_server_capability_discovery_with_the_following_configurations(DataTable dataTable) {
         capabilityConfigurations.clear();
         discoveredCapabilities.clear();
-        List<Map<String, String>> rows = dataTable.asMaps(String.class, String.class);
+        var rows = dataTable.asMaps(String.class, String.class);
         capabilityConfigurations.addAll(rows);
     }
 
     @When("I complete the connection handshake for each configuration")
     public void i_complete_the_connection_handshake_for_each_configuration() throws Exception {
-        for (Map<String, String> config : capabilityConfigurations) {
+        for (var config : capabilityConfigurations) {
             currentConfiguration = config;
-            String serverCapability = config.get("server_capability");
+            var serverCapability = config.get("server_capability");
 
             a_clean_mcp_environment();
             a_transport_mechanism_is_available();
@@ -1165,20 +1165,20 @@ public final class ProtocolLifecycleSteps {
 
     @Then("the capability access should match the expected results")
     public void the_capability_access_should_match_the_expected_results() {
-        for (int i = 0; i < capabilityConfigurations.size(); i++) {
-            Map<String, String> config = capabilityConfigurations.get(i);
-            Set<ServerCapability> actual = discoveredCapabilities.get(i);
-            String availableFeature = config.get("available_feature");
+        for (var i = 0; i < capabilityConfigurations.size(); i++) {
+            var config = capabilityConfigurations.get(i);
+            var actual = discoveredCapabilities.get(i);
+            var availableFeature = config.get("available_feature");
             if (!"none".equals(availableFeature)) {
-                Set<ServerCapability> expected = parseServerCapabilities(availableFeature);
+                var expected = parseServerCapabilities(availableFeature);
                 if (!actual.containsAll(expected)) {
                     throw new AssertionError("Expected features not available: %s".formatted(expected));
                 }
             }
 
-            String unavailableFeature = config.get("unavailable_feature");
+            var unavailableFeature = config.get("unavailable_feature");
             if (!"none".equals(unavailableFeature)) {
-                Set<ServerCapability> expectedUnavailable = parseServerCapabilities(unavailableFeature);
+                var expectedUnavailable = parseServerCapabilities(unavailableFeature);
                 Set<ServerCapability> intersection = new HashSet<>(actual);
                 intersection.retainAll(expectedUnavailable);
                 if (!intersection.isEmpty()) {
@@ -1191,16 +1191,16 @@ public final class ProtocolLifecycleSteps {
     @When("I test error handling with the following scenarios:")
     public void i_test_error_handling_with_the_following_scenarios(DataTable dataTable) {
         errorScenarios.clear();
-        List<Map<String, String>> rows = dataTable.asMaps(String.class, String.class);
+        var rows = dataTable.asMaps(String.class, String.class);
         errorScenarios.addAll(rows);
     }
 
     @Then("I should receive proper error responses for each scenario")
     public void i_should_receive_proper_error_responses_for_each_scenario() {
-        for (Map<String, String> scenario : errorScenarios) {
-            String errorSituation = scenario.get("error_situation");
-            String errorType = scenario.get("error_type");
-            int errorCode = Integer.parseInt(scenario.get("error_code"));
+        for (var scenario : errorScenarios) {
+            var errorSituation = scenario.get("error_situation");
+            var errorType = scenario.get("error_type");
+            var errorCode = Integer.parseInt(scenario.get("error_code"));
 
             error_occurs_during_communication(errorSituation);
             i_should_receive_a_proper_error_response_indicating(errorType, errorCode);
@@ -1209,10 +1209,10 @@ public final class ProtocolLifecycleSteps {
 
     @Given("the server supports the following versions:")
     public void the_server_supports_the_following_versions(DataTable dataTable) {
-        List<String> versions = dataTable.asList().stream()
+        var versions = dataTable.asList().stream()
                 .skip(1) // Skip header row
                 .toList();
-        String versionString = String.join(",", versions);
+        var versionString = String.join(",", versions);
         the_server_supports_versions(versionString);
     }
 
@@ -1228,13 +1228,13 @@ public final class ProtocolLifecycleSteps {
         largePayloadSize = payloadSizeMB * 1024L * 1024L; // Convert to bytes
 
         // Create a large test payload
-        StringBuilder largePayload = new StringBuilder();
-        String chunk = "x".repeat(1024); // 1KB chunk
-        for (int i = 0; i < payloadSizeMB * 1024; i++) {
+        var largePayload = new StringBuilder();
+        var chunk = "x".repeat(1024); // 1KB chunk
+        for (var i = 0; i < payloadSizeMB * 1024; i++) {
             largePayload.append(chunk);
         }
 
-        JsonObject params = Json.createObjectBuilder()
+        var params = Json.createObjectBuilder()
                 .add("largeData", largePayload.toString())
                 .build();
 
@@ -1267,8 +1267,8 @@ public final class ProtocolLifecycleSteps {
                 || !lastResponse.containsKey("id")) {
             throw new AssertionError("response missing required JSON-RPC fields");
         }
-        boolean hasResult = lastResponse.containsKey("result");
-        boolean hasError = lastResponse.containsKey("error");
+        var hasResult = lastResponse.containsKey("result");
+        var hasError = lastResponse.containsKey("error");
         if (hasResult == hasError) {
             throw new AssertionError("response must have either result or error, not both");
         }
@@ -1286,12 +1286,12 @@ public final class ProtocolLifecycleSteps {
         concurrentRequestIds.clear();
         concurrentResponses.clear();
 
-        for (int i = 0; i < requestCount; i++) {
+        for (var i = 0; i < requestCount; i++) {
             RequestId requestId = new RequestId.StringId("concurrent-req-" + i);
             concurrentRequestIds.add(requestId);
 
-            JsonObject request = createRequest(requestId, "ping", null);
-            JsonObject response = createResponse(requestId, Json.createObjectBuilder().build());
+            var request = createRequest(requestId, "ping", null);
+            var response = createResponse(requestId, Json.createObjectBuilder().build());
             concurrentResponses.put(requestId, response);
         }
 
@@ -1315,7 +1315,7 @@ public final class ProtocolLifecycleSteps {
 
     @Then("all responses should match their corresponding request IDs")
     public void all_responses_should_match_their_corresponding_request_ids() {
-        for (RequestId requestId : concurrentRequestIds) {
+        for (var requestId : concurrentRequestIds) {
             if (!concurrentResponses.containsKey(requestId)) {
                 throw new AssertionError("Response missing for request ID: " + requestId);
             }
@@ -1333,17 +1333,17 @@ public final class ProtocolLifecycleSteps {
         dependentRequests.clear();
         requestResponses.clear();
 
-        List<Map<String, String>> requests = dataTable.asMaps(String.class, String.class);
+        var requests = dataTable.asMaps(String.class, String.class);
         dependentRequests.addAll(requests);
 
         // Simulate sending dependent requests
-        for (Map<String, String> reqData : requests) {
-            String reqId = reqData.get("request_id");
-            String method = reqData.get("method");
+        for (var reqData : requests) {
+            var reqId = reqData.get("request_id");
+            var method = reqData.get("method");
 
             RequestId requestId = new RequestId.StringId(reqId);
-            JsonObject request = createRequest(requestId, method, null);
-            JsonObject response = createResponse(requestId, Json.createObjectBuilder().build());
+            var request = createRequest(requestId, method, null);
+            var response = createResponse(requestId, Json.createObjectBuilder().build());
 
             requestResponses.put(reqId, response);
         }
@@ -1356,8 +1356,8 @@ public final class ProtocolLifecycleSteps {
 
     @Then("each response should correctly match its request ID")
     public void each_response_should_correctly_match_its_request_id() {
-        for (Map<String, String> reqData : dependentRequests) {
-            String reqId = reqData.get("request_id");
+        for (var reqData : dependentRequests) {
+            var reqId = reqData.get("request_id");
             if (!requestResponses.containsKey(reqId)) {
                 throw new AssertionError("Response not found for request ID: " + reqId);
             }
@@ -1375,7 +1375,7 @@ public final class ProtocolLifecycleSteps {
 
     @When("I receive a response containing both result and error")
     public void i_receive_a_response_containing_both_result_and_error() {
-        JsonObject response = Json.createObjectBuilder()
+        var response = Json.createObjectBuilder()
                 .add("jsonrpc", "2.0")
                 .add("id", RequestId.toJsonValue(new RequestId.NumericId(1)))
                 .add("result", Json.createObjectBuilder().build())
@@ -1471,7 +1471,7 @@ public final class ProtocolLifecycleSteps {
 
     @Given("a stdio transport with a message containing an embedded newline")
     public void a_stdio_transport_with_a_message_containing_an_embedded_newline() {
-        String msg = "{\"jsonrpc\":\"2.0\",\n\"id\":1}\n";
+        var msg = "{\"jsonrpc\":\"2.0\",\n\"id\":1}\n";
         stdioReader = new BufferedReader(new StringReader(msg));
         newlineError = null;
     }
@@ -1479,7 +1479,7 @@ public final class ProtocolLifecycleSteps {
     @When("I attempt to read the stdio message")
     public void i_attempt_to_read_the_stdio_message() {
         try {
-            String line = stdioReader.readLine();
+            var line = stdioReader.readLine();
             if (line == null) throw new IOException("no input");
             try (var reader = Json.createReader(new StringReader(line))) {
                 reader.readObject();

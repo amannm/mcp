@@ -61,7 +61,7 @@ public final class Certificates {
             var sanBuilder = new GeneralNamesBuilder();
             for (var name : subjectAltNames) sanBuilder.addName(new GeneralName(GeneralName.dNSName, name));
             builder.addExtension(Extension.subjectAlternativeName, false, sanBuilder.build());
-            ContentSigner signer = new JcaContentSignerBuilder(switch (pair.getPrivate()) {
+            var signer = new JcaContentSignerBuilder(switch (pair.getPrivate()) {
                 case RSAPrivateKey ignored -> "SHA256withRSA";
                 default -> "SHA256withECDSA";
             }).build(pair.getPrivate());
@@ -80,11 +80,11 @@ public final class Certificates {
             var extensions = new ExtensionsGenerator();
             extensions.addExtension(Extension.subjectAlternativeName, false, sanBuilder.build());
             builder.addAttribute(PKCSObjectIdentifiers.pkcs_9_at_extensionRequest, extensions.generate());
-            ContentSigner signer = new JcaContentSignerBuilder(switch (pair.getPrivate()) {
+            var signer = new JcaContentSignerBuilder(switch (pair.getPrivate()) {
                 case RSAPrivateKey ignored -> "SHA256withRSA";
                 default -> "SHA256withECDSA";
             }).build(pair.getPrivate());
-            PKCS10CertificationRequest csr = builder.build(signer);
+            var csr = builder.build(signer);
             return csr.getEncoded();
         } catch (OperatorCreationException | IOException e) {
             throw new IllegalStateException("CSR generation failed", e);
@@ -112,10 +112,10 @@ public final class Certificates {
 
     public static String fingerprint(X509Certificate cert) throws CertificateException {
         try {
-            MessageDigest md = MessageDigest.getInstance("SHA-256");
-            byte[] digest = md.digest(cert.getEncoded());
-            StringBuilder sb = new StringBuilder();
-            for (byte b : digest) sb.append(String.format("%02X", b));
+            var md = MessageDigest.getInstance("SHA-256");
+            var digest = md.digest(cert.getEncoded());
+            var sb = new StringBuilder();
+            for (var b : digest) sb.append(String.format("%02X", b));
             return sb.toString();
         } catch (NoSuchAlgorithmException | CertificateEncodingException e) {
             throw new CertificateException(e);
@@ -124,7 +124,7 @@ public final class Certificates {
 
     public static List<String> subjectAltNames(X509Certificate cert) {
         try {
-            Collection<List<?>> sans = cert.getSubjectAlternativeNames();
+            var sans = cert.getSubjectAlternativeNames();
             if (sans == null) return List.of();
             List<String> out = new ArrayList<>();
             for (var san : sans) {

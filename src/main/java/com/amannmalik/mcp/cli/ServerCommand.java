@@ -20,7 +20,7 @@ public final class ServerCommand {
     }
 
     public static CommandSpec createCommandSpec() {
-        CommandSpec spec = CommandSpec.create()
+        var spec = CommandSpec.create()
                 .name("server")
                 .addOption(OptionSpec.builder("--http")
                         .type(Integer.class)
@@ -130,49 +130,49 @@ public final class ServerCommand {
     }
 
     public static int execute(ParseResult parseResult) {
-        Integer helpExitCode = CommandLine.executeHelpRequest(parseResult);
+        var helpExitCode = CommandLine.executeHelpRequest(parseResult);
         if (helpExitCode != null) return helpExitCode;
 
         try {
             boolean stdio = parseResult.matchedOptionValue("--stdio", false);
             boolean verbose = parseResult.matchedOptionValue("--verbose", false);
-            Integer httpPort = parseResult.matchedOptionValue("--http", 3000);
+            var httpPort = parseResult.matchedOptionValue("--http", 3000);
             boolean httpsOnly = parseResult.matchedOptionValue("--https-only", false);
             if (httpsOnly) httpPort = 0;
             String expectedAudience = parseResult.matchedOptionValue("--audience", null);
             String resourceMetadataUrl = parseResult.matchedOptionValue("--resource-metadata", null);
             List<String> authServers = parseResult.matchedOptionValue("--auth-server", Collections.emptyList());
             boolean testMode = parseResult.matchedOptionValue("--test-mode", false);
-            McpServerConfiguration base = McpServerConfiguration.defaultConfiguration();
+            var base = McpServerConfiguration.defaultConfiguration();
             int httpsPort = parseResult.matchedOptionValue("--https-port", base.httpsPort());
-            Path keystorePathOpt = parseResult.matchedOptionValue("--keystore", Path.of(base.keystorePath()));
-            String keystorePath = keystorePathOpt.toString();
-            String keystorePassword = parseResult.matchedOptionValue("--keystore-password", base.keystorePassword());
+            var keystorePathOpt = parseResult.matchedOptionValue("--keystore", Path.of(base.keystorePath()));
+            var keystorePath = keystorePathOpt.toString();
+            var keystorePassword = parseResult.matchedOptionValue("--keystore-password", base.keystorePassword());
             String keystorePasswordEnv = parseResult.matchedOptionValue("--keystore-password-env", null);
             if (keystorePasswordEnv != null) {
-                String env = System.getenv(keystorePasswordEnv);
+                var env = System.getenv(keystorePasswordEnv);
                 if (env != null) keystorePassword = env;
             }
-            String keystoreType = parseResult.matchedOptionValue("--keystore-type", base.keystoreType());
+            var keystoreType = parseResult.matchedOptionValue("--keystore-type", base.keystoreType());
             Path truststorePathOpt = parseResult.matchedOptionValue("--truststore", null);
-            String truststorePath = truststorePathOpt == null ? base.truststorePath() : truststorePathOpt.toString();
-            String truststorePassword = parseResult.matchedOptionValue("--truststore-password", base.truststorePassword());
+            var truststorePath = truststorePathOpt == null ? base.truststorePath() : truststorePathOpt.toString();
+            var truststorePassword = parseResult.matchedOptionValue("--truststore-password", base.truststorePassword());
             String truststorePasswordEnv = parseResult.matchedOptionValue("--truststore-password-env", null);
             if (truststorePasswordEnv != null) {
-                String env = System.getenv(truststorePasswordEnv);
+                var env = System.getenv(truststorePasswordEnv);
                 if (env != null) truststorePassword = env;
             }
-            String truststoreType = parseResult.matchedOptionValue("--truststore-type", base.truststoreType());
-            List<String> tlsProtocols = parseResult.matchedOptionValue("--tls-protocols", base.tlsProtocols());
-            List<String> cipherSuites = parseResult.matchedOptionValue("--cipher-suites", base.cipherSuites());
+            var truststoreType = parseResult.matchedOptionValue("--truststore-type", base.truststoreType());
+            var tlsProtocols = parseResult.matchedOptionValue("--tls-protocols", base.tlsProtocols());
+            var cipherSuites = parseResult.matchedOptionValue("--cipher-suites", base.cipherSuites());
             boolean requireClientAuth = parseResult.matchedOptionValue("--require-client-auth", base.requireClientAuth());
-            McpServerConfiguration config = stdio
+            var config = stdio
                     ? base.withTransport("stdio", base.serverPort(), base.allowedOrigins(), null, null, List.of(), true, verbose)
                     : base.withTransport("http", httpPort, base.allowedOrigins(), expectedAudience, resourceMetadataUrl, authServers, testMode, verbose);
             config = config.withTls(httpsPort, keystorePath, keystorePassword, keystoreType, truststorePath, truststorePassword, truststoreType, tlsProtocols, cipherSuites, requireClientAuth);
             Path instructionsFile = parseResult.matchedOptionValue("--instructions", null);
-            String instructions = instructionsFile == null ? null : Files.readString(instructionsFile);
-            try (McpServer server = new McpServer(config, ServerDefaults.resources(),
+            var instructions = instructionsFile == null ? null : Files.readString(instructionsFile);
+            try (var server = new McpServer(config, ServerDefaults.resources(),
                     ServerDefaults.tools(),
                     ServerDefaults.prompts(),
                     ServerDefaults.completions(),

@@ -11,20 +11,20 @@ public final class Entrypoint {
     }
 
     public static void main(String[] args) {
-        CommandSpec mainSpec = CommandSpec.create()
+        var mainSpec = CommandSpec.create()
                 .name("mcp");
 
-        CommandLine commandLine = new CommandLine(mainSpec);
+        var commandLine = new CommandLine(mainSpec);
         commandLine.addSubcommand("server", ServerCommand.createCommandSpec());
         commandLine.addSubcommand("host", HostCommand.createCommandSpec());
 
         try {
-            ParseResult parseResult = commandLine.parseArgs(args);
-            Integer helpExitCode = CommandLine.executeHelpRequest(parseResult);
+            var parseResult = commandLine.parseArgs(args);
+            var helpExitCode = CommandLine.executeHelpRequest(parseResult);
             if (helpExitCode != null) System.exit(helpExitCode);
             System.exit(execute(parseResult));
         } catch (ParameterException e) {
-            CommandLine cmd = e.getCommandLine();
+            var cmd = e.getCommandLine();
             cmd.getErr().println(e.getMessage());
             if (!UnmatchedArgumentException.printSuggestions(e, cmd.getErr())) cmd.usage(cmd.getErr());
             System.exit(cmd.getCommandSpec().exitCodeOnInvalidInput());
@@ -36,8 +36,8 @@ public final class Entrypoint {
 
     private static int execute(ParseResult parseResult) {
         if (parseResult.hasSubcommand()) {
-            ParseResult subResult = parseResult.subcommand();
-            String name = subResult.commandSpec().name();
+            var subResult = parseResult.subcommand();
+            var name = subResult.commandSpec().name();
             return switch (name) {
                 case "server" -> ServerCommand.execute(subResult);
                 case "host" -> HostCommand.execute(subResult);

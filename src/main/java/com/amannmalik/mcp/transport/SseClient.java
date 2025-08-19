@@ -22,7 +22,7 @@ public final class SseClient implements AutoCloseable {
     private volatile boolean closed;
 
     public SseClient(AsyncContext context, int clientPrefixByteLength, long historyLimit) throws IOException {
-        byte[] bytes = new byte[clientPrefixByteLength];
+        var bytes = new byte[clientPrefixByteLength];
         RANDOM.nextBytes(bytes);
         this.prefix = Base64Util.encodeUrl(bytes);
         attach(context, 0);
@@ -41,7 +41,7 @@ public final class SseClient implements AutoCloseable {
     }
 
     public void send(JsonObject msg) {
-        long id = nextId.getAndIncrement();
+        var id = nextId.getAndIncrement();
         history.addLast(new SseEvent(id, msg));
         while (history.size() > historyLimit) {
             history.removeFirst();
@@ -63,7 +63,7 @@ public final class SseClient implements AutoCloseable {
         if (context == null) {
             return;
         }
-        for (SseEvent ev : history) {
+        for (var ev : history) {
             if (ev.id > lastId) {
                 out.write("id: " + prefix + '-' + ev.id + "\n");
                 out.write("data: " + ev.msg + "\n\n");

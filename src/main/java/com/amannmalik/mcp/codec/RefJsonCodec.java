@@ -8,7 +8,7 @@ public class RefJsonCodec implements JsonCodec<Ref> {
     public JsonObject toJson(Ref ref) {
         return switch (ref) {
             case Ref.PromptRef p -> {
-                JsonObjectBuilder b = Json.createObjectBuilder()
+                var b = Json.createObjectBuilder()
                         .add("type", p.type())
                         .add("name", p.name());
                 if (p.title() != null) b.add("title", p.title());
@@ -24,7 +24,7 @@ public class RefJsonCodec implements JsonCodec<Ref> {
 
     @Override
     public Ref fromJson(JsonObject obj) {
-        String type = obj.getString("type", null);
+        var type = obj.getString("type", null);
         if (type == null) throw new IllegalArgumentException("type required");
         return switch (type) {
             case "ref/prompt" -> new Ref.PromptRef(
