@@ -1,7 +1,7 @@
-package com.amannmalik.mcp.core;
+package com.amannmalik.mcp.api;
 
-import com.amannmalik.mcp.api.*;
 import com.amannmalik.mcp.codec.*;
+import com.amannmalik.mcp.core.*;
 import com.amannmalik.mcp.jsonrpc.*;
 import com.amannmalik.mcp.util.InitializeRequest;
 import com.amannmalik.mcp.util.InitializeResponse;
@@ -17,11 +17,11 @@ final class ClientHandshake {
     }
 
     static Result perform(RequestId id,
-                          Transport transport,
-                          ClientInfo info,
-                          Set<ClientCapability> capabilities,
-                          boolean rootsListChangedSupported,
-                          Duration timeout) throws IOException {
+                                 Transport transport,
+                                 ClientInfo info,
+                                 Set<ClientCapability> capabilities,
+                                 boolean rootsListChangedSupported,
+                                 Duration timeout) throws IOException {
         var init = new InitializeRequest(
                 Protocol.LATEST_VERSION,
                 new Capabilities(capabilities, Set.of(), Map.of(), Map.of()),
@@ -66,9 +66,9 @@ final class ClientHandshake {
     }
 
     record Result(String protocolVersion,
-                  ServerInfo serverInfo,
-                  Set<ServerCapability> capabilities,
-                  Set<ServerFeature> features,
-                  String instructions) {
+                         ServerInfo serverInfo,
+                         Set<ServerCapability> capabilities,
+                         Set<ServerFeature> features,
+                         String instructions) {
     }
 }
