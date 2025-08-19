@@ -89,7 +89,8 @@ public final class ServerFeaturesSteps {
                 base.defaultOriginHeader(), base.httpRequestTimeout(), base.enableKeepAlive(),
                 base.sessionIdByteLength(), base.initializeRequestTimeout(), base.strictVersionValidation(),
                 base.pingTimeout(), base.pingInterval(), base.progressPerSecond(), base.rateLimiterWindow(),
-                base.verbose(), base.interactiveSampling(), roots, base.samplingAccessPolicy()
+                base.verbose(), base.interactiveSampling(), roots, base.samplingAccessPolicy(),
+                McpClientTlsConfiguration.defaultConfiguration()
         );
         McpHostConfiguration hostConfig = new McpHostConfiguration(
                 "2025-06-18",
