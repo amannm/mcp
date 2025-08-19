@@ -95,7 +95,8 @@ public final class HostCommand {
                         clientVerbose,
                         false,
                         List.of(System.getProperty("user.dir")),
-                        SamplingAccessPolicy.PERMISSIVE
+                        SamplingAccessPolicy.PERMISSIVE,
+                        McpClientTlsConfiguration.defaultConfiguration()
                 );
                 clientConfigs.add(clientConfig);
             }

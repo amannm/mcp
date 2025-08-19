@@ -112,22 +112,28 @@ public final class StreamableHttpServerTransport implements Transport {
         this.allowedOrigins = ValidationUtil.requireAllowedOrigins(Set.copyOf(config.allowedOrigins()));
         this.authManager = auth;
 
+        String scheme = https != null ? "https" : "http";
         if (config.resourceMetadataUrl() == null || config.resourceMetadataUrl().isBlank()) {
             int metaPort = https != null ? this.httpsPort : this.port;
             this.resourceMetadataUrl = String.format(
                     config.resourceMetadataUrlTemplate(),
+                    scheme,
                     config.bindAddress(),
                     metaPort);
         } else {
             this.resourceMetadataUrl = config.resourceMetadataUrl();
+            if (https != null && this.resourceMetadataUrl.startsWith("http://")) {
+                throw new IllegalArgumentException("HTTPS required for resource metadata URL");
+            }
         }
 
-        this.canonicalResource = https != null
-                ? "https://" + config.bindAddress() + ":" + this.httpsPort
-                : "http://" + config.bindAddress() + ":" + this.port;
+        this.canonicalResource = scheme + "://" + config.bindAddress() + ":" + (https != null ? this.httpsPort : this.port);
         if (config.authServers().isEmpty()) {
             this.authorizationServers = List.of();
         } else {
+            if (https != null && config.authServers().stream().anyMatch(u -> u.startsWith("http://"))) {
+                throw new IllegalArgumentException("HTTPS required for authorization server URLs");
+            }
             this.authorizationServers = List.copyOf(config.authServers());
         }
         var router = new MessageRouter(
@@ -141,6 +147,10 @@ public final class StreamableHttpServerTransport implements Transport {
 
     public int port() {
         return port;
+    }
+
+    public int httpsPort() {
+        return httpsPort;
     }
 
     @Override

@@ -104,6 +104,10 @@ public record McpServerConfiguration(
                 throw new IllegalArgumentException("Keystore configuration required");
             if (requireClientAuth && (truststorePath.isBlank() || truststorePassword.isBlank() || truststoreType.isBlank()))
                 throw new IllegalArgumentException("Truststore configuration required");
+            if (resourceMetadataUrl != null && !resourceMetadataUrl.isBlank() && resourceMetadataUrl.startsWith("http://"))
+                throw new IllegalArgumentException("HTTPS required for resource metadata URL");
+            if (authServers.stream().anyMatch(u -> u.startsWith("http://")))
+                throw new IllegalArgumentException("HTTPS required for authorization server URLs");
         }
         if (httpsMode == null)
             throw new IllegalArgumentException("HTTPS mode required");
@@ -151,11 +155,7 @@ public record McpServerConfiguration(
                 "default",
                 "stdio",
                 3000,
-                List.of(
-                        "http://localhost",
-                        "http://127.0.0.1",
-                        "https://localhost",
-                        "https://127.0.0.1"),
+                List.of("http://localhost", "http://127.0.0.1", "https://localhost", "https://127.0.0.1"),
                 "https://mcp.example.com",
                 "https://mcp.example.com/.well-known/oauth-protected-resource",
                 List.of("https://auth.example.com"),
@@ -175,7 +175,7 @@ public record McpServerConfiguration(
                 "127.0.0.1",
                 Set.of("/", "/.well-known/oauth-protected-resource"),
                 "/.well-known/oauth-protected-resource",
-                "http://%s:%d/.well-known/oauth-protected-resource",
+                "%s://%s:%d/.well-known/oauth-protected-resource",
                 32,
                 Duration.ofSeconds(30),
                 true,

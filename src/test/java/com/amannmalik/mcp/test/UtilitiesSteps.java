@@ -97,7 +97,8 @@ public final class UtilitiesSteps {
                 base.defaultOriginHeader(), base.httpRequestTimeout(), base.enableKeepAlive(),
                 base.sessionIdByteLength(), base.initializeRequestTimeout(), base.strictVersionValidation(),
                 base.pingTimeout(), base.pingInterval(), base.progressPerSecond(), base.rateLimiterWindow(),
-                base.verbose(), base.interactiveSampling(), base.rootDirectories(), base.samplingAccessPolicy()
+                base.verbose(), base.interactiveSampling(), base.rootDirectories(), base.samplingAccessPolicy(),
+                McpClientTlsConfiguration.defaultConfiguration()
         );
         McpHostConfiguration hostConfig = new McpHostConfiguration(
                 "2025-06-18",
@@ -376,7 +377,8 @@ public final class UtilitiesSteps {
                     base.defaultOriginHeader(), base.httpRequestTimeout(), base.enableKeepAlive(),
                     base.sessionIdByteLength(), base.initializeRequestTimeout(), base.strictVersionValidation(),
                     base.pingTimeout(), Duration.ofMillis(interval), base.progressPerSecond(), base.rateLimiterWindow(),
-                    base.verbose(), base.interactiveSampling(), base.rootDirectories(), base.samplingAccessPolicy()
+                    base.verbose(), base.interactiveSampling(), base.rootDirectories(), base.samplingAccessPolicy(),
+                    McpClientTlsConfiguration.defaultConfiguration()
             );
             pingConfigurationFailed = false;
         } catch (IllegalArgumentException ex) {
