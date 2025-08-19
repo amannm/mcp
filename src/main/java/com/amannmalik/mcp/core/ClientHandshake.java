@@ -9,7 +9,6 @@ import com.amannmalik.mcp.util.InitializeResponse;
 import java.io.IOException;
 import java.time.Duration;
 import java.util.*;
-import java.util.concurrent.*;
 
 final class ClientHandshake {
     private static final InitializeRequestAbstractEntityCodec REQUEST_CODEC = new InitializeRequestAbstractEntityCodec();
@@ -30,29 +29,15 @@ final class ClientHandshake {
                 new ClientFeatures(rootsListChangedSupported));
         var request = new JsonRpcRequest(id, RequestMethod.INITIALIZE.method(), REQUEST_CODEC.toJson(init));
         transport.send(JsonRpcEndpoint.CODEC.toJson(request));
-        var future = CompletableFuture.supplyAsync(() -> {
-            try {
-                return JsonRpcEndpoint.CODEC.fromJson(transport.receive(timeout));
-            } catch (IOException e) {
-                throw new CompletionException(e);
-            }
-        });
         JsonRpcMessage msg;
         try {
-            msg = future.get(timeout.toMillis(), TimeUnit.MILLISECONDS);
-        } catch (TimeoutException e) {
+            msg = JsonRpcEndpoint.CODEC.fromJson(transport.receive(timeout));
+        } catch (IOException e) {
             try {
                 transport.close();
             } catch (IOException ignore) {
             }
-            throw new IOException("Initialization timed out after " + timeout.toMillis() + " ms", e);
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            throw new IOException(e);
-        } catch (ExecutionException e) {
-            var cause = e.getCause();
-            if (cause instanceof IOException io) throw io;
-            throw new IOException(cause);
+            throw new IOException("Initialization failed: " + e.getMessage(), e);
         }
         JsonRpcResponse resp;
         try {
