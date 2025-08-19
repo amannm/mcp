@@ -18,6 +18,7 @@ import java.time.Duration;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 /// - [Overview](specification/2025-06-18/index.mdx)
@@ -279,39 +280,50 @@ final class McpClient extends JsonRpcEndpoint implements AutoCloseable {
     }
 
     public ListResourcesResult listResources(Cursor cursor) throws IOException {
-        var token = cursor instanceof Cursor.Token(var value) ? value : null;
-        var resp = JsonRpc.expectResponse(request(
+        return list(
+                cursor,
                 RequestMethod.RESOURCES_LIST,
-                AbstractEntityCodec.paginatedRequest(
+                token -> AbstractEntityCodec.paginatedRequest(
                         ListResourcesRequest::cursor,
                         ListResourcesRequest::_meta,
-                        ListResourcesRequest::new).toJson(new ListResourcesRequest(token, null)), Duration.ZERO
-        ));
-        return AbstractEntityCodec.paginatedResult(
-                "resources",
-                "resource",
-                r -> new Pagination.Page<>(r.resources(), r.nextCursor()),
-                ListResourcesResult::_meta,
-                new ResourceAbstractEntityCodec(),
-                (page, meta) -> new ListResourcesResult(page.items(), page.nextCursor(), meta)).fromJson(resp.result());
+                        ListResourcesRequest::new).toJson(new ListResourcesRequest(token, null)),
+                json -> AbstractEntityCodec.paginatedResult(
+                        "resources",
+                        "resource",
+                        r -> new Pagination.Page<>(r.resources(), r.nextCursor()),
+                        ListResourcesResult::_meta,
+                        new ResourceAbstractEntityCodec(),
+                        (page, meta) -> new ListResourcesResult(page.items(), page.nextCursor(), meta)).fromJson(json)
+        );
     }
 
     public ListResourceTemplatesResult listResourceTemplates(Cursor cursor) throws IOException {
-        var token = cursor instanceof Cursor.Token(var value) ? value : null;
-        var resp = JsonRpc.expectResponse(request(
+        return list(
+                cursor,
                 RequestMethod.RESOURCES_TEMPLATES_LIST,
-                AbstractEntityCodec.paginatedRequest(
+                token -> AbstractEntityCodec.paginatedRequest(
                         ListResourceTemplatesRequest::cursor,
                         ListResourceTemplatesRequest::_meta,
-                        ListResourceTemplatesRequest::new).toJson(new ListResourceTemplatesRequest(token, null)), Duration.ZERO
-        ));
-        return AbstractEntityCodec.paginatedResult(
-                "resourceTemplates",
-                "resourceTemplate",
-                r -> new Pagination.Page<>(r.resourceTemplates(), r.nextCursor()),
-                ListResourceTemplatesResult::_meta,
-                new ResourceTemplateAbstractEntityCodec(),
-                (page1, meta) -> new ListResourceTemplatesResult(page1.items(), page1.nextCursor(), meta)).fromJson(resp.result());
+                        ListResourceTemplatesRequest::new).toJson(new ListResourceTemplatesRequest(token, null)),
+                json -> AbstractEntityCodec.paginatedResult(
+                        "resourceTemplates",
+                        "resourceTemplate",
+                        r -> new Pagination.Page<>(r.resourceTemplates(), r.nextCursor()),
+                        ListResourceTemplatesResult::_meta,
+                        new ResourceTemplateAbstractEntityCodec(),
+                        (page, meta) -> new ListResourceTemplatesResult(page.items(), page.nextCursor(), meta)).fromJson(json)
+        );
+    }
+
+    private <T> T list(
+            Cursor cursor,
+            RequestMethod method,
+            Function<String, JsonObject> requestJson,
+            Function<JsonObject, T> resultParser) throws IOException {
+        var token = cursor instanceof Cursor.Token(var value) ? value : null;
+        var params = requestJson.apply(token);
+        var resp = JsonRpc.expectResponse(request(method, params, Duration.ZERO));
+        return resultParser.apply(resp.result());
     }
 
     public AutoCloseable subscribeResource(String uri, Consumer<ResourceUpdate> listener) throws IOException {
