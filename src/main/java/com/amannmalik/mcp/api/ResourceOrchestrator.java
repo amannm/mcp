@@ -47,10 +47,12 @@ final class ResourceOrchestrator implements AutoCloseable {
         this.sender = sender;
         this.progress = progress;
         this.listSubscription = resources.supportsListChanged() ?
-                subscribeListChanges(
+                SubscriptionUtil.subscribeListChanges(
+                        state,
                         resources::onListChanged,
-                        NotificationMethod.RESOURCES_LIST_CHANGED,
-                        RESOURCE_LIST_CHANGED_NOTIFICATION_JSON_CODEC.toJson(new ResourceListChangedNotification())) : null;
+                        () -> sender.sendNotification(
+                                NotificationMethod.RESOURCES_LIST_CHANGED,
+                                RESOURCE_LIST_CHANGED_NOTIFICATION_JSON_CODEC.toJson(new ResourceListChangedNotification()))) : null;
     }
 
     public void register(JsonRpcEndpoint endpoint) {
@@ -262,28 +264,6 @@ final class ResourceOrchestrator implements AutoCloseable {
             return JsonRpcError.of(req.id(), JsonRpcErrorCode.INTERNAL_ERROR, "Access denied");
         }
         return action.apply(block);
-    }
-
-    private AutoCloseable subscribeListChanges(
-            SubscriptionFactory<AutoCloseable> factory,
-            NotificationMethod method,
-            JsonObject payload) {
-        try {
-            return factory.onListChanged(() -> {
-                if (state.get() != LifecycleState.OPERATION) return;
-                try {
-                    sender.sendNotification(method, payload);
-                } catch (IOException ignore) {
-                }
-            });
-        } catch (RuntimeException ignore) {
-            return null;
-        }
-    }
-
-    @FunctionalInterface
-    private interface SubscriptionFactory<S extends AutoCloseable> {
-        S onListChanged(Runnable listener);
     }
 
     @FunctionalInterface
