@@ -28,14 +28,14 @@ public sealed interface Cursor permits Cursor.Start, Cursor.End, Cursor.Token {
     }
 
     private static String encode(int index) {
-        String raw = Integer.toString(index);
+        var raw = Integer.toString(index);
         return Base64Util.encodeUrl(raw.getBytes());
     }
 
     private static int decode(String token) {
         if (token == null) return 0;
         try {
-            String s = new String(Base64Util.decodeUrl(token));
+            var s = new String(Base64Util.decodeUrl(token));
             return Integer.parseInt(s);
         } catch (IllegalArgumentException e) {
             throw new IllegalArgumentException("Invalid cursor");

@@ -35,7 +35,7 @@ final class AuthorizationUtil {
 
     static void checkUnauthorized(HttpResponse<InputStream> response) throws IOException {
         if (response.statusCode() == 401) {
-            String header = response.headers().firstValue("WWW-Authenticate").orElse("");
+            var header = response.headers().firstValue("WWW-Authenticate").orElse("");
             response.body().close();
             throw new UnauthorizedException(header);
         }

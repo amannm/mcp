@@ -1,21 +1,25 @@
 package com.amannmalik.mcp.codec;
 
 import com.amannmalik.mcp.api.ReadResourceRequest;
-import jakarta.json.*;
+import jakarta.json.Json;
+import jakarta.json.JsonObject;
 
 import java.util.Set;
 
 public final class ReadResourceRequestAbstractEntityCodec extends AbstractEntityCodec<ReadResourceRequest> {
     @Override
     public JsonObject toJson(ReadResourceRequest req) {
-        return addMeta(Json.createObjectBuilder().add("uri", req.uri()), req._meta()).build();
+        var b = Json.createObjectBuilder().add("uri", req.uri());
+        if (req._meta() != null) b.add("_meta", req._meta());
+        return b.build();
     }
 
     @Override
     public ReadResourceRequest fromJson(JsonObject obj) {
         if (obj == null) throw new IllegalArgumentException("object required");
         requireOnlyKeys(obj, Set.of("uri", "_meta"));
-        String uri = requireString(obj, "uri");
-        return new ReadResourceRequest(uri, meta(obj));
+        var uri = requireString(obj, "uri");
+        var meta = obj.getJsonObject("_meta");
+        return new ReadResourceRequest(uri, meta);
     }
 }

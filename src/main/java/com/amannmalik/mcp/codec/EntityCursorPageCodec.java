@@ -1,6 +1,7 @@
 package com.amannmalik.mcp.codec;
 
-import jakarta.json.*;
+import jakarta.json.Json;
+import jakarta.json.JsonObject;
 
 import java.util.function.BiFunction;
 import java.util.function.Function;
@@ -18,10 +19,12 @@ public final class EntityCursorPageCodec<T> extends AbstractEntityCodec<T> {
 
     @Override
     public JsonObject toJson(T value) {
-        JsonObjectBuilder b = Json.createObjectBuilder();
-        String c = cursor.apply(value);
+        var b = Json.createObjectBuilder();
+        var c = cursor.apply(value);
         if (c != null) b.add("cursor", c);
-        return addMeta(b, meta.apply(value)).build();
+        var m = meta.apply(value);
+        if (m != null) b.add("_meta", m);
+        return b.build();
     }
 
     @Override
@@ -36,6 +39,6 @@ public final class EntityCursorPageCodec<T> extends AbstractEntityCodec<T> {
                 throw new IllegalArgumentException("cursor must be a string");
             }
         }
-        return from.apply(c, meta(obj));
+        return from.apply(c, obj.getJsonObject("_meta"));
     }
 }

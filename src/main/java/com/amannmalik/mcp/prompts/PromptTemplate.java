@@ -23,28 +23,28 @@ public record PromptTemplate(Prompt prompt, List<PromptMessageTemplate> messages
     }
 
     private static String substitute(String template, Map<String, String> args) {
-        String result = template;
-        for (Map.Entry<String, String> e : args.entrySet()) {
+        var result = template;
+        for (var e : args.entrySet()) {
             result = result.replace("{" + e.getKey() + "}", e.getValue());
         }
         return result;
     }
 
     PromptInstance instantiate(Map<String, String> args) {
-        Map<String, String> provided = Immutable.map(args);
+        var provided = Immutable.map(args);
 
         if (!prompt.arguments().isEmpty()) {
-            Set<String> allowed = prompt.arguments().stream()
+            var allowed = prompt.arguments().stream()
                     .map(PromptArgument::name)
                     .collect(Collectors.toUnmodifiableSet());
 
-            for (String name : provided.keySet()) {
+            for (var name : provided.keySet()) {
                 if (!allowed.contains(name)) {
                     throw new IllegalArgumentException("unknown argument: " + name);
                 }
             }
 
-            for (PromptArgument a : prompt.arguments()) {
+            for (var a : prompt.arguments()) {
                 if (a.required() && !provided.containsKey(a.name())) {
                     throw new IllegalArgumentException("missing argument: " + a.name());
                 }
@@ -52,7 +52,7 @@ public record PromptTemplate(Prompt prompt, List<PromptMessageTemplate> messages
         }
 
         List<PromptMessage> list = new ArrayList<>(messages.size());
-        for (PromptMessageTemplate t : messages) {
+        for (var t : messages) {
             list.add(new PromptMessage(t.role(), instantiate(t.content(), provided)));
         }
         return new PromptInstance(prompt.description(), list);

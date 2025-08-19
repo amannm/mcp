@@ -1,6 +1,7 @@
 package com.amannmalik.mcp.codec;
 
-import jakarta.json.*;
+import jakarta.json.Json;
+import jakarta.json.JsonObject;
 
 import java.util.function.Function;
 
@@ -15,13 +16,16 @@ public final class ResourceEntityMetaCodec<T> extends AbstractEntityCodec<T> {
 
     @Override
     public JsonObject toJson(T value) {
-        return addMeta(Json.createObjectBuilder(), meta.apply(value)).build();
+        var b = Json.createObjectBuilder();
+        var m = meta.apply(value);
+        if (m != null) b.add("_meta", m);
+        return b.build();
     }
 
     @Override
     public T fromJson(JsonObject obj) {
         if (obj == null) return from.apply(null);
         AbstractEntityCodec.requireOnlyKeys(obj, META_KEYS);
-        return from.apply(meta(obj));
+        return from.apply(obj.getJsonObject("_meta"));
     }
 }

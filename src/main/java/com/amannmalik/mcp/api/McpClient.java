@@ -7,7 +7,8 @@ import com.amannmalik.mcp.resources.ResourceListChangedNotification;
 import com.amannmalik.mcp.spi.*;
 import com.amannmalik.mcp.transport.StdioTransport;
 import com.amannmalik.mcp.util.*;
-import jakarta.json.*;
+import jakarta.json.Json;
+import jakarta.json.JsonObject;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -116,9 +117,9 @@ final class McpClient extends JsonRpcEndpoint implements AutoCloseable {
 
     private static Transport createTransport(McpClientConfiguration config,
                                              boolean globalVerbose) throws IOException {
-        String spec = config.commandSpec();
-        String[] cmds = spec == null || spec.isBlank() ? new String[0] : spec.split(" ");
-        boolean verbose = config.verbose() || globalVerbose;
+        var spec = config.commandSpec();
+        var cmds = spec == null || spec.isBlank() ? new String[0] : spec.split(" ");
+        var verbose = config.verbose() || globalVerbose;
         return cmds.length == 0
                 ? new StdioTransport(System.in, System.out, config.defaultReceiveTimeout())
                 : new StdioTransport(cmds, verbose ? System.err::println : s -> {
@@ -146,7 +147,7 @@ final class McpClient extends JsonRpcEndpoint implements AutoCloseable {
 
     public synchronized void connect() throws IOException {
         if (connected) return;
-        JsonRpcMessage msg = sendInitialization();
+        var msg = sendInitialization();
         handleInitialization(msg);
         connected = true;
         try {
@@ -204,7 +205,7 @@ final class McpClient extends JsonRpcEndpoint implements AutoCloseable {
     }
 
     public void ping(Duration timeoutMillis) throws IOException {
-        JsonRpcResponse resp = JsonRpc.expectResponse(request(RequestMethod.PING, null, timeoutMillis));
+        var resp = JsonRpc.expectResponse(request(RequestMethod.PING, null, timeoutMillis));
         if (!resp.result().isEmpty()) {
             throw new IOException("Unexpected ping response");
         }
@@ -241,7 +242,7 @@ final class McpClient extends JsonRpcEndpoint implements AutoCloseable {
             return JsonRpcError.of(new RequestId.NumericId(0), -32002, "Server not initialized");
         }
         try {
-            CompletableFuture<JsonRpcMessage> future = new CompletableFuture<>();
+            var future = new CompletableFuture<JsonRpcMessage>();
             pending.put(id, future);
             progress.register(id, params);
             send(new JsonRpcRequest(id, method.method(), params));
@@ -287,8 +288,8 @@ final class McpClient extends JsonRpcEndpoint implements AutoCloseable {
     }
 
     public ListResourcesResult listResources(Cursor cursor) throws IOException {
-        String token = cursor instanceof Cursor.Token(var value) ? value : null;
-        JsonRpcResponse resp = JsonRpc.expectResponse(request(
+        var token = cursor instanceof Cursor.Token(var value) ? value : null;
+        var resp = JsonRpc.expectResponse(request(
                 RequestMethod.RESOURCES_LIST,
                 AbstractEntityCodec.paginatedRequest(
                         ListResourcesRequest::cursor,
@@ -305,8 +306,8 @@ final class McpClient extends JsonRpcEndpoint implements AutoCloseable {
     }
 
     public ListResourceTemplatesResult listResourceTemplates(Cursor cursor) throws IOException {
-        String token = cursor instanceof Cursor.Token(var value) ? value : null;
-        JsonRpcResponse resp = JsonRpc.expectResponse(request(
+        var token = cursor instanceof Cursor.Token(var value) ? value : null;
+        var resp = JsonRpc.expectResponse(request(
                 RequestMethod.RESOURCES_TEMPLATES_LIST,
                 AbstractEntityCodec.paginatedRequest(
                         ListResourceTemplatesRequest::cursor,
@@ -354,7 +355,7 @@ final class McpClient extends JsonRpcEndpoint implements AutoCloseable {
     }
 
     private void fetchResourceMetadata(String url) throws IOException {
-        HttpRequest req = HttpRequest.newBuilder(URI.create(url))
+        var req = HttpRequest.newBuilder(URI.create(url))
                 .header("Accept", "application/json")
                 .GET()
                 .build();
@@ -369,28 +370,28 @@ final class McpClient extends JsonRpcEndpoint implements AutoCloseable {
             resp.body().close();
             throw new IOException("failed to fetch resource metadata: HTTP " + resp.statusCode());
         }
-        try (InputStream body = resp.body(); JsonReader reader = Json.createReader(body)) {
+        try (var body = resp.body(); var reader = Json.createReader(body)) {
             resourceMetadata = new ResourceMetadataJsonCodec().fromJson(reader.readObject());
         }
     }
 
     private JsonRpcMessage sendInitialization() throws IOException {
-        InitializeRequest init = new InitializeRequest(
+        var init = new InitializeRequest(
                 Protocol.LATEST_VERSION,
                 new Capabilities(capabilities, Set.of(), Map.of(), Map.of()),
                 info,
                 new ClientFeatures(rootsListChangedSupported)
         );
         var initJson = INITIALIZE_REQUEST_CODEC.toJson(init);
-        RequestId reqId = nextId();
-        JsonRpcRequest request = new JsonRpcRequest(reqId, RequestMethod.INITIALIZE.method(), initJson);
+        var reqId = nextId();
+        var request = new JsonRpcRequest(reqId, RequestMethod.INITIALIZE.method(), initJson);
         try {
             send(request);
         } catch (UnauthorizedException e) {
             handleUnauthorized(e);
             throw e;
         }
-        CompletableFuture<JsonRpcMessage> future = CompletableFuture.supplyAsync(() -> {
+        var future = CompletableFuture.supplyAsync(() -> {
             try {
                 return CODEC.fromJson(transport.receive(initializationTimeout));
             } catch (IOException e) {
@@ -409,7 +410,7 @@ final class McpClient extends JsonRpcEndpoint implements AutoCloseable {
             Thread.currentThread().interrupt();
             throw new IOException(e);
         } catch (ExecutionException e) {
-            Throwable cause = e.getCause();
+            var cause = e.getCause();
             if (cause instanceof IOException io) throw io;
             throw new IOException(cause);
         }
@@ -422,8 +423,8 @@ final class McpClient extends JsonRpcEndpoint implements AutoCloseable {
         } catch (IOException e) {
             throw new IOException("Initialization failed: " + e.getMessage(), e);
         }
-        InitializeResponse ir = ((JsonCodec<InitializeResponse>) new InitializeResponseAbstractEntityCodec()).fromJson(resp.result());
-        String serverVersion = ir.protocolVersion();
+        var ir = ((JsonCodec<InitializeResponse>) new InitializeResponseAbstractEntityCodec()).fromJson(resp.result());
+        var serverVersion = ir.protocolVersion();
         if (!Protocol.LATEST_VERSION.equals(serverVersion) && !Protocol.PREVIOUS_VERSION.equals(serverVersion)) {
             try {
                 transport.close();
@@ -436,7 +437,7 @@ final class McpClient extends JsonRpcEndpoint implements AutoCloseable {
         serverInfo = ir.serverInfo();
         serverCapabilities = ir.capabilities().server();
         instructions = ir.instructions();
-        Set<ServerFeature> f = ir.features();
+        var f = ir.features();
         if (f != null) {
             serverFeatures = EnumSet.copyOf(f);
         }
@@ -451,7 +452,7 @@ final class McpClient extends JsonRpcEndpoint implements AutoCloseable {
         try {
             rootsSubscription = roots.onListChanged(() -> {
                 try {
-                    JsonObject params = AbstractEntityCodec.empty(RootsListChangedNotification::new).toJson(new RootsListChangedNotification());
+                    var params = AbstractEntityCodec.empty(RootsListChangedNotification::new).toJson(new RootsListChangedNotification());
                     send(new JsonRpcNotification(NotificationMethod.ROOTS_LIST_CHANGED.method(), params));
                 } catch (IOException ignore) {
                 }
@@ -490,7 +491,7 @@ final class McpClient extends JsonRpcEndpoint implements AutoCloseable {
     private void readLoop() {
         while (connected) {
             try {
-                JsonRpcMessage msg = CODEC.fromJson(transport.receive());
+                var msg = CODEC.fromJson(transport.receive());
                 process(msg);
             } catch (IOException e) {
                 pending.values().forEach(f -> f.completeExceptionally(e));
@@ -503,18 +504,18 @@ final class McpClient extends JsonRpcEndpoint implements AutoCloseable {
         if (sampling == null) {
             return JsonRpcError.of(req.id(), JsonRpcErrorCode.METHOD_NOT_FOUND, "Sampling not supported");
         }
-        JsonObject params = req.params();
+        var params = req.params();
         if (params == null) {
             return JsonRpcError.of(req.id(), JsonRpcErrorCode.INVALID_PARAMS, "Missing params");
         }
         try {
-            CreateMessageRequest cmr = new CreateMessageRequestJsonCodec().fromJson(params);
+            var cmr = new CreateMessageRequestJsonCodec().fromJson(params);
             try {
                 samplingAccess.requireAllowed(principal);
             } catch (SecurityException e) {
                 return JsonRpcError.of(req.id(), JsonRpcErrorCode.INTERNAL_ERROR, e.getMessage());
             }
-            CreateMessageResponse resp = sampling.createMessage(cmr);
+            var resp = sampling.createMessage(cmr);
             return new JsonRpcResponse(req.id(), new CreateMessageResponseAbstractEntityCodec().toJson(resp));
         } catch (IllegalArgumentException e) {
             return JsonRpcError.of(req.id(), JsonRpcErrorCode.INVALID_PARAMS, e.getMessage());
@@ -543,13 +544,13 @@ final class McpClient extends JsonRpcEndpoint implements AutoCloseable {
         if (!capabilities.contains(ClientCapability.ELICITATION)) {
             return JsonRpcError.of(req.id(), JsonRpcErrorCode.METHOD_NOT_FOUND, "Elicitation not supported");
         }
-        JsonObject params = req.params();
+        var params = req.params();
         if (params == null) {
             return JsonRpcError.of(req.id(), JsonRpcErrorCode.INVALID_PARAMS, "Missing params");
         }
         try {
-            ElicitRequest er = new ElicitRequestJsonCodec().fromJson(params);
-            ElicitResult resp = elicitation.elicit(er);
+            var er = new ElicitRequestJsonCodec().fromJson(params);
+            var resp = elicitation.elicit(er);
             return new JsonRpcResponse(req.id(), new ElicitResultJsonCodec().toJson(resp));
         } catch (IllegalArgumentException e) {
             return JsonRpcError.of(req.id(), JsonRpcErrorCode.INVALID_PARAMS, e.getMessage());
@@ -559,7 +560,7 @@ final class McpClient extends JsonRpcEndpoint implements AutoCloseable {
     }
 
     private JsonRpcMessage handlePing(JsonRpcRequest req) {
-        final JsonObject params = req.params();
+        final var params = req.params();
         if (params != null) {
             if (params.isEmpty() || params.size() != 1 || !params.containsKey("_meta")) {
                 return JsonRpcError.of(req.id(), JsonRpcErrorCode.INVALID_PARAMS, "Invalid params");
@@ -574,7 +575,7 @@ final class McpClient extends JsonRpcEndpoint implements AutoCloseable {
     }
 
     private void requireCapability(RequestMethod method) {
-        for (ServerCapability cap : method.serverCapabilities()) {
+        for (var cap : method.serverCapabilities()) {
             if (!serverCapabilities.contains(cap)) {
                 throw new IllegalStateException("Server capability not negotiated: " + cap);
             }
@@ -584,7 +585,7 @@ final class McpClient extends JsonRpcEndpoint implements AutoCloseable {
     private void handleProgress(JsonRpcNotification note) {
         if (note.params() == null) return;
         try {
-            ProgressNotification pn = PROGRESS_NOTIFICATION_JSON_CODEC.fromJson(note.params());
+            var pn = PROGRESS_NOTIFICATION_JSON_CODEC.fromJson(note.params());
             progress.record(pn);
             listener.onProgress(pn);
         } catch (IllegalArgumentException | IllegalStateException ignore) {
@@ -610,8 +611,8 @@ final class McpClient extends JsonRpcEndpoint implements AutoCloseable {
     private void handleResourceUpdated(JsonRpcNotification note) {
         if (note.params() == null) return;
         try {
-            ResourceUpdatedNotification run = RESOURCE_UPDATED_NOTIFICATION_JSON_CODEC.fromJson(note.params());
-            Consumer<ResourceUpdate> listener = resourceListeners.get(run.uri());
+            var run = RESOURCE_UPDATED_NOTIFICATION_JSON_CODEC.fromJson(note.params());
+            var listener = resourceListeners.get(run.uri());
             if (listener != null) {
                 listener.accept(new ResourceUpdate(run.uri(), run.title()));
             }
@@ -628,10 +629,10 @@ final class McpClient extends JsonRpcEndpoint implements AutoCloseable {
     }
 
     private void cancelled(JsonRpcNotification note) {
-        CancelledNotification cn = CANCELLED_NOTIFICATION_JSON_CODEC.fromJson(note.params());
+        var cn = CANCELLED_NOTIFICATION_JSON_CODEC.fromJson(note.params());
         progress.cancel(cn.requestId(), cn.reason());
         progress.release(cn.requestId());
-        String reason = progress.reason(cn.requestId());
+        var reason = progress.reason(cn.requestId());
         if (reason != null) {
             System.err.println("Request " + cn.requestId() + " cancelled: " + reason);
         }

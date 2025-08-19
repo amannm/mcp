@@ -19,8 +19,8 @@ public final class SamplingMessageAbstractEntityCodec extends AbstractEntityCode
     public SamplingMessage fromJson(JsonObject obj) {
         if (obj == null) throw new IllegalArgumentException("object required");
         requireOnlyKeys(obj, Set.of("role", "content"));
-        Role role = requireRole(obj);
-        ContentBlock block = requireContent(obj);
+        var role = requireRole(obj);
+        var block = requireContent(obj);
         if (!(block instanceof MessageContent mc)) {
             throw new IllegalArgumentException("content must be message-capable");
         }

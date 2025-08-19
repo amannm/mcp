@@ -14,11 +14,11 @@ public final class Pagination {
     }
 
     public static <T> Page<T> page(List<T> items, Cursor cursor, int size) {
-        int start = Cursor.index(cursor);
+        var start = Cursor.index(cursor);
         if (start > items.size()) throw new IllegalArgumentException("Invalid cursor");
-        int end = Math.min(items.size(), start + size);
-        List<T> slice = items.subList(start, end);
-        Cursor next = end < items.size() ? Cursor.fromIndex(end) : Cursor.End.INSTANCE;
+        var end = Math.min(items.size(), start + size);
+        var slice = items.subList(start, end);
+        var next = end < items.size() ? Cursor.fromIndex(end) : Cursor.End.INSTANCE;
         return new Page<>(slice, next);
     }
 

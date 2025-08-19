@@ -2,7 +2,8 @@ package com.amannmalik.mcp.codec;
 
 import com.amannmalik.mcp.spi.ContentBlock;
 import com.amannmalik.mcp.util.Base64Util;
-import jakarta.json.*;
+import jakarta.json.Json;
+import jakarta.json.JsonObject;
 
 import java.util.Set;
 
@@ -14,41 +15,33 @@ public class ContentBlockJsonCodec implements JsonCodec<ContentBlock> {
 
     @Override
     public JsonObject toJson(ContentBlock content) {
-        return switch (content) {
-            case ContentBlock.Text t -> AbstractEntityCodec.addMeta(builder(t), t._meta())
-                    .add("text", t.text()).build();
-            case ContentBlock.Image i -> AbstractEntityCodec.addMeta(builder(i), i._meta())
-                    .add("data", Base64Util.encode(i.data()))
-                    .add("mimeType", i.mimeType()).build();
-            case ContentBlock.Audio a -> AbstractEntityCodec.addMeta(builder(a), a._meta())
-                    .add("data", Base64Util.encode(a.data()))
-                    .add("mimeType", a.mimeType()).build();
-            case ContentBlock.ResourceLink l -> {
-                JsonObjectBuilder b = builder(l);
-                JsonObject obj = RESOURCE_ENTITY_CODEC.toJson(l.resource());
-                obj.forEach((k, v) -> {
-                    if (!"_meta".equals(k)) b.add(k, v);
-                });
-                AbstractEntityCodec.addMeta(b, l.resource()._meta());
-                yield b.build();
-            }
-            case ContentBlock.EmbeddedResource r -> AbstractEntityCodec.addMeta(builder(r), r._meta())
-                    .add("resource", RESOURCE_BLOCK_CODEC.toJson(r.resource())).build();
-        };
-    }
-
-    private JsonObjectBuilder builder(ContentBlock content) {
-        JsonObjectBuilder b = Json.createObjectBuilder().add("type", content.type());
+        var b = Json.createObjectBuilder().add("type", content.type());
         if (content.annotations() != null && content.annotations() != AnnotationsJsonCodec.EMPTY) {
             b.add("annotations", ANNOTATIONS_CODEC.toJson(content.annotations()));
         }
-        return b;
+        if (content._meta() != null) b.add("_meta", content._meta());
+        return switch (content) {
+            case ContentBlock.Text t -> b.add("text", t.text()).build();
+            case ContentBlock.Image i -> b.add("data", Base64Util.encode(i.data()))
+                    .add("mimeType", i.mimeType()).build();
+            case ContentBlock.Audio a -> b.add("data", Base64Util.encode(a.data()))
+                    .add("mimeType", a.mimeType()).build();
+            case ContentBlock.ResourceLink l -> {
+                var obj = RESOURCE_ENTITY_CODEC.toJson(l.resource());
+                obj.forEach((k, v) -> {
+                    if (!"_meta".equals(k)) b.add(k, v);
+                });
+                if (l.resource()._meta() != null) b.add("_meta", l.resource()._meta());
+                yield b.build();
+            }
+            case ContentBlock.EmbeddedResource r -> b.add("resource", RESOURCE_BLOCK_CODEC.toJson(r.resource())).build();
+        };
     }
 
     @Override
     public ContentBlock fromJson(JsonObject obj) {
         if (obj == null) throw new IllegalArgumentException("object required");
-        String type = obj.getString("type", null);
+        var type = obj.getString("type", null);
         if (type == null) throw new IllegalArgumentException("type required");
         AbstractEntityCodec.requireOnlyKeys(obj, switch (type) {
             case "text" -> Set.of("type", "text", "annotations", "_meta");
@@ -61,21 +54,21 @@ public class ContentBlockJsonCodec implements JsonCodec<ContentBlock> {
             case "text" -> new ContentBlock.Text(
                     obj.getString("text"),
                     obj.containsKey("annotations") ? ANNOTATIONS_CODEC.fromJson(obj.getJsonObject("annotations")) : null,
-                    AbstractEntityCodec.meta(obj));
+                    obj.getJsonObject("_meta"));
             case "image" -> new ContentBlock.Image(
                     Base64Util.decode(obj.getString("data")),
                     obj.getString("mimeType"),
                     obj.containsKey("annotations") ? ANNOTATIONS_CODEC.fromJson(obj.getJsonObject("annotations")) : null,
-                    AbstractEntityCodec.meta(obj));
+                    obj.getJsonObject("_meta"));
             case "audio" -> new ContentBlock.Audio(
                     Base64Util.decode(obj.getString("data")),
                     obj.getString("mimeType"),
                     obj.containsKey("annotations") ? ANNOTATIONS_CODEC.fromJson(obj.getJsonObject("annotations")) : null,
-                    AbstractEntityCodec.meta(obj));
+                    obj.getJsonObject("_meta"));
             case "resource" -> new ContentBlock.EmbeddedResource(
                     RESOURCE_BLOCK_CODEC.fromJson(obj.getJsonObject("resource")),
                     obj.containsKey("annotations") ? ANNOTATIONS_CODEC.fromJson(obj.getJsonObject("annotations")) : null,
-                    AbstractEntityCodec.meta(obj));
+                    obj.getJsonObject("_meta"));
             case "resource_link" -> new ContentBlock.ResourceLink(RESOURCE_ENTITY_CODEC.fromJson(obj));
             default -> throw new IllegalArgumentException("unknown content type: " + type);
         };

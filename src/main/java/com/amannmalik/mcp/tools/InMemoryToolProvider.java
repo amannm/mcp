@@ -28,10 +28,10 @@ public final class InMemoryToolProvider extends InMemoryProvider<Tool> implement
     }
 
     private static boolean hasStructuredText(ToolResult result) {
-        String text = result.structuredContent().toString();
-        for (JsonValue v : result.content()) {
+        var text = result.structuredContent().toString();
+        for (var v : result.content()) {
             if (v.getValueType() != JsonValue.ValueType.OBJECT) continue;
-            JsonObject o = v.asJsonObject();
+            var o = v.asJsonObject();
             if ("text".equals(o.getString("type", null)) && text.equals(o.getString("text", null))) return true;
         }
         return false;
@@ -40,7 +40,7 @@ public final class InMemoryToolProvider extends InMemoryProvider<Tool> implement
     @Override
     public Optional<Tool> find(String name) {
         if (name == null) throw new IllegalArgumentException("name required");
-        for (Tool t : items) {
+        for (var t : items) {
             if (t.name().equals(name)) return Optional.of(t);
         }
         return Optional.empty();
@@ -50,13 +50,13 @@ public final class InMemoryToolProvider extends InMemoryProvider<Tool> implement
     public ToolResult call(String name, JsonObject arguments) {
         var f = handlers.get(name);
         if (f == null) throw new IllegalArgumentException("Unknown tool");
-        Tool tool = items.stream()
+        var tool = items.stream()
                 .filter(t -> t.name().equals(name))
                 .findFirst()
                 .orElseThrow(() -> new IllegalArgumentException("Unknown tool"));
-        JsonObject args = arguments == null ? JsonValue.EMPTY_JSON_OBJECT : arguments;
+        var args = arguments == null ? JsonValue.EMPTY_JSON_OBJECT : arguments;
         ValidationUtil.validateSchema(tool.inputSchema(), args);
-        ToolResult result = f.apply(args);
+        var result = f.apply(args);
         if (tool.outputSchema() != null) {
             if (result.structuredContent() == null) {
                 throw new IllegalStateException("structured result required");

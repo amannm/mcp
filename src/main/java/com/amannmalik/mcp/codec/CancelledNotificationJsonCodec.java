@@ -2,12 +2,13 @@ package com.amannmalik.mcp.codec;
 
 import com.amannmalik.mcp.api.CancelledNotification;
 import com.amannmalik.mcp.api.RequestId;
-import jakarta.json.*;
+import jakarta.json.Json;
+import jakarta.json.JsonObject;
 
 public class CancelledNotificationJsonCodec implements JsonCodec<CancelledNotification> {
     @Override
     public JsonObject toJson(CancelledNotification note) {
-        JsonObjectBuilder b = Json.createObjectBuilder();
+        var b = Json.createObjectBuilder();
         b.add("requestId", RequestId.toJsonValue(note.requestId()));
         if (note.reason() != null) b.add("reason", note.reason());
         return b.build();
@@ -16,8 +17,8 @@ public class CancelledNotificationJsonCodec implements JsonCodec<CancelledNotifi
     @Override
     public CancelledNotification fromJson(JsonObject obj) {
         if (obj == null) throw new IllegalArgumentException("object required");
-        RequestId id = RequestId.from(obj.get("requestId"));
-        String reason = obj.getString("reason", null);
+        var id = RequestId.from(obj.get("requestId"));
+        var reason = obj.getString("reason", null);
         return new CancelledNotification(id, reason);
     }
 }

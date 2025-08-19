@@ -22,23 +22,23 @@ public final class InteractiveElicitationProvider implements ElicitationProvider
             System.err.println(request.message());
             System.err.println();
 
-            JsonObject schema = request.requestedSchema();
-            JsonObject props = schema.getJsonObject("properties");
-            JsonArray req = schema.getJsonArray("required");
+            var schema = request.requestedSchema();
+            var props = schema.getJsonObject("properties");
+            var req = schema.getJsonArray("required");
             Set<String> required = new HashSet<>();
             if (req != null) {
-                for (JsonString s : req.getValuesAs(JsonString.class)) {
+                for (var s : req.getValuesAs(JsonString.class)) {
                     required.add(s.getString());
                 }
             }
 
-            JsonObjectBuilder content = Json.createObjectBuilder();
+            var content = Json.createObjectBuilder();
 
             for (var entry : props.entrySet()) {
-                String name = entry.getKey();
-                JsonObject prop = entry.getValue().asJsonObject();
-                String type = prop.getString("type");
-                boolean isRequired = required.contains(name);
+                var name = entry.getKey();
+                var prop = entry.getValue().asJsonObject();
+                var type = prop.getString("type");
+                var isRequired = required.contains(name);
                 System.err.print(name + " (" + type + (isRequired ? ", required" : "") + ")");
                 if (prop.containsKey("description")) {
                     System.err.print(" - " + prop.getString("description"));
@@ -47,10 +47,10 @@ public final class InteractiveElicitationProvider implements ElicitationProvider
                     System.err.print(" options: " + prop.getJsonArray("enum"));
                 }
                 System.err.println();
-                JsonValue defaultVal = prop.get("default");
+                var defaultVal = prop.get("default");
                 while (true) {
                     System.err.print(name + ": ");
-                    String line = reader.readLine();
+                    var line = reader.readLine();
                     if (line == null) return new ElicitResult(ElicitationAction.CANCEL, null, null);
                     line = line.trim();
                     if (line.isEmpty()) {
@@ -65,10 +65,10 @@ public final class InteractiveElicitationProvider implements ElicitationProvider
                         break;
                     }
                     try {
-                        JsonValue val = parseValue(type, line);
+                        var val = parseValue(type, line);
                         if (prop.containsKey("enum")) {
-                            boolean allowed = false;
-                            for (JsonString v : prop.getJsonArray("enum").getValuesAs(JsonString.class)) {
+                            var allowed = false;
+                            for (var v : prop.getJsonArray("enum").getValuesAs(JsonString.class)) {
                                 if (v.getString().equals(line)) {
                                     allowed = true;
                                     break;
@@ -88,7 +88,7 @@ public final class InteractiveElicitationProvider implements ElicitationProvider
             }
 
             System.err.print("Action accept (a)/decline (d)/cancel (c): ");
-            String act = reader.readLine();
+            var act = reader.readLine();
             if (act == null) return new ElicitResult(ElicitationAction.CANCEL, null, null);
             act = act.trim().toLowerCase();
             if (act.startsWith("a")) {

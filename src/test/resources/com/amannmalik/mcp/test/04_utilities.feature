@@ -239,14 +239,14 @@ Feature: MCP Protocol Utilities
   Scenario: Progress token type requirements
     # Tests specification/2025-06-18/basic/utilities/progress.mdx:14-22 (Token type)
     Given I have requests with progress tokens of different types:
-      | token    | valid |
-      | "abc123" | true  |
-      | 42       | true  |
+      | token               | valid |
+      | "abc123"            | true  |
+      | 42                  | true  |
       | 9223372036854775808 | true  |
       | null                | false |
-      | 1.5      | false |
-      | 1.0      | false |
-      | true     | false |
+      | 1.5                 | false |
+      | 1.0                 | false |
+      | true                | false |
     When I validate progress token types
     Then only valid progress token types should be accepted
 
@@ -254,8 +254,8 @@ Feature: MCP Protocol Utilities
   Scenario: Progress tokens support large integer values
     # Tests specification/2025-06-18/basic/utilities/progress.mdx:14-22 (Token type)
     Given I have requests with progress tokens of different types:
-      | token               | valid |
-      | 9223372036854775808 | true  |
+      | token                | valid |
+      | 9223372036854775808  | true  |
       | -9223372036854775808 | true  |
     When I validate progress token types
     Then only valid progress token types should be accepted
@@ -358,11 +358,11 @@ Feature: MCP Protocol Utilities
     # Tests specification/2025-06-18/server/utilities/pagination.mdx:98-100 (Error handling)
     Given I am handling pagination requests
     When I receive requests with invalid cursors:
-      | cursor_type      | error_code | error_message  |
-      | expired_cursor   | -32602     | Invalid params |
-      | malformed_cursor | -32602     | Invalid params |
-      | unknown_cursor   | -32602     | Invalid params |
-      | non_string_cursor | -32602    | Invalid params |
+      | cursor_type       | error_code | error_message  |
+      | expired_cursor    | -32602     | Invalid params |
+      | malformed_cursor  | -32602     | Invalid params |
+      | unknown_cursor    | -32602     | Invalid params |
+      | non_string_cursor | -32602     | Invalid params |
     Then I should return appropriate error responses for utilities
     And use JSON-RPC error code -32602 for invalid parameters
 
