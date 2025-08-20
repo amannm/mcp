@@ -82,6 +82,9 @@ final class SseReader implements Runnable {
                     }
                     data.append(value);
                 }
+                default -> {
+                    // do nothing
+                }
             }
         }
 

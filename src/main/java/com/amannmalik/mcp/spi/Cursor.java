@@ -33,7 +33,7 @@ public sealed interface Cursor permits Cursor.Start, Cursor.End, Cursor.Token {
 
     private static String encode(int index) {
         var raw = Integer.toString(index);
-        return Base64Util.encodeUrl(raw.getBytes());
+        return Base64Util.encodeUrl(raw.getBytes(StandardCharsets.UTF_8));
     }
 
     private static int decode(String token) {

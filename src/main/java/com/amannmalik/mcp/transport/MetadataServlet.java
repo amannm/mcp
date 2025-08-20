@@ -5,9 +5,14 @@ import com.amannmalik.mcp.core.ResourceMetadata;
 import jakarta.servlet.http.*;
 
 import java.io.IOException;
+import java.io.Serial;
 
 final class MetadataServlet extends HttpServlet {
-    private final StreamableHttpServerTransport transport;
+
+    @Serial
+    private static final long serialVersionUID = 133742069L;
+
+    private transient final StreamableHttpServerTransport transport;
 
     MetadataServlet(StreamableHttpServerTransport transport) {
         this.transport = transport;
