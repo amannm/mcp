@@ -290,9 +290,7 @@ public final class StreamableHttpServerTransport implements Transport {
             resp.sendError(HttpServletResponse.SC_FORBIDDEN);
             return false;
         }
-        if (origin != null) {
-            resp.setHeader("Access-Control-Allow-Origin", origin);
-        }
+        resp.setHeader("Access-Control-Allow-Origin", origin);
         return true;
     }
 
