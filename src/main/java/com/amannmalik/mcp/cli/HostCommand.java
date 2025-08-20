@@ -12,13 +12,13 @@ import picocli.CommandLine.ParseResult;
 import java.io.*;
 import java.lang.System.Logger;
 import java.nio.charset.StandardCharsets;
-
 import java.nio.file.Path;
 import java.util.*;
 import java.util.stream.Collectors;
 
 public final class HostCommand {
     private static final Logger LOG = System.getLogger(HostCommand.class.getName());
+
     public HostCommand() {
     }
 

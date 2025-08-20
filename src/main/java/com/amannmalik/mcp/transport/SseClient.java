@@ -6,12 +6,12 @@ import jakarta.servlet.AsyncContext;
 
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.lang.System.Logger;
 import java.security.SecureRandom;
 import java.util.ArrayDeque;
 import java.util.Deque;
-import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.lang.System.Logger;
+import java.util.concurrent.atomic.AtomicLong;
 
 public final class SseClient implements AutoCloseable {
     private static final SecureRandom RANDOM = new SecureRandom();
@@ -20,9 +20,9 @@ public final class SseClient implements AutoCloseable {
     private final long historyLimit;
     private final Deque<SseEvent> history = new ArrayDeque<>();
     private final AtomicLong nextId = new AtomicLong(1);
+    private final AtomicBoolean closed = new AtomicBoolean();
     private AsyncContext context;
     private PrintWriter out;
-    private final AtomicBoolean closed = new AtomicBoolean();
 
     public SseClient(AsyncContext context, int clientPrefixByteLength, long historyLimit) throws IOException {
         var bytes = new byte[clientPrefixByteLength];

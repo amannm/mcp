@@ -15,11 +15,11 @@ import jakarta.json.stream.JsonParsingException;
 
 import java.io.EOFException;
 import java.io.IOException;
+import java.lang.System.Logger;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
-import java.lang.System.Logger;
 import java.util.concurrent.atomic.AtomicReference;
 
 /// - [Server](specification/2025-06-18/server/index.mdx)
@@ -66,13 +66,13 @@ public final class McpServer extends JsonRpcEndpoint implements AutoCloseable {
     private final Principal principal;
     private final RateLimiter completionLimiter;
     private final RateLimiter logLimiter;
+    private final AtomicReference<LoggingLevel> logLevel = new AtomicReference<>();
     private String protocolVersion;
     private LifecycleState lifecycleState = LifecycleState.INIT;
     private Set<ClientCapability> clientCapabilities = Set.of();
     private ClientFeatures clientFeatures = ClientFeatures.EMPTY;
     private AutoCloseable toolListSubscription;
     private AutoCloseable promptsSubscription;
-    private final AtomicReference<LoggingLevel> logLevel = new AtomicReference<>();
 
     public McpServer(McpServerConfiguration config,
                      ResourceProvider resources,
@@ -180,6 +180,15 @@ public final class McpServer extends JsonRpcEndpoint implements AutoCloseable {
         };
     }
 
+    private static Logger.Level level(LoggingLevel l) {
+        return switch (l) {
+            case DEBUG -> Logger.Level.DEBUG;
+            case INFO, NOTICE -> Logger.Level.INFO;
+            case WARNING -> Logger.Level.WARNING;
+            default -> Logger.Level.ERROR;
+        };
+    }
+
     private ToolCallHandler createToolHandler(ToolProvider tools,
                                               McpServerConfiguration config,
                                               Principal principal) {
@@ -279,15 +288,6 @@ public final class McpServer extends JsonRpcEndpoint implements AutoCloseable {
             }
         }
         return Optional.empty();
-    }
-
-    private static Logger.Level level(LoggingLevel l) {
-        return switch (l) {
-            case DEBUG -> Logger.Level.DEBUG;
-            case INFO, NOTICE -> Logger.Level.INFO;
-            case WARNING -> Logger.Level.WARNING;
-            default -> Logger.Level.ERROR;
-        };
     }
 
     private void logAndRespond(String prefix,

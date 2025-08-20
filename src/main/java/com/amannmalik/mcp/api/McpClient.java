@@ -61,19 +61,19 @@ public final class McpClient extends JsonRpcEndpoint implements AutoCloseable {
     private final Map<URI, Consumer<ResourceUpdate>> resourceListeners = new ConcurrentHashMap<>();
     private final Duration initializationTimeout;
     private final Duration requestTimeout;
+    private final AtomicBoolean connected = new AtomicBoolean();
+    private final AtomicReference<ResourceMetadata> resourceMetadata = new AtomicReference<>();
     private AutoCloseable rootsSubscription;
     private SamplingAccessPolicy samplingAccess;
     private Principal principal;
     private ClientBackgroundTasks background;
     private Duration pingInterval;
     private Duration pingTimeout;
-    private final AtomicBoolean connected = new AtomicBoolean();
     private Set<ServerCapability> serverCapabilities = Set.of();
     private String instructions;
     private Set<ServerFeature> serverFeatures = EnumSet.noneOf(ServerFeature.class);
     private String protocolVersion;
     private ServerInfo serverInfo;
-    private final AtomicReference<ResourceMetadata> resourceMetadata = new AtomicReference<>();
 
     public McpClient(McpClientConfiguration config,
                      boolean globalVerbose,

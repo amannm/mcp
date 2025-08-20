@@ -11,8 +11,8 @@ import com.amannmalik.mcp.spi.*;
 import jakarta.json.JsonObject;
 
 import java.io.IOException;
-import java.net.URI;
 import java.lang.System.Logger;
+import java.net.URI;
 import java.time.Duration;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -32,13 +32,13 @@ public final class McpHost implements AutoCloseable {
                     (page, meta) -> new ListToolsResult(page.items(), page.nextCursor(), meta));
 
     private static final Duration TIMEOUT = Duration.ofSeconds(5);
+    private static final Logger LOG = System.getLogger(McpHost.class.getName());
     private final Map<String, McpClient> clients = new ConcurrentHashMap<>();
     private final ConsentController consents;
     private final Principal principal;
     private final ToolAccessController toolAccess;
     private final ResourceAccessController privacyBoundary;
     private final SamplingAccessController samplingAccess;
-    private static final Logger LOG = System.getLogger(McpHost.class.getName());
 
     public McpHost(McpHostConfiguration config) throws IOException {
         this.principal = new Principal(config.hostPrincipal(), Set.of());
