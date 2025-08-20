@@ -3,6 +3,8 @@ package com.amannmalik.mcp.spi;
 import com.amannmalik.mcp.util.Base64Util;
 import com.amannmalik.mcp.util.ValidationUtil;
 
+import java.nio.charset.StandardCharsets;
+
 public sealed interface Cursor permits Cursor.Start, Cursor.End, Cursor.Token {
     static Cursor of(String value) {
         return value == null ? End.INSTANCE : new Token(value);
@@ -39,7 +41,7 @@ public sealed interface Cursor permits Cursor.Start, Cursor.End, Cursor.Token {
             return 0;
         }
         try {
-            var s = new String(Base64Util.decodeUrl(token));
+            var s = new String(Base64Util.decodeUrl(token), StandardCharsets.UTF_8);
             return Integer.parseInt(s);
         } catch (IllegalArgumentException e) {
             throw new IllegalArgumentException("Invalid cursor");
