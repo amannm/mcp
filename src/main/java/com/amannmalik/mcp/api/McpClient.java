@@ -230,7 +230,7 @@ public final class McpClient extends JsonRpcEndpoint implements AutoCloseable {
         transport.close();
         resourceListeners.clear();
         if (rootsSubscription != null) {
-            CloseUtil.closeQuietly(rootsSubscription);
+            CloseUtil.close(rootsSubscription);
             rootsSubscription = null;
         }
     }
@@ -408,7 +408,8 @@ public final class McpClient extends JsonRpcEndpoint implements AutoCloseable {
                         RequestMethod.RESOURCES_UNSUBSCRIBE,
                         UNSUBSCRIBE_REQUEST_JSON_CODEC.toJson(new UnsubscribeRequest(uri, null)), requestTimeout
                 );
-            } catch (IOException ignore) {
+            } catch (IOException e) {
+                throw new RuntimeException(e);
             }
         };
     }
@@ -473,7 +474,8 @@ public final class McpClient extends JsonRpcEndpoint implements AutoCloseable {
                 try {
                     var params = AbstractEntityCodec.empty(RootsListChangedNotification::new).toJson(new RootsListChangedNotification());
                     send(new JsonRpcNotification(NotificationMethod.ROOTS_LIST_CHANGED.method(), params));
-                } catch (IOException ignore) {
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
                 }
             });
         } catch (Exception e) {
@@ -571,7 +573,8 @@ public final class McpClient extends JsonRpcEndpoint implements AutoCloseable {
             var pn = PROGRESS_NOTIFICATION_JSON_CODEC.fromJson(note.params());
             progress.record(pn);
             listener.onProgress(pn);
-        } catch (IllegalArgumentException | IllegalStateException ignore) {
+        } catch (IllegalArgumentException | IllegalStateException e) {
+            throw new RuntimeException(e);
         }
     }
 
@@ -581,7 +584,8 @@ public final class McpClient extends JsonRpcEndpoint implements AutoCloseable {
         }
         try {
             listener.onMessage(LOGGING_MESSAGE_NOTIFICATION_JSON_CODEC.fromJson(note.params()));
-        } catch (IllegalArgumentException ignore) {
+        } catch (IllegalArgumentException e) {
+            throw new RuntimeException(e);
         }
     }
 
@@ -589,7 +593,8 @@ public final class McpClient extends JsonRpcEndpoint implements AutoCloseable {
         try {
             RESOURCE_LIST_CHANGED_NOTIFICATION_JSON_CODEC.fromJson(note.params());
             listener.onResourceListChanged();
-        } catch (IllegalArgumentException ignore) {
+        } catch (IllegalArgumentException e) {
+            throw new RuntimeException(e);
         }
     }
 
@@ -603,7 +608,8 @@ public final class McpClient extends JsonRpcEndpoint implements AutoCloseable {
             if (listener != null) {
                 listener.accept(new ResourceUpdate(run.uri(), run.title()));
             }
-        } catch (IllegalArgumentException ignore) {
+        } catch (IllegalArgumentException e) {
+            throw new RuntimeException(e);
         }
     }
 
@@ -611,7 +617,8 @@ public final class McpClient extends JsonRpcEndpoint implements AutoCloseable {
         try {
             TOOL_LIST_CHANGED_NOTIFICATION_JSON_CODEC.fromJson(note.params());
             listener.onToolListChanged();
-        } catch (IllegalArgumentException ignore) {
+        } catch (IllegalArgumentException e) {
+            throw new RuntimeException(e);
         }
     }
 

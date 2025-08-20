@@ -4,13 +4,14 @@ public final class CloseUtil {
     private CloseUtil() {
     }
 
-    public static void closeQuietly(AutoCloseable closeable) {
+    public static void close(AutoCloseable closeable) {
         if (closeable == null) {
             return;
         }
         try {
             closeable.close();
-        } catch (Exception ignore) {
+        } catch (Exception e) {
+            throw new RuntimeException(e);
         }
     }
 }

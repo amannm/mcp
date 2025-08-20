@@ -27,7 +27,7 @@ final class SseClients {
     void removeRequest(String key, SseClient client) {
         request.remove(key);
         byPrefix.remove(client.prefix);
-        CloseUtil.closeQuietly(client);
+        CloseUtil.close(client);
     }
 
     AsyncListener requestListener(String key, SseClient client) {
@@ -37,7 +37,7 @@ final class SseClients {
     void removeGeneral(SseClient client) {
         general.remove(client);
         lastGeneral.set(client);
-        CloseUtil.closeQuietly(client);
+        CloseUtil.close(client);
     }
 
     AsyncListener generalListener(SseClient client) {

@@ -75,8 +75,8 @@ final class ResourceOrchestrator implements AutoCloseable {
 
     @Override
     public void close() {
-        subscriptions.values().forEach(CloseUtil::closeQuietly);
-        CloseUtil.closeQuietly(listSubscription);
+        subscriptions.values().forEach(CloseUtil::close);
+        CloseUtil.close(listSubscription);
         resources.close();
     }
 
@@ -172,7 +172,8 @@ final class ResourceOrchestrator implements AutoCloseable {
                         var n = new ResourceUpdatedNotification(update.uri(), update.title());
                         sender.sendNotification(NotificationMethod.RESOURCES_UPDATED,
                                 RESOURCE_UPDATED_NOTIFICATION_JSON_CODEC.toJson(n));
-                    } catch (IOException ignore) {
+                    } catch (IOException e) {
+                        throw new RuntimeException(e);
                     }
                 });
                 subscriptions.put(uri, sub);
@@ -197,7 +198,7 @@ final class ResourceOrchestrator implements AutoCloseable {
                         Json.createObjectBuilder().add("uri", uri.toString()).build());
             }
             var sub = subscriptions.remove(uri);
-            CloseUtil.closeQuietly(sub);
+            CloseUtil.close(sub);
             return new JsonRpcResponse(req.id(), JsonValue.EMPTY_JSON_OBJECT);
         });
     }

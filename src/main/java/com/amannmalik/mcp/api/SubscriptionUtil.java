@@ -13,19 +13,16 @@ final class SubscriptionUtil {
             Supplier<LifecycleState> state,
             SubscriptionFactory<S> factory,
             IoRunnable listener) {
-        try {
-            return factory.onListChanged(() -> {
-                if (state.get() != LifecycleState.OPERATION) {
-                    return;
-                }
-                try {
-                    listener.run();
-                } catch (IOException ignore) {
-                }
-            });
-        } catch (RuntimeException ignore) {
-            return null;
-        }
+        return factory.onListChanged(() -> {
+            if (state.get() != LifecycleState.OPERATION) {
+                return;
+            }
+            try {
+                listener.run();
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        });
     }
 
     @FunctionalInterface
