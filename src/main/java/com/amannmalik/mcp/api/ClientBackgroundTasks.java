@@ -2,11 +2,13 @@ package com.amannmalik.mcp.api;
 
 
 import java.io.IOException;
+import java.lang.System.Logger;
 import java.time.Duration;
 import java.util.concurrent.*;
 
 /// - [Ping](specification/2025-06-18/basic/utilities/ping.mdx)
 final class ClientBackgroundTasks implements AutoCloseable {
+    private static final Logger LOG = System.getLogger(ClientBackgroundTasks.class.getName());
     private final McpClient client;
     private final Duration interval;
     private final Duration timeout;
@@ -49,7 +51,7 @@ final class ClientBackgroundTasks implements AutoCloseable {
             failures = 0;
         } catch (IOException | RuntimeException e) {
             failures++;
-            System.err.println("Ping failure: " + e.getMessage());
+            LOG.log(Logger.Level.WARNING, () -> "Ping failure: " + e.getMessage());
             if (failures >= 3) {
                 failures = 0;
                 try {

@@ -19,6 +19,7 @@ import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
+import java.lang.System.Logger;
 
 /// - [Server](specification/2025-06-18/server/index.mdx)
 /// - [MCP server conformance test](src/test/resources/com/amannmalik/mcp/mcp_conformance.feature:6-34)
@@ -46,6 +47,7 @@ public final class McpServer extends JsonRpcEndpoint implements AutoCloseable {
                     ListPromptsResult::_meta,
                     new PromptAbstractEntityCodec(),
                     (page, meta) -> new ListPromptsResult(page.items(), page.nextCursor(), meta));
+    private static final Logger LOG = System.getLogger(McpServer.class.getName());
 
     private final McpServerConfiguration config;
     private final Set<ServerCapability> serverCapabilities;
@@ -165,10 +167,10 @@ public final class McpServer extends JsonRpcEndpoint implements AutoCloseable {
                         authManager);
                 if (config.verbose()) {
                     if (config.serverPort() > 0) {
-                        System.err.println("Listening on http://127.0.0.1:" + ht.port());
+                        LOG.log(Logger.Level.INFO, "Listening on http://127.0.0.1:" + ht.port());
                     }
                     if (config.httpsPort() > 0) {
-                        System.err.println("Listening on https://127.0.0.1:" + ht.httpsPort());
+                        LOG.log(Logger.Level.INFO, "Listening on https://127.0.0.1:" + ht.httpsPort());
                     }
                 }
                 yield ht;
@@ -251,10 +253,10 @@ public final class McpServer extends JsonRpcEndpoint implements AutoCloseable {
             } catch (IllegalArgumentException e) {
                 handleInvalidRequest(e);
             } catch (IOException e) {
-                System.err.println(config.errorProcessing() + ": " + e.getMessage());
+                LOG.log(Logger.Level.ERROR, () -> config.errorProcessing() + ": " + e.getMessage());
                 sendLog(LoggingLevel.ERROR, config.serverLoggerName(), Json.createValue(e.getMessage()));
             } catch (Exception e) {
-                System.err.println("Unexpected " + config.errorProcessing().toLowerCase() + ": " + e.getMessage());
+                LOG.log(Logger.Level.ERROR, () -> "Unexpected " + config.errorProcessing().toLowerCase(Locale.ROOT) + ": " + e.getMessage());
                 sendLog(LoggingLevel.ERROR, config.serverLoggerName(), Json.createValue(e.getMessage()));
             }
         }
@@ -268,28 +270,37 @@ public final class McpServer extends JsonRpcEndpoint implements AutoCloseable {
         } catch (JsonParsingException e) {
             handleParseError(e);
         } catch (IOException e) {
-            System.err.println(config.errorProcessing() + ": " + e.getMessage());
+            LOG.log(Logger.Level.ERROR, () -> config.errorProcessing() + ": " + e.getMessage());
             try {
                 sendLog(LoggingLevel.ERROR, config.serverLoggerName(), Json.createValue(e.getMessage()));
             } catch (IOException ioe) {
-                System.err.println("Failed to send error: " + ioe.getMessage());
+                LOG.log(Logger.Level.ERROR, () -> "Failed to send error: " + ioe.getMessage());
             }
         }
         return Optional.empty();
     }
 
+    private static Logger.Level level(LoggingLevel l) {
+        return switch (l) {
+            case DEBUG -> Logger.Level.DEBUG;
+            case INFO, NOTICE -> Logger.Level.INFO;
+            case WARNING -> Logger.Level.WARNING;
+            default -> Logger.Level.ERROR;
+        };
+    }
+
     private void logAndRespond(String prefix,
-                               LoggingLevel level,
+                               LoggingLevel logLevel,
                                String logger,
                                JsonRpcErrorCode code,
                                RequestId id,
                                String message) {
-        System.err.println(prefix + ": " + message);
+        LOG.log(level(logLevel), prefix + ": " + message);
         try {
-            sendLog(level, logger, Json.createValue(message));
+            sendLog(logLevel, logger, Json.createValue(message));
             send(JsonRpcError.of(id, code, message));
         } catch (IOException ioe) {
-            System.err.println("Failed to send error: " + ioe.getMessage());
+            LOG.log(Logger.Level.ERROR, () -> "Failed to send error: " + ioe.getMessage());
         }
     }
 

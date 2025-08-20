@@ -12,6 +12,7 @@ import jakarta.json.JsonObject;
 
 import java.io.IOException;
 import java.net.URI;
+import java.lang.System.Logger;
 import java.time.Duration;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -37,6 +38,7 @@ public final class McpHost implements AutoCloseable {
     private final ToolAccessController toolAccess;
     private final ResourceAccessController privacyBoundary;
     private final SamplingAccessController samplingAccess;
+    private static final Logger LOG = System.getLogger(McpHost.class.getName());
 
     public McpHost(McpHostConfiguration config) throws IOException {
         this.principal = new Principal(config.hostPrincipal(), Set.of());
@@ -56,8 +58,13 @@ public final class McpHost implements AutoCloseable {
                 @Override
                 public void onMessage(LoggingMessageNotification notification) {
                     var logger = notification.logger() == null ? "" : ":" + notification.logger();
-                    System.err.println("[" + clientConfig.clientId() + "] " +
-                            notification.level().name().toLowerCase(Locale.ROOT) + logger + " " + notification.data());
+                    var level = switch (notification.level()) {
+                        case DEBUG -> Logger.Level.DEBUG;
+                        case INFO, NOTICE -> Logger.Level.INFO;
+                        case WARNING -> Logger.Level.WARNING;
+                        default -> Logger.Level.ERROR;
+                    };
+                    LOG.log(level, () -> "[" + clientConfig.clientId() + "]" + logger + " " + notification.data());
                 }
             } : null;
 

@@ -10,11 +10,13 @@ import picocli.CommandLine.Model.OptionSpec;
 import picocli.CommandLine.ParseResult;
 
 import java.io.*;
+import java.lang.System.Logger;
 import java.nio.file.Path;
 import java.util.*;
 import java.util.stream.Collectors;
 
 public final class HostCommand {
+    private static final Logger LOG = System.getLogger(HostCommand.class.getName());
     public HostCommand() {
     }
 
@@ -117,7 +119,7 @@ public final class HostCommand {
                 for (var clientConfig : clientConfigs) {
                     host.connect(clientConfig.clientId());
                     if (verbose || clientConfig.verbose()) {
-                        System.err.println("Registered client: " + clientConfig.clientId());
+                        LOG.log(Logger.Level.INFO, "Registered client: " + clientConfig.clientId());
                     }
                 }
                 if (interactive) {

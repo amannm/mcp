@@ -4,8 +4,7 @@ import com.amannmalik.mcp.codec.ContentBlockJsonCodec;
 import com.amannmalik.mcp.codec.JsonCodec;
 import com.amannmalik.mcp.util.ValidationUtil;
 import jakarta.json.*;
-
-import java.util.logging.Logger;
+import java.lang.System.Logger;
 
 public record ToolResult(JsonArray content,
                          JsonObject structuredContent,
@@ -13,7 +12,7 @@ public record ToolResult(JsonArray content,
                          JsonObject _meta) implements Result {
 
     private static final JsonCodec<ContentBlock> CONTENT_BLOCK_CODEC = new ContentBlockJsonCodec();
-    private static final Logger LOG = Logger.getLogger(ToolResult.class.getName());
+    private static final Logger LOG = System.getLogger(ToolResult.class.getName());
 
     public ToolResult {
         content = sanitize(content == null ? JsonValue.EMPTY_JSON_ARRAY : content);
@@ -39,7 +38,7 @@ public record ToolResult(JsonArray content,
         try {
             return CONTENT_BLOCK_CODEC.fromJson(v.asJsonObject());
         } catch (IllegalArgumentException e) {
-            LOG.fine(() -> "invalid content block: " + v);
+            LOG.log(Logger.Level.DEBUG, () -> "invalid content block: " + v);
             return null;
         }
     }

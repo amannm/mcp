@@ -10,9 +10,11 @@ import java.security.SecureRandom;
 import java.util.ArrayDeque;
 import java.util.Deque;
 import java.util.concurrent.atomic.AtomicLong;
+import java.lang.System.Logger;
 
 public final class SseClient implements AutoCloseable {
     private static final SecureRandom RANDOM = new SecureRandom();
+    private static final Logger LOG = System.getLogger(SseClient.class.getName());
     final String prefix;
     private final long historyLimit;
     private final Deque<SseEvent> history = new ArrayDeque<>();
@@ -54,7 +56,7 @@ public final class SseClient implements AutoCloseable {
             out.write("data: " + msg + "\n\n");
             out.flush();
         } catch (Exception e) {
-            System.err.println("SSE send failed: " + e.getMessage());
+            LOG.log(Logger.Level.ERROR, "SSE send failed: " + e.getMessage());
             closed = true;
         }
     }
@@ -83,7 +85,7 @@ public final class SseClient implements AutoCloseable {
                 context.complete();
             }
         } catch (Exception e) {
-            System.err.println("SSE close failed: " + e.getMessage());
+            LOG.log(Logger.Level.ERROR, "SSE close failed: " + e.getMessage());
         } finally {
             context = null;
             out = null;
