@@ -22,9 +22,7 @@ public final class EntityCursorPageCodec<T> extends AbstractEntityCodec<T> {
         var b = Json.createObjectBuilder();
         var c = cursor.apply(value);
         if (c != null) b.add("cursor", c);
-        var m = meta.apply(value);
-        if (m != null) b.add("_meta", m);
-        return b.build();
+        return addMeta(b, meta.apply(value)).build();
     }
 
     @Override
@@ -39,6 +37,6 @@ public final class EntityCursorPageCodec<T> extends AbstractEntityCodec<T> {
                 throw new IllegalArgumentException("cursor must be a string");
             }
         }
-        return from.apply(c, obj.getJsonObject("_meta"));
+        return from.apply(c, meta(obj));
     }
 }

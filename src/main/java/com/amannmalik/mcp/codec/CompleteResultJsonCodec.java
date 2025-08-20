@@ -11,10 +11,10 @@ public class CompleteResultJsonCodec implements JsonCodec<CompleteResult> {
 
     @Override
     public JsonObject toJson(CompleteResult res) {
-        var b = Json.createObjectBuilder()
-                .add("completion", COMPLETION_JSON_CODEC.toJson(res.completion()));
-        if (res._meta() != null) b.add("_meta", res._meta());
-        return b.build();
+        return AbstractEntityCodec.addMeta(
+                Json.createObjectBuilder().add("completion", COMPLETION_JSON_CODEC.toJson(res.completion())),
+                res._meta())
+                .build();
     }
 
     @Override
@@ -22,7 +22,6 @@ public class CompleteResultJsonCodec implements JsonCodec<CompleteResult> {
         var compObj = obj.getJsonObject("completion");
         if (compObj == null) throw new IllegalArgumentException("completion required");
         var comp = COMPLETION_JSON_CODEC.fromJson(compObj);
-        var meta = obj.getJsonObject("_meta");
-        return new CompleteResult(comp, meta);
+        return new CompleteResult(comp, AbstractEntityCodec.meta(obj));
     }
 }

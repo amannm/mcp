@@ -20,8 +20,7 @@ public final class ToolAbstractEntityCodec extends AbstractEntityCodec<Tool> {
         if (tool.description() != null) b.add("description", tool.description());
         if (tool.outputSchema() != null) b.add("outputSchema", tool.outputSchema());
         if (tool.annotations() != null) b.add("annotations", TOOL_ANNOTATIONS_JSON_CODEC.toJson(tool.annotations()));
-        if (tool._meta() != null) b.add("_meta", tool._meta());
-        return b.build();
+        return addMeta(b, tool._meta()).build();
     }
 
     @Override
@@ -36,7 +35,6 @@ public final class ToolAbstractEntityCodec extends AbstractEntityCodec<Tool> {
         var outputSchema = obj.getJsonObject("outputSchema");
         var ann = obj.containsKey("annotations") ?
                 TOOL_ANNOTATIONS_JSON_CODEC.fromJson(getObject(obj, "annotations")) : null;
-        var meta = obj.getJsonObject("_meta");
-        return new Tool(name, title, description, inputSchema, outputSchema, ann, meta);
+        return new Tool(name, title, description, inputSchema, outputSchema, ann, meta(obj));
     }
 }

@@ -14,8 +14,7 @@ public final class CreateMessageResponseAbstractEntityCodec extends AbstractEnti
                 .add("content", CONTENT_BLOCK_CODEC.toJson((ContentBlock) resp.content()))
                 .add("model", resp.model());
         if (resp.stopReason() != null) b.add("stopReason", resp.stopReason());
-        if (resp._meta() != null) b.add("_meta", resp._meta());
-        return b.build();
+        return addMeta(b, resp._meta()).build();
     }
 
     @Override
@@ -29,7 +28,6 @@ public final class CreateMessageResponseAbstractEntityCodec extends AbstractEnti
         }
         var model = requireString(obj, "model");
         var stop = obj.getString("stopReason", null);
-        var meta = obj.getJsonObject("_meta");
-        return new CreateMessageResponse(role, mc, model, stop, meta);
+        return new CreateMessageResponse(role, mc, model, stop, meta(obj));
     }
 }

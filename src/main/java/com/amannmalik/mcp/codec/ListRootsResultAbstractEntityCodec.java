@@ -15,9 +15,7 @@ public final class ListRootsResultAbstractEntityCodec extends AbstractEntityCode
     public JsonObject toJson(ListRootsResult result) {
         var arr = Json.createArrayBuilder();
         result.roots().forEach(r -> arr.add(CODEC.toJson(r)));
-        var b = Json.createObjectBuilder().add("roots", arr);
-        if (result._meta() != null) b.add("_meta", result._meta());
-        return b.build();
+        return addMeta(Json.createObjectBuilder().add("roots", arr), result._meta()).build();
     }
 
     @Override
@@ -28,6 +26,6 @@ public final class ListRootsResultAbstractEntityCodec extends AbstractEntityCode
         List<Root> roots = arr == null || arr.isEmpty()
                 ? List.of()
                 : arr.stream().map(JsonValue::asJsonObject).map(CODEC::fromJson).toList();
-        return new ListRootsResult(roots, getObject(obj, "_meta"));
+        return new ListRootsResult(roots, meta(obj));
     }
 }

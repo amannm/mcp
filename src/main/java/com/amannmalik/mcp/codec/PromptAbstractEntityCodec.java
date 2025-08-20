@@ -12,13 +12,12 @@ public final class PromptAbstractEntityCodec extends AbstractEntityCodec<Prompt>
         var b = Json.createObjectBuilder().add("name", prompt.name());
         if (prompt.title() != null) b.add("title", prompt.title());
         if (prompt.description() != null) b.add("description", prompt.description());
-        if (prompt._meta() != null) b.add("_meta", prompt._meta());
         if (!prompt.arguments().isEmpty()) {
             var arr = Json.createArrayBuilder();
             prompt.arguments().forEach(a -> arr.add(new PromptArgumentAbstractEntityCodec().toJson(a)));
             b.add("arguments", arr.build());
         }
-        return b.build();
+        return addMeta(b, prompt._meta()).build();
     }
 
     @Override
@@ -28,7 +27,7 @@ public final class PromptAbstractEntityCodec extends AbstractEntityCodec<Prompt>
         var name = requireString(obj, "name");
         var title = obj.getString("title", null);
         var description = obj.getString("description", null);
-        var meta = obj.getJsonObject("_meta");
+        var meta = meta(obj);
         var argsArr = obj.getJsonArray("arguments");
         List<PromptArgument> args = List.of();
         if (argsArr != null && !argsArr.isEmpty()) {

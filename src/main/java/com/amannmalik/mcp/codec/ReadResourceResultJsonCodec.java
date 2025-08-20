@@ -15,9 +15,7 @@ public class ReadResourceResultJsonCodec implements JsonCodec<ReadResourceResult
     public JsonObject toJson(ReadResourceResult r) {
         var arr = Json.createArrayBuilder();
         r.contents().forEach(c -> arr.add(RESOURCE_BLOCK_CODEC.toJson(c)));
-        var b = Json.createObjectBuilder().add("contents", arr.build());
-        if (r._meta() != null) b.add("_meta", r._meta());
-        return b.build();
+        return AbstractEntityCodec.addMeta(Json.createObjectBuilder().add("contents", arr.build()), r._meta()).build();
     }
 
     @Override
@@ -32,7 +30,6 @@ public class ReadResourceResultJsonCodec implements JsonCodec<ReadResourceResult
             }
             contents.add(RESOURCE_BLOCK_CODEC.fromJson(v.asJsonObject()));
         }
-        var meta = obj.getJsonObject("_meta");
-        return new ReadResourceResult(contents, meta);
+        return new ReadResourceResult(contents, AbstractEntityCodec.meta(obj));
     }
 }

@@ -12,8 +12,7 @@ public final class RootAbstractEntityCodec extends AbstractEntityCodec<Root> {
     public JsonObject toJson(Root root) {
         var b = Json.createObjectBuilder().add("uri", root.uri().toString());
         if (root.name() != null) b.add("name", root.name());
-        if (root._meta() != null) b.add("_meta", root._meta());
-        return b.build();
+        return addMeta(b, root._meta()).build();
     }
 
     @Override
@@ -23,6 +22,6 @@ public final class RootAbstractEntityCodec extends AbstractEntityCodec<Root> {
         var uriString = requireString(obj, "uri");
         var uri = URI.create(uriString);
         var name = obj.getString("name", null);
-        return new Root(uri, name, getObject(obj, "_meta"));
+        return new Root(uri, name, meta(obj));
     }
 }

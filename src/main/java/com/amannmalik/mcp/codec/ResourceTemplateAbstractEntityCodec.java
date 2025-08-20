@@ -16,8 +16,7 @@ public final class ResourceTemplateAbstractEntityCodec extends AbstractEntityCod
         if (t.annotations() != AnnotationsJsonCodec.EMPTY) {
             b.add("annotations", new AnnotationsJsonCodec().toJson(t.annotations()));
         }
-        if (t._meta() != null) b.add("_meta", t._meta());
-        return b.build();
+        return addMeta(b, t._meta()).build();
     }
 
     @Override
@@ -31,7 +30,6 @@ public final class ResourceTemplateAbstractEntityCodec extends AbstractEntityCod
         var annotations = obj.containsKey("annotations")
                 ? new AnnotationsJsonCodec().fromJson(getObject(obj, "annotations"))
                 : AnnotationsJsonCodec.EMPTY;
-        var meta = obj.getJsonObject("_meta");
-        return new ResourceTemplate(uriTemplate, name, title, description, mimeType, annotations, meta);
+        return new ResourceTemplate(uriTemplate, name, title, description, mimeType, annotations, meta(obj));
     }
 }

@@ -13,8 +13,7 @@ public final class PromptArgumentAbstractEntityCodec extends AbstractEntityCodec
         if (a.title() != null) b.add("title", a.title());
         if (a.description() != null) b.add("description", a.description());
         if (a.required()) b.add("required", true);
-        if (a._meta() != null) b.add("_meta", a._meta());
-        return b.build();
+        return addMeta(b, a._meta()).build();
     }
 
     @Override
@@ -25,7 +24,6 @@ public final class PromptArgumentAbstractEntityCodec extends AbstractEntityCodec
         var title = obj.getString("title", null);
         var description = obj.getString("description", null);
         var required = obj.getBoolean("required", false);
-        var meta = obj.getJsonObject("_meta");
-        return new PromptArgument(name, title, description, required, meta);
+        return new PromptArgument(name, title, description, required, meta(obj));
     }
 }

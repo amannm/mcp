@@ -31,8 +31,7 @@ public class CreateMessageRequestJsonCodec implements JsonCodec<CreateMessageReq
             b.add("stopSequences", arr.build());
         }
         if (req.metadata() != null) b.add("metadata", req.metadata());
-        if (req._meta() != null) b.add("_meta", req._meta());
-        return b.build();
+        return AbstractEntityCodec.addMeta(b, req._meta()).build();
     }
 
     @Override
@@ -62,7 +61,6 @@ public class CreateMessageRequestJsonCodec implements JsonCodec<CreateMessageReq
                 ? obj.getJsonArray("stopSequences").getValuesAs(JsonString.class).stream().map(JsonString::getString).toList()
                 : List.of();
         var metadata = obj.getJsonObject("metadata");
-        var meta = obj.containsKey("_meta") ? obj.getJsonObject("_meta") : null;
-        return new CreateMessageRequest(messages, prefs, system, ctx, temp, max, stops, metadata, meta);
+        return new CreateMessageRequest(messages, prefs, system, ctx, temp, max, stops, metadata, AbstractEntityCodec.meta(obj));
     }
 }

@@ -44,7 +44,7 @@ public final class ResourceEntityFieldCodec<I, R> extends AbstractEntityCodec<R>
             items.add(itemCodec.fromJson(v.asJsonObject()));
         }
         var next = obj.getString("nextCursor", null);
-        var m = obj.getJsonObject("_meta");
+        var m = meta(obj);
         requireOnlyKeys(obj, Set.of(field, "nextCursor", "_meta"));
         return from.apply(new Pagination.Page<>(items, Cursor.of(next)), m);
     }
