@@ -13,6 +13,7 @@ import jakarta.json.JsonObject;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.lang.System.Logger;
 import java.net.URI;
 import java.net.http.*;
 import java.nio.file.Path;
@@ -46,6 +47,7 @@ public final class McpClient extends JsonRpcEndpoint implements AutoCloseable {
     };
     private static final McpClientListener NOOP_LISTENER = new McpClientListener() {
     };
+    private static final Logger LOG = System.getLogger(McpClient.class.getName());
     private final McpClientConfiguration config;
     private final ClientInfo info;
     private final Set<ClientCapability> capabilities;
@@ -152,8 +154,10 @@ public final class McpClient extends JsonRpcEndpoint implements AutoCloseable {
             }
             var cmds = spec.split(" ");
             var verbose = config.verbose() || globalVerbose;
-            return new StdioTransport(cmds, verbose ? System.err::println : s -> {
-            }, config.defaultReceiveTimeout());
+            return new StdioTransport(cmds,
+                    verbose ? line -> LOG.log(Logger.Level.INFO, line) : s -> {
+                    },
+                    config.defaultReceiveTimeout());
         }
         return new StdioTransport(System.in, System.out, config.defaultReceiveTimeout());
     }
@@ -617,7 +621,7 @@ public final class McpClient extends JsonRpcEndpoint implements AutoCloseable {
         progress.release(cn.requestId());
         var reason = progress.reason(cn.requestId());
         if (reason != null) {
-            System.err.println("Request " + cn.requestId() + " cancelled: " + reason);
+            LOG.log(Logger.Level.INFO, () -> "Request " + cn.requestId() + " cancelled: " + reason);
         }
     }
 
