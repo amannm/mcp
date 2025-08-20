@@ -5,7 +5,7 @@ import com.amannmalik.mcp.core.*;
 import com.amannmalik.mcp.jsonrpc.*;
 import com.amannmalik.mcp.resources.ResourceListChangedNotification;
 import com.amannmalik.mcp.spi.*;
-import com.amannmalik.mcp.transport.StdioTransport;
+import com.amannmalik.mcp.transport.TransportFactory;
 import com.amannmalik.mcp.transport.StreamableHttpClientTransport;
 import com.amannmalik.mcp.util.*;
 import jakarta.json.Json;
@@ -77,7 +77,7 @@ public final class McpClient extends JsonRpcEndpoint implements AutoCloseable {
                      RootsProvider roots,
                      ElicitationProvider elicitation,
                      McpClientListener listener) throws IOException {
-        super(createTransport(config, globalVerbose),
+        super(TransportFactory.client(config, globalVerbose),
                 new ProgressManager(new RateLimiter(
                         config.progressPerSecond(),
                         config.rateLimiterWindow().toMillis())),
@@ -120,42 +120,6 @@ public final class McpClient extends JsonRpcEndpoint implements AutoCloseable {
         if (listener != null) {
             registerNotification(NotificationMethod.PROMPTS_LIST_CHANGED, n -> listener.onPromptsListChanged());
         }
-    }
-
-    private static Transport createTransport(McpClientConfiguration config,
-                                             boolean globalVerbose) throws IOException {
-        var spec = config.commandSpec();
-        if (spec != null && !spec.isBlank()) {
-            if (spec.startsWith("http://") || spec.startsWith("https://")) {
-                var uri = URI.create(spec);
-                if (spec.startsWith("https://")) {
-                    var ts = config.truststorePath().isBlank() ? null : Path.of(config.truststorePath());
-                    var ks = config.keystorePath().isBlank() ? null : Path.of(config.keystorePath());
-                    var pins = Set.copyOf(config.certificatePins());
-                    var validate = config.certificateValidationMode() != CertificateValidationMode.PERMISSIVE;
-                    return new StreamableHttpClientTransport(
-                            uri,
-                            config.defaultReceiveTimeout(),
-                            config.defaultOriginHeader(),
-                            ts,
-                            config.truststorePassword().toCharArray(),
-                            ks,
-                            config.keystorePassword().toCharArray(),
-                            validate,
-                            pins,
-                            config.verifyHostname());
-                }
-                return new StreamableHttpClientTransport(
-                        uri,
-                        config.defaultReceiveTimeout(),
-                        config.defaultOriginHeader());
-            }
-            var cmds = spec.split(" ");
-            var verbose = config.verbose() || globalVerbose;
-            return new StdioTransport(cmds, verbose ? System.err::println : s -> {
-            }, config.defaultReceiveTimeout());
-        }
-        return new StdioTransport(System.in, System.out, config.defaultReceiveTimeout());
     }
 
     public void configurePing(Duration intervalMillis, Duration timeoutMillis) {
