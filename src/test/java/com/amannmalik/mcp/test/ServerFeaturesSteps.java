@@ -536,7 +536,7 @@ public final class ServerFeaturesSteps {
             var actual = activeConnection.listResources(clientId, Cursor.Start.INSTANCE).resources().stream()
                     .map(r -> {
                         var b = Json.createObjectBuilder()
-                                .add("uri", r.uri())
+                                .add("uri", r.uri().toString())
                                 .add("name", r.name());
                         if (r.title() != null) b.add("title", r.title());
                         if (r.description() != null) b.add("description", r.description());

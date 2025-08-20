@@ -10,6 +10,7 @@ import com.amannmalik.mcp.spi.*;
 import com.amannmalik.mcp.tools.InMemoryToolProvider;
 import jakarta.json.Json;
 
+import java.net.URI;
 import java.time.Instant;
 import java.util.*;
 
@@ -22,10 +23,10 @@ public final class ServerDefaults {
 
     static {
         var ann = new Annotations(Set.of(Role.USER), 0.5, Instant.parse("2024-01-01T00:00:00Z"));
-        var r0 = new Resource("file:///sample/example.txt", "example", null, null, "text/plain", 5L, ann, null);
-        var r1 = new Resource("https://example.com/resource", "web", null, null, "text/plain", 6L, ann, null);
-        var r2 = new Resource("git://repo/file", "repo", null, null, "text/plain", 7L, ann, null);
-        Map<String, ResourceBlock> content = Map.of(
+        var r0 = new Resource(URI.create("file:///sample/example.txt"), "example", null, null, "text/plain", 5L, ann, null);
+        var r1 = new Resource(URI.create("https://example.com/resource"), "web", null, null, "text/plain", 6L, ann, null);
+        var r2 = new Resource(URI.create("git://repo/file"), "repo", null, null, "text/plain", 7L, ann, null);
+        Map<URI, ResourceBlock> content = Map.of(
                 r0.uri(), new ResourceBlock.Text(r0.uri(), "text/plain", "hello", null),
                 r1.uri(), new ResourceBlock.Text(r1.uri(), "text/plain", "web", null),
                 r2.uri(), new ResourceBlock.Text(r2.uri(), "text/plain", "repo", null)
@@ -116,7 +117,7 @@ public final class ServerDefaults {
                                 Json.createArrayBuilder()
                                         .add(Json.createObjectBuilder()
                                                 .add("type", "resource_link")
-                                                .add("uri", r0.uri())
+                                                .add("uri", r0.uri().toString())
                                                 .build())
                                         .build(), null, false, null),
                         "embedded_tool", a -> new ToolResult(
@@ -124,7 +125,7 @@ public final class ServerDefaults {
                                         .add(Json.createObjectBuilder()
                                                 .add("type", "resource")
                                                 .add("resource", Json.createObjectBuilder()
-                                                        .add("uri", r0.uri())
+                                                        .add("uri", r0.uri().toString())
                                                         .add("name", r0.name())
                                                         .build())
                                                 .build())

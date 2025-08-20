@@ -3,17 +3,19 @@ package com.amannmalik.mcp.spi;
 import com.amannmalik.mcp.util.ValidationUtil;
 import jakarta.json.JsonObject;
 
+import java.net.URI;
+
 public sealed interface ResourceBlock permits
         ResourceBlock.Text,
         ResourceBlock.Binary {
 
-    String uri();
+    URI uri();
 
     String mimeType();
 
     JsonObject _meta();
 
-    record Text(String uri, String mimeType, String text, JsonObject _meta) implements ResourceBlock {
+    record Text(URI uri, String mimeType, String text, JsonObject _meta) implements ResourceBlock {
         public Text {
             uri = ValidationUtil.requireAbsoluteUri(uri);
             mimeType = ValidationUtil.cleanNullable(mimeType);
@@ -22,7 +24,7 @@ public sealed interface ResourceBlock permits
         }
     }
 
-    record Binary(String uri, String mimeType, byte[] blob, JsonObject _meta) implements ResourceBlock {
+    record Binary(URI uri, String mimeType, byte[] blob, JsonObject _meta) implements ResourceBlock {
         public Binary {
             uri = ValidationUtil.requireAbsoluteUri(uri);
             mimeType = ValidationUtil.cleanNullable(mimeType);

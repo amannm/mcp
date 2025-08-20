@@ -3,7 +3,9 @@ package com.amannmalik.mcp.spi;
 import com.amannmalik.mcp.util.ValidationUtil;
 import jakarta.json.JsonObject;
 
-public record Root(String uri, String name, JsonObject _meta) {
+import java.net.URI;
+
+public record Root(URI uri, String name, JsonObject _meta) {
     public Root {
         uri = ValidationUtil.requireFileUri(uri);
         if (name != null) {

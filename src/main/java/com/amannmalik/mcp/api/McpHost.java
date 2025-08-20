@@ -11,6 +11,7 @@ import com.amannmalik.mcp.spi.*;
 import jakarta.json.JsonObject;
 
 import java.io.IOException;
+import java.net.URI;
 import java.time.Duration;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -47,7 +48,7 @@ public final class McpHost implements AutoCloseable {
             grantConsent(clientConfig.serverName());
             SamplingProvider samplingProvider = new InteractiveSamplingProvider(clientConfig.interactiveSampling());
             var roots = clientConfig.rootDirectories().stream()
-                    .map(dir -> new Root("file://" + dir, dir, null))
+                    .map(dir -> new Root(URI.create("file://" + dir), dir, null))
                     .toList();
             var rootsProvider = new InMemoryRootsProvider(roots);
 
@@ -135,7 +136,7 @@ public final class McpHost implements AutoCloseable {
         return client.listResourceTemplates(cursor);
     }
 
-    public AutoCloseable subscribeToResource(String clientId, String uri, Consumer<ResourceUpdate> listener) throws IOException {
+    public AutoCloseable subscribeToResource(String clientId, URI uri, Consumer<ResourceUpdate> listener) throws IOException {
         var client = requireClient(clientId);
         requireCapability(client, ServerCapability.RESOURCES);
         return client.subscribeResource(uri, listener);

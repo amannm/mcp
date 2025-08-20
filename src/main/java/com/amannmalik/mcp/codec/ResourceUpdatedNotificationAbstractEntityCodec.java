@@ -4,17 +4,20 @@ import com.amannmalik.mcp.api.ResourceUpdatedNotification;
 import jakarta.json.Json;
 import jakarta.json.JsonObject;
 
+import java.net.URI;
+
 public final class ResourceUpdatedNotificationAbstractEntityCodec extends AbstractEntityCodec<ResourceUpdatedNotification> {
     @Override
     public JsonObject toJson(ResourceUpdatedNotification n) {
-        var b = Json.createObjectBuilder().add("uri", n.uri());
+        var b = Json.createObjectBuilder().add("uri", n.uri().toString());
         if (n.title() != null) b.add("title", n.title());
         return b.build();
     }
 
     @Override
     public ResourceUpdatedNotification fromJson(JsonObject obj) {
-        var uri = requireString(obj, "uri");
+        var uriString = requireString(obj, "uri");
+        var uri = URI.create(uriString);
         var title = obj.getString("title", null);
         return new ResourceUpdatedNotification(uri, title);
     }

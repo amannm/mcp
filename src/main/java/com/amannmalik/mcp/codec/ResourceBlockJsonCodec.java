@@ -5,12 +5,13 @@ import com.amannmalik.mcp.util.Base64Util;
 import jakarta.json.Json;
 import jakarta.json.JsonObject;
 
+import java.net.URI;
 import java.util.Set;
 
 public class ResourceBlockJsonCodec implements JsonCodec<ResourceBlock> {
     @Override
     public JsonObject toJson(ResourceBlock block) {
-        var b = Json.createObjectBuilder().add("uri", block.uri());
+        var b = Json.createObjectBuilder().add("uri", block.uri().toString());
         if (block.mimeType() != null) b.add("mimeType", block.mimeType());
         if (block._meta() != null) b.add("_meta", block._meta());
         return switch (block) {
@@ -22,8 +23,9 @@ public class ResourceBlockJsonCodec implements JsonCodec<ResourceBlock> {
     @Override
     public ResourceBlock fromJson(JsonObject obj) {
         if (obj == null) throw new IllegalArgumentException("object required");
-        var uri = obj.getString("uri", null);
-        if (uri == null) throw new IllegalArgumentException("uri required");
+        var uriString = obj.getString("uri", null);
+        if (uriString == null) throw new IllegalArgumentException("uri required");
+        var uri = URI.create(uriString);
         var mime = obj.getString("mimeType", null);
         var meta = obj.getJsonObject("_meta");
         var hasText = obj.containsKey("text");

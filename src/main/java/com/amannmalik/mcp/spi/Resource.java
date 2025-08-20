@@ -4,8 +4,10 @@ import com.amannmalik.mcp.codec.AnnotationsJsonCodec;
 import com.amannmalik.mcp.util.ValidationUtil;
 import jakarta.json.JsonObject;
 
+import java.net.URI;
+
 public record Resource(
-        String uri,
+        URI uri,
         String name,
         String title,
         String description,

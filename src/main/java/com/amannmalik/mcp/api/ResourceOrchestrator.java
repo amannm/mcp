@@ -29,7 +29,7 @@ final class ResourceOrchestrator implements AutoCloseable {
     private final Supplier<LifecycleState> state;
     private final Sender sender;
     private final ProgressManager progress;
-    private final Map<String, AutoCloseable> subscriptions = new ConcurrentHashMap<>();
+    private final Map<URI, AutoCloseable> subscriptions = new ConcurrentHashMap<>();
     private final AutoCloseable listSubscription;
 
     public ResourceOrchestrator(ResourceProvider resources,
@@ -160,11 +160,11 @@ final class ResourceOrchestrator implements AutoCloseable {
         return withAccessibleUri(req, uri, () -> {
             if (resources.get(uri).isEmpty()) {
                 return JsonRpcError.of(req.id(), -32002, "Resource not found",
-                        Json.createObjectBuilder().add("uri", uri).build());
+                        Json.createObjectBuilder().add("uri", uri.toString()).build());
             }
             if (subscriptions.containsKey(uri)) {
                 return JsonRpcError.of(req.id(), -32602, "Already subscribed to resource",
-                        Json.createObjectBuilder().add("uri", uri).build());
+                        Json.createObjectBuilder().add("uri", uri.toString()).build());
             }
             try {
                 var sub = resources.subscribe(uri, update -> {
@@ -194,7 +194,7 @@ final class ResourceOrchestrator implements AutoCloseable {
         return withAccessibleUri(req, uri, () -> {
             if (!subscriptions.containsKey(uri)) {
                 return JsonRpcError.of(req.id(), -32602, "No active subscription for resource",
-                        Json.createObjectBuilder().add("uri", uri).build());
+                        Json.createObjectBuilder().add("uri", uri.toString()).build());
             }
             var sub = subscriptions.remove(uri);
             CloseUtil.closeQuietly(sub);
@@ -211,11 +211,11 @@ final class ResourceOrchestrator implements AutoCloseable {
         }
     }
 
-    private boolean withinRoots(String uri) {
+    private boolean withinRoots(URI uri) {
         return RootChecker.withinRoots(uri, roots.roots());
     }
 
-    private boolean canAccessResource(String uri) {
+    private boolean canAccessResource(URI uri) {
         if (!withinRoots(uri)) return false;
         return resources.get(uri)
                 .map(Resource::annotations)
@@ -231,29 +231,19 @@ final class ResourceOrchestrator implements AutoCloseable {
         }
     }
 
-    private JsonRpcMessage withAccessibleUri(JsonRpcRequest req, String uri, Supplier<JsonRpcMessage> action) {
-        try {
-            URI.create(uri);
-        } catch (Exception e) {
-            return JsonRpcError.of(req.id(), JsonRpcErrorCode.INVALID_PARAMS, "Invalid params");
-        }
+    private JsonRpcMessage withAccessibleUri(JsonRpcRequest req, URI uri, Supplier<JsonRpcMessage> action) {
         if (!canAccessResource(uri)) {
             return JsonRpcError.of(req.id(), -32002, "Resource not found",
-                    Json.createObjectBuilder().add("uri", uri).build());
+                    Json.createObjectBuilder().add("uri", uri.toString()).build());
         }
         return action.get();
     }
 
-    private JsonRpcMessage withExistingResource(JsonRpcRequest req, String uri, Function<ResourceBlock, JsonRpcMessage> action) {
-        try {
-            URI.create(uri);
-        } catch (Exception e) {
-            return JsonRpcError.of(req.id(), JsonRpcErrorCode.INVALID_PARAMS, "Invalid params");
-        }
+    private JsonRpcMessage withExistingResource(JsonRpcRequest req, URI uri, Function<ResourceBlock, JsonRpcMessage> action) {
         var block = resources.read(uri);
         if (block == null) {
             return JsonRpcError.of(req.id(), -32002, "Resource not found",
-                    Json.createObjectBuilder().add("uri", uri).build());
+                    Json.createObjectBuilder().add("uri", uri.toString()).build());
         }
         if (!canAccessResource(uri)) {
             return JsonRpcError.of(req.id(), JsonRpcErrorCode.INTERNAL_ERROR, "Access denied");

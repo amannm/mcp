@@ -11,21 +11,15 @@ public final class RootChecker {
     private RootChecker() {
     }
 
-    public static boolean withinRoots(String uri, List<Root> roots) {
+    public static boolean withinRoots(URI uri, List<Root> roots) {
         Objects.requireNonNull(roots);
         if (uri == null) return false;
-        final URI target;
-        try {
-            target = URI.create(uri);
-        } catch (IllegalArgumentException e) {
-            return false;
-        }
-        if (!"file".equalsIgnoreCase(target.getScheme())) return true;
+        if (!"file".equalsIgnoreCase(uri.getScheme())) return true;
         if (roots.isEmpty()) return false;
 
         final Path targetPath;
         try {
-            var p = Paths.get(target);
+            var p = Paths.get(uri);
             targetPath = normalize(p);
         } catch (Exception e) {
             return false;
@@ -38,13 +32,9 @@ public final class RootChecker {
                 .anyMatch(targetPath::startsWith);
     }
 
-    private static Optional<Path> toPath(String uri) {
-        try {
-            var base = URI.create(uri);
-            if ("file".equalsIgnoreCase(base.getScheme())) {
-                return Optional.of(normalize(Paths.get(base)));
-            }
-        } catch (Exception ignore) {
+    private static Optional<Path> toPath(URI uri) {
+        if ("file".equalsIgnoreCase(uri.getScheme())) {
+            return Optional.of(normalize(Paths.get(uri)));
         }
         return Optional.empty();
     }

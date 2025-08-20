@@ -53,7 +53,7 @@ public final class McpClient extends JsonRpcEndpoint implements AutoCloseable {
     private final boolean rootsListChangedSupported;
     private final ElicitationProvider elicitation;
     private final McpClientListener listener;
-    private final Map<String, Consumer<ResourceUpdate>> resourceListeners = new ConcurrentHashMap<>();
+    private final Map<URI, Consumer<ResourceUpdate>> resourceListeners = new ConcurrentHashMap<>();
     private final Duration initializationTimeout;
     private final Duration requestTimeout;
     private AutoCloseable rootsSubscription;
@@ -368,7 +368,7 @@ public final class McpClient extends JsonRpcEndpoint implements AutoCloseable {
         return resultParser.apply(resp.result());
     }
 
-    public AutoCloseable subscribeResource(String uri, Consumer<ResourceUpdate> listener) throws IOException {
+    public AutoCloseable subscribeResource(URI uri, Consumer<ResourceUpdate> listener) throws IOException {
         if (!serverFeatures.contains(ServerFeature.RESOURCES_SUBSCRIBE)) {
             throw new IllegalStateException("resource subscribe not supported");
         }

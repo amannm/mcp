@@ -4,11 +4,13 @@ import com.amannmalik.mcp.spi.Resource;
 import jakarta.json.Json;
 import jakarta.json.JsonObject;
 
+import java.net.URI;
+
 public non-sealed class ResourceAbstractEntityCodec extends AbstractEntityCodec<Resource> {
     @Override
     public JsonObject toJson(Resource r) {
         var b = Json.createObjectBuilder()
-                .add("uri", r.uri())
+                .add("uri", r.uri().toString())
                 .add("name", r.name());
         if (r.title() != null) b.add("title", r.title());
         if (r.description() != null) b.add("description", r.description());
@@ -24,7 +26,8 @@ public non-sealed class ResourceAbstractEntityCodec extends AbstractEntityCodec<
     @Override
     public Resource fromJson(JsonObject obj) {
         if (obj == null) throw new IllegalArgumentException("object required");
-        var uri = requireString(obj, "uri");
+        var uriString = requireString(obj, "uri");
+        var uri = URI.create(uriString);
         var name = requireString(obj, "name");
         var title = obj.getString("title", null);
         var description = obj.getString("description", null);

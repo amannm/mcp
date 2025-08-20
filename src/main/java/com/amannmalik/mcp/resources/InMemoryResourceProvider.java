@@ -3,18 +3,19 @@ package com.amannmalik.mcp.resources;
 import com.amannmalik.mcp.core.InMemoryProvider;
 import com.amannmalik.mcp.spi.*;
 
+import java.net.URI;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.function.Consumer;
 
 public final class InMemoryResourceProvider extends InMemoryProvider<Resource> implements ResourceProvider {
-    private final Map<String, ResourceBlock> contents;
+    private final Map<URI, ResourceBlock> contents;
     private final List<ResourceTemplate> templates;
-    private final Map<String, List<Consumer<ResourceUpdate>>> listeners = new ConcurrentHashMap<>();
+    private final Map<URI, List<Consumer<ResourceUpdate>>> listeners = new ConcurrentHashMap<>();
 
     public InMemoryResourceProvider(List<Resource> resources,
-                                    Map<String, ResourceBlock> contents,
+                                    Map<URI, ResourceBlock> contents,
                                     List<ResourceTemplate> templates) {
         super(resources);
         this.contents = contents == null ? new ConcurrentHashMap<>() : new ConcurrentHashMap<>(contents);
@@ -22,7 +23,7 @@ public final class InMemoryResourceProvider extends InMemoryProvider<Resource> i
     }
 
     @Override
-    public ResourceBlock read(String uri) {
+    public ResourceBlock read(URI uri) {
         return contents.get(uri);
     }
 
@@ -32,13 +33,13 @@ public final class InMemoryResourceProvider extends InMemoryProvider<Resource> i
     }
 
     @Override
-    public AutoCloseable subscribe(String uri, Consumer<ResourceUpdate> listener) {
+    public AutoCloseable subscribe(URI uri, Consumer<ResourceUpdate> listener) {
         listeners.computeIfAbsent(uri, k -> new CopyOnWriteArrayList<>()).add(listener);
         return () -> listeners.getOrDefault(uri, List.of()).remove(listener);
     }
 
     @Override
-    public Optional<Resource> get(String uri) {
+    public Optional<Resource> get(URI uri) {
         for (var r : items) {
             if (r.uri().equals(uri)) {
                 return Optional.of(r);
@@ -52,7 +53,7 @@ public final class InMemoryResourceProvider extends InMemoryProvider<Resource> i
         return true;
     }
 
-    public void notifyUpdate(String uri) {
+    public void notifyUpdate(URI uri) {
         String title = null;
         for (var r : items) {
             if (r.uri().equals(uri)) {

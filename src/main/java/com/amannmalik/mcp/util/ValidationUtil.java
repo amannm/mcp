@@ -89,11 +89,11 @@ public final class ValidationUtil {
         for (var key : obj.keySet()) requireMeta(key);
     }
 
-    public static String requireAbsoluteUri(String uri) {
+    public static URI requireAbsoluteUri(URI uri) {
         if (uri == null) throw new IllegalArgumentException("uri is required");
         URI parsed;
         try {
-            parsed = URI.create(uri).normalize();
+            parsed = uri.normalize();
         } catch (IllegalArgumentException e) {
             throw new IllegalArgumentException("Invalid URI: " + uri, e);
         }
@@ -103,12 +103,12 @@ public final class ValidationUtil {
         if (parsed.getFragment() != null) {
             throw new IllegalArgumentException("URI must not contain fragment: " + uri);
         }
-        return parsed.toString();
+        return parsed;
     }
 
-    public static String requireFileUri(String uri) {
+    public static URI requireFileUri(URI uri) {
         var normalized = requireAbsoluteUri(uri);
-        if (!normalized.startsWith("file:")) {
+        if (!normalized.getScheme().equals("file")) {
             throw new IllegalArgumentException("URI must start with file:");
         }
         return normalized;
