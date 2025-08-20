@@ -45,7 +45,7 @@ final class ClientHandshake {
         } catch (IOException e) {
             throw new IOException("Initialization failed: " + e.getMessage(), e);
         }
-        var ir = ((JsonCodec<InitializeResponse>) new InitializeResponseAbstractEntityCodec()).fromJson(resp.result());
+        var ir = new InitializeResponseAbstractEntityCodec().fromJson(resp.result());
         var serverVersion = ir.protocolVersion();
         if (!Protocol.LATEST_VERSION.equals(serverVersion) && !Protocol.PREVIOUS_VERSION.equals(serverVersion)) {
             try {
