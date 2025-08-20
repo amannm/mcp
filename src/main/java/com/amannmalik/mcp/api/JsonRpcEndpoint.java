@@ -161,14 +161,12 @@ sealed class JsonRpcEndpoint implements AutoCloseable permits McpClient, McpServ
     }
 
     private JsonRpcMessage dispatch(JsonRpcRequest req) {
+        var handler = RequestMethod.from(req.method()).map(requests::get);
+        if (handler.isEmpty()) {
+            return JsonRpcError.of(req.id(), JsonRpcErrorCode.METHOD_NOT_FOUND, "Unknown method: " + req.method());
+        }
         try {
-            var method = RequestMethod.from(req.method())
-                    .flatMap(m -> Optional.ofNullable(requests.get(m))
-                            .map(f -> Map.entry(m, f)));
-            if (method.isEmpty()) {
-                return JsonRpcError.of(req.id(), JsonRpcErrorCode.METHOD_NOT_FOUND, "Unknown method: " + req.method());
-            }
-            var resp = method.get().getValue().apply(req);
+            var resp = handler.get().apply(req);
             if (resp == null) throw new IllegalStateException("handler returned null");
             return resp;
         } catch (IllegalArgumentException e) {
