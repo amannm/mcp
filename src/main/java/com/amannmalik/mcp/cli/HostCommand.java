@@ -11,6 +11,8 @@ import picocli.CommandLine.ParseResult;
 
 import java.io.*;
 import java.lang.System.Logger;
+import java.nio.charset.StandardCharsets;
+
 import java.nio.file.Path;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -249,7 +251,7 @@ public final class HostCommand {
     }
 
     private static void runInteractiveMode(McpHost host) throws IOException {
-        var reader = new BufferedReader(new InputStreamReader(System.in));
+        var reader = new BufferedReader(new InputStreamReader(System.in, StandardCharsets.UTF_8));
         System.out.println("MCP Host Interactive Mode. Type 'help' for commands, 'quit' to exit.");
 
         while (true) {

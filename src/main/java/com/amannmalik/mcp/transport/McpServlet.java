@@ -15,7 +15,7 @@ import java.util.concurrent.*;
 /// - [Transports](specification/2025-06-18/basic/transports.mdx)
 /// - [Conformance Suite](src/test/resources/com/amannmalik/mcp/mcp.feature)
 final class McpServlet extends HttpServlet {
-    private final StreamableHttpServerTransport transport;
+    private transient final StreamableHttpServerTransport transport;
     private final int responseQueueCapacity;
 
     McpServlet(StreamableHttpServerTransport transport, int responseQueueCapacity) {

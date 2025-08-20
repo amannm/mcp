@@ -4,6 +4,7 @@ import com.amannmalik.mcp.spi.*;
 import jakarta.json.*;
 
 import java.io.*;
+import java.nio.charset.StandardCharsets;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -12,7 +13,7 @@ public final class InteractiveElicitationProvider implements ElicitationProvider
     private final BufferedReader reader;
 
     public InteractiveElicitationProvider() {
-        this.reader = new BufferedReader(new InputStreamReader(System.in));
+        this.reader = new BufferedReader(new InputStreamReader(System.in, StandardCharsets.UTF_8));
     }
 
     @Override

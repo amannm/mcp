@@ -6,6 +6,7 @@ import jakarta.json.Json;
 import java.io.*;
 import java.net.URI;
 import java.net.http.*;
+import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.*;
 import java.util.concurrent.*;
@@ -26,7 +27,7 @@ public final class InteractiveSamplingProvider implements SamplingProvider {
     private final boolean autoApprove;
 
     public InteractiveSamplingProvider(boolean autoApprove) {
-        this.reader = new BufferedReader(new InputStreamReader(System.in));
+        this.reader = new BufferedReader(new InputStreamReader(System.in, StandardCharsets.UTF_8));
         this.autoApprove = autoApprove;
     }
 

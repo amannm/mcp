@@ -45,8 +45,8 @@ public final class JwtTokenValidator implements TokenValidator {
             throw new AuthorizationException("invalid token format");
         }
         try {
-            var header = new String(Base64Util.decodeUrl(parts[0]));
-            var payload = new String(Base64Util.decodeUrl(parts[1]));
+            var header = new String(Base64Util.decodeUrl(parts[0]), StandardCharsets.UTF_8);
+            var payload = new String(Base64Util.decodeUrl(parts[1]), StandardCharsets.UTF_8);
             return new JwtParts(header, payload, parts[2]);
         } catch (IllegalArgumentException e) {
             throw new AuthorizationException("invalid token encoding");

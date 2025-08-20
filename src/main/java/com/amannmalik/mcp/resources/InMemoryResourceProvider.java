@@ -81,7 +81,7 @@ public final class InMemoryResourceProvider extends InMemoryProvider<Resource> i
         notifyListChanged();
     }
 
-    public void removeResource(String uri) {
+    public void removeResource(URI uri) {
         items.removeIf(r -> r.uri().equals(uri));
         contents.remove(uri);
         notifyListChanged();
