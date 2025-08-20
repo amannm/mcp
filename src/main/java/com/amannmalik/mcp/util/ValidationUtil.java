@@ -83,7 +83,7 @@ public final class ValidationUtil {
                 if (!LABEL.matcher(label).matches()) {
                     throw new IllegalArgumentException("Invalid _meta prefix: " + key);
                 }
-                if (i < labels.length - 1 && (label.equals("modelcontextprotocol") || label.equals("mcp"))) {
+                if (i < labels.length - 1 && ("modelcontextprotocol".equals(label) || label.equals("mcp"))) {
                     throw new IllegalArgumentException("Reserved _meta prefix: " + key);
                 }
             }

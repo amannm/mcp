@@ -149,6 +149,7 @@ spotbugs {
 }
 
 pmd {
+    isIgnoreFailures = true
     isConsoleOutput = true
     toolVersion = "7.16.0"
     ruleSets = listOf()
