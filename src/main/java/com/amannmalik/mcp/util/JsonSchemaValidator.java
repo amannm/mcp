@@ -58,10 +58,10 @@ public final class JsonSchemaValidator {
             case "string" -> validateString(name, value, schema);
             case "number" -> validateNumber(name, value, schema);
             case "integer" -> validateInteger(name, value, schema);
-            case "boolean" -> requireType(value, JsonValue.ValueType.TRUE, JsonValue.ValueType.FALSE, name);
-            case "array" -> requireType(value, JsonValue.ValueType.ARRAY, name);
+            case "boolean" -> requireType(value, name, JsonValue.ValueType.TRUE, JsonValue.ValueType.FALSE);
+            case "array" -> requireType(value, name, JsonValue.ValueType.ARRAY);
             case "object" -> {
-                requireType(value, JsonValue.ValueType.OBJECT, name);
+                requireType(value, name, JsonValue.ValueType.OBJECT);
                 validateObject(schema, value.asJsonObject());
             }
             default -> {
@@ -70,7 +70,7 @@ public final class JsonSchemaValidator {
     }
 
     private static void validateString(String field, JsonValue v, JsonObject schema) {
-        requireType(v, JsonValue.ValueType.STRING, field);
+        requireType(v, field, JsonValue.ValueType.STRING);
         var str = ((JsonString) v).getString();
         if (schema.containsKey("minLength") && str.length() < schema.getInt("minLength")) {
             throw new IllegalArgumentException("minLength violated for " + field);
@@ -93,24 +93,33 @@ public final class JsonSchemaValidator {
     }
 
     private static void validateNumber(String field, JsonValue v, JsonObject schema) {
-        requireType(v, JsonValue.ValueType.NUMBER, field);
-        var num = ((JsonNumber) v).doubleValue();
-        if (schema.containsKey("minimum") && num < schema.getJsonNumber("minimum").doubleValue()) {
-            throw new IllegalArgumentException("minimum violated for " + field);
-        }
-        if (schema.containsKey("maximum") && num > schema.getJsonNumber("maximum").doubleValue()) {
-            throw new IllegalArgumentException("maximum violated for " + field);
-        }
+        validateNumeric(field, v, schema, false);
     }
 
     private static void validateInteger(String field, JsonValue v, JsonObject schema) {
-        requireInteger(v, field);
-        var num = ((JsonNumber) v).longValue();
-        if (schema.containsKey("minimum") && num < schema.getJsonNumber("minimum").longValue()) {
-            throw new IllegalArgumentException("minimum violated for " + field);
+        validateNumeric(field, v, schema, true);
+    }
+
+    private static void validateNumeric(String field,
+                                        JsonValue value,
+                                        JsonObject schema,
+                                        boolean integral) {
+        requireType(value, field, JsonValue.ValueType.NUMBER);
+        var num = (JsonNumber) value;
+        if (integral && !num.isIntegral()) {
+            throw new IllegalArgumentException("Expected integer for " + field);
         }
-        if (schema.containsKey("maximum") && num > schema.getJsonNumber("maximum").longValue()) {
-            throw new IllegalArgumentException("maximum violated for " + field);
+        if (schema.containsKey("minimum")) {
+            var min = schema.getJsonNumber("minimum");
+            if (integral ? num.longValue() < min.longValue() : num.doubleValue() < min.doubleValue()) {
+                throw new IllegalArgumentException("minimum violated for " + field);
+            }
+        }
+        if (schema.containsKey("maximum")) {
+            var max = schema.getJsonNumber("maximum");
+            if (integral ? num.longValue() > max.longValue() : num.doubleValue() > max.doubleValue()) {
+                throw new IllegalArgumentException("maximum violated for " + field);
+            }
         }
     }
 
@@ -137,23 +146,22 @@ public final class JsonSchemaValidator {
         }
     }
 
-    private static void requireType(JsonValue value, JsonValue.ValueType expected, String field) {
-        if (value.getValueType() != expected) {
-            throw new IllegalArgumentException("Expected " + expected + " for " + field);
-        }
-    }
-
-    private static void requireInteger(JsonValue value, String field) {
-        if (value.getValueType() != JsonValue.ValueType.NUMBER
-                || !((JsonNumber) value).isIntegral()) {
-            throw new IllegalArgumentException("Expected integer for " + field);
-        }
-    }
-
-    private static void requireType(JsonValue value, JsonValue.ValueType a, JsonValue.ValueType b, String field) {
+    private static void requireType(JsonValue value,
+                                    String field,
+                                    JsonValue.ValueType... allowed) {
         var vt = value.getValueType();
-        if (vt != a && vt != b) {
-            throw new IllegalArgumentException("Expected " + a + " or " + b + " for " + field);
+        for (var t : allowed) {
+            if (vt == t) {
+                return;
+            }
         }
+        var names = new StringBuilder();
+        for (var i = 0; i < allowed.length; i++) {
+            if (i > 0) {
+                names.append(" or ");
+            }
+            names.append(allowed[i]);
+        }
+        throw new IllegalArgumentException("Expected " + names + " for " + field);
     }
 }
