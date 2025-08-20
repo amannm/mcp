@@ -19,6 +19,7 @@ import java.security.cert.*;
 import java.security.interfaces.RSAPrivateKey;
 import java.security.spec.ECGenParameterSpec;
 import java.time.Duration;
+import java.time.Instant;
 import java.util.*;
 
 public final class Certificates {
@@ -46,13 +47,13 @@ public final class Certificates {
 
     public static X509Certificate selfSign(KeyPair pair, X500Principal subject, List<String> subjectAltNames, Duration lifetime) {
         try {
-            var now = new Date();
-            var end = new Date(now.getTime() + lifetime.toMillis());
+            var now = Instant.now();
+            var end = now.plus(lifetime);
             var builder = new JcaX509v3CertificateBuilder(
                     new X500Name(subject.getName()),
                     new BigInteger(64, new SecureRandom()),
-                    now,
-                    end,
+                    Date.from(now),
+                    Date.from(end),
                     new X500Name(subject.getName()),
                     pair.getPublic()
             );

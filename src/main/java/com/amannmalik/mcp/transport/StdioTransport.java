@@ -66,14 +66,16 @@ public final class StdioTransport implements Transport {
     }
 
     @Override
-    public synchronized void send(JsonObject message) throws IOException {
+    public void send(JsonObject message) throws IOException {
         var s = message.toString();
         if (s.indexOf('\n') >= 0 || s.indexOf('\r') >= 0) {
             throw new IllegalArgumentException("message contains newline");
         }
-        out.write(s);
-        out.write('\n');
-        out.flush();
+        synchronized (out) {
+            out.write(s);
+            out.write('\n');
+            out.flush();
+        }
     }
 
     @Override
