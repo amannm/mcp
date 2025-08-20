@@ -17,6 +17,7 @@ public final class StdioTransport implements Transport {
     // TODO: externalize
     private static final Duration WAIT = McpHostConfiguration.defaultConfiguration().processWaitSeconds();
     private static final Duration RECEIVE = Duration.ofSeconds(5);
+    private static final Executor READER = command -> Thread.ofVirtual().start(command);
     private final BufferedReader in;
     private final BufferedWriter out;
     private final ProcessResources resources;
@@ -85,31 +86,35 @@ public final class StdioTransport implements Transport {
 
     @Override
     public JsonObject receive(Duration timeout) throws IOException {
-        try (var executor = Executors.newVirtualThreadPerTaskExecutor()) {
-            var future = executor.submit(in::readLine);
-            String line;
+        var future = CompletableFuture.supplyAsync(() -> {
             try {
-                line = future.get(timeout.toMillis(), TimeUnit.MILLISECONDS);
-            } catch (TimeoutException e) {
-                future.cancel(true);
-                resources.checkAlive();
-                throw new IOException("Timeout after " + timeout + " waiting for input", e);
-            } catch (ExecutionException e) {
-                var cause = e.getCause();
-                if (cause instanceof IOException io) {
-                    throw io;
-                }
-                throw new IOException("Failed to read input", cause);
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-                throw new IOException("Interrupted while waiting for input", e);
+                return in.readLine();
+            } catch (IOException e) {
+                throw new UncheckedIOException(e);
             }
-            if (line == null) {
-                throw new EOFException();
+        }, READER);
+        String line;
+        try {
+            line = future.get(timeout.toMillis(), TimeUnit.MILLISECONDS);
+        } catch (TimeoutException e) {
+            future.cancel(true);
+            resources.checkAlive();
+            throw new IOException("Timeout after " + timeout + " waiting for input", e);
+        } catch (ExecutionException e) {
+            var cause = e.getCause();
+            if (cause instanceof IOException io) {
+                throw io;
             }
-            try (var reader = Json.createReader(new StringReader(line))) {
-                return reader.readObject();
-            }
+            throw new IOException("Failed to read input", cause);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new IOException("Interrupted while waiting for input", e);
+        }
+        if (line == null) {
+            throw new EOFException();
+        }
+        try (var reader = Json.createReader(new StringReader(line))) {
+            return reader.readObject();
         }
     }
 
