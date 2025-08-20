@@ -266,24 +266,39 @@ public final class McpServer extends JsonRpcEndpoint implements AutoCloseable {
         return Optional.empty();
     }
 
-    private void handleParseError(JsonParsingException e) {
-        System.err.println(config.errorParse() + ": " + e.getMessage());
+    private void logAndRespond(String prefix,
+                               LoggingLevel level,
+                               String logger,
+                               JsonRpcErrorCode code,
+                               RequestId id,
+                               String message) {
+        System.err.println(prefix + ": " + message);
         try {
-            sendLog(LoggingLevel.ERROR, config.parserLoggerName(), Json.createValue(e.getMessage()));
-            send(JsonRpcError.of(RequestId.NullId.INSTANCE, JsonRpcErrorCode.PARSE_ERROR, e.getMessage()));
+            sendLog(level, logger, Json.createValue(message));
+            send(JsonRpcError.of(id, code, message));
         } catch (IOException ioe) {
             System.err.println("Failed to send error: " + ioe.getMessage());
         }
     }
 
+    private void handleParseError(JsonParsingException e) {
+        logAndRespond(
+                config.errorParse(),
+                LoggingLevel.ERROR,
+                config.parserLoggerName(),
+                JsonRpcErrorCode.PARSE_ERROR,
+                RequestId.NullId.INSTANCE,
+                e.getMessage());
+    }
+
     private void handleInvalidRequest(IllegalArgumentException e) {
-        System.err.println(config.errorInvalidRequest() + ": " + e.getMessage());
-        try {
-            sendLog(LoggingLevel.WARNING, config.serverLoggerName(), Json.createValue(e.getMessage()));
-            send(JsonRpcError.of(RequestId.NullId.INSTANCE, JsonRpcErrorCode.INVALID_REQUEST, e.getMessage()));
-        } catch (IOException ioe) {
-            System.err.println("Failed to send error: " + ioe.getMessage());
-        }
+        logAndRespond(
+                config.errorInvalidRequest(),
+                LoggingLevel.WARNING,
+                config.serverLoggerName(),
+                JsonRpcErrorCode.INVALID_REQUEST,
+                RequestId.NullId.INSTANCE,
+                e.getMessage());
     }
 
     private InitializeResponse initialize(InitializeRequest request) {
