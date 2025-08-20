@@ -7,7 +7,10 @@ import java.io.*;
 import java.net.URI;
 import java.net.http.*;
 import java.time.Duration;
+import java.util.List;
+import java.util.Locale;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.*;
 
 public final class InteractiveSamplingProvider implements SamplingProvider {
@@ -218,31 +221,44 @@ public final class InteractiveSamplingProvider implements SamplingProvider {
     }
 
     private String generateSimpleResponse(CreateMessageRequest request) {
-        // Extract the last user message for context
-        var messages = request.messages();
-        var lastUserMessage = "";
+        var lastUserMessage = lastUserMessage(request);
+        var normalized = lastUserMessage.toLowerCase(Locale.ROOT);
+        for (var res : RESPONSES) {
+            if (res.matches(normalized)) return res.response();
+        }
+        var topic = lastUserMessage.length() > 50
+                ? lastUserMessage.substring(0, 50) + "..."
+                : lastUserMessage;
+        return "I understand you're asking about: \"" +
+                topic +
+                "\". I'm a simulated assistant and would be happy to help with information or guidance on this topic.";
+    }
 
-        for (var i = messages.size() - 1; i >= 0; i--) {
-            var msg = messages.get(i);
+    private String lastUserMessage(CreateMessageRequest request) {
+        for (var i = request.messages().size() - 1; i >= 0; i--) {
+            var msg = request.messages().get(i);
             if (msg.role() == Role.USER && msg.content() instanceof ContentBlock.Text text) {
-                lastUserMessage = text.text();
-                break;
+                return text.text();
             }
         }
+        return "";
+    }
 
-        // Generate a simple contextual response
-        if (lastUserMessage.toLowerCase().contains("hello") || lastUserMessage.toLowerCase().contains("hi")) {
-            return "Hello! How can I assist you today?";
-        } else if (lastUserMessage.toLowerCase().contains("help")) {
-            return "I'm here to help! Please let me know what you need assistance with.";
-        } else if (lastUserMessage.toLowerCase().contains("weather")) {
-            return "I don't have access to real-time weather data, but I'd be happy to help you find weather information or discuss weather-related topics.";
-        } else if (lastUserMessage.toLowerCase().contains("time")) {
-            return "I don't have access to the current time, but I can help you with time-related calculations or questions.";
-        } else {
-            return "I understand you're asking about: \"" +
-                    (lastUserMessage.length() > 50 ? lastUserMessage.substring(0, 50) + "..." : lastUserMessage) +
-                    "\". I'm a simulated assistant and would be happy to help with information or guidance on this topic.";
+    private static final List<KeywordResponse> RESPONSES = List.of(
+            new KeywordResponse(Set.of("hello", "hi"),
+                    "Hello! How can I assist you today?"),
+            new KeywordResponse(Set.of("help"),
+                    "I'm here to help! Please let me know what you need assistance with."),
+            new KeywordResponse(Set.of("weather"),
+                    "I don't have access to real-time weather data, but I'd be happy to help you find weather information or discuss weather-related topics."),
+            new KeywordResponse(Set.of("time"),
+                    "I don't have access to the current time, but I can help you with time-related calculations or questions.")
+    );
+
+    private record KeywordResponse(Set<String> keywords, String response) {
+        boolean matches(String text) {
+            for (var k : keywords) if (text.contains(k)) return true;
+            return false;
         }
     }
 
