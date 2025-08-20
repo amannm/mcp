@@ -38,8 +38,10 @@ public final class StreamableHttpClientTransport implements Transport {
         this(endpoint, Duration.ofSeconds(10), "http://127.0.0.1");
     }
 
-    public StreamableHttpClientTransport(URI endpoint, Duration defaultReceiveTimeout, String defaultOriginHeader) {
-        this(endpoint, defaultReceiveTimeout, defaultOriginHeader, defaultClient(endpoint));
+    public StreamableHttpClientTransport(URI endpoint,
+                                         Duration defaultReceiveTimeout,
+                                         String defaultOriginHeader) {
+        this(endpoint, defaultReceiveTimeout, defaultOriginHeader, defaultClient(endpoint, true));
     }
 
     public StreamableHttpClientTransport(URI endpoint,
@@ -50,11 +52,19 @@ public final class StreamableHttpClientTransport implements Transport {
                                          Path keyStore,
                                          char[] keyStorePassword,
                                          boolean validateCertificates,
-                                         Set<String> pinnedFingerprints) {
+                                         Set<String> pinnedFingerprints,
+                                         boolean verifyHostname) {
         this(endpoint,
                 defaultReceiveTimeout,
                 defaultOriginHeader,
-                buildClient(endpoint, trustStore, trustStorePassword, keyStore, keyStorePassword, validateCertificates, pinnedFingerprints));
+                buildClient(endpoint,
+                        trustStore,
+                        trustStorePassword,
+                        keyStore,
+                        keyStorePassword,
+                        validateCertificates,
+                        pinnedFingerprints,
+                        verifyHostname));
     }
 
     private StreamableHttpClientTransport(URI endpoint,
@@ -74,17 +84,18 @@ public final class StreamableHttpClientTransport implements Transport {
         this.client = client;
     }
 
-    private static HttpClient defaultClient(URI endpoint) {
-        return buildClient(endpoint, null, null, null, null, true, Set.of());
+    private static HttpClient defaultClient(URI endpoint, boolean verifyHostname) {
+        return buildClient(endpoint, null, null, null, null, true, Set.of(), verifyHostname);
     }
 
-    private static HttpClient buildClient(URI endpoint,
-                                          Path trustStore,
-                                          char[] trustStorePassword,
-                                          Path keyStore,
-                                          char[] keyStorePassword,
-                                          boolean validateCertificates,
-                                          Set<String> pinnedFingerprints) {
+    public static HttpClient buildClient(URI endpoint,
+                                         Path trustStore,
+                                         char[] trustStorePassword,
+                                         Path keyStore,
+                                         char[] keyStorePassword,
+                                         boolean validateCertificates,
+                                         Set<String> pinnedFingerprints,
+                                         boolean verifyHostname) {
         try {
             var kms = loadKeyManagers(keyStore, keyStorePassword);
             var tms = validateCertificates
@@ -94,6 +105,7 @@ public final class StreamableHttpClientTransport implements Transport {
             ctx.init(kms, tms, null);
             var params = new SSLParameters();
             params.setServerNames(List.of(new SNIHostName(endpoint.getHost())));
+            if (verifyHostname) params.setEndpointIdentificationAlgorithm("HTTPS");
             return HttpClient.newBuilder()
                     .sslContext(ctx)
                     .sslParameters(params)

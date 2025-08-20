@@ -5,6 +5,7 @@ import com.amannmalik.mcp.core.*;
 import com.amannmalik.mcp.jsonrpc.*;
 import com.amannmalik.mcp.resources.ResourceListChangedNotification;
 import com.amannmalik.mcp.spi.*;
+import com.amannmalik.mcp.transport.StreamableHttpClientTransport;
 import com.amannmalik.mcp.transport.StdioTransport;
 import com.amannmalik.mcp.util.*;
 import jakarta.json.Json;
@@ -14,6 +15,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
 import java.net.http.*;
+import java.nio.file.Path;
 import java.time.Duration;
 import java.util.*;
 import java.util.concurrent.*;
@@ -43,6 +45,7 @@ public final class McpClient extends JsonRpcEndpoint implements AutoCloseable {
     };
     private static final McpClientListener NOOP_LISTENER = new McpClientListener() {
     };
+    private final McpClientConfiguration config;
     private final ClientInfo info;
     private final Set<ClientCapability> capabilities;
     private final SamplingProvider sampling;
@@ -78,6 +81,7 @@ public final class McpClient extends JsonRpcEndpoint implements AutoCloseable {
                         config.progressPerSecond(),
                         config.rateLimiterWindow().toMillis())),
                 1);
+        this.config = config;
         this.info = new ClientInfo(config.serverName(), config.serverDisplayName(), config.serverVersion());
         this.capabilities = config.clientCapabilities().isEmpty() ? Set.of() : EnumSet.copyOf(config.clientCapabilities());
         this.sampling = sampling;
@@ -120,12 +124,37 @@ public final class McpClient extends JsonRpcEndpoint implements AutoCloseable {
     private static Transport createTransport(McpClientConfiguration config,
                                              boolean globalVerbose) throws IOException {
         var spec = config.commandSpec();
-        var cmds = spec == null || spec.isBlank() ? new String[0] : spec.split(" ");
-        var verbose = config.verbose() || globalVerbose;
-        return cmds.length == 0
-                ? new StdioTransport(System.in, System.out, config.defaultReceiveTimeout())
-                : new StdioTransport(cmds, verbose ? System.err::println : s -> {
-        }, config.defaultReceiveTimeout());
+        if (spec != null && !spec.isBlank()) {
+            if (spec.startsWith("http://") || spec.startsWith("https://")) {
+                var uri = URI.create(spec);
+                if (spec.startsWith("https://")) {
+                    var ts = config.truststorePath().isBlank() ? null : Path.of(config.truststorePath());
+                    var ks = config.keystorePath().isBlank() ? null : Path.of(config.keystorePath());
+                    var pins = Set.copyOf(config.certificatePins());
+                    var validate = config.certificateValidationMode() != CertificateValidationMode.PERMISSIVE;
+                    return new StreamableHttpClientTransport(
+                            uri,
+                            config.defaultReceiveTimeout(),
+                            config.defaultOriginHeader(),
+                            ts,
+                            config.truststorePassword().toCharArray(),
+                            ks,
+                            config.keystorePassword().toCharArray(),
+                            validate,
+                            pins,
+                            config.verifyHostname());
+                }
+                return new StreamableHttpClientTransport(
+                        uri,
+                        config.defaultReceiveTimeout(),
+                        config.defaultOriginHeader());
+            }
+            var cmds = spec.split(" ");
+            var verbose = config.verbose() || globalVerbose;
+            return new StdioTransport(cmds, verbose ? System.err::println : s -> {
+            }, config.defaultReceiveTimeout());
+        }
+        return new StdioTransport(System.in, System.out, config.defaultReceiveTimeout());
     }
 
     public void configurePing(Duration intervalMillis, Duration timeoutMillis) {
@@ -371,13 +400,32 @@ public final class McpClient extends JsonRpcEndpoint implements AutoCloseable {
     }
 
     private void fetchResourceMetadata(String url) throws IOException {
-        var req = HttpRequest.newBuilder(URI.create(url))
+        var uri = URI.create(url);
+        HttpClient client;
+        if (url.startsWith("https://")) {
+            var ts = config.truststorePath().isBlank() ? null : Path.of(config.truststorePath());
+            var ks = config.keystorePath().isBlank() ? null : Path.of(config.keystorePath());
+            var pins = Set.copyOf(config.certificatePins());
+            var validate = config.certificateValidationMode() != CertificateValidationMode.PERMISSIVE;
+            client = StreamableHttpClientTransport.buildClient(
+                    uri,
+                    ts,
+                    config.truststorePassword().toCharArray(),
+                    ks,
+                    config.keystorePassword().toCharArray(),
+                    validate,
+                    pins,
+                    config.verifyHostname());
+        } else {
+            client = HttpClient.newHttpClient();
+        }
+        var req = HttpRequest.newBuilder(uri)
                 .header("Accept", "application/json")
                 .GET()
                 .build();
         HttpResponse<InputStream> resp;
         try {
-            resp = HttpClient.newHttpClient().send(req, HttpResponse.BodyHandlers.ofInputStream());
+            resp = client.send(req, HttpResponse.BodyHandlers.ofInputStream());
         } catch (InterruptedException ex) {
             Thread.currentThread().interrupt();
             throw new IOException(ex);
