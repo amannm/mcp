@@ -4,6 +4,7 @@ import com.amannmalik.mcp.codec.ContentBlockJsonCodec;
 import com.amannmalik.mcp.codec.JsonCodec;
 import com.amannmalik.mcp.util.ValidationUtil;
 import jakarta.json.*;
+import java.util.logging.Logger;
 
 public record ToolResult(JsonArray content,
                          JsonObject structuredContent,
@@ -11,6 +12,7 @@ public record ToolResult(JsonArray content,
                          JsonObject _meta) implements Result {
 
     private static final JsonCodec<ContentBlock> CONTENT_BLOCK_CODEC = new ContentBlockJsonCodec();
+    private static final Logger LOG = Logger.getLogger(ToolResult.class.getName());
 
     public ToolResult {
         content = sanitize(content == null ? JsonValue.EMPTY_JSON_ARRAY : content);
@@ -21,17 +23,19 @@ public record ToolResult(JsonArray content,
     private static JsonArray sanitize(JsonArray arr) {
         var b = Json.createArrayBuilder();
         for (var v : arr) {
-            if (v.getValueType() == JsonValue.ValueType.OBJECT) {
-                try {
-                    var c = CONTENT_BLOCK_CODEC.fromJson(v.asJsonObject());
-                    b.add(CONTENT_BLOCK_CODEC.toJson(c));
-                    continue;
-                } catch (IllegalArgumentException ignore) {
-                    // TODO: log
-                }
-            }
-            b.add(v);
+            var block = decode(v);
+            b.add(block == null ? v : CONTENT_BLOCK_CODEC.toJson(block));
         }
         return b.build();
+    }
+
+    private static ContentBlock decode(JsonValue v) {
+        if (v.getValueType() != JsonValue.ValueType.OBJECT) return null;
+        try {
+            return CONTENT_BLOCK_CODEC.fromJson(v.asJsonObject());
+        } catch (IllegalArgumentException e) {
+            LOG.fine(() -> "invalid content block: " + v);
+            return null;
+        }
     }
 }
