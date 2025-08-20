@@ -2,6 +2,7 @@ package com.amannmalik.mcp.util;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.locks.ReentrantLock;
 
 public final class RateLimiter {
     private final Map<String, Window> windows = new ConcurrentHashMap<>();
@@ -16,7 +17,8 @@ public final class RateLimiter {
     public void requireAllowance(String key) {
         var w = windows.computeIfAbsent(key, k -> new Window());
         var now = System.currentTimeMillis();
-        synchronized (w) {
+        w.lock.lock();
+        try {
             if (now - w.start >= windowMs) {
                 w.start = now;
                 w.count = 0;
@@ -25,10 +27,13 @@ public final class RateLimiter {
                 throw new SecurityException("Rate limit exceeded: " + key);
             }
             w.count++;
+        } finally {
+            w.lock.unlock();
         }
     }
 
     private static final class Window {
+        final ReentrantLock lock = new ReentrantLock();
         long start;
         int count;
     }
