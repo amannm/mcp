@@ -21,12 +21,12 @@ public final class McpHost implements AutoCloseable {
     private static final CallToolRequestAbstractEntityCodec CALL_TOOL_REQUEST_CODEC = new CallToolRequestAbstractEntityCodec();
     private static final JsonCodec<ToolResult> TOOL_RESULT_ABSTRACT_ENTITY_CODEC = new ToolResultAbstractEntityCodec();
     private static final JsonCodec<ListToolsResult> LIST_TOOLS_RESULT_JSON_CODEC =
-            AbstractEntityCodec.paginatedResult(
+            new ResourceEntityFieldCodec<>(
                     "tools",
-                    "tool",
                     r -> new Pagination.Page<>(r.tools(), r.nextCursor()),
-                    ListToolsResult::_meta,
                     new ToolAbstractEntityCodec(),
+                    ListToolsResult::_meta,
+                    "tool",
                     (page, meta) -> new ListToolsResult(page.items(), page.nextCursor(), meta));
 
     private static final Duration TIMEOUT = Duration.ofSeconds(5);
@@ -147,7 +147,7 @@ public final class McpHost implements AutoCloseable {
         var token = cursor instanceof Cursor.Token(var value) ? value : null;
         var resp = JsonRpc.expectResponse(client.request(
                 RequestMethod.TOOLS_LIST,
-                AbstractEntityCodec.paginatedRequest(
+                new EntityCursorPageCodec<>(
                         ListToolsRequest::cursor,
                         ListToolsRequest::_meta,
                         ListToolsRequest::new).toJson(new ListToolsRequest(token, null)),

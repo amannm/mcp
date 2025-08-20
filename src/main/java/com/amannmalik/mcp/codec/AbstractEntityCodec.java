@@ -5,7 +5,8 @@ import jakarta.json.*;
 
 import java.util.Objects;
 import java.util.Set;
-import java.util.function.*;
+import java.util.function.Function;
+import java.util.function.Supplier;
 
 public sealed abstract class AbstractEntityCodec<T> implements JsonCodec<T> permits
         EntityCursorPageCodec,
@@ -50,25 +51,6 @@ public sealed abstract class AbstractEntityCodec<T> implements JsonCodec<T> perm
         if (page.nextCursor() instanceof Cursor.Token(var value)) b.add("nextCursor", value);
         if (meta != null) b.add("_meta", meta);
         return b.build();
-    }
-
-    // TODO: add comments on what this does
-    public static <T> JsonCodec<T> paginatedRequest(
-            Function<T, String> cursor,
-            Function<T, JsonObject> meta,
-            BiFunction<String, JsonObject, T> from) {
-        return new EntityCursorPageCodec<>(cursor, meta, from);
-    }
-
-    // TODO: add comments on what this does
-    public static <I, R> JsonCodec<R> paginatedResult(
-            String field,
-            String itemName,
-            Function<R, Pagination.Page<I>> toPage,
-            Function<R, JsonObject> meta,
-            JsonCodec<I> itemCodec,
-            BiFunction<Pagination.Page<I>, JsonObject, R> from) {
-        return new ResourceEntityFieldCodec<>(field, toPage, itemCodec, meta, itemName, from);
     }
 
     public static <T> JsonCodec<T> metaOnly(

@@ -86,7 +86,7 @@ final class ResourceOrchestrator implements AutoCloseable {
         }
         var progressToken = ProgressToken.fromMeta(req.params());
         try {
-            var lr = AbstractEntityCodec.paginatedRequest(
+            var lr = new EntityCursorPageCodec<>(
                     ListResourcesRequest::cursor,
                     ListResourcesRequest::_meta,
                     ListResourcesRequest::new).fromJson(req.params());
@@ -99,12 +99,12 @@ final class ResourceOrchestrator implements AutoCloseable {
                     .toList();
             progressToken.ifPresent(t -> sendProgress(t, 1.0, "Completed resource list"));
             var result = new ListResourcesResult(filtered, list.nextCursor(), null);
-            return new JsonRpcResponse(req.id(), AbstractEntityCodec.paginatedResult(
+            return new JsonRpcResponse(req.id(), new ResourceEntityFieldCodec<>(
                     "resources",
-                    "resource",
                     r -> new Pagination.Page<>(r.resources(), r.nextCursor()),
-                    ListResourcesResult::_meta,
                     new ResourceAbstractEntityCodec(),
+                    ListResourcesResult::_meta,
+                    "resource",
                     (page, meta) -> new ListResourcesResult(page.items(), page.nextCursor(), meta)).toJson(result));
         } catch (IllegalArgumentException e) {
             return JsonRpcError.of(req.id(), JsonRpcErrorCode.INVALID_PARAMS, e.getMessage());
@@ -127,7 +127,7 @@ final class ResourceOrchestrator implements AutoCloseable {
     private JsonRpcMessage listTemplates(JsonRpcRequest req) {
         try {
             var request =
-                    AbstractEntityCodec.paginatedRequest(
+                    new EntityCursorPageCodec<>(
                             ListResourceTemplatesRequest::cursor,
                             ListResourceTemplatesRequest::_meta,
                             ListResourceTemplatesRequest::new).fromJson(req.params());
@@ -137,12 +137,12 @@ final class ResourceOrchestrator implements AutoCloseable {
                     .filter(t -> allowed(t.annotations()))
                     .toList();
             var result = new ListResourceTemplatesResult(filtered, page.nextCursor(), null);
-            return new JsonRpcResponse(req.id(), AbstractEntityCodec.paginatedResult(
+            return new JsonRpcResponse(req.id(), new ResourceEntityFieldCodec<>(
                     "resourceTemplates",
-                    "resourceTemplate",
                     r -> new Pagination.Page<>(r.resourceTemplates(), r.nextCursor()),
-                    ListResourceTemplatesResult::_meta,
                     new ResourceTemplateAbstractEntityCodec(),
+                    ListResourceTemplatesResult::_meta,
+                    "resourceTemplate",
                     (page1, meta) -> new ListResourceTemplatesResult(page1.items(), page1.nextCursor(), meta)).toJson(result));
         } catch (IllegalArgumentException e) {
             return JsonRpcError.of(req.id(), JsonRpcErrorCode.INVALID_PARAMS, e.getMessage());

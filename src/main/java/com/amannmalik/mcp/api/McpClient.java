@@ -325,16 +325,16 @@ public final class McpClient extends JsonRpcEndpoint implements AutoCloseable {
         return list(
                 cursor,
                 RequestMethod.RESOURCES_LIST,
-                token -> AbstractEntityCodec.paginatedRequest(
+                token -> new EntityCursorPageCodec<>(
                         ListResourcesRequest::cursor,
                         ListResourcesRequest::_meta,
                         ListResourcesRequest::new).toJson(new ListResourcesRequest(token, null)),
-                json -> AbstractEntityCodec.paginatedResult(
+                json -> new ResourceEntityFieldCodec<>(
                         "resources",
-                        "resource",
                         r -> new Pagination.Page<>(r.resources(), r.nextCursor()),
-                        ListResourcesResult::_meta,
                         new ResourceAbstractEntityCodec(),
+                        ListResourcesResult::_meta,
+                        "resource",
                         (page, meta) -> new ListResourcesResult(page.items(), page.nextCursor(), meta)).fromJson(json)
         );
     }
@@ -343,16 +343,16 @@ public final class McpClient extends JsonRpcEndpoint implements AutoCloseable {
         return list(
                 cursor,
                 RequestMethod.RESOURCES_TEMPLATES_LIST,
-                token -> AbstractEntityCodec.paginatedRequest(
+                token -> new EntityCursorPageCodec<>(
                         ListResourceTemplatesRequest::cursor,
                         ListResourceTemplatesRequest::_meta,
                         ListResourceTemplatesRequest::new).toJson(new ListResourceTemplatesRequest(token, null)),
-                json -> AbstractEntityCodec.paginatedResult(
+                json -> new ResourceEntityFieldCodec<>(
                         "resourceTemplates",
-                        "resourceTemplate",
                         r -> new Pagination.Page<>(r.resourceTemplates(), r.nextCursor()),
-                        ListResourceTemplatesResult::_meta,
                         new ResourceTemplateAbstractEntityCodec(),
+                        ListResourceTemplatesResult::_meta,
+                        "resourceTemplate",
                         (page, meta) -> new ListResourceTemplatesResult(page.items(), page.nextCursor(), meta)).fromJson(json)
         );
     }

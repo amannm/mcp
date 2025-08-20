@@ -30,21 +30,21 @@ public final class McpServer extends JsonRpcEndpoint implements AutoCloseable {
     private static final CancelledNotificationJsonCodec CANCELLED_NOTIFICATION_JSON_CODEC = new CancelledNotificationJsonCodec();
     private static final JsonCodec<ToolListChangedNotification> TOOL_LIST_CHANGED_NOTIFICATION_JSON_CODEC = new ToolListChangedNotificationJsonCodec();
     private static final JsonCodec<ListToolsResult> LIST_TOOLS_RESULT_JSON_CODEC =
-            AbstractEntityCodec.paginatedResult(
+            new ResourceEntityFieldCodec<>(
                     "tools",
-                    "tool",
                     r -> new Pagination.Page<>(r.tools(), r.nextCursor()),
-                    ListToolsResult::_meta,
                     new ToolAbstractEntityCodec(),
+                    ListToolsResult::_meta,
+                    "tool",
                     (page, meta) -> new ListToolsResult(page.items(), page.nextCursor(), meta));
 
     private static final JsonCodec<ListPromptsResult> LIST_PROMPTS_RESULT_CODEC =
-            AbstractEntityCodec.paginatedResult(
+            new ResourceEntityFieldCodec<>(
                     "prompts",
-                    "prompt",
                     r -> new Pagination.Page<>(r.prompts(), r.nextCursor()),
-                    ListPromptsResult::_meta,
                     new PromptAbstractEntityCodec(),
+                    ListPromptsResult::_meta,
+                    "prompt",
                     (page, meta) -> new ListPromptsResult(page.items(), page.nextCursor(), meta));
 
     private final McpServerConfiguration config;
