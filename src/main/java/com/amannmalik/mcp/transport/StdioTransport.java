@@ -9,7 +9,10 @@ import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.Objects;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.function.Consumer;
 
 /// - [Transports](specification/2025-06-18/basic/transports.mdx)
@@ -56,7 +59,8 @@ public final class StdioTransport implements Transport {
         try (var r = new BufferedReader(new InputStreamReader(err, StandardCharsets.UTF_8))) {
             String line;
             while ((line = r.readLine()) != null) sink.accept(line);
-        } catch (IOException ignore) {
+        } catch (IOException e) {
+            sink.accept("error reading log stream: " + e.getMessage());
         }
     }
 
@@ -77,29 +81,29 @@ public final class StdioTransport implements Transport {
     }
 
     @Override
-    public JsonObject receive(Duration timeoutMillis) throws IOException {
-        var endTime = System.currentTimeMillis() + timeoutMillis.toMillis();
-
-        while (System.currentTimeMillis() < endTime) {
-            if (in.ready()) {
-                var line = in.readLine();
-                if (line == null) throw new EOFException();
-                try (var reader = Json.createReader(new StringReader(line))) {
-                    return reader.readObject();
-                }
-            }
-
-            resources.checkAlive();
-
+    public JsonObject receive(Duration timeout) throws IOException {
+        try (var executor = Executors.newVirtualThreadPerTaskExecutor()) {
+            var future = executor.submit(in::readLine);
+            String line;
             try {
-                Thread.sleep(10);
+                line = future.get(timeout.toMillis(), TimeUnit.MILLISECONDS);
+            } catch (TimeoutException e) {
+                future.cancel(true);
+                resources.checkAlive();
+                throw new IOException("Timeout after " + timeout + " waiting for input", e);
+            } catch (ExecutionException e) {
+                var cause = e.getCause();
+                if (cause instanceof IOException io) throw io;
+                throw new IOException("Failed to read input", cause);
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
                 throw new IOException("Interrupted while waiting for input", e);
             }
+            if (line == null) throw new EOFException();
+            try (var reader = Json.createReader(new StringReader(line))) {
+                return reader.readObject();
+            }
         }
-
-        throw new IOException("Timeout after " + timeoutMillis + "ms waiting for input");
     }
 
     @Override
@@ -159,15 +163,19 @@ public final class StdioTransport implements Transport {
             try {
                 if (!process.waitFor(WAIT.toMillis(), TimeUnit.MILLISECONDS)) {
                     process.destroyForcibly();
-                    process.waitFor(WAIT.toMillis(), TimeUnit.MILLISECONDS);
+                    if (!process.waitFor(WAIT.toMillis(), TimeUnit.MILLISECONDS)) {
+                        throw new IOException("Process did not terminate");
+                    }
                 }
-            } catch (InterruptedException ignore) {
+            } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
+                throw new IOException("Interrupted while waiting for process", e);
             }
             try {
                 logReader.join(100);
-            } catch (InterruptedException ignore) {
+            } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
+                throw new IOException("Interrupted while waiting for log reader", e);
             }
         }
     }
