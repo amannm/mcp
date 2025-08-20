@@ -50,15 +50,24 @@ final class ClientBackgroundTasks implements AutoCloseable {
             client.ping(timeout);
             failures = 0;
         } catch (IOException | RuntimeException e) {
-            failures++;
-            LOG.log(Logger.Level.WARNING, () -> "Ping failure: " + e.getMessage());
-            if (failures >= 3) {
-                failures = 0;
-                try {
-                    client.disconnect();
-                } catch (IOException ignore) {
-                }
-            }
+            handlePingFailure(e);
+        }
+    }
+
+    private void handlePingFailure(Exception e) {
+        failures++;
+        LOG.log(Logger.Level.WARNING, "Ping failure", e);
+        if (failures >= 3) {
+            failures = 0;
+            disconnectAfterPingFailures();
+        }
+    }
+
+    private void disconnectAfterPingFailures() {
+        try {
+            client.disconnect();
+        } catch (IOException e) {
+            LOG.log(Logger.Level.ERROR, "Disconnect failed", e);
         }
     }
 
@@ -71,8 +80,9 @@ final class ClientBackgroundTasks implements AutoCloseable {
         if (reader != null) {
             try {
                 reader.join(100);
-            } catch (InterruptedException ignore) {
+            } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
+                LOG.log(Logger.Level.WARNING, "Interrupted while waiting for reader", e);
             }
             reader = null;
         }
