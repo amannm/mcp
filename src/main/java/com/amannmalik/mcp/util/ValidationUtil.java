@@ -62,45 +62,56 @@ public final class ValidationUtil {
     }
 
     public static void requireMeta(String key) {
-        if (key == null) {
-            throw new IllegalArgumentException("key required");
-        }
-        var slash = key.indexOf('/');
-        var prefix = slash >= 0 ? key.substring(0, slash) : null;
-        var name = slash >= 0 ? key.substring(slash + 1) : key;
-
-        if (slash == 0) {
-            throw new IllegalArgumentException("_meta prefix must not be empty: " + key);
-        }
-        if (slash >= 0 && key.indexOf('/', slash + 1) >= 0) {
-            throw new IllegalArgumentException("_meta key may contain at most one '/' character: " + key);
-        }
-
-        if (prefix != null) {
-            var labels = prefix.split("\\.");
-            for (var i = 0; i < labels.length; i++) {
-                var label = labels[i];
-                if (!LABEL.matcher(label).matches()) {
-                    throw new IllegalArgumentException("Invalid _meta prefix: " + key);
-                }
-                if (i < labels.length - 1 && (label.equals("modelcontextprotocol") || label.equals("mcp"))) {
-                    throw new IllegalArgumentException("Reserved _meta prefix: " + key);
-                }
-            }
-        }
-
-        if (!NAME.matcher(name).matches()) {
-            throw new IllegalArgumentException("Invalid _meta name: " + key);
-        }
+        parseMetaKey(key);
     }
 
     public static void requireMeta(JsonObject obj) {
         if (obj == null) {
             return;
         }
-        for (var key : obj.keySet()) {
-            requireMeta(key);
+        obj.keySet().forEach(ValidationUtil::requireMeta);
+    }
+
+    private static MetaKey parseMetaKey(String key) {
+        if (key == null) {
+            throw new IllegalArgumentException("key required");
         }
+        var slash = key.indexOf('/');
+        if (slash == 0) {
+            throw new IllegalArgumentException("_meta prefix must not be empty: " + key);
+        }
+        if (slash >= 0 && key.indexOf('/', slash + 1) >= 0) {
+            throw new IllegalArgumentException("_meta key may contain at most one '/' character: " + key);
+        }
+        var prefix = slash < 0 ? null : key.substring(0, slash);
+        var name = slash < 0 ? key : key.substring(slash + 1);
+        if (prefix != null) {
+            validateMetaPrefix(prefix, key);
+        }
+        validateMetaName(name, key);
+        return new MetaKey(prefix, name);
+    }
+
+    private static void validateMetaPrefix(String prefix, String original) {
+        var labels = prefix.split("\\.");
+        for (var i = 0; i < labels.length; i++) {
+            var label = labels[i];
+            if (!LABEL.matcher(label).matches()) {
+                throw new IllegalArgumentException("Invalid _meta prefix: " + original);
+            }
+            if (i < labels.length - 1 && (label.equals("modelcontextprotocol") || label.equals("mcp"))) {
+                throw new IllegalArgumentException("Reserved _meta prefix: " + original);
+            }
+        }
+    }
+
+    private static void validateMetaName(String name, String original) {
+        if (!NAME.matcher(name).matches()) {
+            throw new IllegalArgumentException("Invalid _meta name: " + original);
+        }
+    }
+
+    private record MetaKey(String prefix, String name) {
     }
 
     public static URI requireAbsoluteUri(URI uri) {
