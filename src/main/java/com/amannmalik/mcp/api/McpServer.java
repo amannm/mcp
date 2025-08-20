@@ -477,7 +477,8 @@ public final class McpServer extends JsonRpcEndpoint implements AutoCloseable {
             var reason = progress.reason(cn.requestId());
             sendLog(LoggingLevel.INFO, config.cancellationLoggerName(),
                     reason == null ? JsonValue.NULL : Json.createValue(reason));
-        } catch (IOException ignore) {
+        } catch (IOException e) {
+            throw new RuntimeException(e);
         }
     }
 
@@ -644,13 +645,13 @@ public final class McpServer extends JsonRpcEndpoint implements AutoCloseable {
     @Override
     public void close() throws IOException {
         shutdown();
-        CloseUtil.closeQuietly(resourceOrchestrator);
+        CloseUtil.close(resourceOrchestrator);
         if (toolListSubscription != null) {
-            CloseUtil.closeQuietly(toolListSubscription);
+            CloseUtil.close(toolListSubscription);
             toolListSubscription = null;
         }
         if (promptsSubscription != null) {
-            CloseUtil.closeQuietly(promptsSubscription);
+            CloseUtil.close(promptsSubscription);
             promptsSubscription = null;
         }
         if (completions != null) {
