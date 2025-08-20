@@ -7,13 +7,14 @@ import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.util.Set;
 import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 final class SseReader implements Runnable {
     private final InputStream input;
     private final BlockingQueue<JsonObject> queue;
     private final Set<SseReader> container;
     private final EventBuffer buffer = new EventBuffer();
-    private volatile boolean closed;
+    private final AtomicBoolean closed = new AtomicBoolean();
     private String lastEventId;
 
     SseReader(InputStream input, BlockingQueue<JsonObject> queue, Set<SseReader> container) {
@@ -26,7 +27,7 @@ final class SseReader implements Runnable {
     public void run() {
         try (var br = new BufferedReader(new InputStreamReader(input, StandardCharsets.UTF_8))) {
             String line;
-            while (!closed && (line = br.readLine()) != null) {
+            while (!closed.get() && (line = br.readLine()) != null) {
                 if (line.isEmpty()) {
                     buffer.flush();
                     continue;
@@ -58,7 +59,7 @@ final class SseReader implements Runnable {
     }
 
     void close() {
-        closed = true;
+        closed.set(true);
         try {
             input.close();
         } catch (IOException ignore) {

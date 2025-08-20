@@ -18,7 +18,7 @@ final class SessionManager {
     private final AtomicReference<String> lastSessionId = new AtomicReference<>();
     private final String compatibilityVersion;
     private final int sessionIdByteLength;
-    private volatile String protocolVersion;
+    private final AtomicReference<String> protocolVersion;
 
     SessionManager(String compatibilityVersion) {
         this(compatibilityVersion, McpServerConfiguration.defaultConfiguration().sessionIdByteLength());
@@ -27,15 +27,15 @@ final class SessionManager {
     SessionManager(String compatibilityVersion, int sessionIdByteLength) {
         this.compatibilityVersion = compatibilityVersion;
         this.sessionIdByteLength = sessionIdByteLength;
-        this.protocolVersion = compatibilityVersion;
+        this.protocolVersion = new AtomicReference<>(compatibilityVersion);
     }
 
     String protocolVersion() {
-        return protocolVersion;
+        return protocolVersion.get();
     }
 
     void protocolVersion(String version) {
-        this.protocolVersion = version;
+        this.protocolVersion.set(version);
     }
 
     boolean validate(HttpServletRequest req,
@@ -147,7 +147,7 @@ final class SessionManager {
         if (initializing) {
             return true;
         }
-        if (version == null || !version.equals(protocolVersion)) {
+        if (version == null || !version.equals(protocolVersion.get())) {
             resp.sendError(HttpServletResponse.SC_BAD_REQUEST);
             return false;
         }
@@ -161,7 +161,7 @@ final class SessionManager {
         } else {
             lastSessionId.set(null);
         }
-        protocolVersion = compatibilityVersion;
+        protocolVersion.set(compatibilityVersion);
     }
 
     private record SessionState(String id, String owner, Principal principal) {

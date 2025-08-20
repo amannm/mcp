@@ -10,6 +10,7 @@ import java.security.SecureRandom;
 import java.util.ArrayDeque;
 import java.util.Deque;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.lang.System.Logger;
 
 public final class SseClient implements AutoCloseable {
@@ -21,7 +22,7 @@ public final class SseClient implements AutoCloseable {
     private final AtomicLong nextId = new AtomicLong(1);
     private AsyncContext context;
     private PrintWriter out;
-    private volatile boolean closed;
+    private final AtomicBoolean closed = new AtomicBoolean();
 
     public SseClient(AsyncContext context, int clientPrefixByteLength, long historyLimit) throws IOException {
         var bytes = new byte[clientPrefixByteLength];
@@ -34,12 +35,12 @@ public final class SseClient implements AutoCloseable {
     void attach(AsyncContext ctx, long lastId) throws IOException {
         this.context = ctx;
         this.out = ctx.getResponse().getWriter();
-        this.closed = false;
+        this.closed.set(false);
         sendHistory(lastId);
     }
 
     public boolean isActive() {
-        return !closed && context != null;
+        return !closed.get() && context != null;
     }
 
     public void send(JsonObject msg) {
@@ -48,7 +49,7 @@ public final class SseClient implements AutoCloseable {
         while (history.size() > historyLimit) {
             history.removeFirst();
         }
-        if (closed || context == null) {
+        if (closed.get() || context == null) {
             return;
         }
         try {
@@ -57,7 +58,7 @@ public final class SseClient implements AutoCloseable {
             out.flush();
         } catch (Exception e) {
             LOG.log(Logger.Level.ERROR, "SSE send failed: " + e.getMessage());
-            closed = true;
+            closed.set(true);
         }
     }
 
@@ -76,10 +77,10 @@ public final class SseClient implements AutoCloseable {
 
     @Override
     public void close() {
-        if (closed) {
+        if (closed.get()) {
             return;
         }
-        closed = true;
+        closed.set(true);
         try {
             if (context != null && !context.hasOriginalRequestAndResponse()) {
                 context.complete();
