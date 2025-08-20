@@ -2,6 +2,7 @@ package com.amannmalik.mcp.transport;
 
 import com.amannmalik.mcp.api.McpHostConfiguration;
 import com.amannmalik.mcp.api.Transport;
+import com.amannmalik.mcp.util.CloseUtil;
 import jakarta.json.Json;
 import jakarta.json.JsonObject;
 
@@ -112,29 +113,7 @@ public final class StdioTransport implements Transport {
 
     @Override
     public void close() throws IOException {
-        IOException ex = null;
-        try {
-            out.close();
-        } catch (IOException e) {
-            ex = e;
-        }
-        try {
-            in.close();
-        } catch (IOException e) {
-            if (ex == null) {
-                ex = e;
-            }
-        }
-        try {
-            resources.close();
-        } catch (IOException e) {
-            if (ex == null) {
-                ex = e;
-            }
-        }
-        if (ex != null) {
-            throw ex;
-        }
+        CloseUtil.closeAll(out, in, resources);
     }
 
     private enum Detached implements ProcessResources {
