@@ -106,7 +106,8 @@ sealed class JsonRpcEndpoint implements AutoCloseable permits McpClient, McpServ
         try {
             var params = CANCEL_CODEC.toJson(new CancelledNotification(id, "timeout"));
             send(new JsonRpcNotification(NotificationMethod.CANCELLED.method(), params));
-        } catch (IOException ignore) {
+        } catch (IOException e) {
+            throw new RuntimeException(e);
         }
     }
 
@@ -116,13 +117,10 @@ sealed class JsonRpcEndpoint implements AutoCloseable permits McpClient, McpServ
 
     public final void process(JsonRpcMessage msg) throws IOException {
         switch (msg) {
-            case JsonRpcRequest req -> handleRequest(req, true)
-                    .ifPresent(r -> {
-                        try {
-                            send(r);
-                        } catch (IOException ignore) {
-                        }
-                    });
+            case JsonRpcRequest req -> {
+                var resp = handleRequest(req, true);
+                if (resp.isPresent()) send(resp.get());
+            }
             case JsonRpcNotification note -> handleNotification(note);
             case JsonRpcResponse resp -> complete(resp.id(), resp);
             case JsonRpcError err -> complete(err.id(), err);
@@ -185,14 +183,10 @@ sealed class JsonRpcEndpoint implements AutoCloseable permits McpClient, McpServ
     private void sendProgress(ProgressToken token, double current) {
         var msg = current >= 1.0 ? "completed" : "in progress";
         try {
-            progress.send(new ProgressNotification(token, current, 1.0, msg), (m, payload) -> {
-                try {
-                    send(new JsonRpcNotification(m.method(), payload));
-                } catch (IOException ex) {
-                    throw new RuntimeException(ex);
-                }
-            });
-        } catch (IOException ignore) {
+            progress.send(new ProgressNotification(token, current, 1.0, msg),
+                    (m, payload) -> send(new JsonRpcNotification(m.method(), payload)));
+        } catch (IOException e) {
+            throw new RuntimeException(e);
         }
     }
 
