@@ -26,6 +26,7 @@ import java.security.interfaces.RSAKey;
 import java.time.Duration;
 import java.util.*;
 import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 
 public final class StreamableHttpServerTransport implements Transport {
@@ -48,7 +49,7 @@ public final class StreamableHttpServerTransport implements Transport {
     private final Set<String> allowedOrigins;
     private final String resourceMetadataUrl;
     private final MessageDispatcher dispatcher;
-    private volatile boolean closed;
+    private final AtomicBoolean closed = new AtomicBoolean();
 
     public StreamableHttpServerTransport(McpServerConfiguration config,
                                          AuthorizationManager auth) throws Exception {
@@ -224,7 +225,7 @@ public final class StreamableHttpServerTransport implements Transport {
             if (obj == null) {
                 throw new IOException("Timeout after " + timeoutMillis + "ms waiting for message");
             }
-            if (closed && obj.containsKey("_close")) {
+            if (closed.get() && obj.containsKey("_close")) {
                 throw new EOFException();
             }
             return obj;
@@ -324,7 +325,7 @@ public final class StreamableHttpServerTransport implements Transport {
     void terminateSession(boolean recordId) {
         sessions.terminate(recordId);
         clients.clear();
-        closed = true;
+        closed.set(true);
         if (!incoming.offer(Json.createObjectBuilder().add("_close", true).build())) {
             throw new IllegalStateException("incoming queue full");
         }

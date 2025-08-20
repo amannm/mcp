@@ -20,6 +20,7 @@ import java.time.Duration;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.lang.System.Logger;
+import java.util.concurrent.atomic.AtomicReference;
 
 /// - [Server](specification/2025-06-18/server/index.mdx)
 /// - [MCP server conformance test](src/test/resources/com/amannmalik/mcp/mcp_conformance.feature:6-34)
@@ -71,7 +72,7 @@ public final class McpServer extends JsonRpcEndpoint implements AutoCloseable {
     private ClientFeatures clientFeatures = ClientFeatures.EMPTY;
     private AutoCloseable toolListSubscription;
     private AutoCloseable promptsSubscription;
-    private volatile LoggingLevel logLevel;
+    private final AtomicReference<LoggingLevel> logLevel = new AtomicReference<>();
 
     public McpServer(McpServerConfiguration config,
                      ResourceProvider resources,
@@ -114,7 +115,7 @@ public final class McpServer extends JsonRpcEndpoint implements AutoCloseable {
         this.principal = principal;
         this.toolHandler = createToolHandler(tools, config, principal);
         this.samplingAccess = config.samplingAccessPolicy();
-        this.logLevel = config.initialLogLevel();
+        this.logLevel.set(config.initialLogLevel());
         this.rootsManager = new RootsManager(this::negotiatedClientCapabilities, this::request);
         this.resourceOrchestrator = resources == null ? null :
                 new ResourceOrchestrator(resources, resourceAccess, principal, rootsManager, this::state, (method, params) -> send(new JsonRpcNotification(method.method(), params)), progress);
@@ -541,7 +542,7 @@ public final class McpServer extends JsonRpcEndpoint implements AutoCloseable {
             return JsonRpcError.of(req.id(), JsonRpcErrorCode.INVALID_PARAMS, "Missing params");
         }
         try {
-            logLevel = SET_LEVEL_REQUEST_JSON_CODEC.fromJson(params).level();
+            logLevel.set(SET_LEVEL_REQUEST_JSON_CODEC.fromJson(params).level());
             return new JsonRpcResponse(req.id(), JsonValue.EMPTY_JSON_OBJECT);
         } catch (IllegalArgumentException e) {
             return JsonRpcError.of(req.id(), JsonRpcErrorCode.INVALID_PARAMS, "Invalid params");
@@ -550,7 +551,7 @@ public final class McpServer extends JsonRpcEndpoint implements AutoCloseable {
 
     private void sendLog(LoggingMessageNotification note) throws IOException {
         if (rateLimit(logLimiter, note.logger() == null ? "" : note.logger()).isPresent() ||
-                note.level().ordinal() < logLevel.ordinal()) {
+                note.level().ordinal() < logLevel.get().ordinal()) {
             return;
         }
         requireServerCapability(ServerCapability.LOGGING);

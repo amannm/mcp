@@ -21,6 +21,8 @@ import java.time.Duration;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -65,13 +67,13 @@ public final class McpClient extends JsonRpcEndpoint implements AutoCloseable {
     private ClientBackgroundTasks background;
     private Duration pingInterval;
     private Duration pingTimeout;
-    private volatile boolean connected;
+    private final AtomicBoolean connected = new AtomicBoolean();
     private Set<ServerCapability> serverCapabilities = Set.of();
     private String instructions;
     private Set<ServerFeature> serverFeatures = EnumSet.noneOf(ServerFeature.class);
     private String protocolVersion;
     private ServerInfo serverInfo;
-    private volatile ResourceMetadata resourceMetadata;
+    private final AtomicReference<ResourceMetadata> resourceMetadata = new AtomicReference<>();
 
     public McpClient(McpClientConfiguration config,
                      boolean globalVerbose,
@@ -163,7 +165,7 @@ public final class McpClient extends JsonRpcEndpoint implements AutoCloseable {
     }
 
     public synchronized void configurePing(Duration intervalMillis, Duration timeoutMillis) {
-        if (connected) {
+        if (connected.get()) {
             throw new IllegalStateException("already connected");
         }
         if (intervalMillis.isNegative() || timeoutMillis.isNegative()) {
@@ -190,7 +192,7 @@ public final class McpClient extends JsonRpcEndpoint implements AutoCloseable {
     }
 
     public synchronized void connect() throws IOException {
-        if (connected) {
+        if (connected.get()) {
             return;
         }
         ClientHandshake.Result init;
@@ -205,7 +207,7 @@ public final class McpClient extends JsonRpcEndpoint implements AutoCloseable {
         serverCapabilities = init.capabilities();
         serverFeatures = init.features();
         instructions = init.instructions();
-        connected = true;
+        connected.set(true);
         try {
             transport.listen();
         } catch (UnauthorizedException e) {
@@ -219,10 +221,10 @@ public final class McpClient extends JsonRpcEndpoint implements AutoCloseable {
     }
 
     public synchronized void disconnect() throws IOException {
-        if (!connected) {
+        if (!connected.get()) {
             return;
         }
-        connected = false;
+        connected.set(false);
         if (background != null) {
             background.close();
             background = null;
@@ -236,7 +238,7 @@ public final class McpClient extends JsonRpcEndpoint implements AutoCloseable {
     }
 
     public boolean connected() {
-        return connected;
+        return connected.get();
     }
 
     public Set<ClientCapability> capabilities() {
@@ -291,7 +293,7 @@ public final class McpClient extends JsonRpcEndpoint implements AutoCloseable {
                 }
             }
         }
-        if (!connected) {
+        if (!connected.get()) {
             return JsonRpcError.of(new RequestId.NumericId(0), -32002, "Server not initialized");
         }
         try {
@@ -312,7 +314,7 @@ public final class McpClient extends JsonRpcEndpoint implements AutoCloseable {
     }
 
     public void sendNotification(NotificationMethod method, JsonObject params) throws IOException {
-        if (!connected) {
+        if (!connected.get()) {
             throw new IllegalStateException("not connected");
         }
         send(new JsonRpcNotification(method.method(), params));
@@ -457,7 +459,7 @@ public final class McpClient extends JsonRpcEndpoint implements AutoCloseable {
             throw new IOException("failed to fetch resource metadata: HTTP " + resp.statusCode());
         }
         try (var body = resp.body(); var reader = Json.createReader(body)) {
-            resourceMetadata = new ResourceMetadataJsonCodec().fromJson(reader.readObject());
+            resourceMetadata.set(new ResourceMetadataJsonCodec().fromJson(reader.readObject()));
         }
     }
 
