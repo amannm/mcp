@@ -448,10 +448,7 @@ public final class McpServer extends JsonRpcEndpoint implements AutoCloseable {
         if (initCheck.isPresent()) return initCheck.get();
         requireServerCapability(ServerCapability.TOOLS);
         try {
-            var ltr = AbstractEntityCodec.paginatedRequest(
-                    ListToolsRequest::cursor,
-                    ListToolsRequest::_meta,
-                    ListToolsRequest::new).fromJson(req.params());
+            var ltr = ListToolsRequest.CODEC.fromJson(req.params());
             var cursor = CursorUtil.sanitize(ltr.cursor());
             var page = tools.list(cursor);
             var json = LIST_TOOLS_RESULT_JSON_CODEC.toJson(new ListToolsResult(page.items(), page.nextCursor(), null));
