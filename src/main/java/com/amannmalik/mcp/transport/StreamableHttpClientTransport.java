@@ -34,10 +34,6 @@ public final class StreamableHttpClientTransport implements Transport {
     private final Duration defaultReceiveTimeout;
     private final String defaultOriginHeader;
 
-    public StreamableHttpClientTransport(URI endpoint) {
-        this(endpoint, Duration.ofSeconds(10), "http://127.0.0.1");
-    }
-
     public StreamableHttpClientTransport(URI endpoint,
                                          Duration defaultReceiveTimeout,
                                          String defaultOriginHeader) {
