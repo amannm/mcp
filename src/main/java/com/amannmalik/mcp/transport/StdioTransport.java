@@ -9,10 +9,7 @@ import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.Objects;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
+import java.util.concurrent.*;
 import java.util.function.Consumer;
 
 /// - [Transports](specification/2025-06-18/basic/transports.mdx)
@@ -141,20 +138,23 @@ public final class StdioTransport implements Transport {
         }
     }
 
-    private sealed interface ProcessResources extends AutoCloseable permits Detached, Spawned {
-        void checkAlive() throws IOException;
-        @Override
-        void close() throws IOException;
-    }
-
     private enum Detached implements ProcessResources {
         INSTANCE;
+
         @Override
         public void checkAlive() {
         }
+
         @Override
         public void close() {
         }
+    }
+
+    private sealed interface ProcessResources extends AutoCloseable permits Detached, Spawned {
+        void checkAlive() throws IOException;
+
+        @Override
+        void close() throws IOException;
     }
 
     private record Spawned(Process process, Thread logReader) implements ProcessResources {

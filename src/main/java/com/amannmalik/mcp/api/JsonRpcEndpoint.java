@@ -2,7 +2,8 @@ package com.amannmalik.mcp.api;
 
 import com.amannmalik.mcp.codec.CancelledNotificationJsonCodec;
 import com.amannmalik.mcp.codec.JsonRpcMessageJsonCodec;
-import com.amannmalik.mcp.core.*;
+import com.amannmalik.mcp.core.DuplicateRequestException;
+import com.amannmalik.mcp.core.ProgressManager;
 import com.amannmalik.mcp.jsonrpc.*;
 import jakarta.json.JsonObject;
 
@@ -17,8 +18,8 @@ sealed class JsonRpcEndpoint implements AutoCloseable permits McpClient, McpServ
     public static final JsonRpcMessageJsonCodec CODEC = new JsonRpcMessageJsonCodec();
     protected static final CancelledNotificationJsonCodec CANCEL_CODEC = new CancelledNotificationJsonCodec();
     public final Transport transport;
-    protected final ProgressManager progress;
     public final Map<RequestId, CompletableFuture<JsonRpcMessage>> pending = new ConcurrentHashMap<>();
+    protected final ProgressManager progress;
     private final Map<RequestMethod, Function<JsonRpcRequest, JsonRpcMessage>> requests = new EnumMap<>(RequestMethod.class);
     private final Map<NotificationMethod, Consumer<JsonRpcNotification>> notifications = new EnumMap<>(NotificationMethod.class);
     private final AtomicLong counter;
@@ -30,6 +31,14 @@ sealed class JsonRpcEndpoint implements AutoCloseable permits McpClient, McpServ
         this.transport = transport;
         this.progress = progress;
         this.counter = new AtomicLong(initialId);
+    }
+
+    private static IOException unwrapExecutionException(ExecutionException e) {
+        var cause = e.getCause();
+        if (cause instanceof IOException io) {
+            return io;
+        }
+        return new IOException(cause);
     }
 
     protected final RequestId nextId() {
@@ -85,14 +94,6 @@ sealed class JsonRpcEndpoint implements AutoCloseable permits McpClient, McpServ
         } finally {
             pending.remove(id);
         }
-    }
-
-    private static IOException unwrapExecutionException(ExecutionException e) {
-        var cause = e.getCause();
-        if (cause instanceof IOException io) {
-            return io;
-        }
-        return new IOException(cause);
     }
 
     private JsonRpcMessage getCompleted(CompletableFuture<JsonRpcMessage> future) throws IOException {

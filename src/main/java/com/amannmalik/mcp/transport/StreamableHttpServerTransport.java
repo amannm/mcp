@@ -76,6 +76,29 @@ public final class StreamableHttpServerTransport implements Transport {
         this.dispatcher = new MessageDispatcher(router);
     }
 
+    private static void validateCertificateKeySize(String path, String password, String type) {
+        try (var in = Files.newInputStream(Path.of(path))) {
+            var ks = KeyStore.getInstance(type);
+            ks.load(in, password.toCharArray());
+            var aliases = ks.aliases();
+            while (aliases.hasMoreElements()) {
+                var cert = ks.getCertificate(aliases.nextElement());
+                if (cert instanceof X509Certificate x509) {
+                    var size = switch (x509.getPublicKey()) {
+                        case RSAKey k -> k.getModulus().bitLength();
+                        case ECKey k -> k.getParams().getCurve().getField().getFieldSize();
+                        default -> 0;
+                    };
+                    if (size < 2048) {
+                        throw new IllegalArgumentException("Certificate key size too small: " + size);
+                    }
+                }
+            }
+        } catch (Exception e) {
+            throw new IllegalArgumentException("Failed to validate certificate key size", e);
+        }
+    }
+
     private ServletContextHandler servletContext(McpServerConfiguration config) {
         var ctx = new ServletContextHandler();
         for (var path : config.servletPaths()) {
@@ -170,29 +193,6 @@ public final class StreamableHttpServerTransport implements Transport {
             throw new IllegalArgumentException("HTTPS required for authorization server URLs");
         }
         return List.copyOf(config.authServers());
-    }
-
-    private static void validateCertificateKeySize(String path, String password, String type) {
-        try (var in = Files.newInputStream(Path.of(path))) {
-            var ks = KeyStore.getInstance(type);
-            ks.load(in, password.toCharArray());
-            var aliases = ks.aliases();
-            while (aliases.hasMoreElements()) {
-                var cert = ks.getCertificate(aliases.nextElement());
-                if (cert instanceof X509Certificate x509) {
-                    var size = switch (x509.getPublicKey()) {
-                        case RSAKey k -> k.getModulus().bitLength();
-                        case ECKey k -> k.getParams().getCurve().getField().getFieldSize();
-                        default -> 0;
-                    };
-                    if (size < 2048) {
-                        throw new IllegalArgumentException("Certificate key size too small: " + size);
-                    }
-                }
-            }
-        } catch (Exception e) {
-            throw new IllegalArgumentException("Failed to validate certificate key size", e);
-        }
     }
 
     public int port() {

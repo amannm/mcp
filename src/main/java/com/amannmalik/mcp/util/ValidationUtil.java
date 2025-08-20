@@ -1,6 +1,6 @@
 package com.amannmalik.mcp.util;
 
-import jakarta.json.*;
+import jakarta.json.JsonObject;
 
 import java.net.URI;
 import java.util.*;

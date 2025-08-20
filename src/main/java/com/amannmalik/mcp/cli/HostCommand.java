@@ -1,7 +1,6 @@
 package com.amannmalik.mcp.cli;
 
 import com.amannmalik.mcp.api.*;
-import com.amannmalik.mcp.api.McpClientConfiguration;
 import com.amannmalik.mcp.spi.*;
 import jakarta.json.Json;
 import jakarta.json.JsonValue;

@@ -5,8 +5,8 @@ import com.amannmalik.mcp.core.*;
 import com.amannmalik.mcp.jsonrpc.*;
 import com.amannmalik.mcp.resources.ResourceListChangedNotification;
 import com.amannmalik.mcp.spi.*;
-import com.amannmalik.mcp.transport.StreamableHttpClientTransport;
 import com.amannmalik.mcp.transport.StdioTransport;
+import com.amannmalik.mcp.transport.StreamableHttpClientTransport;
 import com.amannmalik.mcp.util.*;
 import jakarta.json.Json;
 import jakarta.json.JsonObject;
@@ -18,7 +18,8 @@ import java.net.http.*;
 import java.nio.file.Path;
 import java.time.Duration;
 import java.util.*;
-import java.util.concurrent.*;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -71,11 +72,11 @@ public final class McpClient extends JsonRpcEndpoint implements AutoCloseable {
     private volatile ResourceMetadata resourceMetadata;
 
     public McpClient(McpClientConfiguration config,
-              boolean globalVerbose,
-              SamplingProvider sampling,
-              RootsProvider roots,
-              ElicitationProvider elicitation,
-              McpClientListener listener) throws IOException {
+                     boolean globalVerbose,
+                     SamplingProvider sampling,
+                     RootsProvider roots,
+                     ElicitationProvider elicitation,
+                     McpClientListener listener) throws IOException {
         super(createTransport(config, globalVerbose),
                 new ProgressManager(new RateLimiter(
                         config.progressPerSecond(),

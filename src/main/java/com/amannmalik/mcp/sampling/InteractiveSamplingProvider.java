@@ -7,14 +7,21 @@ import java.io.*;
 import java.net.URI;
 import java.net.http.*;
 import java.time.Duration;
-import java.util.List;
-import java.util.Locale;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.*;
 
 public final class InteractiveSamplingProvider implements SamplingProvider {
 
+    private static final List<KeywordResponse> RESPONSES = List.of(
+            new KeywordResponse(Set.of("hello", "hi"),
+                    "Hello! How can I assist you today?"),
+            new KeywordResponse(Set.of("help"),
+                    "I'm here to help! Please let me know what you need assistance with."),
+            new KeywordResponse(Set.of("weather"),
+                    "I don't have access to real-time weather data, but I'd be happy to help you find weather information or discuss weather-related topics."),
+            new KeywordResponse(Set.of("time"),
+                    "I don't have access to the current time, but I can help you with time-related calculations or questions.")
+    );
     private final BufferedReader reader;
     private final boolean autoApprove;
 
@@ -265,17 +272,6 @@ public final class InteractiveSamplingProvider implements SamplingProvider {
         }
         return "";
     }
-
-    private static final List<KeywordResponse> RESPONSES = List.of(
-            new KeywordResponse(Set.of("hello", "hi"),
-                    "Hello! How can I assist you today?"),
-            new KeywordResponse(Set.of("help"),
-                    "I'm here to help! Please let me know what you need assistance with."),
-            new KeywordResponse(Set.of("weather"),
-                    "I don't have access to real-time weather data, but I'd be happy to help you find weather information or discuss weather-related topics."),
-            new KeywordResponse(Set.of("time"),
-                    "I don't have access to the current time, but I can help you with time-related calculations or questions.")
-    );
 
     private record KeywordResponse(Set<String> keywords, String response) {
         boolean matches(String text) {

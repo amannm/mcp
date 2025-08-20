@@ -20,8 +20,6 @@ import java.security.interfaces.RSAPrivateKey;
 import java.security.spec.ECGenParameterSpec;
 import java.time.Duration;
 import java.util.*;
-import java.util.HexFormat;
-import java.util.Locale;
 
 public final class Certificates {
     private Certificates() {

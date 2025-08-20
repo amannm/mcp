@@ -57,7 +57,7 @@ public final class McpHost implements AutoCloseable {
                 public void onMessage(LoggingMessageNotification notification) {
                     var logger = notification.logger() == null ? "" : ":" + notification.logger();
                     System.err.println("[" + clientConfig.clientId() + "] " +
-                            notification.level().name().toLowerCase() + logger + " " + notification.data());
+                            notification.level().name().toLowerCase(Locale.ROOT) + logger + " " + notification.data());
                 }
             } : null;
 

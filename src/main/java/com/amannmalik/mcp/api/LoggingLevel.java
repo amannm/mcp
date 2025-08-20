@@ -1,5 +1,7 @@
 package com.amannmalik.mcp.api;
 
+import java.util.Locale;
+
 public enum LoggingLevel {
     DEBUG,
     INFO,
@@ -14,7 +16,7 @@ public enum LoggingLevel {
         if (raw == null) {
             throw new IllegalArgumentException("level required");
         }
-        return switch (raw.toLowerCase()) {
+        return switch (raw.toLowerCase(Locale.ROOT)) {
             case "debug" -> DEBUG;
             case "info" -> INFO;
             case "notice" -> NOTICE;
