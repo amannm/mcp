@@ -226,7 +226,8 @@ final class ResourceOrchestrator implements AutoCloseable {
     private void sendProgress(ProgressToken token, double current, String message) {
         try {
             progress.send(new ProgressNotification(token, current, null, message), sender::sendNotification);
-        } catch (IOException ignore) {
+        } catch (IOException e) {
+            throw new RuntimeException(e);
         }
     }
 
