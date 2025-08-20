@@ -12,13 +12,17 @@ public final class CallToolRequestAbstractEntityCodec extends AbstractEntityCode
         var b = Json.createObjectBuilder()
                 .add("name", req.name())
                 .add("arguments", req.arguments());
-        if (req._meta() != null) b.add("_meta", req._meta());
+        if (req._meta() != null) {
+            b.add("_meta", req._meta());
+        }
         return b.build();
     }
 
     @Override
     public CallToolRequest fromJson(JsonObject obj) {
-        if (obj == null) throw new IllegalArgumentException("object required");
+        if (obj == null) {
+            throw new IllegalArgumentException("object required");
+        }
         requireOnlyKeys(obj, Set.of("name", "arguments", "_meta"));
         var name = requireString(obj, "name");
         var arguments = obj.getJsonObject("arguments");

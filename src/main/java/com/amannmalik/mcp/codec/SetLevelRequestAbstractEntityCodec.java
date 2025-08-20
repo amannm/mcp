@@ -11,13 +11,17 @@ public final class SetLevelRequestAbstractEntityCodec extends AbstractEntityCode
     @Override
     public JsonObject toJson(SetLevelRequest req) {
         var b = Json.createObjectBuilder().add("level", req.level().name().toLowerCase());
-        if (req._meta() != null) b.add("_meta", req._meta());
+        if (req._meta() != null) {
+            b.add("_meta", req._meta());
+        }
         return b.build();
     }
 
     @Override
     public SetLevelRequest fromJson(JsonObject obj) {
-        if (obj == null) throw new IllegalArgumentException("object required");
+        if (obj == null) {
+            throw new IllegalArgumentException("object required");
+        }
         requireOnlyKeys(obj, Set.of("level", "_meta"));
         var raw = requireString(obj, "level");
         var level = LoggingLevel.fromString(raw);

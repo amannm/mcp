@@ -10,17 +10,29 @@ public final class ToolAnnotationsAbstractEntityCodec extends AbstractEntityCode
     @Override
     public JsonObject toJson(ToolAnnotations ann) {
         var b = Json.createObjectBuilder();
-        if (ann.title() != null) b.add("title", ann.title());
-        if (ann.readOnlyHint() != null) b.add("readOnlyHint", ann.readOnlyHint());
-        if (ann.destructiveHint() != null) b.add("destructiveHint", ann.destructiveHint());
-        if (ann.idempotentHint() != null) b.add("idempotentHint", ann.idempotentHint());
-        if (ann.openWorldHint() != null) b.add("openWorldHint", ann.openWorldHint());
+        if (ann.title() != null) {
+            b.add("title", ann.title());
+        }
+        if (ann.readOnlyHint() != null) {
+            b.add("readOnlyHint", ann.readOnlyHint());
+        }
+        if (ann.destructiveHint() != null) {
+            b.add("destructiveHint", ann.destructiveHint());
+        }
+        if (ann.idempotentHint() != null) {
+            b.add("idempotentHint", ann.idempotentHint());
+        }
+        if (ann.openWorldHint() != null) {
+            b.add("openWorldHint", ann.openWorldHint());
+        }
         return b.build();
     }
 
     @Override
     public ToolAnnotations fromJson(JsonObject obj) {
-        if (obj == null) throw new IllegalArgumentException("object required");
+        if (obj == null) {
+            throw new IllegalArgumentException("object required");
+        }
         requireOnlyKeys(obj, Set.of("title", "readOnlyHint", "destructiveHint", "idempotentHint", "openWorldHint"));
         var title = obj.getString("title", null);
         var readOnly = obj.containsKey("readOnlyHint") ? obj.getBoolean("readOnlyHint") : null;

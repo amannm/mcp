@@ -15,16 +15,22 @@ public final class PromptInstanceAbstractEntityCodec extends AbstractEntityCodec
         var msgs = Json.createArrayBuilder();
         inst.messages().forEach(m -> msgs.add(CODEC.toJson(m)));
         var obj = Json.createObjectBuilder().add("messages", msgs.build());
-        if (inst.description() != null) obj.add("description", inst.description());
+        if (inst.description() != null) {
+            obj.add("description", inst.description());
+        }
         return obj.build();
     }
 
     @Override
     public PromptInstance fromJson(JsonObject obj) {
-        if (obj == null) throw new IllegalArgumentException("object required");
+        if (obj == null) {
+            throw new IllegalArgumentException("object required");
+        }
         requireOnlyKeys(obj, Set.of("messages", "description"));
         var arr = obj.getJsonArray("messages");
-        if (arr == null) throw new IllegalArgumentException("messages required");
+        if (arr == null) {
+            throw new IllegalArgumentException("messages required");
+        }
         List<PromptMessage> msgs = new ArrayList<>();
         for (var v : arr) {
             if (v.getValueType() != JsonValue.ValueType.OBJECT) {

@@ -11,14 +11,20 @@ public final class RootAbstractEntityCodec extends AbstractEntityCodec<Root> {
     @Override
     public JsonObject toJson(Root root) {
         var b = Json.createObjectBuilder().add("uri", root.uri().toString());
-        if (root.name() != null) b.add("name", root.name());
-        if (root._meta() != null) b.add("_meta", root._meta());
+        if (root.name() != null) {
+            b.add("name", root.name());
+        }
+        if (root._meta() != null) {
+            b.add("_meta", root._meta());
+        }
         return b.build();
     }
 
     @Override
     public Root fromJson(JsonObject obj) {
-        if (obj == null) throw new IllegalArgumentException("object required");
+        if (obj == null) {
+            throw new IllegalArgumentException("object required");
+        }
         requireOnlyKeys(obj, Set.of("uri", "name", "_meta"));
         var uriString = requireString(obj, "uri");
         var uri = URI.create(uriString);

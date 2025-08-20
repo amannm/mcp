@@ -10,19 +10,29 @@ public final class ResourceTemplateAbstractEntityCodec extends AbstractEntityCod
         var b = Json.createObjectBuilder()
                 .add("uriTemplate", t.uriTemplate())
                 .add("name", t.name());
-        if (t.title() != null) b.add("title", t.title());
-        if (t.description() != null) b.add("description", t.description());
-        if (t.mimeType() != null) b.add("mimeType", t.mimeType());
+        if (t.title() != null) {
+            b.add("title", t.title());
+        }
+        if (t.description() != null) {
+            b.add("description", t.description());
+        }
+        if (t.mimeType() != null) {
+            b.add("mimeType", t.mimeType());
+        }
         if (t.annotations() != AnnotationsJsonCodec.EMPTY) {
             b.add("annotations", new AnnotationsJsonCodec().toJson(t.annotations()));
         }
-        if (t._meta() != null) b.add("_meta", t._meta());
+        if (t._meta() != null) {
+            b.add("_meta", t._meta());
+        }
         return b.build();
     }
 
     @Override
     public ResourceTemplate fromJson(JsonObject obj) {
-        if (obj == null) throw new IllegalArgumentException("object required");
+        if (obj == null) {
+            throw new IllegalArgumentException("object required");
+        }
         var uriTemplate = requireString(obj, "uriTemplate");
         var name = requireString(obj, "name");
         var title = obj.getString("title", null);

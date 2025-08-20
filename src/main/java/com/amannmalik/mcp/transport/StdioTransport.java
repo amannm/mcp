@@ -42,7 +42,9 @@ public final class StdioTransport implements Transport {
 
     public StdioTransport(String[] command, Consumer<String> logSink, Duration receiveTimeout) throws IOException {
         Objects.requireNonNull(logSink, "logSink");
-        if (command.length == 0) throw new IllegalArgumentException("command");
+        if (command.length == 0) {
+            throw new IllegalArgumentException("command");
+        }
         var builder = new ProcessBuilder(command);
         builder.redirectErrorStream(false);
         var process = builder.start();
@@ -58,7 +60,9 @@ public final class StdioTransport implements Transport {
     private static void readLogs(InputStream err, Consumer<String> sink) {
         try (var r = new BufferedReader(new InputStreamReader(err, StandardCharsets.UTF_8))) {
             String line;
-            while ((line = r.readLine()) != null) sink.accept(line);
+            while ((line = r.readLine()) != null) {
+                sink.accept(line);
+            }
         } catch (IOException e) {
             sink.accept("error reading log stream: " + e.getMessage());
         }
@@ -93,13 +97,17 @@ public final class StdioTransport implements Transport {
                 throw new IOException("Timeout after " + timeout + " waiting for input", e);
             } catch (ExecutionException e) {
                 var cause = e.getCause();
-                if (cause instanceof IOException io) throw io;
+                if (cause instanceof IOException io) {
+                    throw io;
+                }
                 throw new IOException("Failed to read input", cause);
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
                 throw new IOException("Interrupted while waiting for input", e);
             }
-            if (line == null) throw new EOFException();
+            if (line == null) {
+                throw new EOFException();
+            }
             try (var reader = Json.createReader(new StringReader(line))) {
                 return reader.readObject();
             }
@@ -117,14 +125,20 @@ public final class StdioTransport implements Transport {
         try {
             in.close();
         } catch (IOException e) {
-            if (ex == null) ex = e;
+            if (ex == null) {
+                ex = e;
+            }
         }
         try {
             resources.close();
         } catch (IOException e) {
-            if (ex == null) ex = e;
+            if (ex == null) {
+                ex = e;
+            }
         }
-        if (ex != null) throw ex;
+        if (ex != null) {
+            throw ex;
+        }
     }
 
     private sealed interface ProcessResources extends AutoCloseable permits Detached, Spawned {

@@ -11,16 +11,22 @@ public class ElicitResultJsonCodec implements JsonCodec<ElicitResult> {
     public JsonObject toJson(ElicitResult r) {
         var b = Json.createObjectBuilder()
                 .add("action", r.action().name().toLowerCase());
-        if (r.content() != null) b.add("content", r.content());
+        if (r.content() != null) {
+            b.add("content", r.content());
+        }
         return AbstractEntityCodec.addMeta(b, r._meta()).build();
     }
 
     @Override
     public ElicitResult fromJson(JsonObject obj) {
-        if (obj == null) throw new IllegalArgumentException("action required");
+        if (obj == null) {
+            throw new IllegalArgumentException("action required");
+        }
         AbstractEntityCodec.requireOnlyKeys(obj, Set.of("action", "content", "_meta"));
         var raw = obj.getString("action", null);
-        if (raw == null) throw new IllegalArgumentException("action required");
+        if (raw == null) {
+            throw new IllegalArgumentException("action required");
+        }
         ElicitationAction action;
         try {
             action = ElicitationAction.valueOf(raw.toUpperCase());

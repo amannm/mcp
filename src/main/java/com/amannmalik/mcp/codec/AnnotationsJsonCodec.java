@@ -15,21 +15,29 @@ public final class AnnotationsJsonCodec implements JsonCodec<Annotations> {
 
     @Override
     public JsonObject toJson(Annotations ann) {
-        if (ann == null || ann.equals(EMPTY)) return JsonValue.EMPTY_JSON_OBJECT;
+        if (ann == null || ann.equals(EMPTY)) {
+            return JsonValue.EMPTY_JSON_OBJECT;
+        }
         var b = Json.createObjectBuilder();
         if (!ann.audience().isEmpty()) {
             var arr = Json.createArrayBuilder();
             ann.audience().forEach(r -> arr.add(r.name().toLowerCase()));
             b.add("audience", arr);
         }
-        if (ann.priority() != null) b.add("priority", ann.priority());
-        if (ann.lastModified() != null) b.add("lastModified", ann.lastModified().toString());
+        if (ann.priority() != null) {
+            b.add("priority", ann.priority());
+        }
+        if (ann.lastModified() != null) {
+            b.add("lastModified", ann.lastModified().toString());
+        }
         return b.build();
     }
 
     @Override
     public Annotations fromJson(JsonObject obj) {
-        if (obj == null || obj.isEmpty()) return EMPTY;
+        if (obj == null || obj.isEmpty()) {
+            return EMPTY;
+        }
         Set<Role> audience = EnumSet.noneOf(Role.class);
         var arr = obj.getJsonArray("audience");
         if (arr != null) {

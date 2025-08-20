@@ -27,7 +27,9 @@ public enum NotificationMethod implements JsonRpcMethod {
     }
 
     public static Optional<NotificationMethod> from(String method) {
-        if (method == null) return Optional.empty();
+        if (method == null) {
+            return Optional.empty();
+        }
         return switch (method) {
             case "notifications/initialized" -> Optional.of(INITIALIZED);
             case "notifications/cancelled" -> Optional.of(CANCELLED);

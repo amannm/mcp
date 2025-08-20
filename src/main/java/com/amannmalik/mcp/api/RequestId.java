@@ -8,8 +8,12 @@ public sealed interface RequestId permits
         RequestId.NullId {
 
     static RequestId parse(String raw) {
-        if (raw == null) throw new IllegalArgumentException("raw required");
-        if (raw.equals("null")) return NullId.INSTANCE;
+        if (raw == null) {
+            throw new IllegalArgumentException("raw required");
+        }
+        if (raw.equals("null")) {
+            return NullId.INSTANCE;
+        }
         if (raw.startsWith("\"") && raw.endsWith("\"") && raw.length() > 1) {
             return new StringId(raw.substring(1, raw.length() - 1));
         }
@@ -36,7 +40,9 @@ public sealed interface RequestId permits
             case STRING -> new StringId(((JsonString) value).getString());
             case NUMBER -> {
                 var num = (JsonNumber) value;
-                if (!num.isIntegral()) throw new IllegalArgumentException("id must be integer");
+                if (!num.isIntegral()) {
+                    throw new IllegalArgumentException("id must be integer");
+                }
                 long val;
                 try {
                     val = num.longValueExact();

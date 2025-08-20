@@ -11,7 +11,9 @@ public sealed interface Ref permits
 
     record PromptRef(String name, String title, JsonObject _meta) implements Ref {
         public PromptRef(String name, String title, JsonObject _meta) {
-            if (name == null) throw new IllegalArgumentException("name required");
+            if (name == null) {
+                throw new IllegalArgumentException("name required");
+            }
             this.name = ValidationUtil.requireClean(name);
             this.title = ValidationUtil.cleanNullable(title);
             ValidationUtil.requireMeta(_meta);
@@ -26,7 +28,9 @@ public sealed interface Ref permits
 
     record ResourceRef(String uri) implements Ref {
         public ResourceRef(String uri) {
-            if (uri == null) throw new IllegalArgumentException("uri required");
+            if (uri == null) {
+                throw new IllegalArgumentException("uri required");
+            }
             this.uri = ValidationUtil.requireAbsoluteTemplate(uri);
         }
 

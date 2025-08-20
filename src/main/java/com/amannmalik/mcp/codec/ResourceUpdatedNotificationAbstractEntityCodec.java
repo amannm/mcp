@@ -10,7 +10,9 @@ public final class ResourceUpdatedNotificationAbstractEntityCodec extends Abstra
     @Override
     public JsonObject toJson(ResourceUpdatedNotification n) {
         var b = Json.createObjectBuilder().add("uri", n.uri().toString());
-        if (n.title() != null) b.add("title", n.title());
+        if (n.title() != null) {
+            b.add("title", n.title());
+        }
         return b.build();
     }
 

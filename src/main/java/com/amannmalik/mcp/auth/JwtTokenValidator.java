@@ -41,7 +41,9 @@ public final class JwtTokenValidator implements TokenValidator {
     private JwtParts decode(String token) throws AuthorizationException {
         token = ValidationUtil.requireNonBlank(token);
         var parts = token.split("\\.");
-        if (parts.length != 3) throw new AuthorizationException("invalid token format");
+        if (parts.length != 3) {
+            throw new AuthorizationException("invalid token format");
+        }
         try {
             var header = new String(Base64Util.decodeUrl(parts[0]));
             var payload = new String(Base64Util.decodeUrl(parts[1]));
@@ -52,7 +54,9 @@ public final class JwtTokenValidator implements TokenValidator {
     }
 
     private void verifySignature(JwtParts parts) throws AuthorizationException {
-        if (secret == null) return;
+        if (secret == null) {
+            return;
+        }
         JsonObject header;
         try (var hr = Json.createReader(new StringReader(parts.headerJson()))) {
             header = hr.readObject();
@@ -60,13 +64,17 @@ public final class JwtTokenValidator implements TokenValidator {
             throw new AuthorizationException("invalid token header");
         }
         var alg = header.getString("alg", null);
-        if (!"HS256".equals(alg)) throw new AuthorizationException("unsupported alg");
+        if (!"HS256".equals(alg)) {
+            throw new AuthorizationException("unsupported alg");
+        }
         try {
             var mac = Mac.getInstance("HmacSHA256");
             mac.init(new SecretKeySpec(secret, "HmacSHA256"));
             var expected = mac.doFinal((parts.headerJson() + "." + parts.payloadJson()).getBytes(StandardCharsets.US_ASCII));
             var actual = Base64Util.decodeUrl(parts.signature());
-            if (!MessageDigest.isEqual(expected, actual)) throw new AuthorizationException("invalid signature");
+            if (!MessageDigest.isEqual(expected, actual)) {
+                throw new AuthorizationException("invalid signature");
+            }
         } catch (NoSuchAlgorithmException | InvalidKeyException e) {
             throw new AuthorizationException("signature verification failed");
         }
@@ -82,7 +90,9 @@ public final class JwtTokenValidator implements TokenValidator {
 
     private String extractSubject(JsonObject payload) throws AuthorizationException {
         var sub = payload.getString("sub", null);
-        if (sub == null || sub.isBlank()) throw new AuthorizationException("subject required");
+        if (sub == null || sub.isBlank()) {
+            throw new AuthorizationException("subject required");
+        }
         return sub;
     }
 
@@ -90,10 +100,14 @@ public final class JwtTokenValidator implements TokenValidator {
             throws AuthorizationException {
         var val = payload.get(key);
         if (val == null) {
-            if (!optional) throw new AuthorizationException(err);
+            if (!optional) {
+                throw new AuthorizationException(err);
+            }
             return;
         }
-        if (mismatch(val)) throw new AuthorizationException(err);
+        if (mismatch(val)) {
+            throw new AuthorizationException(err);
+        }
     }
 
     private boolean mismatch(JsonValue val) {
@@ -111,11 +125,15 @@ public final class JwtTokenValidator implements TokenValidator {
         var now = System.currentTimeMillis() / 1000;
         if (payload.containsKey("exp") && payload.get("exp").getValueType() == JsonValue.ValueType.NUMBER) {
             var exp = payload.getJsonNumber("exp").longValue();
-            if (now >= exp) throw new AuthorizationException("token expired");
+            if (now >= exp) {
+                throw new AuthorizationException("token expired");
+            }
         }
         if (payload.containsKey("nbf") && payload.get("nbf").getValueType() == JsonValue.ValueType.NUMBER) {
             var nbf = payload.getJsonNumber("nbf").longValue();
-            if (now < nbf) throw new AuthorizationException("token not active");
+            if (now < nbf) {
+                throw new AuthorizationException("token not active");
+            }
         }
     }
 

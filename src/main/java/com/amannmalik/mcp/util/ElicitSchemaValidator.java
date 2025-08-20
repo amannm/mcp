@@ -25,7 +25,9 @@ public final class ElicitSchemaValidator {
     }
 
     public static void requireElicitSchema(JsonObject schema) {
-        if (schema == null) throw new IllegalArgumentException("schema required");
+        if (schema == null) {
+            throw new IllegalArgumentException("schema required");
+        }
         if (!"object".equals(schema.getString("type", null))) {
             throw new IllegalArgumentException("schema.type must be 'object'");
         }
@@ -113,8 +115,12 @@ public final class ElicitSchemaValidator {
         validateCommonFields(prop);
         var min = prop.get("minimum");
         var max = prop.get("maximum");
-        if (min != null) ensureNumber(min, name + ".minimum", type);
-        if (max != null) ensureNumber(max, name + ".maximum", type);
+        if (min != null) {
+            ensureNumber(min, name + ".minimum", type);
+        }
+        if (max != null) {
+            ensureNumber(max, name + ".maximum", type);
+        }
         if (min != null && max != null &&
                 ((JsonNumber) max).doubleValue() < ((JsonNumber) min).doubleValue()) {
             throw new IllegalArgumentException("maximum must be >= minimum for " + name);
@@ -132,8 +138,12 @@ public final class ElicitSchemaValidator {
     }
 
     private static void validateCommonFields(JsonObject prop) {
-        if (prop.containsKey("title")) ValidationUtil.requireClean(prop.getString("title"));
-        if (prop.containsKey("description")) ValidationUtil.requireClean(prop.getString("description"));
+        if (prop.containsKey("title")) {
+            ValidationUtil.requireClean(prop.getString("title"));
+        }
+        if (prop.containsKey("description")) {
+            ValidationUtil.requireClean(prop.getString("description"));
+        }
     }
 
     private static void ensureNumber(JsonValue v, String field, String type) {

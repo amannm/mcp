@@ -19,7 +19,9 @@ public class ContentBlockJsonCodec implements JsonCodec<ContentBlock> {
         if (content.annotations() != null && content.annotations() != AnnotationsJsonCodec.EMPTY) {
             b.add("annotations", ANNOTATIONS_CODEC.toJson(content.annotations()));
         }
-        if (content._meta() != null) b.add("_meta", content._meta());
+        if (content._meta() != null) {
+            b.add("_meta", content._meta());
+        }
         return switch (content) {
             case ContentBlock.Text t -> b.add("text", t.text()).build();
             case ContentBlock.Image i -> b.add("data", Base64Util.encode(i.data()))
@@ -29,9 +31,13 @@ public class ContentBlockJsonCodec implements JsonCodec<ContentBlock> {
             case ContentBlock.ResourceLink l -> {
                 var obj = RESOURCE_ENTITY_CODEC.toJson(l.resource());
                 obj.forEach((k, v) -> {
-                    if (!"_meta".equals(k)) b.add(k, v);
+                    if (!"_meta".equals(k)) {
+                        b.add(k, v);
+                    }
                 });
-                if (l.resource()._meta() != null) b.add("_meta", l.resource()._meta());
+                if (l.resource()._meta() != null) {
+                    b.add("_meta", l.resource()._meta());
+                }
                 yield b.build();
             }
             case ContentBlock.EmbeddedResource r -> b.add("resource", RESOURCE_BLOCK_CODEC.toJson(r.resource())).build();
@@ -40,9 +46,13 @@ public class ContentBlockJsonCodec implements JsonCodec<ContentBlock> {
 
     @Override
     public ContentBlock fromJson(JsonObject obj) {
-        if (obj == null) throw new IllegalArgumentException("object required");
+        if (obj == null) {
+            throw new IllegalArgumentException("object required");
+        }
         var type = obj.getString("type", null);
-        if (type == null) throw new IllegalArgumentException("type required");
+        if (type == null) {
+            throw new IllegalArgumentException("type required");
+        }
         AbstractEntityCodec.requireOnlyKeys(obj, switch (type) {
             case "text" -> Set.of("type", "text", "annotations", "_meta");
             case "image", "audio" -> Set.of("type", "data", "mimeType", "annotations", "_meta");

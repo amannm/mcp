@@ -17,7 +17,9 @@ public enum ServerCapability {
     }
 
     public static Optional<ServerCapability> from(String raw) {
-        if (raw == null) return Optional.empty();
+        if (raw == null) {
+            return Optional.empty();
+        }
         return switch (raw) {
             case "prompts" -> Optional.of(PROMPTS);
             case "resources" -> Optional.of(RESOURCES);

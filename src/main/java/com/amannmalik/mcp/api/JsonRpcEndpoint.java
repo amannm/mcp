@@ -24,7 +24,9 @@ sealed class JsonRpcEndpoint implements AutoCloseable permits McpClient, McpServ
     private final AtomicLong counter;
 
     protected JsonRpcEndpoint(Transport transport, ProgressManager progress, long initialId) {
-        if (transport == null || progress == null) throw new IllegalArgumentException("transport and progress required");
+        if (transport == null || progress == null) {
+            throw new IllegalArgumentException("transport and progress required");
+        }
         this.transport = transport;
         this.progress = progress;
         this.counter = new AtomicLong(initialId);
@@ -87,7 +89,9 @@ sealed class JsonRpcEndpoint implements AutoCloseable permits McpClient, McpServ
 
     private static IOException unwrapExecutionException(ExecutionException e) {
         var cause = e.getCause();
-        if (cause instanceof IOException io) return io;
+        if (cause instanceof IOException io) {
+            return io;
+        }
         return new IOException(cause);
     }
 
@@ -119,7 +123,9 @@ sealed class JsonRpcEndpoint implements AutoCloseable permits McpClient, McpServ
         switch (msg) {
             case JsonRpcRequest req -> {
                 var resp = handleRequest(req, true);
-                if (resp.isPresent()) send(resp.get());
+                if (resp.isPresent()) {
+                    send(resp.get());
+                }
             }
             case JsonRpcNotification note -> handleNotification(note);
             case JsonRpcResponse resp -> complete(resp.id(), resp);
@@ -129,11 +135,15 @@ sealed class JsonRpcEndpoint implements AutoCloseable permits McpClient, McpServ
 
     private void complete(RequestId id, JsonRpcMessage msg) {
         var f = pending.remove(id);
-        if (f != null) f.complete(msg);
+        if (f != null) {
+            f.complete(msg);
+        }
     }
 
     private Optional<JsonRpcMessage> handleRequest(JsonRpcRequest req, boolean cancellable) {
-        if (req == null) throw new IllegalArgumentException("request required");
+        if (req == null) {
+            throw new IllegalArgumentException("request required");
+        }
 
         final Optional<ProgressToken> token;
         try {
@@ -148,9 +158,13 @@ sealed class JsonRpcEndpoint implements AutoCloseable permits McpClient, McpServ
 
         try {
             token.ifPresent(t -> sendProgress(t, 0.0));
-            if (cancellable && progress.isCancelled(req.id())) return Optional.empty();
+            if (cancellable && progress.isCancelled(req.id())) {
+                return Optional.empty();
+            }
             var resp = dispatch(req);
-            if (cancellable && progress.isCancelled(req.id())) return Optional.empty();
+            if (cancellable && progress.isCancelled(req.id())) {
+                return Optional.empty();
+            }
             token.ifPresent(t -> sendProgress(t, 1.0));
             return Optional.of(resp);
         } finally {
@@ -165,7 +179,9 @@ sealed class JsonRpcEndpoint implements AutoCloseable permits McpClient, McpServ
         }
         try {
             var resp = handler.get().apply(req);
-            if (resp == null) throw new IllegalStateException("handler returned null");
+            if (resp == null) {
+                throw new IllegalStateException("handler returned null");
+            }
             return resp;
         } catch (IllegalArgumentException e) {
             return JsonRpcError.of(req.id(), JsonRpcErrorCode.INVALID_PARAMS, e.getMessage());

@@ -20,14 +20,22 @@ public final class InitializeResponseAbstractEntityCodec extends AbstractEntityC
             var f = resp.features();
             switch (c) {
                 case PROMPTS -> {
-                    if (f != null && f.contains(ServerFeature.PROMPTS_LIST_CHANGED)) b.add("listChanged", true);
+                    if (f != null && f.contains(ServerFeature.PROMPTS_LIST_CHANGED)) {
+                        b.add("listChanged", true);
+                    }
                 }
                 case RESOURCES -> {
-                    if (f != null && f.contains(ServerFeature.RESOURCES_SUBSCRIBE)) b.add("subscribe", true);
-                    if (f != null && f.contains(ServerFeature.RESOURCES_LIST_CHANGED)) b.add("listChanged", true);
+                    if (f != null && f.contains(ServerFeature.RESOURCES_SUBSCRIBE)) {
+                        b.add("subscribe", true);
+                    }
+                    if (f != null && f.contains(ServerFeature.RESOURCES_LIST_CHANGED)) {
+                        b.add("listChanged", true);
+                    }
                 }
                 case TOOLS -> {
-                    if (f != null && f.contains(ServerFeature.TOOLS_LIST_CHANGED)) b.add("listChanged", true);
+                    if (f != null && f.contains(ServerFeature.TOOLS_LIST_CHANGED)) {
+                        b.add("listChanged", true);
+                    }
                 }
                 default -> {
                 }
@@ -39,7 +47,9 @@ public final class InitializeResponseAbstractEntityCodec extends AbstractEntityC
                 .add("protocolVersion", resp.protocolVersion())
                 .add("capabilities", server.build())
                 .add("serverInfo", SERVER_INFO_CODEC.toJson(resp.serverInfo()));
-        if (resp.instructions() != null) b.add("instructions", resp.instructions());
+        if (resp.instructions() != null) {
+            b.add("instructions", resp.instructions());
+        }
         return b.build();
     }
 
@@ -57,8 +67,12 @@ public final class InitializeResponseAbstractEntityCodec extends AbstractEntityC
         if (capsObj != null) {
             var res = capsObj.getJsonObject(ServerCapability.RESOURCES.code());
             if (res != null) {
-                if (res.getBoolean("subscribe", false)) features.add(ServerFeature.RESOURCES_SUBSCRIBE);
-                if (res.getBoolean("listChanged", false)) features.add(ServerFeature.RESOURCES_LIST_CHANGED);
+                if (res.getBoolean("subscribe", false)) {
+                    features.add(ServerFeature.RESOURCES_SUBSCRIBE);
+                }
+                if (res.getBoolean("listChanged", false)) {
+                    features.add(ServerFeature.RESOURCES_LIST_CHANGED);
+                }
             }
             var tools = capsObj.getJsonObject(ServerCapability.TOOLS.code());
             if (tools != null && tools.getBoolean("listChanged", false)) {

@@ -21,7 +21,9 @@ final class AuthorizationUtil {
                                          HttpServletResponse resp,
                                          String resourceMetadataUrl,
                                          Principal defaultPrincipal) throws IOException {
-        if (manager == null) return Optional.of(defaultPrincipal);
+        if (manager == null) {
+            return Optional.of(defaultPrincipal);
+        }
         try {
             return Optional.of(manager.authorize(req.getHeader("Authorization")));
         } catch (AuthorizationException e) {

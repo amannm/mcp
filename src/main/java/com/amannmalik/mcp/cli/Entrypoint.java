@@ -21,12 +21,16 @@ public final class Entrypoint {
         try {
             var parseResult = commandLine.parseArgs(args);
             var helpExitCode = CommandLine.executeHelpRequest(parseResult);
-            if (helpExitCode != null) System.exit(helpExitCode);
+            if (helpExitCode != null) {
+                System.exit(helpExitCode);
+            }
             System.exit(execute(parseResult));
         } catch (ParameterException e) {
             var cmd = e.getCommandLine();
             cmd.getErr().println(e.getMessage());
-            if (!UnmatchedArgumentException.printSuggestions(e, cmd.getErr())) cmd.usage(cmd.getErr());
+            if (!UnmatchedArgumentException.printSuggestions(e, cmd.getErr())) {
+                cmd.usage(cmd.getErr());
+            }
             System.exit(cmd.getCommandSpec().exitCodeOnInvalidInput());
         } catch (Exception e) {
             commandLine.getErr().println("ERROR: " + e.getMessage());

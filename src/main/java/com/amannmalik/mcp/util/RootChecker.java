@@ -13,9 +13,15 @@ public final class RootChecker {
 
     public static boolean withinRoots(URI uri, List<Root> roots) {
         Objects.requireNonNull(roots);
-        if (uri == null) return false;
-        if (!"file".equalsIgnoreCase(uri.getScheme())) return true;
-        if (roots.isEmpty()) return false;
+        if (uri == null) {
+            return false;
+        }
+        if (!"file".equalsIgnoreCase(uri.getScheme())) {
+            return true;
+        }
+        if (roots.isEmpty()) {
+            return false;
+        }
 
         final Path targetPath;
         try {

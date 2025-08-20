@@ -35,7 +35,9 @@ public final class RootsManager {
         var changed = !roots.equals(fetched);
         roots.clear();
         roots.addAll(fetched);
-        if (changed) listChangeSupport.notifyListeners();
+        if (changed) {
+            listChangeSupport.notifyListeners();
+        }
         return List.copyOf(fetched);
     }
 
@@ -48,7 +50,9 @@ public final class RootsManager {
     }
 
     public void refreshAsync() {
-        if (!capabilities.get().contains(ClientCapability.ROOTS)) return;
+        if (!capabilities.get().contains(ClientCapability.ROOTS)) {
+            return;
+        }
         var t = new Thread(() -> {
             try {
                 listRoots();

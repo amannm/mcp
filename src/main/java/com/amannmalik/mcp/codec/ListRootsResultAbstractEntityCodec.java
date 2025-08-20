@@ -16,13 +16,17 @@ public final class ListRootsResultAbstractEntityCodec extends AbstractEntityCode
         var arr = Json.createArrayBuilder();
         result.roots().forEach(r -> arr.add(CODEC.toJson(r)));
         var b = Json.createObjectBuilder().add("roots", arr);
-        if (result._meta() != null) b.add("_meta", result._meta());
+        if (result._meta() != null) {
+            b.add("_meta", result._meta());
+        }
         return b.build();
     }
 
     @Override
     public ListRootsResult fromJson(JsonObject obj) {
-        if (obj == null) throw new IllegalArgumentException("object required");
+        if (obj == null) {
+            throw new IllegalArgumentException("object required");
+        }
         requireOnlyKeys(obj, Set.of("roots", "_meta"));
         var arr = obj.getJsonArray("roots");
         List<Root> roots = arr == null || arr.isEmpty()

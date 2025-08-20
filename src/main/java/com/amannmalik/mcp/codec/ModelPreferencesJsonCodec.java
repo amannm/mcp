@@ -20,15 +20,23 @@ public class ModelPreferencesJsonCodec implements JsonCodec<ModelPreferences> {
             p.hints().forEach(h -> arr.add(MODEL_HINT_JSON_CODEC.toJson(h)));
             b.add("hints", arr.build());
         }
-        if (p.costPriority() != null) b.add("costPriority", p.costPriority());
-        if (p.speedPriority() != null) b.add("speedPriority", p.speedPriority());
-        if (p.intelligencePriority() != null) b.add("intelligencePriority", p.intelligencePriority());
+        if (p.costPriority() != null) {
+            b.add("costPriority", p.costPriority());
+        }
+        if (p.speedPriority() != null) {
+            b.add("speedPriority", p.speedPriority());
+        }
+        if (p.intelligencePriority() != null) {
+            b.add("intelligencePriority", p.intelligencePriority());
+        }
         return b.build();
     }
 
     @Override
     public ModelPreferences fromJson(JsonObject obj) {
-        if (obj == null) throw new IllegalArgumentException("object required");
+        if (obj == null) {
+            throw new IllegalArgumentException("object required");
+        }
         AbstractEntityCodec.requireOnlyKeys(obj, Set.of("hints", "costPriority", "speedPriority", "intelligencePriority"));
         List<ModelHint> hints = obj.containsKey("hints")
                 ? obj.getJsonArray("hints").stream()

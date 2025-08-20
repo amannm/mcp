@@ -12,7 +12,9 @@ public class RefJsonCodec implements JsonCodec<Ref> {
                 var b = Json.createObjectBuilder()
                         .add("type", p.type())
                         .add("name", p.name());
-                if (p.title() != null) b.add("title", p.title());
+                if (p.title() != null) {
+                    b.add("title", p.title());
+                }
                 yield AbstractEntityCodec.addMeta(b, p._meta()).build();
             }
             case Ref.ResourceRef r -> Json.createObjectBuilder()
@@ -25,7 +27,9 @@ public class RefJsonCodec implements JsonCodec<Ref> {
     @Override
     public Ref fromJson(JsonObject obj) {
         var type = obj.getString("type", null);
-        if (type == null) throw new IllegalArgumentException("type required");
+        if (type == null) {
+            throw new IllegalArgumentException("type required");
+        }
         return switch (type) {
             case "ref/prompt" -> new Ref.PromptRef(
                     obj.getString("name"),

@@ -9,7 +9,9 @@ import java.util.Set;
 public record Annotations(Set<Role> audience, Double priority, Instant lastModified) {
     public Annotations {
         audience = audience == null || audience.isEmpty() ? Set.of() : EnumSet.copyOf(audience);
-        if (priority != null) priority = ValidationUtil.requireFraction(priority, "priority");
+        if (priority != null) {
+            priority = ValidationUtil.requireFraction(priority, "priority");
+        }
     }
 
     @Override

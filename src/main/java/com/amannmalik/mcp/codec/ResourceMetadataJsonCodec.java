@@ -16,10 +16,14 @@ public class ResourceMetadataJsonCodec implements JsonCodec<ResourceMetadata> {
 
     @Override
     public ResourceMetadata fromJson(JsonObject obj) {
-        if (obj == null) throw new IllegalArgumentException("object required");
+        if (obj == null) {
+            throw new IllegalArgumentException("object required");
+        }
         var resource = obj.getString("resource", null);
         var arr = obj.getJsonArray("authorization_servers");
-        if (resource == null || arr == null) throw new IllegalArgumentException("resource and authorization_servers required");
+        if (resource == null || arr == null) {
+            throw new IllegalArgumentException("resource and authorization_servers required");
+        }
         var servers = arr.getValuesAs(JsonString.class).stream().map(JsonString::getString).toList();
         return new ResourceMetadata(resource, servers);
     }

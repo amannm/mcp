@@ -21,10 +21,12 @@ public record McpHostConfiguration(
     public McpHostConfiguration {
         hostClientCapabilities = Set.copyOf(hostClientCapabilities);
         clientConfigurations = List.copyOf(clientConfigurations);
-        if (processWaitSeconds.isNegative())
+        if (processWaitSeconds.isNegative()) {
             throw new IllegalArgumentException("Invalid process wait seconds");
-        if (defaultPageSize <= 0 || maxCompletionValues <= 0)
+        }
+        if (defaultPageSize <= 0 || maxCompletionValues <= 0) {
             throw new IllegalArgumentException("Invalid pagination configuration");
+        }
     }
 
     public static McpHostConfiguration defaultConfiguration() {

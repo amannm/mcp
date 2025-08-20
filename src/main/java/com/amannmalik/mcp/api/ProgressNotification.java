@@ -10,7 +10,9 @@ public record ProgressNotification(
 ) {
 
     public ProgressNotification {
-        if (token == null) throw new IllegalArgumentException("token is required");
+        if (token == null) {
+            throw new IllegalArgumentException("token is required");
+        }
         progress = ValidationUtil.requireNonNegative(progress, "progress");
         if (total != null) {
             total = ValidationUtil.requirePositive(total, "total");

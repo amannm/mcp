@@ -30,8 +30,12 @@ public record Tool(String name,
 
     @Override
     public String displayName() {
-        if (title != null) return title;
-        if (annotations != null && annotations.title() != null) return annotations.title();
+        if (title != null) {
+            return title;
+        }
+        if (annotations != null && annotations.title() != null) {
+            return annotations.title();
+        }
         return name;
     }
 

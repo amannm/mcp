@@ -158,18 +158,26 @@ public final class McpClient extends JsonRpcEndpoint implements AutoCloseable {
     }
 
     public void configurePing(Duration intervalMillis, Duration timeoutMillis) {
-        if (connected) throw new IllegalStateException("already connected");
-        if (intervalMillis.isNegative() || timeoutMillis.isNegative()) throw new IllegalArgumentException("invalid ping settings");
+        if (connected) {
+            throw new IllegalStateException("already connected");
+        }
+        if (intervalMillis.isNegative() || timeoutMillis.isNegative()) {
+            throw new IllegalArgumentException("invalid ping settings");
+        }
         this.pingInterval = intervalMillis;
         this.pingTimeout = timeoutMillis;
     }
 
     public void setSamplingAccessPolicy(SamplingAccessPolicy policy) {
-        if (policy != null) this.samplingAccess = policy;
+        if (policy != null) {
+            this.samplingAccess = policy;
+        }
     }
 
     public void setPrincipal(Principal principal) {
-        if (principal != null) this.principal = principal;
+        if (principal != null) {
+            this.principal = principal;
+        }
     }
 
     public ClientInfo info() {
@@ -177,7 +185,9 @@ public final class McpClient extends JsonRpcEndpoint implements AutoCloseable {
     }
 
     public synchronized void connect() throws IOException {
-        if (connected) return;
+        if (connected) {
+            return;
+        }
         ClientHandshake.Result init;
         try {
             init = ClientHandshake.perform(nextId(), transport, info, capabilities, rootsListChangedSupported, initializationTimeout);
@@ -204,7 +214,9 @@ public final class McpClient extends JsonRpcEndpoint implements AutoCloseable {
     }
 
     public synchronized void disconnect() throws IOException {
-        if (!connected) return;
+        if (!connected) {
+            return;
+        }
         connected = false;
         if (background != null) {
             background.close();
@@ -246,7 +258,9 @@ public final class McpClient extends JsonRpcEndpoint implements AutoCloseable {
     }
 
     public void setLogLevel(LoggingLevel level) throws IOException {
-        if (level == null) throw new IllegalArgumentException("level required");
+        if (level == null) {
+            throw new IllegalArgumentException("level required");
+        }
         JsonRpc.expectResponse(request(RequestMethod.LOGGING_SET_LEVEL,
                 SET_LEVEL_REQUEST_JSON_CODEC.toJson(new SetLevelRequest(level, null)), requestTimeout));
     }
@@ -293,7 +307,9 @@ public final class McpClient extends JsonRpcEndpoint implements AutoCloseable {
     }
 
     public void sendNotification(NotificationMethod method, JsonObject params) throws IOException {
-        if (!connected) throw new IllegalStateException("not connected");
+        if (!connected) {
+            throw new IllegalStateException("not connected");
+        }
         send(new JsonRpcNotification(method.method(), params));
     }
 
@@ -444,7 +460,9 @@ public final class McpClient extends JsonRpcEndpoint implements AutoCloseable {
     }
 
     private void subscribeRootsIfNeeded() throws IOException {
-        if (!capabilities.contains(ClientCapability.ROOTS) || !rootsListChangedSupported) return;
+        if (!capabilities.contains(ClientCapability.ROOTS) || !rootsListChangedSupported) {
+            return;
+        }
         try {
             rootsSubscription = roots.onListChanged(() -> {
                 try {
@@ -541,7 +559,9 @@ public final class McpClient extends JsonRpcEndpoint implements AutoCloseable {
     }
 
     private void handleProgress(JsonRpcNotification note) {
-        if (note.params() == null) return;
+        if (note.params() == null) {
+            return;
+        }
         try {
             var pn = PROGRESS_NOTIFICATION_JSON_CODEC.fromJson(note.params());
             progress.record(pn);
@@ -551,7 +571,9 @@ public final class McpClient extends JsonRpcEndpoint implements AutoCloseable {
     }
 
     private void handleMessage(JsonRpcNotification note) {
-        if (note.params() == null) return;
+        if (note.params() == null) {
+            return;
+        }
         try {
             listener.onMessage(LOGGING_MESSAGE_NOTIFICATION_JSON_CODEC.fromJson(note.params()));
         } catch (IllegalArgumentException ignore) {
@@ -567,7 +589,9 @@ public final class McpClient extends JsonRpcEndpoint implements AutoCloseable {
     }
 
     private void handleResourceUpdated(JsonRpcNotification note) {
-        if (note.params() == null) return;
+        if (note.params() == null) {
+            return;
+        }
         try {
             var run = RESOURCE_UPDATED_NOTIFICATION_JSON_CODEC.fromJson(note.params());
             var listener = resourceListeners.get(run.uri());

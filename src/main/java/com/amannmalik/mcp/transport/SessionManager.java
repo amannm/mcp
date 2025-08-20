@@ -42,27 +42,39 @@ final class SessionManager {
                      HttpServletResponse resp,
                      Principal principal,
                      boolean initializing) throws IOException {
-        if (principal == null) throw new IllegalArgumentException("principal required");
+        if (principal == null) {
+            throw new IllegalArgumentException("principal required");
+        }
         var id = sessionId(req);
         var version = req.getHeader(TransportHeaders.PROTOCOL_VERSION);
-        if (!sanitizeHeaders(id, version, resp)) return false;
+        if (!sanitizeHeaders(id, version, resp)) {
+            return false;
+        }
         var state = current.get();
         if (state == null) {
             return initializing
                     ? createSession(req, resp, principal)
                     : failForMissingSession(resp, id, lastSessionId.get());
         }
-        if (!validateExistingSession(req, resp, principal, state, id)) return false;
+        if (!validateExistingSession(req, resp, principal, state, id)) {
+            return false;
+        }
         return validateVersion(initializing, version, resp);
     }
 
     private String sessionId(HttpServletRequest req) {
         var header = req.getHeader(TransportHeaders.SESSION_ID);
-        if (header != null) return header;
+        if (header != null) {
+            return header;
+        }
         var cookies = req.getCookies();
-        if (cookies == null) return null;
+        if (cookies == null) {
+            return null;
+        }
         for (var c : cookies) {
-            if (TransportHeaders.SESSION_ID.equals(c.getName())) return c.getValue();
+            if (TransportHeaders.SESSION_ID.equals(c.getName())) {
+                return c.getValue();
+            }
         }
         return null;
     }
@@ -132,7 +144,9 @@ final class SessionManager {
     private boolean validateVersion(boolean initializing,
                                     String version,
                                     HttpServletResponse resp) throws IOException {
-        if (initializing) return true;
+        if (initializing) {
+            return true;
+        }
         if (version == null || !version.equals(protocolVersion)) {
             resp.sendError(HttpServletResponse.SC_BAD_REQUEST);
             return false;

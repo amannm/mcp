@@ -12,20 +12,32 @@ public non-sealed class ResourceAbstractEntityCodec extends AbstractEntityCodec<
         var b = Json.createObjectBuilder()
                 .add("uri", r.uri().toString())
                 .add("name", r.name());
-        if (r.title() != null) b.add("title", r.title());
-        if (r.description() != null) b.add("description", r.description());
-        if (r.mimeType() != null) b.add("mimeType", r.mimeType());
-        if (r.size() != null) b.add("size", r.size());
+        if (r.title() != null) {
+            b.add("title", r.title());
+        }
+        if (r.description() != null) {
+            b.add("description", r.description());
+        }
+        if (r.mimeType() != null) {
+            b.add("mimeType", r.mimeType());
+        }
+        if (r.size() != null) {
+            b.add("size", r.size());
+        }
         if (r.annotations() != AnnotationsJsonCodec.EMPTY) {
             b.add("annotations", new AnnotationsJsonCodec().toJson(r.annotations()));
         }
-        if (r._meta() != null) b.add("_meta", r._meta());
+        if (r._meta() != null) {
+            b.add("_meta", r._meta());
+        }
         return b.build();
     }
 
     @Override
     public Resource fromJson(JsonObject obj) {
-        if (obj == null) throw new IllegalArgumentException("object required");
+        if (obj == null) {
+            throw new IllegalArgumentException("object required");
+        }
         var uriString = requireString(obj, "uri");
         var uri = URI.create(uriString);
         var name = requireString(obj, "name");

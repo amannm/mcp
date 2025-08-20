@@ -9,44 +9,66 @@ public class JsonRpcMessageJsonCodec implements JsonCodec<JsonRpcMessage> {
 
     static void validateVersion(JsonObject obj) {
         var version = obj.getString("jsonrpc", null);
-        if (!JsonRpc.VERSION.equals(version)) throw new IllegalArgumentException("Unsupported jsonrpc version: " + version);
+        if (!JsonRpc.VERSION.equals(version)) {
+            throw new IllegalArgumentException("Unsupported jsonrpc version: " + version);
+        }
     }
 
     static JsonObject params(JsonValue value) {
-        if (value == null) return null;
-        if (value.getValueType() != JsonValue.ValueType.OBJECT) throw new IllegalArgumentException("params must be an object");
+        if (value == null) {
+            return null;
+        }
+        if (value.getValueType() != JsonValue.ValueType.OBJECT) {
+            throw new IllegalArgumentException("params must be an object");
+        }
         return value.asJsonObject();
     }
 
     static JsonObject result(JsonValue value) {
-        if (value == null || value.getValueType() != JsonValue.ValueType.OBJECT) throw new IllegalArgumentException("result must be an object");
+        if (value == null || value.getValueType() != JsonValue.ValueType.OBJECT) {
+            throw new IllegalArgumentException("result must be an object");
+        }
         return value.asJsonObject();
     }
 
     static JsonRpcKind kind(String method, JsonValue idValue, boolean hasResult, boolean hasError) {
-        if (hasResult && hasError) throw new IllegalArgumentException("response cannot contain both result and error");
+        if (hasResult && hasError) {
+            throw new IllegalArgumentException("response cannot contain both result and error");
+        }
         if (method != null) {
-            if (idValue != null && idValue.getValueType() != JsonValue.ValueType.NULL) return JsonRpcKind.REQUEST;
+            if (idValue != null && idValue.getValueType() != JsonValue.ValueType.NULL) {
+                return JsonRpcKind.REQUEST;
+            }
             return JsonRpcKind.NOTIFICATION;
         }
-        if (hasResult) return JsonRpcKind.RESPONSE;
-        if (hasError) return JsonRpcKind.ERROR;
+        if (hasResult) {
+            return JsonRpcKind.RESPONSE;
+        }
+        if (hasError) {
+            return JsonRpcKind.ERROR;
+        }
         throw new IllegalArgumentException("Unknown message type");
     }
 
     static RequestId requestId(JsonValue value) {
-        if (value == null || value.getValueType() == JsonValue.ValueType.NULL) throw new IllegalArgumentException("id is required for response");
+        if (value == null || value.getValueType() == JsonValue.ValueType.NULL) {
+            throw new IllegalArgumentException("id is required for response");
+        }
         return RequestId.from(value);
     }
 
     static RequestId optionalId(JsonValue value) {
-        if (value == null || value.getValueType() == JsonValue.ValueType.NULL) return RequestId.NullId.INSTANCE;
+        if (value == null || value.getValueType() == JsonValue.ValueType.NULL) {
+            return RequestId.NullId.INSTANCE;
+        }
         return RequestId.from(value);
     }
 
     static JsonRpcError.ErrorDetail errorDetail(JsonObject obj) {
         var codeValue = obj.get("code");
-        if (!(codeValue instanceof JsonNumber number) || !number.isIntegral()) throw new IllegalArgumentException("error code must be integer");
+        if (!(codeValue instanceof JsonNumber number) || !number.isIntegral()) {
+            throw new IllegalArgumentException("error code must be integer");
+        }
         int code;
         try {
             code = number.intValueExact();
@@ -54,7 +76,9 @@ public class JsonRpcMessageJsonCodec implements JsonCodec<JsonRpcMessage> {
             throw new IllegalArgumentException("error code must be integer", e);
         }
         var messageValue = obj.get("message");
-        if (!(messageValue instanceof JsonString msg)) throw new IllegalArgumentException("error message must be string");
+        if (!(messageValue instanceof JsonString msg)) {
+            throw new IllegalArgumentException("error message must be string");
+        }
         return new JsonRpcError.ErrorDetail(code, msg.getString(), obj.get("data"));
     }
 
@@ -65,12 +89,16 @@ public class JsonRpcMessageJsonCodec implements JsonCodec<JsonRpcMessage> {
             case JsonRpcRequest r -> {
                 builder.add("id", RequestId.toJsonValue(r.id()));
                 builder.add("method", r.method());
-                if (r.params() != null) builder.add("params", r.params());
+                if (r.params() != null) {
+                    builder.add("params", r.params());
+                }
                 yield builder.build();
             }
             case JsonRpcNotification n -> {
                 builder.add("method", n.method());
-                if (n.params() != null) builder.add("params", n.params());
+                if (n.params() != null) {
+                    builder.add("params", n.params());
+                }
                 yield builder.build();
             }
             case JsonRpcResponse r -> {
@@ -84,7 +112,9 @@ public class JsonRpcMessageJsonCodec implements JsonCodec<JsonRpcMessage> {
                 var errBuilder = Json.createObjectBuilder()
                         .add("code", err.code())
                         .add("message", err.message());
-                if (err.data() != null) errBuilder.add("data", err.data());
+                if (err.data() != null) {
+                    errBuilder.add("data", err.data());
+                }
                 builder.add("error", errBuilder.build());
                 yield builder.build();
             }

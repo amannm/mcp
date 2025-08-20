@@ -12,6 +12,8 @@ public final class EventSupport {
     }
 
     public void notifyListeners() {
-        for (var l : listeners) l.run();
+        for (var l : listeners) {
+            l.run();
+        }
     }
 }

@@ -24,7 +24,9 @@ public final class MessageDispatcher {
     public void flush() {
         while (true) {
             var msg = backlog.peek();
-            if (msg == null) return;
+            if (msg == null) {
+                return;
+            }
             if (router.route(msg)) {
                 backlog.poll();
             } else {

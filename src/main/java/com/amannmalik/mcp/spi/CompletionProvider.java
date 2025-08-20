@@ -14,8 +14,12 @@ public non-sealed interface CompletionProvider extends ExecutingProvider<Ref, Co
     }
 
     static Ref decode(String name) {
-        if (name.startsWith("prompt:")) return new Ref.PromptRef(name.substring(7), null, null);
-        if (name.startsWith("resource:")) return new Ref.ResourceRef(name.substring(9));
+        if (name.startsWith("prompt:")) {
+            return new Ref.PromptRef(name.substring(7), null, null);
+        }
+        if (name.startsWith("resource:")) {
+            return new Ref.ResourceRef(name.substring(9));
+        }
         throw new IllegalArgumentException("invalid ref");
     }
 

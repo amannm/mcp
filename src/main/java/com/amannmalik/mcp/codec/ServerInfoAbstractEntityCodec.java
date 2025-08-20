@@ -10,13 +10,17 @@ public final class ServerInfoAbstractEntityCodec extends AbstractEntityCodec<Ser
         var b = Json.createObjectBuilder()
                 .add("name", info.name())
                 .add("version", info.version());
-        if (info.title() != null) b.add("title", info.title());
+        if (info.title() != null) {
+            b.add("title", info.title());
+        }
         return b.build();
     }
 
     @Override
     public ServerInfo fromJson(JsonObject obj) {
-        if (obj == null) throw new IllegalArgumentException("object required");
+        if (obj == null) {
+            throw new IllegalArgumentException("object required");
+        }
         var name = requireString(obj, "name");
         var version = requireString(obj, "version");
         var title = obj.getString("title", null);

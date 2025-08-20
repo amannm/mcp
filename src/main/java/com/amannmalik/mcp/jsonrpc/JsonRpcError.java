@@ -29,7 +29,9 @@ public record JsonRpcError(RequestId id, ErrorDetail error) implements JsonRpcMe
 
     public record ErrorDetail(int code, String message, JsonValue data) {
         public ErrorDetail {
-            if (message == null) throw new IllegalArgumentException("message is required");
+            if (message == null) {
+                throw new IllegalArgumentException("message is required");
+            }
         }
     }
 }

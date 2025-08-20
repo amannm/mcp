@@ -19,7 +19,9 @@ public final class AuthorizationManager {
     public Principal authorize(String authorizationHeader) throws AuthorizationException {
         for (var strategy : strategies) {
             var result = strategy.authorize(authorizationHeader);
-            if (result.isPresent()) return result.get();
+            if (result.isPresent()) {
+                return result.get();
+            }
         }
         throw new AuthorizationException("No valid authorization strategy");
     }

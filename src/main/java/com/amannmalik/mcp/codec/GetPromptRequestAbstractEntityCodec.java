@@ -15,13 +15,17 @@ public final class GetPromptRequestAbstractEntityCodec extends AbstractEntityCod
             req.arguments().forEach(args::add);
             b.add("arguments", args.build());
         }
-        if (req._meta() != null) b.add("_meta", req._meta());
+        if (req._meta() != null) {
+            b.add("_meta", req._meta());
+        }
         return b.build();
     }
 
     @Override
     public GetPromptRequest fromJson(JsonObject obj) {
-        if (obj == null) throw new IllegalArgumentException("params required");
+        if (obj == null) {
+            throw new IllegalArgumentException("params required");
+        }
         requireOnlyKeys(obj, Set.of("name", "arguments", "_meta"));
         var name = requireString(obj, "name");
         var argsObj = obj.getJsonObject("arguments");

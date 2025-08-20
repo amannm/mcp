@@ -15,7 +15,9 @@ final class SubscriptionUtil {
             IoRunnable listener) {
         try {
             return factory.onListChanged(() -> {
-                if (state.get() != LifecycleState.OPERATION) return;
+                if (state.get() != LifecycleState.OPERATION) {
+                    return;
+                }
                 try {
                     listener.run();
                 } catch (IOException ignore) {

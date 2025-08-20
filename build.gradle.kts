@@ -6,6 +6,8 @@ plugins {
     id("org.graalvm.buildtools.native") version "0.10.6"
     jacoco
     id("me.champeau.jmh") version "0.7.2"
+    id("com.github.spotbugs") version "6.2.5"
+    pmd
 }
 
 group = "com.amannmalik"
@@ -133,4 +135,31 @@ tasks.register<JavaExec>("generateManPage") {
     classpath = configurations.annotationProcessor.get() + sourceSets.main.get().runtimeClasspath
     mainClass.set("picocli.codegen.docgen.manpage.ManPageGenerator")
     args("-d", "${projectDir}/man", "com.amannmalik.mcp.Main")
+}
+
+spotbugs {
+    ignoreFailures = true
+    showStackTraces = false
+    showProgress = true
+    effort = com.github.spotbugs.snom.Effort.MAX
+    reportLevel = com.github.spotbugs.snom.Confidence.MEDIUM
+    reportsDir = layout.buildDirectory.dir("reports/spotbugs")
+    excludeFilter = file("config/spotbugs/exclude.xml")
+    toolVersion = "4.9.4"
+}
+
+pmd {
+    isConsoleOutput = true
+    toolVersion = "7.16.0"
+    ruleSets = listOf()
+    ruleSetFiles = files("config/pmd/ruleset.xml")
+    reportsDir = layout.buildDirectory.dir("reports/pmd").get().asFile
+}
+
+tasks.withType<Pmd>().configureEach {
+    ignoreFailures = true
+    reports {
+        xml.required = true
+        html.required = true
+    }
 }

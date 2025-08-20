@@ -216,7 +216,9 @@ final class ResourceOrchestrator implements AutoCloseable {
     }
 
     private boolean canAccessResource(URI uri) {
-        if (!withinRoots(uri)) return false;
+        if (!withinRoots(uri)) {
+            return false;
+        }
         return resources.get(uri)
                 .map(Resource::annotations)
                 .map(this::allowed)

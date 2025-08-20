@@ -39,40 +39,56 @@ public record McpClientConfiguration(
 ) {
 
     public McpClientConfiguration {
-        if (clientId == null || clientId.isBlank())
+        if (clientId == null || clientId.isBlank()) {
             throw new IllegalArgumentException("Client ID is required");
-        if (serverName == null || serverName.isBlank())
+        }
+        if (serverName == null || serverName.isBlank()) {
             throw new IllegalArgumentException("Server name is required");
-        if (principal == null || principal.isBlank())
+        }
+        if (principal == null || principal.isBlank()) {
             throw new IllegalArgumentException("Principal is required");
+        }
         clientCapabilities = Set.copyOf(clientCapabilities);
-        if (defaultReceiveTimeout == null || defaultReceiveTimeout.isNegative() || defaultReceiveTimeout.isZero())
+        if (defaultReceiveTimeout == null || defaultReceiveTimeout.isNegative() || defaultReceiveTimeout.isZero()) {
             throw new IllegalArgumentException("Default receive timeout must be positive");
-        if (defaultOriginHeader == null || defaultOriginHeader.isBlank())
+        }
+        if (defaultOriginHeader == null || defaultOriginHeader.isBlank()) {
             throw new IllegalArgumentException("Default origin header is required");
-        if (httpRequestTimeout == null || httpRequestTimeout.isNegative() || httpRequestTimeout.isZero())
+        }
+        if (httpRequestTimeout == null || httpRequestTimeout.isNegative() || httpRequestTimeout.isZero()) {
             throw new IllegalArgumentException("HTTP request timeout must be positive");
-        if (sessionIdByteLength <= 0)
+        }
+        if (sessionIdByteLength <= 0) {
             throw new IllegalArgumentException("Session ID byte length must be positive");
-        if (initializeRequestTimeout == null || initializeRequestTimeout.isNegative() || initializeRequestTimeout.isZero())
+        }
+        if (initializeRequestTimeout == null || initializeRequestTimeout.isNegative() || initializeRequestTimeout.isZero()) {
             throw new IllegalArgumentException("Initialize request timeout must be positive");
-        if (pingTimeout == null || pingTimeout.isNegative() || pingTimeout.isZero())
+        }
+        if (pingTimeout == null || pingTimeout.isNegative() || pingTimeout.isZero()) {
             throw new IllegalArgumentException("Ping timeout must be positive");
-        if (pingInterval == null || pingInterval.isNegative() || pingInterval.isZero())
+        }
+        if (pingInterval == null || pingInterval.isNegative() || pingInterval.isZero()) {
             throw new IllegalArgumentException("Ping interval must be positive");
-        if (progressPerSecond < 0)
+        }
+        if (progressPerSecond < 0) {
             throw new IllegalArgumentException("Progress per second must be non-negative");
-        if (rateLimiterWindow == null || rateLimiterWindow.isNegative() || rateLimiterWindow.isZero())
+        }
+        if (rateLimiterWindow == null || rateLimiterWindow.isNegative() || rateLimiterWindow.isZero()) {
             throw new IllegalArgumentException("Rate limiter window must be positive");
+        }
         rootDirectories = List.copyOf(rootDirectories);
-        if (samplingAccessPolicy == null)
+        if (samplingAccessPolicy == null) {
             throw new IllegalArgumentException("Sampling access policy is required");
-        if (tlsConfiguration == null)
+        }
+        if (tlsConfiguration == null) {
             throw new IllegalArgumentException("TLS configuration required");
-        if (certificateValidationMode == null)
+        }
+        if (certificateValidationMode == null) {
             throw new IllegalArgumentException("certificate validation mode required");
-        if (certificatePins == null)
+        }
+        if (certificatePins == null) {
             throw new IllegalArgumentException("certificate pins required");
+        }
         certificatePins = List.copyOf(certificatePins);
     }
 

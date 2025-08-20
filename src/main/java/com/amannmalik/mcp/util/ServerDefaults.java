@@ -171,7 +171,9 @@ public final class ServerDefaults {
 
     public static ResourceAccessPolicy privacyBoundary(String principalId) {
         var p = new ResourceAccessController();
-        for (var a : Role.values()) p.allow(principalId, a);
+        for (var a : Role.values()) {
+            p.allow(principalId, a);
+        }
         return p;
     }
 

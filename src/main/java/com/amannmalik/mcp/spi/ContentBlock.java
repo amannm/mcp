@@ -19,12 +19,16 @@ public sealed interface ContentBlock permits
     }
 
     private static byte[] requireData(byte[] data) {
-        if (data == null) throw new IllegalArgumentException("data is required");
+        if (data == null) {
+            throw new IllegalArgumentException("data is required");
+        }
         return data.clone();
     }
 
     private static String requireMimeType(String mimeType) {
-        if (mimeType == null) throw new IllegalArgumentException("mimeType is required");
+        if (mimeType == null) {
+            throw new IllegalArgumentException("mimeType is required");
+        }
         return ValidationUtil.requireClean(mimeType);
     }
 
@@ -37,7 +41,9 @@ public sealed interface ContentBlock permits
     record Text(String text, Annotations annotations, JsonObject _meta)
             implements ContentBlock, PromptContent, MessageContent {
         public Text {
-            if (text == null) throw new IllegalArgumentException("text is required");
+            if (text == null) {
+                throw new IllegalArgumentException("text is required");
+            }
             text = ValidationUtil.requireClean(text);
             validateMeta(_meta);
             annotations = orEmpty(annotations);
@@ -82,7 +88,9 @@ public sealed interface ContentBlock permits
     record ResourceLink(Resource resource)
             implements ContentBlock, PromptContent {
         public ResourceLink {
-            if (resource == null) throw new IllegalArgumentException("resource is required");
+            if (resource == null) {
+                throw new IllegalArgumentException("resource is required");
+            }
         }
 
         @Override
@@ -104,7 +112,9 @@ public sealed interface ContentBlock permits
     record EmbeddedResource(ResourceBlock resource, Annotations annotations, JsonObject _meta)
             implements ContentBlock, PromptContent {
         public EmbeddedResource {
-            if (resource == null) throw new IllegalArgumentException("resource is required");
+            if (resource == null) {
+                throw new IllegalArgumentException("resource is required");
+            }
             validateMeta(_meta);
             annotations = orEmpty(annotations);
         }

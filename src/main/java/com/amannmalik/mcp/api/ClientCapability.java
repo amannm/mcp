@@ -15,7 +15,9 @@ public enum ClientCapability {
     }
 
     public static Optional<ClientCapability> from(String raw) {
-        if (raw == null) return Optional.empty();
+        if (raw == null) {
+            return Optional.empty();
+        }
         return switch (raw) {
             case "roots" -> Optional.of(ROOTS);
             case "sampling" -> Optional.of(SAMPLING);

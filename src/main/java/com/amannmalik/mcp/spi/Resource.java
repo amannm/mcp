@@ -23,7 +23,9 @@ public record Resource(
         title = ValidationUtil.cleanNullable(title);
         description = ValidationUtil.cleanNullable(description);
         mimeType = ValidationUtil.cleanNullable(mimeType);
-        if (size != null) size = ValidationUtil.requireNonNegative(size, "size");
+        if (size != null) {
+            size = ValidationUtil.requireNonNegative(size, "size");
+        }
         annotations = annotations == null ? AnnotationsJsonCodec.EMPTY : annotations;
         ValidationUtil.requireMeta(_meta);
     }

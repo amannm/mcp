@@ -11,13 +11,17 @@ public final class SubscribeRequestAbstractEntityCodec extends AbstractEntityCod
     @Override
     public JsonObject toJson(SubscribeRequest req) {
         var b = Json.createObjectBuilder().add("uri", req.uri().toString());
-        if (req._meta() != null) b.add("_meta", req._meta());
+        if (req._meta() != null) {
+            b.add("_meta", req._meta());
+        }
         return b.build();
     }
 
     @Override
     public SubscribeRequest fromJson(JsonObject obj) {
-        if (obj == null) throw new IllegalArgumentException("object required");
+        if (obj == null) {
+            throw new IllegalArgumentException("object required");
+        }
         requireOnlyKeys(obj, Set.of("uri", "_meta"));
         var uriString = requireString(obj, "uri");
         var uri = URI.create(uriString);

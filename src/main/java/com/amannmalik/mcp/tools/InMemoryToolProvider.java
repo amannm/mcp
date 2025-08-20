@@ -17,11 +17,15 @@ public final class InMemoryToolProvider extends InMemoryProvider<Tool> implement
         super(tools);
         this.handlers = handlers == null ? new ConcurrentHashMap<>() : new ConcurrentHashMap<>(handlers);
         this.byName = new ConcurrentHashMap<>();
-        if (tools != null) tools.forEach(t -> byName.put(t.name(), t));
+        if (tools != null) {
+            tools.forEach(t -> byName.put(t.name(), t));
+        }
     }
 
     private static ToolResult withStructuredText(ToolResult result) {
-        if (hasStructuredText(result)) return result;
+        if (hasStructuredText(result)) {
+            return result;
+        }
         var b = Json.createArrayBuilder(result.content());
         b.add(Json.createObjectBuilder()
                 .add("type", "text")
@@ -33,16 +37,22 @@ public final class InMemoryToolProvider extends InMemoryProvider<Tool> implement
     private static boolean hasStructuredText(ToolResult result) {
         var text = result.structuredContent().toString();
         for (var v : result.content()) {
-            if (v.getValueType() != JsonValue.ValueType.OBJECT) continue;
+            if (v.getValueType() != JsonValue.ValueType.OBJECT) {
+                continue;
+            }
             var o = v.asJsonObject();
-            if ("text".equals(o.getString("type", null)) && text.equals(o.getString("text", null))) return true;
+            if ("text".equals(o.getString("type", null)) && text.equals(o.getString("text", null))) {
+                return true;
+            }
         }
         return false;
     }
 
     @Override
     public Optional<Tool> find(String name) {
-        if (name == null) throw new IllegalArgumentException("name required");
+        if (name == null) {
+            throw new IllegalArgumentException("name required");
+        }
         return Optional.ofNullable(byName.get(name));
     }
 
@@ -50,7 +60,9 @@ public final class InMemoryToolProvider extends InMemoryProvider<Tool> implement
     public ToolResult call(String name, JsonObject arguments) {
         var tool = byName.get(name);
         var handler = handlers.get(name);
-        if (tool == null || handler == null) throw new IllegalArgumentException("Unknown tool");
+        if (tool == null || handler == null) {
+            throw new IllegalArgumentException("Unknown tool");
+        }
         var args = arguments == null ? JsonValue.EMPTY_JSON_OBJECT : arguments;
         JsonSchemaValidator.validate(tool.inputSchema(), args);
         var result = handler.apply(args);
@@ -60,18 +72,24 @@ public final class InMemoryToolProvider extends InMemoryProvider<Tool> implement
             }
             JsonSchemaValidator.validate(tool.outputSchema(), result.structuredContent());
         }
-        if (result.structuredContent() != null) result = withStructuredText(result);
+        if (result.structuredContent() != null) {
+            result = withStructuredText(result);
+        }
         return result;
     }
 
     public void addTool(Tool tool, Function<JsonObject, ToolResult> handler) {
-        if (tool == null) throw new IllegalArgumentException("tool required");
+        if (tool == null) {
+            throw new IllegalArgumentException("tool required");
+        }
         if (byName.containsKey(tool.name())) {
             throw new IllegalArgumentException("Duplicate tool name: " + tool.name());
         }
         items.add(tool);
         byName.put(tool.name(), tool);
-        if (handler != null) handlers.put(tool.name(), handler);
+        if (handler != null) {
+            handlers.put(tool.name(), handler);
+        }
         notifyListChanged();
     }
 

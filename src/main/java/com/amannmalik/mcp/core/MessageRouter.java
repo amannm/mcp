@@ -34,25 +34,39 @@ public final class MessageRouter {
         var id = message.containsKey("id") ? message.get("id").toString() : null;
         var method = message.getString("method", null);
         if (id != null) {
-            if (sendToRequestStream(id, method, message)) return true;
-            if (sendToResponseQueue(id, message)) return true;
-            if (method == null) return false;
+            if (sendToRequestStream(id, method, message)) {
+                return true;
+            }
+            if (sendToResponseQueue(id, message)) {
+                return true;
+            }
+            if (method == null) {
+                return false;
+            }
         }
-        if (sendToActiveClient(message)) return true;
+        if (sendToActiveClient(message)) {
+            return true;
+        }
         return sendToPending(message);
     }
 
     private boolean sendToRequestStream(String id, String method, JsonObject message) {
         var stream = requestStreams.get(id);
-        if (stream == null) return false;
+        if (stream == null) {
+            return false;
+        }
         stream.send(message);
-        if (method == null) remover.accept(id, stream);
+        if (method == null) {
+            remover.accept(id, stream);
+        }
         return true;
     }
 
     private boolean sendToResponseQueue(String id, JsonObject message) {
         var q = responseQueues.remove(id);
-        if (q == null) return false;
+        if (q == null) {
+            return false;
+        }
         q.add(message);
         return true;
     }
@@ -69,7 +83,9 @@ public final class MessageRouter {
 
     private boolean sendToPending(JsonObject message) {
         var pending = lastGeneral.get();
-        if (pending == null) return false;
+        if (pending == null) {
+            return false;
+        }
         pending.send(message);
         return true;
     }

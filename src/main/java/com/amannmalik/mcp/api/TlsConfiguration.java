@@ -23,14 +23,18 @@ public record TlsConfiguration(
         tlsProtocols = List.copyOf(tlsProtocols);
         cipherSuites = List.copyOf(cipherSuites);
         if (tlsProtocols.isEmpty() ||
-                tlsProtocols.stream().anyMatch(p -> p.isBlank() || !ALLOWED_PROTOCOLS.contains(p)))
+                tlsProtocols.stream().anyMatch(p -> p.isBlank() || !ALLOWED_PROTOCOLS.contains(p))) {
             throw new IllegalArgumentException("Invalid TLS protocols");
-        if (cipherSuites.isEmpty() || cipherSuites.stream().anyMatch(s -> s.isBlank() || !isStrongCipher(s)))
+        }
+        if (cipherSuites.isEmpty() || cipherSuites.stream().anyMatch(s -> s.isBlank() || !isStrongCipher(s))) {
             throw new IllegalArgumentException("Invalid cipher suites");
+        }
     }
 
     public static boolean isStrongCipher(String suite) {
-        if (WEAK_CIPHERS.matcher(suite).matches()) return false;
+        if (WEAK_CIPHERS.matcher(suite).matches()) {
+            return false;
+        }
         return suite.contains("TLS_AES") || suite.contains("_ECDHE_") || suite.contains("_DHE_");
     }
 

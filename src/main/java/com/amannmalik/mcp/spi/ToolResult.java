@@ -16,7 +16,9 @@ public record ToolResult(JsonArray content,
 
     public ToolResult {
         content = sanitize(content == null ? JsonValue.EMPTY_JSON_ARRAY : content);
-        if (isError == null) isError = Boolean.FALSE;
+        if (isError == null) {
+            isError = Boolean.FALSE;
+        }
         ValidationUtil.requireMeta(_meta);
     }
 
@@ -30,7 +32,9 @@ public record ToolResult(JsonArray content,
     }
 
     private static ContentBlock decode(JsonValue v) {
-        if (v.getValueType() != JsonValue.ValueType.OBJECT) return null;
+        if (v.getValueType() != JsonValue.ValueType.OBJECT) {
+            return null;
+        }
         try {
             return CONTENT_BLOCK_CODEC.fromJson(v.asJsonObject());
         } catch (IllegalArgumentException e) {

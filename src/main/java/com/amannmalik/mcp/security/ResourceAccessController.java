@@ -15,8 +15,12 @@ public final class ResourceAccessController implements ResourceAccessPolicy {
 
     @Override
     public void requireAllowed(Principal principal, Annotations ann) {
-        if (principal == null) throw new IllegalArgumentException("principal required");
-        if (ann == null || ann.audience().isEmpty()) return;
+        if (principal == null) {
+            throw new IllegalArgumentException("principal required");
+        }
+        if (ann == null || ann.audience().isEmpty()) {
+            return;
+        }
 
         for (var r : ann.audience()) {
             permissions.requirePermission(principal.id(), r, "Audience not permitted: " + ann.audience());

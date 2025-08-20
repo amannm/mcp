@@ -59,7 +59,9 @@ public final class Certificates {
                     pair.getPublic()
             );
             var sanBuilder = new GeneralNamesBuilder();
-            for (var name : subjectAltNames) sanBuilder.addName(new GeneralName(GeneralName.dNSName, name));
+            for (var name : subjectAltNames) {
+                sanBuilder.addName(new GeneralName(GeneralName.dNSName, name));
+            }
             builder.addExtension(Extension.subjectAlternativeName, false, sanBuilder.build());
             var signer = new JcaContentSignerBuilder(switch (pair.getPrivate()) {
                 case RSAPrivateKey ignored -> "SHA256withRSA";
@@ -76,7 +78,9 @@ public final class Certificates {
         try {
             var builder = new JcaPKCS10CertificationRequestBuilder(new X500Name(subject.getName()), pair.getPublic());
             var sanBuilder = new GeneralNamesBuilder();
-            for (var name : subjectAltNames) sanBuilder.addName(new GeneralName(GeneralName.dNSName, name));
+            for (var name : subjectAltNames) {
+                sanBuilder.addName(new GeneralName(GeneralName.dNSName, name));
+            }
             var extensions = new ExtensionsGenerator();
             extensions.addExtension(Extension.subjectAlternativeName, false, sanBuilder.build());
             builder.addAttribute(PKCSObjectIdentifiers.pkcs_9_at_extensionRequest, extensions.generate());
@@ -94,7 +98,9 @@ public final class Certificates {
     public static X509Certificate parse(byte[] data) {
         try {
             var cert = CertificateFactory.getInstance("X.509").generateCertificate(new ByteArrayInputStream(data));
-            if (cert instanceof X509Certificate x509) return x509;
+            if (cert instanceof X509Certificate x509) {
+                return x509;
+            }
             throw new IllegalArgumentException("Not an X.509 certificate");
         } catch (CertificateException e) {
             throw new IllegalArgumentException("Invalid certificate data", e);
@@ -122,11 +128,15 @@ public final class Certificates {
     public static List<String> subjectAltNames(X509Certificate cert) {
         try {
             var sans = cert.getSubjectAlternativeNames();
-            if (sans == null) return List.of();
+            if (sans == null) {
+                return List.of();
+            }
             List<String> out = new ArrayList<>();
             for (var san : sans) {
                 int type = (Integer) san.get(0);
-                if (type == 2 || type == 7) out.add(san.get(1).toString());
+                if (type == 2 || type == 7) {
+                    out.add(san.get(1).toString());
+                }
             }
             return out;
         } catch (CertificateParsingException e) {

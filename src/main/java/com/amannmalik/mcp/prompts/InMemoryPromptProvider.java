@@ -34,7 +34,9 @@ public final class InMemoryPromptProvider extends InMemoryProvider<Prompt> imple
     @Override
     public PromptInstance get(String name, Map<String, String> arguments) {
         var tmpl = templates.get(name);
-        if (tmpl == null) throw new IllegalArgumentException("unknown prompt: " + name);
+        if (tmpl == null) {
+            throw new IllegalArgumentException("unknown prompt: " + name);
+        }
         return tmpl.instantiate(arguments);
     }
 }

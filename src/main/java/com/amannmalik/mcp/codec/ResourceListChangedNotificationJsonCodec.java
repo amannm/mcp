@@ -12,7 +12,9 @@ public final class ResourceListChangedNotificationJsonCodec implements JsonCodec
 
     @Override
     public ResourceListChangedNotification fromJson(JsonObject obj) {
-        if (obj != null && !obj.isEmpty()) throw new IllegalArgumentException("unexpected fields");
+        if (obj != null && !obj.isEmpty()) {
+            throw new IllegalArgumentException("unexpected fields");
+        }
         return new ResourceListChangedNotification();
     }
 }

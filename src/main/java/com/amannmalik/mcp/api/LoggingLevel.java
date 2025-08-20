@@ -11,7 +11,9 @@ public enum LoggingLevel {
     EMERGENCY;
 
     public static LoggingLevel fromString(String raw) {
-        if (raw == null) throw new IllegalArgumentException("level required");
+        if (raw == null) {
+            throw new IllegalArgumentException("level required");
+        }
         return switch (raw.toLowerCase()) {
             case "debug" -> DEBUG;
             case "info" -> INFO;

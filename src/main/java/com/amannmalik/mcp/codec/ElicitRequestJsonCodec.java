@@ -16,10 +16,14 @@ public class ElicitRequestJsonCodec implements JsonCodec<ElicitRequest> {
 
     @Override
     public ElicitRequest fromJson(JsonObject obj) {
-        if (obj == null) throw new IllegalArgumentException("object required");
+        if (obj == null) {
+            throw new IllegalArgumentException("object required");
+        }
         AbstractEntityCodec.requireOnlyKeys(obj, Set.of("message", "requestedSchema", "_meta"));
         var message = obj.getString("message", null);
-        if (message == null) throw new IllegalArgumentException("message required");
+        if (message == null) {
+            throw new IllegalArgumentException("message required");
+        }
         var schemaVal = obj.get("requestedSchema");
         if (schemaVal == null || schemaVal.getValueType() != JsonValue.ValueType.OBJECT) {
             throw new IllegalArgumentException("requestedSchema must be object");

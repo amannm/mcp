@@ -33,9 +33,13 @@ public final class ResourceEntityFieldCodec<I, R> extends AbstractEntityCodec<R>
 
     @Override
     public R fromJson(JsonObject obj) {
-        if (obj == null) throw new IllegalArgumentException("object required");
+        if (obj == null) {
+            throw new IllegalArgumentException("object required");
+        }
         var arr = obj.getJsonArray(field);
-        if (arr == null) throw new IllegalArgumentException(field + " required");
+        if (arr == null) {
+            throw new IllegalArgumentException(field + " required");
+        }
         List<I> items = new ArrayList<>();
         for (var v : arr) {
             if (v.getValueType() != JsonValue.ValueType.OBJECT) {

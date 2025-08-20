@@ -21,19 +21,25 @@ public final class ProgressManager {
     private final ProgressNotificationJsonCodec NOTIFICATION_CODEC = new ProgressNotificationJsonCodec();
 
     public ProgressManager(RateLimiter limiter) {
-        if (limiter == null) throw new IllegalArgumentException("limiter required");
+        if (limiter == null) {
+            throw new IllegalArgumentException("limiter required");
+        }
         this.limiter = limiter;
     }
 
     public Optional<ProgressToken> register(RequestId id, JsonObject params) {
-        if (!used.add(id) || !active.add(id)) throw new DuplicateRequestException(id);
+        if (!used.add(id) || !active.add(id)) {
+            throw new DuplicateRequestException(id);
+        }
         if (params != null && params.containsKey("progressToken")) {
             throw new IllegalArgumentException("progressToken must be in _meta");
         }
         var token = ProgressToken.fromMeta(params);
         token.ifPresent(t -> {
             var prev = progress.putIfAbsent(t, Double.NEGATIVE_INFINITY);
-            if (prev != null) throw new IllegalArgumentException("Duplicate token: " + t);
+            if (prev != null) {
+                throw new IllegalArgumentException("Duplicate token: " + t);
+            }
             tokens.put(id, t);
         });
         return token;
@@ -43,11 +49,15 @@ public final class ProgressManager {
         active.remove(id);
         cancelled.remove(id);
         var t = tokens.remove(id);
-        if (t != null) progress.remove(t);
+        if (t != null) {
+            progress.remove(t);
+        }
     }
 
     public void cancel(RequestId id, String reason) {
-        if (active.contains(id)) cancelled.put(id, reason);
+        if (active.contains(id)) {
+            cancelled.put(id, reason);
+        }
     }
 
     public boolean isCancelled(RequestId id) {
@@ -68,8 +78,12 @@ public final class ProgressManager {
 
     private void update(ProgressNotification note) {
         progress.compute(note.token(), (t, prev) -> {
-            if (prev == null) throw new IllegalStateException("Unknown progress token: " + t);
-            if (note.progress() <= prev) throw new IllegalArgumentException("progress must increase");
+            if (prev == null) {
+                throw new IllegalStateException("Unknown progress token: " + t);
+            }
+            if (note.progress() <= prev) {
+                throw new IllegalArgumentException("progress must increase");
+            }
             return note.progress();
         });
     }
@@ -84,7 +98,9 @@ public final class ProgressManager {
     }
 
     public void send(ProgressNotification note, NotificationSender sender) throws IOException {
-        if (!isActive(note.token())) return;
+        if (!isActive(note.token())) {
+            return;
+        }
         try {
             limiter.requireAllowance(note.token().asString());
             update(note);

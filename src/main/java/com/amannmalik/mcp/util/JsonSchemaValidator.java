@@ -11,8 +11,12 @@ public final class JsonSchemaValidator {
     }
 
     public static void validate(JsonObject schema, JsonObject value) {
-        if (schema == null) return;
-        if (!"object".equals(schema.getString("type", null))) return;
+        if (schema == null) {
+            return;
+        }
+        if (!"object".equals(schema.getString("type", null))) {
+            return;
+        }
         validateObject(schema, value);
     }
 
@@ -26,10 +30,14 @@ public final class JsonSchemaValidator {
             }
         }
         var props = schema.getJsonObject("properties");
-        if (props == null) return;
+        if (props == null) {
+            return;
+        }
         for (var e : props.entrySet()) {
             var name = e.getKey();
-            if (!value.containsKey(name)) continue;
+            if (!value.containsKey(name)) {
+                continue;
+            }
             var prop = e.getValue().asJsonObject();
             var v = value.get(name);
             validateProperty(name, prop, v);
@@ -43,7 +51,9 @@ public final class JsonSchemaValidator {
 
     private static void validateProperty(String name, JsonObject schema, JsonValue value) {
         var t = schema.getString("type", null);
-        if (t == null) return;
+        if (t == null) {
+            return;
+        }
         switch (t) {
             case "string" -> validateString(name, value, schema);
             case "number" -> validateNumber(name, value, schema);

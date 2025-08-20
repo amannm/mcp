@@ -98,13 +98,17 @@ public final class HostCommand {
 
     public static int execute(ParseResult parseResult) {
         var helpExitCode = CommandLine.executeHelpRequest(parseResult);
-        if (helpExitCode != null) return helpExitCode;
+        if (helpExitCode != null) {
+            return helpExitCode;
+        }
 
         try {
             boolean verbose = parseResult.matchedOptionValue("--verbose", false);
             List<String> clientSpecs = parseResult.matchedOptionValue("--client", Collections.emptyList());
             boolean interactive = parseResult.matchedOptionValue("--interactive", false);
-            if (clientSpecs.isEmpty()) throw new IllegalArgumentException("--client required");
+            if (clientSpecs.isEmpty()) {
+                throw new IllegalArgumentException("--client required");
+            }
 
             var tls = extractTlsSettings(parseResult);
             var clientConfigs = parseClientConfigs(clientSpecs, verbose, tls);
@@ -136,7 +140,9 @@ public final class HostCommand {
         String truststorePasswordEnv = parseResult.matchedOptionValue("--client-truststore-password-env", null);
         if (truststorePasswordEnv != null) {
             var env = System.getenv(truststorePasswordEnv);
-            if (env != null) truststorePassword = env;
+            if (env != null) {
+                truststorePassword = env;
+            }
         }
         var truststoreType = parseResult.matchedOptionValue("--client-truststore-type", "PKCS12");
         Path keystorePathOpt = parseResult.matchedOptionValue("--client-keystore", null);
@@ -145,7 +151,9 @@ public final class HostCommand {
         String keystorePasswordEnv = parseResult.matchedOptionValue("--client-keystore-password-env", null);
         if (keystorePasswordEnv != null) {
             var env = System.getenv(keystorePasswordEnv);
-            if (env != null) keystorePassword = env;
+            if (env != null) {
+                keystorePassword = env;
+            }
         }
         var keystoreType = parseResult.matchedOptionValue("--client-keystore-type", "PKCS12");
         boolean verifyCertificates = parseResult.matchedOptionValue("--verify-certificates", true);
@@ -251,7 +259,9 @@ public final class HostCommand {
             }
 
             var parts = line.trim().split("\\s+");
-            if (parts.length == 0) continue;
+            if (parts.length == 0) {
+                continue;
+            }
 
             try {
                 switch (parts[0]) {

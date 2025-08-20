@@ -177,7 +177,9 @@ public final class McpHost implements AutoCloseable {
         do {
             var page = listTools(clientId, cursor);
             for (var t : page.tools()) {
-                if (t.name().equals(name)) return Optional.of(t);
+                if (t.name().equals(name)) {
+                    return Optional.of(t);
+                }
             }
             cursor = page.nextCursor();
         } while (!(cursor instanceof Cursor.End));
@@ -248,7 +250,9 @@ public final class McpHost implements AutoCloseable {
 
     private McpClient requireClient(String id) {
         var client = clients.get(id);
-        if (client == null) throw new IllegalArgumentException("Unknown client: " + id);
+        if (client == null) {
+            throw new IllegalArgumentException("Unknown client: " + id);
+        }
         return client;
     }
 
@@ -278,7 +282,9 @@ public final class McpHost implements AutoCloseable {
 
     private McpClient requireConnectedClient(String id) {
         var client = requireClient(id);
-        if (!client.connected()) throw new IllegalStateException("Client not connected: " + id);
+        if (!client.connected()) {
+            throw new IllegalStateException("Client not connected: " + id);
+        }
         return client;
     }
 

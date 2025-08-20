@@ -8,7 +8,9 @@ public final class StringMetrics {
 
     public static int levenshtein(String a, String b) {
         var prev = new int[b.length() + 1];
-        for (var j = 0; j <= b.length(); j++) prev[j] = j;
+        for (var j = 0; j <= b.length(); j++) {
+            prev[j] = j;
+        }
         for (var i = 1; i <= a.length(); i++) {
             var curr = new int[b.length() + 1];
             curr[0] = i;

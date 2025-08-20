@@ -75,7 +75,9 @@ public final class InMemoryResourceProvider extends InMemoryProvider<Resource> i
             }
         }
         items.add(resource);
-        if (content != null) contents.put(resource.uri(), content);
+        if (content != null) {
+            contents.put(resource.uri(), content);
+        }
         notifyListChanged();
     }
 

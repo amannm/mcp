@@ -51,7 +51,9 @@ public final class InteractiveElicitationProvider implements ElicitationProvider
                 while (true) {
                     System.err.print(name + ": ");
                     var line = reader.readLine();
-                    if (line == null) return new ElicitResult(ElicitationAction.CANCEL, null, null);
+                    if (line == null) {
+                        return new ElicitResult(ElicitationAction.CANCEL, null, null);
+                    }
                     line = line.trim();
                     if (line.isEmpty()) {
                         if (defaultVal != null) {
@@ -89,7 +91,9 @@ public final class InteractiveElicitationProvider implements ElicitationProvider
 
             System.err.print("Action accept (a)/decline (d)/cancel (c): ");
             var act = reader.readLine();
-            if (act == null) return new ElicitResult(ElicitationAction.CANCEL, null, null);
+            if (act == null) {
+                return new ElicitResult(ElicitationAction.CANCEL, null, null);
+            }
             act = act.trim().toLowerCase();
             if (act.startsWith("a")) {
                 return new ElicitResult(ElicitationAction.ACCEPT, content.build(), null);
@@ -121,9 +125,13 @@ public final class InteractiveElicitationProvider implements ElicitationProvider
                 }
             }
             case "boolean" -> {
-                if ("true".equalsIgnoreCase(input)) yield JsonValue.TRUE;
-                else if ("false".equalsIgnoreCase(input)) yield JsonValue.FALSE;
-                else throw new IllegalArgumentException("boolean required");
+                if ("true".equalsIgnoreCase(input)) {
+                    yield JsonValue.TRUE;
+                } else if ("false".equalsIgnoreCase(input)) {
+                    yield JsonValue.FALSE;
+                } else {
+                    throw new IllegalArgumentException("boolean required");
+                }
             }
             default -> throw new IllegalArgumentException("unsupported type: " + type);
         };

@@ -13,8 +13,12 @@ public final class JsonRpc {
     }
 
     public static JsonRpcResponse expectResponse(JsonRpcMessage msg) throws IOException {
-        if (msg instanceof JsonRpcResponse resp) return resp;
-        if (msg instanceof JsonRpcError err) throw new IOException(err.error().message());
+        if (msg instanceof JsonRpcResponse resp) {
+            return resp;
+        }
+        if (msg instanceof JsonRpcError err) {
+            throw new IOException(err.error().message());
+        }
         throw new IOException("Unexpected message type: " + msg.getClass().getSimpleName());
     }
 }

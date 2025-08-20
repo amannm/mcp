@@ -9,15 +9,21 @@ class CompletionJsonCodec implements JsonCodec<Completion> {
         var arr = Json.createArrayBuilder();
         c.values().forEach(arr::add);
         var b = Json.createObjectBuilder().add("values", arr.build());
-        if (c.total() != null) b.add("total", c.total());
-        if (c.hasMore() != null) b.add("hasMore", c.hasMore());
+        if (c.total() != null) {
+            b.add("total", c.total());
+        }
+        if (c.hasMore() != null) {
+            b.add("hasMore", c.hasMore());
+        }
         return b.build();
     }
 
     @Override
     public Completion fromJson(JsonObject obj) {
         var valuesArr = obj.getJsonArray("values");
-        if (valuesArr == null) throw new IllegalArgumentException("values required");
+        if (valuesArr == null) {
+            throw new IllegalArgumentException("values required");
+        }
         var values = valuesArr.getValuesAs(JsonString.class).stream()
                 .map(JsonString::getString)
                 .toList();

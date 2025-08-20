@@ -21,15 +21,21 @@ public final class EntityCursorPageCodec<T> extends AbstractEntityCodec<T> {
     public JsonObject toJson(T value) {
         var b = Json.createObjectBuilder();
         var c = cursor.apply(value);
-        if (c != null) b.add("cursor", c);
+        if (c != null) {
+            b.add("cursor", c);
+        }
         var m = meta.apply(value);
-        if (m != null) b.add("_meta", m);
+        if (m != null) {
+            b.add("_meta", m);
+        }
         return b.build();
     }
 
     @Override
     public T fromJson(JsonObject obj) {
-        if (obj == null) return from.apply(null, null);
+        if (obj == null) {
+            return from.apply(null, null);
+        }
         requireOnlyKeys(obj, REQUEST_KEYS);
         String c = null;
         if (obj.containsKey("cursor")) {

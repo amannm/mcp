@@ -13,18 +13,24 @@ public non-sealed class LoggingMessageNotificationAbstractEntityCodec extends Ab
         var b = Json.createObjectBuilder()
                 .add("level", n.level().name().toLowerCase())
                 .add("data", n.data());
-        if (n.logger() != null) b.add("logger", n.logger());
+        if (n.logger() != null) {
+            b.add("logger", n.logger());
+        }
         return b.build();
     }
 
     @Override
     public LoggingMessageNotification fromJson(JsonObject obj) {
-        if (obj == null) throw new IllegalArgumentException("object required");
+        if (obj == null) {
+            throw new IllegalArgumentException("object required");
+        }
         requireOnlyKeys(obj, Set.of("level", "logger", "data"));
         var raw = requireString(obj, "level");
         var level = LoggingLevel.fromString(raw);
         var data = obj.get("data");
-        if (data == null) throw new IllegalArgumentException("data required");
+        if (data == null) {
+            throw new IllegalArgumentException("data required");
+        }
         var logger = obj.containsKey("logger") ? obj.getString("logger") : null;
         return new LoggingMessageNotification(level, logger, data);
     }

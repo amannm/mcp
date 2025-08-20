@@ -21,7 +21,9 @@ public final class RateLimiter {
                 w.start = now;
                 w.count = 0;
             }
-            if (w.count >= limit) throw new SecurityException("Rate limit exceeded: " + key);
+            if (w.count >= limit) {
+                throw new SecurityException("Rate limit exceeded: " + key);
+            }
             w.count++;
         }
     }

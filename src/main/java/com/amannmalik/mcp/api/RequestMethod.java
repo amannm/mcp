@@ -40,7 +40,9 @@ public enum RequestMethod implements JsonRpcMethod {
     }
 
     public static Optional<RequestMethod> from(String method) {
-        if (method == null) return Optional.empty();
+        if (method == null) {
+            return Optional.empty();
+        }
         return switch (method) {
             case "initialize" -> Optional.of(INITIALIZE);
             case "ping" -> Optional.of(PING);

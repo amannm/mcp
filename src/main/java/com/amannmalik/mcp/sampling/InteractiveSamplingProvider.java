@@ -35,7 +35,9 @@ public final class InteractiveSamplingProvider implements SamplingProvider {
                 .map(ContentBlock.Text.class::cast)
                 .map(ContentBlock.Text::text)
                 .anyMatch(t -> t.equalsIgnoreCase("reject"));
-        if (reject) throw new InterruptedException("User rejected sampling request");
+        if (reject) {
+            throw new InterruptedException("User rejected sampling request");
+        }
         return new CreateMessageResponse(
                 Role.ASSISTANT,
                 new ContentBlock.Text("ok", null, null),
@@ -150,10 +152,14 @@ public final class InteractiveSamplingProvider implements SamplingProvider {
 
     private Optional<AiResult> openAiResponse(CreateMessageRequest request, Duration timeoutMillis) throws IOException, InterruptedException {
         var apiKey = System.getenv("OPENAI_API_KEY");
-        if (apiKey == null || apiKey.isBlank()) return Optional.empty();
+        if (apiKey == null || apiKey.isBlank()) {
+            return Optional.empty();
+        }
 
         var clientBuilder = HttpClient.newBuilder();
-        if (timeoutMillis.isPositive()) clientBuilder.connectTimeout(timeoutMillis);
+        if (timeoutMillis.isPositive()) {
+            clientBuilder.connectTimeout(timeoutMillis);
+        }
         var client = clientBuilder.build();
 
         var msgs = Json.createArrayBuilder();
@@ -183,25 +189,37 @@ public final class InteractiveSamplingProvider implements SamplingProvider {
                 .header("Authorization", "Bearer " + apiKey)
                 .header("Content-Type", "application/json")
                 .POST(HttpRequest.BodyPublishers.ofString(body.toString()));
-        if (timeoutMillis.isPositive()) requestBuilder.timeout(timeoutMillis);
+        if (timeoutMillis.isPositive()) {
+            requestBuilder.timeout(timeoutMillis);
+        }
         var httpRequest = requestBuilder.build();
 
         var response = client.send(httpRequest, HttpResponse.BodyHandlers.ofString());
-        if (response.statusCode() / 100 != 2) return Optional.empty();
+        if (response.statusCode() / 100 != 2) {
+            return Optional.empty();
+        }
 
         var obj = Json.createReader(new StringReader(response.body())).readObject();
         var choices = obj.getJsonArray("choices");
-        if (choices == null || choices.isEmpty()) return Optional.empty();
+        if (choices == null || choices.isEmpty()) {
+            return Optional.empty();
+        }
         var msg = choices.getJsonObject(0).getJsonObject("message");
-        if (msg == null) return Optional.empty();
+        if (msg == null) {
+            return Optional.empty();
+        }
         var content = msg.getString("content", null);
-        if (content == null) return Optional.empty();
+        if (content == null) {
+            return Optional.empty();
+        }
         var model = obj.getString("model", "openai");
         return Optional.of(new AiResult(content.trim(), model));
     }
 
     private String readLine(Duration timeoutMillis) throws IOException, InterruptedException {
-        if (!timeoutMillis.isPositive()) return reader.readLine();
+        if (!timeoutMillis.isPositive()) {
+            return reader.readLine();
+        }
         var executor = Executors.newSingleThreadExecutor();
         try {
             var future = executor.submit(reader::readLine);
@@ -213,7 +231,9 @@ public final class InteractiveSamplingProvider implements SamplingProvider {
             }
         } catch (ExecutionException e) {
             var cause = e.getCause();
-            if (cause instanceof IOException io) throw io;
+            if (cause instanceof IOException io) {
+                throw io;
+            }
             throw new InterruptedException(cause.toString());
         } finally {
             executor.shutdownNow();
@@ -224,7 +244,9 @@ public final class InteractiveSamplingProvider implements SamplingProvider {
         var lastUserMessage = lastUserMessage(request);
         var normalized = lastUserMessage.toLowerCase(Locale.ROOT);
         for (var res : RESPONSES) {
-            if (res.matches(normalized)) return res.response();
+            if (res.matches(normalized)) {
+                return res.response();
+            }
         }
         var topic = lastUserMessage.length() > 50
                 ? lastUserMessage.substring(0, 50) + "..."
@@ -257,7 +279,11 @@ public final class InteractiveSamplingProvider implements SamplingProvider {
 
     private record KeywordResponse(Set<String> keywords, String response) {
         boolean matches(String text) {
-            for (var k : keywords) if (text.contains(k)) return true;
+            for (var k : keywords) {
+                if (text.contains(k)) {
+                    return true;
+                }
+            }
             return false;
         }
     }

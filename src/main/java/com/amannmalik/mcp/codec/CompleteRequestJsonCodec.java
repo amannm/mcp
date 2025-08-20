@@ -17,7 +17,9 @@ public class CompleteRequestJsonCodec implements JsonCodec<CompleteRequest> {
         if (req.context() != null && !req.context().arguments().isEmpty()) {
             b.add("context", CONTEXT_CODEC.toJson(req.context()));
         }
-        if (req._meta() != null) b.add("_meta", req._meta());
+        if (req._meta() != null) {
+            b.add("_meta", req._meta());
+        }
         return b.build();
     }
 

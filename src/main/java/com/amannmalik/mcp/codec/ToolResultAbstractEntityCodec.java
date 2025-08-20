@@ -11,18 +11,28 @@ public final class ToolResultAbstractEntityCodec extends AbstractEntityCodec<Too
     public JsonObject toJson(ToolResult r) {
         var b = Json.createObjectBuilder()
                 .add("content", r.content());
-        if (r.isError()) b.add("isError", true);
-        if (r.structuredContent() != null) b.add("structuredContent", r.structuredContent());
-        if (r._meta() != null) b.add("_meta", r._meta());
+        if (r.isError()) {
+            b.add("isError", true);
+        }
+        if (r.structuredContent() != null) {
+            b.add("structuredContent", r.structuredContent());
+        }
+        if (r._meta() != null) {
+            b.add("_meta", r._meta());
+        }
         return b.build();
     }
 
     @Override
     public ToolResult fromJson(JsonObject obj) {
-        if (obj == null) throw new IllegalArgumentException("object required");
+        if (obj == null) {
+            throw new IllegalArgumentException("object required");
+        }
         requireOnlyKeys(obj, Set.of("content", "structuredContent", "isError", "_meta"));
         var content = obj.getJsonArray("content");
-        if (content == null) throw new IllegalArgumentException("content required");
+        if (content == null) {
+            throw new IllegalArgumentException("content required");
+        }
         var structured = obj.getJsonObject("structuredContent");
         var isError = obj.getBoolean("isError", false);
         var meta = obj.getJsonObject("_meta");

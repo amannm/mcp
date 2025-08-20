@@ -72,13 +72,16 @@ public final class StreamableHttpClientTransport implements Transport {
                                           String defaultOriginHeader,
                                           HttpClient client) {
         var scheme = endpoint.getScheme();
-        if (!"http".equalsIgnoreCase(scheme) && !"https".equalsIgnoreCase(scheme))
+        if (!"http".equalsIgnoreCase(scheme) && !"https".equalsIgnoreCase(scheme)) {
             throw new IllegalArgumentException("Endpoint must use http or https");
+        }
         this.endpoint = endpoint;
-        if (defaultReceiveTimeout == null || defaultReceiveTimeout.isNegative() || defaultReceiveTimeout.isZero())
+        if (defaultReceiveTimeout == null || defaultReceiveTimeout.isNegative() || defaultReceiveTimeout.isZero()) {
             throw new IllegalArgumentException("Default receive timeout must be positive");
-        if (defaultOriginHeader == null || defaultOriginHeader.isBlank())
+        }
+        if (defaultOriginHeader == null || defaultOriginHeader.isBlank()) {
             throw new IllegalArgumentException("Default origin header is required");
+        }
         this.defaultReceiveTimeout = defaultReceiveTimeout;
         this.defaultOriginHeader = defaultOriginHeader;
         this.client = client;
@@ -105,7 +108,9 @@ public final class StreamableHttpClientTransport implements Transport {
             ctx.init(kms, tms, null);
             var params = new SSLParameters();
             params.setServerNames(List.of(new SNIHostName(endpoint.getHost())));
-            if (verifyHostname) params.setEndpointIdentificationAlgorithm("HTTPS");
+            if (verifyHostname) {
+                params.setEndpointIdentificationAlgorithm("HTTPS");
+            }
             return HttpClient.newBuilder()
                     .sslContext(ctx)
                     .sslParameters(params)
@@ -116,7 +121,9 @@ public final class StreamableHttpClientTransport implements Transport {
     }
 
     private static KeyManager[] loadKeyManagers(Path keyStore, char[] password) throws GeneralSecurityException, IOException {
-        if (keyStore == null) return null;
+        if (keyStore == null) {
+            return null;
+        }
         var ks = KeyStore.getInstance(KeyStore.getDefaultType());
         try (var in = Files.newInputStream(keyStore)) {
             ks.load(in, password);
@@ -140,7 +147,9 @@ public final class StreamableHttpClientTransport implements Transport {
             tmf.init(ts);
         }
         var tms = tmf.getTrustManagers();
-        if (pins.isEmpty()) return tms;
+        if (pins.isEmpty()) {
+            return tms;
+        }
         for (var i = 0; i < tms.length; i++) {
             if (tms[i] instanceof X509TrustManager x509) {
                 tms[i] = new PinnedTrustManager(x509, pins);
@@ -301,9 +310,13 @@ public final class StreamableHttpClientTransport implements Transport {
         @Override
         public void checkServerTrusted(X509Certificate[] chain, String authType) throws CertificateException {
             delegate.checkServerTrusted(chain, authType);
-            if (pins.isEmpty()) return;
+            if (pins.isEmpty()) {
+                return;
+            }
             var fp = Certificates.fingerprint(chain[0]);
-            if (!pins.contains(fp)) throw new CertificateException("Certificate pinning failure");
+            if (!pins.contains(fp)) {
+                throw new CertificateException("Certificate pinning failure");
+            }
         }
 
         @Override

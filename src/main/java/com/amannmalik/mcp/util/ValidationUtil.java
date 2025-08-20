@@ -16,16 +16,22 @@ public final class ValidationUtil {
     }
 
     public static boolean containsNonVisibleAscii(String value) {
-        if (value == null) return true;
+        if (value == null) {
+            return true;
+        }
         for (var i = 0; i < value.length(); i++) {
             var c = value.charAt(i);
-            if (c < 0x21 || c > 0x7E) return true;
+            if (c < 0x21 || c > 0x7E) {
+                return true;
+            }
         }
         return false;
     }
 
     public static String requireClean(String value) {
-        if (value == null) throw new IllegalArgumentException("value is required");
+        if (value == null) {
+            throw new IllegalArgumentException("value is required");
+        }
         for (var i = 0; i < value.length(); i++) {
             var c = value.charAt(i);
             if (c < 0x20 && c != '\n' && c != '\r' && c != '\t') {
@@ -47,14 +53,18 @@ public final class ValidationUtil {
     }
 
     public static Map<String, String> requireCleanMap(Map<String, String> map) {
-        if (map == null || map.isEmpty()) return Map.of();
+        if (map == null || map.isEmpty()) {
+            return Map.of();
+        }
         Map<String, String> copy = new HashMap<>();
         map.forEach((k, v) -> copy.put(requireClean(k), requireClean(v)));
         return Map.copyOf(copy);
     }
 
     public static void requireMeta(String key) {
-        if (key == null) throw new IllegalArgumentException("key required");
+        if (key == null) {
+            throw new IllegalArgumentException("key required");
+        }
         var slash = key.indexOf('/');
         var prefix = slash >= 0 ? key.substring(0, slash) : null;
         var name = slash >= 0 ? key.substring(slash + 1) : key;
@@ -85,12 +95,18 @@ public final class ValidationUtil {
     }
 
     public static void requireMeta(JsonObject obj) {
-        if (obj == null) return;
-        for (var key : obj.keySet()) requireMeta(key);
+        if (obj == null) {
+            return;
+        }
+        for (var key : obj.keySet()) {
+            requireMeta(key);
+        }
     }
 
     public static URI requireAbsoluteUri(URI uri) {
-        if (uri == null) throw new IllegalArgumentException("uri is required");
+        if (uri == null) {
+            throw new IllegalArgumentException("uri is required");
+        }
         URI parsed;
         try {
             parsed = uri.normalize();
@@ -122,7 +138,9 @@ public final class ValidationUtil {
     }
 
     public static boolean isAllowedOrigin(String origin, Set<String> allowedOrigins) {
-        if (origin == null || origin.isBlank()) return false;
+        if (origin == null || origin.isBlank()) {
+            return false;
+        }
         URI parsed;
         try {
             parsed = URI.create(origin).normalize();
@@ -140,7 +158,9 @@ public final class ValidationUtil {
     }
 
     public static String requireAbsoluteTemplate(String template) {
-        if (template == null) throw new IllegalArgumentException("uriTemplate is required");
+        if (template == null) {
+            throw new IllegalArgumentException("uriTemplate is required");
+        }
         checkBraces(template);
         var replaced = template.replaceAll("\\{[^}]*}", "x");
         URI parsed;
@@ -162,20 +182,31 @@ public final class ValidationUtil {
         var depth = 0;
         for (var i = 0; i < template.length(); i++) {
             var c = template.charAt(i);
-            if (c == '{') depth++;
-            else if (c == '}') depth--;
-            if (depth < 0) throw new IllegalArgumentException("Unmatched braces in URI template: " + template);
+            if (c == '{') {
+                depth++;
+            } else if (c == '}') {
+                depth--;
+            }
+            if (depth < 0) {
+                throw new IllegalArgumentException("Unmatched braces in URI template: " + template);
+            }
         }
-        if (depth != 0) throw new IllegalArgumentException("Unmatched braces in URI template: " + template);
+        if (depth != 0) {
+            throw new IllegalArgumentException("Unmatched braces in URI template: " + template);
+        }
     }
 
     public static int requirePositive(int value, String field) {
-        if (value <= 0) throw new IllegalArgumentException(field + " must be > 0");
+        if (value <= 0) {
+            throw new IllegalArgumentException(field + " must be > 0");
+        }
         return value;
     }
 
     public static long requirePositive(long value, String field) {
-        if (value <= 0) throw new IllegalArgumentException(field + " must be > 0");
+        if (value <= 0) {
+            throw new IllegalArgumentException(field + " must be > 0");
+        }
         return value;
     }
 
@@ -187,12 +218,16 @@ public final class ValidationUtil {
     }
 
     public static int requireNonNegative(int value, String field) {
-        if (value < 0) throw new IllegalArgumentException(field + " must be >= 0");
+        if (value < 0) {
+            throw new IllegalArgumentException(field + " must be >= 0");
+        }
         return value;
     }
 
     public static long requireNonNegative(long value, String field) {
-        if (value < 0) throw new IllegalArgumentException(field + " must be >= 0");
+        if (value < 0) {
+            throw new IllegalArgumentException(field + " must be >= 0");
+        }
         return value;
     }
 

@@ -12,7 +12,9 @@ public final class ToolListChangedNotificationJsonCodec implements JsonCodec<Too
 
     @Override
     public ToolListChangedNotification fromJson(JsonObject obj) {
-        if (obj != null && !obj.isEmpty()) throw new IllegalArgumentException("unexpected fields");
+        if (obj != null && !obj.isEmpty()) {
+            throw new IllegalArgumentException("unexpected fields");
+        }
         return new ToolListChangedNotification();
     }
 }

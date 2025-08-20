@@ -13,6 +13,8 @@ public record InitializeRequest(
         if (protocolVersion == null) {
             throw new IllegalArgumentException("protocolVersion must not be null");
         }
-        if (features == null) features = ClientFeatures.EMPTY;
+        if (features == null) {
+            features = ClientFeatures.EMPTY;
+        }
     }
 }

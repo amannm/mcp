@@ -47,8 +47,12 @@ public sealed abstract class AbstractEntityCodec<T> implements JsonCodec<T> perm
         var arr = Json.createArrayBuilder();
         page.items().forEach(item -> arr.add(encoder.apply(item)));
         var b = Json.createObjectBuilder().add(field, arr.build());
-        if (page.nextCursor() instanceof Cursor.Token(var value)) b.add("nextCursor", value);
-        if (meta != null) b.add("_meta", meta);
+        if (page.nextCursor() instanceof Cursor.Token(var value)) {
+            b.add("nextCursor", value);
+        }
+        if (meta != null) {
+            b.add("_meta", meta);
+        }
         return b.build();
     }
 
@@ -82,7 +86,9 @@ public sealed abstract class AbstractEntityCodec<T> implements JsonCodec<T> perm
     }
 
     protected static JsonObjectBuilder addMeta(JsonObjectBuilder b, JsonObject meta) {
-        if (meta != null) b.add("_meta", meta);
+        if (meta != null) {
+            b.add("_meta", meta);
+        }
         return b;
     }
 
@@ -92,7 +98,9 @@ public sealed abstract class AbstractEntityCodec<T> implements JsonCodec<T> perm
 
     protected static String requireString(JsonObject obj, String key) {
         var val = obj.getString(key, null);
-        if (val == null) throw new IllegalArgumentException(key + " required");
+        if (val == null) {
+            throw new IllegalArgumentException(key + " required");
+        }
         return val;
     }
 
@@ -106,7 +114,9 @@ public sealed abstract class AbstractEntityCodec<T> implements JsonCodec<T> perm
 
     protected static ContentBlock requireContent(JsonObject obj) {
         var c = getObject(obj, "content");
-        if (c == null) throw new IllegalArgumentException("content required");
+        if (c == null) {
+            throw new IllegalArgumentException("content required");
+        }
         return CONTENT_BLOCK_CODEC.fromJson(c);
     }
 
@@ -114,7 +124,9 @@ public sealed abstract class AbstractEntityCodec<T> implements JsonCodec<T> perm
         Objects.requireNonNull(obj);
         Objects.requireNonNull(allowed);
         for (var key : obj.keySet()) {
-            if (!allowed.contains(key)) throw new IllegalArgumentException("unexpected field: " + key);
+            if (!allowed.contains(key)) {
+                throw new IllegalArgumentException("unexpected field: " + key);
+            }
         }
     }
 }

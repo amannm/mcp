@@ -129,10 +129,18 @@ public final class McpServer extends JsonRpcEndpoint implements AutoCloseable {
                                                       PromptProvider prompts,
                                                       CompletionProvider completions) {
         var caps = EnumSet.noneOf(ServerCapability.class);
-        if (resources != null) caps.add(ServerCapability.RESOURCES);
-        if (tools != null) caps.add(ServerCapability.TOOLS);
-        if (prompts != null) caps.add(ServerCapability.PROMPTS);
-        if (completions != null) caps.add(ServerCapability.COMPLETIONS);
+        if (resources != null) {
+            caps.add(ServerCapability.RESOURCES);
+        }
+        if (tools != null) {
+            caps.add(ServerCapability.TOOLS);
+        }
+        if (prompts != null) {
+            caps.add(ServerCapability.PROMPTS);
+        }
+        if (completions != null) {
+            caps.add(ServerCapability.COMPLETIONS);
+        }
         caps.add(ServerCapability.LOGGING);
         return EnumSet.copyOf(caps);
     }
@@ -140,7 +148,9 @@ public final class McpServer extends JsonRpcEndpoint implements AutoCloseable {
     private ToolCallHandler createToolHandler(ToolProvider tools,
                                               McpServerConfiguration config,
                                               Principal principal) {
-        if (tools == null) return null;
+        if (tools == null) {
+            return null;
+        }
         return new ToolCallHandler(
                 tools,
                 config.toolAccessPolicy(),
@@ -233,7 +243,9 @@ public final class McpServer extends JsonRpcEndpoint implements AutoCloseable {
     public void serve() throws IOException {
         while (state() != LifecycleState.SHUTDOWN) {
             var obj = receiveMessage();
-            if (obj.isEmpty()) continue;
+            if (obj.isEmpty()) {
+                continue;
+            }
             try {
                 process(CODEC.fromJson(obj.get()));
             } catch (IllegalArgumentException e) {
@@ -460,7 +472,9 @@ public final class McpServer extends JsonRpcEndpoint implements AutoCloseable {
 
     private JsonRpcMessage listTools(JsonRpcRequest req) {
         var initCheck = checkInitialized(req.id());
-        if (initCheck.isPresent()) return initCheck.get();
+        if (initCheck.isPresent()) {
+            return initCheck.get();
+        }
         requireServerCapability(ServerCapability.TOOLS);
         try {
             var ltr = AbstractEntityCodec.paginatedRequest(
@@ -483,7 +497,9 @@ public final class McpServer extends JsonRpcEndpoint implements AutoCloseable {
 
     private JsonRpcMessage listPrompts(JsonRpcRequest req) {
         var initCheck = checkInitialized(req.id());
-        if (initCheck.isPresent()) return initCheck.get();
+        if (initCheck.isPresent()) {
+            return initCheck.get();
+        }
         requireServerCapability(ServerCapability.PROMPTS);
         try {
             var lpr = ListPromptsRequest.CODEC.fromJson(req.params());
@@ -522,7 +538,9 @@ public final class McpServer extends JsonRpcEndpoint implements AutoCloseable {
 
     private void sendLog(LoggingMessageNotification note) throws IOException {
         if (rateLimit(logLimiter, note.logger() == null ? "" : note.logger()).isPresent() ||
-                note.level().ordinal() < logLevel.ordinal()) return;
+                note.level().ordinal() < logLevel.ordinal()) {
+            return;
+        }
         requireServerCapability(ServerCapability.LOGGING);
         var params = LOGGING_MESSAGE_NOTIFICATION_JSON_CODEC.toJson(note);
         send(new JsonRpcNotification(NotificationMethod.MESSAGE.method(), params));
@@ -624,8 +642,12 @@ public final class McpServer extends JsonRpcEndpoint implements AutoCloseable {
             CloseUtil.closeQuietly(promptsSubscription);
             promptsSubscription = null;
         }
-        if (completions != null) completions.close();
-        if (sampling != null) sampling.close();
+        if (completions != null) {
+            completions.close();
+        }
+        if (sampling != null) {
+            sampling.close();
+        }
         transport.close();
     }
 }

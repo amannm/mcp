@@ -9,7 +9,9 @@ public sealed interface Cursor permits Cursor.Start, Cursor.End, Cursor.Token {
     }
 
     static Cursor.Token fromIndex(int index) {
-        if (index < 0) throw new IllegalArgumentException("index must be >= 0");
+        if (index < 0) {
+            throw new IllegalArgumentException("index must be >= 0");
+        }
         return new Token(encode(index));
     }
 
@@ -33,7 +35,9 @@ public sealed interface Cursor permits Cursor.Start, Cursor.End, Cursor.Token {
     }
 
     private static int decode(String token) {
-        if (token == null) return 0;
+        if (token == null) {
+            return 0;
+        }
         try {
             var s = new String(Base64Util.decodeUrl(token));
             return Integer.parseInt(s);
@@ -52,7 +56,9 @@ public sealed interface Cursor permits Cursor.Start, Cursor.End, Cursor.Token {
 
     record Token(String value) implements Cursor {
         public Token {
-            if (value == null) throw new IllegalArgumentException("value is required");
+            if (value == null) {
+                throw new IllegalArgumentException("value is required");
+            }
             value = ValidationUtil.requireClean(value);
             Cursor.requireValid(value);
         }

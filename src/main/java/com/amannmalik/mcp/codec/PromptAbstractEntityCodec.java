@@ -10,9 +10,15 @@ public final class PromptAbstractEntityCodec extends AbstractEntityCodec<Prompt>
     @Override
     public JsonObject toJson(Prompt prompt) {
         var b = Json.createObjectBuilder().add("name", prompt.name());
-        if (prompt.title() != null) b.add("title", prompt.title());
-        if (prompt.description() != null) b.add("description", prompt.description());
-        if (prompt._meta() != null) b.add("_meta", prompt._meta());
+        if (prompt.title() != null) {
+            b.add("title", prompt.title());
+        }
+        if (prompt.description() != null) {
+            b.add("description", prompt.description());
+        }
+        if (prompt._meta() != null) {
+            b.add("_meta", prompt._meta());
+        }
         if (!prompt.arguments().isEmpty()) {
             var arr = Json.createArrayBuilder();
             prompt.arguments().forEach(a -> arr.add(new PromptArgumentAbstractEntityCodec().toJson(a)));
@@ -23,7 +29,9 @@ public final class PromptAbstractEntityCodec extends AbstractEntityCodec<Prompt>
 
     @Override
     public Prompt fromJson(JsonObject obj) {
-        if (obj == null) throw new IllegalArgumentException("object required");
+        if (obj == null) {
+            throw new IllegalArgumentException("object required");
+        }
         requireOnlyKeys(obj, Set.of("name", "title", "description", "arguments", "_meta"));
         var name = requireString(obj, "name");
         var title = obj.getString("title", null);

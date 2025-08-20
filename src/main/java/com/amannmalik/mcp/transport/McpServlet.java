@@ -29,17 +29,27 @@ final class McpServlet extends HttpServlet {
         var isRequest = hasMethod && hasId;
         var isNotification = hasMethod && !hasId;
         var isResponse = !hasMethod && (obj.containsKey("result") || obj.containsKey("error"));
-        if (isRequest) return MessageType.REQUEST;
-        if (isNotification) return MessageType.NOTIFICATION;
-        if (isResponse) return MessageType.RESPONSE;
+        if (isRequest) {
+            return MessageType.REQUEST;
+        }
+        if (isNotification) {
+            return MessageType.NOTIFICATION;
+        }
+        if (isResponse) {
+            return MessageType.RESPONSE;
+        }
         return MessageType.INVALID;
     }
 
     @Override
     protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws IOException {
-        if (!transport.enforceHttps(req, resp)) return;
+        if (!transport.enforceHttps(req, resp)) {
+            return;
+        }
         var principalOpt = authorize(req, resp, true, true);
-        if (principalOpt.isEmpty()) return;
+        if (principalOpt.isEmpty()) {
+            return;
+        }
         var principal = principalOpt.get();
 
         JsonObject obj;
@@ -52,7 +62,9 @@ final class McpServlet extends HttpServlet {
         var initializing = RequestMethod.INITIALIZE.method()
                 .equals(obj.getString("method", null));
 
-        if (!transport.validateSession(req, resp, principal, initializing)) return;
+        if (!transport.validateSession(req, resp, principal, initializing)) {
+            return;
+        }
 
         switch (classify(obj)) {
             case NOTIFICATION, RESPONSE -> enqueue(obj, resp);
@@ -63,10 +75,16 @@ final class McpServlet extends HttpServlet {
 
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws IOException {
-        if (!transport.enforceHttps(req, resp)) return;
+        if (!transport.enforceHttps(req, resp)) {
+            return;
+        }
         var principalOpt = authorize(req, resp, true, false);
-        if (principalOpt.isEmpty()) return;
-        if (!transport.validateSession(req, resp, principalOpt.get(), false)) return;
+        if (principalOpt.isEmpty()) {
+            return;
+        }
+        if (!transport.validateSession(req, resp, principalOpt.get(), false)) {
+            return;
+        }
         var ac = initSse(req, resp);
 
         var lastEvent = req.getHeader("Last-Event-ID");
@@ -101,10 +119,16 @@ final class McpServlet extends HttpServlet {
 
     @Override
     protected void doDelete(HttpServletRequest req, HttpServletResponse resp) throws IOException {
-        if (!transport.enforceHttps(req, resp)) return;
+        if (!transport.enforceHttps(req, resp)) {
+            return;
+        }
         var principalOpt = authorize(req, resp, false, false);
-        if (principalOpt.isEmpty()) return;
-        if (!transport.validateSession(req, resp, principalOpt.get(), false)) return;
+        if (principalOpt.isEmpty()) {
+            return;
+        }
+        if (!transport.validateSession(req, resp, principalOpt.get(), false)) {
+            return;
+        }
         transport.terminateSession(true);
         resp.setStatus(HttpServletResponse.SC_OK);
     }
@@ -114,9 +138,15 @@ final class McpServlet extends HttpServlet {
                                           boolean requireAccept,
                                           boolean post) throws IOException {
         var principalOpt = transport.authorize(req, resp);
-        if (principalOpt.isEmpty()) return Optional.empty();
-        if (!transport.verifyOrigin(req, resp)) return Optional.empty();
-        if (requireAccept && !transport.validateAccept(req, resp, post)) return Optional.empty();
+        if (principalOpt.isEmpty()) {
+            return Optional.empty();
+        }
+        if (!transport.verifyOrigin(req, resp)) {
+            return Optional.empty();
+        }
+        if (requireAccept && !transport.validateAccept(req, resp, post)) {
+            return Optional.empty();
+        }
         return principalOpt;
     }
 

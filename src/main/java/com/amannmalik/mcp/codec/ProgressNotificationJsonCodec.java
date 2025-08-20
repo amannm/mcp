@@ -15,8 +15,12 @@ public class ProgressNotificationJsonCodec implements JsonCodec<ProgressNotifica
             case ProgressToken.NumericToken n -> b.add("progressToken", n.value());
         }
         b.add("progress", note.progress());
-        if (note.total() != null) b.add("total", note.total());
-        if (note.message() != null) b.add("message", note.message());
+        if (note.total() != null) {
+            b.add("total", note.total());
+        }
+        if (note.message() != null) {
+            b.add("message", note.message());
+        }
         return b.build();
     }
 

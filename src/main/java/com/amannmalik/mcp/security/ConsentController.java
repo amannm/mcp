@@ -14,8 +14,12 @@ public final class ConsentController {
     }
 
     public void requireConsent(Principal principal, String scope) {
-        if (principal == null) throw new IllegalArgumentException("principal required");
-        if (scope == null || scope.isBlank()) throw new IllegalArgumentException("scope required");
+        if (principal == null) {
+            throw new IllegalArgumentException("principal required");
+        }
+        if (scope == null || scope.isBlank()) {
+            throw new IllegalArgumentException("scope required");
+        }
         consents.requirePermission(principal.id(), scope, "User consent required: " + scope);
     }
 }

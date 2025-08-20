@@ -15,7 +15,9 @@ public final class Pagination {
 
     public static <T> Page<T> page(List<T> items, Cursor cursor, int size) {
         var start = Cursor.index(cursor);
-        if (start > items.size()) throw new IllegalArgumentException("Invalid cursor");
+        if (start > items.size()) {
+            throw new IllegalArgumentException("Invalid cursor");
+        }
         var end = Math.min(items.size(), start + size);
         var slice = items.subList(start, end);
         var next = end < items.size() ? Cursor.fromIndex(end) : Cursor.End.INSTANCE;

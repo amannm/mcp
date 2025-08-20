@@ -32,13 +32,17 @@ final class SseReader implements Runnable {
                     continue;
                 }
                 var idx = line.indexOf(':');
-                if (idx < 0) continue;
+                if (idx < 0) {
+                    continue;
+                }
                 buffer.field(line.substring(0, idx), line.substring(idx + 1).trim());
             }
             buffer.flush();
         } catch (IOException ignore) {
         } finally {
-            if (container != null) container.remove(this);
+            if (container != null) {
+                container.remove(this);
+            }
             close();
         }
     }
@@ -48,7 +52,9 @@ final class SseReader implements Runnable {
             queue.add(jr.readObject());
         } catch (Exception ignore) {
         }
-        if (eventId != null) lastEventId = eventId;
+        if (eventId != null) {
+            lastEventId = eventId;
+        }
     }
 
     void close() {
@@ -71,14 +77,18 @@ final class SseReader implements Runnable {
             switch (name) {
                 case "id" -> eventId = value;
                 case "data" -> {
-                    if (!data.isEmpty()) data.append('\n');
+                    if (!data.isEmpty()) {
+                        data.append('\n');
+                    }
                     data.append(value);
                 }
             }
         }
 
         void flush() {
-            if (data.isEmpty()) return;
+            if (data.isEmpty()) {
+                return;
+            }
             dispatch(data.toString(), eventId);
             data.setLength(0);
             eventId = null;

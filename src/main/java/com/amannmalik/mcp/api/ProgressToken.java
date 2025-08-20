@@ -11,10 +11,14 @@ public sealed interface ProgressToken permits
         ProgressToken.NumericToken {
 
     static Optional<ProgressToken> fromMeta(JsonObject params) {
-        if (params == null || !params.containsKey("_meta")) return Optional.empty();
+        if (params == null || !params.containsKey("_meta")) {
+            return Optional.empty();
+        }
         var meta = params.getJsonObject("_meta");
         ValidationUtil.requireMeta(meta);
-        if (!meta.containsKey("progressToken")) return Optional.empty();
+        if (!meta.containsKey("progressToken")) {
+            return Optional.empty();
+        }
         var val = meta.get("progressToken");
         ProgressToken token = switch (val.getValueType()) {
             case STRING -> new ProgressToken.StringToken(ValidationUtil.requireClean(meta.getString("progressToken")));

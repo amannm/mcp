@@ -132,14 +132,18 @@ public final class ServerCommand {
 
     public static int execute(ParseResult parseResult) {
         var helpExitCode = CommandLine.executeHelpRequest(parseResult);
-        if (helpExitCode != null) return helpExitCode;
+        if (helpExitCode != null) {
+            return helpExitCode;
+        }
 
         try {
             boolean stdio = parseResult.matchedOptionValue("--stdio", false);
             boolean verbose = parseResult.matchedOptionValue("--verbose", false);
             var httpPort = parseResult.matchedOptionValue("--http", 3000);
             boolean httpsOnly = parseResult.matchedOptionValue("--https-only", false);
-            if (httpsOnly) httpPort = 0;
+            if (httpsOnly) {
+                httpPort = 0;
+            }
             String expectedAudience = parseResult.matchedOptionValue("--audience", null);
             String resourceMetadataUrl = parseResult.matchedOptionValue("--resource-metadata", null);
             List<String> authServers = parseResult.matchedOptionValue("--auth-server", Collections.emptyList());
@@ -152,7 +156,9 @@ public final class ServerCommand {
             String keystorePasswordEnv = parseResult.matchedOptionValue("--keystore-password-env", null);
             if (keystorePasswordEnv != null) {
                 var env = System.getenv(keystorePasswordEnv);
-                if (env != null) keystorePassword = env;
+                if (env != null) {
+                    keystorePassword = env;
+                }
             }
             var keystoreType = parseResult.matchedOptionValue("--keystore-type", base.keystoreType());
             Path truststorePathOpt = parseResult.matchedOptionValue("--truststore", null);
@@ -161,7 +167,9 @@ public final class ServerCommand {
             String truststorePasswordEnv = parseResult.matchedOptionValue("--truststore-password-env", null);
             if (truststorePasswordEnv != null) {
                 var env = System.getenv(truststorePasswordEnv);
-                if (env != null) truststorePassword = env;
+                if (env != null) {
+                    truststorePassword = env;
+                }
             }
             var truststoreType = parseResult.matchedOptionValue("--truststore-type", base.truststoreType());
             var tlsProtocols = parseResult.matchedOptionValue("--tls-protocols", base.tlsProtocols());

@@ -17,7 +17,9 @@ public final class PromptMessageAbstractEntityCodec extends AbstractEntityCodec<
 
     @Override
     public PromptMessage fromJson(JsonObject obj) {
-        if (obj == null) throw new IllegalArgumentException("object required");
+        if (obj == null) {
+            throw new IllegalArgumentException("object required");
+        }
         requireOnlyKeys(obj, Set.of("role", "content"));
         var role = requireRole(obj);
         var block = requireContent(obj);

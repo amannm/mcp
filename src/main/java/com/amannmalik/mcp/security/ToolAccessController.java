@@ -15,8 +15,12 @@ public final class ToolAccessController implements ToolAccessPolicy {
 
     @Override
     public void requireAllowed(Principal principal, Tool tool) {
-        if (principal == null) throw new IllegalArgumentException("principal required");
-        if (tool == null) throw new IllegalArgumentException("tool required");
+        if (principal == null) {
+            throw new IllegalArgumentException("principal required");
+        }
+        if (tool == null) {
+            throw new IllegalArgumentException("tool required");
+        }
         permissions.requirePermission(principal.id(), tool.name(), "Tool not authorized: " + tool.name());
     }
 }

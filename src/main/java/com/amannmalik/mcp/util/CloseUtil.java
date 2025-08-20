@@ -5,7 +5,9 @@ public final class CloseUtil {
     }
 
     public static void closeQuietly(AutoCloseable closeable) {
-        if (closeable == null) return;
+        if (closeable == null) {
+            return;
+        }
         try {
             closeable.close();
         } catch (Exception ignore) {

@@ -7,7 +7,9 @@ public final class CursorUtil {
     }
 
     public static Cursor sanitize(String cursor) {
-        if (cursor == null) return Cursor.Start.INSTANCE;
+        if (cursor == null) {
+            return Cursor.Start.INSTANCE;
+        }
         var clean = ValidationUtil.cleanNullable(cursor);
         return new Cursor.Token(clean);
     }

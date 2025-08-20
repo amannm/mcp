@@ -89,7 +89,9 @@ public final class StreamableHttpServerTransport implements Transport {
     }
 
     private ServerConnector httpConnector(Server server, McpServerConfiguration config) {
-        if (config.serverPort() <= 0) return null;
+        if (config.serverPort() <= 0) {
+            return null;
+        }
         var cfg = new HttpConfiguration();
         var connector = new ServerConnector(server, new HttpConnectionFactory(cfg));
         connector.setHost(config.bindAddress());
@@ -99,7 +101,9 @@ public final class StreamableHttpServerTransport implements Transport {
     }
 
     private ServerConnector httpsConnector(Server server, McpServerConfiguration config) {
-        if (config.httpsPort() <= 0) return null;
+        if (config.httpsPort() <= 0) {
+            return null;
+        }
         var cfg = new HttpConfiguration();
         cfg.setSecureScheme("https");
         cfg.setSecurePort(config.httpsPort());
@@ -159,7 +163,9 @@ public final class StreamableHttpServerTransport implements Transport {
     }
 
     private List<String> authorizationServers(McpServerConfiguration config, boolean https) {
-        if (config.authServers().isEmpty()) return List.of();
+        if (config.authServers().isEmpty()) {
+            return List.of();
+        }
         if (https && config.authServers().stream().anyMatch(u -> u.startsWith("http://"))) {
             throw new IllegalArgumentException("HTTPS required for authorization server URLs");
         }
@@ -179,7 +185,9 @@ public final class StreamableHttpServerTransport implements Transport {
                         case ECKey k -> k.getParams().getCurve().getField().getFieldSize();
                         default -> 0;
                     };
-                    if (size < 2048) throw new IllegalArgumentException("Certificate key size too small: " + size);
+                    if (size < 2048) {
+                        throw new IllegalArgumentException("Certificate key size too small: " + size);
+                    }
                 }
             }
         } catch (Exception e) {
@@ -261,7 +269,9 @@ public final class StreamableHttpServerTransport implements Transport {
             case REDIRECT -> {
                 var url = "https://" + req.getServerName() + ":" + httpsPort + req.getRequestURI();
                 var q = req.getQueryString();
-                if (q != null && !q.isEmpty()) url += "?" + q;
+                if (q != null && !q.isEmpty()) {
+                    url += "?" + q;
+                }
                 resp.setStatus(HttpServletResponse.SC_MOVED_PERMANENTLY);
                 resp.setHeader("Location", url);
                 yield false;
@@ -280,7 +290,9 @@ public final class StreamableHttpServerTransport implements Transport {
             resp.sendError(HttpServletResponse.SC_FORBIDDEN);
             return false;
         }
-        if (origin != null) resp.setHeader("Access-Control-Allow-Origin", origin);
+        if (origin != null) {
+            resp.setHeader("Access-Control-Allow-Origin", origin);
+        }
         return true;
     }
 
@@ -298,7 +310,9 @@ public final class StreamableHttpServerTransport implements Transport {
         var ok = post
                 ? types.size() == 2 && types.contains("application/json") && types.contains("text/event-stream")
                 : types.size() == 1 && types.contains("text/event-stream");
-        if (!ok) resp.sendError(HttpServletResponse.SC_NOT_ACCEPTABLE);
+        if (!ok) {
+            resp.sendError(HttpServletResponse.SC_NOT_ACCEPTABLE);
+        }
         return ok;
     }
 

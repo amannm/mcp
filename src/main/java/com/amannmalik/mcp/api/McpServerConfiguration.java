@@ -73,50 +73,71 @@ public record McpServerConfiguration(
         servletPaths = Set.copyOf(servletPaths);
         servletAcceptedContentTypes = List.copyOf(servletAcceptedContentTypes);
         servletProducedContentTypes = List.copyOf(servletProducedContentTypes);
-        if (supportedVersions.isEmpty())
+        if (supportedVersions.isEmpty()) {
             throw new IllegalArgumentException("Supported versions required");
-        if (defaultTimeoutMs.isNegative() || initialRequestId < 0)
-            throw new IllegalArgumentException("Invalid protocol configuration");
-        if (toolsPerSecond < 0 || completionsPerSecond < 0 || logsPerSecond < 0 || progressPerSecond < 0)
-            throw new IllegalArgumentException("Invalid rate limit configuration");
-        if (rateLimiterWindowMs <= 0)
-            throw new IllegalArgumentException("Invalid rate limiter window");
-        if (rateLimitErrorCode >= 0)
-            throw new IllegalArgumentException("Rate limit error code must be negative");
-        if (initialLogLevel == null || toolAccessPolicy == null || samplingAccessPolicy == null)
-            throw new IllegalArgumentException("Invalid policy configuration");
-        if (serverPort < 0 || serverPort > 65_535)
-            throw new IllegalArgumentException("Invalid port number");
-        if (httpsPort < 0 || httpsPort > 65_535)
-            throw new IllegalArgumentException("Invalid HTTPS port number");
-        if (tlsConfiguration == null)
-            throw new IllegalArgumentException("TLS configuration required");
-        if (httpsPort > 0) {
-            if (!tlsConfiguration.hasKeystore())
-                throw new IllegalArgumentException("Keystore configuration required");
-            if (requireClientAuth && !tlsConfiguration.hasTruststore())
-                throw new IllegalArgumentException("Truststore configuration required");
-            if (resourceMetadataUrl != null && !resourceMetadataUrl.isBlank() && resourceMetadataUrl.startsWith("http://"))
-                throw new IllegalArgumentException("HTTPS required for resource metadata URL");
-            if (authServers.stream().anyMatch(u -> u.startsWith("http://")))
-                throw new IllegalArgumentException("HTTPS required for authorization server URLs");
         }
-        if (httpsMode == null)
+        if (defaultTimeoutMs.isNegative() || initialRequestId < 0) {
+            throw new IllegalArgumentException("Invalid protocol configuration");
+        }
+        if (toolsPerSecond < 0 || completionsPerSecond < 0 || logsPerSecond < 0 || progressPerSecond < 0) {
+            throw new IllegalArgumentException("Invalid rate limit configuration");
+        }
+        if (rateLimiterWindowMs <= 0) {
+            throw new IllegalArgumentException("Invalid rate limiter window");
+        }
+        if (rateLimitErrorCode >= 0) {
+            throw new IllegalArgumentException("Rate limit error code must be negative");
+        }
+        if (initialLogLevel == null || toolAccessPolicy == null || samplingAccessPolicy == null) {
+            throw new IllegalArgumentException("Invalid policy configuration");
+        }
+        if (serverPort < 0 || serverPort > 65_535) {
+            throw new IllegalArgumentException("Invalid port number");
+        }
+        if (httpsPort < 0 || httpsPort > 65_535) {
+            throw new IllegalArgumentException("Invalid HTTPS port number");
+        }
+        if (tlsConfiguration == null) {
+            throw new IllegalArgumentException("TLS configuration required");
+        }
+        if (httpsPort > 0) {
+            if (!tlsConfiguration.hasKeystore()) {
+                throw new IllegalArgumentException("Keystore configuration required");
+            }
+            if (requireClientAuth && !tlsConfiguration.hasTruststore()) {
+                throw new IllegalArgumentException("Truststore configuration required");
+            }
+            if (resourceMetadataUrl != null && !resourceMetadataUrl.isBlank() && resourceMetadataUrl.startsWith("http://")) {
+                throw new IllegalArgumentException("HTTPS required for resource metadata URL");
+            }
+            if (authServers.stream().anyMatch(u -> u.startsWith("http://"))) {
+                throw new IllegalArgumentException("HTTPS required for authorization server URLs");
+            }
+        }
+        if (httpsMode == null) {
             throw new IllegalArgumentException("HTTPS mode required");
-        if (httpsMode != HttpsMode.MIXED && httpsPort <= 0)
+        }
+        if (httpsMode != HttpsMode.MIXED && httpsPort <= 0) {
             throw new IllegalArgumentException("HTTPS mode requires HTTPS port");
-        if (bindAddress == null || bindAddress.isBlank())
+        }
+        if (bindAddress == null || bindAddress.isBlank()) {
             throw new IllegalArgumentException("Bind address required");
-        if (sessionIdByteLength <= 0)
+        }
+        if (sessionIdByteLength <= 0) {
             throw new IllegalArgumentException("Session ID byte length must be positive");
-        if (initializeRequestTimeout.isNegative() || initializeRequestTimeout.isZero())
+        }
+        if (initializeRequestTimeout.isNegative() || initializeRequestTimeout.isZero()) {
             throw new IllegalArgumentException("Initialize request timeout must be positive");
-        if (sseClientPrefixByteLength <= 0)
+        }
+        if (sseClientPrefixByteLength <= 0) {
             throw new IllegalArgumentException("Client prefix byte length must be positive");
-        if (sseHistoryLimit < 0)
+        }
+        if (sseHistoryLimit < 0) {
             throw new IllegalArgumentException("SSE history limit must be non-negative");
-        if (httpResponseQueueCapacity <= 0)
+        }
+        if (httpResponseQueueCapacity <= 0) {
             throw new IllegalArgumentException("HTTP response queue capacity must be positive");
+        }
     }
 
 
