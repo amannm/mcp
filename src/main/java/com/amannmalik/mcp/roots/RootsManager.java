@@ -13,6 +13,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.function.Supplier;
+import java.lang.System.Logger;
 
 /// - [Roots](specification/2025-06-18/client/roots.mdx)
 /// - [MCP roots specification conformance](src/test/resources/com/amannmalik/mcp/mcp_conformance.feature:154-169)
@@ -20,6 +21,7 @@ public final class RootsManager {
     public static final JsonCodec<ListRootsRequest> CODEC =
             AbstractEntityCodec.metaOnly(ListRootsRequest::_meta, ListRootsRequest::new);
     private static final ListRootsResultAbstractEntityCodec LIST_RESULTS_CODEC = new ListRootsResultAbstractEntityCodec();
+    private static final Logger LOG = System.getLogger(RootsManager.class.getName());
     private final Supplier<Set<ClientCapability>> capabilities;
     private final RequestSender requester;
     private final EventSupport listChangeSupport = new EventSupport();
@@ -56,7 +58,8 @@ public final class RootsManager {
         var t = new Thread(() -> {
             try {
                 listRoots();
-            } catch (IOException ignore) {
+            } catch (IOException e) {
+                LOG.log(Logger.Level.WARNING, "Failed to refresh roots", e);
             }
         });
         t.setDaemon(true);

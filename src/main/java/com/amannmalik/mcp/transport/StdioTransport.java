@@ -12,6 +12,7 @@ import java.time.Duration;
 import java.util.Objects;
 import java.util.concurrent.*;
 import java.util.function.Consumer;
+import java.lang.System.Logger;
 
 /// - [Transports](specification/2025-06-18/basic/transports.mdx)
 public final class StdioTransport implements Transport {
@@ -19,6 +20,7 @@ public final class StdioTransport implements Transport {
     private static final Duration WAIT = McpHostConfiguration.defaultConfiguration().processWaitSeconds();
     private static final Duration RECEIVE = Duration.ofSeconds(5);
     private static final Executor READER = command -> Thread.ofVirtual().start(command);
+    private static final Logger LOG = System.getLogger(StdioTransport.class.getName());
     private final BufferedReader in;
     private final BufferedWriter out;
     private final ProcessResources resources;
@@ -142,8 +144,9 @@ public final class StdioTransport implements Transport {
                 int code;
                 try {
                     code = process.exitValue();
-                } catch (IllegalThreadStateException ignore) {
+                } catch (IllegalThreadStateException e) {
                     code = -1;
+                    LOG.log(Logger.Level.DEBUG, "Process still running when checking exit value", e);
                 }
                 throw new IOException("Process exited with code " + code);
             }

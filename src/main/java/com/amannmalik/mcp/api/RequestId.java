@@ -1,11 +1,14 @@
 package com.amannmalik.mcp.api;
 
 import jakarta.json.*;
+import java.lang.System.Logger;
 
 public sealed interface RequestId permits
         RequestId.StringId,
         RequestId.NumericId,
         RequestId.NullId {
+
+    Logger LOG = System.getLogger(RequestId.class.getName());
 
     static RequestId parse(String raw) {
         if (raw == null) {
@@ -19,7 +22,8 @@ public sealed interface RequestId permits
         }
         try {
             return new NumericId(Long.parseLong(raw));
-        } catch (NumberFormatException ignore) {
+        } catch (NumberFormatException e) {
+            LOG.log(Logger.Level.DEBUG, "Non-numeric request id: " + raw, e);
             return new StringId(raw);
         }
     }

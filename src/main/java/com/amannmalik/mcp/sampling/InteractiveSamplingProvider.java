@@ -10,9 +10,11 @@ import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.*;
 import java.util.concurrent.*;
+import java.lang.System.Logger;
 
 public final class InteractiveSamplingProvider implements SamplingProvider {
 
+    private static final Logger LOG = System.getLogger(InteractiveSamplingProvider.class.getName());
     private static final List<KeywordResponse> RESPONSES = List.of(
             new KeywordResponse(Set.of("hello", "hi"),
                     "Hello! How can I assist you today?"),
@@ -144,7 +146,8 @@ public final class InteractiveSamplingProvider implements SamplingProvider {
                         null
                 );
             }
-        } catch (IOException ignore) {
+        } catch (IOException e) {
+            LOG.log(Logger.Level.WARNING, "Failed to fetch sampling responses", e);
         }
 
         var responseText = generateSimpleResponse(request);

@@ -9,12 +9,15 @@ import jakarta.servlet.AsyncContext;
 import jakarta.servlet.http.*;
 
 import java.io.IOException;
+import java.lang.System.Logger;
 import java.util.Optional;
 import java.util.concurrent.*;
 
 /// - [Transports](specification/2025-06-18/basic/transports.mdx)
 /// - [Conformance Suite](src/test/resources/com/amannmalik/mcp/mcp.feature)
 final class McpServlet extends HttpServlet {
+    private static final Logger LOG = System.getLogger(McpServlet.class.getName());
+
     private transient final StreamableHttpServerTransport transport;
     private final int responseQueueCapacity;
 
@@ -96,7 +99,8 @@ final class McpServlet extends HttpServlet {
                 var prefix = lastEvent.substring(0, idx);
                 try {
                     lastId = Long.parseLong(lastEvent.substring(idx + 1));
-                } catch (NumberFormatException ignore) {
+                } catch (NumberFormatException e) {
+                    LOG.log(Logger.Level.WARNING, "Invalid Last-Event-ID: " + lastEvent, e);
                 }
                 found = transport.clients.byPrefix.get(prefix);
                 if (found != null) {
