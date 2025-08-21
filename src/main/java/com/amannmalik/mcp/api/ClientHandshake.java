@@ -9,9 +9,11 @@ import com.amannmalik.mcp.util.InitializeRequest;
 import java.io.IOException;
 import java.time.Duration;
 import java.util.*;
+import java.lang.System.Logger;
 
 final class ClientHandshake {
     private static final InitializeRequestAbstractEntityCodec REQUEST_CODEC = new InitializeRequestAbstractEntityCodec();
+    private static final Logger LOG = System.getLogger(ClientHandshake.class.getName());
 
     private ClientHandshake() {
     }
@@ -35,7 +37,8 @@ final class ClientHandshake {
         } catch (IOException e) {
             try {
                 transport.close();
-            } catch (IOException ignore) {
+            } catch (IOException e2) {
+                LOG.log(Logger.Level.WARNING, "Failed to close transport after initialization failure", e2);
             }
             throw new IOException("Initialization failed: " + e.getMessage(), e);
         }
@@ -50,7 +53,8 @@ final class ClientHandshake {
         if (!Protocol.LATEST_VERSION.equals(serverVersion) && !Protocol.PREVIOUS_VERSION.equals(serverVersion)) {
             try {
                 transport.close();
-            } catch (IOException ignore) {
+            } catch (IOException e2) {
+                LOG.log(Logger.Level.WARNING, "Failed to close transport after unsupported protocol", e2);
             }
             throw new UnsupportedProtocolVersionException(serverVersion, Protocol.LATEST_VERSION + " or " + Protocol.PREVIOUS_VERSION);
         }

@@ -9,6 +9,7 @@ import jakarta.json.JsonObject;
 import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.lang.System.Logger;
 
 public final class ProgressManager {
     private final Map<ProgressToken, Double> progress = new ConcurrentHashMap<>();
@@ -19,6 +20,7 @@ public final class ProgressManager {
     private final RateLimiter limiter;
 
     private final ProgressNotificationJsonCodec NOTIFICATION_CODEC = new ProgressNotificationJsonCodec();
+    private static final Logger LOG = System.getLogger(ProgressManager.class.getName());
 
     public ProgressManager(RateLimiter limiter) {
         if (limiter == null) {
@@ -104,7 +106,8 @@ public final class ProgressManager {
         try {
             limiter.requireAllowance(note.token().asString());
             update(note);
-        } catch (IllegalArgumentException | IllegalStateException | SecurityException ignore) {
+        } catch (IllegalArgumentException | IllegalStateException | SecurityException e) {
+            LOG.log(Logger.Level.WARNING, "Progress update rejected", e);
             return;
         }
         sender.send(NotificationMethod.PROGRESS, NOTIFICATION_CODEC.toJson(note));

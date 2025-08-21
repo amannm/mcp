@@ -21,9 +21,12 @@ import java.time.Duration;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicReference;
+import java.lang.System.Logger;
 
 /// - [Transports](specification/2025-06-18/basic/transports.mdx)
 public final class StreamableHttpClientTransport implements Transport {
+    private static final Logger LOG = System.getLogger(StreamableHttpClientTransport.class.getName());
+
     private final HttpClient client;
     private final URI endpoint;
     private final BlockingQueue<JsonObject> incoming = new LinkedBlockingQueue<>();
@@ -236,8 +239,9 @@ public final class StreamableHttpClientTransport implements Transport {
             var request = builder().DELETE().build();
             try {
                 client.send(request, HttpResponse.BodyHandlers.discarding());
-            } catch (InterruptedException ignore) {
+            } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
+                LOG.log(Logger.Level.WARNING, "Session termination interrupted", e);
             }
         }
         streams.forEach(SseReader::close);

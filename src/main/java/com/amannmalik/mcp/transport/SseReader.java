@@ -8,8 +8,11 @@ import java.nio.charset.StandardCharsets;
 import java.util.Set;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.lang.System.Logger;
 
 final class SseReader implements Runnable {
+    private static final Logger LOG = System.getLogger(SseReader.class.getName());
+
     private final InputStream input;
     private final BlockingQueue<JsonObject> queue;
     private final Set<SseReader> container;
@@ -39,7 +42,8 @@ final class SseReader implements Runnable {
                 buffer.field(line.substring(0, idx), line.substring(idx + 1).trim());
             }
             buffer.flush();
-        } catch (IOException ignore) {
+        } catch (IOException e) {
+            LOG.log(Logger.Level.WARNING, "SSE read failed", e);
         } finally {
             if (container != null) {
                 container.remove(this);
@@ -51,7 +55,8 @@ final class SseReader implements Runnable {
     private void dispatch(String payload, String eventId) {
         try (var jr = Json.createReader(new StringReader(payload))) {
             queue.add(jr.readObject());
-        } catch (Exception ignore) {
+        } catch (Exception e) {
+            LOG.log(Logger.Level.WARNING, "Invalid SSE payload", e);
         }
         if (eventId != null) {
             lastEventId = eventId;
@@ -62,7 +67,8 @@ final class SseReader implements Runnable {
         closed.set(true);
         try {
             input.close();
-        } catch (IOException ignore) {
+        } catch (IOException e) {
+            LOG.log(Logger.Level.WARNING, "SSE close failed", e);
         }
     }
 
