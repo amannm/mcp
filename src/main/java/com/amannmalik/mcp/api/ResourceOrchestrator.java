@@ -86,11 +86,8 @@ final class ResourceOrchestrator implements AutoCloseable {
         }
         var progressToken = ProgressToken.fromMeta(req.params());
         try {
-            var lr = AbstractEntityCodec.paginatedRequest(
-                    ListResourcesRequest::cursor,
-                    ListResourcesRequest::_meta,
-                    ListResourcesRequest::new).fromJson(req.params());
-            var cursor = CursorUtil.sanitize(lr.cursor());
+            var pageReq = PaginatedRequest.CODEC.fromJson(req.params());
+            var cursor = CursorUtil.sanitize(pageReq.cursor());
             progressToken.ifPresent(t -> sendProgress(t, 0.0, "Starting resource list"));
             var list = resources.list(cursor);
             progressToken.ifPresent(t -> sendProgress(t, 0.5, "Filtering resources"));
@@ -126,12 +123,8 @@ final class ResourceOrchestrator implements AutoCloseable {
 
     private JsonRpcMessage listTemplates(JsonRpcRequest req) {
         try {
-            var request =
-                    AbstractEntityCodec.paginatedRequest(
-                            ListResourceTemplatesRequest::cursor,
-                            ListResourceTemplatesRequest::_meta,
-                            ListResourceTemplatesRequest::new).fromJson(req.params());
-            var cursor = CursorUtil.sanitize(request.cursor());
+            var pageReq = PaginatedRequest.CODEC.fromJson(req.params());
+            var cursor = CursorUtil.sanitize(pageReq.cursor());
             var page = resources.listTemplates(cursor);
             var filtered = page.items().stream()
                     .filter(t -> allowed(t.annotations()))
