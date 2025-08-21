@@ -2,6 +2,7 @@ package com.amannmalik.mcp.codec;
 
 import com.amannmalik.mcp.api.*;
 import com.amannmalik.mcp.core.Capabilities;
+import com.amannmalik.mcp.util.Immutable;
 import com.amannmalik.mcp.util.InitializeResponse;
 import jakarta.json.Json;
 import jakarta.json.JsonObject;
@@ -85,13 +86,12 @@ public final class InitializeResponseAbstractEntityCodec extends AbstractEntityC
         }
         var caps = new Capabilities(
                 Set.of(),
-                server.isEmpty() ? Set.of() : EnumSet.copyOf(server),
+                Immutable.enumSet(server),
                 Map.of(),
-                experimental.isEmpty() ? Map.of() : Map.copyOf(experimental)
+                Immutable.map(experimental)
         );
         var info = SERVER_INFO_CODEC.fromJson(getObject(obj, "serverInfo"));
         var instructions = obj.getString("instructions", null);
-        Set<ServerFeature> f = features.isEmpty() ? Set.of() : EnumSet.copyOf(features);
-        return new InitializeResponse(version, caps, info, instructions, f);
+        return new InitializeResponse(version, caps, info, instructions, Immutable.enumSet(features));
     }
 }

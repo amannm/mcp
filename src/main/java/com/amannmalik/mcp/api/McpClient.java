@@ -88,7 +88,7 @@ public final class McpClient extends JsonRpcEndpoint implements AutoCloseable {
                 1);
         this.config = config;
         this.info = new ClientInfo(config.serverName(), config.serverDisplayName(), config.serverVersion());
-        this.capabilities = config.clientCapabilities().isEmpty() ? Set.of() : EnumSet.copyOf(config.clientCapabilities());
+        this.capabilities = Immutable.enumSet(config.clientCapabilities());
         this.sampling = sampling;
         if (this.capabilities.contains(ClientCapability.SAMPLING) && this.sampling == null) {
             throw new IllegalArgumentException("sampling capability requires provider");

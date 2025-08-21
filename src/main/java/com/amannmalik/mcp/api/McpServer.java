@@ -445,7 +445,7 @@ public final class McpServer extends JsonRpcEndpoint implements AutoCloseable {
         if (prompts != null && prompts.supportsListChanged()) {
             f.add(ServerFeature.PROMPTS_LIST_CHANGED);
         }
-        return f.isEmpty() ? Set.of() : EnumSet.copyOf(f);
+        return Immutable.enumSet(f);
     }
 
     private void requireServerCapability(ServerCapability cap) {
