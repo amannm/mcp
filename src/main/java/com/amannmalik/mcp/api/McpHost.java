@@ -155,10 +155,7 @@ public final class McpHost implements AutoCloseable {
         var token = cursor instanceof Cursor.Token(var value) ? value : null;
         var resp = JsonRpc.expectResponse(client.request(
                 RequestMethod.TOOLS_LIST,
-                AbstractEntityCodec.paginatedRequest(
-                        ListToolsRequest::cursor,
-                        ListToolsRequest::_meta,
-                        ListToolsRequest::new).toJson(new ListToolsRequest(token, null)),
+                PaginatedRequest.CODEC.toJson(new PaginatedRequest(token, null)),
                 TIMEOUT
         ));
         return LIST_TOOLS_RESULT_JSON_CODEC.fromJson(resp.result());
