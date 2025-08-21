@@ -1,5 +1,6 @@
 package com.amannmalik.mcp.spi;
 
+import com.amannmalik.mcp.util.Immutable;
 import java.util.Set;
 
 public record Principal(String id, Set<String> scopes) {
@@ -7,6 +8,6 @@ public record Principal(String id, Set<String> scopes) {
         if (id == null) {
             throw new IllegalArgumentException("id is required");
         }
-        scopes = scopes == null || scopes.isEmpty() ? Set.of() : Set.copyOf(scopes);
+        scopes = Immutable.set(scopes);
     }
 }
