@@ -14,6 +14,7 @@ import jakarta.json.JsonObject;
 import java.io.IOException;
 import java.io.InputStream;
 import java.lang.System.Logger;
+import com.amannmalik.mcp.util.PlatformLog;
 import java.net.URI;
 import java.net.http.*;
 import java.nio.file.Path;
@@ -49,7 +50,7 @@ public final class McpClient extends JsonRpcEndpoint implements AutoCloseable {
     };
     private static final McpClientListener NOOP_LISTENER = new McpClientListener() {
     };
-    private static final Logger LOG = System.getLogger(McpClient.class.getName());
+    private static final Logger LOG = PlatformLog.get(McpClient.class);
     private final McpClientConfiguration config;
     private final ClientInfo info;
     private final Set<ClientCapability> capabilities;

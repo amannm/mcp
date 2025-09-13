@@ -2,13 +2,14 @@ package com.amannmalik.mcp.api;
 
 import jakarta.json.*;
 import java.lang.System.Logger;
+import com.amannmalik.mcp.util.PlatformLog;
 
 public sealed interface RequestId permits
         RequestId.StringId,
         RequestId.NumericId,
         RequestId.NullId {
 
-    Logger LOG = System.getLogger(RequestId.class.getName());
+    Logger LOG = PlatformLog.get(RequestId.class);
 
     static RequestId parse(String raw) {
         if (raw == null) {

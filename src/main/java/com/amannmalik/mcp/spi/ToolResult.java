@@ -6,6 +6,7 @@ import com.amannmalik.mcp.util.ValidationUtil;
 import jakarta.json.*;
 
 import java.lang.System.Logger;
+import com.amannmalik.mcp.util.PlatformLog;
 
 public record ToolResult(JsonArray content,
                          JsonObject structuredContent,
@@ -13,7 +14,7 @@ public record ToolResult(JsonArray content,
                          JsonObject _meta) implements Result {
 
     private static final JsonCodec<ContentBlock> CONTENT_BLOCK_CODEC = new ContentBlockJsonCodec();
-    private static final Logger LOG = System.getLogger(ToolResult.class.getName());
+    private static final Logger LOG = PlatformLog.get(ToolResult.class);
 
     public ToolResult {
         content = sanitize(content == null ? JsonValue.EMPTY_JSON_ARRAY : content);

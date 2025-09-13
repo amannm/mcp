@@ -16,6 +16,7 @@ import jakarta.json.stream.JsonParsingException;
 import java.io.EOFException;
 import java.io.IOException;
 import java.lang.System.Logger;
+import com.amannmalik.mcp.util.PlatformLog;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.*;
@@ -48,7 +49,7 @@ public final class McpServer extends JsonRpcEndpoint implements AutoCloseable {
                     ListPromptsResult::_meta,
                     new PromptAbstractEntityCodec(),
                     (page, meta) -> new ListPromptsResult(page.items(), page.nextCursor(), meta));
-    private static final Logger LOG = System.getLogger(McpServer.class.getName());
+    private static final Logger LOG = PlatformLog.get(McpServer.class);
 
     private final McpServerConfiguration config;
     private final Set<ServerCapability> serverCapabilities;
@@ -180,14 +181,7 @@ public final class McpServer extends JsonRpcEndpoint implements AutoCloseable {
         };
     }
 
-    private static Logger.Level level(LoggingLevel l) {
-        return switch (l) {
-            case DEBUG -> Logger.Level.DEBUG;
-            case INFO, NOTICE -> Logger.Level.INFO;
-            case WARNING -> Logger.Level.WARNING;
-            default -> Logger.Level.ERROR;
-        };
-    }
+    private static Logger.Level level(LoggingLevel l) { return PlatformLog.toPlatformLevel(l); }
 
     private ToolCallHandler createToolHandler(ToolProvider tools,
                                               McpServerConfiguration config,

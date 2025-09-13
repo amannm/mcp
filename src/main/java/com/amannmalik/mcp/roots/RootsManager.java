@@ -14,6 +14,7 @@ import java.util.Set;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.function.Supplier;
 import java.lang.System.Logger;
+import com.amannmalik.mcp.util.PlatformLog;
 
 /// - [Roots](specification/2025-06-18/client/roots.mdx)
 /// - [MCP roots specification conformance](src/test/resources/com/amannmalik/mcp/mcp_conformance.feature:154-169)
@@ -21,7 +22,7 @@ public final class RootsManager {
     public static final JsonCodec<ListRootsRequest> CODEC =
             AbstractEntityCodec.metaOnly(ListRootsRequest::_meta, ListRootsRequest::new);
     private static final ListRootsResultAbstractEntityCodec LIST_RESULTS_CODEC = new ListRootsResultAbstractEntityCodec();
-    private static final Logger LOG = System.getLogger(RootsManager.class.getName());
+    private static final Logger LOG = PlatformLog.get(RootsManager.class);
     private final Supplier<Set<ClientCapability>> capabilities;
     private final RequestSender requester;
     private final EventSupport listChangeSupport = new EventSupport();
@@ -86,4 +87,3 @@ public final class RootsManager {
         }
     }
 }
-

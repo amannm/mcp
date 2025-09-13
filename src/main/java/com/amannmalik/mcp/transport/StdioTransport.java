@@ -13,6 +13,7 @@ import java.util.Objects;
 import java.util.concurrent.*;
 import java.util.function.Consumer;
 import java.lang.System.Logger;
+import com.amannmalik.mcp.util.PlatformLog;
 
 /// - [Transports](specification/2025-06-18/basic/transports.mdx)
 public final class StdioTransport implements Transport {
@@ -20,7 +21,7 @@ public final class StdioTransport implements Transport {
     private static final Duration WAIT = McpHostConfiguration.defaultConfiguration().processWaitSeconds();
     private static final Duration RECEIVE = Duration.ofSeconds(5);
     private static final Executor READER = command -> Thread.ofVirtual().start(command);
-    private static final Logger LOG = System.getLogger(StdioTransport.class.getName());
+    private static final Logger LOG = PlatformLog.get(StdioTransport.class);
     private final BufferedReader in;
     private final BufferedWriter out;
     private final ProcessResources resources;

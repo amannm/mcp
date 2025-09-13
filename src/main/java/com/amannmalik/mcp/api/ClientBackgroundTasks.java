@@ -3,12 +3,13 @@ package com.amannmalik.mcp.api;
 
 import java.io.IOException;
 import java.lang.System.Logger;
+import com.amannmalik.mcp.util.PlatformLog;
 import java.time.Duration;
 import java.util.concurrent.*;
 
 /// - [Ping](specification/2025-06-18/basic/utilities/ping.mdx)
 final class ClientBackgroundTasks implements AutoCloseable {
-    private static final Logger LOG = System.getLogger(ClientBackgroundTasks.class.getName());
+    private static final Logger LOG = PlatformLog.get(ClientBackgroundTasks.class);
     private final McpClient client;
     private final Duration interval;
     private final Duration timeout;
@@ -88,4 +89,3 @@ final class ClientBackgroundTasks implements AutoCloseable {
         }
     }
 }
-

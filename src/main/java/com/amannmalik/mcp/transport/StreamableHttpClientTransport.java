@@ -22,10 +22,11 @@ import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicReference;
 import java.lang.System.Logger;
+import com.amannmalik.mcp.util.PlatformLog;
 
 /// - [Transports](specification/2025-06-18/basic/transports.mdx)
 public final class StreamableHttpClientTransport implements Transport {
-    private static final Logger LOG = System.getLogger(StreamableHttpClientTransport.class.getName());
+    private static final Logger LOG = PlatformLog.get(StreamableHttpClientTransport.class);
 
     private final HttpClient client;
     private final URI endpoint;

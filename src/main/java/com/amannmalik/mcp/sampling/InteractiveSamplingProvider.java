@@ -11,10 +11,11 @@ import java.time.Duration;
 import java.util.*;
 import java.util.concurrent.*;
 import java.lang.System.Logger;
+import com.amannmalik.mcp.util.PlatformLog;
 
 public final class InteractiveSamplingProvider implements SamplingProvider {
 
-    private static final Logger LOG = System.getLogger(InteractiveSamplingProvider.class.getName());
+    private static final Logger LOG = PlatformLog.get(InteractiveSamplingProvider.class);
     private static final List<KeywordResponse> RESPONSES = List.of(
             new KeywordResponse(Set.of("hello", "hi"),
                     "Hello! How can I assist you today?"),

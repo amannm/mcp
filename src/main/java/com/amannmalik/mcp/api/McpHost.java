@@ -12,6 +12,7 @@ import jakarta.json.JsonObject;
 
 import java.io.IOException;
 import java.lang.System.Logger;
+import com.amannmalik.mcp.util.PlatformLog;
 import java.net.URI;
 import java.time.Duration;
 import java.util.*;
@@ -32,7 +33,7 @@ public final class McpHost implements AutoCloseable {
                     (page, meta) -> new ListToolsResult(page.items(), page.nextCursor(), meta));
 
     private static final Duration TIMEOUT = Duration.ofSeconds(5);
-    private static final Logger LOG = System.getLogger(McpHost.class.getName());
+    private static final Logger LOG = PlatformLog.get(McpHost.class);
     private final Map<String, McpClient> clients = new ConcurrentHashMap<>();
     private final ConsentController consents;
     private final Principal principal;
@@ -58,12 +59,7 @@ public final class McpHost implements AutoCloseable {
                 @Override
                 public void onMessage(LoggingMessageNotification notification) {
                     var logger = notification.logger() == null ? "" : ":" + notification.logger();
-                    var level = switch (notification.level()) {
-                        case DEBUG -> Logger.Level.DEBUG;
-                        case INFO, NOTICE -> Logger.Level.INFO;
-                        case WARNING -> Logger.Level.WARNING;
-                        default -> Logger.Level.ERROR;
-                    };
+                    var level = PlatformLog.toPlatformLevel(notification.level());
                     LOG.log(level, () -> "[" + clientConfig.clientId() + "]" + logger + " " + notification.data());
                 }
             } : null;

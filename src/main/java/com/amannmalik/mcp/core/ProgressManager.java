@@ -10,6 +10,7 @@ import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.lang.System.Logger;
+import com.amannmalik.mcp.util.PlatformLog;
 
 public final class ProgressManager {
     private final Map<ProgressToken, Double> progress = new ConcurrentHashMap<>();
@@ -20,7 +21,7 @@ public final class ProgressManager {
     private final RateLimiter limiter;
 
     private final ProgressNotificationJsonCodec NOTIFICATION_CODEC = new ProgressNotificationJsonCodec();
-    private static final Logger LOG = System.getLogger(ProgressManager.class.getName());
+    private static final Logger LOG = PlatformLog.get(ProgressManager.class);
 
     public ProgressManager(RateLimiter limiter) {
         if (limiter == null) {

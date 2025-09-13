@@ -9,9 +9,10 @@ import java.util.Set;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.lang.System.Logger;
+import com.amannmalik.mcp.util.PlatformLog;
 
 final class SseReader implements Runnable {
-    private static final Logger LOG = System.getLogger(SseReader.class.getName());
+    private static final Logger LOG = PlatformLog.get(SseReader.class);
 
     private final InputStream input;
     private final BlockingQueue<JsonObject> queue;

@@ -11,13 +11,14 @@ import picocli.CommandLine.ParseResult;
 
 import java.io.*;
 import java.lang.System.Logger;
+import com.amannmalik.mcp.util.PlatformLog;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.util.*;
 import java.util.stream.Collectors;
 
 public final class HostCommand {
-    private static final Logger LOG = System.getLogger(HostCommand.class.getName());
+    private static final Logger LOG = PlatformLog.get(HostCommand.class);
 
     public HostCommand() {
     }

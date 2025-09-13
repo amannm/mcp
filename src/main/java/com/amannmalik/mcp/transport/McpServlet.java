@@ -10,6 +10,7 @@ import jakarta.servlet.http.*;
 
 import java.io.IOException;
 import java.lang.System.Logger;
+import com.amannmalik.mcp.util.PlatformLog;
 import java.util.Optional;
 import java.util.concurrent.*;
 
@@ -18,7 +19,7 @@ import java.util.concurrent.*;
 final class McpServlet extends HttpServlet {
     /// Explicit serialVersionUID for stable servlet serialization semantics.
     private static final long serialVersionUID = 1L;
-    private static final Logger LOG = System.getLogger(McpServlet.class.getName());
+    private static final Logger LOG = PlatformLog.get(McpServlet.class);
 
     private transient final StreamableHttpServerTransport transport;
     private final int responseQueueCapacity;

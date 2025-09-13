@@ -11,10 +11,11 @@ import java.io.IOException;
 import java.time.Duration;
 import java.util.*;
 import java.lang.System.Logger;
+import com.amannmalik.mcp.util.PlatformLog;
 
 final class ClientHandshake {
     private static final InitializeRequestAbstractEntityCodec REQUEST_CODEC = new InitializeRequestAbstractEntityCodec();
-    private static final Logger LOG = System.getLogger(ClientHandshake.class.getName());
+    private static final Logger LOG = PlatformLog.get(ClientHandshake.class);
 
     private ClientHandshake() {
     }

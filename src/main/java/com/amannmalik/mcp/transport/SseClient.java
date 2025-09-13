@@ -7,6 +7,7 @@ import jakarta.servlet.AsyncContext;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.lang.System.Logger;
+import com.amannmalik.mcp.util.PlatformLog;
 import java.security.SecureRandom;
 import java.util.ArrayDeque;
 import java.util.Deque;
@@ -15,7 +16,7 @@ import java.util.concurrent.atomic.AtomicLong;
 
 public final class SseClient implements AutoCloseable {
     private static final SecureRandom RANDOM = new SecureRandom();
-    private static final Logger LOG = System.getLogger(SseClient.class.getName());
+    private static final Logger LOG = PlatformLog.get(SseClient.class);
     final String prefix;
     private final long historyLimit;
     private final Deque<SseEvent> history = new ArrayDeque<>();
@@ -57,7 +58,7 @@ public final class SseClient implements AutoCloseable {
             out.write("data: " + msg + "\n\n");
             out.flush();
         } catch (Exception e) {
-            LOG.log(Logger.Level.ERROR, "SSE send failed: " + e.getMessage());
+            LOG.log(Logger.Level.ERROR, "SSE send failed", e);
             closed.set(true);
         }
     }
@@ -86,7 +87,7 @@ public final class SseClient implements AutoCloseable {
                 context.complete();
             }
         } catch (Exception e) {
-            LOG.log(Logger.Level.ERROR, "SSE close failed: " + e.getMessage());
+            LOG.log(Logger.Level.ERROR, "SSE close failed", e);
         } finally {
             context = null;
             out = null;
@@ -96,4 +97,3 @@ public final class SseClient implements AutoCloseable {
     private record SseEvent(long id, JsonObject msg) {
     }
 }
-
