@@ -4,6 +4,7 @@ import com.amannmalik.mcp.codec.InitializeRequestAbstractEntityCodec;
 import com.amannmalik.mcp.codec.InitializeResponseAbstractEntityCodec;
 import com.amannmalik.mcp.core.*;
 import com.amannmalik.mcp.jsonrpc.*;
+import com.amannmalik.mcp.util.Immutable;
 import com.amannmalik.mcp.util.InitializeRequest;
 
 import java.io.IOException;
@@ -65,7 +66,7 @@ final class ClientHandshake {
                 serverVersion,
                 ir.serverInfo(),
                 caps,
-                features == null ? EnumSet.noneOf(ServerFeature.class) : EnumSet.copyOf(features),
+                Immutable.enumSet(features),
                 ir.instructions());
     }
 

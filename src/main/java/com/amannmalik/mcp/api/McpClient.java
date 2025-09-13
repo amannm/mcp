@@ -88,7 +88,7 @@ public final class McpClient extends JsonRpcEndpoint implements AutoCloseable {
                 1);
         this.config = config;
         this.info = new ClientInfo(config.serverName(), config.serverDisplayName(), config.serverVersion());
-        this.capabilities = config.clientCapabilities().isEmpty() ? Set.of() : EnumSet.copyOf(config.clientCapabilities());
+        this.capabilities = Immutable.enumSet(config.clientCapabilities());
         this.sampling = sampling;
         if (this.capabilities.contains(ClientCapability.SAMPLING) && this.sampling == null) {
             throw new IllegalArgumentException("sampling capability requires provider");
@@ -348,10 +348,7 @@ public final class McpClient extends JsonRpcEndpoint implements AutoCloseable {
         return list(
                 cursor,
                 RequestMethod.RESOURCES_LIST,
-                token -> AbstractEntityCodec.paginatedRequest(
-                        ListResourcesRequest::cursor,
-                        ListResourcesRequest::_meta,
-                        ListResourcesRequest::new).toJson(new ListResourcesRequest(token, null)),
+                token -> PaginatedRequest.CODEC.toJson(new PaginatedRequest(token, null)),
                 json -> AbstractEntityCodec.paginatedResult(
                         "resources",
                         "resource",
@@ -366,10 +363,7 @@ public final class McpClient extends JsonRpcEndpoint implements AutoCloseable {
         return list(
                 cursor,
                 RequestMethod.RESOURCES_TEMPLATES_LIST,
-                token -> AbstractEntityCodec.paginatedRequest(
-                        ListResourceTemplatesRequest::cursor,
-                        ListResourceTemplatesRequest::_meta,
-                        ListResourceTemplatesRequest::new).toJson(new ListResourceTemplatesRequest(token, null)),
+                token -> PaginatedRequest.CODEC.toJson(new PaginatedRequest(token, null)),
                 json -> AbstractEntityCodec.paginatedResult(
                         "resourceTemplates",
                         "resourceTemplate",

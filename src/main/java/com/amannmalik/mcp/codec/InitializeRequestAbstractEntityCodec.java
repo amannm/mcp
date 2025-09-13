@@ -4,6 +4,7 @@ import com.amannmalik.mcp.api.ClientCapability;
 import com.amannmalik.mcp.api.ClientInfo;
 import com.amannmalik.mcp.core.Capabilities;
 import com.amannmalik.mcp.core.ClientFeatures;
+import com.amannmalik.mcp.util.Immutable;
 import com.amannmalik.mcp.util.InitializeRequest;
 import jakarta.json.Json;
 import jakarta.json.JsonObject;
@@ -56,9 +57,9 @@ public final class InitializeRequestAbstractEntityCodec extends AbstractEntityCo
             }
         }
         var caps = new Capabilities(
-                client.isEmpty() ? Set.of() : EnumSet.copyOf(client),
+                Immutable.enumSet(client),
                 Set.of(),
-                experimental.isEmpty() ? Map.of() : Map.copyOf(experimental),
+                Immutable.map(experimental),
                 Map.of()
         );
         var info = CLIENT_INFO_JSON_CODEC.fromJson(getObject(obj, "clientInfo"));

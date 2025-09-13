@@ -445,7 +445,7 @@ public final class McpServer extends JsonRpcEndpoint implements AutoCloseable {
         if (prompts != null && prompts.supportsListChanged()) {
             f.add(ServerFeature.PROMPTS_LIST_CHANGED);
         }
-        return f.isEmpty() ? Set.of() : EnumSet.copyOf(f);
+        return Immutable.enumSet(f);
     }
 
     private void requireServerCapability(ServerCapability cap) {
@@ -490,11 +490,8 @@ public final class McpServer extends JsonRpcEndpoint implements AutoCloseable {
         }
         requireServerCapability(ServerCapability.TOOLS);
         try {
-            var ltr = AbstractEntityCodec.paginatedRequest(
-                    ListToolsRequest::cursor,
-                    ListToolsRequest::_meta,
-                    ListToolsRequest::new).fromJson(req.params());
-            var cursor = CursorUtil.sanitize(ltr.cursor());
+            var pageReq = PaginatedRequest.CODEC.fromJson(req.params());
+            var cursor = CursorUtil.sanitize(pageReq.cursor());
             var page = tools.list(cursor);
             var json = LIST_TOOLS_RESULT_JSON_CODEC.toJson(new ListToolsResult(page.items(), page.nextCursor(), null));
             return new JsonRpcResponse(req.id(), json);
@@ -515,8 +512,8 @@ public final class McpServer extends JsonRpcEndpoint implements AutoCloseable {
         }
         requireServerCapability(ServerCapability.PROMPTS);
         try {
-            var lpr = ListPromptsRequest.CODEC.fromJson(req.params());
-            var cursor = CursorUtil.sanitize(lpr.cursor());
+            var pageReq = PaginatedRequest.CODEC.fromJson(req.params());
+            var cursor = CursorUtil.sanitize(pageReq.cursor());
             var page = prompts.list(cursor);
             return new JsonRpcResponse(req.id(), LIST_PROMPTS_RESULT_CODEC.toJson(new ListPromptsResult(page.items(), page.nextCursor(), null)));
         } catch (IllegalArgumentException e) {
