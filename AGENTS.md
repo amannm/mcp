@@ -3,46 +3,45 @@ name: Codex
 description: MCP Specification Expert
 ---
 
-# Philosophy
+# Philosophy and principles
+- High visual density.
+- Flat organization.
+- Minimal dependencies.
+- Precision over convenience.
+- Immutable over mutable.
+- Composition over inheritance.
+- Fail fast.
+- "You Aren't Gonna Need It" (YAGNI).
+- Premature optimization is the root of all evil.
+- Make illegal states unrepresentable and valid operations obvious.
 
-- High information density
-- Flat organization
-- Minimal dependencies
-- Precision over convenience
-- Immutable over mutable
-- Composition over inheritance
-
-# Wisdom
-
+# Coding style and language preferences
 - Ensure consistency between *specification*, *implementation*, *verification*
-- Make illegal states unrepresentable and valid operations obvious
-- Keep external dependencies furthest from the center of a codebase
-- Don't bother writing PR descriptions since nobody actually reads them
-- Leave freshly written tests failing if they reveal new defects
-- Follow Markdown links within source files to acquire additional context
+- Keep external dependencies furthest from the center of a codebase.
+- When multiple styles of use are offered by a particular dependency, you CHOOSE AGAINST those:
+  - Focused primarily on improving developer ergonomics or human-specific ease-of-use concerns.
+  - Reducing the effectiveness of static analysis to quickly spot mistakes or misconfiguration well before runtime.
+- Use self-documenting code <purpose>to increase source code information density</purpose>.
+- Write strongly-typed, idiomatic, modern Java.
+- (Leave/Follow) Markdown comments (via `///`) within `.java` source files <purpose>to (Offer/Discover) additional context</purpose>.
+- Clearly mark ALL workarounds, hacks, placeholders, mocks, incomplete areas with `// TODO:`.
+- Leverage `instanceof` pattern matching.
+- Prefer `sealed` and `final` over `non-sealed`.
+- Never suppress exceptions or warnings.
+- Only declare `null` or `Object` when absolutely necessary.
+- Never introduce unchecked casts.
+- Only use `Optional<T>` for nullable method returns.
+- Never use `java.lang.reflect`.
 
-# Instincts
+# Developing automated tests and investigating verification failures
+- Leave freshly written tests failing <condition>if they reveal new implementation defects</condition>.
+- Never loosen visibility or expose implementation internals simply to make their verification easier.
 
-- Use self-documenting code to avoid comments
-- Mark all incomplete areas with `// TODO:`
-- Write typed, idiomatic, modern Java 24
-- Leverage `instanceof` pattern matching
-- Prefer `sealed` and `final` over `non-sealed`
-- Avoid unchecked casts
-- Avoid introducing `null` or `Object`
-- Avoid `Optional<T>` in fields or collections or arguments
-- Never loosen visibility for testing
-- Never use `java.lang.reflect`
-- Never modify the specification
-- Never ignore exceptions
+# Environment features
+- Unrestricted internet access enabled.
+- Java toolchain: `graalvm-jdk-24` with `gradle` .
 
-# Environment
-
-- Unrestricted internet access enabled
-- Java toolchain: `graalvm-jdk-24` with `gradle` 
-
-# Knowledge
-
+# Specification documents
 - [Architecture](specification/2025-06-18/architecture/index.mdx)
 - [Authorization](specification/2025-06-18/basic/authorization.mdx)
 - [Overview](specification/2025-06-18/basic/index.mdx)
@@ -65,3 +64,10 @@ description: MCP Specification Expert
 - [Completion](specification/2025-06-18/server/utilities/completion.mdx)
 - [Logging](specification/2025-06-18/server/utilities/logging.mdx)
 - [Pagination](specification/2025-06-18/server/utilities/pagination.mdx)]
+
+# Implementation sources
+- [MCP implementation source root](src/main/java)
+
+# Verification suite
+- [Gherkin feature files checking MCP conformance](src/test/resources/com/amannmalik/mcp/test)
+  - [Backing steps for Cucumber-Java execution](src/test/java/com/amannmalik/mcp/test)
