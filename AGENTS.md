@@ -36,7 +36,7 @@ description: MCP Specification Expert
   - Reducing the effectiveness of static analysis to quickly spot mistakes or misconfiguration well before runtime.
 - Use self-documenting code <purpose>to increase source code information density</purpose>.
 - Write strongly-typed, idiomatic, modern Java.
-- (Leave/Follow) Markdown comments (via `///`) within `.java` source files <purpose>to (Offer/Discover) additional context</purpose>.
+- (Leave/Follow) Markdown links (via `///`) within `.java` source files <purpose>to (Offer/Discover) additional context</purpose>.
 - Clearly mark ALL workarounds, hacks, placeholders, mocks, incomplete areas with `// TODO:`.
 - Leverage `instanceof` pattern matching.
 - Prefer `sealed` and `final` over `non-sealed`.

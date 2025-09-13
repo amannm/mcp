@@ -6,7 +6,7 @@ import com.amannmalik.mcp.util.ValidationUtil;
 import jakarta.json.JsonObject;
 
 public record PaginatedRequest(String cursor, JsonObject _meta) {
-    public static final JsonCodec<PaginatedRequest> CODEC =
+    static final JsonCodec<PaginatedRequest> CODEC =
             AbstractEntityCodec.paginatedRequest(
                     PaginatedRequest::cursor,
                     PaginatedRequest::_meta,
