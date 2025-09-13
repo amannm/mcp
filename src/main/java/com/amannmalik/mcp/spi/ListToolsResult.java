@@ -14,9 +14,14 @@ public record ListToolsResult(List<Tool> tools,
         nextCursor = nextCursor == null ? Cursor.End.INSTANCE : nextCursor;
         ValidationUtil.requireMeta(_meta);
     }
+    /// Return an immutable view to avoid exposing internal representation.
+    @Override
+    public List<Tool> tools() {
+        return List.copyOf(tools);
+    }
 
     @Override
     public List<Tool> items() {
-        return tools;
+        return List.copyOf(tools);
     }
 }

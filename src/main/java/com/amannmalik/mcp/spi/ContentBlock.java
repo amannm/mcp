@@ -68,6 +68,12 @@ public sealed interface ContentBlock permits
         public String type() {
             return "image";
         }
+
+        /// Return a defensive copy to avoid exposing internal representation.
+        @Override
+        public byte[] data() {
+            return data.clone();
+        }
     }
 
     record Audio(byte[] data, String mimeType, Annotations annotations, JsonObject _meta)
@@ -82,6 +88,12 @@ public sealed interface ContentBlock permits
         @Override
         public String type() {
             return "audio";
+        }
+
+        /// Return a defensive copy to avoid exposing internal representation.
+        @Override
+        public byte[] data() {
+            return data.clone();
         }
     }
 

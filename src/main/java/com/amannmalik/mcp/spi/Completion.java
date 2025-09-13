@@ -16,4 +16,10 @@ public record Completion(List<String> values, Integer total, Boolean hasMore) {
             throw new IllegalArgumentException("total must be >= values length");
         }
     }
+
+    /// Return an immutable view to avoid exposing internal representation.
+    @Override
+    public List<String> values() {
+        return List.copyOf(values);
+    }
 }

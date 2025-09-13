@@ -14,9 +14,14 @@ public record ListResourcesResult(List<Resource> resources,
         nextCursor = nextCursor == null ? Cursor.End.INSTANCE : nextCursor;
         ValidationUtil.requireMeta(_meta);
     }
+    /// Return an immutable view to avoid exposing internal representation.
+    @Override
+    public List<Resource> resources() {
+        return List.copyOf(resources);
+    }
 
     @Override
     public List<Resource> items() {
-        return resources;
+        return List.copyOf(resources);
     }
 }

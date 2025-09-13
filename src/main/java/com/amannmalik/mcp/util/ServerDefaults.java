@@ -150,19 +150,157 @@ public final class ServerDefaults {
     }
 
     public static ResourceProvider resources() {
-        return RESOURCES;
+        /// Return a defensive delegate to avoid exposing internal mutable provider instance.
+        final var delegate = RESOURCES;
+        return new ResourceProvider() {
+            @Override
+            public ResourceBlock read(URI uri) {
+                return delegate.read(uri);
+            }
+
+            @Override
+            public Optional<Resource> get(URI uri) {
+                return delegate.get(uri);
+            }
+
+            @Override
+            public Pagination.Page<Resource> list(Cursor cursor) {
+                return delegate.list(cursor);
+            }
+
+            @Override
+            public Pagination.Page<ResourceTemplate> listTemplates(Cursor cursor) {
+                return delegate.listTemplates(cursor);
+            }
+
+            @Override
+            public AutoCloseable subscribe(URI uri, java.util.function.Consumer<ResourceUpdate> listener) {
+                return delegate.subscribe(uri, listener);
+            }
+
+            @Override
+            public boolean supportsSubscribe() {
+                return delegate.supportsSubscribe();
+            }
+
+            @Override
+            public AutoCloseable onListChanged(Runnable listener) {
+                return delegate.onListChanged(listener);
+            }
+
+            @Override
+            public boolean supportsListChanged() {
+                return delegate.supportsListChanged();
+            }
+
+            @Override
+            public void close() {
+                delegate.close();
+            }
+        };
     }
 
     public static ToolProvider tools() {
-        return TOOLS;
+        /// Return a defensive delegate to avoid exposing internal mutable provider instance.
+        final var delegate = TOOLS;
+        return new ToolProvider() {
+            @Override
+            public Pagination.Page<Tool> list(Cursor cursor) {
+                return delegate.list(cursor);
+            }
+
+            @Override
+            public AutoCloseable onListChanged(Runnable listener) {
+                return delegate.onListChanged(listener);
+            }
+
+            @Override
+            public boolean supportsListChanged() {
+                return delegate.supportsListChanged();
+            }
+
+            @Override
+            public void close() {
+                delegate.close();
+            }
+
+            @Override
+            public Optional<Tool> find(String name) {
+                return delegate.find(name);
+            }
+
+            @Override
+            public ToolResult call(String name, jakarta.json.JsonObject arguments) {
+                return delegate.call(name, arguments);
+            }
+        };
     }
 
     public static PromptProvider prompts() {
-        return PROMPTS;
+        /// Return a defensive delegate to avoid exposing internal mutable provider instance.
+        final var delegate = PROMPTS;
+        return new PromptProvider() {
+            @Override
+            public Pagination.Page<Prompt> list(Cursor cursor) {
+                return delegate.list(cursor);
+            }
+
+            @Override
+            public AutoCloseable onListChanged(Runnable listener) {
+                return delegate.onListChanged(listener);
+            }
+
+            @Override
+            public boolean supportsListChanged() {
+                return delegate.supportsListChanged();
+            }
+
+            @Override
+            public void close() {
+                delegate.close();
+            }
+
+            @Override
+            public java.util.Optional<Prompt> find(String name) {
+                return delegate.find(name);
+            }
+
+            @Override
+            public PromptInstance get(String name, java.util.Map<String, String> arguments) {
+                return delegate.get(name, arguments);
+            }
+        };
     }
 
     public static CompletionProvider completions() {
-        return COMPLETIONS;
+        /// Return a defensive delegate to avoid exposing internal mutable provider instance.
+        final var delegate = COMPLETIONS;
+        return new CompletionProvider() {
+            @Override
+            public Pagination.Page<Ref> list(Cursor cursor) {
+                return delegate.list(cursor);
+            }
+
+            @Override
+            public AutoCloseable onListChanged(Runnable listener) {
+                return delegate.onListChanged(listener);
+            }
+
+            @Override
+            public boolean supportsListChanged() {
+                return delegate.supportsListChanged();
+            }
+
+            @Override
+            public void close() {
+                delegate.close();
+            }
+
+            @Override
+            public CompleteResult execute(String name, jakarta.json.JsonObject args) throws InterruptedException {
+                return delegate.execute(name, args);
+            }
+        };
     }
 
     public static SamplingProvider sampling() {

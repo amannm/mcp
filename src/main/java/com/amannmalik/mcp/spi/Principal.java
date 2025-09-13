@@ -10,4 +10,10 @@ public record Principal(String id, Set<String> scopes) {
         }
         scopes = Immutable.set(scopes);
     }
+
+    /// Return an immutable view to avoid exposing internal representation.
+    @Override
+    public Set<String> scopes() {
+        return Set.copyOf(scopes);
+    }
 }

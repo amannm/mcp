@@ -15,9 +15,14 @@ public record ListPromptsResult(List<Prompt> prompts,
         nextCursor = nextCursor == null ? Cursor.End.INSTANCE : nextCursor;
         ValidationUtil.requireMeta(_meta);
     }
+    /// Return an immutable view to avoid exposing internal representation.
+    @Override
+    public List<Prompt> prompts() {
+        return List.copyOf(prompts);
+    }
 
     @Override
     public List<Prompt> items() {
-        return prompts;
+        return List.copyOf(prompts);
     }
 }

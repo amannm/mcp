@@ -13,4 +13,10 @@ public record Annotations(Set<Role> audience, Double priority, Instant lastModif
             priority = ValidationUtil.requireFraction(priority, "priority");
         }
     }
+
+    /// Return an immutable view to avoid exposing internal representation.
+    @Override
+    public Set<Role> audience() {
+        return Set.copyOf(audience);
+    }
 }

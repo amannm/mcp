@@ -16,6 +16,8 @@ import java.util.concurrent.*;
 /// - [Transports](specification/2025-06-18/basic/transports.mdx)
 /// - [Conformance Suite](src/test/resources/com/amannmalik/mcp/mcp.feature)
 final class McpServlet extends HttpServlet {
+    /// Explicit serialVersionUID for stable servlet serialization semantics.
+    private static final long serialVersionUID = 1L;
     private static final Logger LOG = System.getLogger(McpServlet.class.getName());
 
     private transient final StreamableHttpServerTransport transport;
@@ -236,4 +238,3 @@ final class McpServlet extends HttpServlet {
 
     private enum MessageType {REQUEST, NOTIFICATION, RESPONSE, INVALID}
 }
-

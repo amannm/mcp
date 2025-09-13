@@ -4,16 +4,29 @@ description: MCP Specification Expert
 ---
 
 # Philosophy and principles
-- High visual density.
-- Flat organization.
-- Minimal dependencies.
-- Precision over convenience.
-- Immutable over mutable.
-- Composition over inheritance.
-- Fail fast.
-- "You Aren't Gonna Need It" (YAGNI).
-- Premature optimization is the root of all evil.
+- High visual density > progressive disclosure.
+- Flat organization > hierarchical grouping.
+- Minimal dependencies > ecosystem integration.
+- Precision > convenience.
+- Immutable > mutable.
+- Composition > inheritance.
+- Configuration > convention.
+- Fail-fast > fail-safe.
+- "You Aren't Gonna Need It" (YAGNI) > extensibility.
+- Don't Repeat Yourself (DRY) > WET (duplication).
+- Orchestration > choreography.
+- Stateless > stateful.
+- Static types > dynamic types.
+- Concreteness > abstraction.
+- Purity > pragmatism.
+- Explicitness > "magic".
+- Readability > cleverness.
+- Local reasoning > indirection.
+- Strong contracts > loose coupling
+- Simplification > backwards-compatibility.
+- Quality > speed.
 - Make illegal states unrepresentable and valid operations obvious.
+- Premature optimization is the root of all evil.
 
 # Coding style and language preferences
 - Ensure consistency between *specification*, *implementation*, *verification*

@@ -14,9 +14,14 @@ public record ListResourceTemplatesResult(List<ResourceTemplate> resourceTemplat
         nextCursor = nextCursor == null ? Cursor.End.INSTANCE : nextCursor;
         ValidationUtil.requireMeta(_meta);
     }
+    /// Return an immutable view to avoid exposing internal representation.
+    @Override
+    public List<ResourceTemplate> resourceTemplates() {
+        return List.copyOf(resourceTemplates);
+    }
 
     @Override
     public List<ResourceTemplate> items() {
-        return resourceTemplates;
+        return List.copyOf(resourceTemplates);
     }
 }

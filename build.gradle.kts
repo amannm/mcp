@@ -148,6 +148,18 @@ spotbugs {
     toolVersion = "4.9.4"
 }
 
+// Configure SpotBugs reports for local inspection
+tasks.withType<com.github.spotbugs.snom.SpotBugsTask>().configureEach {
+    reports.create("xml") {
+        required.set(true)
+        outputLocation.set(layout.buildDirectory.file("reports/spotbugs/${name}.xml"))
+    }
+    reports.create("html") {
+        required.set(true)
+        outputLocation.set(layout.buildDirectory.file("reports/spotbugs/${name}.html"))
+    }
+}
+
 pmd {
     isIgnoreFailures = true
     isConsoleOutput = true
