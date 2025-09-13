@@ -138,7 +138,7 @@ tasks.register<JavaExec>("generateManPage") {
 }
 
 spotbugs {
-    ignoreFailures = true
+    ignoreFailures = false
     showStackTraces = false
     showProgress = true
     effort = com.github.spotbugs.snom.Effort.MAX
@@ -158,7 +158,7 @@ pmd {
 }
 
 tasks.withType<Pmd>().configureEach {
-    ignoreFailures = true
+    ignoreFailures = false
     reports {
         xml.required = true
         html.required = true

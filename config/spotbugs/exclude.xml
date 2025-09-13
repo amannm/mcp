@@ -1,24 +1,3 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <FindBugsFilter>
-    <!-- Exclude test files from SpotBugs analysis -->
-    <Match>
-        <Class name="~.*Test.*"/>
-    </Match>
-    
-    <!-- Exclude benchmark files from SpotBugs analysis -->
-    <Match>
-        <Class name="~.*Benchmark.*"/>
-    </Match>
-    
-    <!-- Exclude generated code -->
-    <Match>
-        <Class name="~.*generated.*"/>
-    </Match>
-    
-    <!-- Example: Exclude specific bug patterns if needed -->
-    <!-- 
-    <Match>
-        <Bug pattern="SE_BAD_FIELD"/>
-    </Match>
-    -->
 </FindBugsFilter>
