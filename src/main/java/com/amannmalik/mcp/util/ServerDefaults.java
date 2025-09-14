@@ -9,10 +9,12 @@ import com.amannmalik.mcp.security.ResourceAccessController;
 import com.amannmalik.mcp.spi.*;
 import com.amannmalik.mcp.tools.InMemoryToolProvider;
 import jakarta.json.Json;
+import jakarta.json.JsonObject;
 
 import java.net.URI;
 import java.time.Instant;
 import java.util.*;
+import java.util.function.Consumer;
 
 public final class ServerDefaults {
     private static final ResourceProvider RESOURCES;
@@ -174,7 +176,7 @@ public final class ServerDefaults {
             }
 
             @Override
-            public AutoCloseable subscribe(URI uri, java.util.function.Consumer<ResourceUpdate> listener) {
+            public AutoCloseable subscribe(URI uri, Consumer<ResourceUpdate> listener) {
                 return delegate.subscribe(uri, listener);
             }
 
@@ -230,7 +232,7 @@ public final class ServerDefaults {
             }
 
             @Override
-            public ToolResult call(String name, jakarta.json.JsonObject arguments) {
+            public ToolResult call(String name, JsonObject arguments) {
                 return delegate.call(name, arguments);
             }
         };
@@ -261,12 +263,12 @@ public final class ServerDefaults {
             }
 
             @Override
-            public java.util.Optional<Prompt> find(String name) {
+            public Optional<Prompt> find(String name) {
                 return delegate.find(name);
             }
 
             @Override
-            public PromptInstance get(String name, java.util.Map<String, String> arguments) {
+            public PromptInstance get(String name, Map<String, String> arguments) {
                 return delegate.get(name, arguments);
             }
         };
@@ -297,7 +299,7 @@ public final class ServerDefaults {
             }
 
             @Override
-            public CompleteResult execute(String name, jakarta.json.JsonObject args) throws InterruptedException {
+            public CompleteResult execute(String name, JsonObject args) throws InterruptedException {
                 return delegate.execute(name, args);
             }
         };

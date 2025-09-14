@@ -8,11 +8,11 @@ import com.amannmalik.mcp.roots.InMemoryRootsProvider;
 import com.amannmalik.mcp.sampling.InteractiveSamplingProvider;
 import com.amannmalik.mcp.security.*;
 import com.amannmalik.mcp.spi.*;
+import com.amannmalik.mcp.util.PlatformLog;
 import jakarta.json.JsonObject;
 
 import java.io.IOException;
 import java.lang.System.Logger;
-import com.amannmalik.mcp.util.PlatformLog;
 import java.net.URI;
 import java.time.Duration;
 import java.util.*;

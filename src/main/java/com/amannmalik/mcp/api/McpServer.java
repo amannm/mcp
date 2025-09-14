@@ -4,7 +4,8 @@ import com.amannmalik.mcp.auth.*;
 import com.amannmalik.mcp.codec.*;
 import com.amannmalik.mcp.core.*;
 import com.amannmalik.mcp.jsonrpc.*;
-import com.amannmalik.mcp.prompts.*;
+import com.amannmalik.mcp.prompts.ListPromptsResult;
+import com.amannmalik.mcp.prompts.PromptListChangedNotification;
 import com.amannmalik.mcp.roots.RootsManager;
 import com.amannmalik.mcp.spi.*;
 import com.amannmalik.mcp.transport.StdioTransport;
@@ -16,7 +17,6 @@ import jakarta.json.stream.JsonParsingException;
 import java.io.EOFException;
 import java.io.IOException;
 import java.lang.System.Logger;
-import com.amannmalik.mcp.util.PlatformLog;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.*;
@@ -181,7 +181,9 @@ public final class McpServer extends JsonRpcEndpoint implements AutoCloseable {
         };
     }
 
-    private static Logger.Level level(LoggingLevel l) { return PlatformLog.toPlatformLevel(l); }
+    private static Logger.Level level(LoggingLevel l) {
+        return PlatformLog.toPlatformLevel(l);
+    }
 
     private ToolCallHandler createToolHandler(ToolProvider tools,
                                               McpServerConfiguration config,

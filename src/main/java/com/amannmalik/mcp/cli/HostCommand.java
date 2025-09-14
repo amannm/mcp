@@ -2,6 +2,7 @@ package com.amannmalik.mcp.cli;
 
 import com.amannmalik.mcp.api.*;
 import com.amannmalik.mcp.spi.*;
+import com.amannmalik.mcp.util.PlatformLog;
 import jakarta.json.Json;
 import jakarta.json.JsonValue;
 import picocli.CommandLine;
@@ -11,9 +12,9 @@ import picocli.CommandLine.ParseResult;
 
 import java.io.*;
 import java.lang.System.Logger;
-import com.amannmalik.mcp.util.PlatformLog;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
+import java.time.Duration;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -226,17 +227,17 @@ public final class HostCommand {
                     McpHostConfiguration.defaultConfiguration().hostPrincipal(),
                     capabilities,
                     command,
-                    java.time.Duration.ofSeconds(10),
+                    Duration.ofSeconds(10),
                     "http://127.0.0.1",
-                    java.time.Duration.ofSeconds(30),
+                    Duration.ofSeconds(30),
                     true,
                     32,
-                    java.time.Duration.ofSeconds(30),
+                    Duration.ofSeconds(30),
                     true,
-                    java.time.Duration.ofMillis(5_000L),
-                    java.time.Duration.ofMillis(0L),
+                    Duration.ofMillis(5_000L),
+                    Duration.ofMillis(0L),
                     20,
-                    java.time.Duration.ofMillis(1_000L),
+                    Duration.ofMillis(1_000L),
                     clientVerbose,
                     false,
                     List.of(System.getProperty("user.dir")),

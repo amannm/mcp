@@ -20,6 +20,7 @@ public record Prompt(
         description = ValidationUtil.cleanNullable(description);
         ValidationUtil.requireMeta(_meta);
     }
+
     /// Return an immutable view to avoid exposing internal representation.
     @Override
     public List<PromptArgument> arguments() {

@@ -1,5 +1,6 @@
 package com.amannmalik.mcp.spi;
 
+import com.amannmalik.mcp.resources.ReadResourceResult;
 import jakarta.json.JsonObject;
 
 public sealed interface Result permits PaginatedResult,
@@ -8,7 +9,7 @@ public sealed interface Result permits PaginatedResult,
         ListRootsResult,
         ToolResult,
         CreateMessageResponse,
-        com.amannmalik.mcp.resources.ReadResourceResult {
+        ReadResourceResult {
     JsonObject _meta();
 }
 

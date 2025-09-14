@@ -2,26 +2,23 @@ package com.amannmalik.mcp.core;
 
 import com.amannmalik.mcp.api.*;
 import com.amannmalik.mcp.codec.ProgressNotificationJsonCodec;
-import com.amannmalik.mcp.util.NotificationSender;
-import com.amannmalik.mcp.util.RateLimiter;
+import com.amannmalik.mcp.util.*;
 import jakarta.json.JsonObject;
 
 import java.io.IOException;
+import java.lang.System.Logger;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
-import java.lang.System.Logger;
-import com.amannmalik.mcp.util.PlatformLog;
 
 public final class ProgressManager {
+    private static final Logger LOG = PlatformLog.get(ProgressManager.class);
     private final Map<ProgressToken, Double> progress = new ConcurrentHashMap<>();
     private final Map<RequestId, ProgressToken> tokens = new ConcurrentHashMap<>();
     private final Set<RequestId> active = ConcurrentHashMap.newKeySet();
     private final Set<RequestId> used = ConcurrentHashMap.newKeySet();
     private final Map<RequestId, String> cancelled = new ConcurrentHashMap<>();
     private final RateLimiter limiter;
-
     private final ProgressNotificationJsonCodec NOTIFICATION_CODEC = new ProgressNotificationJsonCodec();
-    private static final Logger LOG = PlatformLog.get(ProgressManager.class);
 
     public ProgressManager(RateLimiter limiter) {
         if (limiter == null) {

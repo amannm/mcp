@@ -1,6 +1,7 @@
 package com.amannmalik.mcp.spi;
 
 import com.amannmalik.mcp.util.Immutable;
+
 import java.util.Set;
 
 public record Principal(String id, Set<String> scopes) {

@@ -4,14 +4,13 @@ import com.amannmalik.mcp.codec.InitializeRequestAbstractEntityCodec;
 import com.amannmalik.mcp.codec.InitializeResponseAbstractEntityCodec;
 import com.amannmalik.mcp.core.*;
 import com.amannmalik.mcp.jsonrpc.*;
-import com.amannmalik.mcp.util.Immutable;
-import com.amannmalik.mcp.util.InitializeRequest;
+import com.amannmalik.mcp.util.*;
 
 import java.io.IOException;
-import java.time.Duration;
-import java.util.*;
 import java.lang.System.Logger;
-import com.amannmalik.mcp.util.PlatformLog;
+import java.time.Duration;
+import java.util.Map;
+import java.util.Set;
 
 final class ClientHandshake {
     private static final InitializeRequestAbstractEntityCodec REQUEST_CODEC = new InitializeRequestAbstractEntityCodec();

@@ -1,11 +1,13 @@
 package com.amannmalik.mcp.spi;
 
+import com.amannmalik.mcp.prompts.ListPromptsResult;
+
 import java.util.List;
 
 public sealed interface PaginatedResult<T> extends Result permits ListResourcesResult,
         ListResourceTemplatesResult,
         ListToolsResult,
-        com.amannmalik.mcp.prompts.ListPromptsResult {
+        ListPromptsResult {
     List<T> items();
 
     Cursor nextCursor();

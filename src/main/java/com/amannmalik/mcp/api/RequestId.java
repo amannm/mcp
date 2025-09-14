@@ -1,8 +1,9 @@
 package com.amannmalik.mcp.api;
 
-import jakarta.json.*;
-import java.lang.System.Logger;
 import com.amannmalik.mcp.util.PlatformLog;
+import jakarta.json.*;
+
+import java.lang.System.Logger;
 
 public sealed interface RequestId permits
         RequestId.StringId,

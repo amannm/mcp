@@ -1,15 +1,15 @@
 package com.amannmalik.mcp.transport;
 
+import com.amannmalik.mcp.util.PlatformLog;
 import jakarta.json.Json;
 import jakarta.json.JsonObject;
 
 import java.io.*;
+import java.lang.System.Logger;
 import java.nio.charset.StandardCharsets;
 import java.util.Set;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.lang.System.Logger;
-import com.amannmalik.mcp.util.PlatformLog;
 
 final class SseReader implements Runnable {
     private static final Logger LOG = PlatformLog.get(SseReader.class);

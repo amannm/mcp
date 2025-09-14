@@ -2,11 +2,11 @@ package com.amannmalik.mcp.spi;
 
 import com.amannmalik.mcp.codec.ContentBlockJsonCodec;
 import com.amannmalik.mcp.codec.JsonCodec;
+import com.amannmalik.mcp.util.PlatformLog;
 import com.amannmalik.mcp.util.ValidationUtil;
 import jakarta.json.*;
 
 import java.lang.System.Logger;
-import com.amannmalik.mcp.util.PlatformLog;
 
 public record ToolResult(JsonArray content,
                          JsonObject structuredContent,

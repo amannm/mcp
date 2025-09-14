@@ -2,6 +2,7 @@ package com.amannmalik.mcp.transport;
 
 import com.amannmalik.mcp.api.RequestMethod;
 import com.amannmalik.mcp.spi.Principal;
+import com.amannmalik.mcp.util.PlatformLog;
 import jakarta.json.Json;
 import jakarta.json.JsonObject;
 import jakarta.json.stream.JsonParsingException;
@@ -10,7 +11,6 @@ import jakarta.servlet.http.*;
 
 import java.io.IOException;
 import java.lang.System.Logger;
-import com.amannmalik.mcp.util.PlatformLog;
 import java.util.Optional;
 import java.util.concurrent.*;
 

@@ -4,6 +4,7 @@ import com.amannmalik.mcp.core.InMemoryProvider;
 import com.amannmalik.mcp.spi.Root;
 import com.amannmalik.mcp.spi.RootsProvider;
 
+import java.net.URI;
 import java.util.List;
 
 public final class InMemoryRootsProvider extends InMemoryProvider<Root> implements RootsProvider {
@@ -17,7 +18,7 @@ public final class InMemoryRootsProvider extends InMemoryProvider<Root> implemen
         notifyListChanged();
     }
 
-    public void remove(java.net.URI uri) {
+    public void remove(URI uri) {
         if (uri == null) {
             throw new IllegalArgumentException("uri required");
         }

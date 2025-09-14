@@ -9,6 +9,7 @@ import jakarta.json.JsonObject;
 import javax.net.ssl.*;
 import java.io.IOException;
 import java.io.InputStream;
+import java.lang.System.Logger;
 import java.net.URI;
 import java.net.http.*;
 import java.nio.file.Files;
@@ -21,8 +22,6 @@ import java.time.Duration;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicReference;
-import java.lang.System.Logger;
-import com.amannmalik.mcp.util.PlatformLog;
 
 /// - [Transports](specification/2025-06-18/basic/transports.mdx)
 public final class StreamableHttpClientTransport implements Transport {

@@ -6,11 +6,12 @@ import java.lang.System.Logger;
 
 /**
  * Central helpers for Java Platform Logging.
- *
+ * <p>
  * Purpose: remove duplication and keep level conversions consistent.
  */
 public final class PlatformLog {
-    private PlatformLog() {}
+    private PlatformLog() {
+    }
 
     public static Logger get(Class<?> cls) {
         return System.getLogger(cls.getName());

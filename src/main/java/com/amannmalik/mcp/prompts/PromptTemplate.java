@@ -11,12 +11,6 @@ public record PromptTemplate(Prompt prompt, List<PromptMessageTemplate> messages
         messages = Immutable.list(messages);
     }
 
-    /// Return an immutable view to avoid exposing internal representation.
-    @Override
-    public List<PromptMessageTemplate> messages() {
-        return List.copyOf(messages);
-    }
-
     private static PromptContent instantiate(PromptContent tmpl, Map<String, String> args) {
         return switch (tmpl) {
             case ContentBlock.Text t -> new ContentBlock.Text(substitute(t.text(), args), t.annotations(), t._meta());
@@ -34,6 +28,12 @@ public record PromptTemplate(Prompt prompt, List<PromptMessageTemplate> messages
             result = result.replace("{" + e.getKey() + "}", e.getValue());
         }
         return result;
+    }
+
+    /// Return an immutable view to avoid exposing internal representation.
+    @Override
+    public List<PromptMessageTemplate> messages() {
+        return List.copyOf(messages);
     }
 
     PromptInstance instantiate(Map<String, String> args) {

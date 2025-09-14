@@ -3,17 +3,17 @@ package com.amannmalik.mcp.transport;
 import com.amannmalik.mcp.api.McpHostConfiguration;
 import com.amannmalik.mcp.api.Transport;
 import com.amannmalik.mcp.util.CloseUtil;
+import com.amannmalik.mcp.util.PlatformLog;
 import jakarta.json.Json;
 import jakarta.json.JsonObject;
 
 import java.io.*;
+import java.lang.System.Logger;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.Objects;
 import java.util.concurrent.*;
 import java.util.function.Consumer;
-import java.lang.System.Logger;
-import com.amannmalik.mcp.util.PlatformLog;
 
 /// - [Transports](specification/2025-06-18/basic/transports.mdx)
 public final class StdioTransport implements Transport {

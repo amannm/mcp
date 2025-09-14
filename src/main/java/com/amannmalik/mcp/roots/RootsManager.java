@@ -7,14 +7,14 @@ import com.amannmalik.mcp.jsonrpc.JsonRpcError;
 import com.amannmalik.mcp.jsonrpc.JsonRpcResponse;
 import com.amannmalik.mcp.spi.Root;
 import com.amannmalik.mcp.util.EventSupport;
+import com.amannmalik.mcp.util.PlatformLog;
 
 import java.io.IOException;
+import java.lang.System.Logger;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.function.Supplier;
-import java.lang.System.Logger;
-import com.amannmalik.mcp.util.PlatformLog;
 
 /// - [Roots](specification/2025-06-18/client/roots.mdx)
 /// - [MCP roots specification conformance](src/test/resources/com/amannmalik/mcp/mcp_conformance.feature:154-169)

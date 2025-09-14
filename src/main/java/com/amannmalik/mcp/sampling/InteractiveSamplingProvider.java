@@ -1,17 +1,17 @@
 package com.amannmalik.mcp.sampling;
 
 import com.amannmalik.mcp.spi.*;
+import com.amannmalik.mcp.util.PlatformLog;
 import jakarta.json.Json;
 
 import java.io.*;
+import java.lang.System.Logger;
 import java.net.URI;
 import java.net.http.*;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.*;
 import java.util.concurrent.*;
-import java.lang.System.Logger;
-import com.amannmalik.mcp.util.PlatformLog;
 
 public final class InteractiveSamplingProvider implements SamplingProvider {
 

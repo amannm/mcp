@@ -23,6 +23,7 @@ public record ModelPreferences(
             intelligencePriority = ValidationUtil.requireFraction(intelligencePriority, "intelligencePriority");
         }
     }
+
     /// Return an immutable view to avoid exposing internal representation.
     @Override
     public List<ModelHint> hints() {

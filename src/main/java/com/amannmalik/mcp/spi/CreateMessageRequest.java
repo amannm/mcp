@@ -28,8 +28,6 @@ public record CreateMessageRequest(
         ValidationUtil.requireMeta(_meta);
     }
 
-    public enum IncludeContext {NONE, THIS_SERVER, ALL_SERVERS}
-
     /// Return immutable views to avoid exposing internal representation.
     @Override
     public List<SamplingMessage> messages() {
@@ -40,5 +38,7 @@ public record CreateMessageRequest(
     public List<String> stopSequences() {
         return List.copyOf(stopSequences);
     }
+
+    public enum IncludeContext {NONE, THIS_SERVER, ALL_SERVERS}
 
 }
