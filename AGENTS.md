@@ -27,14 +27,14 @@ description: MCP Specification Expert
 - Quality > speed.
 
 # Coding style and language preferences
-- Make illegal states unrepresentable and valid operations obvious.
-- Premature optimization is the root of all evil.
 - Ensure consistency between *specification*, *implementation*, *verification*
 - Keep external dependencies furthest from the center of a codebase.
 - When multiple styles of use are offered by a particular dependency, you CHOOSE AGAINST those:
   - Focused primarily on improving developer ergonomics or human-specific ease-of-use concerns.
   - Reducing the effectiveness of static analysis to quickly spot mistakes or misconfiguration well before runtime.
 - Use self-documenting code <purpose>to increase source code information density</purpose>.
+- Make illegal states unrepresentable and valid operations obvious.
+- Premature optimization is the root of all evil.
 - Write strongly-typed, idiomatic, modern Java.
 - (Leave/Follow) Markdown links (via `///`) within `.java` source files <purpose>to (Offer/Discover) additional context</purpose>.
 - Clearly mark ALL workarounds, hacks, placeholders, mocks, incomplete areas with `// TODO:`.
