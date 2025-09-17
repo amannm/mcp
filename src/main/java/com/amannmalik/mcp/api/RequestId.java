@@ -4,6 +4,7 @@ import com.amannmalik.mcp.util.PlatformLog;
 import jakarta.json.*;
 
 import java.lang.System.Logger;
+import java.util.Optional;
 
 public sealed interface RequestId permits
         RequestId.StringId,
@@ -59,6 +60,16 @@ public sealed interface RequestId permits
             }
             default -> throw new IllegalArgumentException("Invalid id type");
         };
+    }
+
+    static Optional<RequestId> fromNullable(JsonValue value) {
+        if (value == null) {
+            return Optional.empty();
+        }
+        if (value.getValueType() == JsonValue.ValueType.NULL) {
+            return Optional.of(NullId.INSTANCE);
+        }
+        return Optional.of(from(value));
     }
 
     enum NullId implements RequestId {

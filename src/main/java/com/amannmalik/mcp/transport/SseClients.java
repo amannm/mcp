@@ -11,6 +11,7 @@ import jakarta.json.JsonObject;
 import jakarta.servlet.AsyncEvent;
 import jakarta.servlet.AsyncListener;
 
+import java.util.List;
 import java.util.Set;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
@@ -19,19 +20,35 @@ import java.util.concurrent.atomic.AtomicReference;
 final class SseClients {
     static final JsonCodec<JsonRpcMessage> CODEC = new JsonRpcMessageJsonCodec();
     final Set<SseClient> general = ConcurrentHashMap.newKeySet();
-    final ConcurrentHashMap<String, SseClient> request = new ConcurrentHashMap<>();
+    final ConcurrentHashMap<RequestId, SseClient> request = new ConcurrentHashMap<>();
     final ConcurrentHashMap<String, SseClient> byPrefix = new ConcurrentHashMap<>();
     final AtomicReference<SseClient> lastGeneral = new AtomicReference<>();
-    final ConcurrentHashMap<String, BlockingQueue<JsonObject>> responses = new ConcurrentHashMap<>();
+    final ConcurrentHashMap<RequestId, BlockingQueue<JsonObject>> responses = new ConcurrentHashMap<>();
 
-    void removeRequest(String key, SseClient client) {
-        request.remove(key);
-        byPrefix.remove(client.prefix);
+    void removeRequest(RequestId key, SseClient client) {
+        request.remove(key, client);
+        byPrefix.remove(client.prefix());
         CloseUtil.close(client);
     }
 
-    AsyncListener requestListener(String key, SseClient client) {
+    AsyncListener requestListener(RequestId key, SseClient client) {
         return listener(() -> removeRequest(key, client));
+    }
+
+    SseClient requestClient(RequestId key) {
+        return request.get(key);
+    }
+
+    BlockingQueue<JsonObject> removeResponse(RequestId key) {
+        return responses.remove(key);
+    }
+
+    Iterable<SseClient> generalSnapshot() {
+        return List.copyOf(general);
+    }
+
+    SseClient lastGeneralClient() {
+        return lastGeneral.get();
     }
 
     void removeGeneral(SseClient client) {
@@ -69,8 +86,7 @@ final class SseClients {
 
     void failPending() {
         responses.forEach((id, q) -> {
-            var reqId = RequestId.parse(id);
-            var err = JsonRpcError.of(reqId, JsonRpcErrorCode.INTERNAL_ERROR, "Transport closed");
+            var err = JsonRpcError.of(id, JsonRpcErrorCode.INTERNAL_ERROR, "Transport closed");
             if (!q.offer(CODEC.toJson(err))) {
                 throw new IllegalStateException("queue full");
             }
@@ -85,6 +101,7 @@ final class SseClients {
         request.forEach((id, c) -> c.close());
         request.clear();
         byPrefix.clear();
+        responses.clear();
     }
 }
 

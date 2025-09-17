@@ -25,11 +25,8 @@ sealed class JsonRpcEndpoint implements AutoCloseable permits McpClient, McpServ
     private final AtomicLong counter;
 
     protected JsonRpcEndpoint(Transport transport, ProgressManager progress, long initialId) {
-        if (transport == null || progress == null) {
-            throw new IllegalArgumentException("transport and progress required");
-        }
-        this.transport = transport;
-        this.progress = progress;
+        this.transport = Objects.requireNonNull(transport, "transport required");
+        this.progress = Objects.requireNonNull(progress, "progress required");
         this.counter = new AtomicLong(initialId);
     }
 
