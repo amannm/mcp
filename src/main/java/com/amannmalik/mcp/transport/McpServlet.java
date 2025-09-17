@@ -1,5 +1,6 @@
 package com.amannmalik.mcp.transport;
 
+import com.amannmalik.mcp.api.RequestId;
 import com.amannmalik.mcp.api.RequestMethod;
 import com.amannmalik.mcp.spi.Principal;
 import com.amannmalik.mcp.util.PlatformLog;
@@ -114,7 +115,7 @@ final class McpServlet extends HttpServlet {
         SseClient client;
         if (found == null) {
             client = new SseClient(ac, transport.config.sseClientPrefixByteLength(), transport.config.sseHistoryLimit());
-            transport.clients.byPrefix.put(client.prefix, client);
+            transport.clients.byPrefix.put(client.prefix(), client);
         } else {
             client = found;
             transport.clients.lastGeneral.set(null);
@@ -190,7 +191,7 @@ final class McpServlet extends HttpServlet {
     }
 
     private void handleInitialize(JsonObject obj, HttpServletResponse resp) throws IOException {
-        var id = obj.get("id").toString();
+        var id = requireRequestId(obj);
         BlockingQueue<JsonObject> q = new LinkedBlockingQueue<>(responseQueueCapacity);
         transport.clients.responses.put(id, q);
         try {
@@ -224,9 +225,9 @@ final class McpServlet extends HttpServlet {
                                      HttpServletResponse resp) throws IOException {
         var ac = initSse(req, resp);
         var client = new SseClient(ac, transport.config.sseClientPrefixByteLength(), transport.config.sseHistoryLimit());
-        var key = obj.get("id").toString();
+        var key = requireRequestId(obj);
         transport.clients.request.put(key, client);
-        transport.clients.byPrefix.put(client.prefix, client);
+        transport.clients.byPrefix.put(client.prefix(), client);
         ac.addListener(transport.clients.requestListener(key, client));
         try {
             transport.incoming.put(obj);
@@ -235,6 +236,11 @@ final class McpServlet extends HttpServlet {
             transport.clients.removeRequest(key, client);
             resp.sendError(HttpServletResponse.SC_SERVICE_UNAVAILABLE);
         }
+    }
+
+    private RequestId requireRequestId(JsonObject obj) {
+        return RequestId.fromNullable(obj.get("id"))
+                .orElseThrow(() -> new IllegalArgumentException("request id missing"));
     }
 
     private enum MessageType {REQUEST, NOTIFICATION, RESPONSE, INVALID}

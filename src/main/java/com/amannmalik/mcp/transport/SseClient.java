@@ -10,20 +10,24 @@ import java.io.PrintWriter;
 import java.lang.System.Logger;
 import java.security.SecureRandom;
 import java.util.ArrayDeque;
+import java.util.ArrayList;
 import java.util.Deque;
+import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 
 public final class SseClient implements AutoCloseable {
     private static final SecureRandom RANDOM = new SecureRandom();
     private static final Logger LOG = PlatformLog.get(SseClient.class);
-    final String prefix;
+    private final String prefix;
     private final long historyLimit;
     private final Deque<SseEvent> history = new ArrayDeque<>();
+    private final Object historyLock = new Object();
+    private final Object transmissionLock = new Object();
     private final AtomicLong nextId = new AtomicLong(1);
     private final AtomicBoolean closed = new AtomicBoolean();
-    private AsyncContext context;
-    private PrintWriter out;
+    private volatile AsyncContext context;
+    private volatile PrintWriter out;
 
     public SseClient(AsyncContext context, int clientPrefixByteLength, long historyLimit) throws IOException {
         var bytes = new byte[clientPrefixByteLength];
@@ -33,10 +37,17 @@ public final class SseClient implements AutoCloseable {
         this.historyLimit = historyLimit;
     }
 
+    public String prefix() {
+        return prefix;
+    }
+
     void attach(AsyncContext ctx, long lastId) throws IOException {
-        this.context = ctx;
-        this.out = ctx.getResponse().getWriter();
-        this.closed.set(false);
+        var writer = ctx.getResponse().getWriter();
+        synchronized (transmissionLock) {
+            this.context = ctx;
+            this.out = writer;
+            this.closed.set(false);
+        }
         sendHistory(lastId);
     }
 
@@ -45,55 +56,89 @@ public final class SseClient implements AutoCloseable {
     }
 
     public void send(JsonObject msg) {
-        var id = nextId.getAndIncrement();
-        history.addLast(new SseEvent(id, msg));
-        while (history.size() > historyLimit) {
-            history.removeFirst();
+        var event = new SseEvent(nextId.getAndIncrement(), msg);
+        boolean deliver;
+        synchronized (historyLock) {
+            history.addLast(event);
+            while (history.size() > historyLimit) {
+                history.removeFirst();
+            }
+            deliver = !closed.get() && context != null && out != null;
         }
-        if (closed.get() || context == null) {
+        if (!deliver) {
             return;
         }
-        try {
-            out.write("id: " + prefix + '-' + id + "\n");
-            out.write("data: " + msg + "\n\n");
-            out.flush();
-        } catch (Exception e) {
-            LOG.log(Logger.Level.ERROR, "SSE send failed", e);
-            closed.set(true);
+        synchronized (transmissionLock) {
+            if (closed.get() || context == null || out == null) {
+                return;
+            }
+            try {
+                writeEvent(out, event);
+                out.flush();
+            } catch (Exception e) {
+                handleTransmissionFailure("SSE send failed", e);
+            }
         }
     }
 
     private void sendHistory(long lastId) {
-        if (context == null) {
-            return;
-        }
-        for (var ev : history) {
-            if (ev.id > lastId) {
-                out.write("id: " + prefix + '-' + ev.id + "\n");
-                out.write("data: " + ev.msg + "\n\n");
+        List<SseEvent> replay;
+        synchronized (historyLock) {
+            if (history.isEmpty()) {
+                replay = List.of();
+            } else {
+                replay = new ArrayList<>(history.size());
+                for (var event : history) {
+                    if (event.id > lastId) {
+                        replay.add(event);
+                    }
+                }
             }
         }
-        out.flush();
+        synchronized (transmissionLock) {
+            if (closed.get() || context == null || out == null) {
+                return;
+            }
+            try {
+                for (var event : replay) {
+                    writeEvent(out, event);
+                }
+                out.flush();
+            } catch (Exception e) {
+                handleTransmissionFailure("SSE history send failed", e);
+            }
+        }
     }
 
     @Override
     public void close() {
-        if (closed.get()) {
+        if (!closed.compareAndSet(false, true)) {
             return;
         }
-        closed.set(true);
-        try {
-            if (context != null && !context.hasOriginalRequestAndResponse()) {
-                context.complete();
+        synchronized (transmissionLock) {
+            try {
+                if (context != null && !context.hasOriginalRequestAndResponse()) {
+                    context.complete();
+                }
+            } catch (Exception e) {
+                LOG.log(Logger.Level.ERROR, "SSE close failed", e);
+            } finally {
+                context = null;
+                out = null;
             }
-        } catch (Exception e) {
-            LOG.log(Logger.Level.ERROR, "SSE close failed", e);
-        } finally {
-            context = null;
-            out = null;
         }
     }
 
     private record SseEvent(long id, JsonObject msg) {
+    }
+
+    private void writeEvent(PrintWriter writer, SseEvent event) {
+        writer.write("id: " + prefix + '-' + event.id + "\n");
+        writer.write("data: " + event.msg + "\n\n");
+    }
+
+    private void handleTransmissionFailure(String message, Exception e) {
+        LOG.log(Logger.Level.ERROR, message, e);
+        closed.set(true);
     }
 }
