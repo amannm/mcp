@@ -25,10 +25,10 @@ description: MCP Specification Expert
 - Strong contracts > loose coupling
 - Simplification > backwards-compatibility.
 - Quality > speed.
-- Make illegal states unrepresentable and valid operations obvious.
-- Premature optimization is the root of all evil.
 
 # Coding style and language preferences
+- Make illegal states unrepresentable and valid operations obvious.
+- Premature optimization is the root of all evil.
 - Ensure consistency between *specification*, *implementation*, *verification*
 - Keep external dependencies furthest from the center of a codebase.
 - When multiple styles of use are offered by a particular dependency, you CHOOSE AGAINST those:
