@@ -12,18 +12,51 @@ import jakarta.servlet.AsyncEvent;
 import jakarta.servlet.AsyncListener;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.atomic.AtomicReference;
 
 final class SseClients {
     static final JsonCodec<JsonRpcMessage> CODEC = new JsonRpcMessageJsonCodec();
-    final Set<SseClient> general = ConcurrentHashMap.newKeySet();
-    final ConcurrentHashMap<RequestId, SseClient> request = new ConcurrentHashMap<>();
-    final ConcurrentHashMap<String, SseClient> byPrefix = new ConcurrentHashMap<>();
-    final AtomicReference<SseClient> lastGeneral = new AtomicReference<>();
-    final ConcurrentHashMap<RequestId, BlockingQueue<JsonObject>> responses = new ConcurrentHashMap<>();
+    private final Set<SseClient> general = ConcurrentHashMap.newKeySet();
+    private final ConcurrentHashMap<RequestId, SseClient> request = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<String, SseClient> byPrefix = new ConcurrentHashMap<>();
+    private final AtomicReference<SseClient> lastGeneral = new AtomicReference<>();
+    private final ConcurrentHashMap<RequestId, BlockingQueue<JsonObject>> responses = new ConcurrentHashMap<>();
+
+    Optional<SseClient> findByPrefix(String prefix) {
+        return Optional.ofNullable(byPrefix.get(prefix));
+    }
+
+    void registerGeneral(SseClient client) {
+        general.add(client);
+        byPrefix.put(client.prefix(), client);
+        lastGeneral.set(null);
+    }
+
+    void registerRequest(RequestId key, SseClient client) {
+        var existing = request.putIfAbsent(key, client);
+        if (existing != null) {
+            throw new IllegalStateException("duplicate request client: " + key);
+        }
+        byPrefix.put(client.prefix(), client);
+    }
+
+    BlockingQueue<JsonObject> registerResponseQueue(RequestId key, int capacity) {
+        BlockingQueue<JsonObject> queue = new LinkedBlockingQueue<>(capacity);
+        var existing = responses.putIfAbsent(key, queue);
+        if (existing != null) {
+            throw new IllegalStateException("duplicate response queue: " + key);
+        }
+        return queue;
+    }
+
+    void removeResponseQueue(RequestId key) {
+        responses.remove(key);
+    }
 
     void removeRequest(RequestId key, SseClient client) {
         request.remove(key, client);

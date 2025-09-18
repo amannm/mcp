@@ -1,6 +1,7 @@
 package com.amannmalik.mcp.core;
 
 import com.amannmalik.mcp.api.RequestId;
+import com.amannmalik.mcp.jsonrpc.JsonRpcEnvelope;
 import com.amannmalik.mcp.transport.SseClient;
 import jakarta.json.JsonObject;
 
@@ -32,17 +33,16 @@ public final class MessageRouter {
     }
 
     public boolean route(JsonObject message) {
-        var idValue = RequestId.fromNullable(message.get("id"));
-        var method = message.getString("method", null);
-        if (idValue.isPresent()) {
-            var id = idValue.get();
-            if (sendToRequestStream(id, method, message)) {
+        var envelope = JsonRpcEnvelope.of(message);
+        if (envelope.id().isPresent()) {
+            var id = envelope.id().get();
+            if (sendToRequestStream(id, message, envelope.isResponse())) {
                 return true;
             }
             if (sendToResponseQueue(id, message)) {
                 return true;
             }
-            if (method == null) {
+            if (!envelope.isRequest() && !envelope.isNotification()) {
                 return false;
             }
         }
@@ -52,13 +52,13 @@ public final class MessageRouter {
         return sendToPending(message);
     }
 
-    private boolean sendToRequestStream(RequestId id, String method, JsonObject message) {
+    private boolean sendToRequestStream(RequestId id, JsonObject message, boolean finalMessage) {
         var stream = requestStreams.apply(id);
         if (stream == null) {
             return false;
         }
         stream.send(message);
-        if (method == null) {
+        if (finalMessage) {
             remover.accept(id, stream);
         }
         return true;
