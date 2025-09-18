@@ -23,7 +23,7 @@ final class MetadataServlet extends HttpServlet {
         if (!transport.enforceHttps(req, resp)) {
             return;
         }
-        var meta = new ResourceMetadata(transport.canonicalResource, transport.authorizationServers);
+        var meta = new ResourceMetadata(transport.canonicalResource(), transport.authorizationServers());
         var body = new ResourceMetadataJsonCodec().toJson(meta);
         resp.setStatus(HttpServletResponse.SC_OK);
         resp.setContentType("application/json");

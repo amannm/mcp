@@ -5,9 +5,11 @@ import com.amannmalik.mcp.auth.AuthorizationManager;
 import com.amannmalik.mcp.core.MessageDispatcher;
 import com.amannmalik.mcp.core.MessageRouter;
 import com.amannmalik.mcp.spi.Principal;
+import com.amannmalik.mcp.util.PlatformLog;
 import com.amannmalik.mcp.util.ValidationUtil;
 import jakarta.json.Json;
 import jakarta.json.JsonObject;
+import jakarta.servlet.AsyncContext;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.eclipse.jetty.ee10.servlet.ServletContextHandler;
@@ -17,6 +19,7 @@ import org.eclipse.jetty.util.ssl.SslContextFactory;
 
 import java.io.EOFException;
 import java.io.IOException;
+import java.lang.System.Logger;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.security.KeyStore;
@@ -34,15 +37,16 @@ public final class StreamableHttpServerTransport implements Transport {
     // absent, as recommended for backwards compatibility.
     static final String COMPATIBILITY_VERSION =
             Protocol.PREVIOUS_VERSION;
+    private static final Logger LOG = PlatformLog.get(StreamableHttpServerTransport.class);
     private static final Principal DEFAULT_PRINCIPAL = new Principal(
             McpServerConfiguration.defaultConfiguration().defaultPrincipal(), Set.of());
-    final AuthorizationManager authManager;
-    final String canonicalResource;
-    final List<String> authorizationServers;
-    final BlockingQueue<JsonObject> incoming = new LinkedBlockingQueue<>();
-    final SseClients clients = new SseClients();
-    final SessionManager sessions;
-    final McpServerConfiguration config;
+    private final AuthorizationManager authManager;
+    private final String canonicalResource;
+    private final List<String> authorizationServers;
+    private final BlockingQueue<JsonObject> incoming = new LinkedBlockingQueue<>();
+    private final SseClients clients = new SseClients();
+    private final SessionManager sessions;
+    private final McpServerConfiguration config;
     private final Server server;
     private final int port;
     private final int httpsPort;
@@ -196,12 +200,32 @@ public final class StreamableHttpServerTransport implements Transport {
         return List.copyOf(config.authServers());
     }
 
+    public String canonicalResource() {
+        return canonicalResource;
+    }
+
+    public List<String> authorizationServers() {
+        return authorizationServers;
+    }
+
     public int port() {
         return port;
     }
 
     public int httpsPort() {
         return httpsPort;
+    }
+
+    public String protocolVersion() {
+        return sessions.protocolVersion();
+    }
+
+    void updateProtocolVersion(String version) {
+        sessions.protocolVersion(version);
+    }
+
+    Duration initializeRequestTimeout() {
+        return config.initializeRequestTimeout();
     }
 
     @Override
@@ -211,6 +235,42 @@ public final class StreamableHttpServerTransport implements Transport {
 
     void flushBacklog() {
         dispatcher.flush();
+    }
+
+    void submitIncoming(JsonObject message) throws InterruptedException {
+        incoming.put(message);
+    }
+
+    BlockingQueue<JsonObject> registerResponseQueue(RequestId id, int capacity) {
+        return clients.registerResponseQueue(id, capacity);
+    }
+
+    void removeResponseQueue(RequestId id) {
+        clients.removeResponseQueue(id);
+    }
+
+    SseClient registerGeneralClient(AsyncContext context, String lastEventId) throws IOException {
+        var resumed = resumeClient(context, lastEventId);
+        SseClient client;
+        if (resumed.isPresent()) {
+            client = resumed.get();
+        } else {
+            client = createClient(context);
+        }
+        clients.registerGeneral(client);
+        context.addListener(clients.generalListener(client));
+        return client;
+    }
+
+    SseClient registerRequestClient(RequestId id, AsyncContext context) throws IOException {
+        var client = createClient(context);
+        clients.registerRequest(id, client);
+        context.addListener(clients.requestListener(id, client));
+        return client;
+    }
+
+    void unregisterRequestClient(RequestId id, SseClient client) {
+        clients.removeRequest(id, client);
     }
 
     @Override
@@ -322,6 +382,48 @@ public final class StreamableHttpServerTransport implements Transport {
         return sessions.validate(req, resp, principal, initializing);
     }
 
+    private Optional<SseClient> resumeClient(AsyncContext context, String lastEventId) throws IOException {
+        var parsed = parseLastEventId(lastEventId);
+        if (parsed.isEmpty()) {
+            return Optional.empty();
+        }
+        var token = parsed.get();
+        var candidate = clients.findByPrefix(token.prefix());
+        if (candidate.isEmpty()) {
+            return Optional.empty();
+        }
+        var client = candidate.get();
+        client.attach(context, token.eventId());
+        return Optional.of(client);
+    }
+
+    private SseClient createClient(AsyncContext context) throws IOException {
+        return new SseClient(context, config.sseClientPrefixByteLength(), config.sseHistoryLimit());
+    }
+
+    private Optional<SseLastEventId> parseLastEventId(String header) {
+        if (header == null || header.isBlank()) {
+            return Optional.empty();
+        }
+        var idx = header.lastIndexOf('-');
+        if (idx <= 0 || idx == header.length() - 1) {
+            LOG.log(Logger.Level.WARNING, "Invalid Last-Event-ID: " + header);
+            return Optional.empty();
+        }
+        var prefix = header.substring(0, idx);
+        try {
+            var eventId = Long.parseLong(header.substring(idx + 1));
+            if (eventId < 0) {
+                LOG.log(Logger.Level.WARNING, "Invalid Last-Event-ID: " + header);
+                return Optional.empty();
+            }
+            return Optional.of(new SseLastEventId(prefix, eventId));
+        } catch (NumberFormatException e) {
+            LOG.log(Logger.Level.WARNING, "Invalid Last-Event-ID: " + header, e);
+            return Optional.empty();
+        }
+    }
+
     void terminateSession(boolean recordId) {
         sessions.terminate(recordId);
         clients.clear();
@@ -329,6 +431,9 @@ public final class StreamableHttpServerTransport implements Transport {
         if (!incoming.offer(Json.createObjectBuilder().add("_close", true).build())) {
             throw new IllegalStateException("incoming queue full");
         }
+    }
+
+    private record SseLastEventId(String prefix, long eventId) {
     }
 
 }

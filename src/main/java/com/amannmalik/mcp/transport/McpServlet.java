@@ -1,7 +1,7 @@
 package com.amannmalik.mcp.transport;
 
-import com.amannmalik.mcp.api.RequestId;
 import com.amannmalik.mcp.api.RequestMethod;
+import com.amannmalik.mcp.jsonrpc.JsonRpcEnvelope;
 import com.amannmalik.mcp.spi.Principal;
 import com.amannmalik.mcp.util.PlatformLog;
 import jakarta.json.Json;
@@ -13,7 +13,8 @@ import jakarta.servlet.http.*;
 import java.io.IOException;
 import java.lang.System.Logger;
 import java.util.Optional;
-import java.util.concurrent.*;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.TimeUnit;
 
 /// - [Transports](specification/2025-06-18/basic/transports.mdx)
 /// - [Conformance Suite](src/test/resources/com/amannmalik/mcp/mcp.feature)
@@ -28,24 +29,6 @@ final class McpServlet extends HttpServlet {
     McpServlet(StreamableHttpServerTransport transport, int responseQueueCapacity) {
         this.transport = transport;
         this.responseQueueCapacity = responseQueueCapacity;
-    }
-
-    private static MessageType classify(JsonObject obj) {
-        var hasMethod = obj.containsKey("method");
-        var hasId = obj.containsKey("id");
-        var isRequest = hasMethod && hasId;
-        var isNotification = hasMethod && !hasId;
-        var isResponse = !hasMethod && (obj.containsKey("result") || obj.containsKey("error"));
-        if (isRequest) {
-            return MessageType.REQUEST;
-        }
-        if (isNotification) {
-            return MessageType.NOTIFICATION;
-        }
-        if (isResponse) {
-            return MessageType.RESPONSE;
-        }
-        return MessageType.INVALID;
     }
 
     @Override
@@ -66,16 +49,18 @@ final class McpServlet extends HttpServlet {
             resp.sendError(HttpServletResponse.SC_BAD_REQUEST);
             return;
         }
-        var initializing = RequestMethod.INITIALIZE.method()
-                .equals(obj.getString("method", null));
+        var envelope = JsonRpcEnvelope.of(obj);
+        var initializing = envelope.method()
+                .map(RequestMethod.INITIALIZE.method()::equals)
+                .orElse(false);
 
         if (!transport.validateSession(req, resp, principal, initializing)) {
             return;
         }
 
-        switch (classify(obj)) {
+        switch (envelope.type()) {
             case NOTIFICATION, RESPONSE -> enqueue(obj, resp);
-            case REQUEST -> handleRequest(obj, initializing, req, resp);
+            case REQUEST -> handleRequest(obj, envelope, initializing, req, resp);
             default -> resp.sendError(HttpServletResponse.SC_BAD_REQUEST);
         }
     }
@@ -93,36 +78,8 @@ final class McpServlet extends HttpServlet {
             return;
         }
         var ac = initSse(req, resp);
-
-        var lastEvent = req.getHeader("Last-Event-ID");
-        SseClient found = null;
-        long lastId = 0;
-        if (lastEvent != null) {
-            var idx = lastEvent.lastIndexOf('-');
-            if (idx > 0) {
-                var prefix = lastEvent.substring(0, idx);
-                try {
-                    lastId = Long.parseLong(lastEvent.substring(idx + 1));
-                } catch (NumberFormatException e) {
-                    LOG.log(Logger.Level.WARNING, "Invalid Last-Event-ID: " + lastEvent, e);
-                }
-                found = transport.clients.byPrefix.get(prefix);
-                if (found != null) {
-                    found.attach(ac, lastId);
-                }
-            }
-        }
-        SseClient client;
-        if (found == null) {
-            client = new SseClient(ac, transport.config.sseClientPrefixByteLength(), transport.config.sseHistoryLimit());
-            transport.clients.byPrefix.put(client.prefix(), client);
-        } else {
-            client = found;
-            transport.clients.lastGeneral.set(null);
-        }
-        transport.clients.general.add(client);
+        transport.registerGeneralClient(ac, req.getHeader("Last-Event-ID"));
         transport.flushBacklog();
-        ac.addListener(transport.clients.generalListener(client));
     }
 
     @Override
@@ -162,7 +119,7 @@ final class McpServlet extends HttpServlet {
         resp.setStatus(HttpServletResponse.SC_OK);
         resp.setContentType("text/event-stream;charset=UTF-8");
         resp.setHeader("Cache-Control", "no-cache");
-        resp.setHeader(TransportHeaders.PROTOCOL_VERSION, transport.sessions.protocolVersion());
+        resp.setHeader(TransportHeaders.PROTOCOL_VERSION, transport.protocolVersion());
         resp.flushBuffer();
         var ac = req.startAsync();
         ac.setTimeout(0);
@@ -171,7 +128,7 @@ final class McpServlet extends HttpServlet {
 
     private void enqueue(JsonObject obj, HttpServletResponse resp) throws IOException {
         try {
-            transport.incoming.put(obj);
+            transport.submitIncoming(obj);
             resp.setStatus(HttpServletResponse.SC_ACCEPTED);
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
@@ -180,24 +137,26 @@ final class McpServlet extends HttpServlet {
     }
 
     private void handleRequest(JsonObject obj,
+                               JsonRpcEnvelope envelope,
                                boolean initializing,
                                HttpServletRequest req,
                                HttpServletResponse resp) throws IOException {
         if (initializing) {
-            handleInitialize(obj, resp);
+            handleInitialize(obj, envelope, resp);
         } else {
-            handleStreamRequest(obj, req, resp);
+            handleStreamRequest(obj, envelope, req, resp);
         }
     }
 
-    private void handleInitialize(JsonObject obj, HttpServletResponse resp) throws IOException {
-        var id = requireRequestId(obj);
-        BlockingQueue<JsonObject> q = new LinkedBlockingQueue<>(responseQueueCapacity);
-        transport.clients.responses.put(id, q);
+    private void handleInitialize(JsonObject obj,
+                                  JsonRpcEnvelope envelope,
+                                  HttpServletResponse resp) throws IOException {
+        var id = envelope.requireId();
+        BlockingQueue<JsonObject> queue = transport.registerResponseQueue(id, responseQueueCapacity);
         try {
-            transport.incoming.put(obj);
-            var timeoutSeconds = transport.config.initializeRequestTimeout().toSeconds();
-            var response = q.poll(timeoutSeconds, TimeUnit.SECONDS);
+            transport.submitIncoming(obj);
+            var timeoutSeconds = transport.initializeRequestTimeout().toSeconds();
+            var response = queue.poll(timeoutSeconds, TimeUnit.SECONDS);
             if (response == null) {
                 resp.sendError(HttpServletResponse.SC_REQUEST_TIMEOUT);
                 return;
@@ -205,43 +164,34 @@ final class McpServlet extends HttpServlet {
             if (response.containsKey("result")) {
                 var result = response.getJsonObject("result");
                 if (result.containsKey("protocolVersion")) {
-                    transport.sessions.protocolVersion(result.getString("protocolVersion"));
+                    transport.updateProtocolVersion(result.getString("protocolVersion"));
                 }
             }
             resp.setContentType("application/json");
             resp.setCharacterEncoding("UTF-8");
-            resp.setHeader(TransportHeaders.PROTOCOL_VERSION, transport.sessions.protocolVersion());
+            resp.setHeader(TransportHeaders.PROTOCOL_VERSION, transport.protocolVersion());
             resp.getWriter().write(response.toString());
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             resp.sendError(HttpServletResponse.SC_SERVICE_UNAVAILABLE);
         } finally {
-            transport.clients.responses.remove(id);
+            transport.removeResponseQueue(id);
         }
     }
 
     private void handleStreamRequest(JsonObject obj,
+                                     JsonRpcEnvelope envelope,
                                      HttpServletRequest req,
                                      HttpServletResponse resp) throws IOException {
         var ac = initSse(req, resp);
-        var client = new SseClient(ac, transport.config.sseClientPrefixByteLength(), transport.config.sseHistoryLimit());
-        var key = requireRequestId(obj);
-        transport.clients.request.put(key, client);
-        transport.clients.byPrefix.put(client.prefix(), client);
-        ac.addListener(transport.clients.requestListener(key, client));
+        var key = envelope.requireId();
+        SseClient client = transport.registerRequestClient(key, ac);
         try {
-            transport.incoming.put(obj);
+            transport.submitIncoming(obj);
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
-            transport.clients.removeRequest(key, client);
+            transport.unregisterRequestClient(key, client);
             resp.sendError(HttpServletResponse.SC_SERVICE_UNAVAILABLE);
         }
     }
-
-    private RequestId requireRequestId(JsonObject obj) {
-        return RequestId.fromNullable(obj.get("id"))
-                .orElseThrow(() -> new IllegalArgumentException("request id missing"));
-    }
-
-    private enum MessageType {REQUEST, NOTIFICATION, RESPONSE, INVALID}
 }
