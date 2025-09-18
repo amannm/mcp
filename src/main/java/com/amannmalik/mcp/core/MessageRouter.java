@@ -33,19 +33,27 @@ public final class MessageRouter {
     }
 
     public boolean route(JsonObject message) {
+        Objects.requireNonNull(message, "message");
+
         var envelope = JsonRpcEnvelope.of(message);
-        if (envelope.id().isPresent()) {
-            var id = envelope.id().get();
-            if (sendToRequestStream(id, message, envelope.isResponse())) {
-                return true;
-            }
-            if (sendToResponseQueue(id, message)) {
+        var id = envelope.id();
+        if (id.isPresent()) {
+            if (routeById(id.get(), message, envelope.isResponse())) {
                 return true;
             }
             if (!envelope.isRequest() && !envelope.isNotification()) {
                 return false;
             }
         }
+        return routeToGeneralClients(message);
+    }
+
+    private boolean routeById(RequestId id, JsonObject message, boolean finalMessage) {
+        return sendToRequestStream(id, message, finalMessage)
+                || sendToResponseQueue(id, message);
+    }
+
+    private boolean routeToGeneralClients(JsonObject message) {
         if (sendToActiveClient(message)) {
             return true;
         }
