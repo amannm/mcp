@@ -38,6 +38,7 @@ public final class StreamableHttpServerTransport implements Transport {
     static final String COMPATIBILITY_VERSION =
             Protocol.PREVIOUS_VERSION;
     private static final Logger LOG = PlatformLog.get(StreamableHttpServerTransport.class);
+    private static final JsonObject CLOSE_SIGNAL = Json.createObjectBuilder().add("_close", true).build();
     private static final Principal DEFAULT_PRINCIPAL = new Principal(
             McpServerConfiguration.defaultConfiguration().defaultPrincipal(), Set.of());
     private final AuthorizationManager authManager;
@@ -407,20 +408,17 @@ public final class StreamableHttpServerTransport implements Transport {
         }
         var idx = header.lastIndexOf('-');
         if (idx <= 0 || idx == header.length() - 1) {
-            LOG.log(Logger.Level.WARNING, "Invalid Last-Event-ID: " + header);
-            return Optional.empty();
+            return invalidLastEventId(header, null);
         }
         var prefix = header.substring(0, idx);
         try {
             var eventId = Long.parseLong(header.substring(idx + 1));
             if (eventId < 0) {
-                LOG.log(Logger.Level.WARNING, "Invalid Last-Event-ID: " + header);
-                return Optional.empty();
+                return invalidLastEventId(header, null);
             }
             return Optional.of(new SseLastEventId(prefix, eventId));
         } catch (NumberFormatException e) {
-            LOG.log(Logger.Level.WARNING, "Invalid Last-Event-ID: " + header, e);
-            return Optional.empty();
+            return invalidLastEventId(header, e);
         }
     }
 
@@ -428,9 +426,22 @@ public final class StreamableHttpServerTransport implements Transport {
         sessions.terminate(recordId);
         clients.clear();
         closed.set(true);
-        if (!incoming.offer(Json.createObjectBuilder().add("_close", true).build())) {
+        signalClosure();
+    }
+
+    private void signalClosure() {
+        if (!incoming.offer(CLOSE_SIGNAL)) {
             throw new IllegalStateException("incoming queue full");
         }
+    }
+
+    private Optional<SseLastEventId> invalidLastEventId(String header, Exception cause) {
+        if (cause == null) {
+            LOG.log(Logger.Level.WARNING, "Invalid Last-Event-ID: " + header);
+        } else {
+            LOG.log(Logger.Level.WARNING, "Invalid Last-Event-ID: " + header, cause);
+        }
+        return Optional.empty();
     }
 
     private record SseLastEventId(String prefix, long eventId) {

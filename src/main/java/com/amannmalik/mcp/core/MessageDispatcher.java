@@ -2,6 +2,7 @@ package com.amannmalik.mcp.core;
 
 import jakarta.json.JsonObject;
 
+import java.util.Objects;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
@@ -10,7 +11,7 @@ public final class MessageDispatcher {
     private final Queue<JsonObject> backlog = new ConcurrentLinkedQueue<>();
 
     public MessageDispatcher(MessageRouter router) {
-        this.router = router;
+        this.router = Objects.requireNonNull(router, "router");
     }
 
     public void dispatch(JsonObject message) {
@@ -22,16 +23,12 @@ public final class MessageDispatcher {
     }
 
     public void flush() {
-        while (true) {
-            var msg = backlog.peek();
-            if (msg == null) {
+        JsonObject message;
+        while ((message = backlog.peek()) != null) {
+            if (!router.route(message)) {
                 return;
             }
-            if (router.route(msg)) {
-                backlog.poll();
-            } else {
-                return;
-            }
+            backlog.poll();
         }
     }
 }
