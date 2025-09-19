@@ -53,9 +53,6 @@ public final class McpServer extends JsonRpcEndpoint implements AutoCloseable {
 
     private final McpServerConfiguration config;
     private final Set<ServerCapability> serverCapabilities;
-    private final ServerInfo serverInfo;
-    private final String instructions;
-    private final List<String> supportedVersions;
     private final ResourceOrchestrator resourceOrchestrator;
     private final ToolProvider tools;
     private final PromptProvider prompts;
@@ -67,11 +64,8 @@ public final class McpServer extends JsonRpcEndpoint implements AutoCloseable {
     private final Principal principal;
     private final RateLimiter completionLimiter;
     private final RateLimiter logLimiter;
+    private final ServerLifecycle lifecycle;
     private final AtomicReference<LoggingLevel> logLevel = new AtomicReference<>();
-    private String protocolVersion;
-    private LifecycleState lifecycleState = LifecycleState.INIT;
-    private Set<ClientCapability> clientCapabilities = Set.of();
-    private ClientFeatures clientFeatures = ClientFeatures.EMPTY;
     private AutoCloseable toolListSubscription;
     private AutoCloseable promptsSubscription;
 
@@ -100,26 +94,22 @@ public final class McpServer extends JsonRpcEndpoint implements AutoCloseable {
                 config.logsPerSecond(),
                 config.rateLimiterWindowMs());
         this.serverCapabilities = capabilities(resources, tools, prompts, completions);
-        this.serverInfo = new ServerInfo(
+        var serverInfo = new ServerInfo(
                 config.serverName(),
                 config.serverDescription(),
                 config.serverVersion());
-        this.instructions = instructions;
-        List<String> versions = new ArrayList<>(config.supportedVersions());
-        versions.sort(Comparator.reverseOrder());
-        this.supportedVersions = List.copyOf(versions);
-        this.protocolVersion = this.supportedVersions.getFirst();
         this.tools = tools;
         this.prompts = prompts;
         this.completions = completions;
         this.sampling = sampling;
         this.principal = principal;
+        this.lifecycle = new ServerLifecycle(config.supportedVersions(), serverCapabilities, serverInfo, instructions);
         this.toolHandler = createToolHandler(tools, config, principal);
         this.samplingAccess = config.samplingAccessPolicy();
         this.logLevel.set(config.initialLogLevel());
-        this.rootsManager = new RootsManager(this::negotiatedClientCapabilities, this::request);
+        this.rootsManager = new RootsManager(lifecycle::clientCapabilities, this::request);
         this.resourceOrchestrator = resources == null ? null :
-                new ResourceOrchestrator(resources, resourceAccess, principal, rootsManager, this::state, (method, params) -> send(new JsonRpcNotification(method.method(), params)), progress);
+                new ResourceOrchestrator(resources, resourceAccess, principal, rootsManager, lifecycle::state, (method, params) -> send(new JsonRpcNotification(method.method(), params)), progress);
         subscribeListChanges(tools, prompts);
         registerHandlers(resources, tools, prompts, completions);
     }
@@ -197,14 +187,14 @@ public final class McpServer extends JsonRpcEndpoint implements AutoCloseable {
                 limiter(config.toolsPerSecond(), config.rateLimiterWindowMs()),
                 principal,
                 config,
-                () -> clientCapabilities,
+                lifecycle::clientCapabilities,
                 this::elicit);
     }
 
     private void subscribeListChanges(ToolProvider tools, PromptProvider prompts) {
         if (tools != null && tools.supportsListChanged()) {
             toolListSubscription = SubscriptionUtil.subscribeListChanges(
-                    this::state,
+                    lifecycle::state,
                     tools::onListChanged,
                     () -> send(new JsonRpcNotification(
                             NotificationMethod.TOOLS_LIST_CHANGED.method(),
@@ -212,7 +202,7 @@ public final class McpServer extends JsonRpcEndpoint implements AutoCloseable {
         }
         if (prompts != null && prompts.supportsListChanged()) {
             promptsSubscription = SubscriptionUtil.subscribeListChanges(
-                    this::state,
+                    lifecycle::state,
                     prompts::onListChanged,
                     () -> send(new JsonRpcNotification(
                             NotificationMethod.PROMPTS_LIST_CHANGED.method(),
@@ -249,7 +239,7 @@ public final class McpServer extends JsonRpcEndpoint implements AutoCloseable {
     }
 
     public void serve() throws IOException {
-        while (state() != LifecycleState.SHUTDOWN) {
+        while (lifecycle.state() != LifecycleState.SHUTDOWN) {
             var obj = receiveMessage();
             if (obj.isEmpty()) {
                 continue;
@@ -322,85 +312,24 @@ public final class McpServer extends JsonRpcEndpoint implements AutoCloseable {
     }
 
     private InitializeResponse initialize(InitializeRequest request) {
-        ensureState(LifecycleState.INIT);
-        var requested = request.capabilities().client();
-        clientCapabilities = requested.isEmpty()
-                ? EnumSet.noneOf(ClientCapability.class)
-                : EnumSet.copyOf(requested);
-        clientFeatures = request.features() == null ? ClientFeatures.EMPTY : request.features();
-        if (request.protocolVersion() != null && supportedVersions.contains(request.protocolVersion())) {
-            protocolVersion = request.protocolVersion();
-        } else {
-            protocolVersion = supportedVersions.getFirst();
-        }
-        return new InitializeResponse(
-                protocolVersion,
-                new Capabilities(clientCapabilities, serverCapabilities, Map.of(), Map.of()),
-                serverInfo,
-                instructions,
-                null
-        );
+        return lifecycle.initialize(request, serverFeatures());
     }
 
     private void initialized() {
-        ensureState(LifecycleState.INIT);
-        lifecycleState = LifecycleState.OPERATION;
+        lifecycle.confirmInitialized();
     }
 
     private void shutdown() {
-        lifecycleState = LifecycleState.SHUTDOWN;
-    }
-
-    private LifecycleState state() {
-        return lifecycleState;
-    }
-
-    private Set<ClientCapability> negotiatedClientCapabilities() {
-        return clientCapabilities;
-    }
-
-    private ClientFeatures clientFeatures() {
-        return clientFeatures;
+        lifecycle.shutdown();
     }
 
     private Set<ServerCapability> serverCapabilities() {
         return serverCapabilities;
     }
 
-    private String protocolVersion() {
-        return protocolVersion;
-    }
-
-    private void ensureState(LifecycleState expected) {
-        if (lifecycleState != expected) {
-            throw new IllegalStateException("Invalid lifecycle state: " + lifecycleState);
-        }
-    }
-
     private JsonRpcMessage initialize(JsonRpcRequest req) {
         var init = INITIALIZE_REQUEST_CODEC.fromJson(req.params());
-        InitializeResponse baseResp;
-        try {
-            baseResp = initialize(init);
-        } catch (UnsupportedProtocolVersionException e) {
-            var supported = Json.createArrayBuilder();
-            config.supportedVersions().forEach(supported::add);
-            return JsonRpcError.of(
-                    req.id(),
-                    JsonRpcErrorCode.INVALID_PARAMS,
-                    "Unsupported protocol version",
-                    Json.createObjectBuilder()
-                            .add("supported", supported.build())
-                            .add("requested", e.requested())
-                            .build());
-        }
-        var resp = new InitializeResponse(
-                baseResp.protocolVersion(),
-                baseResp.capabilities(),
-                baseResp.serverInfo(),
-                baseResp.instructions(),
-                serverFeatures()
-        );
+        var resp = initialize(init);
         var json = new InitializeResponseAbstractEntityCodec().toJson(resp);
         return new JsonRpcResponse(req.id(), json);
     }
@@ -422,9 +351,7 @@ public final class McpServer extends JsonRpcEndpoint implements AutoCloseable {
     }
 
     private void requireClientCapability(ClientCapability cap) {
-        if (!negotiatedClientCapabilities().contains(cap)) {
-            throw new IllegalStateException("Missing client capability: " + cap);
-        }
+        lifecycle.requireClientCapability(cap);
     }
 
     private Set<ServerFeature> serverFeatures() {
@@ -451,10 +378,7 @@ public final class McpServer extends JsonRpcEndpoint implements AutoCloseable {
     }
 
     private Optional<JsonRpcError> checkInitialized(RequestId id) {
-        if (lifecycleState != LifecycleState.OPERATION) {
-            return Optional.of(JsonRpcError.of(id, -32002, config.errorNotInitialized()));
-        }
-        return Optional.empty();
+        return lifecycle.ensureInitialized(id, config.errorNotInitialized());
     }
 
     private Optional<String> rateLimit(RateLimiter limiter, String key) {
