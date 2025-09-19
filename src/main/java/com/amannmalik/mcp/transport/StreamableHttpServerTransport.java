@@ -30,7 +30,6 @@ import java.time.Duration;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.stream.Collectors;
 
 public final class StreamableHttpServerTransport implements Transport {
     // Default to the previous protocol revision when the version header is
@@ -357,19 +356,21 @@ public final class StreamableHttpServerTransport implements Transport {
     }
 
     boolean validateAccept(HttpServletRequest req, HttpServletResponse resp, boolean post) throws IOException {
-        var accept = req.getHeader("Accept");
-        if (accept == null) {
+        var header = req.getHeader("Accept");
+        if (header == null) {
             resp.sendError(HttpServletResponse.SC_NOT_ACCEPTABLE);
             return false;
         }
-        var types = Arrays.stream(accept.split(","))
-                .map(String::trim)
-                .filter(s -> !s.isEmpty())
-                .map(s -> s.toLowerCase(Locale.ROOT))
-                .collect(Collectors.toSet());
+        AcceptHeader accept;
+        try {
+            accept = AcceptHeader.parse(header);
+        } catch (IllegalArgumentException e) {
+            resp.sendError(HttpServletResponse.SC_NOT_ACCEPTABLE);
+            return false;
+        }
         var ok = post
-                ? types.size() == 2 && types.contains("application/json") && types.contains("text/event-stream")
-                : types.size() == 1 && types.contains("text/event-stream");
+                ? accept.matchesExactly(AcceptHeader.APPLICATION_JSON, AcceptHeader.TEXT_EVENT_STREAM)
+                : accept.matchesExactly(AcceptHeader.TEXT_EVENT_STREAM);
         if (!ok) {
             resp.sendError(HttpServletResponse.SC_NOT_ACCEPTABLE);
         }
@@ -384,7 +385,7 @@ public final class StreamableHttpServerTransport implements Transport {
     }
 
     private Optional<SseClient> resumeClient(AsyncContext context, String lastEventId) throws IOException {
-        var parsed = parseLastEventId(lastEventId);
+        var parsed = SseLastEventId.parse(lastEventId);
         if (parsed.isEmpty()) {
             return Optional.empty();
         }
@@ -402,26 +403,6 @@ public final class StreamableHttpServerTransport implements Transport {
         return new SseClient(context, config.sseClientPrefixByteLength(), config.sseHistoryLimit());
     }
 
-    private Optional<SseLastEventId> parseLastEventId(String header) {
-        if (header == null || header.isBlank()) {
-            return Optional.empty();
-        }
-        var idx = header.lastIndexOf('-');
-        if (idx <= 0 || idx == header.length() - 1) {
-            return invalidLastEventId(header, null);
-        }
-        var prefix = header.substring(0, idx);
-        try {
-            var eventId = Long.parseLong(header.substring(idx + 1));
-            if (eventId < 0) {
-                return invalidLastEventId(header, null);
-            }
-            return Optional.of(new SseLastEventId(prefix, eventId));
-        } catch (NumberFormatException e) {
-            return invalidLastEventId(header, e);
-        }
-    }
-
     void terminateSession(boolean recordId) {
         sessions.terminate(recordId);
         clients.clear();
@@ -435,16 +416,35 @@ public final class StreamableHttpServerTransport implements Transport {
         }
     }
 
-    private Optional<SseLastEventId> invalidLastEventId(String header, Exception cause) {
-        if (cause == null) {
-            LOG.log(Logger.Level.WARNING, "Invalid Last-Event-ID: " + header);
-        } else {
-            LOG.log(Logger.Level.WARNING, "Invalid Last-Event-ID: " + header, cause);
-        }
-        return Optional.empty();
-    }
-
     private record SseLastEventId(String prefix, long eventId) {
+        private static Optional<SseLastEventId> parse(String header) {
+            if (header == null || header.isBlank()) {
+                return Optional.empty();
+            }
+            var idx = header.lastIndexOf('-');
+            if (idx <= 0 || idx == header.length() - 1) {
+                return invalid(header, null);
+            }
+            var prefix = header.substring(0, idx);
+            try {
+                var eventId = Long.parseLong(header.substring(idx + 1));
+                if (eventId < 0) {
+                    return invalid(header, null);
+                }
+                return Optional.of(new SseLastEventId(prefix, eventId));
+            } catch (NumberFormatException e) {
+                return invalid(header, e);
+            }
+        }
+
+        private static Optional<SseLastEventId> invalid(String header, Exception cause) {
+            if (cause == null) {
+                LOG.log(Logger.Level.WARNING, "Invalid Last-Event-ID: " + header);
+            } else {
+                LOG.log(Logger.Level.WARNING, "Invalid Last-Event-ID: " + header, cause);
+            }
+            return Optional.empty();
+        }
     }
 
 }
