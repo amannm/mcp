@@ -250,23 +250,11 @@ public final class StreamableHttpServerTransport implements Transport {
     }
 
     SseClient registerGeneralClient(AsyncContext context, String lastEventId) throws IOException {
-        var resumed = resumeClient(context, lastEventId);
-        SseClient client;
-        if (resumed.isPresent()) {
-            client = resumed.get();
-        } else {
-            client = createClient(context);
-        }
-        clients.registerGeneral(client);
-        context.addListener(clients.generalListener(client));
-        return client;
+        return clients.registerGeneral(context, lastEventId, this::createClient);
     }
 
     SseClient registerRequestClient(RequestId id, AsyncContext context) throws IOException {
-        var client = createClient(context);
-        clients.registerRequest(id, client);
-        context.addListener(clients.requestListener(id, client));
-        return client;
+        return clients.registerRequest(id, context, this::createClient);
     }
 
     void unregisterRequestClient(RequestId id, SseClient client) {
@@ -384,21 +372,6 @@ public final class StreamableHttpServerTransport implements Transport {
         return sessions.validate(req, resp, principal, initializing);
     }
 
-    private Optional<SseClient> resumeClient(AsyncContext context, String lastEventId) throws IOException {
-        var parsed = SseLastEventId.parse(lastEventId);
-        if (parsed.isEmpty()) {
-            return Optional.empty();
-        }
-        var token = parsed.get();
-        var candidate = clients.findByPrefix(token.prefix());
-        if (candidate.isEmpty()) {
-            return Optional.empty();
-        }
-        var client = candidate.get();
-        client.attach(context, token.eventId());
-        return Optional.of(client);
-    }
-
     private SseClient createClient(AsyncContext context) throws IOException {
         return new SseClient(context, config.sseClientPrefixByteLength(), config.sseHistoryLimit());
     }
@@ -415,36 +388,4 @@ public final class StreamableHttpServerTransport implements Transport {
             throw new IllegalStateException("incoming queue full");
         }
     }
-
-    private record SseLastEventId(String prefix, long eventId) {
-        private static Optional<SseLastEventId> parse(String header) {
-            if (header == null || header.isBlank()) {
-                return Optional.empty();
-            }
-            var idx = header.lastIndexOf('-');
-            if (idx <= 0 || idx == header.length() - 1) {
-                return invalid(header, null);
-            }
-            var prefix = header.substring(0, idx);
-            try {
-                var eventId = Long.parseLong(header.substring(idx + 1));
-                if (eventId < 0) {
-                    return invalid(header, null);
-                }
-                return Optional.of(new SseLastEventId(prefix, eventId));
-            } catch (NumberFormatException e) {
-                return invalid(header, e);
-            }
-        }
-
-        private static Optional<SseLastEventId> invalid(String header, Exception cause) {
-            if (cause == null) {
-                LOG.log(Logger.Level.WARNING, "Invalid Last-Event-ID: " + header);
-            } else {
-                LOG.log(Logger.Level.WARNING, "Invalid Last-Event-ID: " + header, cause);
-            }
-            return Optional.empty();
-        }
-    }
-
 }
