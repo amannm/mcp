@@ -15,6 +15,7 @@ public final class MessageDispatcher {
     }
 
     public void dispatch(JsonObject message) {
+        Objects.requireNonNull(message, "message");
         if (router.route(message)) {
             flush();
         } else {
