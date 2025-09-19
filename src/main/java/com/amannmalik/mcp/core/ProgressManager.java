@@ -14,11 +14,12 @@ public final class ProgressManager {
     private static final Logger LOG = PlatformLog.get(ProgressManager.class);
     private final Map<ProgressToken, Double> progress = new ConcurrentHashMap<>();
     private final Map<RequestId, ProgressToken> tokens = new ConcurrentHashMap<>();
+    private final Map<ProgressToken, Set<RequestId>> requestsByToken = new ConcurrentHashMap<>();
     private final Set<RequestId> active = ConcurrentHashMap.newKeySet();
     private final Set<RequestId> used = ConcurrentHashMap.newKeySet();
     private final Map<RequestId, String> cancelled = new ConcurrentHashMap<>();
     private final RateLimiter limiter;
-    private final ProgressNotificationJsonCodec NOTIFICATION_CODEC = new ProgressNotificationJsonCodec();
+    private static final ProgressNotificationJsonCodec NOTIFICATION_CODEC = new ProgressNotificationJsonCodec();
 
     public ProgressManager(RateLimiter limiter) {
         if (limiter == null) {
@@ -41,6 +42,11 @@ public final class ProgressManager {
                 throw new IllegalArgumentException("Duplicate token: " + t);
             }
             tokens.put(id, t);
+            requestsByToken.compute(t, (ignored, ids) -> {
+                var set = ids == null ? ConcurrentHashMap.<RequestId>newKeySet() : ids;
+                set.add(id);
+                return set;
+            });
         });
         return token;
     }
@@ -48,9 +54,9 @@ public final class ProgressManager {
     public void release(RequestId id) {
         active.remove(id);
         cancelled.remove(id);
-        var t = tokens.remove(id);
-        if (t != null) {
-            progress.remove(t);
+        var token = tokens.remove(id);
+        if (token != null && removeAssociation(token, id)) {
+            progress.remove(token);
         }
     }
 
@@ -71,8 +77,7 @@ public final class ProgressManager {
     public void record(ProgressNotification note) {
         update(note);
         if (note.progress() >= 1.0) {
-            progress.remove(note.token());
-            tokens.values().removeIf(t -> t.equals(note.token()));
+            completeToken(note.token());
         }
     }
 
@@ -86,6 +91,27 @@ public final class ProgressManager {
             }
             return note.progress();
         });
+    }
+
+    private boolean removeAssociation(ProgressToken token, RequestId id) {
+        var remaining = requestsByToken.compute(token, (ignored, ids) -> {
+            if (ids == null) {
+                return null;
+            }
+            ids.remove(id);
+            return ids.isEmpty() ? null : ids;
+        });
+        return remaining == null;
+    }
+
+    private void completeToken(ProgressToken token) {
+        progress.remove(token);
+        var ids = requestsByToken.remove(token);
+        if (ids != null) {
+            for (var id : ids) {
+                tokens.remove(id, token);
+            }
+        }
     }
 
     private boolean isActive(ProgressToken token) {

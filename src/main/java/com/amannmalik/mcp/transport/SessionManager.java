@@ -8,6 +8,8 @@ import jakarta.servlet.http.*;
 
 import java.io.IOException;
 import java.security.SecureRandom;
+import java.util.Objects;
+import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
 
 /// - [Lifecycle](specification/2025-06-18/basic/lifecycle.mdx)
@@ -25,7 +27,10 @@ final class SessionManager {
     }
 
     SessionManager(String compatibilityVersion, int sessionIdByteLength) {
-        this.compatibilityVersion = compatibilityVersion;
+        this.compatibilityVersion = Objects.requireNonNull(compatibilityVersion, "compatibilityVersion");
+        if (sessionIdByteLength <= 0) {
+            throw new IllegalArgumentException("sessionIdByteLength must be positive");
+        }
         this.sessionIdByteLength = sessionIdByteLength;
         this.protocolVersion = new AtomicReference<>(compatibilityVersion);
     }
@@ -35,31 +40,36 @@ final class SessionManager {
     }
 
     void protocolVersion(String version) {
-        this.protocolVersion.set(version);
+        this.protocolVersion.set(Objects.requireNonNull(version, "version"));
     }
 
     boolean validate(HttpServletRequest req,
                      HttpServletResponse resp,
                      Principal principal,
                      boolean initializing) throws IOException {
+        Objects.requireNonNull(req, "req");
+        Objects.requireNonNull(resp, "resp");
         if (principal == null) {
             throw new IllegalArgumentException("principal required");
         }
-        var id = sessionId(req);
-        var version = req.getHeader(TransportHeaders.PROTOCOL_VERSION);
-        if (!sanitizeHeaders(id, version, resp)) {
+        var headers = sanitizeHeaders(
+                sessionId(req),
+                req.getHeader(TransportHeaders.PROTOCOL_VERSION),
+                resp);
+        if (headers.isEmpty()) {
             return false;
         }
+        var sanitized = headers.get();
         var state = current.get();
         if (state == null) {
             return initializing
                     ? createSession(req, resp, principal)
-                    : failForMissingSession(resp, id, lastSessionId.get());
+                    : failForMissingSession(resp, sanitized.sessionId(), lastSessionId.get());
         }
-        if (!validateExistingSession(req, resp, principal, state, id)) {
+        if (!validateExistingSession(req, resp, principal, state, sanitized.sessionId())) {
             return false;
         }
-        return validateVersion(initializing, version, resp);
+        return validateVersion(initializing, sanitized.version(), resp);
     }
 
     private String sessionId(HttpServletRequest req) {
@@ -79,18 +89,18 @@ final class SessionManager {
         return null;
     }
 
-    private boolean sanitizeHeaders(String sessionHeader,
-                                    String versionHeader,
-                                    HttpServletResponse resp) throws IOException {
+    private Optional<SanitizedHeaders> sanitizeHeaders(String sessionHeader,
+                                                       String versionHeader,
+                                                       HttpServletResponse resp) throws IOException {
         if (sessionHeader != null && ValidationUtil.containsNonVisibleAscii(sessionHeader)) {
             resp.sendError(HttpServletResponse.SC_BAD_REQUEST);
-            return false;
+            return Optional.empty();
         }
         if (versionHeader != null && ValidationUtil.containsNonVisibleAscii(versionHeader)) {
             resp.sendError(HttpServletResponse.SC_BAD_REQUEST);
-            return false;
+            return Optional.empty();
         }
-        return true;
+        return Optional.of(new SanitizedHeaders(sessionHeader, versionHeader));
     }
 
     private boolean createSession(HttpServletRequest req,
@@ -165,6 +175,8 @@ final class SessionManager {
     }
 
     private record SessionState(String id, String owner, Principal principal) {
+    }
+    private record SanitizedHeaders(String sessionId, String version) {
     }
 }
 

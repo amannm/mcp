@@ -30,6 +30,7 @@ import java.time.Duration;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.Objects;
 
 public final class StreamableHttpServerTransport implements Transport {
     // Default to the previous protocol revision when the version header is
@@ -57,7 +58,7 @@ public final class StreamableHttpServerTransport implements Transport {
 
     public StreamableHttpServerTransport(McpServerConfiguration config,
                                          AuthorizationManager auth) throws Exception {
-        this.config = config;
+        this.config = Objects.requireNonNull(config, "config");
         this.sessions = new SessionManager(COMPATIBILITY_VERSION, config.sessionIdByteLength());
         this.server = new Server();
         server.setHandler(servletContext(config));

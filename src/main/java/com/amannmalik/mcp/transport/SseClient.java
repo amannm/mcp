@@ -32,6 +32,12 @@ public final class SseClient implements AutoCloseable {
 
     public SseClient(AsyncContext context, int clientPrefixByteLength, long historyLimit) throws IOException {
         Objects.requireNonNull(context, "context");
+        if (clientPrefixByteLength <= 0) {
+            throw new IllegalArgumentException("clientPrefixByteLength must be positive");
+        }
+        if (historyLimit < 0) {
+            throw new IllegalArgumentException("historyLimit must be non-negative");
+        }
         var bytes = new byte[clientPrefixByteLength];
         RANDOM.nextBytes(bytes);
         this.prefix = Base64Util.encodeUrl(bytes);
@@ -60,13 +66,12 @@ public final class SseClient implements AutoCloseable {
 
     public void send(JsonObject msg) {
         Objects.requireNonNull(msg, "msg");
-        var event = recordEvent(msg);
-        transmit(List.of(event), "SSE send failed");
+        transmitEvent(recordEvent(msg), "SSE send failed");
     }
 
     private void sendHistory(long lastId) {
         var replay = historyAfter(lastId);
-        transmit(replay, "SSE history send failed");
+        transmitEvents(replay, "SSE history send failed");
     }
 
     @Override
@@ -121,7 +126,22 @@ public final class SseClient implements AutoCloseable {
         }
     }
 
-    private void transmit(List<SseEvent> events, String failureMessage) {
+    private void transmitEvent(SseEvent event, String failureMessage) {
+        Objects.requireNonNull(event, "event");
+        synchronized (transmissionLock) {
+            if (!canTransmit()) {
+                return;
+            }
+            try {
+                writeEvent(out, event);
+                out.flush();
+            } catch (Exception e) {
+                handleTransmissionFailure(failureMessage, e);
+            }
+        }
+    }
+
+    private void transmitEvents(List<SseEvent> events, String failureMessage) {
         if (events.isEmpty()) {
             return;
         }
