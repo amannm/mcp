@@ -43,15 +43,9 @@ final class SseClients {
         Objects.requireNonNull(context, "context");
         Objects.requireNonNull(factory, "factory");
 
-        var resumed = resume(lastEventId, context);
-        SseClient client;
-        if (resumed.isPresent()) {
-            client = resumed.get();
-        } else {
-            client = factory.create(context);
-        }
+        var client = resumeOrCreate(lastEventId, context, factory);
         registerGeneral(client);
-        context.addListener(listener(() -> removeGeneral(client)));
+        addCleanupListener(context, () -> removeGeneral(client));
         return client;
     }
 
@@ -62,7 +56,7 @@ final class SseClients {
 
         var client = factory.create(context);
         registerRequest(key, client);
-        context.addListener(listener(() -> removeRequest(key, client)));
+        addCleanupListener(context, () -> removeRequest(key, client));
         return client;
     }
 
@@ -157,6 +151,20 @@ final class SseClients {
         }
         candidate.attach(context, token.eventId());
         return Optional.of(candidate);
+    }
+
+    private SseClient resumeOrCreate(String lastEventId,
+                                     AsyncContext context,
+                                     ClientFactory factory) throws IOException {
+        var resumed = resume(lastEventId, context);
+        if (resumed.isPresent()) {
+            return resumed.get();
+        }
+        return factory.create(context);
+    }
+
+    private void addCleanupListener(AsyncContext context, Runnable cleanup) {
+        context.addListener(listener(cleanup));
     }
 
     private void registerGeneral(SseClient client) {

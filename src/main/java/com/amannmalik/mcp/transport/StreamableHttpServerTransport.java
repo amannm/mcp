@@ -206,7 +206,10 @@ public final class StreamableHttpServerTransport implements Transport {
     }
 
     public List<String> authorizationServers() {
-        return authorizationServers;
+        if (authorizationServers.isEmpty()) {
+            return List.of();
+        }
+        return Collections.unmodifiableList(new ArrayList<>(authorizationServers));
     }
 
     public int port() {
