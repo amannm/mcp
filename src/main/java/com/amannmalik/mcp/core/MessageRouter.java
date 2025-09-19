@@ -36,28 +36,29 @@ public final class MessageRouter {
         Objects.requireNonNull(message, "message");
 
         var envelope = JsonRpcEnvelope.of(message);
-        var id = envelope.id();
-        if (id.isPresent()) {
-            if (routeById(id.get(), message, envelope.isResponse())) {
-                return true;
-            }
-            if (!envelope.isRequest() && !envelope.isNotification()) {
-                return false;
-            }
-        }
-        return routeToGeneralClients(message);
+        return envelope.id()
+                .map(id -> routeWithId(envelope, id))
+                .orElseGet(() -> routeToGeneralClients(envelope.message()));
     }
 
-    private boolean routeById(RequestId id, JsonObject message, boolean finalMessage) {
-        return sendToRequestStream(id, message, finalMessage)
+    private boolean routeWithId(JsonRpcEnvelope envelope, RequestId id) {
+        if (routeById(id, envelope)) {
+            return true;
+        }
+        return switch (envelope.type()) {
+            case REQUEST, NOTIFICATION -> routeToGeneralClients(envelope.message());
+            case RESPONSE, INVALID -> false;
+        };
+    }
+
+    private boolean routeById(RequestId id, JsonRpcEnvelope envelope) {
+        var message = envelope.message();
+        return sendToRequestStream(id, message, envelope.isResponse())
                 || sendToResponseQueue(id, message);
     }
 
     private boolean routeToGeneralClients(JsonObject message) {
-        if (sendToActiveClient(message)) {
-            return true;
-        }
-        return sendToPending(message);
+        return sendToActiveClient(message) || sendToPending(message);
     }
 
     private boolean sendToRequestStream(RequestId id, JsonObject message, boolean finalMessage) {
