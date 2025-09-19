@@ -17,7 +17,6 @@ public record GetPromptRequest(String name,
         ValidationUtil.requireMeta(_meta);
     }
 
-    /// Return an immutable view to avoid exposing internal representation.
     @Override
     public Map<String, String> arguments() {
         return Map.copyOf(arguments);
