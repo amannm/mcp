@@ -32,7 +32,7 @@ public final class MessageRouter {
         this.remover = Objects.requireNonNull(remover, "remover");
     }
 
-    public boolean route(JsonObject message) {
+    public RouteOutcome route(JsonObject message) {
         Objects.requireNonNull(message, "message");
 
         var envelope = JsonRpcEnvelope.of(message);
@@ -41,45 +41,52 @@ public final class MessageRouter {
                 .orElseGet(() -> routeToGeneralClients(envelope.message()));
     }
 
-    private boolean routeWithId(JsonRpcEnvelope envelope, RequestId id) {
-        if (routeById(id, envelope)) {
-            return true;
+    private RouteOutcome routeWithId(JsonRpcEnvelope envelope, RequestId id) {
+        var outcome = routeById(id, envelope);
+        if (outcome != RouteOutcome.NOT_FOUND) {
+            return outcome;
         }
         return switch (envelope.type()) {
             case REQUEST, NOTIFICATION -> routeToGeneralClients(envelope.message());
-            case RESPONSE, INVALID -> false;
+            case RESPONSE, INVALID -> RouteOutcome.NOT_FOUND;
         };
     }
 
-    private boolean routeById(RequestId id, JsonRpcEnvelope envelope) {
+    private RouteOutcome routeById(RequestId id, JsonRpcEnvelope envelope) {
         var message = envelope.message();
-        return sendToRequestStream(id, message, envelope.isResponse())
-                || sendToResponseQueue(id, message);
+        var streamOutcome = sendToRequestStream(id, message, envelope);
+        if (streamOutcome != RouteOutcome.NOT_FOUND) {
+            return streamOutcome;
+        }
+        return sendToResponseQueue(id, message);
     }
 
-    private boolean routeToGeneralClients(JsonObject message) {
-        return sendToActiveClient(message) || sendToPending(message);
+    private RouteOutcome routeToGeneralClients(JsonObject message) {
+        if (sendToActiveClient(message) || sendToPending(message)) {
+            return RouteOutcome.DELIVERED;
+        }
+        return RouteOutcome.PENDING;
     }
 
-    private boolean sendToRequestStream(RequestId id, JsonObject message, boolean finalMessage) {
+    private RouteOutcome sendToRequestStream(RequestId id, JsonObject message, JsonRpcEnvelope envelope) {
         var stream = requestStreams.apply(id);
         if (stream == null) {
-            return false;
+            return RouteOutcome.NOT_FOUND;
         }
         stream.send(message);
-        if (finalMessage) {
+        if (envelope.isResponse()) {
             remover.accept(id, stream);
         }
-        return true;
+        return RouteOutcome.DELIVERED;
     }
 
-    private boolean sendToResponseQueue(RequestId id, JsonObject message) {
+    private RouteOutcome sendToResponseQueue(RequestId id, JsonObject message) {
         var q = responseQueues.apply(id);
         if (q == null) {
-            return false;
+            return RouteOutcome.NOT_FOUND;
         }
         q.add(message);
-        return true;
+        return RouteOutcome.DELIVERED;
     }
 
     private boolean sendToActiveClient(JsonObject message) {
