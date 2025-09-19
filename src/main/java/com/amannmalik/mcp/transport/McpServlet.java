@@ -11,6 +11,7 @@ import jakarta.servlet.AsyncContext;
 import jakarta.servlet.http.*;
 
 import java.io.IOException;
+import java.io.Serial;
 import java.lang.System.Logger;
 import java.util.Optional;
 import java.util.concurrent.BlockingQueue;
@@ -20,6 +21,7 @@ import java.util.concurrent.TimeUnit;
 /// - [Conformance Suite](src/test/resources/com/amannmalik/mcp/mcp.feature)
 final class McpServlet extends HttpServlet {
     /// Explicit serialVersionUID for stable servlet serialization semantics.
+    @Serial
     private static final long serialVersionUID = 1L;
     private static final Logger LOG = PlatformLog.get(McpServlet.class);
 
