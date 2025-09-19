@@ -112,11 +112,11 @@ public final class SseClient implements AutoCloseable {
             }
             var replay = new ArrayList<SseEvent>(history.size());
             for (var event : history) {
-                if (event.id > lastId) {
+                if (event.id() > lastId) {
                     replay.add(event);
                 }
             }
-            return replay.isEmpty() ? List.of() : replay;
+            return replay.isEmpty() ? List.of() : List.copyOf(replay);
         }
     }
 
@@ -128,31 +128,27 @@ public final class SseClient implements AutoCloseable {
 
     private void transmitEvent(SseEvent event, String failureMessage) {
         Objects.requireNonNull(event, "event");
-        synchronized (transmissionLock) {
-            if (!canTransmit()) {
-                return;
-            }
-            try {
-                writeEvent(out, event);
-                out.flush();
-            } catch (Exception e) {
-                handleTransmissionFailure(failureMessage, e);
-            }
-        }
+        transmit(failureMessage, writer -> writeEvent(writer, event));
     }
 
     private void transmitEvents(List<SseEvent> events, String failureMessage) {
         if (events.isEmpty()) {
             return;
         }
+        transmit(failureMessage, writer -> {
+            for (var event : events) {
+                writeEvent(writer, event);
+            }
+        });
+    }
+
+    private void transmit(String failureMessage, TransmissionTask task) {
         synchronized (transmissionLock) {
             if (!canTransmit()) {
                 return;
             }
             try {
-                for (var event : events) {
-                    writeEvent(out, event);
-                }
+                task.accept(out);
                 out.flush();
             } catch (Exception e) {
                 handleTransmissionFailure(failureMessage, e);
@@ -165,12 +161,17 @@ public final class SseClient implements AutoCloseable {
     }
 
     private void writeEvent(PrintWriter writer, SseEvent event) {
-        writer.write("id: " + prefix + '-' + event.id + "\n");
-        writer.write("data: " + event.msg + "\n\n");
+        writer.write("id: " + prefix + '-' + event.id() + "\n");
+        writer.write("data: " + event.msg() + "\n\n");
     }
 
     private void handleTransmissionFailure(String message, Exception e) {
         LOG.log(Logger.Level.ERROR, message, e);
         closed.set(true);
+    }
+
+    @FunctionalInterface
+    private interface TransmissionTask {
+        void accept(PrintWriter writer) throws Exception;
     }
 }
