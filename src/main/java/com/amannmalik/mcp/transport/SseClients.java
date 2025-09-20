@@ -115,8 +115,9 @@ final class SseClients {
 
     void removeGeneral(SseClient client) {
         Objects.requireNonNull(client, "client");
-        general.remove(client);
-        lastGeneral.set(client);
+        if (general.remove(client)) {
+            lastGeneral.set(client);
+        }
         CloseUtil.close(client);
     }
 

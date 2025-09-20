@@ -35,11 +35,8 @@ public final class MessageDispatcher {
     }
 
     private void drainBacklog() {
-        while (true) {
-            var next = backlog.peek();
-            if (next == null) {
-                return;
-            }
+        JsonObject next;
+        while ((next = backlog.peek()) != null) {
             var outcome = router.route(next);
             if (outcome == RouteOutcome.PENDING) {
                 return;
@@ -47,7 +44,6 @@ public final class MessageDispatcher {
             backlog.poll();
             if (outcome == RouteOutcome.NOT_FOUND) {
                 logDrop(next, true);
-                continue;
             }
             // Successful delivery, continue draining remaining backlog entries.
         }

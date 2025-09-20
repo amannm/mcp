@@ -361,25 +361,9 @@ public final class StreamableHttpServerTransport implements Transport {
     }
 
     boolean validateAccept(HttpServletRequest req, HttpServletResponse resp, boolean post) throws IOException {
-        var header = req.getHeader("Accept");
-        if (header == null) {
-            resp.sendError(HttpServletResponse.SC_NOT_ACCEPTABLE);
-            return false;
-        }
-        AcceptHeader accept;
-        try {
-            accept = AcceptHeader.parse(header);
-        } catch (IllegalArgumentException e) {
-            resp.sendError(HttpServletResponse.SC_NOT_ACCEPTABLE);
-            return false;
-        }
-        var ok = post
-                ? accept.matchesExactly(AcceptHeader.APPLICATION_JSON, AcceptHeader.TEXT_EVENT_STREAM)
-                : accept.matchesExactly(AcceptHeader.TEXT_EVENT_STREAM);
-        if (!ok) {
-            resp.sendError(HttpServletResponse.SC_NOT_ACCEPTABLE);
-        }
-        return ok;
+        return post
+                ? requireAcceptHeader(req, resp, AcceptHeader.APPLICATION_JSON, AcceptHeader.TEXT_EVENT_STREAM)
+                : requireAcceptHeader(req, resp, AcceptHeader.TEXT_EVENT_STREAM);
     }
 
     boolean validateSession(HttpServletRequest req,
@@ -389,6 +373,28 @@ public final class StreamableHttpServerTransport implements Transport {
         return sessions.validate(req, resp, principal, initializing);
     }
 
+    private boolean requireAcceptHeader(HttpServletRequest req,
+                                        HttpServletResponse resp,
+                                        String... expectedTypes) throws IOException {
+        var header = req.getHeader("Accept");
+        if (header == null) {
+            resp.sendError(HttpServletResponse.SC_NOT_ACCEPTABLE);
+            return false;
+        }
+        AcceptHeader parsed;
+        try {
+            parsed = AcceptHeader.parse(header);
+        } catch (IllegalArgumentException e) {
+            resp.sendError(HttpServletResponse.SC_NOT_ACCEPTABLE);
+            return false;
+        }
+        if (!parsed.matchesExactly(expectedTypes)) {
+            resp.sendError(HttpServletResponse.SC_NOT_ACCEPTABLE);
+            return false;
+        }
+        return true;
+    }
+
     private SseClient createClient(AsyncContext context) throws IOException {
         return new SseClient(context, config.sseClientPrefixByteLength(), config.sseHistoryLimit());
     }
@@ -396,8 +402,9 @@ public final class StreamableHttpServerTransport implements Transport {
     void terminateSession(boolean recordId) {
         sessions.terminate(recordId);
         clients.clear();
-        closed.set(true);
-        signalClosure();
+        if (closed.compareAndSet(false, true)) {
+            signalClosure();
+        }
     }
 
     private void signalClosure() {
