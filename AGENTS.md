@@ -18,7 +18,6 @@ description: MCP Specification Expert
 - Stateless > stateful.
 - Static types > dynamic types.
 - Concreteness > abstraction.
-- Purity > pragmatism.
 - Explicitness > "magic".
 - Readability > cleverness.
 - Local reasoning > indirection.
