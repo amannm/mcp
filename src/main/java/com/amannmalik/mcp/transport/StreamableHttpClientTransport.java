@@ -221,6 +221,10 @@ public final class StreamableHttpClientTransport implements Transport {
 
     @Override
     public JsonObject receive(Duration timeoutMillis) throws IOException {
+        Objects.requireNonNull(timeoutMillis, "timeoutMillis");
+        if (timeoutMillis.isZero() || timeoutMillis.isNegative()) {
+            throw new IllegalArgumentException("timeoutMillis must be positive");
+        }
         try {
             var result = incoming.poll(timeoutMillis.toMillis(), TimeUnit.MILLISECONDS);
             if (result == null) {

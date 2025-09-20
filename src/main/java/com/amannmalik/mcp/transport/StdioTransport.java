@@ -82,6 +82,10 @@ public final class StdioTransport implements Transport {
 
     @Override
     public JsonObject receive(Duration timeout) throws IOException {
+        Objects.requireNonNull(timeout, "timeout");
+        if (timeout.isZero() || timeout.isNegative()) {
+            throw new IllegalArgumentException("timeout must be positive");
+        }
         var future = CompletableFuture.supplyAsync(() -> {
             try {
                 return in.readLine();

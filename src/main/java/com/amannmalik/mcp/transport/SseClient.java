@@ -168,6 +168,18 @@ public final class SseClient implements AutoCloseable {
     private void handleTransmissionFailure(String message, Exception e) {
         LOG.log(Logger.Level.ERROR, message, e);
         closed.set(true);
+
+        var currentContext = context;
+        try {
+            if (currentContext != null && !currentContext.hasOriginalRequestAndResponse()) {
+                currentContext.complete();
+            }
+        } catch (Exception completionFailure) {
+            LOG.log(Logger.Level.WARNING, "SSE context completion failed", completionFailure);
+        } finally {
+            context = null;
+            out = null;
+        }
     }
 
     @FunctionalInterface
