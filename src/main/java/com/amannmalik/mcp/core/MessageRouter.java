@@ -88,6 +88,7 @@ public final class MessageRouter {
 
     private boolean deliverToPendingClient(JsonObject message) {
         return routes.pendingGeneralClient()
+                .filter(SseClient::isActive)
                 .map(client -> {
                     client.send(message);
                     return true;

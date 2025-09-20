@@ -18,15 +18,15 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.ReentrantLock;
 
 public final class ProgressManager {
     private static final Logger LOG = PlatformLog.get(ProgressManager.class);
     private final Map<ProgressToken, TokenState> tokensByProgress = new ConcurrentHashMap<>();
-    private final Map<RequestId, ProgressToken> tokens = new ConcurrentHashMap<>();
-    private final Set<RequestId> active = ConcurrentHashMap.newKeySet();
+    private final Map<RequestId, RequestRegistration> requests = new ConcurrentHashMap<>();
     private final Set<RequestId> used = ConcurrentHashMap.newKeySet();
-    private final Map<RequestId, String> cancelled = new ConcurrentHashMap<>();
     private final RateLimiter limiter;
     private static final ProgressNotificationJsonCodec NOTIFICATION_CODEC = new ProgressNotificationJsonCodec();
 
@@ -36,21 +36,25 @@ public final class ProgressManager {
 
     public Optional<ProgressToken> register(RequestId id, JsonObject params) {
         Objects.requireNonNull(id, "id");
-        ensureNewRequest(id);
         ensureProgressTokenPlacement(params);
         var token = ProgressToken.fromMeta(params);
-        token.ifPresent(candidate -> associate(id, candidate));
-        return token;
-    }
-
-    private void ensureNewRequest(RequestId id) {
         if (!used.add(id)) {
             throw new DuplicateRequestException(id);
         }
-        if (!active.add(id)) {
+        var registration = createRegistration(id, token);
+        var previous = requests.putIfAbsent(id, registration);
+        if (previous != null) {
             used.remove(id);
             throw new DuplicateRequestException(id);
         }
+        try {
+            token.ifPresent(candidate -> bindToken(id, registration, candidate));
+        } catch (RuntimeException e) {
+            requests.remove(id, registration);
+            used.remove(id);
+            throw e;
+        }
+        return token;
     }
 
     private static void ensureProgressTokenPlacement(JsonObject params) {
@@ -61,37 +65,45 @@ public final class ProgressManager {
 
     public void release(RequestId id) {
         Objects.requireNonNull(id, "id");
-        active.remove(id);
-        cancelled.remove(id);
-        var token = tokens.remove(id);
-        if (token == null) {
+        var registration = requests.remove(id);
+        if (registration == null) {
             return;
         }
-        tokensByProgress.computeIfPresent(token, (ignored, state) -> {
-            if (!state.removeRequest(id)) {
-                return state;
-            }
-            state.clearRequests();
-            state.deactivate();
-            return null;
-        });
+        registration.token().ifPresent(token ->
+                registration.tokenState().ifPresent(state ->
+                        tokensByProgress.computeIfPresent(token, (ignored, current) -> {
+                            if (!current.removeRequest(id)) {
+                                return current;
+                            }
+                            current.clearRequests();
+                            current.deactivate();
+                            return null;
+                        })));
     }
 
-    public void cancel(RequestId id, String reason) {
+    public Optional<String> cancel(RequestId id, String reason) {
         Objects.requireNonNull(id, "id");
-        if (active.contains(id)) {
-            cancelled.put(id, reason);
+        var registration = requests.get(id);
+        if (registration == null) {
+            return Optional.empty();
         }
+        registration.cancel(reason);
+        return Optional.ofNullable(reason);
     }
 
     public boolean isCancelled(RequestId id) {
         Objects.requireNonNull(id, "id");
-        return cancelled.containsKey(id);
+        var registration = requests.get(id);
+        return registration != null && registration.isCancelled();
     }
 
     public String reason(RequestId id) {
         Objects.requireNonNull(id, "id");
-        return cancelled.get(id);
+        var registration = requests.get(id);
+        if (registration == null) {
+            return null;
+        }
+        return registration.cancellationReason().orElse(null);
     }
 
     public void record(ProgressNotification note) {
@@ -109,7 +121,10 @@ public final class ProgressManager {
         }
         state.deactivate();
         for (var requestId : state.requestIdsSnapshot()) {
-            tokens.remove(requestId, token);
+            requests.computeIfPresent(requestId, (ignored, registration) -> {
+                registration.clearTokenState();
+                return registration;
+            });
         }
         state.clearRequests();
     }
@@ -139,16 +154,27 @@ public final class ProgressManager {
         sender.send(NotificationMethod.PROGRESS, NOTIFICATION_CODEC.toJson(note));
     }
 
-    private void associate(RequestId id, ProgressToken token) {
+    private RequestRegistration createRegistration(RequestId id, Optional<ProgressToken> token) {
         Objects.requireNonNull(id, "id");
         Objects.requireNonNull(token, "token");
+        if (token.isEmpty()) {
+            return RequestRegistration.withoutToken();
+        }
         var state = new TokenState();
         state.addRequest(id);
+        return RequestRegistration.withToken(token.get(), state);
+    }
+
+    private void bindToken(RequestId id, RequestRegistration registration, ProgressToken token) {
+        Objects.requireNonNull(id, "id");
+        Objects.requireNonNull(registration, "registration");
+        Objects.requireNonNull(token, "token");
+        var state = registration.tokenState()
+                .orElseThrow(() -> new IllegalStateException("Missing token state for " + id));
         var existing = tokensByProgress.putIfAbsent(token, state);
         if (existing != null) {
             throw new IllegalArgumentException("Duplicate token: " + token);
         }
-        tokens.put(id, token);
     }
 
     private TokenState requireActiveState(ProgressToken token) {
@@ -215,6 +241,51 @@ public final class ProgressManager {
 
         void clearRequests() {
             requestIds.clear();
+        }
+    }
+
+    private static final class RequestRegistration {
+        private final ProgressToken token;
+        private final AtomicReference<TokenState> tokenState;
+        private final AtomicBoolean cancelled = new AtomicBoolean();
+        private final AtomicReference<String> cancellationReason = new AtomicReference<>();
+
+        private RequestRegistration(ProgressToken token, TokenState state) {
+            this.token = token;
+            this.tokenState = new AtomicReference<>(state);
+        }
+
+        static RequestRegistration withoutToken() {
+            return new RequestRegistration(null, null);
+        }
+
+        static RequestRegistration withToken(ProgressToken token, TokenState state) {
+            return new RequestRegistration(Objects.requireNonNull(token, "token"), Objects.requireNonNull(state, "state"));
+        }
+
+        Optional<ProgressToken> token() {
+            return Optional.ofNullable(token);
+        }
+
+        Optional<TokenState> tokenState() {
+            return Optional.ofNullable(tokenState.get());
+        }
+
+        void clearTokenState() {
+            tokenState.set(null);
+        }
+
+        void cancel(String reason) {
+            cancelled.set(true);
+            cancellationReason.set(reason);
+        }
+
+        boolean isCancelled() {
+            return cancelled.get();
+        }
+
+        Optional<String> cancellationReason() {
+            return Optional.ofNullable(cancellationReason.get());
         }
     }
 }
