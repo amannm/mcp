@@ -130,18 +130,35 @@ public final class McpHost implements AutoCloseable {
     public ListResourcesResult listResources(String clientId, Cursor cursor) throws IOException {
         var client = requireClient(clientId);
         requireCapability(client, ServerCapability.RESOURCES);
-        return client.listResources(cursor);
+        var result = client.listResources(cursor);
+        var filtered = result.resources().stream()
+                .filter(r -> allowed(r.annotations()))
+                .toList();
+        if (filtered.size() == result.resources().size()) {
+            return result;
+        }
+        return new ListResourcesResult(filtered, result.nextCursor(), result._meta());
     }
 
     public ListResourceTemplatesResult listResourceTemplates(String clientId, Cursor cursor) throws IOException {
         var client = requireClient(clientId);
         requireCapability(client, ServerCapability.RESOURCES);
-        return client.listResourceTemplates(cursor);
+        var result = client.listResourceTemplates(cursor);
+        var filtered = result.resourceTemplates().stream()
+                .filter(t -> allowed(t.annotations()))
+                .toList();
+        if (filtered.size() == result.resourceTemplates().size()) {
+            return result;
+        }
+        return new ListResourceTemplatesResult(filtered, result.nextCursor(), result._meta());
     }
 
     public AutoCloseable subscribeToResource(String clientId, URI uri, Consumer<ResourceUpdate> listener) throws IOException {
         var client = requireClient(clientId);
         requireCapability(client, ServerCapability.RESOURCES);
+        var resource = findResource(client, uri)
+                .orElseThrow(() -> new IllegalArgumentException("Resource not found: " + uri));
+        privacyBoundary.requireAllowed(principal, resource.annotations());
         return client.subscribeResource(uri, listener);
     }
 
@@ -179,6 +196,20 @@ public final class McpHost implements AutoCloseable {
             for (var t : page.tools()) {
                 if (t.name().equals(name)) {
                     return Optional.of(t);
+                }
+            }
+            cursor = page.nextCursor();
+        } while (!(cursor instanceof Cursor.End));
+        return Optional.empty();
+    }
+
+    private Optional<Resource> findResource(McpClient client, URI uri) throws IOException {
+        Cursor cursor = Cursor.Start.INSTANCE;
+        do {
+            var page = client.listResources(cursor);
+            for (var resource : page.resources()) {
+                if (resource.uri().equals(uri)) {
+                    return Optional.of(resource);
                 }
             }
             cursor = page.nextCursor();
@@ -299,6 +330,15 @@ public final class McpHost implements AutoCloseable {
             requireCapability(client, cap);
         }
         return client;
+    }
+
+    private boolean allowed(Annotations annotations) {
+        try {
+            privacyBoundary.requireAllowed(principal, annotations);
+            return true;
+        } catch (SecurityException e) {
+            return false;
+        }
     }
 
 }
