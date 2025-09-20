@@ -52,7 +52,15 @@ public final class MessageRouter {
 
     private RouteOutcome deliverToRequestStream(RequestId id, JsonRpcEnvelope envelope, SseClient client) {
         var message = envelope.message();
+        if (!client.isActive()) {
+            routes.removeRequestClient(id, client);
+            return RouteOutcome.NOT_FOUND;
+        }
         client.send(message);
+        if (!client.isActive()) {
+            routes.removeRequestClient(id, client);
+            return RouteOutcome.NOT_FOUND;
+        }
         if (envelope.isResponse()) {
             routes.removeRequestClient(id, client);
         }

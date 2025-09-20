@@ -19,54 +19,42 @@ public final class MessageDispatcher {
 
     public void dispatch(JsonObject message) {
         Objects.requireNonNull(message, "message");
-        handleOutcome(message, router.route(message), false);
+        handleDispatchOutcome(message, router.route(message));
     }
 
     public void flush() {
-        JsonObject message;
-        while ((message = backlog.peek()) != null) {
-            if (!handleBacklog(message)) {
+        drainBacklog();
+    }
+
+    private void handleDispatchOutcome(JsonObject message, RouteOutcome outcome) {
+        switch (outcome) {
+            case DELIVERED -> drainBacklog();
+            case PENDING -> backlog.add(message);
+            case NOT_FOUND -> logDrop(message, false);
+        }
+    }
+
+    private void drainBacklog() {
+        while (true) {
+            var next = backlog.peek();
+            if (next == null) {
                 return;
             }
-        }
-    }
-
-    private boolean handleOutcome(JsonObject message, RouteOutcome outcome, boolean fromBacklog) {
-        return switch (outcome) {
-            case DELIVERED -> handleDelivered(fromBacklog);
-            case PENDING -> handlePending(message, fromBacklog);
-            case NOT_FOUND -> handleNotFound(message, fromBacklog);
-        };
-    }
-
-    private boolean handleDelivered(boolean fromBacklog) {
-        if (fromBacklog) {
+            var outcome = router.route(next);
+            if (outcome == RouteOutcome.PENDING) {
+                return;
+            }
             backlog.poll();
-        } else {
-            flush();
+            if (outcome == RouteOutcome.NOT_FOUND) {
+                logDrop(next, true);
+                continue;
+            }
+            // Successful delivery, continue draining remaining backlog entries.
         }
-        return true;
     }
 
-    private boolean handlePending(JsonObject message, boolean fromBacklog) {
-        if (!fromBacklog) {
-            backlog.add(message);
-        }
-        return false;
-    }
-
-    private boolean handleNotFound(JsonObject message, boolean fromBacklog) {
-        dropMessage(message, fromBacklog);
-        return true;
-    }
-
-    private boolean handleBacklog(JsonObject message) {
-        return handleOutcome(message, router.route(message), true);
-    }
-
-    private void dropMessage(JsonObject message, boolean fromBacklog) {
+    private void logDrop(JsonObject message, boolean fromBacklog) {
         if (fromBacklog) {
-            backlog.poll();
             LOG.log(Logger.Level.WARNING, "Dropping unroutable message from backlog: {0}", message);
         } else {
             LOG.log(Logger.Level.WARNING, "Dropping unroutable message: {0}", message);
