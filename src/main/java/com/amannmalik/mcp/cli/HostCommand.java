@@ -12,10 +12,12 @@ import picocli.CommandLine.ParseResult;
 
 import java.io.*;
 import java.lang.System.Logger;
+import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.time.Duration;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
 public final class HostCommand {
@@ -255,21 +257,23 @@ public final class HostCommand {
     private static void runInteractiveMode(McpHost host) throws IOException {
         var reader = new BufferedReader(new InputStreamReader(System.in, StandardCharsets.UTF_8));
         System.out.println("MCP Host Interactive Mode. Type 'help' for commands, 'quit' to exit.");
+        Map<String, AutoCloseable> resourceSubscriptions = new ConcurrentHashMap<>();
 
-        while (true) {
-            System.out.print("mcp> ");
-            var line = reader.readLine();
-            if (line == null || "quit".equals(line.trim())) {
-                break;
-            }
+        try {
+            while (true) {
+                System.out.print("mcp> ");
+                var line = reader.readLine();
+                if (line == null || "quit".equals(line.trim())) {
+                    break;
+                }
 
-            var parts = line.trim().split("\\s+");
-            if (parts.length == 0) {
-                continue;
-            }
+                var parts = line.trim().split("\\s+");
+                if (parts.length == 0) {
+                    continue;
+                }
 
-            try {
-                switch (parts[0]) {
+                try {
+                    switch (parts[0]) {
                     case "help" -> printHelp();
                     case "clients" -> System.out.println("Active clients: " + host.clientIds());
                     case "context" -> System.out.println(host.aggregateContext());
@@ -330,6 +334,26 @@ public final class HostCommand {
                             System.out.println(page);
                         }
                     }
+                    case "list-resources" -> {
+                        if (parts.length < 2) {
+                            System.out.println("Usage: list-resources <client-id> [cursor]");
+                        } else {
+                            var token = parts.length > 2 ? parts[2] : null;
+                            var cursor = token == null ? Cursor.Start.INSTANCE : new Cursor.Token(token);
+                            var page = host.listResources(parts[1], cursor);
+                            System.out.println(page);
+                        }
+                    }
+                    case "list-resource-templates" -> {
+                        if (parts.length < 2) {
+                            System.out.println("Usage: list-resource-templates <client-id> [cursor]");
+                        } else {
+                            var token = parts.length > 2 ? parts[2] : null;
+                            var cursor = token == null ? Cursor.Start.INSTANCE : new Cursor.Token(token);
+                            var page = host.listResourceTemplates(parts[1], cursor);
+                            System.out.println(page);
+                        }
+                    }
                     case "server-capabilities" -> {
                         if (parts.length != 2) {
                             System.out.println("Usage: server-capabilities <client-id>");
@@ -376,12 +400,77 @@ public final class HostCommand {
                             System.out.println(result);
                         }
                     }
+                    case "subscribe-resource" -> {
+                        if (parts.length != 3) {
+                            System.out.println("Usage: subscribe-resource <client-id> <resource-uri>");
+                        } else {
+                            var clientId = parts[1];
+                            URI uri;
+                            try {
+                                uri = URI.create(parts[2]);
+                            } catch (IllegalArgumentException e) {
+                                System.out.println("Invalid URI: " + parts[2]);
+                                break;
+                            }
+                            var key = subscriptionKey(clientId, uri);
+                            if (resourceSubscriptions.containsKey(key)) {
+                                System.out.println("Already subscribed to resource: " + uri);
+                                break;
+                            }
+                            var subscription = host.subscribeToResource(clientId, uri, update -> {
+                                var title = update.title();
+                                var suffix = (title == null || title.isBlank()) ? "" : " (" + title + ")";
+                                System.out.println("Resource updated [" + clientId + "]: " + update.uri() + suffix);
+                            });
+                            resourceSubscriptions.put(key, subscription);
+                            System.out.println("Subscribed to resource: " + uri);
+                        }
+                    }
+                    case "unsubscribe-resource" -> {
+                        if (parts.length != 3) {
+                            System.out.println("Usage: unsubscribe-resource <client-id> <resource-uri>");
+                        } else {
+                            var clientId = parts[1];
+                            URI uri;
+                            try {
+                                uri = URI.create(parts[2]);
+                            } catch (IllegalArgumentException e) {
+                                System.out.println("Invalid URI: " + parts[2]);
+                                break;
+                            }
+                            var key = subscriptionKey(clientId, uri);
+                            var subscription = resourceSubscriptions.remove(key);
+                            if (subscription == null) {
+                                System.out.println("No active subscription for: " + uri);
+                            } else {
+                                try {
+                                    subscription.close();
+                                    System.out.println("Unsubscribed from resource: " + uri);
+                                } catch (Exception e) {
+                                    System.out.println("Failed to unsubscribe: " + e.getMessage());
+                                }
+                            }
+                        }
+                    }
                     case "create-message" -> {
                         if (parts.length < 3) {
                             System.out.println("Usage: create-message <client-id> <json-params>");
                         } else {
                             var params = Json.createReader(new StringReader(parts[2])).readObject();
                             System.out.println(host.createMessage(parts[1], params));
+                        }
+                    }
+                    case "set-log-level" -> {
+                        if (parts.length != 3) {
+                            System.out.println("Usage: set-log-level <client-id> <level>");
+                        } else {
+                            try {
+                                var level = LoggingLevel.valueOf(parts[2].toUpperCase());
+                                host.setClientLogLevel(parts[1], level);
+                                System.out.println("Set log level for " + parts[1] + " to " + level);
+                            } catch (IllegalArgumentException e) {
+                                System.out.println("Invalid level. Valid values: " + Arrays.toString(LoggingLevel.values()));
+                            }
                         }
                     }
                     case "allow-audience" -> {
@@ -433,9 +522,18 @@ public final class HostCommand {
                     }
                     default -> System.out.println("Unknown command: " + parts[0] + ". Type 'help' for available commands.");
                 }
-            } catch (Exception e) {
-                System.out.println("Error: " + e.getMessage());
+                } catch (Exception e) {
+                    System.out.println("Error: " + e.getMessage());
+                }
             }
+        } finally {
+            resourceSubscriptions.values().forEach(subscription -> {
+                try {
+                    subscription.close();
+                } catch (Exception e) {
+                    LOG.log(Logger.Level.WARNING, "Failed to close resource subscription", e);
+                }
+            });
         }
     }
 
@@ -457,15 +555,24 @@ public final class HostCommand {
                   server-features <client-id>      - Show server features
                   server-info <client-id>          - Show server info summary
                   server-info-map <client-id>      - Show server info as key/value map
+                  list-resources <client-id> [cursor] - List resources from client
+                  list-resource-templates <client-id> [cursor] - List resource templates from client
+                  subscribe-resource <client-id> <resource-uri> - Subscribe to resource updates
+                  unsubscribe-resource <client-id> <resource-uri> - Cancel a resource subscription
                   allow-audience <audience>         - Allow audience access
                   revoke-audience <audience>        - Revoke audience access
                   list-tools <client-id> [cursor]  - List tools from client
                   call-tool <client-id> <tool> [args] - Call tool (args as JSON)
                   create-message <client-id> <params> - Request sampling
+                  set-log-level <client-id> <level> - Set client logging verbosity
                   request <client-id> <method> [params] - Send request to client
                   notify <client-id> <method> [params]  - Send notification to client
                   quit                              - Exit interactive mode
                 """);
+    }
+
+    private static String subscriptionKey(String clientId, URI uri) {
+        return clientId + "|" + uri;
     }
 
     private record TlsSettings(
