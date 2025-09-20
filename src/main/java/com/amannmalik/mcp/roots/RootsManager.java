@@ -13,6 +13,7 @@ import java.io.IOException;
 import java.lang.System.Logger;
 import java.time.Duration;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.function.Supplier;
@@ -30,8 +31,8 @@ public final class RootsManager {
     private final List<Root> roots = new CopyOnWriteArrayList<>();
 
     public RootsManager(Supplier<Set<ClientCapability>> capabilities, RequestSender requester) {
-        this.capabilities = capabilities;
-        this.requester = requester;
+        this.capabilities = Objects.requireNonNull(capabilities, "capabilities");
+        this.requester = Objects.requireNonNull(requester, "requester");
     }
 
     public List<Root> listRoots() throws IOException {
@@ -57,15 +58,15 @@ public final class RootsManager {
         if (!capabilities.get().contains(ClientCapability.ROOTS)) {
             return;
         }
-        var t = new Thread(() -> {
-            try {
-                listRoots();
-            } catch (IOException e) {
-                LOG.log(Logger.Level.WARNING, "Failed to refresh roots", e);
-            }
-        });
-        t.setDaemon(true);
-        t.start();
+        Thread.ofVirtual()
+                .name("mcp-roots-refresh")
+                .start(() -> {
+                    try {
+                        listRoots();
+                    } catch (IOException e) {
+                        LOG.log(Logger.Level.WARNING, "Failed to refresh roots", e);
+                    }
+                });
     }
 
     public void listChangedNotification() {

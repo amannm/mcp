@@ -3,6 +3,7 @@ package com.amannmalik.mcp.auth;
 import com.amannmalik.mcp.spi.Principal;
 
 import java.util.List;
+import java.util.Objects;
 
 /// - [Authorization](specification/2025-06-18/basic/authorization.mdx)
 /// - [Security Best Practices](specification/2025-06-18/basic/security_best_practices.mdx)
@@ -12,6 +13,9 @@ public final class AuthorizationManager {
     public AuthorizationManager(List<AuthorizationStrategy> strategies) {
         if (strategies == null || strategies.isEmpty()) {
             throw new IllegalArgumentException("strategies required");
+        }
+        if (strategies.stream().anyMatch(Objects::isNull)) {
+            throw new IllegalArgumentException("strategies must not contain null elements");
         }
         this.strategies = List.copyOf(strategies);
     }
