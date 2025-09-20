@@ -34,18 +34,17 @@ public final class InMemoryResourceProvider extends InMemoryProvider<Resource> i
 
     @Override
     public AutoCloseable subscribe(URI uri, Consumer<ResourceUpdate> listener) {
-        listeners.computeIfAbsent(uri, k -> new CopyOnWriteArrayList<>()).add(listener);
-        return () -> listeners.getOrDefault(uri, List.of()).remove(listener);
+        Objects.requireNonNull(uri, "uri");
+        Objects.requireNonNull(listener, "listener");
+
+        var listenersForUri = listeners.computeIfAbsent(uri, k -> new CopyOnWriteArrayList<>());
+        listenersForUri.add(listener);
+        return () -> removeListener(uri, listener);
     }
 
     @Override
     public Optional<Resource> get(URI uri) {
-        for (var r : items) {
-            if (r.uri().equals(uri)) {
-                return Optional.of(r);
-            }
-        }
-        return Optional.empty();
+        return findResource(uri);
     }
 
     @Override
@@ -54,54 +53,90 @@ public final class InMemoryResourceProvider extends InMemoryProvider<Resource> i
     }
 
     public void notifyUpdate(URI uri) {
-        String title = null;
-        for (var r : items) {
-            if (r.uri().equals(uri)) {
-                title = r.title();
-                break;
-            }
+        Objects.requireNonNull(uri, "uri");
+
+        var listenersForUri = listeners.get(uri);
+        if (listenersForUri == null || listenersForUri.isEmpty()) {
+            return;
         }
+
+        var title = findResource(uri).map(Resource::title).orElse(null);
         var update = new ResourceUpdate(uri, title);
-        listeners.getOrDefault(uri, List.of()).forEach(l -> l.accept(update));
+        listenersForUri.forEach(listener -> listener.accept(update));
     }
 
     public void addResource(Resource resource, ResourceBlock content) {
-        if (resource == null) {
-            throw new IllegalArgumentException("resource required");
-        }
-        for (var r : items) {
-            if (r.uri().equals(resource.uri())) {
-                throw new IllegalArgumentException("duplicate resource uri: " + resource.uri());
-            }
+        Objects.requireNonNull(resource, "resource");
+
+        var uri = resource.uri();
+        if (findResource(uri).isPresent()) {
+            throw new IllegalArgumentException("duplicate resource uri: " + uri);
         }
         items.add(resource);
         if (content != null) {
-            contents.put(resource.uri(), content);
+            contents.put(uri, content);
         }
         notifyListChanged();
     }
 
     public void removeResource(URI uri) {
-        items.removeIf(r -> r.uri().equals(uri));
+        Objects.requireNonNull(uri, "uri");
+
+        var removed = items.removeIf(r -> r.uri().equals(uri));
         contents.remove(uri);
-        notifyListChanged();
+        listeners.remove(uri);
+        if (removed) {
+            notifyListChanged();
+        }
     }
 
     public void addTemplate(ResourceTemplate template) {
-        if (template == null) {
-            throw new IllegalArgumentException("template required");
-        }
-        for (var t : templates) {
-            if (t.name().equals(template.name())) {
-                throw new IllegalArgumentException("duplicate template name: " + template.name());
-            }
+        Objects.requireNonNull(template, "template");
+
+        if (templateExists(template.name())) {
+            throw new IllegalArgumentException("duplicate template name: " + template.name());
         }
         templates.add(template);
         notifyListChanged();
     }
 
     public void removeTemplate(String name) {
-        templates.removeIf(t -> t.name().equals(name));
-        notifyListChanged();
+        Objects.requireNonNull(name, "name");
+
+        if (templates.removeIf(t -> t.name().equals(name))) {
+            notifyListChanged();
+        }
+    }
+
+    private Optional<Resource> findResource(URI uri) {
+        Objects.requireNonNull(uri, "uri");
+
+        for (var resource : items) {
+            if (resource.uri().equals(uri)) {
+                return Optional.of(resource);
+            }
+        }
+        return Optional.empty();
+    }
+
+    private boolean templateExists(String name) {
+        for (var template : templates) {
+            if (template.name().equals(name)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private void removeListener(URI uri, Consumer<ResourceUpdate> listener) {
+        var listenersForUri = listeners.get(uri);
+        if (listenersForUri == null) {
+            return;
+        }
+
+        listenersForUri.remove(listener);
+        if (listenersForUri.isEmpty()) {
+            listeners.remove(uri, listenersForUri);
+        }
     }
 }
