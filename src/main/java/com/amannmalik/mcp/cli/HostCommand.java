@@ -12,6 +12,7 @@ import picocli.CommandLine.ParseResult;
 
 import java.io.*;
 import java.lang.System.Logger;
+import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.time.Duration;
@@ -255,6 +256,7 @@ public final class HostCommand {
     private static void runInteractiveMode(McpHost host) throws IOException {
         var reader = new BufferedReader(new InputStreamReader(System.in, StandardCharsets.UTF_8));
         System.out.println("MCP Host Interactive Mode. Type 'help' for commands, 'quit' to exit.");
+        var resourceSubscriptions = new HashMap<String, Map<URI, AutoCloseable>>();
 
         while (true) {
             System.out.print("mcp> ");
@@ -328,6 +330,69 @@ public final class HostCommand {
                             var cursor = token == null ? Cursor.Start.INSTANCE : new Cursor.Token(token);
                             var page = host.listTools(parts[1], cursor);
                             System.out.println(page);
+                        }
+                    }
+                    case "list-resource-templates" -> {
+                        if (parts.length < 2) {
+                            System.out.println("Usage: list-resource-templates <client-id> [cursor]");
+                        } else {
+                            var token = parts.length > 2 ? parts[2] : null;
+                            var cursor = token == null ? Cursor.Start.INSTANCE : new Cursor.Token(token);
+                            var page = host.listResourceTemplates(parts[1], cursor);
+                            System.out.println(page);
+                        }
+                    }
+                    case "subscribe-resource" -> {
+                        if (parts.length != 3) {
+                            System.out.println("Usage: subscribe-resource <client-id> <uri>");
+                        } else {
+                            var clientId = parts[1];
+                            var uri = URI.create(parts[2]);
+                            var clientSubs = resourceSubscriptions.computeIfAbsent(clientId, __ -> new HashMap<>());
+                            if (clientSubs.containsKey(uri)) {
+                                System.out.println("Already subscribed to: " + uri);
+                            } else {
+                                var handle = host.subscribeToResource(clientId, uri, update -> {
+                                    var title = update.title() == null ? "" : " (" + update.title() + ")";
+                                    System.out.println("Resource updated: " + update.uri() + title);
+                                });
+                                clientSubs.put(uri, handle);
+                                System.out.println("Subscribed to resource: " + uri);
+                            }
+                        }
+                    }
+                    case "unsubscribe-resource" -> {
+                        if (parts.length != 3) {
+                            System.out.println("Usage: unsubscribe-resource <client-id> <uri>");
+                        } else {
+                            var clientId = parts[1];
+                            var uri = URI.create(parts[2]);
+                            var clientSubs = resourceSubscriptions.get(clientId);
+                            if (clientSubs == null || !clientSubs.containsKey(uri)) {
+                                System.out.println("No active subscription for: " + uri);
+                            } else {
+                                var handle = clientSubs.remove(uri);
+                                try {
+                                    if (handle != null) {
+                                        handle.close();
+                                    }
+                                } catch (Exception e) {
+                                    throw new RuntimeException("Failed to unsubscribe: " + e.getMessage(), e);
+                                }
+                                if (clientSubs.isEmpty()) {
+                                    resourceSubscriptions.remove(clientId);
+                                }
+                                System.out.println("Unsubscribed from resource: " + uri);
+                            }
+                        }
+                    }
+                    case "set-log-level" -> {
+                        if (parts.length != 3) {
+                            System.out.println("Usage: set-log-level <client-id> <level>");
+                        } else {
+                            var level = LoggingLevel.valueOf(parts[2].toUpperCase());
+                            host.setClientLogLevel(parts[1], level);
+                            System.out.println("Set log level to " + level);
                         }
                     }
                     case "server-capabilities" -> {
@@ -437,6 +502,15 @@ public final class HostCommand {
                 System.out.println("Error: " + e.getMessage());
             }
         }
+
+        resourceSubscriptions.values().forEach(clientSubs ->
+                clientSubs.values().forEach(sub -> {
+                    try {
+                        sub.close();
+                    } catch (Exception e) {
+                        LOG.log(Logger.Level.WARNING, "Failed to close resource subscription", e);
+                    }
+                }));
     }
 
     private static void printHelp() {
@@ -460,6 +534,10 @@ public final class HostCommand {
                   allow-audience <audience>         - Allow audience access
                   revoke-audience <audience>        - Revoke audience access
                   list-tools <client-id> [cursor]  - List tools from client
+                  list-resource-templates <client-id> [cursor] - List resource templates from client
+                  subscribe-resource <client-id> <uri> - Subscribe to resource updates
+                  unsubscribe-resource <client-id> <uri> - Cancel resource subscription
+                  set-log-level <client-id> <level> - Update client log level
                   call-tool <client-id> <tool> [args] - Call tool (args as JSON)
                   create-message <client-id> <params> - Request sampling
                   request <client-id> <method> [params] - Send request to client
