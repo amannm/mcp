@@ -402,12 +402,11 @@ public final class McpServer extends JsonRpcEndpoint implements AutoCloseable {
 
     private void cancelled(JsonRpcNotification note) {
         var cn = CANCELLED_NOTIFICATION_JSON_CODEC.fromJson(note.params());
-        progress.cancel(cn.requestId(), cn.reason());
+        var reason = progress.cancel(cn.requestId(), cn.reason());
         progress.release(cn.requestId());
         try {
-            var reason = progress.reason(cn.requestId());
-            sendLog(LoggingLevel.INFO, config.cancellationLoggerName(),
-                    reason == null ? JsonValue.NULL : Json.createValue(reason));
+            var payload = reason.<JsonValue>map(Json::createValue).orElse(JsonValue.NULL);
+            sendLog(LoggingLevel.INFO, config.cancellationLoggerName(), payload);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }

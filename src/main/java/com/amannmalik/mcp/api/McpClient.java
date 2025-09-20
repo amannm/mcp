@@ -620,12 +620,10 @@ public final class McpClient extends JsonRpcEndpoint implements AutoCloseable {
 
     private void cancelled(JsonRpcNotification note) {
         var cn = CANCELLED_NOTIFICATION_JSON_CODEC.fromJson(note.params());
-        progress.cancel(cn.requestId(), cn.reason());
+        var reason = progress.cancel(cn.requestId(), cn.reason());
         progress.release(cn.requestId());
-        var reason = progress.reason(cn.requestId());
-        if (reason != null) {
-            LOG.log(Logger.Level.INFO, () -> "Request " + cn.requestId() + " cancelled: " + reason);
-        }
+        reason.ifPresent(value ->
+                LOG.log(Logger.Level.INFO, () -> "Request " + cn.requestId() + " cancelled: " + value));
     }
 
     public interface McpClientListener {

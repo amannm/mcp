@@ -106,7 +106,11 @@ final class SseClients {
     }
 
     private Optional<SseClient> lastGeneralClient() {
-        return Optional.ofNullable(lastGeneral.get());
+        var client = lastGeneral.get();
+        if (client == null || !client.isActive()) {
+            return Optional.empty();
+        }
+        return Optional.of(client);
     }
 
     void removeGeneral(SseClient client) {
