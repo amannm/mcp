@@ -8,7 +8,6 @@ import java.io.*;
 import java.lang.System.Logger;
 import java.nio.charset.StandardCharsets;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -18,7 +17,7 @@ final class SseReader implements Runnable {
 
     private final InputStream input;
     private final BlockingQueue<JsonObject> queue;
-    private final Optional<Set<SseReader>> container;
+    private final Set<SseReader> container;
     private final EventBuffer buffer = new EventBuffer();
     private final AtomicBoolean closed = new AtomicBoolean();
     private String lastEventId;
@@ -26,7 +25,7 @@ final class SseReader implements Runnable {
     SseReader(InputStream input, BlockingQueue<JsonObject> queue, Set<SseReader> container) {
         this.input = Objects.requireNonNull(input, "input");
         this.queue = Objects.requireNonNull(queue, "queue");
-        this.container = Optional.ofNullable(container);
+        this.container = container == null ? Set.of() : container;
     }
 
     @Override
@@ -48,7 +47,9 @@ final class SseReader implements Runnable {
         } catch (IOException e) {
             LOG.log(Logger.Level.WARNING, "SSE read failed", e);
         } finally {
-            container.ifPresent(c -> c.remove(this));
+            if (!container.isEmpty()) {
+                container.remove(this);
+            }
             close();
         }
     }
