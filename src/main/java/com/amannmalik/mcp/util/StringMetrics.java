@@ -1,18 +1,26 @@
 package com.amannmalik.mcp.util;
 
 import java.util.Locale;
+import java.util.Objects;
 
 public final class StringMetrics {
     private StringMetrics() {
     }
 
     public static int levenshtein(String a, String b) {
+        Objects.requireNonNull(a, "a");
+        Objects.requireNonNull(b, "b");
+
+        if (a.equals(b)) {
+            return 0;
+        }
+
         var prev = new int[b.length() + 1];
+        var curr = new int[b.length() + 1];
         for (var j = 0; j <= b.length(); j++) {
             prev[j] = j;
         }
         for (var i = 1; i <= a.length(); i++) {
-            var curr = new int[b.length() + 1];
             curr[0] = i;
             var ca = a.charAt(i - 1);
             for (var j = 1; j <= b.length(); j++) {
@@ -22,7 +30,9 @@ public final class StringMetrics {
                 var sub = prev[j - 1] + cost;
                 curr[j] = Math.min(Math.min(ins, del), sub);
             }
+            var swap = prev;
             prev = curr;
+            curr = swap;
         }
         return prev[b.length()];
     }

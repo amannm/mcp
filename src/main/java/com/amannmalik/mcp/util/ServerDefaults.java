@@ -2,307 +2,78 @@ package com.amannmalik.mcp.util;
 
 import com.amannmalik.mcp.api.McpServerConfiguration;
 import com.amannmalik.mcp.completion.InMemoryCompletionProvider;
-import com.amannmalik.mcp.prompts.*;
+import com.amannmalik.mcp.prompts.InMemoryPromptProvider;
+import com.amannmalik.mcp.prompts.PromptMessageTemplate;
+import com.amannmalik.mcp.prompts.PromptTemplate;
 import com.amannmalik.mcp.resources.InMemoryResourceProvider;
 import com.amannmalik.mcp.sampling.InteractiveSamplingProvider;
 import com.amannmalik.mcp.security.ResourceAccessController;
-import com.amannmalik.mcp.spi.*;
+import com.amannmalik.mcp.spi.Annotations;
+import com.amannmalik.mcp.spi.CompleteResult;
+import com.amannmalik.mcp.spi.CompletionProvider;
+import com.amannmalik.mcp.spi.ContentBlock;
+import com.amannmalik.mcp.spi.Cursor;
+import com.amannmalik.mcp.spi.Pagination;
+import com.amannmalik.mcp.spi.Prompt;
+import com.amannmalik.mcp.spi.PromptArgument;
+import com.amannmalik.mcp.spi.PromptInstance;
+import com.amannmalik.mcp.spi.PromptProvider;
+import com.amannmalik.mcp.spi.Principal;
+import com.amannmalik.mcp.spi.Ref;
+import com.amannmalik.mcp.spi.Resource;
+import com.amannmalik.mcp.spi.ResourceAccessPolicy;
+import com.amannmalik.mcp.spi.ResourceBlock;
+import com.amannmalik.mcp.spi.ResourceProvider;
+import com.amannmalik.mcp.spi.ResourceTemplate;
+import com.amannmalik.mcp.spi.ResourceUpdate;
+import com.amannmalik.mcp.spi.Role;
+import com.amannmalik.mcp.spi.SamplingProvider;
+import com.amannmalik.mcp.spi.Tool;
+import com.amannmalik.mcp.spi.ToolAnnotations;
+import com.amannmalik.mcp.spi.ToolProvider;
+import com.amannmalik.mcp.spi.ToolResult;
 import com.amannmalik.mcp.tools.InMemoryToolProvider;
 import jakarta.json.Json;
 import jakarta.json.JsonObject;
 
 import java.net.URI;
 import java.time.Instant;
-import java.util.*;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
 import java.util.function.Consumer;
+import java.util.function.Function;
 
 public final class ServerDefaults {
-    private static final ResourceProvider RESOURCES;
-    private static final ToolProvider TOOLS;
-    private static final PromptProvider PROMPTS;
-    private static final CompletionProvider COMPLETIONS;
-    private static final SamplingProvider SAMPLING;
-
-    static {
-        var ann = new Annotations(Set.of(Role.USER), 0.5, Instant.parse("2024-01-01T00:00:00Z"));
-        var r0 = new Resource(URI.create("file:///sample/example.txt"), "example", null, null, "text/plain", 5L, ann, null);
-        var r1 = new Resource(URI.create("https://example.com/resource"), "web", null, null, "text/plain", 6L, ann, null);
-        var r2 = new Resource(URI.create("git://repo/file"), "repo", null, null, "text/plain", 7L, ann, null);
-        Map<URI, ResourceBlock> content = Map.of(
-                r0.uri(), new ResourceBlock.Text(r0.uri(), "text/plain", "hello", null),
-                r1.uri(), new ResourceBlock.Text(r1.uri(), "text/plain", "web", null),
-                r2.uri(), new ResourceBlock.Text(r2.uri(), "text/plain", "repo", null)
-        );
-        var template = new ResourceTemplate("file:///sample/template", "example_template", null, null, "text/plain", null, null);
-        RESOURCES = new InMemoryResourceProvider(List.of(r0, r1, r2), content, List.of(template));
-
-        var schema = Json.createObjectBuilder().add("type", "object").build();
-        var outSchema = Json.createObjectBuilder()
-                .add("type", "object")
-                .add("properties", Json.createObjectBuilder()
-                        .add("message", Json.createObjectBuilder().add("type", "string")))
-                .add("required", Json.createArrayBuilder().add("message"))
-                .build();
-        var tool = new Tool("test_tool", "Test Tool", "Demonstrates successful execution", schema, outSchema,
-                new ToolAnnotations("Annotated Tool", true, null, null, null), null);
-        var errorTool = new Tool("error_tool", "Error Tool", "Always fails", schema, null, null, null);
-        var eschema = Json.createObjectBuilder()
-                .add("type", "object")
-                .add("properties", Json.createObjectBuilder()
-                        .add("msg", Json.createObjectBuilder().add("type", "string")))
-                .add("required", Json.createArrayBuilder().add("msg"))
-                .build();
-        var eliciting = new Tool("echo_tool", "Echo Tool", "Echoes the provided message", eschema, null, null, null);
-        var slow = new Tool("slow_tool", "Slow Tool", "Delays before responding", schema, null, null, null);
-        var img = new Tool("image_tool", "Image Tool", "Returns image content", schema, null, null, null);
-        var audio = new Tool("audio_tool", "Audio Tool", "Returns audio content", schema, null, null, null);
-        var link = new Tool("link_tool", "Link Tool", "Returns resource link", schema, null, null, null);
-        var embedded = new Tool("embedded_tool", "Embedded Resource Tool", "Returns embedded resource", schema, null, null, null);
-        TOOLS = new InMemoryToolProvider(
-                List.of(tool, errorTool, eliciting, slow, img, audio, link, embedded),
-                Map.of(
-                        "test_tool", a -> new ToolResult(
-                                Json.createArrayBuilder()
-                                        .add(Json.createObjectBuilder()
-                                                .add("type", "text")
-                                                .add("text", "ok")
-                                                .build())
-                                        .build(),
-                                Json.createObjectBuilder().add("message", "ok").build(),
-                                false, null),
-                        "error_tool", a -> new ToolResult(
-                                Json.createArrayBuilder()
-                                        .add(Json.createObjectBuilder()
-                                                .add("type", "text")
-                                                .add("text", "fail")
-                                                .build())
-                                        .build(), null, true, null),
-                        "echo_tool", a -> new ToolResult(
-                                Json.createArrayBuilder()
-                                        .add(Json.createObjectBuilder()
-                                                .add("type", "text")
-                                                .add("text", a.getString("msg"))
-                                                .build())
-                                        .build(), null, false, null),
-                        "slow_tool", a -> {
-                            try {
-                                Thread.sleep(1000);
-                            } catch (InterruptedException ie) {
-                                Thread.currentThread().interrupt();
-                            }
-                            return new ToolResult(
-                                    Json.createArrayBuilder()
-                                            .add(Json.createObjectBuilder()
-                                                    .add("type", "text")
-                                                    .add("text", "ok")
-                                                    .build())
-                                            .build(),
-                                    null, false, null);
-                        },
-                        "image_tool", a -> new ToolResult(
-                                Json.createArrayBuilder()
-                                        .add(Json.createObjectBuilder()
-                                                .add("type", "image")
-                                                .add("data", "")
-                                                .add("encoding", "base64")
-                                                .build())
-                                        .build(), null, false, null),
-                        "audio_tool", a -> new ToolResult(
-                                Json.createArrayBuilder()
-                                        .add(Json.createObjectBuilder()
-                                                .add("type", "audio")
-                                                .add("data", "")
-                                                .add("encoding", "base64")
-                                                .build())
-                                        .build(), null, false, null),
-                        "link_tool", a -> new ToolResult(
-                                Json.createArrayBuilder()
-                                        .add(Json.createObjectBuilder()
-                                                .add("type", "resource_link")
-                                                .add("uri", r0.uri().toString())
-                                                .build())
-                                        .build(), null, false, null),
-                        "embedded_tool", a -> new ToolResult(
-                                Json.createArrayBuilder()
-                                        .add(Json.createObjectBuilder()
-                                                .add("type", "resource")
-                                                .add("resource", Json.createObjectBuilder()
-                                                        .add("uri", r0.uri().toString())
-                                                        .add("name", r0.name())
-                                                        .build())
-                                                .build())
-                                        .build(), null, false, null)
-                ));
-
-        var promptProvider = new InMemoryPromptProvider();
-        var arg = new PromptArgument("test_arg", null, null, true, null);
-        var prompt = new Prompt("test_prompt", "Test Prompt", null, List.of(arg), null);
-        var msg = new PromptMessageTemplate(Role.USER, new ContentBlock.Text("hello", null, null));
-        promptProvider.add(new PromptTemplate(prompt, List.of(msg)));
-        PROMPTS = promptProvider;
-
-        var completionProvider = new InMemoryCompletionProvider();
-        completionProvider.add(new Ref.PromptRef("test_prompt", null, null), "test_arg", Map.of(), List.of("test_completion"));
-        COMPLETIONS = completionProvider;
-
-        SAMPLING = new InteractiveSamplingProvider(true);
-    }
+    private static final ResourceDefaults RESOURCE_DEFAULTS = createResourceDefaults();
+    private static final ResourceProvider RESOURCES = RESOURCE_DEFAULTS.provider();
+    private static final ToolProvider TOOLS = createToolProvider(RESOURCE_DEFAULTS.sampleResource());
+    private static final PromptProvider PROMPTS = createPromptProvider();
+    private static final CompletionProvider COMPLETIONS = createCompletionProvider();
+    private static final SamplingProvider SAMPLING = new InteractiveSamplingProvider(true);
 
     private ServerDefaults() {
     }
 
     public static ResourceProvider resources() {
         /// Return a defensive delegate to avoid exposing internal mutable provider instance.
-        final var delegate = RESOURCES;
-        return new ResourceProvider() {
-            @Override
-            public ResourceBlock read(URI uri) {
-                return delegate.read(uri);
-            }
-
-            @Override
-            public Optional<Resource> get(URI uri) {
-                return delegate.get(uri);
-            }
-
-            @Override
-            public Pagination.Page<Resource> list(Cursor cursor) {
-                return delegate.list(cursor);
-            }
-
-            @Override
-            public Pagination.Page<ResourceTemplate> listTemplates(Cursor cursor) {
-                return delegate.listTemplates(cursor);
-            }
-
-            @Override
-            public AutoCloseable subscribe(URI uri, Consumer<ResourceUpdate> listener) {
-                return delegate.subscribe(uri, listener);
-            }
-
-            @Override
-            public boolean supportsSubscribe() {
-                return delegate.supportsSubscribe();
-            }
-
-            @Override
-            public AutoCloseable onListChanged(Runnable listener) {
-                return delegate.onListChanged(listener);
-            }
-
-            @Override
-            public boolean supportsListChanged() {
-                return delegate.supportsListChanged();
-            }
-
-            @Override
-            public void close() {
-                delegate.close();
-            }
-        };
+        return new DelegatingResourceProvider(RESOURCES);
     }
 
     public static ToolProvider tools() {
         /// Return a defensive delegate to avoid exposing internal mutable provider instance.
-        final var delegate = TOOLS;
-        return new ToolProvider() {
-            @Override
-            public Pagination.Page<Tool> list(Cursor cursor) {
-                return delegate.list(cursor);
-            }
-
-            @Override
-            public AutoCloseable onListChanged(Runnable listener) {
-                return delegate.onListChanged(listener);
-            }
-
-            @Override
-            public boolean supportsListChanged() {
-                return delegate.supportsListChanged();
-            }
-
-            @Override
-            public void close() {
-                delegate.close();
-            }
-
-            @Override
-            public Optional<Tool> find(String name) {
-                return delegate.find(name);
-            }
-
-            @Override
-            public ToolResult call(String name, JsonObject arguments) {
-                return delegate.call(name, arguments);
-            }
-        };
+        return new DelegatingToolProvider(TOOLS);
     }
 
     public static PromptProvider prompts() {
         /// Return a defensive delegate to avoid exposing internal mutable provider instance.
-        final var delegate = PROMPTS;
-        return new PromptProvider() {
-            @Override
-            public Pagination.Page<Prompt> list(Cursor cursor) {
-                return delegate.list(cursor);
-            }
-
-            @Override
-            public AutoCloseable onListChanged(Runnable listener) {
-                return delegate.onListChanged(listener);
-            }
-
-            @Override
-            public boolean supportsListChanged() {
-                return delegate.supportsListChanged();
-            }
-
-            @Override
-            public void close() {
-                delegate.close();
-            }
-
-            @Override
-            public Optional<Prompt> find(String name) {
-                return delegate.find(name);
-            }
-
-            @Override
-            public PromptInstance get(String name, Map<String, String> arguments) {
-                return delegate.get(name, arguments);
-            }
-        };
+        return new DelegatingPromptProvider(PROMPTS);
     }
 
     public static CompletionProvider completions() {
         /// Return a defensive delegate to avoid exposing internal mutable provider instance.
-        final var delegate = COMPLETIONS;
-        return new CompletionProvider() {
-            @Override
-            public Pagination.Page<Ref> list(Cursor cursor) {
-                return delegate.list(cursor);
-            }
-
-            @Override
-            public AutoCloseable onListChanged(Runnable listener) {
-                return delegate.onListChanged(listener);
-            }
-
-            @Override
-            public boolean supportsListChanged() {
-                return delegate.supportsListChanged();
-            }
-
-            @Override
-            public void close() {
-                delegate.close();
-            }
-
-            @Override
-            public CompleteResult execute(String name, JsonObject args) throws InterruptedException {
-                return delegate.execute(name, args);
-            }
-        };
+        return new DelegatingCompletionProvider(COMPLETIONS);
     }
 
     public static SamplingProvider sampling() {
@@ -319,5 +90,381 @@ public final class ServerDefaults {
 
     public static Principal principal() {
         return new Principal(McpServerConfiguration.defaultConfiguration().defaultPrincipal(), Set.of());
+    }
+
+    private static ResourceDefaults createResourceDefaults() {
+        var annotations = new Annotations(Set.of(Role.USER), 0.5, Instant.parse("2024-01-01T00:00:00Z"));
+        var sampleFile = new Resource(
+                URI.create("file:///sample/example.txt"),
+                "example",
+                null,
+                null,
+                "text/plain",
+                5L,
+                annotations,
+                null);
+        var webResource = new Resource(
+                URI.create("https://example.com/resource"),
+                "web",
+                null,
+                null,
+                "text/plain",
+                6L,
+                annotations,
+                null);
+        var gitResource = new Resource(
+                URI.create("git://repo/file"),
+                "repo",
+                null,
+                null,
+                "text/plain",
+                7L,
+                annotations,
+                null);
+
+        var content = Map.<URI, ResourceBlock>of(
+                sampleFile.uri(), new ResourceBlock.Text(sampleFile.uri(), "text/plain", "hello", null),
+                webResource.uri(), new ResourceBlock.Text(webResource.uri(), "text/plain", "web", null),
+                gitResource.uri(), new ResourceBlock.Text(gitResource.uri(), "text/plain", "repo", null));
+
+        var template = new ResourceTemplate(
+                "file:///sample/template",
+                "example_template",
+                null,
+                null,
+                "text/plain",
+                null,
+                null);
+
+        var provider = new InMemoryResourceProvider(
+                List.of(sampleFile, webResource, gitResource),
+                content,
+                List.of(template));
+
+        return new ResourceDefaults(provider, sampleFile);
+    }
+
+    private static ToolProvider createToolProvider(Resource sampleResource) {
+        Objects.requireNonNull(sampleResource, "sampleResource");
+
+        var schema = Json.createObjectBuilder()
+                .add("type", "object")
+                .build();
+
+        var outputSchema = Json.createObjectBuilder()
+                .add("type", "object")
+                .add("properties", Json.createObjectBuilder()
+                        .add("message", Json.createObjectBuilder().add("type", "string")))
+                .add("required", Json.createArrayBuilder().add("message"))
+                .build();
+
+        var echoSchema = Json.createObjectBuilder()
+                .add("type", "object")
+                .add("properties", Json.createObjectBuilder()
+                        .add("msg", Json.createObjectBuilder().add("type", "string")))
+                .add("required", Json.createArrayBuilder().add("msg"))
+                .build();
+
+        var tools = List.of(
+                new Tool(
+                        "test_tool",
+                        "Test Tool",
+                        "Demonstrates successful execution",
+                        schema,
+                        outputSchema,
+                        new ToolAnnotations("Annotated Tool", true, null, null, null),
+                        null),
+                new Tool("error_tool", "Error Tool", "Always fails", schema, null, null, null),
+                new Tool("echo_tool", "Echo Tool", "Echoes the provided message", echoSchema, null, null, null),
+                new Tool("slow_tool", "Slow Tool", "Delays before responding", schema, null, null, null),
+                new Tool("image_tool", "Image Tool", "Returns image content", schema, null, null, null),
+                new Tool("audio_tool", "Audio Tool", "Returns audio content", schema, null, null, null),
+                new Tool("link_tool", "Link Tool", "Returns resource link", schema, null, null, null),
+                new Tool("embedded_tool", "Embedded Resource Tool", "Returns embedded resource", schema, null, null, null));
+
+        var handlers = Map.<String, Function<JsonObject, ToolResult>>ofEntries(
+                Map.entry("test_tool", args -> structuredMessageResult("ok")),
+                Map.entry("error_tool", args -> errorResult("fail")),
+                Map.entry("echo_tool", args -> textResult(args.getString("msg"))),
+                Map.entry("slow_tool", args -> slowResult()),
+                Map.entry("image_tool", args -> binaryResult("image")),
+                Map.entry("audio_tool", args -> binaryResult("audio")),
+                Map.entry("link_tool", args -> linkResult(sampleResource.uri().toString())),
+                Map.entry("embedded_tool", args -> embeddedResult(sampleResource)));
+
+        return new InMemoryToolProvider(tools, handlers);
+    }
+
+    private static PromptProvider createPromptProvider() {
+        var provider = new InMemoryPromptProvider();
+        var argument = new PromptArgument("test_arg", null, null, true, null);
+        var prompt = new Prompt("test_prompt", "Test Prompt", null, List.of(argument), null);
+        var message = new PromptMessageTemplate(Role.USER, new ContentBlock.Text("hello", null, null));
+        provider.add(new PromptTemplate(prompt, List.of(message)));
+        return provider;
+    }
+
+    private static CompletionProvider createCompletionProvider() {
+        var provider = new InMemoryCompletionProvider();
+        provider.add(new Ref.PromptRef("test_prompt", null, null), "test_arg", Map.of(), List.of("test_completion"));
+        return provider;
+    }
+
+    private static ToolResult structuredMessageResult(String message) {
+        return new ToolResult(
+                Json.createArrayBuilder()
+                        .add(textBlock(message))
+                        .build(),
+                Json.createObjectBuilder().add("message", message).build(),
+                false,
+                null);
+    }
+
+    private static ToolResult errorResult(String message) {
+        return new ToolResult(
+                Json.createArrayBuilder()
+                        .add(textBlock(message))
+                        .build(),
+                null,
+                true,
+                null);
+    }
+
+    private static ToolResult textResult(String message) {
+        return new ToolResult(
+                Json.createArrayBuilder()
+                        .add(textBlock(message))
+                        .build(),
+                null,
+                false,
+                null);
+    }
+
+    private static ToolResult slowResult() {
+        delay();
+        return textResult("ok");
+    }
+
+    private static void delay() {
+        try {
+            Thread.sleep(1000);
+        } catch (InterruptedException ie) {
+            Thread.currentThread().interrupt();
+        }
+    }
+
+    private static ToolResult binaryResult(String type) {
+        return new ToolResult(
+                Json.createArrayBuilder()
+                        .add(Json.createObjectBuilder()
+                                .add("type", type)
+                                .add("data", "")
+                                .add("encoding", "base64")
+                                .build())
+                        .build(),
+                null,
+                false,
+                null);
+    }
+
+    private static ToolResult linkResult(String uri) {
+        return new ToolResult(
+                Json.createArrayBuilder()
+                        .add(Json.createObjectBuilder()
+                                .add("type", "resource_link")
+                                .add("uri", uri)
+                                .build())
+                        .build(),
+                null,
+                false,
+                null);
+    }
+
+    private static ToolResult embeddedResult(Resource resource) {
+        return new ToolResult(
+                Json.createArrayBuilder()
+                        .add(Json.createObjectBuilder()
+                                .add("type", "resource")
+                                .add("resource", Json.createObjectBuilder()
+                                        .add("uri", resource.uri().toString())
+                                        .add("name", resource.name())
+                                        .build())
+                                .build())
+                        .build(),
+                null,
+                false,
+                null);
+    }
+
+    private static JsonObject textBlock(String message) {
+        return Json.createObjectBuilder()
+                .add("type", "text")
+                .add("text", message)
+                .build();
+    }
+
+    private static final class DelegatingResourceProvider implements ResourceProvider {
+        private final ResourceProvider delegate;
+
+        private DelegatingResourceProvider(ResourceProvider delegate) {
+            this.delegate = Objects.requireNonNull(delegate, "delegate");
+        }
+
+        @Override
+        public ResourceBlock read(URI uri) {
+            return delegate.read(uri);
+        }
+
+        @Override
+        public java.util.Optional<Resource> get(URI uri) {
+            return delegate.get(uri);
+        }
+
+        @Override
+        public Pagination.Page<Resource> list(Cursor cursor) {
+            return delegate.list(cursor);
+        }
+
+        @Override
+        public Pagination.Page<ResourceTemplate> listTemplates(Cursor cursor) {
+            return delegate.listTemplates(cursor);
+        }
+
+        @Override
+        public AutoCloseable subscribe(URI uri, Consumer<ResourceUpdate> listener) {
+            return delegate.subscribe(uri, listener);
+        }
+
+        @Override
+        public boolean supportsSubscribe() {
+            return delegate.supportsSubscribe();
+        }
+
+        @Override
+        public AutoCloseable onListChanged(Runnable listener) {
+            return delegate.onListChanged(listener);
+        }
+
+        @Override
+        public boolean supportsListChanged() {
+            return delegate.supportsListChanged();
+        }
+
+        @Override
+        public void close() {
+            delegate.close();
+        }
+    }
+
+    private static final class DelegatingToolProvider implements ToolProvider {
+        private final ToolProvider delegate;
+
+        private DelegatingToolProvider(ToolProvider delegate) {
+            this.delegate = Objects.requireNonNull(delegate, "delegate");
+        }
+
+        @Override
+        public Pagination.Page<Tool> list(Cursor cursor) {
+            return delegate.list(cursor);
+        }
+
+        @Override
+        public AutoCloseable onListChanged(Runnable listener) {
+            return delegate.onListChanged(listener);
+        }
+
+        @Override
+        public boolean supportsListChanged() {
+            return delegate.supportsListChanged();
+        }
+
+        @Override
+        public void close() {
+            delegate.close();
+        }
+
+        @Override
+        public java.util.Optional<Tool> find(String name) {
+            return delegate.find(name);
+        }
+
+        @Override
+        public ToolResult call(String name, JsonObject arguments) {
+            return delegate.call(name, arguments);
+        }
+    }
+
+    private static final class DelegatingPromptProvider implements PromptProvider {
+        private final PromptProvider delegate;
+
+        private DelegatingPromptProvider(PromptProvider delegate) {
+            this.delegate = Objects.requireNonNull(delegate, "delegate");
+        }
+
+        @Override
+        public Pagination.Page<Prompt> list(Cursor cursor) {
+            return delegate.list(cursor);
+        }
+
+        @Override
+        public AutoCloseable onListChanged(Runnable listener) {
+            return delegate.onListChanged(listener);
+        }
+
+        @Override
+        public boolean supportsListChanged() {
+            return delegate.supportsListChanged();
+        }
+
+        @Override
+        public void close() {
+            delegate.close();
+        }
+
+        @Override
+        public java.util.Optional<Prompt> find(String name) {
+            return delegate.find(name);
+        }
+
+        @Override
+        public PromptInstance get(String name, Map<String, String> arguments) {
+            return delegate.get(name, arguments);
+        }
+    }
+
+    private static final class DelegatingCompletionProvider implements CompletionProvider {
+        private final CompletionProvider delegate;
+
+        private DelegatingCompletionProvider(CompletionProvider delegate) {
+            this.delegate = Objects.requireNonNull(delegate, "delegate");
+        }
+
+        @Override
+        public Pagination.Page<Ref> list(Cursor cursor) {
+            return delegate.list(cursor);
+        }
+
+        @Override
+        public AutoCloseable onListChanged(Runnable listener) {
+            return delegate.onListChanged(listener);
+        }
+
+        @Override
+        public boolean supportsListChanged() {
+            return delegate.supportsListChanged();
+        }
+
+        @Override
+        public void close() {
+            delegate.close();
+        }
+
+        @Override
+        public CompleteResult execute(String name, JsonObject args) throws InterruptedException {
+            return delegate.execute(name, args);
+        }
+    }
+
+    private record ResourceDefaults(ResourceProvider provider, Resource sampleResource) {
     }
 }
