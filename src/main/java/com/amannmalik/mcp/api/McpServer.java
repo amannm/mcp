@@ -32,6 +32,9 @@ public final class McpServer extends JsonRpcEndpoint implements AutoCloseable {
     private static final JsonCodec<SetLevelRequest> SET_LEVEL_REQUEST_JSON_CODEC = new SetLevelRequestAbstractEntityCodec();
     private static final CancelledNotificationJsonCodec CANCELLED_NOTIFICATION_JSON_CODEC = new CancelledNotificationJsonCodec();
     private static final JsonCodec<ToolListChangedNotification> TOOL_LIST_CHANGED_NOTIFICATION_JSON_CODEC = new ToolListChangedNotificationJsonCodec();
+    private static final InitializeResponseAbstractEntityCodec INITIALIZE_RESPONSE_CODEC = new InitializeResponseAbstractEntityCodec();
+    private static final JsonCodec<GetPromptRequest> GET_PROMPT_REQUEST_JSON_CODEC = new GetPromptRequestAbstractEntityCodec();
+    private static final JsonCodec<PromptInstance> PROMPT_INSTANCE_JSON_CODEC = new PromptInstanceAbstractEntityCodec();
     private static final JsonCodec<ListToolsResult> LIST_TOOLS_RESULT_JSON_CODEC =
             AbstractEntityCodec.paginatedResult(
                     "tools",
@@ -136,7 +139,7 @@ public final class McpServer extends JsonRpcEndpoint implements AutoCloseable {
             caps.add(ServerCapability.COMPLETIONS);
         }
         caps.add(ServerCapability.LOGGING);
-        return EnumSet.copyOf(caps);
+        return Immutable.enumSet(caps);
     }
 
     private static Transport createTransport(McpServerConfiguration config) throws Exception {
@@ -323,14 +326,10 @@ public final class McpServer extends JsonRpcEndpoint implements AutoCloseable {
         lifecycle.shutdown();
     }
 
-    private Set<ServerCapability> serverCapabilities() {
-        return serverCapabilities;
-    }
-
     private JsonRpcMessage initialize(JsonRpcRequest req) {
         var init = INITIALIZE_REQUEST_CODEC.fromJson(req.params());
         var resp = initialize(init);
-        var json = new InitializeResponseAbstractEntityCodec().toJson(resp);
+        var json = INITIALIZE_RESPONSE_CODEC.toJson(resp);
         return new JsonRpcResponse(req.id(), json);
     }
 
@@ -372,13 +371,24 @@ public final class McpServer extends JsonRpcEndpoint implements AutoCloseable {
     }
 
     private void requireServerCapability(ServerCapability cap) {
-        if (!serverCapabilities().contains(cap)) {
+        if (!serverCapabilities.contains(cap)) {
             throw new IllegalStateException("Server capability not declared: " + cap);
         }
     }
 
     private Optional<JsonRpcError> checkInitialized(RequestId id) {
         return lifecycle.ensureInitialized(id, config.errorNotInitialized());
+    }
+
+    private Optional<JsonRpcMessage> ensureInitialized(JsonRpcRequest req) {
+        return checkInitialized(req.id()).map(error -> (JsonRpcMessage) error);
+    }
+
+    private Duration normalizeTimeout(Duration timeout) {
+        if (timeout == null || timeout.isZero() || timeout.isNegative()) {
+            return config.defaultTimeoutMs();
+        }
+        return timeout;
     }
 
     private Optional<String> rateLimit(RateLimiter limiter, String key) {
@@ -404,7 +414,7 @@ public final class McpServer extends JsonRpcEndpoint implements AutoCloseable {
     }
 
     private JsonRpcMessage listTools(JsonRpcRequest req) {
-        var initCheck = checkInitialized(req.id());
+        var initCheck = ensureInitialized(req);
         if (initCheck.isPresent()) {
             return initCheck.get();
         }
@@ -426,7 +436,7 @@ public final class McpServer extends JsonRpcEndpoint implements AutoCloseable {
     }
 
     private JsonRpcMessage listPrompts(JsonRpcRequest req) {
-        var initCheck = checkInitialized(req.id());
+        var initCheck = ensureInitialized(req);
         if (initCheck.isPresent()) {
             return initCheck.get();
         }
@@ -444,9 +454,9 @@ public final class McpServer extends JsonRpcEndpoint implements AutoCloseable {
     private JsonRpcMessage getPrompt(JsonRpcRequest req) {
         requireServerCapability(ServerCapability.PROMPTS);
         try {
-            var getRequest = ((JsonCodec<GetPromptRequest>) new GetPromptRequestAbstractEntityCodec()).fromJson(req.params());
+            var getRequest = GET_PROMPT_REQUEST_JSON_CODEC.fromJson(req.params());
             var inst = prompts.get(getRequest.name(), getRequest.arguments());
-            return new JsonRpcResponse(req.id(), new PromptInstanceAbstractEntityCodec().toJson(inst));
+            return new JsonRpcResponse(req.id(), PROMPT_INSTANCE_JSON_CODEC.toJson(inst));
         } catch (IllegalArgumentException e) {
             return JsonRpcError.of(req.id(), JsonRpcErrorCode.INVALID_PARAMS, e.getMessage());
         }
@@ -481,7 +491,7 @@ public final class McpServer extends JsonRpcEndpoint implements AutoCloseable {
     }
 
     private JsonRpcMessage complete(JsonRpcRequest req) {
-        if (!serverCapabilities().contains(ServerCapability.COMPLETIONS)) {
+        if (!serverCapabilities.contains(ServerCapability.COMPLETIONS)) {
             return JsonRpcError.of(req.id(), JsonRpcErrorCode.METHOD_NOT_FOUND, "Capability not supported");
         }
         requireServerCapability(ServerCapability.COMPLETIONS);
@@ -507,7 +517,7 @@ public final class McpServer extends JsonRpcEndpoint implements AutoCloseable {
         }
     }
 
-    private JsonRpcMessage request(RequestMethod method, JsonObject params, long timeoutMillis) throws IOException {
+    private JsonRpcMessage request(RequestMethod method, JsonObject params, Duration timeout) throws IOException {
         var id = nextId();
         var future = new CompletableFuture<JsonRpcMessage>();
         pending.put(id, future);
@@ -515,7 +525,7 @@ public final class McpServer extends JsonRpcEndpoint implements AutoCloseable {
         return awaitAndProcess(
                 id,
                 future,
-                Duration.ofMillis(timeoutMillis),
+                normalizeTimeout(timeout),
                 this::receiveMessage,
                 this::handleInvalidRequest,
                 config.errorTimeout());
@@ -523,7 +533,7 @@ public final class McpServer extends JsonRpcEndpoint implements AutoCloseable {
 
     private ElicitResult elicit(ElicitRequest req) throws IOException {
         requireClientCapability(ClientCapability.ELICITATION);
-        var msg = request(RequestMethod.ELICITATION_CREATE, new ElicitRequestJsonCodec().toJson(req), 0L);
+        var msg = request(RequestMethod.ELICITATION_CREATE, new ElicitRequestJsonCodec().toJson(req), config.defaultTimeoutMs());
         if (msg instanceof JsonRpcResponse resp) {
             var er = new ElicitResultJsonCodec().fromJson(resp.result());
             if (er.action() == ElicitationAction.ACCEPT) {

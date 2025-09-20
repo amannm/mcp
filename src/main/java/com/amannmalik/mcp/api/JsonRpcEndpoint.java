@@ -43,19 +43,29 @@ sealed class JsonRpcEndpoint implements AutoCloseable permits McpClient, McpServ
     }
 
     public final void registerRequest(RequestMethod method, Function<JsonRpcRequest, JsonRpcMessage> handler) {
-        requests.put(method, handler);
+        Objects.requireNonNull(method, "method");
+        Objects.requireNonNull(handler, "handler");
+        var previous = requests.putIfAbsent(method, handler);
+        if (previous != null) {
+            throw new IllegalStateException("Request handler already registered: " + method);
+        }
     }
 
     protected final void registerNotification(NotificationMethod method, Consumer<JsonRpcNotification> handler) {
-        notifications.put(method, handler);
+        Objects.requireNonNull(method, "method");
+        Objects.requireNonNull(handler, "handler");
+        var previous = notifications.putIfAbsent(method, handler);
+        if (previous != null) {
+            throw new IllegalStateException("Notification handler already registered: " + method);
+        }
     }
 
-    protected JsonRpcMessage await(RequestId id, CompletableFuture<JsonRpcMessage> future, Duration timeoutMillis) throws IOException {
+    protected JsonRpcMessage await(RequestId id, CompletableFuture<JsonRpcMessage> future, Duration timeout) throws IOException {
         try {
-            return future.get(timeoutMillis.toMillis(), TimeUnit.MILLISECONDS);
+            return future.get(timeout.toMillis(), TimeUnit.MILLISECONDS);
         } catch (TimeoutException e) {
             cancelTimeout(id);
-            throw new IOException(McpServerConfiguration.defaultConfiguration().errorTimeout() + " after " + timeoutMillis + " ms", e);
+            throw new IOException("Request timed out after " + timeout.toMillis() + " ms", e);
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             throw new IOException(e);
