@@ -222,6 +222,7 @@ final class SseClients {
 
         @Override
         public void onStartAsync(AsyncEvent event) {
+            Objects.requireNonNull(event, "event").getAsyncContext().addListener(this);
         }
     }
 

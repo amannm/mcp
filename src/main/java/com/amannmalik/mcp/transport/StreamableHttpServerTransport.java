@@ -206,7 +206,7 @@ public final class StreamableHttpServerTransport implements Transport {
     }
 
     public List<String> authorizationServers() {
-        return authorizationServers;
+        return List.copyOf(authorizationServers);
     }
 
     public int port() {
