@@ -52,24 +52,32 @@ final class SessionManager {
         if (principal == null) {
             throw new IllegalArgumentException("principal required");
         }
-        var sanitized = sanitizeHeaders(
+        var headers = sanitizeHeaders(
                 sessionId(req),
                 req.getHeader(TransportHeaders.PROTOCOL_VERSION),
                 resp);
-        if (sanitized.isEmpty()) {
+        if (headers.isEmpty()) {
             return false;
         }
-        var headers = sanitized.get();
+        var sanitized = headers.get();
         var state = current.get();
         if (state == null) {
-            return initializing
-                    ? createSession(req, resp, principal)
-                    : failForMissingSession(resp, headers.sessionId(), lastSessionId.get());
+            return handleMissingSession(req, resp, principal, sanitized, initializing);
         }
-        if (!validateExistingSession(req, resp, principal, state, headers.sessionId())) {
+        if (!validateExistingSession(req, resp, principal, state, sanitized.sessionId())) {
             return false;
         }
-        return validateVersion(initializing, headers.version(), resp);
+        return validateVersion(initializing, sanitized.version(), resp);
+    }
+
+    private boolean handleMissingSession(HttpServletRequest req,
+                                         HttpServletResponse resp,
+                                         Principal principal,
+                                         SanitizedHeaders headers,
+                                         boolean initializing) throws IOException {
+        return initializing
+                ? createSession(req, resp, principal)
+                : failForMissingSession(resp, headers.sessionId(), lastSessionId.get());
     }
 
     private String sessionId(HttpServletRequest req) {
