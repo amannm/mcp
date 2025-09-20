@@ -4,17 +4,15 @@ import com.amannmalik.mcp.api.ClientInfo;
 import com.amannmalik.mcp.core.Capabilities;
 import com.amannmalik.mcp.core.ClientFeatures;
 
+import java.util.Objects;
+
 public record InitializeRequest(
         String protocolVersion,
         Capabilities capabilities,
         ClientInfo clientInfo,
         ClientFeatures features) {
     public InitializeRequest {
-        if (protocolVersion == null) {
-            throw new IllegalArgumentException("protocolVersion must not be null");
-        }
-        if (features == null) {
-            features = ClientFeatures.EMPTY;
-        }
+        protocolVersion = Objects.requireNonNull(protocolVersion, "protocolVersion");
+        features = Objects.requireNonNullElse(features, ClientFeatures.EMPTY);
     }
 }

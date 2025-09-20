@@ -1,15 +1,23 @@
 package com.amannmalik.mcp.core;
 
-import com.amannmalik.mcp.api.*;
+import com.amannmalik.mcp.api.NotificationMethod;
+import com.amannmalik.mcp.api.ProgressNotification;
+import com.amannmalik.mcp.api.ProgressToken;
+import com.amannmalik.mcp.api.RequestId;
 import com.amannmalik.mcp.codec.ProgressNotificationJsonCodec;
-import com.amannmalik.mcp.util.*;
+import com.amannmalik.mcp.util.NotificationSender;
+import com.amannmalik.mcp.util.PlatformLog;
+import com.amannmalik.mcp.util.RateLimiter;
 import jakarta.json.JsonObject;
 
 import java.io.IOException;
 import java.lang.System.Logger;
-import java.util.*;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.ReentrantLock;
 
 public final class ProgressManager {
@@ -23,25 +31,36 @@ public final class ProgressManager {
     private static final ProgressNotificationJsonCodec NOTIFICATION_CODEC = new ProgressNotificationJsonCodec();
 
     public ProgressManager(RateLimiter limiter) {
-        if (limiter == null) {
-            throw new IllegalArgumentException("limiter required");
-        }
-        this.limiter = limiter;
+        this.limiter = Objects.requireNonNull(limiter, "limiter");
     }
 
     public Optional<ProgressToken> register(RequestId id, JsonObject params) {
-        if (!used.add(id) || !active.add(id)) {
-            throw new DuplicateRequestException(id);
-        }
-        if (params != null && params.containsKey("progressToken")) {
-            throw new IllegalArgumentException("progressToken must be in _meta");
-        }
+        Objects.requireNonNull(id, "id");
+        ensureNewRequest(id);
+        ensureProgressTokenPlacement(params);
         var token = ProgressToken.fromMeta(params);
-        token.ifPresent(t -> associate(id, t));
+        token.ifPresent(candidate -> associate(id, candidate));
         return token;
     }
 
+    private void ensureNewRequest(RequestId id) {
+        if (!used.add(id)) {
+            throw new DuplicateRequestException(id);
+        }
+        if (!active.add(id)) {
+            used.remove(id);
+            throw new DuplicateRequestException(id);
+        }
+    }
+
+    private static void ensureProgressTokenPlacement(JsonObject params) {
+        if (params != null && params.containsKey("progressToken")) {
+            throw new IllegalArgumentException("progressToken must be in _meta");
+        }
+    }
+
     public void release(RequestId id) {
+        Objects.requireNonNull(id, "id");
         active.remove(id);
         cancelled.remove(id);
         var token = tokens.remove(id);
@@ -59,21 +78,25 @@ public final class ProgressManager {
     }
 
     public void cancel(RequestId id, String reason) {
+        Objects.requireNonNull(id, "id");
         if (active.contains(id)) {
             cancelled.put(id, reason);
         }
     }
 
     public boolean isCancelled(RequestId id) {
+        Objects.requireNonNull(id, "id");
         return cancelled.containsKey(id);
     }
 
     public String reason(RequestId id) {
+        Objects.requireNonNull(id, "id");
         return cancelled.get(id);
     }
 
     public void record(ProgressNotification note) {
-        var state = requireState(note.token());
+        Objects.requireNonNull(note, "note");
+        var state = requireActiveState(note.token());
         state.advance(note.progress());
         if (note.progress() >= 1.0) {
             completeToken(note.token(), state);
@@ -92,18 +115,23 @@ public final class ProgressManager {
     }
 
     public boolean hasProgress(ProgressToken token) {
-        var state = tokensByProgress.get(token);
-        return state != null && state.hasProgress();
+        Objects.requireNonNull(token, "token");
+        return findActiveState(token)
+                .map(TokenState::hasProgress)
+                .orElse(false);
     }
 
     public void send(ProgressNotification note, NotificationSender sender) throws IOException {
-        var state = tokensByProgress.get(note.token());
-        if (state == null || !state.isActive()) {
+        Objects.requireNonNull(note, "note");
+        Objects.requireNonNull(sender, "sender");
+        var state = findActiveState(note.token());
+        if (state.isEmpty()) {
             return;
         }
+        var tokenState = state.get();
         try {
             limiter.requireAllowance(note.token().asString());
-            state.advance(note.progress());
+            tokenState.advance(note.progress());
         } catch (IllegalArgumentException | IllegalStateException | SecurityException e) {
             LOG.log(Logger.Level.WARNING, "Progress update rejected", e);
             return;
@@ -112,6 +140,8 @@ public final class ProgressManager {
     }
 
     private void associate(RequestId id, ProgressToken token) {
+        Objects.requireNonNull(id, "id");
+        Objects.requireNonNull(token, "token");
         var state = new TokenState();
         state.addRequest(id);
         var existing = tokensByProgress.putIfAbsent(token, state);
@@ -121,18 +151,24 @@ public final class ProgressManager {
         tokens.put(id, token);
     }
 
-    private TokenState requireState(ProgressToken token) {
+    private TokenState requireActiveState(ProgressToken token) {
+        return findActiveState(token)
+                .orElseThrow(() -> new IllegalStateException("Unknown progress token: " + token));
+    }
+
+    private Optional<TokenState> findActiveState(ProgressToken token) {
+        Objects.requireNonNull(token, "token");
         var state = tokensByProgress.get(token);
         if (state == null || !state.isActive()) {
-            throw new IllegalStateException("Unknown progress token: " + token);
+            return Optional.empty();
         }
-        return state;
+        return Optional.of(state);
     }
 
     private static final class TokenState {
         private final Set<RequestId> requestIds = ConcurrentHashMap.newKeySet();
         private final ReentrantLock lock = new ReentrantLock();
-        private final AtomicBoolean active = new AtomicBoolean(true);
+        private volatile boolean active = true;
         private volatile boolean hasProgress;
         private volatile double progress;
 
@@ -146,17 +182,17 @@ public final class ProgressManager {
         }
 
         void deactivate() {
-            active.set(false);
+            active = false;
         }
 
         boolean isActive() {
-            return active.get();
+            return active;
         }
 
         void advance(double value) {
             lock.lock();
             try {
-                if (!active.get()) {
+                if (!active) {
                     throw new IllegalStateException("Progress token no longer active");
                 }
                 if (hasProgress && value <= progress) {
