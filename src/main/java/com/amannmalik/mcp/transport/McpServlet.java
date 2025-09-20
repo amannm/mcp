@@ -13,6 +13,7 @@ import jakarta.servlet.http.*;
 import java.io.IOException;
 import java.io.Serial;
 import java.lang.System.Logger;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.TimeUnit;
@@ -29,7 +30,10 @@ final class McpServlet extends HttpServlet {
     private final int responseQueueCapacity;
 
     McpServlet(StreamableHttpServerTransport transport, int responseQueueCapacity) {
-        this.transport = transport;
+        this.transport = Objects.requireNonNull(transport, "transport");
+        if (responseQueueCapacity <= 0) {
+            throw new IllegalArgumentException("responseQueueCapacity must be positive");
+        }
         this.responseQueueCapacity = responseQueueCapacity;
     }
 

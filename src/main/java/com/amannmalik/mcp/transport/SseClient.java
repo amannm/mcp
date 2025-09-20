@@ -80,16 +80,7 @@ public final class SseClient implements AutoCloseable {
             return;
         }
         synchronized (transmissionLock) {
-            try {
-                if (context != null && !context.hasOriginalRequestAndResponse()) {
-                    context.complete();
-                }
-            } catch (Exception e) {
-                LOG.log(Logger.Level.ERROR, "SSE close failed", e);
-            } finally {
-                context = null;
-                out = null;
-            }
+            completeContext(Logger.Level.ERROR, "SSE close failed");
         }
     }
 
@@ -168,22 +159,25 @@ public final class SseClient implements AutoCloseable {
     private void handleTransmissionFailure(String message, Exception e) {
         LOG.log(Logger.Level.ERROR, message, e);
         closed.set(true);
+        completeContext(Logger.Level.WARNING, "SSE context completion failed");
+    }
 
+    @FunctionalInterface
+    private interface TransmissionTask {
+        void accept(PrintWriter writer) throws Exception;
+    }
+
+    private void completeContext(Logger.Level failureLevel, String failureMessage) {
         var currentContext = context;
         try {
             if (currentContext != null && !currentContext.hasOriginalRequestAndResponse()) {
                 currentContext.complete();
             }
         } catch (Exception completionFailure) {
-            LOG.log(Logger.Level.WARNING, "SSE context completion failed", completionFailure);
+            LOG.log(failureLevel, failureMessage, completionFailure);
         } finally {
             context = null;
             out = null;
         }
-    }
-
-    @FunctionalInterface
-    private interface TransmissionTask {
-        void accept(PrintWriter writer) throws Exception;
     }
 }

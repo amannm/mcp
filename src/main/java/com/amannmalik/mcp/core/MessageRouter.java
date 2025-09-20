@@ -52,19 +52,25 @@ public final class MessageRouter {
 
     private RouteOutcome deliverToRequestStream(RequestId id, JsonRpcEnvelope envelope, SseClient client) {
         var message = envelope.message();
-        if (!client.isActive()) {
-            routes.removeRequestClient(id, client);
+        if (evictIfInactive(id, client)) {
             return RouteOutcome.NOT_FOUND;
         }
         client.send(message);
-        if (!client.isActive()) {
-            routes.removeRequestClient(id, client);
+        if (evictIfInactive(id, client)) {
             return RouteOutcome.NOT_FOUND;
         }
         if (envelope.isResponse()) {
             routes.removeRequestClient(id, client);
         }
         return RouteOutcome.DELIVERED;
+    }
+
+    private boolean evictIfInactive(RequestId id, SseClient client) {
+        if (!client.isActive()) {
+            routes.removeRequestClient(id, client);
+            return true;
+        }
+        return false;
     }
 
     private Optional<RouteOutcome> attemptResponseQueue(RequestId id, JsonObject message) {
