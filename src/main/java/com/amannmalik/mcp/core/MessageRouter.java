@@ -68,20 +68,22 @@ public final class MessageRouter {
     }
 
     private RouteOutcome routeToGeneralClients(JsonObject message) {
-        if (sendToActiveClient(message) || deliverToPendingClient(message)) {
+        if (sendToActiveClients(message) || deliverToPendingClient(message)) {
             return RouteOutcome.DELIVERED;
         }
         return RouteOutcome.PENDING;
     }
 
-    private boolean sendToActiveClient(JsonObject message) {
+    private boolean sendToActiveClients(JsonObject message) {
+        var delivered = false;
         for (var client : routes.generalClients()) {
-            if (client.isActive()) {
-                client.send(message);
-                return true;
+            if (!client.isActive()) {
+                continue;
             }
+            client.send(message);
+            delivered = true;
         }
-        return false;
+        return delivered;
     }
 
     private boolean deliverToPendingClient(JsonObject message) {

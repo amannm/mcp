@@ -11,7 +11,9 @@ import java.util.function.Consumer;
 
 public final class InMemoryResourceProvider extends InMemoryProvider<Resource> implements ResourceProvider {
     private final Map<URI, ResourceBlock> contents;
+    private final Map<URI, Resource> resourcesByUri;
     private final List<ResourceTemplate> templates;
+    private final Map<String, ResourceTemplate> templatesByName;
     private final Map<URI, List<Consumer<ResourceUpdate>>> listeners = new ConcurrentHashMap<>();
 
     public InMemoryResourceProvider(List<Resource> resources,
@@ -19,7 +21,15 @@ public final class InMemoryResourceProvider extends InMemoryProvider<Resource> i
                                     List<ResourceTemplate> templates) {
         super(resources);
         this.contents = contents == null ? new ConcurrentHashMap<>() : new ConcurrentHashMap<>(contents);
+        this.resourcesByUri = new ConcurrentHashMap<>();
+        for (var resource : items) {
+            registerInitialResource(resource);
+        }
         this.templates = templates == null ? new CopyOnWriteArrayList<>() : new CopyOnWriteArrayList<>(templates);
+        this.templatesByName = new ConcurrentHashMap<>();
+        for (var template : this.templates) {
+            registerInitialTemplate(template);
+        }
     }
 
     @Override
@@ -44,7 +54,8 @@ public final class InMemoryResourceProvider extends InMemoryProvider<Resource> i
 
     @Override
     public Optional<Resource> get(URI uri) {
-        return findResource(uri);
+        Objects.requireNonNull(uri, "uri");
+        return Optional.ofNullable(resourcesByUri.get(uri));
     }
 
     @Override
@@ -60,7 +71,8 @@ public final class InMemoryResourceProvider extends InMemoryProvider<Resource> i
             return;
         }
 
-        var title = findResource(uri).map(Resource::title).orElse(null);
+        var resource = resourcesByUri.get(uri);
+        var title = resource == null ? null : resource.title();
         var update = new ResourceUpdate(uri, title);
         listenersForUri.forEach(listener -> listener.accept(update));
     }
@@ -69,10 +81,13 @@ public final class InMemoryResourceProvider extends InMemoryProvider<Resource> i
         Objects.requireNonNull(resource, "resource");
 
         var uri = resource.uri();
-        if (findResource(uri).isPresent()) {
+        if (resourcesByUri.putIfAbsent(uri, resource) != null) {
             throw new IllegalArgumentException("duplicate resource uri: " + uri);
         }
-        items.add(resource);
+        if (!items.add(resource)) {
+            resourcesByUri.remove(uri, resource);
+            throw new IllegalStateException("Failed to register resource: " + uri);
+        }
         if (content != null) {
             contents.put(uri, content);
         }
@@ -82,10 +97,14 @@ public final class InMemoryResourceProvider extends InMemoryProvider<Resource> i
     public void removeResource(URI uri) {
         Objects.requireNonNull(uri, "uri");
 
-        var removed = items.removeIf(r -> r.uri().equals(uri));
+        var removed = resourcesByUri.remove(uri);
         contents.remove(uri);
         listeners.remove(uri);
-        if (removed) {
+        if (removed != null) {
+            if (!items.remove(removed)) {
+                resourcesByUri.putIfAbsent(uri, removed);
+                throw new IllegalStateException("Failed to remove resource: " + uri);
+            }
             notifyListChanged();
         }
     }
@@ -93,39 +112,24 @@ public final class InMemoryResourceProvider extends InMemoryProvider<Resource> i
     public void addTemplate(ResourceTemplate template) {
         Objects.requireNonNull(template, "template");
 
-        if (templateExists(template.name())) {
-            throw new IllegalArgumentException("duplicate template name: " + template.name());
+        var name = template.name();
+        if (templatesByName.putIfAbsent(name, template) != null) {
+            throw new IllegalArgumentException("duplicate template name: " + name);
         }
-        templates.add(template);
+        if (!templates.add(template)) {
+            templatesByName.remove(name, template);
+            throw new IllegalStateException("Failed to register template: " + name);
+        }
         notifyListChanged();
     }
 
     public void removeTemplate(String name) {
         Objects.requireNonNull(name, "name");
 
-        if (templates.removeIf(t -> t.name().equals(name))) {
+        var removed = templatesByName.remove(name);
+        if (removed != null && templates.remove(removed)) {
             notifyListChanged();
         }
-    }
-
-    private Optional<Resource> findResource(URI uri) {
-        Objects.requireNonNull(uri, "uri");
-
-        for (var resource : items) {
-            if (resource.uri().equals(uri)) {
-                return Optional.of(resource);
-            }
-        }
-        return Optional.empty();
-    }
-
-    private boolean templateExists(String name) {
-        for (var template : templates) {
-            if (template.name().equals(name)) {
-                return true;
-            }
-        }
-        return false;
     }
 
     private void removeListener(URI uri, Consumer<ResourceUpdate> listener) {
@@ -137,6 +141,22 @@ public final class InMemoryResourceProvider extends InMemoryProvider<Resource> i
         listenersForUri.remove(listener);
         if (listenersForUri.isEmpty()) {
             listeners.remove(uri, listenersForUri);
+        }
+    }
+
+    private void registerInitialResource(Resource resource) {
+        Objects.requireNonNull(resource, "resource");
+        var previous = resourcesByUri.putIfAbsent(resource.uri(), resource);
+        if (previous != null) {
+            throw new IllegalArgumentException("duplicate resource uri: " + resource.uri());
+        }
+    }
+
+    private void registerInitialTemplate(ResourceTemplate template) {
+        Objects.requireNonNull(template, "template");
+        var previous = templatesByName.putIfAbsent(template.name(), template);
+        if (previous != null) {
+            throw new IllegalArgumentException("duplicate template name: " + template.name());
         }
     }
 }

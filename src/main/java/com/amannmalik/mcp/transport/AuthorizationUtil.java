@@ -25,10 +25,12 @@ final class AuthorizationUtil {
             return Optional.of(defaultPrincipal);
         }
         try {
-            return Optional.of(manager.authorize(req.getHeader("Authorization")));
+            return Optional.of(manager.authorize(req.getHeader(TransportHeaders.AUTHORIZATION)));
         } catch (AuthorizationException e) {
-            if (resourceMetadataUrl != null && e.status() == HttpServletResponse.SC_UNAUTHORIZED) {
-                resp.setHeader("WWW-Authenticate", "Bearer resource=" + resourceMetadataUrl);
+            if (resourceMetadataUrl != null
+                    && !resourceMetadataUrl.isBlank()
+                    && e.status() == HttpServletResponse.SC_UNAUTHORIZED) {
+                resp.setHeader(TransportHeaders.WWW_AUTHENTICATE, "Bearer resource=" + resourceMetadataUrl);
             }
             resp.sendError(e.status());
             return Optional.empty();
@@ -36,8 +38,8 @@ final class AuthorizationUtil {
     }
 
     static void checkUnauthorized(HttpResponse<InputStream> response) throws IOException {
-        if (response.statusCode() == 401) {
-            var header = response.headers().firstValue("WWW-Authenticate").orElse("");
+        if (response.statusCode() == HttpServletResponse.SC_UNAUTHORIZED) {
+            var header = response.headers().firstValue(TransportHeaders.WWW_AUTHENTICATE).orElse("");
             response.body().close();
             throw new UnauthorizedException(header);
         }
