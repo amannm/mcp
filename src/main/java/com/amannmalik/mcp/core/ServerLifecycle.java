@@ -9,7 +9,6 @@ import com.amannmalik.mcp.jsonrpc.JsonRpcError;
 import com.amannmalik.mcp.util.InitializeRequest;
 import com.amannmalik.mcp.util.InitializeResponse;
 
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.EnumSet;
@@ -18,6 +17,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.TreeSet;
 
 /**
  * Coordinates lifecycle transitions and negotiation details for {@link com.amannmalik.mcp.api.McpServer}.
@@ -29,9 +29,9 @@ public final class ServerLifecycle {
     private final Set<ServerCapability> declaredCapabilities;
     private final ServerInfo serverInfo;
     private final String instructions;
+    private final EnumSet<ClientCapability> clientCapabilities = EnumSet.noneOf(ClientCapability.class);
 
     private LifecycleState state = LifecycleState.INIT;
-    private Set<ClientCapability> clientCapabilities = EnumSet.noneOf(ClientCapability.class);
     private ClientFeatures clientFeatures = ClientFeatures.EMPTY;
     private String protocolVersion;
 
@@ -42,7 +42,7 @@ public final class ServerLifecycle {
         this.supportedVersions = normaliseSupportedVersions(supportedVersions);
         this.declaredCapabilities = normaliseServerCapabilities(declaredCapabilities);
         this.serverInfo = Objects.requireNonNull(serverInfo, "serverInfo");
-        this.instructions = instructions;
+        this.instructions = instructions == null ? "" : instructions;
         this.protocolVersion = this.supportedVersions.get(0);
     }
 
@@ -51,19 +51,14 @@ public final class ServerLifecycle {
         Objects.requireNonNull(features, "features");
         requireState(LifecycleState.INIT);
 
-        clientCapabilities = normaliseClientCapabilities(request.capabilities());
+        clientCapabilities.clear();
+        clientCapabilities.addAll(normaliseClientCapabilities(request.capabilities()));
         clientFeatures = Objects.requireNonNullElse(request.features(), ClientFeatures.EMPTY);
         protocolVersion = negotiateProtocolVersion(request.protocolVersion());
 
-        var negotiatedCapabilities = new Capabilities(
-                clientCapabilities,
-                declaredCapabilities,
-                Map.of(),
-                Map.of());
-
         return new InitializeResponse(
                 protocolVersion,
-                negotiatedCapabilities,
+                negotiatedCapabilities(),
                 serverInfo,
                 instructions,
                 features);
@@ -96,7 +91,7 @@ public final class ServerLifecycle {
 
     public void requireState(LifecycleState expected) {
         if (state != expected) {
-            throw new IllegalStateException("Invalid lifecycle state: " + state);
+            throw new IllegalStateException("Expected lifecycle state " + expected + " but was " + state);
         }
     }
 
@@ -116,12 +111,23 @@ public final class ServerLifecycle {
         return Optional.empty();
     }
 
+    private Capabilities negotiatedCapabilities() {
+        return new Capabilities(
+                clientCapabilities,
+                declaredCapabilities,
+                Map.of(),
+                Map.of());
+    }
+
     private static List<String> normaliseSupportedVersions(Collection<String> versions) {
-        if (versions == null || versions.isEmpty()) {
+        if (versions == null) {
             throw new IllegalArgumentException("supportedVersions required");
         }
-        var sorted = new ArrayList<>(versions);
-        sorted.sort(Comparator.reverseOrder());
+        var sorted = new TreeSet<String>(Comparator.reverseOrder());
+        sorted.addAll(versions);
+        if (sorted.isEmpty()) {
+            throw new IllegalArgumentException("supportedVersions required");
+        }
         return List.copyOf(sorted);
     }
 
