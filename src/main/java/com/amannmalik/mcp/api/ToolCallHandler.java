@@ -85,12 +85,8 @@ final class ToolCallHandler {
             if (res.action() != ElicitationAction.ACCEPT) {
                 return JsonRpcError.of(req.id(), JsonRpcErrorCode.INVALID_PARAMS, "Tool invocation cancelled");
             }
-            try {
-                var result = tools.call(tool.name(), res.content());
-                return new JsonRpcResponse(req.id(), RESULT_CODEC.toJson(result));
-            } catch (IllegalArgumentException e) {
-                return JsonRpcError.of(req.id(), JsonRpcErrorCode.INVALID_PARAMS, e.getMessage());
-            }
+            var result = tools.call(tool.name(), res.content());
+            return new JsonRpcResponse(req.id(), RESULT_CODEC.toJson(result));
         } catch (IllegalArgumentException e) {
             return JsonRpcError.of(req.id(), JsonRpcErrorCode.INVALID_PARAMS, e.getMessage());
         } catch (Exception e) {
