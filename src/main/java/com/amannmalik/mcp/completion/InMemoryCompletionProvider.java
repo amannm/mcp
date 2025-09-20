@@ -35,6 +35,7 @@ public final class InMemoryCompletionProvider extends InMemoryProvider<Ref> impl
                     String argumentName,
                     Map<String, String> context,
                     List<String> values) {
+        Objects.requireNonNull(ref, "ref");
         argumentName = ValidationUtil.requireClean(argumentName);
         var ctx = ValidationUtil.requireCleanMap(context);
         List<String> vals = values == null ? List.of() : values.stream()
