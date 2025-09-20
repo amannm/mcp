@@ -75,13 +75,10 @@ public final class StreamableHttpClientTransport implements Transport {
             throw new IllegalArgumentException("Endpoint must use http or https");
         }
         this.endpoint = endpoint;
-        if (defaultReceiveTimeout == null || defaultReceiveTimeout.isNegative() || defaultReceiveTimeout.isZero()) {
-            throw new IllegalArgumentException("Default receive timeout must be positive");
-        }
+        this.defaultReceiveTimeout = ValidationUtil.requirePositive(defaultReceiveTimeout, "Default receive timeout");
         if (defaultOriginHeader == null || defaultOriginHeader.isBlank()) {
             throw new IllegalArgumentException("Default origin header is required");
         }
-        this.defaultReceiveTimeout = defaultReceiveTimeout;
         this.defaultOriginHeader = defaultOriginHeader;
         this.client = client;
     }
@@ -220,15 +217,13 @@ public final class StreamableHttpClientTransport implements Transport {
     }
 
     @Override
-    public JsonObject receive(Duration timeoutMillis) throws IOException {
-        Objects.requireNonNull(timeoutMillis, "timeoutMillis");
-        if (timeoutMillis.isZero() || timeoutMillis.isNegative()) {
-            throw new IllegalArgumentException("timeoutMillis must be positive");
-        }
+    public JsonObject receive(Duration timeout) throws IOException {
+        var duration = ValidationUtil.requirePositive(timeout, "timeout");
+        var waitMillis = duration.toMillis();
         try {
-            var result = incoming.poll(timeoutMillis.toMillis(), TimeUnit.MILLISECONDS);
+            var result = incoming.poll(waitMillis, TimeUnit.MILLISECONDS);
             if (result == null) {
-                throw new IOException("Timeout after " + timeoutMillis.toMillis() + "ms waiting for message");
+                throw new IOException("Timeout after " + waitMillis + "ms waiting for message");
             }
             return result;
         } catch (InterruptedException e) {

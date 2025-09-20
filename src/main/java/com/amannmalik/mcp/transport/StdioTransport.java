@@ -4,6 +4,7 @@ import com.amannmalik.mcp.api.McpHostConfiguration;
 import com.amannmalik.mcp.api.Transport;
 import com.amannmalik.mcp.util.CloseUtil;
 import com.amannmalik.mcp.util.PlatformLog;
+import com.amannmalik.mcp.util.ValidationUtil;
 import jakarta.json.Json;
 import jakarta.json.JsonObject;
 
@@ -31,7 +32,7 @@ public final class StdioTransport implements Transport {
         this.resources = Detached.INSTANCE;
         this.in = new BufferedReader(new InputStreamReader(in, StandardCharsets.UTF_8));
         this.out = new BufferedWriter(new OutputStreamWriter(out, StandardCharsets.UTF_8));
-        this.receiveTimeout = receiveTimeout;
+        this.receiveTimeout = ValidationUtil.requirePositive(receiveTimeout, "receiveTimeout");
     }
 
     public StdioTransport(String[] command, Consumer<String> logSink, Duration receiveTimeout) throws IOException {
@@ -48,7 +49,7 @@ public final class StdioTransport implements Transport {
         logReader.setDaemon(true);
         logReader.start();
         this.resources = new Spawned(process, logReader);
-        this.receiveTimeout = receiveTimeout;
+        this.receiveTimeout = ValidationUtil.requirePositive(receiveTimeout, "receiveTimeout");
     }
 
     private static void readLogs(InputStream err, Consumer<String> sink) {
@@ -82,10 +83,8 @@ public final class StdioTransport implements Transport {
 
     @Override
     public JsonObject receive(Duration timeout) throws IOException {
-        Objects.requireNonNull(timeout, "timeout");
-        if (timeout.isZero() || timeout.isNegative()) {
-            throw new IllegalArgumentException("timeout must be positive");
-        }
+        var duration = ValidationUtil.requirePositive(timeout, "timeout");
+        var waitMillis = duration.toMillis();
         var future = CompletableFuture.supplyAsync(() -> {
             try {
                 return in.readLine();
@@ -95,11 +94,11 @@ public final class StdioTransport implements Transport {
         }, READER);
         String line;
         try {
-            line = future.get(timeout.toMillis(), TimeUnit.MILLISECONDS);
+            line = future.get(waitMillis, TimeUnit.MILLISECONDS);
         } catch (TimeoutException e) {
             future.cancel(true);
             resources.checkAlive();
-            throw new IOException("Timeout after " + timeout + " waiting for input", e);
+            throw new IOException("Timeout after " + waitMillis + "ms waiting for input", e);
         } catch (ExecutionException e) {
             var cause = e.getCause();
             if (cause instanceof IOException io) {

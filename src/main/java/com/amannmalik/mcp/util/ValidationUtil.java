@@ -3,6 +3,7 @@ package com.amannmalik.mcp.util;
 import jakarta.json.JsonObject;
 
 import java.net.URI;
+import java.time.Duration;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
@@ -184,6 +185,13 @@ public final class ValidationUtil {
         if (depth != 0) {
             throw new IllegalArgumentException("Unmatched braces in URI template: " + template);
         }
+    }
+
+    public static Duration requirePositive(Duration value, String field) {
+        if (value == null || value.isZero() || value.isNegative()) {
+            throw new IllegalArgumentException(field + " must be positive");
+        }
+        return value;
     }
 
     public static int requirePositive(int value, String field) {
