@@ -2,6 +2,7 @@ package com.amannmalik.mcp.api;
 
 import com.amannmalik.mcp.spi.SamplingAccessPolicy;
 import com.amannmalik.mcp.spi.ToolAccessPolicy;
+import com.amannmalik.mcp.util.ValidationUtil;
 
 import java.time.Duration;
 import java.util.List;
@@ -126,9 +127,7 @@ public record McpServerConfiguration(
         if (sessionIdByteLength <= 0) {
             throw new IllegalArgumentException("Session ID byte length must be positive");
         }
-        if (initializeRequestTimeout.isNegative() || initializeRequestTimeout.isZero()) {
-            throw new IllegalArgumentException("Initialize request timeout must be positive");
-        }
+        ValidationUtil.requirePositive(initializeRequestTimeout, "Initialize request timeout");
         if (sseClientPrefixByteLength <= 0) {
             throw new IllegalArgumentException("Client prefix byte length must be positive");
         }

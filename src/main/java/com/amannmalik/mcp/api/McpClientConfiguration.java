@@ -1,6 +1,7 @@
 package com.amannmalik.mcp.api;
 
 import com.amannmalik.mcp.spi.SamplingAccessPolicy;
+import com.amannmalik.mcp.util.ValidationUtil;
 
 import java.time.Duration;
 import java.util.List;
@@ -49,33 +50,21 @@ public record McpClientConfiguration(
             throw new IllegalArgumentException("Principal is required");
         }
         clientCapabilities = Set.copyOf(clientCapabilities);
-        if (defaultReceiveTimeout == null || defaultReceiveTimeout.isNegative() || defaultReceiveTimeout.isZero()) {
-            throw new IllegalArgumentException("Default receive timeout must be positive");
-        }
+        defaultReceiveTimeout = ValidationUtil.requirePositive(defaultReceiveTimeout, "Default receive timeout");
         if (defaultOriginHeader == null || defaultOriginHeader.isBlank()) {
             throw new IllegalArgumentException("Default origin header is required");
         }
-        if (httpRequestTimeout == null || httpRequestTimeout.isNegative() || httpRequestTimeout.isZero()) {
-            throw new IllegalArgumentException("HTTP request timeout must be positive");
-        }
+        httpRequestTimeout = ValidationUtil.requirePositive(httpRequestTimeout, "HTTP request timeout");
         if (sessionIdByteLength <= 0) {
             throw new IllegalArgumentException("Session ID byte length must be positive");
         }
-        if (initializeRequestTimeout == null || initializeRequestTimeout.isNegative() || initializeRequestTimeout.isZero()) {
-            throw new IllegalArgumentException("Initialize request timeout must be positive");
-        }
-        if (pingTimeout == null || pingTimeout.isNegative() || pingTimeout.isZero()) {
-            throw new IllegalArgumentException("Ping timeout must be positive");
-        }
-        if (pingInterval == null || pingInterval.isNegative() || pingInterval.isZero()) {
-            throw new IllegalArgumentException("Ping interval must be positive");
-        }
+        initializeRequestTimeout = ValidationUtil.requirePositive(initializeRequestTimeout, "Initialize request timeout");
+        pingTimeout = ValidationUtil.requirePositive(pingTimeout, "Ping timeout");
+        pingInterval = ValidationUtil.requirePositive(pingInterval, "Ping interval");
         if (progressPerSecond < 0) {
             throw new IllegalArgumentException("Progress per second must be non-negative");
         }
-        if (rateLimiterWindow == null || rateLimiterWindow.isNegative() || rateLimiterWindow.isZero()) {
-            throw new IllegalArgumentException("Rate limiter window must be positive");
-        }
+        rateLimiterWindow = ValidationUtil.requirePositive(rateLimiterWindow, "Rate limiter window");
         rootDirectories = List.copyOf(rootDirectories);
         if (samplingAccessPolicy == null) {
             throw new IllegalArgumentException("Sampling access policy is required");

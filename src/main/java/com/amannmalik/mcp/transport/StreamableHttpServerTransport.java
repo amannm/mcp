@@ -268,11 +268,13 @@ public final class StreamableHttpServerTransport implements Transport {
     }
 
     @Override
-    public JsonObject receive(Duration timeoutMillis) throws IOException {
+    public JsonObject receive(Duration timeout) throws IOException {
+        var duration = ValidationUtil.requirePositive(timeout, "timeout");
+        var waitMillis = duration.toMillis();
         try {
-            var obj = incoming.poll(timeoutMillis.toMillis(), TimeUnit.MILLISECONDS);
+            var obj = incoming.poll(waitMillis, TimeUnit.MILLISECONDS);
             if (obj == null) {
-                throw new IOException("Timeout after " + timeoutMillis + "ms waiting for message");
+                throw new IOException("Timeout after " + waitMillis + "ms waiting for message");
             }
             if (closed.get() && obj.containsKey("_close")) {
                 throw new EOFException();
