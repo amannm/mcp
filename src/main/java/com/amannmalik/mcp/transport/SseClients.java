@@ -176,8 +176,24 @@ final class SseClients {
         Objects.requireNonNull(registration, "registration");
         Objects.requireNonNull(cleanup, "cleanup");
 
-        registration.run();
-        addCleanupListener(context, cleanup);
+        try {
+            registration.run();
+        } catch (RuntimeException e) {
+            CloseUtil.close(client);
+            throw e;
+        }
+
+        try {
+            addCleanupListener(context, cleanup);
+        } catch (RuntimeException listenerFailure) {
+            try {
+                cleanup.run();
+            } catch (RuntimeException cleanupFailure) {
+                listenerFailure.addSuppressed(cleanupFailure);
+            }
+            throw listenerFailure;
+        }
+
         return client;
     }
 
