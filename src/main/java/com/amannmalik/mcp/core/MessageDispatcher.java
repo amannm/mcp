@@ -25,7 +25,7 @@ public final class MessageDispatcher {
     public void flush() {
         JsonObject message;
         while ((message = backlog.peek()) != null) {
-            if (!handleOutcome(message, router.route(message), true)) {
+            if (!handleBacklog(message)) {
                 return;
             }
         }
@@ -58,6 +58,10 @@ public final class MessageDispatcher {
     private boolean handleNotFound(JsonObject message, boolean fromBacklog) {
         dropMessage(message, fromBacklog);
         return true;
+    }
+
+    private boolean handleBacklog(JsonObject message) {
+        return handleOutcome(message, router.route(message), true);
     }
 
     private void dropMessage(JsonObject message, boolean fromBacklog) {

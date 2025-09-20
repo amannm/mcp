@@ -35,22 +35,17 @@ final class McpServlet extends HttpServlet {
 
     @Override
     protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws IOException {
-        if (!transport.enforceHttps(req, resp)) {
-            return;
-        }
-        var principalOpt = authorize(req, resp, true, true);
+        var principalOpt = enforceHttpsAndAuthorize(req, resp, true, true);
         if (principalOpt.isEmpty()) {
             return;
         }
         var principal = principalOpt.get();
 
-        JsonObject obj;
-        try (var reader = Json.createReader(req.getInputStream())) {
-            obj = reader.readObject();
-        } catch (JsonParsingException e) {
-            resp.sendError(HttpServletResponse.SC_BAD_REQUEST);
+        var payload = readJson(req, resp);
+        if (payload.isEmpty()) {
             return;
         }
+        var obj = payload.get();
         var envelope = JsonRpcEnvelope.of(obj);
         var initializing = envelope.method()
                 .map(RequestMethod.INITIALIZE.method()::equals)
@@ -69,10 +64,7 @@ final class McpServlet extends HttpServlet {
 
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws IOException {
-        if (!transport.enforceHttps(req, resp)) {
-            return;
-        }
-        var principalOpt = authorize(req, resp, true, false);
+        var principalOpt = enforceHttpsAndAuthorize(req, resp, true, false);
         if (principalOpt.isEmpty()) {
             return;
         }
@@ -86,10 +78,7 @@ final class McpServlet extends HttpServlet {
 
     @Override
     protected void doDelete(HttpServletRequest req, HttpServletResponse resp) throws IOException {
-        if (!transport.enforceHttps(req, resp)) {
-            return;
-        }
-        var principalOpt = authorize(req, resp, false, false);
+        var principalOpt = enforceHttpsAndAuthorize(req, resp, false, false);
         if (principalOpt.isEmpty()) {
             return;
         }
@@ -98,6 +87,16 @@ final class McpServlet extends HttpServlet {
         }
         transport.terminateSession(true);
         resp.setStatus(HttpServletResponse.SC_OK);
+    }
+
+    private Optional<Principal> enforceHttpsAndAuthorize(HttpServletRequest req,
+                                                         HttpServletResponse resp,
+                                                         boolean requireAccept,
+                                                         boolean post) throws IOException {
+        if (!transport.enforceHttps(req, resp)) {
+            return Optional.empty();
+        }
+        return authorize(req, resp, requireAccept, post);
     }
 
     private Optional<Principal> authorize(HttpServletRequest req,
@@ -115,6 +114,15 @@ final class McpServlet extends HttpServlet {
             return Optional.empty();
         }
         return principalOpt;
+    }
+
+    private Optional<JsonObject> readJson(HttpServletRequest req, HttpServletResponse resp) throws IOException {
+        try (var reader = Json.createReader(req.getInputStream())) {
+            return Optional.of(reader.readObject());
+        } catch (JsonParsingException e) {
+            resp.sendError(HttpServletResponse.SC_BAD_REQUEST);
+            return Optional.empty();
+        }
     }
 
     private AsyncContext initSse(HttpServletRequest req, HttpServletResponse resp) throws IOException {
