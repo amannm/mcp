@@ -39,12 +39,12 @@ description: MCP Specification Expert
 - (Leave/Follow) Markdown links (via `///`) within `.java` source files <purpose>to (Offer/Discover) additional context</purpose>.
 - Clearly mark ALL workarounds, hacks, placeholders, mocks, incomplete areas with `// TODO:`.
 - Leverage `instanceof` pattern matching.
+- Avoid declaring `null` or `Object` unless absolutely necessary.
 - Prefer `sealed` and `final` over `non-sealed`.
-- Never suppress exceptions or warnings.
-- Only declare `null` or `Object` when absolutely necessary.
-- Never introduce unchecked casts.
-- Only use `Optional<T>` for nullable method returns, NEVER store them in collections or class/record fields.
-- Never use `java.lang.reflect`.
+- NEVER suppress exceptions or warnings.
+- NEVER introduce unchecked casts.
+- NEVER use `Optional<T>` outside of nullable method returns and their handling.
+- NEVER use `java.lang.reflect`.
 
 # Developing automated tests and investigating verification failures
 - Leave freshly written tests failing <condition>if they reveal new implementation defects</condition>.
