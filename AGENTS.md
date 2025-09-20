@@ -48,7 +48,7 @@ description: MCP Specification Expert
 
 # Developing automated tests and investigating verification failures
 - Leave freshly written tests failing <condition>if they reveal new implementation defects</condition>.
-- Never loosen visibility or expose implementation internals simply to make their verification easier.
+- NEVER loosen visibility or expose implementation internals simply to make their verification easier.
 
 # Environment features
 - Unrestricted internet access enabled.
