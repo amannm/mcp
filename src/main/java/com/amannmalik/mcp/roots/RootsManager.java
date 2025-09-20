@@ -11,6 +11,7 @@ import com.amannmalik.mcp.util.PlatformLog;
 
 import java.io.IOException;
 import java.lang.System.Logger;
+import java.time.Duration;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -74,7 +75,7 @@ public final class RootsManager {
     private List<Root> fetchRoots() throws IOException {
         requireClientCapability(ClientCapability.ROOTS);
         var msg = requester.send(RequestMethod.ROOTS_LIST,
-                CODEC.toJson(new ListRootsRequest(null)), 0L);
+                CODEC.toJson(new ListRootsRequest(null)), Duration.ZERO);
         if (msg instanceof JsonRpcResponse resp) {
             return LIST_RESULTS_CODEC.fromJson(resp.result()).roots();
         }
