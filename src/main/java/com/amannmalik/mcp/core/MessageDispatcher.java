@@ -19,30 +19,47 @@ public final class MessageDispatcher {
 
     public void dispatch(JsonObject message) {
         Objects.requireNonNull(message, "message");
-        switch (router.route(message)) {
-            case DELIVERED -> flush();
-            case PENDING -> backlog.add(message);
-            case NOT_FOUND -> logDrop("Dropping unroutable message: {0}", message);
-        }
+        handleOutcome(message, router.route(message), false);
     }
 
     public void flush() {
         JsonObject message;
         while ((message = backlog.peek()) != null) {
-            switch (router.route(message)) {
-                case DELIVERED -> backlog.poll();
-                case PENDING -> {
-                    return;
-                }
-                case NOT_FOUND -> {
-                    backlog.poll();
-                    logDrop("Dropping unroutable message from backlog: {0}", message);
-                }
+            if (!handleOutcome(message, router.route(message), true)) {
+                return;
             }
         }
     }
 
     private void logDrop(String template, JsonObject message) {
         LOG.log(Logger.Level.WARNING, template, message);
+    }
+
+    private boolean handleOutcome(JsonObject message, RouteOutcome outcome, boolean fromBacklog) {
+        return switch (outcome) {
+            case DELIVERED -> {
+                if (fromBacklog) {
+                    backlog.poll();
+                } else {
+                    flush();
+                }
+                yield true;
+            }
+            case PENDING -> {
+                if (!fromBacklog) {
+                    backlog.add(message);
+                }
+                yield false;
+            }
+            case NOT_FOUND -> {
+                if (fromBacklog) {
+                    backlog.poll();
+                    logDrop("Dropping unroutable message from backlog: {0}", message);
+                } else {
+                    logDrop("Dropping unroutable message: {0}", message);
+                }
+                yield true;
+            }
+        };
     }
 }

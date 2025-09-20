@@ -44,9 +44,9 @@ final class SseClients {
         Objects.requireNonNull(factory, "factory");
 
         var client = resumeOrCreate(lastEventId, context, factory);
-        registerGeneral(client);
-        addCleanupListener(context, () -> removeGeneral(client));
-        return client;
+        return registerClient(client, context,
+                () -> registerGeneral(client),
+                () -> removeGeneral(client));
     }
 
     SseClient registerRequest(RequestId key, AsyncContext context, ClientFactory factory) throws IOException {
@@ -55,9 +55,9 @@ final class SseClients {
         Objects.requireNonNull(factory, "factory");
 
         var client = factory.create(context);
-        registerRequest(key, client);
-        addCleanupListener(context, () -> removeRequest(key, client));
-        return client;
+        return registerClient(client, context,
+                () -> registerRequest(key, client),
+                () -> removeRequest(key, client));
     }
 
     BlockingQueue<JsonObject> registerResponseQueue(RequestId key, int capacity) {
@@ -165,6 +165,20 @@ final class SseClients {
 
     private void addCleanupListener(AsyncContext context, Runnable cleanup) {
         context.addListener(listener(cleanup));
+    }
+
+    private SseClient registerClient(SseClient client,
+                                     AsyncContext context,
+                                     Runnable registration,
+                                     Runnable cleanup) {
+        Objects.requireNonNull(client, "client");
+        Objects.requireNonNull(context, "context");
+        Objects.requireNonNull(registration, "registration");
+        Objects.requireNonNull(cleanup, "cleanup");
+
+        registration.run();
+        addCleanupListener(context, cleanup);
+        return client;
     }
 
     private void registerGeneral(SseClient client) {

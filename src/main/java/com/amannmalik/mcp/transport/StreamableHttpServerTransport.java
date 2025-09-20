@@ -191,7 +191,7 @@ public final class StreamableHttpServerTransport implements Transport {
         return config.resourceMetadataUrl();
     }
 
-    private List<String> authorizationServers(McpServerConfiguration config, boolean https) {
+    private static List<String> authorizationServers(McpServerConfiguration config, boolean https) {
         if (config.authServers().isEmpty()) {
             return List.of();
         }
@@ -206,10 +206,7 @@ public final class StreamableHttpServerTransport implements Transport {
     }
 
     public List<String> authorizationServers() {
-        if (authorizationServers.isEmpty()) {
-            return List.of();
-        }
-        return Collections.unmodifiableList(new ArrayList<>(authorizationServers));
+        return authorizationServers;
     }
 
     public int port() {

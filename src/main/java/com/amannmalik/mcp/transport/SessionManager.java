@@ -9,7 +9,6 @@ import jakarta.servlet.http.*;
 import java.io.IOException;
 import java.security.SecureRandom;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
 
 /// - [Lifecycle](specification/2025-06-18/basic/lifecycle.mdx)
@@ -52,14 +51,13 @@ final class SessionManager {
         if (principal == null) {
             throw new IllegalArgumentException("principal required");
         }
-        var headers = sanitizeHeaders(
+        var sanitized = sanitizeHeaders(
                 sessionId(req),
                 req.getHeader(TransportHeaders.PROTOCOL_VERSION),
                 resp);
-        if (headers.isEmpty()) {
+        if (sanitized == null) {
             return false;
         }
-        var sanitized = headers.get();
         var state = current.get();
         if (state == null) {
             return initializing
@@ -89,18 +87,21 @@ final class SessionManager {
         return null;
     }
 
-    private Optional<SanitizedHeaders> sanitizeHeaders(String sessionHeader,
-                                                       String versionHeader,
-                                                       HttpServletResponse resp) throws IOException {
-        if (sessionHeader != null && ValidationUtil.containsNonVisibleAscii(sessionHeader)) {
-            resp.sendError(HttpServletResponse.SC_BAD_REQUEST);
-            return Optional.empty();
+    private SanitizedHeaders sanitizeHeaders(String sessionHeader,
+                                             String versionHeader,
+                                             HttpServletResponse resp) throws IOException {
+        if (hasNonVisibleAscii(sessionHeader, resp) || hasNonVisibleAscii(versionHeader, resp)) {
+            return null;
         }
-        if (versionHeader != null && ValidationUtil.containsNonVisibleAscii(versionHeader)) {
+        return new SanitizedHeaders(sessionHeader, versionHeader);
+    }
+
+    private boolean hasNonVisibleAscii(String header, HttpServletResponse resp) throws IOException {
+        if (header != null && ValidationUtil.containsNonVisibleAscii(header)) {
             resp.sendError(HttpServletResponse.SC_BAD_REQUEST);
-            return Optional.empty();
+            return true;
         }
-        return Optional.of(new SanitizedHeaders(sessionHeader, versionHeader));
+        return false;
     }
 
     private boolean createSession(HttpServletRequest req,
