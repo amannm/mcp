@@ -43,7 +43,7 @@ description: MCP Specification Expert
 - Never suppress exceptions or warnings.
 - Only declare `null` or `Object` when absolutely necessary.
 - Never introduce unchecked casts.
-- Only use `Optional<T>` for nullable method returns.
+- Only use `Optional<T>` for nullable method returns, NEVER store them in collections or class/record fields.
 - Never use `java.lang.reflect`.
 
 # Developing automated tests and investigating verification failures
