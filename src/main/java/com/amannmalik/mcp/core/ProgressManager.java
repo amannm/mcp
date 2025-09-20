@@ -30,7 +30,7 @@ public final class ProgressManager {
     }
 
     public Optional<ProgressToken> register(RequestId id, JsonObject params) {
-        if (!used.add(id) || !active.add(id)) {
+        if (!used.add(id)) {
             throw new DuplicateRequestException(id);
         }
         if (params != null && params.containsKey("progressToken")) {
@@ -38,6 +38,10 @@ public final class ProgressManager {
         }
         var token = ProgressToken.fromMeta(params);
         token.ifPresent(t -> associate(id, t));
+        if (!active.add(id)) {
+            token.ifPresent(t -> rollbackAssociation(id, t));
+            throw new DuplicateRequestException(id);
+        }
         return token;
     }
 
@@ -48,14 +52,7 @@ public final class ProgressManager {
         if (token == null) {
             return;
         }
-        tokensByProgress.computeIfPresent(token, (ignored, state) -> {
-            if (!state.removeRequest(id)) {
-                return state;
-            }
-            state.clearRequests();
-            state.deactivate();
-            return null;
-        });
+        removeTokenAssociation(id, token);
     }
 
     public void cancel(RequestId id, String reason) {
@@ -112,13 +109,38 @@ public final class ProgressManager {
     }
 
     private void associate(RequestId id, ProgressToken token) {
-        var state = new TokenState();
-        state.addRequest(id);
-        var existing = tokensByProgress.putIfAbsent(token, state);
-        if (existing != null) {
-            throw new IllegalArgumentException("Duplicate token: " + token);
+        if (tokens.putIfAbsent(id, token) != null) {
+            throw new IllegalStateException("Request already associated: " + id);
         }
-        tokens.put(id, token);
+        try {
+            tokensByProgress.compute(token, (ignored, existing) -> {
+                if (existing != null) {
+                    throw new IllegalArgumentException("Duplicate token: " + token);
+                }
+                var state = new TokenState();
+                state.addRequest(id);
+                return state;
+            });
+        } catch (RuntimeException e) {
+            tokens.remove(id, token);
+            throw e;
+        }
+    }
+
+    private void rollbackAssociation(RequestId id, ProgressToken token) {
+        tokens.remove(id, token);
+        removeTokenAssociation(id, token);
+    }
+
+    private void removeTokenAssociation(RequestId id, ProgressToken token) {
+        tokensByProgress.computeIfPresent(token, (ignored, state) -> {
+            if (!state.removeRequest(id)) {
+                return state;
+            }
+            state.clearRequests();
+            state.deactivate();
+            return null;
+        });
     }
 
     private TokenState requireState(ProgressToken token) {
@@ -137,6 +159,9 @@ public final class ProgressManager {
         private volatile double progress;
 
         void addRequest(RequestId id) {
+            if (!active.get()) {
+                throw new IllegalStateException("Progress token no longer active");
+            }
             requestIds.add(id);
         }
 

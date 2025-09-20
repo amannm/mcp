@@ -9,6 +9,7 @@ import jakarta.servlet.http.*;
 import java.io.IOException;
 import java.security.SecureRandom;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
 
 /// - [Lifecycle](specification/2025-06-18/basic/lifecycle.mdx)
@@ -48,26 +49,25 @@ final class SessionManager {
                      boolean initializing) throws IOException {
         Objects.requireNonNull(req, "req");
         Objects.requireNonNull(resp, "resp");
-        if (principal == null) {
-            throw new IllegalArgumentException("principal required");
-        }
+        Objects.requireNonNull(principal, "principal");
         var sanitized = sanitizeHeaders(
                 sessionId(req),
                 req.getHeader(TransportHeaders.PROTOCOL_VERSION),
                 resp);
-        if (sanitized == null) {
+        if (sanitized.isEmpty()) {
             return false;
         }
+        var headers = sanitized.get();
         var state = current.get();
         if (state == null) {
             return initializing
                     ? createSession(req, resp, principal)
-                    : failForMissingSession(resp, sanitized.sessionId(), lastSessionId.get());
+                    : failForMissingSession(resp, headers.sessionId(), lastSessionId.get());
         }
-        if (!validateExistingSession(req, resp, principal, state, sanitized.sessionId())) {
+        if (!validateExistingSession(req, resp, principal, state, headers.sessionId())) {
             return false;
         }
-        return validateVersion(initializing, sanitized.version(), resp);
+        return validateVersion(initializing, headers.version(), resp);
     }
 
     private String sessionId(HttpServletRequest req) {
@@ -87,13 +87,13 @@ final class SessionManager {
         return null;
     }
 
-    private SanitizedHeaders sanitizeHeaders(String sessionHeader,
-                                             String versionHeader,
-                                             HttpServletResponse resp) throws IOException {
+    private Optional<SanitizedHeaders> sanitizeHeaders(String sessionHeader,
+                                                       String versionHeader,
+                                                       HttpServletResponse resp) throws IOException {
         if (hasNonVisibleAscii(sessionHeader, resp) || hasNonVisibleAscii(versionHeader, resp)) {
-            return null;
+            return Optional.empty();
         }
-        return new SanitizedHeaders(sessionHeader, versionHeader);
+        return Optional.of(new SanitizedHeaders(sessionHeader, versionHeader));
     }
 
     private boolean hasNonVisibleAscii(String header, HttpServletResponse resp) throws IOException {
