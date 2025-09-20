@@ -27,10 +27,14 @@ import java.security.cert.X509Certificate;
 import java.security.interfaces.ECKey;
 import java.security.interfaces.RSAKey;
 import java.time.Duration;
-import java.util.*;
-import java.util.concurrent.*;
-import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
+import java.util.Set;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 public final class StreamableHttpServerTransport implements Transport {
     // Default to the previous protocol revision when the version header is
@@ -39,8 +43,6 @@ public final class StreamableHttpServerTransport implements Transport {
             Protocol.PREVIOUS_VERSION;
     private static final Logger LOG = PlatformLog.get(StreamableHttpServerTransport.class);
     private static final JsonObject CLOSE_SIGNAL = Json.createObjectBuilder().add("_close", true).build();
-    private static final Principal DEFAULT_PRINCIPAL = new Principal(
-            McpServerConfiguration.defaultConfiguration().defaultPrincipal(), Set.of());
     private final AuthorizationManager authManager;
     private final String canonicalResource;
     private final List<String> authorizationServers;
@@ -53,6 +55,7 @@ public final class StreamableHttpServerTransport implements Transport {
     private final int httpsPort;
     private final Set<String> allowedOrigins;
     private final String resourceMetadataUrl;
+    private final Principal defaultPrincipal;
     private final MessageDispatcher dispatcher;
     private final AtomicBoolean closed = new AtomicBoolean();
 
@@ -60,21 +63,28 @@ public final class StreamableHttpServerTransport implements Transport {
                                          AuthorizationManager auth) throws Exception {
         this.config = Objects.requireNonNull(config, "config");
         this.sessions = new SessionManager(COMPATIBILITY_VERSION, config.sessionIdByteLength());
-        this.server = new Server();
-        server.setHandler(servletContext(config));
-        var http = httpConnector(server, config);
-        var https = httpsConnector(server, config);
-        startServer();
-        this.port = http != null ? http.getLocalPort() : https.getLocalPort();
-        this.httpsPort = https != null ? https.getLocalPort() : -1;
+        this.defaultPrincipal = createDefaultPrincipal(config);
+        var bindings = startServer(config);
+        this.server = bindings.server();
+        this.port = bindings.httpPort();
+        this.httpsPort = bindings.httpsPort();
         this.allowedOrigins = ValidationUtil.requireAllowedOrigins(Set.copyOf(config.allowedOrigins()));
         this.authManager = auth;
-        var scheme = https != null ? "https" : "http";
-        this.resourceMetadataUrl = metadataUrl(config, scheme, https != null ? this.httpsPort : this.port, https != null);
-        this.canonicalResource = scheme + "://" + config.bindAddress() + ":" + (https != null ? this.httpsPort : this.port);
-        this.authorizationServers = authorizationServers(config, https != null);
+        var scheme = bindings.scheme();
+        var listenerPort = bindings.primaryPort();
+        this.resourceMetadataUrl = metadataUrl(config, scheme, listenerPort, bindings.httpsEnabled());
+        this.canonicalResource = scheme + "://" + config.bindAddress() + ":" + listenerPort;
+        this.authorizationServers = authorizationServers(config, bindings.httpsEnabled());
         var router = new MessageRouter(clients.routes());
         this.dispatcher = new MessageDispatcher(router);
+    }
+
+    private static Principal createDefaultPrincipal(McpServerConfiguration config) {
+        var principalId = Objects.requireNonNull(config.defaultPrincipal(), "defaultPrincipal");
+        if (principalId.isBlank()) {
+            throw new IllegalArgumentException("defaultPrincipal must not be blank");
+        }
+        return new Principal(principalId, Set.of());
     }
 
     private static void validateCertificateKeySize(String path, String password, String type) {
@@ -159,7 +169,16 @@ public final class StreamableHttpServerTransport implements Transport {
         return connector;
     }
 
-    private void startServer() throws Exception {
+    private ServerBindings startServer(McpServerConfiguration config) throws Exception {
+        var server = new Server();
+        server.setHandler(servletContext(config));
+        var http = httpConnector(server, config);
+        var https = httpsConnector(server, config);
+        startJetty(server);
+        return new ServerBindings(server, http, https);
+    }
+
+    private static void startJetty(Server server) throws Exception {
         try {
             server.start();
         } catch (Exception e) {
@@ -303,7 +322,7 @@ public final class StreamableHttpServerTransport implements Transport {
                 req,
                 resp,
                 resourceMetadataUrl,
-                DEFAULT_PRINCIPAL);
+                defaultPrincipal);
     }
 
     boolean enforceHttps(HttpServletRequest req, HttpServletResponse resp) throws IOException {
@@ -384,6 +403,34 @@ public final class StreamableHttpServerTransport implements Transport {
     private void signalClosure() {
         if (!incoming.offer(CLOSE_SIGNAL)) {
             throw new IllegalStateException("incoming queue full");
+        }
+    }
+
+    private record ServerBindings(Server server, ServerConnector http, ServerConnector https) {
+        private int httpPort() {
+            if (http != null) {
+                return http.getLocalPort();
+            }
+            if (https != null) {
+                return https.getLocalPort();
+            }
+            throw new IllegalStateException("Server must expose at least one connector");
+        }
+
+        private int httpsPort() {
+            return https != null ? https.getLocalPort() : -1;
+        }
+
+        private boolean httpsEnabled() {
+            return https != null;
+        }
+
+        private String scheme() {
+            return httpsEnabled() ? "https" : "http";
+        }
+
+        private int primaryPort() {
+            return httpsEnabled() ? httpsPort() : httpPort();
         }
     }
 }
