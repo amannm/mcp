@@ -273,6 +273,13 @@ public final class HostCommand {
                     case "help" -> printHelp();
                     case "clients" -> System.out.println("Active clients: " + host.clientIds());
                     case "context" -> System.out.println(host.aggregateContext());
+                    case "protocol-version" -> {
+                        if (parts.length != 2) {
+                            System.out.println("Usage: protocol-version <client-id>");
+                        } else {
+                            System.out.println(host.getProtocolVersion(parts[1]));
+                        }
+                    }
                     case "grant-consent" -> {
                         if (parts.length != 2) {
                             System.out.println("Usage: grant-consent <scope>");
@@ -321,6 +328,41 @@ public final class HostCommand {
                             var cursor = token == null ? Cursor.Start.INSTANCE : new Cursor.Token(token);
                             var page = host.listTools(parts[1], cursor);
                             System.out.println(page);
+                        }
+                    }
+                    case "server-capabilities" -> {
+                        if (parts.length != 2) {
+                            System.out.println("Usage: server-capabilities <client-id>");
+                        } else {
+                            System.out.println(host.serverCapabilities(parts[1]));
+                        }
+                    }
+                    case "server-capability-names" -> {
+                        if (parts.length != 2) {
+                            System.out.println("Usage: server-capability-names <client-id>");
+                        } else {
+                            System.out.println(host.getServerCapabilityNames(parts[1]));
+                        }
+                    }
+                    case "server-features" -> {
+                        if (parts.length != 2) {
+                            System.out.println("Usage: server-features <client-id>");
+                        } else {
+                            System.out.println(host.serverFeatures(parts[1]));
+                        }
+                    }
+                    case "server-info" -> {
+                        if (parts.length != 2) {
+                            System.out.println("Usage: server-info <client-id>");
+                        } else {
+                            System.out.println(host.getServerInfo(parts[1]));
+                        }
+                    }
+                    case "server-info-map" -> {
+                        if (parts.length != 2) {
+                            System.out.println("Usage: server-info-map <client-id>");
+                        } else {
+                            System.out.println(host.getServerInfoMap(parts[1]));
                         }
                     }
                     case "call-tool" -> {
@@ -409,6 +451,12 @@ public final class HostCommand {
                   revoke-tool <tool>                - Revoke tool access
                   allow-sampling                   - Allow sampling requests
                   revoke-sampling                  - Revoke sampling requests
+                  protocol-version <client-id>     - Show negotiated protocol version
+                  server-capabilities <client-id>  - Show server capabilities
+                  server-capability-names <client-id> - Show server capability identifiers
+                  server-features <client-id>      - Show server features
+                  server-info <client-id>          - Show server info summary
+                  server-info-map <client-id>      - Show server info as key/value map
                   allow-audience <audience>         - Allow audience access
                   revoke-audience <audience>        - Revoke audience access
                   list-tools <client-id> [cursor]  - List tools from client
