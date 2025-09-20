@@ -32,22 +32,30 @@ public final class MessageDispatcher {
     }
 
     private boolean handleOutcome(JsonObject message, RouteOutcome outcome, boolean fromBacklog) {
-        if (outcome.isDelivered()) {
-            if (fromBacklog) {
-                backlog.poll();
-            } else {
-                flush();
-            }
-            return true;
-        }
+        return switch (outcome) {
+            case DELIVERED -> handleDelivered(fromBacklog);
+            case PENDING -> handlePending(message, fromBacklog);
+            case NOT_FOUND -> handleNotFound(message, fromBacklog);
+        };
+    }
 
-        if (outcome.shouldRetry()) {
-            if (!fromBacklog) {
-                backlog.add(message);
-            }
-            return false;
+    private boolean handleDelivered(boolean fromBacklog) {
+        if (fromBacklog) {
+            backlog.poll();
+        } else {
+            flush();
         }
+        return true;
+    }
 
+    private boolean handlePending(JsonObject message, boolean fromBacklog) {
+        if (!fromBacklog) {
+            backlog.add(message);
+        }
+        return false;
+    }
+
+    private boolean handleNotFound(JsonObject message, boolean fromBacklog) {
         dropMessage(message, fromBacklog);
         return true;
     }
