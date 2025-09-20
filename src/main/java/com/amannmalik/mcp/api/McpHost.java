@@ -130,18 +130,29 @@ public final class McpHost implements AutoCloseable {
     public ListResourcesResult listResources(String clientId, Cursor cursor) throws IOException {
         var client = requireClient(clientId);
         requireCapability(client, ServerCapability.RESOURCES);
-        return client.listResources(cursor);
+        var page = client.listResources(cursor);
+        var filtered = filterResources(page.resources());
+        if (filtered.size() == page.resources().size()) {
+            return page;
+        }
+        return new ListResourcesResult(filtered, page.nextCursor(), page._meta());
     }
 
     public ListResourceTemplatesResult listResourceTemplates(String clientId, Cursor cursor) throws IOException {
         var client = requireClient(clientId);
         requireCapability(client, ServerCapability.RESOURCES);
-        return client.listResourceTemplates(cursor);
+        var page = client.listResourceTemplates(cursor);
+        var filtered = filterResourceTemplates(page.resourceTemplates());
+        if (filtered.size() == page.resourceTemplates().size()) {
+            return page;
+        }
+        return new ListResourceTemplatesResult(filtered, page.nextCursor(), page._meta());
     }
 
     public AutoCloseable subscribeToResource(String clientId, URI uri, Consumer<ResourceUpdate> listener) throws IOException {
         var client = requireClient(clientId);
         requireCapability(client, ServerCapability.RESOURCES);
+        ensureResourceAccessible(client, uri);
         return client.subscribeResource(uri, listener);
     }
 
@@ -179,6 +190,47 @@ public final class McpHost implements AutoCloseable {
             for (var t : page.tools()) {
                 if (t.name().equals(name)) {
                     return Optional.of(t);
+                }
+            }
+            cursor = page.nextCursor();
+        } while (!(cursor instanceof Cursor.End));
+        return Optional.empty();
+    }
+
+    private List<Resource> filterResources(List<Resource> resources) {
+        return resources.stream()
+                .filter(r -> allowed(r.annotations()))
+                .toList();
+    }
+
+    private List<ResourceTemplate> filterResourceTemplates(List<ResourceTemplate> templates) {
+        return templates.stream()
+                .filter(t -> allowed(t.annotations()))
+                .toList();
+    }
+
+    private boolean allowed(Annotations annotations) {
+        try {
+            privacyBoundary.requireAllowed(principal, annotations);
+            return true;
+        } catch (SecurityException e) {
+            return false;
+        }
+    }
+
+    private void ensureResourceAccessible(McpClient client, URI uri) throws IOException {
+        var resource = findResource(client, uri)
+                .orElseThrow(() -> new IllegalArgumentException("Resource not found: " + uri));
+        privacyBoundary.requireAllowed(principal, resource.annotations());
+    }
+
+    private Optional<Resource> findResource(McpClient client, URI uri) throws IOException {
+        Cursor cursor = Cursor.Start.INSTANCE;
+        do {
+            var page = client.listResources(cursor);
+            for (var resource : page.resources()) {
+                if (resource.uri().equals(uri)) {
+                    return Optional.of(resource);
                 }
             }
             cursor = page.nextCursor();
