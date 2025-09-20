@@ -3,7 +3,10 @@ package com.amannmalik.mcp.util;
 import jakarta.json.JsonObject;
 
 import java.net.URI;
-import java.util.*;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
 import java.util.regex.Pattern;
 
 public final class ValidationUtil {
@@ -11,6 +14,7 @@ public final class ValidationUtil {
             Pattern.compile("[A-Za-z](?:[A-Za-z0-9-]*[A-Za-z0-9])?");
     private static final Pattern NAME =
             Pattern.compile("(?:[A-Za-z0-9](?:[A-Za-z0-9._-]*[A-Za-z0-9])?)?");
+    private static final Set<String> RESERVED_META_PREFIXES = Set.of("modelcontextprotocol", "mcp");
 
     private ValidationUtil() {
     }
@@ -56,19 +60,14 @@ public final class ValidationUtil {
         if (map == null || map.isEmpty()) {
             return Map.of();
         }
-        Map<String, String> copy = new HashMap<>();
-        map.forEach((k, v) -> copy.put(requireClean(k), requireClean(v)));
-        return Map.copyOf(copy);
+        var sanitized = new HashMap<String, String>(map.size());
+        map.forEach((k, v) -> sanitized.put(requireClean(k), requireClean(v)));
+        return Map.copyOf(sanitized);
     }
 
     public static void requireMeta(String key) {
-        if (key == null) {
-            throw new IllegalArgumentException("key required");
-        }
+        Objects.requireNonNull(key, "key required");
         var slash = key.indexOf('/');
-        var prefix = slash >= 0 ? key.substring(0, slash) : null;
-        var name = slash >= 0 ? key.substring(slash + 1) : key;
-
         if (slash == 0) {
             throw new IllegalArgumentException("_meta prefix must not be empty: " + key);
         }
@@ -76,22 +75,13 @@ public final class ValidationUtil {
             throw new IllegalArgumentException("_meta key may contain at most one '/' character: " + key);
         }
 
-        if (prefix != null) {
-            var labels = prefix.split("\\.");
-            for (var i = 0; i < labels.length; i++) {
-                var label = labels[i];
-                if (!LABEL.matcher(label).matches()) {
-                    throw new IllegalArgumentException("Invalid _meta prefix: " + key);
-                }
-                if (i < labels.length - 1 && ("modelcontextprotocol".equals(label) || label.equals("mcp"))) {
-                    throw new IllegalArgumentException("Reserved _meta prefix: " + key);
-                }
-            }
-        }
+        var prefix = slash >= 0 ? key.substring(0, slash) : null;
+        var name = slash >= 0 ? key.substring(slash + 1) : key;
 
-        if (!NAME.matcher(name).matches()) {
-            throw new IllegalArgumentException("Invalid _meta name: " + key);
+        if (prefix != null) {
+            validateMetaPrefix(prefix, key);
         }
+        validateMetaName(name, key);
     }
 
     public static void requireMeta(JsonObject obj) {
@@ -243,5 +233,24 @@ public final class ValidationUtil {
             throw new IllegalArgumentException(field + " must be between 0.0 and 1.0");
         }
         return value;
+    }
+
+    private static void validateMetaPrefix(String prefix, String key) {
+        var labels = prefix.split("\\.");
+        for (var i = 0; i < labels.length; i++) {
+            var label = labels[i];
+            if (!LABEL.matcher(label).matches()) {
+                throw new IllegalArgumentException("Invalid _meta prefix: " + key);
+            }
+            if (i < labels.length - 1 && RESERVED_META_PREFIXES.contains(label)) {
+                throw new IllegalArgumentException("Reserved _meta prefix: " + key);
+            }
+        }
+    }
+
+    private static void validateMetaName(String name, String key) {
+        if (!NAME.matcher(name).matches()) {
+            throw new IllegalArgumentException("Invalid _meta name: " + key);
+        }
     }
 }

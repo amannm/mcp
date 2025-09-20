@@ -5,14 +5,17 @@ import com.amannmalik.mcp.spi.Root;
 import java.net.URI;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.*;
+import java.util.Collection;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.stream.Stream;
 
 public final class RootChecker {
     private RootChecker() {
     }
 
-    public static boolean withinRoots(URI uri, List<Root> roots) {
-        Objects.requireNonNull(roots);
+    public static boolean withinRoots(URI uri, Collection<? extends Root> roots) {
+        Objects.requireNonNull(roots, "roots");
         if (uri == null) {
             return false;
         }
@@ -23,26 +26,30 @@ public final class RootChecker {
             return false;
         }
 
-        final Path targetPath;
-        try {
-            var p = Paths.get(uri);
-            targetPath = normalize(p);
-        } catch (Exception e) {
+        var targetPath = filePath(uri).orElse(null);
+        if (targetPath == null) {
             return false;
         }
 
         return roots.stream()
                 .map(Root::uri)
-                .map(RootChecker::toPath)
-                .flatMap(Optional::stream)
+                .flatMap(RootChecker::filePathStream)
                 .anyMatch(targetPath::startsWith);
     }
 
-    private static Optional<Path> toPath(URI uri) {
-        if ("file".equalsIgnoreCase(uri.getScheme())) {
-            return Optional.of(normalize(Paths.get(uri)));
+    private static Optional<Path> filePath(URI uri) {
+        if (!"file".equalsIgnoreCase(uri.getScheme())) {
+            return Optional.empty();
         }
-        return Optional.empty();
+        try {
+            return Optional.of(normalize(Paths.get(uri)));
+        } catch (Exception e) {
+            return Optional.empty();
+        }
+    }
+
+    private static Stream<Path> filePathStream(URI uri) {
+        return filePath(uri).stream();
     }
 
     private static Path normalize(Path p) {
