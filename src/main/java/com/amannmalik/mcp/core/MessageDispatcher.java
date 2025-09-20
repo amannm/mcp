@@ -31,35 +31,33 @@ public final class MessageDispatcher {
         }
     }
 
-    private void logDrop(String template, JsonObject message) {
-        LOG.log(Logger.Level.WARNING, template, message);
+    private boolean handleOutcome(JsonObject message, RouteOutcome outcome, boolean fromBacklog) {
+        if (outcome.isDelivered()) {
+            if (fromBacklog) {
+                backlog.poll();
+            } else {
+                flush();
+            }
+            return true;
+        }
+
+        if (outcome.shouldRetry()) {
+            if (!fromBacklog) {
+                backlog.add(message);
+            }
+            return false;
+        }
+
+        dropMessage(message, fromBacklog);
+        return true;
     }
 
-    private boolean handleOutcome(JsonObject message, RouteOutcome outcome, boolean fromBacklog) {
-        return switch (outcome) {
-            case DELIVERED -> {
-                if (fromBacklog) {
-                    backlog.poll();
-                } else {
-                    flush();
-                }
-                yield true;
-            }
-            case PENDING -> {
-                if (!fromBacklog) {
-                    backlog.add(message);
-                }
-                yield false;
-            }
-            case NOT_FOUND -> {
-                if (fromBacklog) {
-                    backlog.poll();
-                    logDrop("Dropping unroutable message from backlog: {0}", message);
-                } else {
-                    logDrop("Dropping unroutable message: {0}", message);
-                }
-                yield true;
-            }
-        };
+    private void dropMessage(JsonObject message, boolean fromBacklog) {
+        if (fromBacklog) {
+            backlog.poll();
+            LOG.log(Logger.Level.WARNING, "Dropping unroutable message from backlog: {0}", message);
+        } else {
+            LOG.log(Logger.Level.WARNING, "Dropping unroutable message: {0}", message);
+        }
     }
 }

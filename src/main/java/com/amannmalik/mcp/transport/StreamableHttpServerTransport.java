@@ -73,12 +73,7 @@ public final class StreamableHttpServerTransport implements Transport {
         this.resourceMetadataUrl = metadataUrl(config, scheme, https != null ? this.httpsPort : this.port, https != null);
         this.canonicalResource = scheme + "://" + config.bindAddress() + ":" + (https != null ? this.httpsPort : this.port);
         this.authorizationServers = authorizationServers(config, https != null);
-        var router = new MessageRouter(
-                clients::requestClient,
-                clients::removeResponse,
-                clients::generalSnapshot,
-                clients::lastGeneralClient,
-                clients::removeRequest);
+        var router = new MessageRouter(clients.routes());
         this.dispatcher = new MessageDispatcher(router);
     }
 

@@ -6,30 +6,16 @@ import com.amannmalik.mcp.transport.SseClient;
 import jakarta.json.JsonObject;
 
 import java.util.Objects;
+import java.util.Optional;
 import java.util.concurrent.BlockingQueue;
-import java.util.function.BiConsumer;
-import java.util.function.Function;
-import java.util.function.Supplier;
 
 /// - [Base Protocol](specification/2025-06-18/basic/index.mdx)
 /// - [Conformance Suite](src/test/resources/com/amannmalik/mcp/mcp.feature)
 public final class MessageRouter {
-    private final Function<RequestId, SseClient> requestStreams;
-    private final Function<RequestId, BlockingQueue<JsonObject>> responseQueues;
-    private final Supplier<Iterable<SseClient>> generalClients;
-    private final Supplier<SseClient> lastGeneral;
-    private final BiConsumer<RequestId, SseClient> remover;
+    private final Routes routes;
 
-    public MessageRouter(Function<RequestId, SseClient> requestStreams,
-                         Function<RequestId, BlockingQueue<JsonObject>> responseQueues,
-                         Supplier<Iterable<SseClient>> generalClients,
-                         Supplier<SseClient> lastGeneral,
-                         BiConsumer<RequestId, SseClient> remover) {
-        this.requestStreams = Objects.requireNonNull(requestStreams, "requestStreams");
-        this.responseQueues = Objects.requireNonNull(responseQueues, "responseQueues");
-        this.generalClients = Objects.requireNonNull(generalClients, "generalClients");
-        this.lastGeneral = Objects.requireNonNull(lastGeneral, "lastGeneral");
-        this.remover = Objects.requireNonNull(remover, "remover");
+    public MessageRouter(Routes routes) {
+        this.routes = Objects.requireNonNull(routes, "routes");
     }
 
     public RouteOutcome route(JsonObject message) {
@@ -43,9 +29,10 @@ public final class MessageRouter {
 
     private RouteOutcome routeWithId(JsonRpcEnvelope envelope, RequestId id) {
         var outcome = routeById(id, envelope);
-        if (outcome != RouteOutcome.NOT_FOUND) {
-            return outcome;
-        }
+        return outcome == RouteOutcome.NOT_FOUND ? handleUnroutableWithId(envelope) : outcome;
+    }
+
+    private RouteOutcome handleUnroutableWithId(JsonRpcEnvelope envelope) {
         return switch (envelope.type()) {
             case REQUEST, NOTIFICATION -> routeToGeneralClients(envelope.message());
             case RESPONSE, INVALID -> RouteOutcome.NOT_FOUND;
@@ -53,59 +40,69 @@ public final class MessageRouter {
     }
 
     private RouteOutcome routeById(RequestId id, JsonRpcEnvelope envelope) {
+        return attemptRequestStream(id, envelope)
+                .or(() -> attemptResponseQueue(id, envelope.message()))
+                .orElse(RouteOutcome.NOT_FOUND);
+    }
+
+    private Optional<RouteOutcome> attemptRequestStream(RequestId id, JsonRpcEnvelope envelope) {
+        return routes.requestClient(id)
+                .map(client -> deliverToRequestStream(id, envelope, client));
+    }
+
+    private RouteOutcome deliverToRequestStream(RequestId id, JsonRpcEnvelope envelope, SseClient client) {
         var message = envelope.message();
-        var streamOutcome = sendToRequestStream(id, message, envelope);
-        if (streamOutcome != RouteOutcome.NOT_FOUND) {
-            return streamOutcome;
+        client.send(message);
+        if (envelope.isResponse()) {
+            routes.removeRequestClient(id, client);
         }
-        return sendToResponseQueue(id, message);
+        return RouteOutcome.DELIVERED;
+    }
+
+    private Optional<RouteOutcome> attemptResponseQueue(RequestId id, JsonObject message) {
+        return routes.takeResponseQueue(id)
+                .map(queue -> {
+                    queue.add(message);
+                    return RouteOutcome.DELIVERED;
+                });
     }
 
     private RouteOutcome routeToGeneralClients(JsonObject message) {
-        if (sendToActiveClient(message) || sendToPending(message)) {
+        if (sendToActiveClient(message) || deliverToPendingClient(message)) {
             return RouteOutcome.DELIVERED;
         }
         return RouteOutcome.PENDING;
     }
 
-    private RouteOutcome sendToRequestStream(RequestId id, JsonObject message, JsonRpcEnvelope envelope) {
-        var stream = requestStreams.apply(id);
-        if (stream == null) {
-            return RouteOutcome.NOT_FOUND;
-        }
-        stream.send(message);
-        if (envelope.isResponse()) {
-            remover.accept(id, stream);
-        }
-        return RouteOutcome.DELIVERED;
-    }
-
-    private RouteOutcome sendToResponseQueue(RequestId id, JsonObject message) {
-        var q = responseQueues.apply(id);
-        if (q == null) {
-            return RouteOutcome.NOT_FOUND;
-        }
-        q.add(message);
-        return RouteOutcome.DELIVERED;
-    }
-
     private boolean sendToActiveClient(JsonObject message) {
-        for (var c : generalClients.get()) {
-            if (c.isActive()) {
-                c.send(message);
+        for (var client : routes.generalClients()) {
+            if (client.isActive()) {
+                client.send(message);
                 return true;
             }
         }
         return false;
     }
 
-    private boolean sendToPending(JsonObject message) {
-        var pending = lastGeneral.get();
-        if (pending == null) {
-            return false;
-        }
-        pending.send(message);
-        return true;
+    private boolean deliverToPendingClient(JsonObject message) {
+        return routes.pendingGeneralClient()
+                .map(client -> {
+                    client.send(message);
+                    return true;
+                })
+                .orElse(false);
+    }
+
+    public interface Routes {
+        Optional<SseClient> requestClient(RequestId id);
+
+        Optional<BlockingQueue<JsonObject>> takeResponseQueue(RequestId id);
+
+        Iterable<SseClient> generalClients();
+
+        Optional<SseClient> pendingGeneralClient();
+
+        void removeRequestClient(RequestId id, SseClient client);
     }
 }
 

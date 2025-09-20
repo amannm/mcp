@@ -4,6 +4,7 @@ import com.amannmalik.mcp.api.JsonRpcMessage;
 import com.amannmalik.mcp.api.RequestId;
 import com.amannmalik.mcp.codec.JsonCodec;
 import com.amannmalik.mcp.codec.JsonRpcMessageJsonCodec;
+import com.amannmalik.mcp.core.MessageRouter;
 import com.amannmalik.mcp.jsonrpc.JsonRpcError;
 import com.amannmalik.mcp.jsonrpc.JsonRpcErrorCode;
 import com.amannmalik.mcp.util.CloseUtil;
@@ -38,6 +39,7 @@ final class SseClients {
     private final ConcurrentHashMap<String, SseClient> byPrefix = new ConcurrentHashMap<>();
     private final AtomicReference<SseClient> lastGeneral = new AtomicReference<>();
     private final ConcurrentHashMap<RequestId, BlockingQueue<JsonObject>> responses = new ConcurrentHashMap<>();
+    private final MessageRouter.Routes routerBindings = new RoutesView();
 
     SseClient registerGeneral(AsyncContext context, String lastEventId, ClientFactory factory) throws IOException {
         Objects.requireNonNull(context, "context");
@@ -74,8 +76,16 @@ final class SseClients {
     }
 
     void removeResponseQueue(RequestId key) {
+        removeResponseQueueInternal(key);
+    }
+
+    private BlockingQueue<JsonObject> removeResponseQueueInternal(RequestId key) {
         Objects.requireNonNull(key, "key");
-        responses.remove(key);
+        return responses.remove(key);
+    }
+
+    private Optional<BlockingQueue<JsonObject>> takeResponseQueue(RequestId key) {
+        return Optional.ofNullable(removeResponseQueueInternal(key));
     }
 
     void removeRequest(RequestId key, SseClient client) {
@@ -86,22 +96,17 @@ final class SseClients {
         CloseUtil.close(client);
     }
 
-    SseClient requestClient(RequestId key) {
+    private SseClient requestClient(RequestId key) {
         Objects.requireNonNull(key, "key");
         return request.get(key);
     }
 
-    BlockingQueue<JsonObject> removeResponse(RequestId key) {
-        Objects.requireNonNull(key, "key");
-        return responses.remove(key);
-    }
-
-    Iterable<SseClient> generalSnapshot() {
+    private Iterable<SseClient> generalSnapshot() {
         return List.copyOf(general);
     }
 
-    SseClient lastGeneralClient() {
-        return lastGeneral.get();
+    private Optional<SseClient> lastGeneralClient() {
+        return Optional.ofNullable(lastGeneral.get());
     }
 
     void removeGeneral(SseClient client) {
@@ -113,6 +118,10 @@ final class SseClients {
 
     private AsyncListener listener(Runnable cleanup) {
         return new CleanupAsyncListener(cleanup);
+    }
+
+    MessageRouter.Routes routes() {
+        return routerBindings;
     }
 
     void failPending() {
@@ -212,6 +221,37 @@ final class SseClients {
             throw new IllegalStateException("duplicate request client: " + key);
         }
         byPrefix.put(client.prefix(), client);
+    }
+
+    private final class RoutesView implements MessageRouter.Routes {
+        @Override
+        public Optional<SseClient> requestClient(RequestId id) {
+            Objects.requireNonNull(id, "id");
+            return Optional.ofNullable(SseClients.this.requestClient(id));
+        }
+
+        @Override
+        public Optional<BlockingQueue<JsonObject>> takeResponseQueue(RequestId id) {
+            Objects.requireNonNull(id, "id");
+            return SseClients.this.takeResponseQueue(id);
+        }
+
+        @Override
+        public Iterable<SseClient> generalClients() {
+            return SseClients.this.generalSnapshot();
+        }
+
+        @Override
+        public Optional<SseClient> pendingGeneralClient() {
+            return SseClients.this.lastGeneralClient();
+        }
+
+        @Override
+        public void removeRequestClient(RequestId id, SseClient client) {
+            Objects.requireNonNull(id, "id");
+            Objects.requireNonNull(client, "client");
+            SseClients.this.removeRequest(id, client);
+        }
     }
 
     private static final class CleanupAsyncListener implements AsyncListener {
