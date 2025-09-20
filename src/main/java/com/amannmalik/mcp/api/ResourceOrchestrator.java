@@ -111,7 +111,7 @@ final class ResourceOrchestrator implements AutoCloseable {
     private JsonRpcMessage readResource(JsonRpcRequest req) {
         ReadResourceRequest rrr;
         try {
-            rrr = ((JsonCodec<ReadResourceRequest>) new ReadResourceRequestAbstractEntityCodec()).fromJson(req.params());
+            rrr = (new ReadResourceRequestAbstractEntityCodec()).fromJson(req.params());
         } catch (IllegalArgumentException e) {
             return JsonRpcError.of(req.id(), JsonRpcErrorCode.INVALID_PARAMS, "Invalid params");
         }
@@ -145,7 +145,7 @@ final class ResourceOrchestrator implements AutoCloseable {
     private JsonRpcMessage subscribeResource(JsonRpcRequest req) {
         SubscribeRequest sr;
         try {
-            sr = ((JsonCodec<SubscribeRequest>) new SubscribeRequestAbstractEntityCodec()).fromJson(req.params());
+            sr = (new SubscribeRequestAbstractEntityCodec()).fromJson(req.params());
         } catch (IllegalArgumentException e) {
             return JsonRpcError.of(req.id(), JsonRpcErrorCode.INVALID_PARAMS, e.getMessage());
         }
@@ -180,7 +180,7 @@ final class ResourceOrchestrator implements AutoCloseable {
     private JsonRpcMessage unsubscribeResource(JsonRpcRequest req) {
         UnsubscribeRequest ur;
         try {
-            ur = ((JsonCodec<UnsubscribeRequest>) new UnsubscribeRequestAbstractEntityCodec()).fromJson(req.params());
+            ur = (new UnsubscribeRequestAbstractEntityCodec()).fromJson(req.params());
         } catch (IllegalArgumentException e) {
             return JsonRpcError.of(req.id(), JsonRpcErrorCode.INVALID_PARAMS, e.getMessage());
         }
