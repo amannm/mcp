@@ -22,27 +22,35 @@ public final class MessageRouter {
         Objects.requireNonNull(message, "message");
 
         var envelope = JsonRpcEnvelope.of(message);
-        return envelope.id()
-                .map(id -> routeWithId(envelope, id))
-                .orElseGet(() -> routeToGeneralClients(envelope.message()));
-    }
-
-    private RouteOutcome routeWithId(JsonRpcEnvelope envelope, RequestId id) {
-        var outcome = routeById(id, envelope);
-        return outcome == RouteOutcome.NOT_FOUND ? handleUnroutableWithId(envelope) : outcome;
-    }
-
-    private RouteOutcome handleUnroutableWithId(JsonRpcEnvelope envelope) {
         return switch (envelope.type()) {
-            case REQUEST, NOTIFICATION -> routeToGeneralClients(envelope.message());
-            case RESPONSE, INVALID -> RouteOutcome.NOT_FOUND;
+            case REQUEST -> routeRequest(envelope);
+            case NOTIFICATION -> deliverToGeneralClients(envelope.message());
+            case RESPONSE -> routeResponse(envelope);
+            case INVALID -> routeInvalid(envelope);
         };
     }
 
-    private RouteOutcome routeById(RequestId id, JsonRpcEnvelope envelope) {
-        return attemptRequestStream(id, envelope)
-                .or(() -> attemptResponseQueue(id, envelope.message()))
+    private RouteOutcome routeRequest(JsonRpcEnvelope envelope) {
+        return envelope.id()
+                .flatMap(id -> attemptIdentifiedRoutes(id, envelope))
+                .orElseGet(() -> deliverToGeneralClients(envelope.message()));
+    }
+
+    private RouteOutcome routeResponse(JsonRpcEnvelope envelope) {
+        return envelope.id()
+                .flatMap(id -> attemptIdentifiedRoutes(id, envelope))
                 .orElse(RouteOutcome.NOT_FOUND);
+    }
+
+    private RouteOutcome routeInvalid(JsonRpcEnvelope envelope) {
+        return envelope.id()
+                .map(id -> attemptIdentifiedRoutes(id, envelope).orElse(RouteOutcome.NOT_FOUND))
+                .orElseGet(() -> deliverToGeneralClients(envelope.message()));
+    }
+
+    private Optional<RouteOutcome> attemptIdentifiedRoutes(RequestId id, JsonRpcEnvelope envelope) {
+        return attemptRequestStream(id, envelope)
+                .or(() -> attemptResponseQueue(id, envelope.message()));
     }
 
     private Optional<RouteOutcome> attemptRequestStream(RequestId id, JsonRpcEnvelope envelope) {
@@ -52,17 +60,21 @@ public final class MessageRouter {
 
     private RouteOutcome deliverToRequestStream(RequestId id, JsonRpcEnvelope envelope, SseClient client) {
         var message = envelope.message();
-        if (evictIfInactive(id, client)) {
-            return RouteOutcome.NOT_FOUND;
-        }
-        client.send(message);
-        if (evictIfInactive(id, client)) {
+        if (!deliverToClientIfActive(id, client, message)) {
             return RouteOutcome.NOT_FOUND;
         }
         if (envelope.isResponse()) {
             routes.removeRequestClient(id, client);
         }
         return RouteOutcome.DELIVERED;
+    }
+
+    private boolean deliverToClientIfActive(RequestId id, SseClient client, JsonObject message) {
+        if (evictIfInactive(id, client)) {
+            return false;
+        }
+        client.send(message);
+        return !evictIfInactive(id, client);
     }
 
     private boolean evictIfInactive(RequestId id, SseClient client) {
@@ -81,7 +93,7 @@ public final class MessageRouter {
                 });
     }
 
-    private RouteOutcome routeToGeneralClients(JsonObject message) {
+    private RouteOutcome deliverToGeneralClients(JsonObject message) {
         if (sendToActiveClients(message) || deliverToPendingClient(message)) {
             return RouteOutcome.DELIVERED;
         }
@@ -91,23 +103,25 @@ public final class MessageRouter {
     private boolean sendToActiveClients(JsonObject message) {
         var delivered = false;
         for (var client : routes.generalClients()) {
-            if (!client.isActive()) {
-                continue;
+            if (sendIfActive(client, message)) {
+                delivered = true;
             }
-            client.send(message);
-            delivered = true;
         }
         return delivered;
     }
 
     private boolean deliverToPendingClient(JsonObject message) {
         return routes.pendingGeneralClient()
-                .filter(SseClient::isActive)
-                .map(client -> {
-                    client.send(message);
-                    return true;
-                })
+                .map(client -> sendIfActive(client, message))
                 .orElse(false);
+    }
+
+    private boolean sendIfActive(SseClient client, JsonObject message) {
+        if (!client.isActive()) {
+            return false;
+        }
+        client.send(message);
+        return true;
     }
 
     public interface Routes {
