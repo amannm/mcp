@@ -19,12 +19,4 @@ public sealed interface Transport extends AutoCloseable permits
 
     @Override
     void close() throws IOException;
-
-    default void listen() throws IOException {
-        // Default implementation for non-streaming transports
-    }
-
-    default void setProtocolVersion(String version) {
-        // Default implementation for transports that don't need version setting
-    }
 }
