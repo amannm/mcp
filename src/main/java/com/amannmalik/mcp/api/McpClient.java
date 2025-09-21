@@ -43,14 +43,6 @@ public final class McpClient extends JsonRpcEndpoint implements AutoCloseable {
     private static final CancelledNotificationJsonCodec CANCELLED_NOTIFICATION_JSON_CODEC = new CancelledNotificationJsonCodec();
     private static final JsonCodec<LoggingMessageNotification> LOGGING_MESSAGE_NOTIFICATION_JSON_CODEC = new LoggingMessageNotificationAbstractEntityCodec();
     private static final JsonCodec<ProgressNotification> PROGRESS_NOTIFICATION_JSON_CODEC = new ProgressNotificationJsonCodec();
-    private static final RootsProvider NO_ROOTS_PROVIDER = cursor -> {
-        throw new UnsupportedOperationException("Roots not supported");
-    };
-    private static final ElicitationProvider NO_ELICITATION_PROVIDER = (req, timeout) -> {
-        throw new UnsupportedOperationException("Elicitation not supported");
-    };
-    private static final McpClientListener NOOP_LISTENER = new McpClientListener() {
-    };
     private static final Logger LOG = PlatformLog.get(McpClient.class);
     private final McpClientConfiguration config;
     private final ClientInfo info;
@@ -100,13 +92,18 @@ public final class McpClient extends JsonRpcEndpoint implements AutoCloseable {
         if (this.capabilities.contains(ClientCapability.ROOTS) && roots == null) {
             throw new IllegalArgumentException("roots capability requires provider");
         }
-        this.roots = roots == null ? NO_ROOTS_PROVIDER : roots;
+        this.roots = roots == null ? _ -> {
+            throw new UnsupportedOperationException("Roots not supported");
+        } : roots;
         this.rootsListChangedSupported = this.capabilities.contains(ClientCapability.ROOTS) && this.roots.supportsListChanged();
         if (this.capabilities.contains(ClientCapability.ELICITATION) && elicitation == null) {
             throw new IllegalArgumentException("elicitation capability requires provider");
         }
-        this.elicitation = elicitation == null ? NO_ELICITATION_PROVIDER : elicitation;
-        this.listener = listener == null ? NOOP_LISTENER : listener;
+        this.elicitation = elicitation == null ? (_, _) -> {
+            throw new UnsupportedOperationException("Elicitation not supported");
+        } : elicitation;
+        this.listener = listener == null ? new McpClientListener() {
+        } : listener;
         this.samplingAccess = config.samplingAccessPolicy();
         this.principal = new Principal(config.principal(), Set.of());
         this.pingInterval = config.pingInterval();
