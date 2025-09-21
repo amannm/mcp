@@ -183,12 +183,12 @@ public final class ServerCommand {
             var config = stdio
                     ? base.withTransport("stdio", base.serverPort(), base.allowedOrigins(), "", "", null, List.of(), true, verbose)
                     : base.withTransport("http", httpPort, base.allowedOrigins(),
-                            expectedAudience == null ? "" : expectedAudience,
-                            jwtSecret,
-                            resourceMetadataUrl,
-                            authServers,
-                            testMode,
-                            verbose);
+                    expectedAudience == null ? "" : expectedAudience,
+                    jwtSecret,
+                    resourceMetadataUrl,
+                    authServers,
+                    testMode,
+                    verbose);
             var tlsConfig = new TlsConfiguration(keystorePath, keystorePassword, keystoreType, truststorePath, truststorePassword, truststoreType, tlsProtocols, cipherSuites);
             config = config.withTls(httpsPort, tlsConfig, requireClientAuth);
             Path instructionsFile = parseResult.matchedOptionValue("--instructions", null);

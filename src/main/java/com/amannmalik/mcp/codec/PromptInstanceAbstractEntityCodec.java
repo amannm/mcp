@@ -2,7 +2,8 @@ package com.amannmalik.mcp.codec;
 
 import com.amannmalik.mcp.spi.PromptInstance;
 import com.amannmalik.mcp.spi.PromptMessage;
-import jakarta.json.*;
+import jakarta.json.Json;
+import jakarta.json.JsonObject;
 
 import java.util.*;
 
@@ -33,7 +34,7 @@ public final class PromptInstanceAbstractEntityCodec extends AbstractEntityCodec
         }
         List<PromptMessage> msgs = new ArrayList<>();
         for (var v : arr) {
-            if (v.getValueType() != JsonValue.ValueType.OBJECT) {
+            if (!(v instanceof JsonObject)) {
                 throw new IllegalArgumentException("message must be object");
             }
             msgs.add(CODEC.fromJson(v.asJsonObject()));

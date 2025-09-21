@@ -1,7 +1,6 @@
 package com.amannmalik.mcp.test;
 
 import com.amannmalik.mcp.api.*;
-import com.amannmalik.mcp.api.McpHost;
 import com.amannmalik.mcp.api.config.*;
 import com.amannmalik.mcp.spi.*;
 import io.cucumber.datatable.DataTable;
@@ -467,7 +466,7 @@ public final class ServerFeaturesSteps {
             try {
                 var r = activeConnection.callTool(clientId, tool.name(), Json.createObjectBuilder().build());
                 for (var v : r.content()) {
-                    if (v.getValueType() == JsonValue.ValueType.OBJECT) {
+                    if (v instanceof JsonObject) {
                         var obj = v.asJsonObject();
                         var type = obj.getString("type", null);
                         if (type != null && !contentTypeSamples.containsKey(type)) {
@@ -1276,15 +1275,15 @@ public final class ServerFeaturesSteps {
                     }
                     continue;
                 }
-                var valueType = msg.get(field).getValueType();
+                var value = msg.get(field);
                 switch (type) {
                     case "string" -> {
-                        if (valueType != JsonValue.ValueType.STRING) {
+                        if (!(value instanceof JsonString)) {
                             throw new AssertionError("field " + field + " should be a string");
                         }
                     }
                     case "object" -> {
-                        if (valueType != JsonValue.ValueType.OBJECT) {
+                        if (!(value instanceof JsonObject)) {
                             throw new AssertionError("field " + field + " should be an object");
                         }
                     }

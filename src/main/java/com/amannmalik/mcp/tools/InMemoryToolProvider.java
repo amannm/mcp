@@ -37,7 +37,7 @@ public final class InMemoryToolProvider extends InMemoryProvider<Tool> implement
     private static boolean hasStructuredText(ToolResult result) {
         var text = result.structuredContent().toString();
         for (var v : result.content()) {
-            if (v.getValueType() != JsonValue.ValueType.OBJECT) {
+            if (!(v instanceof JsonObject)) {
                 continue;
             }
             var o = v.asJsonObject();

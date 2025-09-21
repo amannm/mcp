@@ -1,6 +1,6 @@
 package com.amannmalik.mcp.test;
 
-import com.amannmalik.mcp.api.*;
+import com.amannmalik.mcp.api.ClientCapability;
 import com.amannmalik.mcp.api.McpHost;
 import com.amannmalik.mcp.api.config.*;
 import io.cucumber.datatable.DataTable;

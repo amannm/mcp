@@ -33,11 +33,11 @@ public final class GetPromptRequestAbstractEntityCodec extends AbstractEntityCod
         if (argsObj != null) {
             Map<String, String> tmp = new HashMap<>();
             argsObj.forEach((k, v) -> {
-                if (v.getValueType() != JsonValue.ValueType.STRING) {
+                if (!(v instanceof JsonString js)) {
                     throw new IllegalArgumentException("argument values must be strings");
                 }
                 var key = ValidationUtil.requireClean(k);
-                var value = ValidationUtil.requireClean(((JsonString) v).getString());
+                var value = ValidationUtil.requireClean(js.getString());
                 tmp.put(key, value);
             });
             args = Map.copyOf(tmp);

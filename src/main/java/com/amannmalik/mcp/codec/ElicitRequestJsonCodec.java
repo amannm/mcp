@@ -1,7 +1,8 @@
 package com.amannmalik.mcp.codec;
 
 import com.amannmalik.mcp.spi.ElicitRequest;
-import jakarta.json.*;
+import jakarta.json.Json;
+import jakarta.json.JsonObject;
 
 import java.util.Set;
 
@@ -25,7 +26,7 @@ public class ElicitRequestJsonCodec implements JsonCodec<ElicitRequest> {
             throw new IllegalArgumentException("message required");
         }
         var schemaVal = obj.get("requestedSchema");
-        if (schemaVal == null || schemaVal.getValueType() != JsonValue.ValueType.OBJECT) {
+        if (schemaVal == null || !(schemaVal instanceof JsonObject)) {
             throw new IllegalArgumentException("requestedSchema must be object");
         }
         return new ElicitRequest(message, schemaVal.asJsonObject(), AbstractEntityCodec.meta(obj));

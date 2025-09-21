@@ -3,8 +3,7 @@ package com.amannmalik.mcp.codec;
 import com.amannmalik.mcp.api.ProgressNotification;
 import com.amannmalik.mcp.api.ProgressToken;
 import com.amannmalik.mcp.util.ValidationUtil;
-import jakarta.json.Json;
-import jakarta.json.JsonObject;
+import jakarta.json.*;
 
 public class ProgressNotificationJsonCodec implements JsonCodec<ProgressNotification> {
     @Override
@@ -26,10 +25,10 @@ public class ProgressNotificationJsonCodec implements JsonCodec<ProgressNotifica
 
     @Override
     public ProgressNotification fromJson(JsonObject obj) {
-        ProgressToken token = switch (obj.get("progressToken").getValueType()) {
-            case STRING -> new ProgressToken.StringToken(ValidationUtil.requireClean(obj.getString("progressToken")));
-            case NUMBER -> {
-                var num = obj.getJsonNumber("progressToken");
+        var pt = obj.get("progressToken");
+        ProgressToken token = switch (pt) {
+            case JsonString js -> new ProgressToken.StringToken(ValidationUtil.requireClean(js.getString()));
+            case JsonNumber num -> {
                 if (!num.isIntegral()) {
                     throw new IllegalArgumentException("progressToken must be an integer");
                 }

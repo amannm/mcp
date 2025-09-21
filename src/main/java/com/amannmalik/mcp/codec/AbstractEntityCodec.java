@@ -56,7 +56,6 @@ public sealed abstract class AbstractEntityCodec<T> implements JsonCodec<T> perm
         return b.build();
     }
 
-    // TODO: add comments on what this does
     public static <T> JsonCodec<T> paginatedRequest(
             Function<T, String> cursor,
             Function<T, JsonObject> meta,
@@ -64,7 +63,6 @@ public sealed abstract class AbstractEntityCodec<T> implements JsonCodec<T> perm
         return new EntityCursorPageCodec<>(cursor, meta, from);
     }
 
-    // TODO: add comments on what this does
     public static <I, R> JsonCodec<R> paginatedResult(
             String field,
             String itemName,

@@ -21,20 +21,20 @@ public final class InitializeResponseAbstractEntityCodec extends AbstractEntityC
             var f = resp.features();
             switch (c) {
                 case PROMPTS -> {
-                    if (f != null && f.contains(ServerFeature.PROMPTS_LIST_CHANGED)) {
+                    if (f.contains(ServerFeature.PROMPTS_LIST_CHANGED)) {
                         b.add("listChanged", true);
                     }
                 }
                 case RESOURCES -> {
-                    if (f != null && f.contains(ServerFeature.RESOURCES_SUBSCRIBE)) {
+                    if (f.contains(ServerFeature.RESOURCES_SUBSCRIBE)) {
                         b.add("subscribe", true);
                     }
-                    if (f != null && f.contains(ServerFeature.RESOURCES_LIST_CHANGED)) {
+                    if (f.contains(ServerFeature.RESOURCES_LIST_CHANGED)) {
                         b.add("listChanged", true);
                     }
                 }
                 case TOOLS -> {
-                    if (f != null && f.contains(ServerFeature.TOOLS_LIST_CHANGED)) {
+                    if (f.contains(ServerFeature.TOOLS_LIST_CHANGED)) {
                         b.add("listChanged", true);
                     }
                 }

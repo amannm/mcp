@@ -85,7 +85,7 @@ public final class ElicitSchemaValidator {
                 throw new IllegalArgumentException("enum must have values for " + name);
             }
             for (var v : vals) {
-                if (v.getValueType() != JsonValue.ValueType.STRING) {
+                if (!(v instanceof JsonString)) {
                     throw new IllegalArgumentException("enum values must be strings for " + name);
                 }
             }
@@ -95,7 +95,7 @@ public final class ElicitSchemaValidator {
                     throw new IllegalArgumentException("enumNames size mismatch for " + name);
                 }
                 for (var v : names) {
-                    if (v.getValueType() != JsonValue.ValueType.STRING) {
+                    if (!(v instanceof JsonString)) {
                         throw new IllegalArgumentException("enumNames values must be strings for " + name);
                     }
                 }
@@ -130,10 +130,11 @@ public final class ElicitSchemaValidator {
     private static void validateElicitBoolean(JsonObject prop, String name) {
         requireAllowedKeys(prop, BOOLEAN_KEYS, name);
         validateCommonFields(prop);
-        if (prop.containsKey("default") &&
-                prop.get("default").getValueType() != JsonValue.ValueType.TRUE &&
-                prop.get("default").getValueType() != JsonValue.ValueType.FALSE) {
-            throw new IllegalArgumentException("default must be boolean for " + name);
+        if (prop.containsKey("default")) {
+            var d = prop.get("default");
+            if (!(d == JsonValue.TRUE || d == JsonValue.FALSE)) {
+                throw new IllegalArgumentException("default must be boolean for " + name);
+            }
         }
     }
 
@@ -147,7 +148,7 @@ public final class ElicitSchemaValidator {
     }
 
     private static void ensureNumber(JsonValue v, String field, String type) {
-        if (v.getValueType() != JsonValue.ValueType.NUMBER) {
+        if (!(v instanceof JsonNumber)) {
             throw new IllegalArgumentException(field + " must be a number");
         }
         if ("integer".equals(type) && !((JsonNumber) v).isIntegral()) {
@@ -163,4 +164,3 @@ public final class ElicitSchemaValidator {
         }
     }
 }
-

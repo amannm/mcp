@@ -34,7 +34,7 @@ public record ToolResult(JsonArray content,
     }
 
     private static ContentBlock decode(JsonValue v) {
-        if (v.getValueType() != JsonValue.ValueType.OBJECT) {
+        if (!(v instanceof JsonObject)) {
             return null;
         }
         try {

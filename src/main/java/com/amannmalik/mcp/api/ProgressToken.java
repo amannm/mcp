@@ -1,7 +1,7 @@
 package com.amannmalik.mcp.api;
 
 import com.amannmalik.mcp.util.ValidationUtil;
-import jakarta.json.JsonObject;
+import jakarta.json.*;
 
 import java.math.BigInteger;
 import java.util.Optional;
@@ -20,14 +20,13 @@ public sealed interface ProgressToken permits
             return Optional.empty();
         }
         var val = meta.get("progressToken");
-        ProgressToken token = switch (val.getValueType()) {
-            case STRING -> new ProgressToken.StringToken(ValidationUtil.requireClean(meta.getString("progressToken")));
-            case NUMBER -> {
-                var num = meta.getJsonNumber("progressToken");
-                if (!num.isIntegral()) {
+        ProgressToken token = switch (val) {
+            case JsonString js -> new ProgressToken.StringToken(js.getString());
+            case JsonNumber jn -> {
+                if (!jn.isIntegral()) {
                     throw new IllegalArgumentException("progressToken must be a string or integer");
                 }
-                yield new ProgressToken.NumericToken(num.bigIntegerValueExact());
+                yield new ProgressToken.NumericToken(jn.bigIntegerValueExact());
             }
             default -> throw new IllegalArgumentException("progressToken must be a string or number");
         };
@@ -38,18 +37,8 @@ public sealed interface ProgressToken permits
         public StringToken {
             value = ValidationUtil.requireClean(value);
         }
-
-        @Override
-        public String toString() {
-            return value;
-        }
     }
 
     record NumericToken(BigInteger value) implements ProgressToken {
-
-        @Override
-        public String toString() {
-            return value.toString();
-        }
     }
 }

@@ -2,7 +2,8 @@ package com.amannmalik.mcp.codec;
 
 import com.amannmalik.mcp.spi.ElicitResult;
 import com.amannmalik.mcp.spi.ElicitationAction;
-import jakarta.json.*;
+import jakarta.json.Json;
+import jakarta.json.JsonObject;
 
 import java.util.Set;
 
@@ -36,7 +37,7 @@ public class ElicitResultJsonCodec implements JsonCodec<ElicitResult> {
         var c = obj.get("content");
         JsonObject content = null;
         if (c != null) {
-            if (c.getValueType() != JsonValue.ValueType.OBJECT) {
+            if (!(c instanceof JsonObject)) {
                 throw new IllegalArgumentException("content must be object");
             }
             content = c.asJsonObject();

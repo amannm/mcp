@@ -90,7 +90,7 @@ public final class InteractiveSamplingProvider implements SamplingProvider {
         if (request.modelPreferences() != null) {
             var prefs = request.modelPreferences();
             System.err.println("Model preferences:");
-            if (prefs.hints() != null && !prefs.hints().isEmpty()) {
+            if (!prefs.hints().isEmpty()) {
                 System.err.print("  Hints: ");
                 prefs.hints().forEach(hint -> System.err.print(hint.name() + " "));
                 System.err.println();

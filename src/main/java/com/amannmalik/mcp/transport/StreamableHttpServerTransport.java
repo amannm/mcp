@@ -6,7 +6,6 @@ import com.amannmalik.mcp.auth.AuthorizationManager;
 import com.amannmalik.mcp.core.MessageDispatcher;
 import com.amannmalik.mcp.core.MessageRouter;
 import com.amannmalik.mcp.spi.Principal;
-import com.amannmalik.mcp.util.PlatformLog;
 import com.amannmalik.mcp.util.ValidationUtil;
 import jakarta.json.Json;
 import jakarta.json.JsonObject;
@@ -20,7 +19,6 @@ import org.eclipse.jetty.util.ssl.SslContextFactory;
 
 import java.io.EOFException;
 import java.io.IOException;
-import java.lang.System.Logger;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.security.KeyStore;

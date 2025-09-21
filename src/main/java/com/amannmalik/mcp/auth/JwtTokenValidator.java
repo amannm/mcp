@@ -111,10 +111,9 @@ public final class JwtTokenValidator implements TokenValidator {
     }
 
     private boolean mismatch(JsonValue val) {
-        return switch (val.getValueType()) {
-            case STRING -> !expectedAudience.equalsIgnoreCase(((JsonString) val).getString());
-            case ARRAY -> val.asJsonArray()
-                    .getValuesAs(JsonString.class)
+        return switch (val) {
+            case JsonString js -> !expectedAudience.equalsIgnoreCase(js.getString());
+            case JsonArray arr -> arr.getValuesAs(JsonString.class)
                     .stream()
                     .noneMatch(js -> expectedAudience.equalsIgnoreCase(js.getString()));
             default -> true;
@@ -123,13 +122,13 @@ public final class JwtTokenValidator implements TokenValidator {
 
     private void validateTimestamps(JsonObject payload) throws AuthorizationException {
         var now = System.currentTimeMillis() / 1000;
-        if (payload.containsKey("exp") && payload.get("exp").getValueType() == JsonValue.ValueType.NUMBER) {
+        if (payload.containsKey("exp") && payload.get("exp") instanceof JsonNumber) {
             var exp = payload.getJsonNumber("exp").longValue();
             if (now >= exp) {
                 throw new AuthorizationException("token expired");
             }
         }
-        if (payload.containsKey("nbf") && payload.get("nbf").getValueType() == JsonValue.ValueType.NUMBER) {
+        if (payload.containsKey("nbf") && payload.get("nbf") instanceof JsonNumber) {
             var nbf = payload.getJsonNumber("nbf").longValue();
             if (now < nbf) {
                 throw new AuthorizationException("token not active");

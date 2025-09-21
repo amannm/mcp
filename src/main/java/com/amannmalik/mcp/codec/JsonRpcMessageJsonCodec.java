@@ -18,14 +18,14 @@ public class JsonRpcMessageJsonCodec implements JsonCodec<JsonRpcMessage> {
         if (value == null) {
             return null;
         }
-        if (value.getValueType() != JsonValue.ValueType.OBJECT) {
+        if (!(value instanceof JsonObject)) {
             throw new IllegalArgumentException("params must be an object");
         }
         return value.asJsonObject();
     }
 
     static JsonObject result(JsonValue value) {
-        if (value == null || value.getValueType() != JsonValue.ValueType.OBJECT) {
+        if (value == null || !(value instanceof JsonObject)) {
             throw new IllegalArgumentException("result must be an object");
         }
         return value.asJsonObject();
@@ -36,7 +36,7 @@ public class JsonRpcMessageJsonCodec implements JsonCodec<JsonRpcMessage> {
             throw new IllegalArgumentException("response cannot contain both result and error");
         }
         if (method != null) {
-            if (idValue != null && idValue.getValueType() != JsonValue.ValueType.NULL) {
+            if (idValue != null && idValue != JsonValue.NULL) {
                 return JsonRpcKind.REQUEST;
             }
             return JsonRpcKind.NOTIFICATION;
@@ -51,14 +51,14 @@ public class JsonRpcMessageJsonCodec implements JsonCodec<JsonRpcMessage> {
     }
 
     static RequestId requestId(JsonValue value) {
-        if (value == null || value.getValueType() == JsonValue.ValueType.NULL) {
+        if (value == null || value == JsonValue.NULL) {
             throw new IllegalArgumentException("id is required for response");
         }
         return RequestId.from(value);
     }
 
     static RequestId optionalId(JsonValue value) {
-        if (value == null || value.getValueType() == JsonValue.ValueType.NULL) {
+        if (value == null || value == JsonValue.NULL) {
             return RequestId.NullId.INSTANCE;
         }
         return RequestId.from(value);

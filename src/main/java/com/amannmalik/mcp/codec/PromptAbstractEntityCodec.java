@@ -2,7 +2,8 @@ package com.amannmalik.mcp.codec;
 
 import com.amannmalik.mcp.spi.Prompt;
 import com.amannmalik.mcp.spi.PromptArgument;
-import jakarta.json.*;
+import jakarta.json.Json;
+import jakarta.json.JsonObject;
 
 import java.util.*;
 
@@ -42,7 +43,7 @@ public final class PromptAbstractEntityCodec extends AbstractEntityCodec<Prompt>
         if (argsArr != null && !argsArr.isEmpty()) {
             List<PromptArgument> tmp = new ArrayList<>();
             for (var v : argsArr) {
-                if (v.getValueType() != JsonValue.ValueType.OBJECT) {
+                if (!(v instanceof JsonObject)) {
                     throw new IllegalArgumentException("argument must be object");
                 }
                 tmp.add(((JsonCodec<PromptArgument>) new PromptArgumentAbstractEntityCodec()).fromJson(v.asJsonObject()));

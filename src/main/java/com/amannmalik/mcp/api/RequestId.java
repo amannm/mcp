@@ -40,13 +40,12 @@ public sealed interface RequestId permits
     }
 
     static RequestId from(JsonValue value) {
-        if (value == null || value.getValueType() == JsonValue.ValueType.NULL) {
+        if (value == null || value == JsonValue.NULL) {
             throw new IllegalArgumentException("id is required");
         }
-        return switch (value.getValueType()) {
-            case STRING -> new StringId(((JsonString) value).getString());
-            case NUMBER -> {
-                var num = (JsonNumber) value;
+        return switch (value) {
+            case JsonString js -> new StringId(js.getString());
+            case JsonNumber num -> {
                 if (!num.isIntegral()) {
                     throw new IllegalArgumentException("id must be integer");
                 }
@@ -66,7 +65,7 @@ public sealed interface RequestId permits
         if (value == null) {
             return Optional.empty();
         }
-        if (value.getValueType() == JsonValue.ValueType.NULL) {
+        if (value == JsonValue.NULL) {
             return Optional.of(NullId.INSTANCE);
         }
         return Optional.of(from(value));

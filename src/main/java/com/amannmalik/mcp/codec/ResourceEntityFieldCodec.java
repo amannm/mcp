@@ -3,7 +3,6 @@ package com.amannmalik.mcp.codec;
 import com.amannmalik.mcp.spi.Cursor;
 import com.amannmalik.mcp.spi.Pagination;
 import jakarta.json.JsonObject;
-import jakarta.json.JsonValue;
 
 import java.util.*;
 import java.util.function.BiFunction;
@@ -42,7 +41,7 @@ public final class ResourceEntityFieldCodec<I, R> extends AbstractEntityCodec<R>
         }
         List<I> items = new ArrayList<>();
         for (var v : arr) {
-            if (v.getValueType() != JsonValue.ValueType.OBJECT) {
+            if (!(v instanceof JsonObject)) {
                 throw new IllegalArgumentException(itemName + " must be object");
             }
             items.add(itemCodec.fromJson(v.asJsonObject()));

@@ -149,17 +149,35 @@ public final class JsonSchemaValidator {
     private static void requireType(JsonValue value,
                                     String field,
                                     JsonValue.ValueType... allowed) {
-        var vt = value.getValueType();
         for (var t : allowed) {
-            if (vt == t) {
-                return;
+            // Prefer class/constant checks over enum-based lookups.
+            switch (t) {
+                case STRING -> {
+                    if (value instanceof JsonString) return;
+                }
+                case NUMBER -> {
+                    if (value instanceof JsonNumber) return;
+                }
+                case OBJECT -> {
+                    if (value instanceof JsonObject) return;
+                }
+                case ARRAY -> {
+                    if (value instanceof JsonArray) return;
+                }
+                case TRUE -> {
+                    if (value == JsonValue.TRUE) return;
+                }
+                case FALSE -> {
+                    if (value == JsonValue.FALSE) return;
+                }
+                case NULL -> {
+                    if (value == JsonValue.NULL) return;
+                }
             }
         }
         var names = new StringBuilder();
         for (var i = 0; i < allowed.length; i++) {
-            if (i > 0) {
-                names.append(" or ");
-            }
+            if (i > 0) names.append(" or ");
             names.append(allowed[i]);
         }
         throw new IllegalArgumentException("Expected " + names + " for " + field);

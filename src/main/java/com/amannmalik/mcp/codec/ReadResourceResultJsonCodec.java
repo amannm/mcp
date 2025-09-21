@@ -2,7 +2,8 @@ package com.amannmalik.mcp.codec;
 
 import com.amannmalik.mcp.resources.ReadResourceResult;
 import com.amannmalik.mcp.spi.ResourceBlock;
-import jakarta.json.*;
+import jakarta.json.Json;
+import jakarta.json.JsonObject;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -33,7 +34,7 @@ public class ReadResourceResultJsonCodec implements JsonCodec<ReadResourceResult
         }
         List<ResourceBlock> contents = new ArrayList<>();
         for (var v : arr) {
-            if (v.getValueType() != JsonValue.ValueType.OBJECT) {
+            if (!(v instanceof JsonObject)) {
                 throw new IllegalArgumentException("content must be object");
             }
             contents.add(RESOURCE_BLOCK_CODEC.fromJson(v.asJsonObject()));

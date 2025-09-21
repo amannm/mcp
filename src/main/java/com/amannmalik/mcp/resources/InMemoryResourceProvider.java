@@ -84,10 +84,7 @@ public final class InMemoryResourceProvider extends InMemoryProvider<Resource> i
         if (resourcesByUri.putIfAbsent(uri, resource) != null) {
             throw new IllegalArgumentException("duplicate resource uri: " + uri);
         }
-        if (!items.add(resource)) {
-            resourcesByUri.remove(uri, resource);
-            throw new IllegalStateException("Failed to register resource: " + uri);
-        }
+        items.add(resource);
         if (content != null) {
             contents.put(uri, content);
         }
@@ -116,10 +113,7 @@ public final class InMemoryResourceProvider extends InMemoryProvider<Resource> i
         if (templatesByName.putIfAbsent(name, template) != null) {
             throw new IllegalArgumentException("duplicate template name: " + name);
         }
-        if (!templates.add(template)) {
-            templatesByName.remove(name, template);
-            throw new IllegalStateException("Failed to register template: " + name);
-        }
+        templates.add(template);
         notifyListChanged();
     }
 

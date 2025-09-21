@@ -15,12 +15,14 @@ public record ElicitResult(ElicitationAction action, JsonObject content, JsonObj
         if (content != null) {
             for (var entry : content.entrySet()) {
                 ValidationUtil.requireClean(entry.getKey());
-                switch (entry.getValue().getValueType()) {
-                    case STRING -> ValidationUtil.requireClean(content.getString(entry.getKey()));
-                    case NUMBER, TRUE, FALSE -> {
+                var value = entry.getValue();
+                switch (value) {
+                    case jakarta.json.JsonString js -> ValidationUtil.requireClean(js.getString());
+                    case jakarta.json.JsonNumber ignored -> {
                     }
-                    default -> throw new IllegalArgumentException(
-                            "content values must be primitive");
+                    case jakarta.json.JsonValue jv when jv == jakarta.json.JsonValue.TRUE || jv == jakarta.json.JsonValue.FALSE -> {
+                    }
+                    default -> throw new IllegalArgumentException("content values must be primitive");
                 }
             }
         }

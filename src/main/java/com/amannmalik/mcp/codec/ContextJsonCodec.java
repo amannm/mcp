@@ -21,10 +21,11 @@ public class ContextJsonCodec implements JsonCodec<Context> {
         Map<String, String> map = new HashMap<>();
         if (argsObj != null) {
             argsObj.forEach((k, v) -> {
-                if (v.getValueType() != JsonValue.ValueType.STRING) {
+                if (v instanceof JsonString js) {
+                    map.put(k, js.getString());
+                } else {
                     throw new IllegalArgumentException("context arguments must be strings");
                 }
-                map.put(k, ((JsonString) v).getString());
             });
         }
         return new Context(ValidationUtil.requireCleanMap(map));

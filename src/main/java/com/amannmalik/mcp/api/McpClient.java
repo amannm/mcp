@@ -1,8 +1,6 @@
 package com.amannmalik.mcp.api;
 
-import com.amannmalik.mcp.api.config.McpClientConfiguration;
-import com.amannmalik.mcp.api.config.LoggingLevel;
-import com.amannmalik.mcp.api.config.CertificateValidationMode;
+import com.amannmalik.mcp.api.config.*;
 import com.amannmalik.mcp.codec.*;
 import com.amannmalik.mcp.core.*;
 import com.amannmalik.mcp.jsonrpc.*;
@@ -121,6 +119,98 @@ public final class McpClient extends JsonRpcEndpoint implements AutoCloseable {
         registerNotification(NotificationMethod.RESOURCES_UPDATED, this::handleResourceUpdated);
         registerNotification(NotificationMethod.TOOLS_LIST_CHANGED, this::handleToolsListChanged);
         registerNotification(NotificationMethod.PROMPTS_LIST_CHANGED, n -> listener.onPromptsListChanged());
+    }
+
+    private static Transport createTransport(McpClientConfiguration config,
+                                             boolean globalVerbose) throws IOException {
+        var spec = config.commandSpec();
+        if (spec != null && !spec.isBlank()) {
+            if (spec.startsWith("http://") || spec.startsWith("https://")) {
+                var uri = URI.create(spec);
+                if (spec.startsWith("https://")) {
+                    var ts = config.truststorePath().isBlank() ? null : Path.of(config.truststorePath());
+                    var ks = config.keystorePath().isBlank() ? null : Path.of(config.keystorePath());
+                    var pins = Set.copyOf(config.certificatePins());
+                    var validate = config.certificateValidationMode() != CertificateValidationMode.PERMISSIVE;
+                    return new StreamableHttpClientTransport(
+                            uri,
+                            config.defaultReceiveTimeout(),
+                            config.defaultOriginHeader(),
+                            ts,
+                            config.truststorePassword().toCharArray(),
+                            ks,
+                            config.keystorePassword().toCharArray(),
+                            validate,
+                            pins,
+                            config.verifyHostname());
+                }
+                return new StreamableHttpClientTransport(
+                        uri,
+                        config.defaultReceiveTimeout(),
+                        config.defaultOriginHeader());
+            }
+            var cmds = spec.split(" ");
+            var verbose = config.verbose() || globalVerbose;
+            return new StdioTransport(cmds,
+                    verbose ? line -> LOG.log(Logger.Level.INFO, line) : s -> {
+                    },
+                    config.defaultReceiveTimeout(),
+                    config.processShutdownWait());
+        }
+        return new StdioTransport(System.in, System.out, config.defaultReceiveTimeout());
+    }
+
+    private static HandshakeResult performHandshake(RequestId id,
+                                                    Transport transport,
+                                                    ClientInfo info,
+                                                    Set<ClientCapability> capabilities,
+                                                    boolean rootsListChangedSupported,
+                                                    Duration timeout) throws IOException {
+        var init = new InitializeRequest(
+                Protocol.LATEST_VERSION,
+                new Capabilities(capabilities, Set.of(), Map.of(), Map.of()),
+                info,
+                new ClientFeatures(rootsListChangedSupported));
+        var request = new JsonRpcRequest(id, RequestMethod.INITIALIZE.method(),
+                new InitializeRequestAbstractEntityCodec().toJson(init));
+        transport.send(JsonRpcEndpoint.CODEC.toJson(request));
+        JsonRpcMessage msg;
+        try {
+            msg = JsonRpcEndpoint.CODEC.fromJson(transport.receive(timeout));
+        } catch (IOException e) {
+            try {
+                transport.close();
+            } catch (IOException e2) {
+                LOG.log(Logger.Level.WARNING, "Failed to close transport after initialization failure", e2);
+            }
+            throw new IOException("Initialization failed: " + e.getMessage(), e);
+        }
+        JsonRpcResponse resp;
+        try {
+            resp = JsonRpc.expectResponse(msg);
+        } catch (IOException e) {
+            throw new IOException("Initialization failed: " + e.getMessage(), e);
+        }
+        var ir = new InitializeResponseAbstractEntityCodec().fromJson(resp.result());
+        var serverVersion = ir.protocolVersion();
+        if (!Protocol.LATEST_VERSION.equals(serverVersion) && !Protocol.PREVIOUS_VERSION.equals(serverVersion)) {
+            try {
+                transport.close();
+            } catch (IOException e2) {
+                LOG.log(Logger.Level.WARNING, "Failed to close transport after unsupported protocol", e2);
+            }
+            throw new UnsupportedProtocolVersionException(serverVersion,
+                    Protocol.LATEST_VERSION + " or " + Protocol.PREVIOUS_VERSION);
+        }
+        transport.setProtocolVersion(serverVersion);
+        var features = ir.features();
+        var caps = ir.capabilities().server();
+        return new HandshakeResult(
+                serverVersion,
+                ir.serverInfo(),
+                caps,
+                Immutable.enumSet(features),
+                ir.instructions());
     }
 
     public ClientInfo info() {
@@ -327,98 +417,6 @@ public final class McpClient extends JsonRpcEndpoint implements AutoCloseable {
         if (principal != null) {
             this.principal = principal;
         }
-    }
-
-    private static Transport createTransport(McpClientConfiguration config,
-                                             boolean globalVerbose) throws IOException {
-        var spec = config.commandSpec();
-        if (spec != null && !spec.isBlank()) {
-            if (spec.startsWith("http://") || spec.startsWith("https://")) {
-                var uri = URI.create(spec);
-                if (spec.startsWith("https://")) {
-                    var ts = config.truststorePath().isBlank() ? null : Path.of(config.truststorePath());
-                    var ks = config.keystorePath().isBlank() ? null : Path.of(config.keystorePath());
-                    var pins = Set.copyOf(config.certificatePins());
-                    var validate = config.certificateValidationMode() != CertificateValidationMode.PERMISSIVE;
-                    return new StreamableHttpClientTransport(
-                            uri,
-                            config.defaultReceiveTimeout(),
-                            config.defaultOriginHeader(),
-                            ts,
-                            config.truststorePassword().toCharArray(),
-                            ks,
-                            config.keystorePassword().toCharArray(),
-                            validate,
-                            pins,
-                            config.verifyHostname());
-                }
-                return new StreamableHttpClientTransport(
-                        uri,
-                        config.defaultReceiveTimeout(),
-                        config.defaultOriginHeader());
-            }
-            var cmds = spec.split(" ");
-            var verbose = config.verbose() || globalVerbose;
-            return new StdioTransport(cmds,
-                    verbose ? line -> LOG.log(Logger.Level.INFO, line) : s -> {
-                    },
-                    config.defaultReceiveTimeout(),
-                    config.processShutdownWait());
-        }
-        return new StdioTransport(System.in, System.out, config.defaultReceiveTimeout());
-    }
-
-    private static HandshakeResult performHandshake(RequestId id,
-                                                    Transport transport,
-                                                    ClientInfo info,
-                                                    Set<ClientCapability> capabilities,
-                                                    boolean rootsListChangedSupported,
-                                                    Duration timeout) throws IOException {
-        var init = new InitializeRequest(
-                Protocol.LATEST_VERSION,
-                new Capabilities(capabilities, Set.of(), Map.of(), Map.of()),
-                info,
-                new ClientFeatures(rootsListChangedSupported));
-        var request = new JsonRpcRequest(id, RequestMethod.INITIALIZE.method(),
-                new InitializeRequestAbstractEntityCodec().toJson(init));
-        transport.send(JsonRpcEndpoint.CODEC.toJson(request));
-        JsonRpcMessage msg;
-        try {
-            msg = JsonRpcEndpoint.CODEC.fromJson(transport.receive(timeout));
-        } catch (IOException e) {
-            try {
-                transport.close();
-            } catch (IOException e2) {
-                LOG.log(Logger.Level.WARNING, "Failed to close transport after initialization failure", e2);
-            }
-            throw new IOException("Initialization failed: " + e.getMessage(), e);
-        }
-        JsonRpcResponse resp;
-        try {
-            resp = JsonRpc.expectResponse(msg);
-        } catch (IOException e) {
-            throw new IOException("Initialization failed: " + e.getMessage(), e);
-        }
-        var ir = new InitializeResponseAbstractEntityCodec().fromJson(resp.result());
-        var serverVersion = ir.protocolVersion();
-        if (!Protocol.LATEST_VERSION.equals(serverVersion) && !Protocol.PREVIOUS_VERSION.equals(serverVersion)) {
-            try {
-                transport.close();
-            } catch (IOException e2) {
-                LOG.log(Logger.Level.WARNING, "Failed to close transport after unsupported protocol", e2);
-            }
-            throw new UnsupportedProtocolVersionException(serverVersion,
-                    Protocol.LATEST_VERSION + " or " + Protocol.PREVIOUS_VERSION);
-        }
-        transport.setProtocolVersion(serverVersion);
-        var features = ir.features();
-        var caps = ir.capabilities().server();
-        return new HandshakeResult(
-                serverVersion,
-                ir.serverInfo(),
-                caps,
-                Immutable.enumSet(features),
-                ir.instructions());
     }
 
     private void startBackgroundTasks() {
