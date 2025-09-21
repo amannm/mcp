@@ -111,12 +111,10 @@ public final class McpClient extends JsonRpcEndpoint implements AutoCloseable {
         this.pingTimeout = config.pingTimeout();
         this.initializationTimeout = config.initializeRequestTimeout();
         this.requestTimeout = config.defaultReceiveTimeout();
-
         registerRequest(RequestMethod.SAMPLING_CREATE_MESSAGE, this::handleCreateMessage);
         registerRequest(RequestMethod.ROOTS_LIST, this::handleListRoots);
         registerRequest(RequestMethod.ELICITATION_CREATE, this::handleElicit);
         registerRequest(RequestMethod.PING, this::handlePing);
-
         registerNotification(NotificationMethod.PROGRESS, this::handleProgress);
         registerNotification(NotificationMethod.MESSAGE, this::handleMessage);
         registerNotification(NotificationMethod.CANCELLED, this::cancelled);
@@ -124,120 +122,6 @@ public final class McpClient extends JsonRpcEndpoint implements AutoCloseable {
         registerNotification(NotificationMethod.RESOURCES_UPDATED, this::handleResourceUpdated);
         registerNotification(NotificationMethod.TOOLS_LIST_CHANGED, this::handleToolsListChanged);
         registerNotification(NotificationMethod.PROMPTS_LIST_CHANGED, n -> listener.onPromptsListChanged());
-    }
-
-    private static Transport createTransport(McpClientConfiguration config,
-                                             boolean globalVerbose) throws IOException {
-        var spec = config.commandSpec();
-        if (spec != null && !spec.isBlank()) {
-            if (spec.startsWith("http://") || spec.startsWith("https://")) {
-                var uri = URI.create(spec);
-                if (spec.startsWith("https://")) {
-                    var ts = config.truststorePath().isBlank() ? null : Path.of(config.truststorePath());
-                    var ks = config.keystorePath().isBlank() ? null : Path.of(config.keystorePath());
-                    var pins = Set.copyOf(config.certificatePins());
-                    var validate = config.certificateValidationMode() != CertificateValidationMode.PERMISSIVE;
-                    return new StreamableHttpClientTransport(
-                            uri,
-                            config.defaultReceiveTimeout(),
-                            config.defaultOriginHeader(),
-                            ts,
-                            config.truststorePassword().toCharArray(),
-                            ks,
-                            config.keystorePassword().toCharArray(),
-                            validate,
-                            pins,
-                            config.verifyHostname());
-                }
-                return new StreamableHttpClientTransport(
-                        uri,
-                        config.defaultReceiveTimeout(),
-                        config.defaultOriginHeader());
-            }
-            var cmds = spec.split(" ");
-            var verbose = config.verbose() || globalVerbose;
-            return new StdioTransport(cmds,
-                    verbose ? line -> LOG.log(Logger.Level.INFO, line) : s -> {
-                    },
-                    config.defaultReceiveTimeout());
-        }
-        return new StdioTransport(System.in, System.out, config.defaultReceiveTimeout());
-    }
-
-    private static HandshakeResult performHandshake(RequestId id,
-                                                    Transport transport,
-                                                    ClientInfo info,
-                                                    Set<ClientCapability> capabilities,
-                                                    boolean rootsListChangedSupported,
-                                                    Duration timeout) throws IOException {
-        var init = new InitializeRequest(
-                Protocol.LATEST_VERSION,
-                new Capabilities(capabilities, Set.of(), Map.of(), Map.of()),
-                info,
-                new ClientFeatures(rootsListChangedSupported));
-        var request = new JsonRpcRequest(id, RequestMethod.INITIALIZE.method(),
-                new InitializeRequestAbstractEntityCodec().toJson(init));
-        transport.send(JsonRpcEndpoint.CODEC.toJson(request));
-        JsonRpcMessage msg;
-        try {
-            msg = JsonRpcEndpoint.CODEC.fromJson(transport.receive(timeout));
-        } catch (IOException e) {
-            try {
-                transport.close();
-            } catch (IOException e2) {
-                LOG.log(Logger.Level.WARNING, "Failed to close transport after initialization failure", e2);
-            }
-            throw new IOException("Initialization failed: " + e.getMessage(), e);
-        }
-        JsonRpcResponse resp;
-        try {
-            resp = JsonRpc.expectResponse(msg);
-        } catch (IOException e) {
-            throw new IOException("Initialization failed: " + e.getMessage(), e);
-        }
-        var ir = new InitializeResponseAbstractEntityCodec().fromJson(resp.result());
-        var serverVersion = ir.protocolVersion();
-        if (!Protocol.LATEST_VERSION.equals(serverVersion) && !Protocol.PREVIOUS_VERSION.equals(serverVersion)) {
-            try {
-                transport.close();
-            } catch (IOException e2) {
-                LOG.log(Logger.Level.WARNING, "Failed to close transport after unsupported protocol", e2);
-            }
-            throw new UnsupportedProtocolVersionException(serverVersion,
-                    Protocol.LATEST_VERSION + " or " + Protocol.PREVIOUS_VERSION);
-        }
-        transport.setProtocolVersion(serverVersion);
-        var features = ir.features();
-        var caps = ir.capabilities().server();
-        return new HandshakeResult(
-                serverVersion,
-                ir.serverInfo(),
-                caps,
-                Immutable.enumSet(features),
-                ir.instructions());
-    }
-
-    public synchronized void configurePing(Duration intervalMillis, Duration timeoutMillis) {
-        if (connected.get()) {
-            throw new IllegalStateException("already connected");
-        }
-        if (intervalMillis.isNegative() || timeoutMillis.isNegative()) {
-            throw new IllegalArgumentException("invalid ping settings");
-        }
-        this.pingInterval = intervalMillis;
-        this.pingTimeout = timeoutMillis;
-    }
-
-    public void setSamplingAccessPolicy(SamplingAccessPolicy policy) {
-        if (policy != null) {
-            this.samplingAccess = policy;
-        }
-    }
-
-    public void setPrincipal(Principal principal) {
-        if (principal != null) {
-            this.principal = principal;
-        }
     }
 
     public ClientInfo info() {
@@ -283,74 +167,6 @@ public final class McpClient extends JsonRpcEndpoint implements AutoCloseable {
         if (rootsSubscription != null) {
             CloseUtil.close(rootsSubscription);
             rootsSubscription = null;
-        }
-    }
-
-    private void startBackgroundTasks() {
-        readerThread = new Thread(this::readLoop);
-        readerThread.setDaemon(true);
-        readerThread.start();
-        if (pingInterval != null && pingInterval.isPositive()) {
-            pingScheduler = Executors.newSingleThreadScheduledExecutor();
-            pingFailures = 0;
-            pingScheduler.scheduleAtFixedRate(this::pingTick,
-                    pingInterval.toMillis(),
-                    pingInterval.toMillis(),
-                    TimeUnit.MILLISECONDS);
-        }
-    }
-
-    private void stopBackgroundTasks() {
-        if (pingScheduler != null) {
-            pingScheduler.shutdownNow();
-            pingScheduler = null;
-        }
-        if (readerThread != null) {
-            try {
-                readerThread.join(100);
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-                LOG.log(Logger.Level.WARNING, "Interrupted while waiting for reader", e);
-            }
-            readerThread = null;
-        }
-    }
-
-    private void readLoop() {
-        while (connected()) {
-            try {
-                var msg = JsonRpcEndpoint.CODEC.fromJson(transport.receive());
-                process(msg);
-            } catch (IOException e) {
-                pending.values().forEach(f -> f.completeExceptionally(e));
-                break;
-            }
-        }
-    }
-
-    private void pingTick() {
-        try {
-            ping(pingTimeout);
-            pingFailures = 0;
-        } catch (IOException | RuntimeException e) {
-            handlePingFailure(e);
-        }
-    }
-
-    private void handlePingFailure(Exception e) {
-        pingFailures++;
-        LOG.log(Logger.Level.WARNING, "Ping failure", e);
-        if (pingFailures >= 3) {
-            pingFailures = 0;
-            disconnectAfterPingFailures();
-        }
-    }
-
-    private void disconnectAfterPingFailures() {
-        try {
-            disconnect();
-        } catch (IOException e) {
-            LOG.log(Logger.Level.ERROR, "Disconnect failed", e);
         }
     }
 
@@ -489,6 +305,188 @@ public final class McpClient extends JsonRpcEndpoint implements AutoCloseable {
                         new ResourceTemplateAbstractEntityCodec(),
                         (page, meta) -> new ListResourceTemplatesResult(page.items(), page.nextCursor(), meta)).fromJson(json)
         );
+    }
+
+    public synchronized void configurePing(Duration intervalMillis, Duration timeoutMillis) {
+        if (connected.get()) {
+            throw new IllegalStateException("already connected");
+        }
+        if (intervalMillis.isNegative() || timeoutMillis.isNegative()) {
+            throw new IllegalArgumentException("invalid ping settings");
+        }
+        this.pingInterval = intervalMillis;
+        this.pingTimeout = timeoutMillis;
+    }
+
+    public void setSamplingAccessPolicy(SamplingAccessPolicy policy) {
+        if (policy != null) {
+            this.samplingAccess = policy;
+        }
+    }
+
+    public void setPrincipal(Principal principal) {
+        if (principal != null) {
+            this.principal = principal;
+        }
+    }
+
+    private static Transport createTransport(McpClientConfiguration config,
+                                             boolean globalVerbose) throws IOException {
+        var spec = config.commandSpec();
+        if (spec != null && !spec.isBlank()) {
+            if (spec.startsWith("http://") || spec.startsWith("https://")) {
+                var uri = URI.create(spec);
+                if (spec.startsWith("https://")) {
+                    var ts = config.truststorePath().isBlank() ? null : Path.of(config.truststorePath());
+                    var ks = config.keystorePath().isBlank() ? null : Path.of(config.keystorePath());
+                    var pins = Set.copyOf(config.certificatePins());
+                    var validate = config.certificateValidationMode() != CertificateValidationMode.PERMISSIVE;
+                    return new StreamableHttpClientTransport(
+                            uri,
+                            config.defaultReceiveTimeout(),
+                            config.defaultOriginHeader(),
+                            ts,
+                            config.truststorePassword().toCharArray(),
+                            ks,
+                            config.keystorePassword().toCharArray(),
+                            validate,
+                            pins,
+                            config.verifyHostname());
+                }
+                return new StreamableHttpClientTransport(
+                        uri,
+                        config.defaultReceiveTimeout(),
+                        config.defaultOriginHeader());
+            }
+            var cmds = spec.split(" ");
+            var verbose = config.verbose() || globalVerbose;
+            return new StdioTransport(cmds,
+                    verbose ? line -> LOG.log(Logger.Level.INFO, line) : s -> {
+                    },
+                    config.defaultReceiveTimeout());
+        }
+        return new StdioTransport(System.in, System.out, config.defaultReceiveTimeout());
+    }
+
+    private static HandshakeResult performHandshake(RequestId id,
+                                                    Transport transport,
+                                                    ClientInfo info,
+                                                    Set<ClientCapability> capabilities,
+                                                    boolean rootsListChangedSupported,
+                                                    Duration timeout) throws IOException {
+        var init = new InitializeRequest(
+                Protocol.LATEST_VERSION,
+                new Capabilities(capabilities, Set.of(), Map.of(), Map.of()),
+                info,
+                new ClientFeatures(rootsListChangedSupported));
+        var request = new JsonRpcRequest(id, RequestMethod.INITIALIZE.method(),
+                new InitializeRequestAbstractEntityCodec().toJson(init));
+        transport.send(JsonRpcEndpoint.CODEC.toJson(request));
+        JsonRpcMessage msg;
+        try {
+            msg = JsonRpcEndpoint.CODEC.fromJson(transport.receive(timeout));
+        } catch (IOException e) {
+            try {
+                transport.close();
+            } catch (IOException e2) {
+                LOG.log(Logger.Level.WARNING, "Failed to close transport after initialization failure", e2);
+            }
+            throw new IOException("Initialization failed: " + e.getMessage(), e);
+        }
+        JsonRpcResponse resp;
+        try {
+            resp = JsonRpc.expectResponse(msg);
+        } catch (IOException e) {
+            throw new IOException("Initialization failed: " + e.getMessage(), e);
+        }
+        var ir = new InitializeResponseAbstractEntityCodec().fromJson(resp.result());
+        var serverVersion = ir.protocolVersion();
+        if (!Protocol.LATEST_VERSION.equals(serverVersion) && !Protocol.PREVIOUS_VERSION.equals(serverVersion)) {
+            try {
+                transport.close();
+            } catch (IOException e2) {
+                LOG.log(Logger.Level.WARNING, "Failed to close transport after unsupported protocol", e2);
+            }
+            throw new UnsupportedProtocolVersionException(serverVersion,
+                    Protocol.LATEST_VERSION + " or " + Protocol.PREVIOUS_VERSION);
+        }
+        transport.setProtocolVersion(serverVersion);
+        var features = ir.features();
+        var caps = ir.capabilities().server();
+        return new HandshakeResult(
+                serverVersion,
+                ir.serverInfo(),
+                caps,
+                Immutable.enumSet(features),
+                ir.instructions());
+    }
+
+    private void startBackgroundTasks() {
+        readerThread = new Thread(this::readLoop);
+        readerThread.setDaemon(true);
+        readerThread.start();
+        if (pingInterval != null && pingInterval.isPositive()) {
+            pingScheduler = Executors.newSingleThreadScheduledExecutor();
+            pingFailures = 0;
+            pingScheduler.scheduleAtFixedRate(this::pingTick,
+                    pingInterval.toMillis(),
+                    pingInterval.toMillis(),
+                    TimeUnit.MILLISECONDS);
+        }
+    }
+
+    private void stopBackgroundTasks() {
+        if (pingScheduler != null) {
+            pingScheduler.shutdownNow();
+            pingScheduler = null;
+        }
+        if (readerThread != null) {
+            try {
+                readerThread.join(100);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                LOG.log(Logger.Level.WARNING, "Interrupted while waiting for reader", e);
+            }
+            readerThread = null;
+        }
+    }
+
+    private void readLoop() {
+        while (connected()) {
+            try {
+                var msg = JsonRpcEndpoint.CODEC.fromJson(transport.receive());
+                process(msg);
+            } catch (IOException e) {
+                pending.values().forEach(f -> f.completeExceptionally(e));
+                break;
+            }
+        }
+    }
+
+    private void pingTick() {
+        try {
+            ping(pingTimeout);
+            pingFailures = 0;
+        } catch (IOException | RuntimeException e) {
+            handlePingFailure(e);
+        }
+    }
+
+    private void handlePingFailure(Exception e) {
+        pingFailures++;
+        LOG.log(Logger.Level.WARNING, "Ping failure", e);
+        if (pingFailures >= 3) {
+            pingFailures = 0;
+            disconnectAfterPingFailures();
+        }
+    }
+
+    private void disconnectAfterPingFailures() {
+        try {
+            disconnect();
+        } catch (IOException e) {
+            LOG.log(Logger.Level.ERROR, "Disconnect failed", e);
+        }
     }
 
     private <T> T list(
@@ -658,7 +656,7 @@ public final class McpClient extends JsonRpcEndpoint implements AutoCloseable {
     }
 
     private JsonRpcMessage handlePing(JsonRpcRequest req) {
-        final var params = req.params();
+        var params = req.params();
         if (params != null) {
             if (params.size() != 1 || !params.containsKey("_meta")) {
                 return JsonRpcError.of(req.id(), JsonRpcErrorCode.INVALID_PARAMS, "Invalid params");
@@ -684,57 +682,37 @@ public final class McpClient extends JsonRpcEndpoint implements AutoCloseable {
         if (note.params() == null) {
             return;
         }
-        try {
-            var pn = PROGRESS_NOTIFICATION_JSON_CODEC.fromJson(note.params());
-            progress.record(pn);
-            listener.onProgress(pn);
-        } catch (IllegalArgumentException | IllegalStateException e) {
-            throw new RuntimeException(e);
-        }
+        var pn = PROGRESS_NOTIFICATION_JSON_CODEC.fromJson(note.params());
+        progress.record(pn);
+        listener.onProgress(pn);
     }
 
     private void handleMessage(JsonRpcNotification note) {
         if (note.params() == null) {
             return;
         }
-        try {
-            listener.onMessage(LOGGING_MESSAGE_NOTIFICATION_JSON_CODEC.fromJson(note.params()));
-        } catch (IllegalArgumentException e) {
-            throw new RuntimeException(e);
-        }
+        listener.onMessage(LOGGING_MESSAGE_NOTIFICATION_JSON_CODEC.fromJson(note.params()));
     }
 
     private void handleResourcesListChanged(JsonRpcNotification note) {
-        try {
-            RESOURCE_LIST_CHANGED_NOTIFICATION_JSON_CODEC.fromJson(note.params());
-            listener.onResourceListChanged();
-        } catch (IllegalArgumentException e) {
-            throw new RuntimeException(e);
-        }
+        RESOURCE_LIST_CHANGED_NOTIFICATION_JSON_CODEC.fromJson(note.params());
+        listener.onResourceListChanged();
     }
 
     private void handleResourceUpdated(JsonRpcNotification note) {
         if (note.params() == null) {
             return;
         }
-        try {
-            var run = RESOURCE_UPDATED_NOTIFICATION_JSON_CODEC.fromJson(note.params());
-            var listener = resourceListeners.get(run.uri());
-            if (listener != null) {
-                listener.accept(new ResourceUpdate(run.uri(), run.title()));
-            }
-        } catch (IllegalArgumentException e) {
-            throw new RuntimeException(e);
+        var run = RESOURCE_UPDATED_NOTIFICATION_JSON_CODEC.fromJson(note.params());
+        var listener = resourceListeners.get(run.uri());
+        if (listener != null) {
+            listener.accept(new ResourceUpdate(run.uri(), run.title()));
         }
     }
 
     private void handleToolsListChanged(JsonRpcNotification note) {
-        try {
-            TOOL_LIST_CHANGED_NOTIFICATION_JSON_CODEC.fromJson(note.params());
-            listener.onToolListChanged();
-        } catch (IllegalArgumentException e) {
-            throw new RuntimeException(e);
-        }
+        TOOL_LIST_CHANGED_NOTIFICATION_JSON_CODEC.fromJson(note.params());
+        listener.onToolListChanged();
     }
 
     private void cancelled(JsonRpcNotification note) {
@@ -745,28 +723,10 @@ public final class McpClient extends JsonRpcEndpoint implements AutoCloseable {
                 LOG.log(Logger.Level.INFO, () -> "Request " + cn.requestId() + " cancelled: " + value));
     }
 
-    public interface McpClientListener {
-        default void onProgress(ProgressNotification notification) {
-        }
-
-        default void onMessage(LoggingMessageNotification notification) {
-        }
-
-        default void onResourceListChanged() {
-        }
-
-        default void onToolListChanged() {
-        }
-
-        default void onPromptsListChanged() {
-        }
-    }
-
     private record HandshakeResult(String protocolVersion,
                                    ServerInfo serverInfo,
                                    Set<ServerCapability> capabilities,
                                    Set<ServerFeature> features,
                                    String instructions) {
     }
-
 }
