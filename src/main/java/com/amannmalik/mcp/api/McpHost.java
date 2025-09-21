@@ -24,20 +24,18 @@ import java.util.stream.Collectors;
 public final class McpHost implements AutoCloseable {
     private static final CallToolRequestAbstractEntityCodec CALL_TOOL_REQUEST_CODEC = new CallToolRequestAbstractEntityCodec();
     private static final JsonCodec<ToolResult> TOOL_RESULT_ABSTRACT_ENTITY_CODEC = new ToolResultAbstractEntityCodec();
-    private static final JsonCodec<ListToolsResult> LIST_TOOLS_RESULT_JSON_CODEC =
-            AbstractEntityCodec.paginatedResult(
-                    "tools",
-                    "tool",
-                    r -> new Pagination.Page<>(r.tools(), r.nextCursor()),
-                    ListToolsResult::_meta,
-                    new ToolAbstractEntityCodec(),
-                    (page, meta) -> new ListToolsResult(page.items(), page.nextCursor(), meta));
-
+    private static final JsonCodec<ListToolsResult> LIST_TOOLS_RESULT_JSON_CODEC = AbstractEntityCodec.paginatedResult(
+            "tools",
+            "tool",
+            r -> new Pagination.Page<>(r.tools(), r.nextCursor()),
+            ListToolsResult::_meta,
+            new ToolAbstractEntityCodec(),
+            (page, meta) -> new ListToolsResult(page.items(), page.nextCursor(), meta));
     private static final Duration TIMEOUT = Duration.ofSeconds(5);
     private static final Logger LOG = PlatformLog.get(McpHost.class);
     private final Map<String, McpClient> clients = new ConcurrentHashMap<>();
-    private final ConsentController consents;
     private final Principal principal;
+    private final ConsentController consents;
     private final ToolAccessController toolAccess;
     private final ResourceAccessController privacyBoundary;
     private final SamplingAccessController samplingAccess;
@@ -50,10 +48,8 @@ public final class McpHost implements AutoCloseable {
         this.samplingAccess = new SamplingAccessController();
         for (var clientConfig : config.clientConfigurations()) {
             grantConsent(clientConfig.serverName());
-            SamplingProvider samplingProvider = new InteractiveSamplingProvider(clientConfig.interactiveSampling());
-            var roots = clientConfig.rootDirectories().stream()
-                    .map(dir -> new Root(URI.create("file://" + dir), dir, null))
-                    .toList();
+            var samplingProvider = new InteractiveSamplingProvider(clientConfig.interactiveSampling());
+            var roots = clientConfig.rootDirectories().stream().map(dir -> new Root(URI.create("file://" + dir), dir, null)).toList();
             var rootsProvider = new InMemoryRootsProvider(roots);
             var listener = (clientConfig.verbose() || config.globalVerbose()) ? new McpClientListener() {
                 @Override
@@ -63,9 +59,7 @@ public final class McpHost implements AutoCloseable {
                     LOG.log(level, () -> "[" + clientConfig.clientId() + "]" + logger + " " + notification.data());
                 }
             } : null;
-
-            ElicitationProvider elicitationProvider = new InteractiveElicitationProvider();
-
+            var elicitationProvider = new InteractiveElicitationProvider();
             var client = new McpClient(
                     clientConfig,
                     config.globalVerbose(),
@@ -73,20 +67,7 @@ public final class McpHost implements AutoCloseable {
                     rootsProvider,
                     elicitationProvider,
                     listener);
-
             register(clientConfig.clientId(), client, clientConfig);
-        }
-    }
-
-    private static void requireCapability(McpClient client, ServerCapability cap) {
-        if (!client.serverCapabilities().contains(cap)) {
-            throw new IllegalStateException("Server capability not supported: " + cap);
-        }
-    }
-
-    private static void requireCapability(McpClient client, ClientCapability cap) {
-        if (!client.capabilities().contains(cap)) {
-            throw new IllegalStateException("Client capability not supported: " + cap);
         }
     }
 
@@ -144,8 +125,25 @@ public final class McpHost implements AutoCloseable {
     public AutoCloseable subscribeToResource(String clientId, URI uri, Consumer<ResourceUpdate> listener) throws IOException {
         var client = requireClient(clientId);
         requireCapability(client, ServerCapability.RESOURCES);
-        var resource = findResource(client, uri)
-                .orElseThrow(() -> new IllegalArgumentException("Resource not found: " + uri));
+        Optional<Resource> result = Optional.empty();
+        boolean finished = false;
+        Cursor cursor = Cursor.Start.INSTANCE;
+        do {
+            var page = client.listResources(cursor);
+            for (var resource : page.resources()) {
+                if (resource.uri().equals(uri)) {
+                    result = Optional.of(resource);
+                    finished = true;
+                    break;
+                }
+            }
+            if (finished) break;
+            cursor = page.nextCursor();
+        } while (!(cursor instanceof Cursor.End));
+        if (!finished) {
+            result = Optional.empty();
+        }
+        var resource = result.orElseThrow(() -> new IllegalArgumentException("Resource not found: " + uri));
         privacyBoundary.requireAllowed(principal, resource.annotations());
         return client.subscribeResource(uri, listener);
     }
@@ -154,11 +152,7 @@ public final class McpHost implements AutoCloseable {
         var client = requireClient(clientId);
         requireCapability(client, ServerCapability.TOOLS);
         var token = cursor instanceof Cursor.Token(var value) ? value : null;
-        var resp = JsonRpc.expectResponse(client.request(
-                RequestMethod.TOOLS_LIST,
-                PaginatedRequest.CODEC.toJson(new PaginatedRequest(token, null)),
-                TIMEOUT
-        ));
+        var resp = JsonRpc.expectResponse(client.request(RequestMethod.TOOLS_LIST, PaginatedRequest.CODEC.toJson(new PaginatedRequest(token, null)), TIMEOUT));
         return LIST_TOOLS_RESULT_JSON_CODEC.fromJson(resp.result());
     }
 
@@ -166,14 +160,27 @@ public final class McpHost implements AutoCloseable {
         var client = requireClient(clientId);
         requireCapability(client, ServerCapability.TOOLS);
         consents.requireConsent(principal, "tool:" + name);
-        var tool = findTool(clientId, name)
-                .orElseThrow(() -> new IllegalArgumentException("Tool not found: " + name));
+        Optional<Tool> result = Optional.empty();
+        boolean finished = false;
+        Cursor cursor = Cursor.Start.INSTANCE;
+        do {
+            var page = listTools(clientId, cursor);
+            for (var t : page.tools()) {
+                if (t.name().equals(name)) {
+                    result = Optional.of(t);
+                    finished = true;
+                    break;
+                }
+            }
+            if (finished) break;
+            cursor = page.nextCursor();
+        } while (!(cursor instanceof Cursor.End));
+        if (!finished) {
+            result = Optional.empty();
+        }
+        var tool = result.orElseThrow(() -> new IllegalArgumentException("Tool not found: " + name));
         toolAccess.requireAllowed(principal, tool);
-        var resp = JsonRpc.expectResponse(client.request(
-                RequestMethod.TOOLS_CALL,
-                CALL_TOOL_REQUEST_CODEC.toJson(new CallToolRequest(name, args, null)),
-                TIMEOUT
-        ));
+        var resp = JsonRpc.expectResponse(client.request(RequestMethod.TOOLS_CALL, CALL_TOOL_REQUEST_CODEC.toJson(new CallToolRequest(name, args, null)), TIMEOUT));
         return TOOL_RESULT_ABSTRACT_ENTITY_CODEC.fromJson(resp.result());
     }
 
@@ -229,6 +236,18 @@ public final class McpHost implements AutoCloseable {
         return requireClient(id);
     }
 
+    private static void requireCapability(McpClient client, ServerCapability cap) {
+        if (!client.serverCapabilities().contains(cap)) {
+            throw new IllegalStateException("Server capability not supported: " + cap);
+        }
+    }
+
+    private static void requireCapability(McpClient client, ClientCapability cap) {
+        if (!client.capabilities().contains(cap)) {
+            throw new IllegalStateException("Client capability not supported: " + cap);
+        }
+    }
+
     private void register(String id, McpClient client, McpClientConfiguration clientConfig) {
         consents.requireConsent(principal, client.info().name());
         if (clients.putIfAbsent(id, client) != null) {
@@ -239,34 +258,6 @@ public final class McpHost implements AutoCloseable {
         client.configurePing(
                 clientConfig.pingInterval(),
                 clientConfig.pingTimeout());
-    }
-
-    private Optional<Tool> findTool(String clientId, String name) throws IOException {
-        Cursor cursor = Cursor.Start.INSTANCE;
-        do {
-            var page = listTools(clientId, cursor);
-            for (var t : page.tools()) {
-                if (t.name().equals(name)) {
-                    return Optional.of(t);
-                }
-            }
-            cursor = page.nextCursor();
-        } while (!(cursor instanceof Cursor.End));
-        return Optional.empty();
-    }
-
-    private Optional<Resource> findResource(McpClient client, URI uri) throws IOException {
-        Cursor cursor = Cursor.Start.INSTANCE;
-        do {
-            var page = client.listResources(cursor);
-            for (var resource : page.resources()) {
-                if (resource.uri().equals(uri)) {
-                    return Optional.of(resource);
-                }
-            }
-            cursor = page.nextCursor();
-        } while (!(cursor instanceof Cursor.End));
-        return Optional.empty();
     }
 
     private McpClient requireClient(String id) {

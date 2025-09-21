@@ -15,10 +15,10 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.*;
 
 sealed class JsonRpcEndpoint implements AutoCloseable permits McpClient, McpServer {
-    public static final JsonRpcMessageJsonCodec CODEC = new JsonRpcMessageJsonCodec();
+    protected static final JsonRpcMessageJsonCodec CODEC = new JsonRpcMessageJsonCodec();
     protected static final CancelledNotificationJsonCodec CANCEL_CODEC = new CancelledNotificationJsonCodec();
-    public final Transport transport;
-    public final Map<RequestId, CompletableFuture<JsonRpcMessage>> pending = new ConcurrentHashMap<>();
+    protected final Transport transport;
+    protected final Map<RequestId, CompletableFuture<JsonRpcMessage>> pending = new ConcurrentHashMap<>();
     protected final ProgressManager progress;
     private final Map<RequestMethod, Function<JsonRpcRequest, JsonRpcMessage>> requests = new EnumMap<>(RequestMethod.class);
     private final Map<NotificationMethod, Consumer<JsonRpcNotification>> notifications = new EnumMap<>(NotificationMethod.class);
