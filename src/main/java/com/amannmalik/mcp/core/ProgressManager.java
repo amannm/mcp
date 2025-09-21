@@ -34,24 +34,24 @@ public final class ProgressManager {
     public Optional<ProgressToken> register(RequestId id, JsonObject params) {
         Objects.requireNonNull(id, "id");
         ensureProgressTokenPlacement(params);
-        var token = ProgressToken.fromMeta(params);
+        var tokenOpt = ProgressToken.fromMeta(params);
         if (!used.add(id)) {
             throw new DuplicateRequestException(id);
         }
-        var registration = createRegistration(id, token);
+        var registration = createRegistration(id, tokenOpt.orElse(null));
         var previous = requests.putIfAbsent(id, registration);
         if (previous != null) {
             used.remove(id);
             throw new DuplicateRequestException(id);
         }
         try {
-            token.ifPresent(candidate -> bindToken(id, registration, candidate));
+            tokenOpt.ifPresent(candidate -> bindToken(id, registration, candidate));
         } catch (RuntimeException e) {
             requests.remove(id, registration);
             used.remove(id);
             throw e;
         }
-        return token;
+        return tokenOpt;
     }
 
     public void release(RequestId id) {
@@ -136,7 +136,7 @@ public final class ProgressManager {
         }
         var tokenState = state.get();
         try {
-            limiter.requireAllowance(note.token().asString());
+            limiter.requireAllowance(note.token().toString());
             tokenState.advance(note.progress());
         } catch (IllegalArgumentException | IllegalStateException | SecurityException e) {
             LOG.log(Logger.Level.WARNING, "Progress update rejected", e);
@@ -145,15 +145,14 @@ public final class ProgressManager {
         sender.send(NotificationMethod.PROGRESS, NOTIFICATION_CODEC.toJson(note));
     }
 
-    private RequestRegistration createRegistration(RequestId id, Optional<ProgressToken> token) {
+    private RequestRegistration createRegistration(RequestId id, ProgressToken token) {
         Objects.requireNonNull(id, "id");
-        Objects.requireNonNull(token, "token");
-        if (token.isEmpty()) {
+        if (token == null) {
             return RequestRegistration.withoutToken();
         }
         var state = new TokenState();
         state.addRequest(id);
-        return RequestRegistration.withToken(token.get(), state);
+        return RequestRegistration.withToken(token, state);
     }
 
     private void bindToken(RequestId id, RequestRegistration registration, ProgressToken token) {

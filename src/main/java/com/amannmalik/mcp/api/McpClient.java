@@ -6,7 +6,8 @@ import com.amannmalik.mcp.core.*;
 import com.amannmalik.mcp.jsonrpc.*;
 import com.amannmalik.mcp.resources.ResourceListChangedNotification;
 import com.amannmalik.mcp.spi.*;
-import com.amannmalik.mcp.transport.*;
+import com.amannmalik.mcp.transport.StdioTransport;
+import com.amannmalik.mcp.transport.StreamableHttpClientTransport;
 import com.amannmalik.mcp.util.*;
 import jakarta.json.Json;
 import jakarta.json.JsonObject;
@@ -163,61 +164,6 @@ public final class McpClient extends JsonRpcEndpoint implements AutoCloseable {
         return new StdioTransport(System.in, System.out, config.defaultReceiveTimeout());
     }
 
-    public synchronized void configurePing(Duration intervalMillis, Duration timeoutMillis) {
-        if (connected.get()) {
-            throw new IllegalStateException("already connected");
-        }
-        if (intervalMillis.isNegative() || timeoutMillis.isNegative()) {
-            throw new IllegalArgumentException("invalid ping settings");
-        }
-        this.pingInterval = intervalMillis;
-        this.pingTimeout = timeoutMillis;
-    }
-
-    public void setSamplingAccessPolicy(SamplingAccessPolicy policy) {
-        if (policy != null) {
-            this.samplingAccess = policy;
-        }
-    }
-
-    public void setPrincipal(Principal principal) {
-        if (principal != null) {
-            this.principal = principal;
-        }
-    }
-
-    public ClientInfo info() {
-        return info;
-    }
-
-    public synchronized void connect() throws IOException {
-        if (connected.get()) {
-            return;
-        }
-        HandshakeResult init;
-        try {
-            init = performHandshake(nextId(), transport, info, capabilities, rootsListChangedSupported, initializationTimeout);
-        } catch (UnauthorizedException e) {
-            handleUnauthorized(e);
-            throw e;
-        }
-        protocolVersion = init.protocolVersion();
-        serverInfo = init.serverInfo();
-        serverCapabilities = init.capabilities();
-        serverFeatures = init.features();
-        instructions = init.instructions();
-        connected.set(true);
-        try {
-            transport.listen();
-        } catch (UnauthorizedException e) {
-            handleUnauthorized(e);
-            throw e;
-        }
-        startBackgroundTasks();
-        subscribeRootsIfNeeded();
-        notifyInitialized();
-    }
-
     private static HandshakeResult performHandshake(RequestId id,
                                                     Transport transport,
                                                     ClientInfo info,
@@ -271,11 +217,59 @@ public final class McpClient extends JsonRpcEndpoint implements AutoCloseable {
                 ir.instructions());
     }
 
-    private record HandshakeResult(String protocolVersion,
-                                   ServerInfo serverInfo,
-                                   Set<ServerCapability> capabilities,
-                                   Set<ServerFeature> features,
-                                   String instructions) {
+    public synchronized void configurePing(Duration intervalMillis, Duration timeoutMillis) {
+        if (connected.get()) {
+            throw new IllegalStateException("already connected");
+        }
+        if (intervalMillis.isNegative() || timeoutMillis.isNegative()) {
+            throw new IllegalArgumentException("invalid ping settings");
+        }
+        this.pingInterval = intervalMillis;
+        this.pingTimeout = timeoutMillis;
+    }
+
+    public void setSamplingAccessPolicy(SamplingAccessPolicy policy) {
+        if (policy != null) {
+            this.samplingAccess = policy;
+        }
+    }
+
+    public void setPrincipal(Principal principal) {
+        if (principal != null) {
+            this.principal = principal;
+        }
+    }
+
+    public ClientInfo info() {
+        return info;
+    }
+
+    public synchronized void connect() throws IOException {
+        if (connected.get()) {
+            return;
+        }
+        HandshakeResult init;
+        try {
+            init = performHandshake(nextId(), transport, info, capabilities, rootsListChangedSupported, initializationTimeout);
+        } catch (UnauthorizedException e) {
+            handleUnauthorized(e);
+            throw e;
+        }
+        protocolVersion = init.protocolVersion();
+        serverInfo = init.serverInfo();
+        serverCapabilities = init.capabilities();
+        serverFeatures = init.features();
+        instructions = init.instructions();
+        connected.set(true);
+        try {
+            transport.listen();
+        } catch (UnauthorizedException e) {
+            handleUnauthorized(e);
+            throw e;
+        }
+        startBackgroundTasks();
+        subscribeRootsIfNeeded();
+        notifyInitialized();
     }
 
     public synchronized void disconnect() throws IOException {
@@ -766,6 +760,13 @@ public final class McpClient extends JsonRpcEndpoint implements AutoCloseable {
 
         default void onPromptsListChanged() {
         }
+    }
+
+    private record HandshakeResult(String protocolVersion,
+                                   ServerInfo serverInfo,
+                                   Set<ServerCapability> capabilities,
+                                   Set<ServerFeature> features,
+                                   String instructions) {
     }
 
 }

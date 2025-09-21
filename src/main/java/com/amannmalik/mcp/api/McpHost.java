@@ -80,6 +80,18 @@ public final class McpHost implements AutoCloseable {
         }
     }
 
+    private static void requireCapability(McpClient client, ServerCapability cap) {
+        if (!client.serverCapabilities().contains(cap)) {
+            throw new IllegalStateException("Server capability not supported: " + cap);
+        }
+    }
+
+    private static void requireCapability(McpClient client, ClientCapability cap) {
+        if (!client.capabilities().contains(cap)) {
+            throw new IllegalStateException("Client capability not supported: " + cap);
+        }
+    }
+
     @Override
     public void close() throws IOException {
         for (var id : Set.copyOf(clients.keySet())) {
@@ -229,18 +241,6 @@ public final class McpHost implements AutoCloseable {
         client.configurePing(
                 clientConfig.pingInterval(),
                 clientConfig.pingTimeout());
-    }
-
-    private static void requireCapability(McpClient client, ServerCapability cap) {
-        if (!client.serverCapabilities().contains(cap)) {
-            throw new IllegalStateException("Server capability not supported: " + cap);
-        }
-    }
-
-    private static void requireCapability(McpClient client, ClientCapability cap) {
-        if (!client.capabilities().contains(cap)) {
-            throw new IllegalStateException("Client capability not supported: " + cap);
-        }
     }
 
     private Optional<Tool> findTool(String clientId, String name) throws IOException {

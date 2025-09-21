@@ -29,22 +29,18 @@ public final class ServerDefaults {
     }
 
     public static ResourceProvider resources() {
-        /// Return a defensive delegate to avoid exposing internal mutable provider instance.
         return new DelegatingResourceProvider(RESOURCES);
     }
 
     public static ToolProvider tools() {
-        /// Return a defensive delegate to avoid exposing internal mutable provider instance.
         return new DelegatingToolProvider(TOOLS);
     }
 
     public static PromptProvider prompts() {
-        /// Return a defensive delegate to avoid exposing internal mutable provider instance.
         return new DelegatingPromptProvider(PROMPTS);
     }
 
     public static CompletionProvider completions() {
-        /// Return a defensive delegate to avoid exposing internal mutable provider instance.
         return new DelegatingCompletionProvider(COMPLETIONS);
     }
 
@@ -276,158 +272,158 @@ public final class ServerDefaults {
     }
 
     private record DelegatingResourceProvider(ResourceProvider delegate) implements ResourceProvider {
-            private DelegatingResourceProvider(ResourceProvider delegate) {
-                this.delegate = Objects.requireNonNull(delegate, "delegate");
-            }
-
-            @Override
-            public ResourceBlock read(URI uri) {
-                return delegate.read(uri);
-            }
-
-            @Override
-            public Optional<Resource> get(URI uri) {
-                return delegate.get(uri);
-            }
-
-            @Override
-            public Pagination.Page<Resource> list(Cursor cursor) {
-                return delegate.list(cursor);
-            }
-
-            @Override
-            public Pagination.Page<ResourceTemplate> listTemplates(Cursor cursor) {
-                return delegate.listTemplates(cursor);
-            }
-
-            @Override
-            public AutoCloseable subscribe(URI uri, Consumer<ResourceUpdate> listener) {
-                return delegate.subscribe(uri, listener);
-            }
-
-            @Override
-            public boolean supportsSubscribe() {
-                return delegate.supportsSubscribe();
-            }
-
-            @Override
-            public AutoCloseable onListChanged(Runnable listener) {
-                return delegate.onListChanged(listener);
-            }
-
-            @Override
-            public boolean supportsListChanged() {
-                return delegate.supportsListChanged();
-            }
-
-            @Override
-            public void close() {
-                delegate.close();
-            }
+        private DelegatingResourceProvider(ResourceProvider delegate) {
+            this.delegate = Objects.requireNonNull(delegate, "delegate");
         }
+
+        @Override
+        public ResourceBlock read(URI uri) {
+            return delegate.read(uri);
+        }
+
+        @Override
+        public Optional<Resource> get(URI uri) {
+            return delegate.get(uri);
+        }
+
+        @Override
+        public Pagination.Page<Resource> list(Cursor cursor) {
+            return delegate.list(cursor);
+        }
+
+        @Override
+        public Pagination.Page<ResourceTemplate> listTemplates(Cursor cursor) {
+            return delegate.listTemplates(cursor);
+        }
+
+        @Override
+        public AutoCloseable subscribe(URI uri, Consumer<ResourceUpdate> listener) {
+            return delegate.subscribe(uri, listener);
+        }
+
+        @Override
+        public boolean supportsSubscribe() {
+            return delegate.supportsSubscribe();
+        }
+
+        @Override
+        public AutoCloseable onListChanged(Runnable listener) {
+            return delegate.onListChanged(listener);
+        }
+
+        @Override
+        public boolean supportsListChanged() {
+            return delegate.supportsListChanged();
+        }
+
+        @Override
+        public void close() {
+            delegate.close();
+        }
+    }
 
     private record DelegatingToolProvider(ToolProvider delegate) implements ToolProvider {
-            private DelegatingToolProvider(ToolProvider delegate) {
-                this.delegate = Objects.requireNonNull(delegate, "delegate");
-            }
-
-            @Override
-            public Pagination.Page<Tool> list(Cursor cursor) {
-                return delegate.list(cursor);
-            }
-
-            @Override
-            public AutoCloseable onListChanged(Runnable listener) {
-                return delegate.onListChanged(listener);
-            }
-
-            @Override
-            public boolean supportsListChanged() {
-                return delegate.supportsListChanged();
-            }
-
-            @Override
-            public void close() {
-                delegate.close();
-            }
-
-            @Override
-            public Optional<Tool> find(String name) {
-                return delegate.find(name);
-            }
-
-            @Override
-            public ToolResult call(String name, JsonObject arguments) {
-                return delegate.call(name, arguments);
-            }
+        private DelegatingToolProvider(ToolProvider delegate) {
+            this.delegate = Objects.requireNonNull(delegate, "delegate");
         }
+
+        @Override
+        public Pagination.Page<Tool> list(Cursor cursor) {
+            return delegate.list(cursor);
+        }
+
+        @Override
+        public AutoCloseable onListChanged(Runnable listener) {
+            return delegate.onListChanged(listener);
+        }
+
+        @Override
+        public boolean supportsListChanged() {
+            return delegate.supportsListChanged();
+        }
+
+        @Override
+        public void close() {
+            delegate.close();
+        }
+
+        @Override
+        public Optional<Tool> find(String name) {
+            return delegate.find(name);
+        }
+
+        @Override
+        public ToolResult call(String name, JsonObject arguments) {
+            return delegate.call(name, arguments);
+        }
+    }
 
     private record DelegatingPromptProvider(PromptProvider delegate) implements PromptProvider {
-            private DelegatingPromptProvider(PromptProvider delegate) {
-                this.delegate = Objects.requireNonNull(delegate, "delegate");
-            }
-
-            @Override
-            public Pagination.Page<Prompt> list(Cursor cursor) {
-                return delegate.list(cursor);
-            }
-
-            @Override
-            public AutoCloseable onListChanged(Runnable listener) {
-                return delegate.onListChanged(listener);
-            }
-
-            @Override
-            public boolean supportsListChanged() {
-                return delegate.supportsListChanged();
-            }
-
-            @Override
-            public void close() {
-                delegate.close();
-            }
-
-            @Override
-            public Optional<Prompt> find(String name) {
-                return delegate.find(name);
-            }
-
-            @Override
-            public PromptInstance get(String name, Map<String, String> arguments) {
-                return delegate.get(name, arguments);
-            }
+        private DelegatingPromptProvider(PromptProvider delegate) {
+            this.delegate = Objects.requireNonNull(delegate, "delegate");
         }
+
+        @Override
+        public Pagination.Page<Prompt> list(Cursor cursor) {
+            return delegate.list(cursor);
+        }
+
+        @Override
+        public AutoCloseable onListChanged(Runnable listener) {
+            return delegate.onListChanged(listener);
+        }
+
+        @Override
+        public boolean supportsListChanged() {
+            return delegate.supportsListChanged();
+        }
+
+        @Override
+        public void close() {
+            delegate.close();
+        }
+
+        @Override
+        public Optional<Prompt> find(String name) {
+            return delegate.find(name);
+        }
+
+        @Override
+        public PromptInstance get(String name, Map<String, String> arguments) {
+            return delegate.get(name, arguments);
+        }
+    }
 
     private record DelegatingCompletionProvider(CompletionProvider delegate) implements CompletionProvider {
-            private DelegatingCompletionProvider(CompletionProvider delegate) {
-                this.delegate = Objects.requireNonNull(delegate, "delegate");
-            }
-
-            @Override
-            public Pagination.Page<Ref> list(Cursor cursor) {
-                return delegate.list(cursor);
-            }
-
-            @Override
-            public AutoCloseable onListChanged(Runnable listener) {
-                return delegate.onListChanged(listener);
-            }
-
-            @Override
-            public boolean supportsListChanged() {
-                return delegate.supportsListChanged();
-            }
-
-            @Override
-            public void close() {
-                delegate.close();
-            }
-
-            @Override
-            public CompleteResult execute(String name, JsonObject args) throws InterruptedException {
-                return delegate.execute(name, args);
-            }
+        private DelegatingCompletionProvider(CompletionProvider delegate) {
+            this.delegate = Objects.requireNonNull(delegate, "delegate");
         }
+
+        @Override
+        public Pagination.Page<Ref> list(Cursor cursor) {
+            return delegate.list(cursor);
+        }
+
+        @Override
+        public AutoCloseable onListChanged(Runnable listener) {
+            return delegate.onListChanged(listener);
+        }
+
+        @Override
+        public boolean supportsListChanged() {
+            return delegate.supportsListChanged();
+        }
+
+        @Override
+        public void close() {
+            delegate.close();
+        }
+
+        @Override
+        public CompleteResult execute(String name, JsonObject args) throws InterruptedException {
+            return delegate.execute(name, args);
+        }
+    }
 
     private record ResourceDefaults(ResourceProvider provider, Resource sampleResource) {
     }

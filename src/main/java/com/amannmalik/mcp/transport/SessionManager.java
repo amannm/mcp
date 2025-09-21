@@ -1,6 +1,5 @@
 package com.amannmalik.mcp.transport;
 
-import com.amannmalik.mcp.api.config.McpServerConfiguration;
 import com.amannmalik.mcp.spi.Principal;
 import com.amannmalik.mcp.util.Base64Util;
 import com.amannmalik.mcp.util.ValidationUtil;
@@ -21,10 +20,6 @@ final class SessionManager {
     private final String compatibilityVersion;
     private final int sessionIdByteLength;
     private final AtomicReference<String> protocolVersion;
-
-    SessionManager(String compatibilityVersion) {
-        this(compatibilityVersion, McpServerConfiguration.defaultConfiguration().sessionIdByteLength());
-    }
 
     SessionManager(String compatibilityVersion, int sessionIdByteLength) {
         this.compatibilityVersion = Objects.requireNonNull(compatibilityVersion, "compatibilityVersion");

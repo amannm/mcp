@@ -34,16 +34,9 @@ public sealed interface ProgressToken permits
         return Optional.of(token);
     }
 
-    String asString();
-
     record StringToken(String value) implements ProgressToken {
         public StringToken {
             value = ValidationUtil.requireClean(value);
-        }
-
-        @Override
-        public String asString() {
-            return value;
         }
 
         @Override
@@ -53,10 +46,6 @@ public sealed interface ProgressToken permits
     }
 
     record NumericToken(BigInteger value) implements ProgressToken {
-        @Override
-        public String asString() {
-            return value.toString();
-        }
 
         @Override
         public String toString() {

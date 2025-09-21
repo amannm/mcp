@@ -8,5 +8,4 @@ open module mcp.test {
     requires jakarta.json;
     requires org.bouncycastle.pkix;
     requires org.bouncycastle.provider;
-
 }

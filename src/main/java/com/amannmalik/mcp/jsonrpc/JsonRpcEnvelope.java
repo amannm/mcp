@@ -11,15 +11,16 @@ import java.util.Optional;
  */
 public final class JsonRpcEnvelope {
     private final JsonObject message;
-    private final Optional<RequestId> id;
-    private final Optional<String> method;
+    // Avoid Optional as fields; store nullable and expose via Optional accessors
+    private final RequestId id; // nullable
+    private final String method; // nullable
     private final Type type;
 
     private JsonRpcEnvelope(JsonObject message) {
         this.message = Objects.requireNonNull(message, "message");
-        this.id = RequestId.fromNullable(message.get("id"));
-        this.method = Optional.ofNullable(message.getString("method", null));
-        this.type = classify(message, method.isPresent(), id.isPresent());
+        this.id = RequestId.fromNullable(message.get("id")).orElse(null);
+        this.method = message.getString("method", null);
+        this.type = classify(message, method != null, id != null);
     }
 
     public static JsonRpcEnvelope of(JsonObject message) {
@@ -44,11 +45,11 @@ public final class JsonRpcEnvelope {
     }
 
     public Optional<RequestId> id() {
-        return id;
+        return Optional.ofNullable(id);
     }
 
     public Optional<String> method() {
-        return method;
+        return Optional.ofNullable(method);
     }
 
     public Type type() {
@@ -68,7 +69,10 @@ public final class JsonRpcEnvelope {
     }
 
     public RequestId requireId() {
-        return id.orElseThrow(() -> new IllegalArgumentException("request id missing"));
+        if (id == null) {
+            throw new IllegalArgumentException("request id missing");
+        }
+        return id;
     }
 
     public enum Type {
@@ -78,4 +82,3 @@ public final class JsonRpcEnvelope {
         INVALID
     }
 }
-

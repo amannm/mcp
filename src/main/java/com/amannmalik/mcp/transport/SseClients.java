@@ -221,30 +221,30 @@ final class SseClients {
     }
 
     private record CleanupAsyncListener(Runnable cleanup) implements AsyncListener {
-            private CleanupAsyncListener(Runnable cleanup) {
-                this.cleanup = Objects.requireNonNull(cleanup, "cleanup");
-            }
-
-            @Override
-            public void onComplete(AsyncEvent event) {
-                cleanup.run();
-            }
-
-            @Override
-            public void onTimeout(AsyncEvent event) {
-                cleanup.run();
-            }
-
-            @Override
-            public void onError(AsyncEvent event) {
-                cleanup.run();
-            }
-
-            @Override
-            public void onStartAsync(AsyncEvent event) {
-                Objects.requireNonNull(event, "event").getAsyncContext().addListener(this);
-            }
+        private CleanupAsyncListener(Runnable cleanup) {
+            this.cleanup = Objects.requireNonNull(cleanup, "cleanup");
         }
+
+        @Override
+        public void onComplete(AsyncEvent event) {
+            cleanup.run();
+        }
+
+        @Override
+        public void onTimeout(AsyncEvent event) {
+            cleanup.run();
+        }
+
+        @Override
+        public void onError(AsyncEvent event) {
+            cleanup.run();
+        }
+
+        @Override
+        public void onStartAsync(AsyncEvent event) {
+            Objects.requireNonNull(event, "event").getAsyncContext().addListener(this);
+        }
+    }
 
     private record SseLastEventId(String prefix, long eventId) {
         private static Optional<SseLastEventId> parse(String header) {
