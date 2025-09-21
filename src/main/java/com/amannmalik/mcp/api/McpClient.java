@@ -1,6 +1,7 @@
 package com.amannmalik.mcp.api;
 
 import com.amannmalik.mcp.api.config.McpClientConfiguration;
+import com.amannmalik.mcp.api.config.CertificateValidationMode;
 import com.amannmalik.mcp.codec.*;
 import com.amannmalik.mcp.core.*;
 import com.amannmalik.mcp.jsonrpc.*;
