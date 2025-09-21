@@ -55,7 +55,6 @@ public final class McpHost implements AutoCloseable {
                     .map(dir -> new Root(URI.create("file://" + dir), dir, null))
                     .toList();
             var rootsProvider = new InMemoryRootsProvider(roots);
-
             var listener = (clientConfig.verbose() || config.globalVerbose()) ? new McpClientListener() {
                 @Override
                 public void onMessage(LoggingMessageNotification notification) {
