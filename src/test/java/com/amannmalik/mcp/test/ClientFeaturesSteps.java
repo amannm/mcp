@@ -77,7 +77,7 @@ public final class ClientFeaturesSteps {
         );
         var clientConfig = new McpClientConfiguration(
                 base.clientId(), base.serverName(), base.serverDisplayName(), base.serverVersion(),
-                base.principal(), base.clientCapabilities(), cmd, base.defaultReceiveTimeout(),
+                base.principal(), base.clientCapabilities(), cmd, base.defaultReceiveTimeout(), base.processShutdownWait(),
                 base.defaultOriginHeader(), base.httpRequestTimeout(), base.enableKeepAlive(),
                 base.sessionIdByteLength(), base.initializeRequestTimeout(), base.strictVersionValidation(),
                 base.pingTimeout(), base.pingInterval(), base.progressPerSecond(), base.rateLimiterWindow(),

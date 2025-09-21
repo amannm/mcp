@@ -33,11 +33,7 @@ import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 public final class StreamableHttpServerTransport implements Transport {
-    // Default to the previous protocol revision when the version header is
-    // absent, as recommended for backwards compatibility.
-    static final String COMPATIBILITY_VERSION =
-            Protocol.PREVIOUS_VERSION;
-    private static final Logger LOG = PlatformLog.get(StreamableHttpServerTransport.class);
+    static final String COMPATIBILITY_VERSION = Protocol.PREVIOUS_VERSION;
     private static final JsonObject CLOSE_SIGNAL = Json.createObjectBuilder().add("_close", true).build();
     private final AuthorizationManager authManager;
     private final String canonicalResource;

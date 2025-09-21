@@ -233,6 +233,7 @@ public final class HostCommand {
                     capabilities,
                     command,
                     Duration.ofSeconds(10),
+                    McpHostConfiguration.defaultConfiguration().processWaitSeconds(),
                     "http://127.0.0.1",
                     Duration.ofSeconds(30),
                     true,

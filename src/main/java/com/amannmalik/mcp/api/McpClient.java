@@ -365,7 +365,8 @@ public final class McpClient extends JsonRpcEndpoint implements AutoCloseable {
             return new StdioTransport(cmds,
                     verbose ? line -> LOG.log(Logger.Level.INFO, line) : s -> {
                     },
-                    config.defaultReceiveTimeout());
+                    config.defaultReceiveTimeout(),
+                    config.processShutdownWait());
         }
         return new StdioTransport(System.in, System.out, config.defaultReceiveTimeout());
     }

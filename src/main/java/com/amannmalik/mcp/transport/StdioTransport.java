@@ -1,7 +1,6 @@
 package com.amannmalik.mcp.transport;
 
 import com.amannmalik.mcp.api.Transport;
-import com.amannmalik.mcp.api.config.McpHostConfiguration;
 import com.amannmalik.mcp.util.*;
 import jakarta.json.Json;
 import jakarta.json.JsonObject;
@@ -16,9 +15,6 @@ import java.util.function.Consumer;
 
 /// - [Transports](specification/2025-06-18/basic/transports.mdx)
 public final class StdioTransport implements Transport {
-    // TODO: externalize
-    private static final Duration WAIT = McpHostConfiguration.defaultConfiguration().processWaitSeconds();
-    private static final Duration RECEIVE = Duration.ofSeconds(5);
     private static final Executor READER = command -> Thread.ofVirtual().start(command);
     private static final Logger LOG = PlatformLog.get(StdioTransport.class);
     private final BufferedReader in;
@@ -33,7 +29,10 @@ public final class StdioTransport implements Transport {
         this.receiveTimeout = ValidationUtil.requirePositive(receiveTimeout, "receiveTimeout");
     }
 
-    public StdioTransport(String[] command, Consumer<String> logSink, Duration receiveTimeout) throws IOException {
+    public StdioTransport(String[] command,
+                          Consumer<String> logSink,
+                          Duration receiveTimeout,
+                          Duration processShutdownWait) throws IOException {
         Objects.requireNonNull(logSink, "logSink");
         if (command.length == 0) {
             throw new IllegalArgumentException("command");
@@ -46,7 +45,7 @@ public final class StdioTransport implements Transport {
         var logReader = new Thread(() -> readLogs(process.getErrorStream(), logSink));
         logReader.setDaemon(true);
         logReader.start();
-        this.resources = new Spawned(process, logReader);
+        this.resources = new Spawned(process, logReader, ValidationUtil.requirePositive(processShutdownWait, "processShutdownWait"));
         this.receiveTimeout = ValidationUtil.requirePositive(receiveTimeout, "receiveTimeout");
     }
 
@@ -149,7 +148,7 @@ public final class StdioTransport implements Transport {
         void close() throws IOException;
     }
 
-    private record Spawned(Process process, Thread logReader) implements ProcessResources {
+    private record Spawned(Process process, Thread logReader, Duration shutdownWait) implements ProcessResources {
         @Override
         public void checkAlive() throws IOException {
             if (!process.isAlive()) {
@@ -168,9 +167,9 @@ public final class StdioTransport implements Transport {
         public void close() throws IOException {
             process.destroy();
             try {
-                if (!process.waitFor(WAIT.toMillis(), TimeUnit.MILLISECONDS)) {
+                if (!process.waitFor(shutdownWait.toMillis(), TimeUnit.MILLISECONDS)) {
                     process.destroyForcibly();
-                    if (!process.waitFor(WAIT.toMillis(), TimeUnit.MILLISECONDS)) {
+                    if (!process.waitFor(shutdownWait.toMillis(), TimeUnit.MILLISECONDS)) {
                         throw new IOException("Process did not terminate");
                     }
                 }

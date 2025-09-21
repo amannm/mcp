@@ -37,10 +37,8 @@ public final class ProtocolLifecycleSteps {
     private final List<Integer> expectedPostMessageStatuses = new ArrayList<>();
     private final List<Boolean> postMessageBodiesEmpty = new ArrayList<>();
     private final List<Boolean> expectedPostMessageBodiesEmpty = new ArrayList<>();
-    // New step definitions for concurrent request processing
     private final List<RequestId> concurrentRequestIds = new ArrayList<>();
     private final Map<RequestId, JsonObject> concurrentResponses = new HashMap<>();
-    // New step definitions for message ordering guarantees
     private final List<Map<String, String>> dependentRequests = new ArrayList<>();
     private final Map<String, JsonObject> requestResponses = new HashMap<>();
     private final List<Boolean> preInitAllowedResults = new ArrayList<>();
@@ -68,7 +66,6 @@ public final class ProtocolLifecycleSteps {
     private String serverSessionId;
     private boolean sessionActive;
     private int lastHttpStatus;
-    // New step definitions for large message handling
     private long largePayloadSize;
     private boolean largeMessageHandled;
     private boolean connectionStable;
@@ -140,7 +137,7 @@ public final class ProtocolLifecycleSteps {
         );
         return new McpClientConfiguration(
                 base.clientId(), base.serverName(), base.serverDisplayName(), base.serverVersion(),
-                base.principal(), base.clientCapabilities(), commandSpec, base.defaultReceiveTimeout(),
+                base.principal(), base.clientCapabilities(), commandSpec, base.defaultReceiveTimeout(), base.processShutdownWait(),
                 base.defaultOriginHeader(), base.httpRequestTimeout(), base.enableKeepAlive(),
                 base.sessionIdByteLength(), base.initializeRequestTimeout(), base.strictVersionValidation(),
                 base.pingTimeout(), base.pingInterval(), base.progressPerSecond(), base.rateLimiterWindow(),
@@ -156,7 +153,7 @@ public final class ProtocolLifecycleSteps {
         );
         return new McpClientConfiguration(
                 base.clientId(), base.serverName(), base.serverDisplayName(), base.serverVersion(),
-                base.principal(), capabilities, base.commandSpec(), base.defaultReceiveTimeout(),
+                base.principal(), capabilities, base.commandSpec(), base.defaultReceiveTimeout(), base.processShutdownWait(),
                 base.defaultOriginHeader(), base.httpRequestTimeout(), base.enableKeepAlive(),
                 base.sessionIdByteLength(), base.initializeRequestTimeout(), base.strictVersionValidation(),
                 base.pingTimeout(), base.pingInterval(), base.progressPerSecond(), base.rateLimiterWindow(),

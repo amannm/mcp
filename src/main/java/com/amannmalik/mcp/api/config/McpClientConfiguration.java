@@ -20,6 +20,7 @@ public record McpClientConfiguration(
         Set<ClientCapability> clientCapabilities,
         String commandSpec,
         Duration defaultReceiveTimeout,
+        Duration processShutdownWait,
         String defaultOriginHeader,
         Duration httpRequestTimeout,
         boolean enableKeepAlive,
@@ -52,6 +53,7 @@ public record McpClientConfiguration(
         }
         clientCapabilities = Set.copyOf(clientCapabilities);
         defaultReceiveTimeout = ValidationUtil.requirePositive(defaultReceiveTimeout, "Default receive timeout");
+        processShutdownWait = ValidationUtil.requirePositive(processShutdownWait, "Process shutdown wait");
         if (defaultOriginHeader == null || defaultOriginHeader.isBlank()) {
             throw new IllegalArgumentException("Default origin header is required");
         }
@@ -92,6 +94,7 @@ public record McpClientConfiguration(
                 Set.of(ClientCapability.SAMPLING, ClientCapability.ROOTS),
                 "",
                 Duration.ofSeconds(10),
+                Duration.ofSeconds(2),
                 "http://127.0.0.1",
                 Duration.ofSeconds(30),
                 true,

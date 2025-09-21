@@ -26,7 +26,6 @@ import java.util.concurrent.atomic.AtomicReference;
 /// - [Transports](specification/2025-06-18/basic/transports.mdx)
 public final class StreamableHttpClientTransport implements Transport {
     private static final Logger LOG = PlatformLog.get(StreamableHttpClientTransport.class);
-
     private final HttpClient client;
     private final URI endpoint;
     private final BlockingQueue<JsonObject> incoming = new LinkedBlockingQueue<>();
