@@ -47,6 +47,10 @@ public final class ServerCommand {
                         .type(String.class)
                         .description("Expected JWT audience for authorization")
                         .build())
+                .addOption(OptionSpec.builder("--jwt-secret")
+                        .type(String.class)
+                        .description("JWT HMAC secret (leave blank to use public key validation)")
+                        .build())
                 .addOption(OptionSpec.builder("--resource-metadata")
                         .type(String.class)
                         .description("Resource metadata URL")
@@ -145,6 +149,7 @@ public final class ServerCommand {
                 httpPort = 0;
             }
             String expectedAudience = parseResult.matchedOptionValue("--audience", null);
+            String jwtSecret = parseResult.matchedOptionValue("--jwt-secret", "");
             String resourceMetadataUrl = parseResult.matchedOptionValue("--resource-metadata", null);
             List<String> authServers = parseResult.matchedOptionValue("--auth-server", Collections.emptyList());
             boolean testMode = parseResult.matchedOptionValue("--test-mode", false);
@@ -176,8 +181,14 @@ public final class ServerCommand {
             var cipherSuites = parseResult.matchedOptionValue("--cipher-suites", base.cipherSuites());
             boolean requireClientAuth = parseResult.matchedOptionValue("--require-client-auth", base.requireClientAuth());
             var config = stdio
-                    ? base.withTransport("stdio", base.serverPort(), base.allowedOrigins(), null, null, List.of(), true, verbose)
-                    : base.withTransport("http", httpPort, base.allowedOrigins(), expectedAudience, resourceMetadataUrl, authServers, testMode, verbose);
+                    ? base.withTransport("stdio", base.serverPort(), base.allowedOrigins(), "", "", null, List.of(), true, verbose)
+                    : base.withTransport("http", httpPort, base.allowedOrigins(),
+                            expectedAudience == null ? "" : expectedAudience,
+                            jwtSecret,
+                            resourceMetadataUrl,
+                            authServers,
+                            testMode,
+                            verbose);
             var tlsConfig = new TlsConfiguration(keystorePath, keystorePassword, keystoreType, truststorePath, truststorePassword, truststoreType, tlsProtocols, cipherSuites);
             config = config.withTls(httpsPort, tlsConfig, requireClientAuth);
             Path instructionsFile = parseResult.matchedOptionValue("--instructions", null);

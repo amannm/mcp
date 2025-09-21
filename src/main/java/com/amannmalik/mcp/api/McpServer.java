@@ -160,11 +160,11 @@ public final class McpServer extends JsonRpcEndpoint implements AutoCloseable {
                     throw new IllegalArgumentException("auth server must be specified");
                 }
                 AuthorizationManager authManager = null;
-                if (config.expectedAudience() != null && !config.expectedAudience().isBlank()) {
-                    var secretEnv = System.getenv("MCP_JWT_SECRET");
-                    var tokenValidator = secretEnv == null || secretEnv.isBlank()
+                if (!config.expectedAudience().isBlank()) {
+                    var secret = config.jwtSecret();
+                    var tokenValidator = (secret == null || secret.isBlank())
                             ? new JwtTokenValidator(config.expectedAudience())
-                            : new JwtTokenValidator(config.expectedAudience(), secretEnv.getBytes(StandardCharsets.UTF_8));
+                            : new JwtTokenValidator(config.expectedAudience(), secret.getBytes(StandardCharsets.UTF_8));
                     authManager = new AuthorizationManager(List.of(new BearerTokenAuthorizationStrategy(tokenValidator)));
                 }
                 var ht = new StreamableHttpServerTransport(

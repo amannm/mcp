@@ -42,6 +42,7 @@ public record McpServerConfiguration(
         int serverPort,
         List<String> allowedOrigins,
         String expectedAudience,
+        String jwtSecret,
         String resourceMetadataUrl,
         List<String> authServers,
         boolean insecure,
@@ -116,6 +117,12 @@ public record McpServerConfiguration(
                 throw new IllegalArgumentException("HTTPS required for authorization server URLs");
             }
         }
+        if (expectedAudience == null) {
+            throw new IllegalArgumentException("expectedAudience cannot be null (use blank to disable)");
+        }
+        if (jwtSecret == null) {
+            throw new IllegalArgumentException("jwtSecret cannot be null (use blank for none)");
+        }
         if (httpsMode == null) {
             throw new IllegalArgumentException("HTTPS mode required");
         }
@@ -175,6 +182,7 @@ public record McpServerConfiguration(
                 3000,
                 List.of("http://localhost", "http://127.0.0.1", "https://localhost", "https://127.0.0.1"),
                 "https://mcp.example.com",
+                "",
                 "https://mcp.example.com/.well-known/oauth-protected-resource",
                 List.of("https://auth.example.com"),
                 false,
@@ -217,6 +225,7 @@ public record McpServerConfiguration(
                                                 int serverPort,
                                                 List<String> allowedOrigins,
                                                 String expectedAudience,
+                                                String jwtSecret,
                                                 String resourceMetadataUrl,
                                                 List<String> authServers,
                                                 boolean insecure,
@@ -254,6 +263,7 @@ public record McpServerConfiguration(
                 serverPort,
                 allowedOrigins,
                 expectedAudience,
+                jwtSecret,
                 resourceMetadataUrl,
                 authServers,
                 insecure,
@@ -316,6 +326,7 @@ public record McpServerConfiguration(
                 serverPort,
                 allowedOrigins,
                 expectedAudience,
+                jwtSecret,
                 resourceMetadataUrl,
                 authServers,
                 insecure,

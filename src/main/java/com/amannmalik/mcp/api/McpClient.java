@@ -309,7 +309,7 @@ public final class McpClient extends JsonRpcEndpoint implements AutoCloseable {
         );
     }
 
-    public synchronized void configurePing(Duration intervalMillis, Duration timeoutMillis) {
+    public void configurePing(Duration intervalMillis, Duration timeoutMillis) {
         if (connected.get()) {
             throw new IllegalStateException("already connected");
         }
