@@ -1,6 +1,6 @@
 package com.amannmalik.mcp.util;
 
-import com.amannmalik.mcp.api.LoggingLevel;
+import com.amannmalik.mcp.api.config.LoggingLevel;
 
 import java.lang.System.Logger;
 
@@ -29,4 +29,3 @@ public final class PlatformLog {
         };
     }
 }
-
