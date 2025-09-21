@@ -310,7 +310,7 @@ public final class ProtocolLifecycleSteps {
         } catch (Exception ignore) {
         }
         try {
-            activeConnection.request(clientId, RequestMethod.RESOURCES_LIST, Json.createObjectBuilder().build());
+            activeConnection.client(clientId).request(RequestMethod.RESOURCES_LIST, Json.createObjectBuilder().build(), Duration.ofSeconds(5));
             serverCapabilities.add(ServerCapability.RESOURCES);
             hasServerCapabilities = true;
         } catch (Exception ignore) {
@@ -330,9 +330,9 @@ public final class ProtocolLifecycleSteps {
             throw new IllegalStateException("connection not established");
         }
 
-        activeConnection.notify(clientId, NotificationMethod.INITIALIZED, Json.createObjectBuilder().build());
+        activeConnection.client(clientId).sendNotification(NotificationMethod.INITIALIZED, Json.createObjectBuilder().build());
 
-        var response = activeConnection.request(clientId, RequestMethod.PING, Json.createObjectBuilder().build());
+        var response = activeConnection.client(clientId).request(RequestMethod.PING, Json.createObjectBuilder().build(), Duration.ofSeconds(5));
         if (response == null) {
             throw new AssertionError("message exchange failed");
         }
@@ -680,7 +680,7 @@ public final class ProtocolLifecycleSteps {
         }
         lastRequest = createRequest(lastRequestId, RequestMethod.PING.method(), Json.createObjectBuilder().build());
         try {
-            activeConnection.request(clientId, lastRequestId, RequestMethod.PING, Json.createObjectBuilder().build());
+            activeConnection.client(clientId).request(lastRequestId, RequestMethod.PING, Json.createObjectBuilder().build(), Duration.ofSeconds(5));
             lastErrorCode = 0;
             lastErrorMessage = null;
         } catch (IllegalArgumentException e) {
@@ -977,7 +977,7 @@ public final class ProtocolLifecycleSteps {
                         .build())
                 .build();
         try {
-            activeConnection.request(clientId, new RequestId.NumericId(1), RequestMethod.PING, meta);
+            activeConnection.client(clientId).request(new RequestId.NumericId(1), RequestMethod.PING, meta, Duration.ofSeconds(5));
             lastErrorCode = 0;
             lastErrorMessage = null;
         } catch (IllegalArgumentException e) {

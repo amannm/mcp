@@ -149,9 +149,9 @@ public final class ServerFeaturesSteps {
             throw new IllegalStateException("connection not established");
         }
         serverCapabilities.clear();
-        serverCapabilities.addAll(activeConnection.serverCapabilities(clientId));
+        serverCapabilities.addAll(activeConnection.client(clientId).serverCapabilities());
         serverFeatures.clear();
-        serverFeatures.addAll(activeConnection.serverFeatures(clientId));
+        serverFeatures.addAll(activeConnection.client(clientId).serverFeatures());
     }
 
     @Then("the server should declare the {string} capability")
@@ -207,7 +207,7 @@ public final class ServerFeaturesSteps {
         if (activeConnection == null || clientId == null) {
             throw new IllegalStateException("connection not established");
         }
-        if (!activeConnection.serverCapabilities(clientId).contains(ServerCapability.TOOLS)) {
+        if (!activeConnection.client(clientId).serverCapabilities().contains(ServerCapability.TOOLS)) {
             throw new AssertionError("Tools capability not enabled");
         }
     }
@@ -424,7 +424,7 @@ public final class ServerFeaturesSteps {
         if (activeConnection == null || clientId == null) {
             throw new IllegalStateException("connection not established");
         }
-        if (!activeConnection.serverFeatures(clientId).contains(ServerFeature.TOOLS_LIST_CHANGED)) {
+        if (!activeConnection.client(clientId).serverFeatures().contains(ServerFeature.TOOLS_LIST_CHANGED)) {
             throw new AssertionError("listChanged not enabled");
         }
     }
@@ -440,7 +440,7 @@ public final class ServerFeaturesSteps {
             throw new IllegalStateException("not subscribed");
         }
         try {
-            activeConnection.notify(clientId, NotificationMethod.TOOLS_LIST_CHANGED, Json.createObjectBuilder().build());
+            activeConnection.client(clientId).sendNotification(NotificationMethod.TOOLS_LIST_CHANGED, Json.createObjectBuilder().build());
             toolListChangedNotification = true;
         } catch (Exception e) {
             toolListChangedNotification = false;
@@ -507,7 +507,7 @@ public final class ServerFeaturesSteps {
         if (activeConnection == null || clientId == null) {
             throw new IllegalStateException("connection not established");
         }
-        activeConnection.request(clientId, RequestMethod.RESOURCES_LIST, Json.createObjectBuilder().build());
+        activeConnection.client(clientId).request(RequestMethod.RESOURCES_LIST, Json.createObjectBuilder().build(), Duration.ofSeconds(5));
     }
 
     // --- Resources -------------------------------------------------------
@@ -517,7 +517,7 @@ public final class ServerFeaturesSteps {
         if (activeConnection == null || clientId == null) {
             throw new IllegalStateException("connection not established");
         }
-        if (!activeConnection.serverCapabilities(clientId).contains(ServerCapability.RESOURCES)) {
+        if (!activeConnection.client(clientId).serverCapabilities().contains(ServerCapability.RESOURCES)) {
             throw new AssertionError("Resources capability not enabled");
         }
     }
@@ -637,7 +637,7 @@ public final class ServerFeaturesSteps {
     public void i_send_a_resources_read_request_for_that_uri() throws Exception {
         try {
             var params = Json.createObjectBuilder().add("uri", resourceUri).build();
-            activeConnection.request(clientId, RequestMethod.RESOURCES_READ, params);
+            activeConnection.client(clientId).request(RequestMethod.RESOURCES_READ, params, Duration.ofSeconds(5));
             resourceContents = Json.createObjectBuilder()
                     .add("contents", Json.createArrayBuilder().add(Json.createObjectBuilder()
                             .add("uri", resourceUri)
@@ -683,13 +683,13 @@ public final class ServerFeaturesSteps {
 
     @Given("the server supports resource templates")
     public void the_server_supports_resource_templates() throws Exception {
-        activeConnection.request(clientId, RequestMethod.RESOURCES_TEMPLATES_LIST, Json.createObjectBuilder().build());
+        activeConnection.client(clientId).request(RequestMethod.RESOURCES_TEMPLATES_LIST, Json.createObjectBuilder().build(), Duration.ofSeconds(5));
     }
 
     @When("I send a \"resources\\/templates\\/list\" request")
     public void i_send_a_resources_templates_list_request() throws Exception {
         try {
-            activeConnection.request(clientId, RequestMethod.RESOURCES_TEMPLATES_LIST, Json.createObjectBuilder().build());
+            activeConnection.client(clientId).request(RequestMethod.RESOURCES_TEMPLATES_LIST, Json.createObjectBuilder().build(), Duration.ofSeconds(5));
             resourceTemplates = List.of(Json.createObjectBuilder()
                     .add("uriTemplate", "file:///{path}")
                     .add("name", "template")
@@ -726,7 +726,7 @@ public final class ServerFeaturesSteps {
             case "listChanged" -> ServerFeature.RESOURCES_LIST_CHANGED;
             default -> throw new IllegalArgumentException("Unsupported feature: " + feature);
         };
-        if (!activeConnection.serverFeatures(clientId).contains(f)) {
+        if (!activeConnection.client(clientId).serverFeatures().contains(f)) {
             throw new AssertionError(feature + " not enabled");
         }
     }
@@ -746,7 +746,7 @@ public final class ServerFeaturesSteps {
     public void i_send_a_resources_subscribe_request_for_the_resource_uri() throws Exception {
         try {
             var params = Json.createObjectBuilder().add("uri", resourceUri).build();
-            activeConnection.request(clientId, RequestMethod.RESOURCES_SUBSCRIBE, params);
+            activeConnection.client(clientId).request(RequestMethod.RESOURCES_SUBSCRIBE, params, Duration.ofSeconds(5));
             resourceSubscriptionConfirmed = true;
         } catch (Exception e) {
             resourceSubscriptionConfirmed = false;
@@ -763,7 +763,7 @@ public final class ServerFeaturesSteps {
     @Then("when the resource changes, I should receive \"notifications\\/resources\\/updated\"")
     public void when_the_resource_changes_i_should_receive_notifications_resources_updated() {
         try {
-            activeConnection.notify(clientId, NotificationMethod.RESOURCES_UPDATED, Json.createObjectBuilder().build());
+            activeConnection.client(clientId).sendNotification(NotificationMethod.RESOURCES_UPDATED, Json.createObjectBuilder().build());
             resourceUpdatedNotification = true;
         } catch (Exception e) {
             resourceUpdatedNotification = false;
@@ -777,7 +777,7 @@ public final class ServerFeaturesSteps {
     public void i_send_a_resources_unsubscribe_request_for_the_resource_uri() throws Exception {
         try {
             var params = Json.createObjectBuilder().add("uri", resourceUri).build();
-            resourceUnsubscriptionConfirmed = !"JsonRpcError".equals(activeConnection.request(clientId, RequestMethod.RESOURCES_UNSUBSCRIBE, params).getClass().getSimpleName());
+            resourceUnsubscriptionConfirmed = !"JsonRpcError".equals(activeConnection.client(clientId).request(RequestMethod.RESOURCES_UNSUBSCRIBE, params, Duration.ofSeconds(5)).getClass().getSimpleName());
         } catch (Exception e) {
             resourceUnsubscriptionConfirmed = false;
         }
@@ -793,7 +793,7 @@ public final class ServerFeaturesSteps {
     @Then("a subsequent \"resources\\/unsubscribe\" request should result in error")
     public void a_subsequent_resources_unsubscribe_request_should_result_in_error() throws Exception {
         var params = Json.createObjectBuilder().add("uri", resourceUri).build();
-        var type = activeConnection.request(clientId, RequestMethod.RESOURCES_UNSUBSCRIBE, params).getClass().getSimpleName();
+        var type = activeConnection.client(clientId).request(RequestMethod.RESOURCES_UNSUBSCRIBE, params, Duration.ofSeconds(5)).getClass().getSimpleName();
         if (!"JsonRpcError".equals(type)) {
             throw new AssertionError("expected no active subscription error");
         }
@@ -802,7 +802,7 @@ public final class ServerFeaturesSteps {
     @When("the server's resource list changes")
     public void the_server_s_resource_list_changes() {
         try {
-            activeConnection.notify(clientId, NotificationMethod.RESOURCES_LIST_CHANGED, Json.createObjectBuilder().build());
+            activeConnection.client(clientId).sendNotification(NotificationMethod.RESOURCES_LIST_CHANGED, Json.createObjectBuilder().build());
             resourceListChangedNotification = true;
         } catch (Exception e) {
             resourceListChangedNotification = false;
@@ -873,7 +873,7 @@ public final class ServerFeaturesSteps {
 
     @Given("the server has resources capability")
     public void the_server_has_resources_capability() {
-        if (!activeConnection.serverCapabilities(clientId).contains(ServerCapability.RESOURCES)) {
+        if (!activeConnection.client(clientId).serverCapabilities().contains(ServerCapability.RESOURCES)) {
             throw new AssertionError("resources capability not enabled");
         }
     }
@@ -895,11 +895,11 @@ public final class ServerFeaturesSteps {
                 var msg = switch (scenario) {
                     case "nonexistent resource" -> {
                         var params = Json.createObjectBuilder().add("uri", "file:///nope").build();
-                        yield activeConnection.request(clientId, RequestMethod.RESOURCES_READ, params);
+                        yield activeConnection.client(clientId).request(RequestMethod.RESOURCES_READ, params, Duration.ofSeconds(5));
                     }
                     case "invalid URI format" -> {
                         var params = Json.createObjectBuilder().add("uri", "not_a_uri").build();
-                        yield activeConnection.request(clientId, RequestMethod.RESOURCES_READ, params);
+                        yield activeConnection.client(clientId).request(RequestMethod.RESOURCES_READ, params, Duration.ofSeconds(5));
                     }
                     default -> throw new IllegalArgumentException("Unknown scenario: " + scenario);
                 };
@@ -957,14 +957,14 @@ public final class ServerFeaturesSteps {
         if (activeConnection == null || clientId == null) {
             throw new IllegalStateException("connection not established");
         }
-        activeConnection.request(clientId, RequestMethod.PROMPTS_LIST, Json.createObjectBuilder().build());
+        activeConnection.client(clientId).request(RequestMethod.PROMPTS_LIST, Json.createObjectBuilder().build(), Duration.ofSeconds(5));
     }
 
     // --- Prompts --------------------------------------------------------
 
     @Given("the server has prompts capability enabled")
     public void the_server_has_prompts_capability_enabled() {
-        if (!activeConnection.serverCapabilities(clientId).contains(ServerCapability.PROMPTS)) {
+        if (!activeConnection.client(clientId).serverCapabilities().contains(ServerCapability.PROMPTS)) {
             throw new AssertionError("prompts capability not enabled");
         }
     }
@@ -972,7 +972,7 @@ public final class ServerFeaturesSteps {
     @When("I send a \"prompts\\/list\" request")
     public void i_send_a_prompts_list_request() throws Exception {
         try {
-            activeConnection.request(clientId, RequestMethod.PROMPTS_LIST, Json.createObjectBuilder().build());
+            activeConnection.client(clientId).request(RequestMethod.PROMPTS_LIST, Json.createObjectBuilder().build(), Duration.ofSeconds(5));
             availablePrompts = List.of(Json.createObjectBuilder()
                     .add("name", "code_review")
                     .add("arguments", Json.createArrayBuilder().add(Json.createObjectBuilder().add("name", "code").build()).build())
@@ -1029,7 +1029,7 @@ public final class ServerFeaturesSteps {
         }
         b.add("arguments", args.build());
         try {
-            activeConnection.request(clientId, RequestMethod.PROMPTS_GET, b.build());
+            activeConnection.client(clientId).request(RequestMethod.PROMPTS_GET, b.build(), Duration.ofSeconds(5));
             promptInstance = Json.createObjectBuilder()
                     .add("messages", Json.createArrayBuilder().add(Json.createObjectBuilder()
                             .add("role", "user")
@@ -1117,7 +1117,7 @@ public final class ServerFeaturesSteps {
 
     @Given("the server has prompts capability with \"listChanged\" enabled")
     public void the_server_has_prompts_capability_with_list_changed_enabled() {
-        if (!activeConnection.serverFeatures(clientId).contains(ServerFeature.PROMPTS_LIST_CHANGED)) {
+        if (!activeConnection.client(clientId).serverFeatures().contains(ServerFeature.PROMPTS_LIST_CHANGED)) {
             throw new AssertionError("listChanged not enabled");
         }
     }
@@ -1125,7 +1125,7 @@ public final class ServerFeaturesSteps {
     @When("the server's prompt list changes")
     public void the_server_s_prompt_list_changes() {
         try {
-            activeConnection.notify(clientId, NotificationMethod.PROMPTS_LIST_CHANGED, Json.createObjectBuilder().build());
+            activeConnection.client(clientId).sendNotification(NotificationMethod.PROMPTS_LIST_CHANGED, Json.createObjectBuilder().build());
             promptListChangedNotification = true;
         } catch (Exception e) {
             promptListChangedNotification = false;
@@ -1141,7 +1141,7 @@ public final class ServerFeaturesSteps {
 
     @Given("the server has prompts capability")
     public void the_server_has_prompts_capability() {
-        if (!activeConnection.serverCapabilities(clientId).contains(ServerCapability.PROMPTS)) {
+        if (!activeConnection.client(clientId).serverCapabilities().contains(ServerCapability.PROMPTS)) {
             throw new AssertionError("prompts capability not enabled");
         }
     }
@@ -1158,14 +1158,14 @@ public final class ServerFeaturesSteps {
                 switch (scenario) {
                     case "invalid prompt name" -> {
                         var params = Json.createObjectBuilder().add("name", "nope").build();
-                        activeConnection.request(clientId, RequestMethod.PROMPTS_GET, params);
+                        activeConnection.client(clientId).request(RequestMethod.PROMPTS_GET, params, Duration.ofSeconds(5));
                     }
                     case "missing required arguments" -> {
                         var params = Json.createObjectBuilder().add("name", "code_review").build();
-                        activeConnection.request(clientId, RequestMethod.PROMPTS_GET, params);
+                        activeConnection.client(clientId).request(RequestMethod.PROMPTS_GET, params, Duration.ofSeconds(5));
                     }
                     case "server internal error" -> {
-                        activeConnection.request(clientId, RequestMethod.PROMPTS_GET, Json.createObjectBuilder().build());
+                        activeConnection.client(clientId).request(RequestMethod.PROMPTS_GET, Json.createObjectBuilder().build(), Duration.ofSeconds(5));
                     }
                     default -> throw new IllegalArgumentException("Unknown scenario: " + scenario);
                 }
@@ -1176,14 +1176,14 @@ public final class ServerFeaturesSteps {
 
     @Given("the server supports logging functionality")
     public void the_server_supports_logging_functionality() throws Exception {
-        activeConnection.request(clientId, RequestMethod.LOGGING_SET_LEVEL, Json.createObjectBuilder().add("level", "info").build());
+        activeConnection.client(clientId).request(RequestMethod.LOGGING_SET_LEVEL, Json.createObjectBuilder().add("level", "info").build(), Duration.ofSeconds(5));
     }
 
     // --- Logging --------------------------------------------------------
 
     @Given("the server has logging capability enabled")
     public void the_server_has_logging_capability_enabled() {
-        if (!activeConnection.serverCapabilities(clientId).contains(ServerCapability.LOGGING)) {
+        if (!activeConnection.client(clientId).serverCapabilities().contains(ServerCapability.LOGGING)) {
             throw new AssertionError("logging capability not enabled");
         }
     }
@@ -1192,7 +1192,7 @@ public final class ServerFeaturesSteps {
     public void i_send_a_logging_set_level_request_with_level(String level) throws Exception {
         try {
             var params = Json.createObjectBuilder().add("level", level).build();
-            activeConnection.request(clientId, RequestMethod.LOGGING_SET_LEVEL, params);
+            activeConnection.client(clientId).request(RequestMethod.LOGGING_SET_LEVEL, params, Duration.ofSeconds(5));
             loggingLevelAccepted = true;
             currentLogLevel = level;
         } catch (Exception e) {
@@ -1229,7 +1229,7 @@ public final class ServerFeaturesSteps {
             int value = LOG_LEVELS.getOrDefault(lvl, Integer.MAX_VALUE);
             if (value <= threshold) {
                 try {
-                    activeConnection.notify(clientId, NotificationMethod.MESSAGE, msg);
+                    activeConnection.client(clientId).sendNotification(NotificationMethod.MESSAGE, msg);
                 } catch (Exception ignore) {
                 }
                 logMessages.add(msg);
@@ -1250,7 +1250,7 @@ public final class ServerFeaturesSteps {
                     .add("logger", "test")
                     .add("data", Json.createObjectBuilder().add("msg", "hello").build())
                     .build();
-            activeConnection.notify(clientId, NotificationMethod.MESSAGE, params);
+            activeConnection.client(clientId).sendNotification(NotificationMethod.MESSAGE, params);
             logMessages.add(params);
         } catch (Exception ignore) {
         }
@@ -1320,7 +1320,7 @@ public final class ServerFeaturesSteps {
 
     @Given("the server has logging capability")
     public void the_server_has_logging_capability() {
-        if (!activeConnection.serverCapabilities(clientId).contains(ServerCapability.LOGGING)) {
+        if (!activeConnection.client(clientId).serverCapabilities().contains(ServerCapability.LOGGING)) {
             throw new AssertionError("logging capability not enabled");
         }
     }
@@ -1342,7 +1342,7 @@ public final class ServerFeaturesSteps {
                 var msg = switch (scenario) {
                     case "invalid log level" -> {
                         var params = Json.createObjectBuilder().add("level", "invalid").build();
-                        yield activeConnection.request(clientId, RequestMethod.LOGGING_SET_LEVEL, params);
+                        yield activeConnection.client(clientId).request(RequestMethod.LOGGING_SET_LEVEL, params, Duration.ofSeconds(5));
                     }
                     default -> throw new IllegalArgumentException("Unknown scenario: " + scenario);
                 };
@@ -1360,16 +1360,16 @@ public final class ServerFeaturesSteps {
 
     @Given("the server supports completion functionality")
     public void the_server_supports_completion_functionality() throws Exception {
-        activeConnection.request(clientId, RequestMethod.COMPLETION_COMPLETE, Json.createObjectBuilder()
+        activeConnection.client(clientId).request(RequestMethod.COMPLETION_COMPLETE, Json.createObjectBuilder()
                 .add("ref", Json.createObjectBuilder().add("type", "ref/prompt").add("name", "test").build())
-                .build());
+                .build(), Duration.ofSeconds(5));
     }
 
     // --- Completion -----------------------------------------------------
 
     @Given("the server has completion capability enabled")
     public void the_server_has_completion_capability_enabled() {
-        if (!activeConnection.serverCapabilities(clientId).contains(ServerCapability.COMPLETIONS)) {
+        if (!activeConnection.client(clientId).serverCapabilities().contains(ServerCapability.COMPLETIONS)) {
             throw new AssertionError("completion capability not enabled");
         }
     }
@@ -1391,7 +1391,7 @@ public final class ServerFeaturesSteps {
                 .build();
         var params = Json.createObjectBuilder().add("ref", ref).add("arguments", args).build();
         try {
-            activeConnection.request(clientId, RequestMethod.COMPLETION_COMPLETE, params);
+            activeConnection.client(clientId).request(RequestMethod.COMPLETION_COMPLETE, params, Duration.ofSeconds(5));
             lastCompletion = Json.createObjectBuilder()
                     .add("completion", Json.createObjectBuilder().add("values", Json.createArrayBuilder().add("python").build()).build())
                     .build();
@@ -1433,7 +1433,7 @@ public final class ServerFeaturesSteps {
                 .build();
         var params = Json.createObjectBuilder().add("ref", ref).add("arguments", args).build();
         try {
-            activeConnection.request(clientId, RequestMethod.COMPLETION_COMPLETE, params);
+            activeConnection.client(clientId).request(RequestMethod.COMPLETION_COMPLETE, params, Duration.ofSeconds(5));
             lastCompletion = Json.createObjectBuilder()
                     .add("completion", Json.createObjectBuilder().add("values", Json.createArrayBuilder().add("path").build()).build())
                     .build();
@@ -1463,7 +1463,7 @@ public final class ServerFeaturesSteps {
         var ref = Json.createObjectBuilder().add("type", "ref/prompt").add("name", "multi").build();
         var params = Json.createObjectBuilder().add("ref", ref).add("arguments", args.build()).build();
         try {
-            activeConnection.request(clientId, RequestMethod.COMPLETION_COMPLETE, params);
+            activeConnection.client(clientId).request(RequestMethod.COMPLETION_COMPLETE, params, Duration.ofSeconds(5));
             lastCompletion = Json.createObjectBuilder()
                     .add("completion", Json.createObjectBuilder().add("values", Json.createArrayBuilder().add("framework").build()).build())
                     .build();
@@ -1490,7 +1490,7 @@ public final class ServerFeaturesSteps {
     public void i_request_completions_that_have_many_matches() throws Exception {
         var ref = Json.createObjectBuilder().add("type", "ref/prompt").add("name", "many").build();
         try {
-            activeConnection.request(clientId, RequestMethod.COMPLETION_COMPLETE, Json.createObjectBuilder().add("ref", ref).build());
+            activeConnection.client(clientId).request(RequestMethod.COMPLETION_COMPLETE, Json.createObjectBuilder().add("ref", ref).build(), Duration.ofSeconds(5));
             var values = Json.createArrayBuilder().add("a").add("b").add("c").build();
             lastCompletion = Json.createObjectBuilder()
                     .add("completion", Json.createObjectBuilder()
@@ -1531,7 +1531,7 @@ public final class ServerFeaturesSteps {
 
     @Given("the server has completion capability")
     public void the_server_has_completion_capability() {
-        if (!activeConnection.serverCapabilities(clientId).contains(ServerCapability.COMPLETIONS)) {
+        if (!activeConnection.client(clientId).serverCapabilities().contains(ServerCapability.COMPLETIONS)) {
             throw new AssertionError("completion capability not enabled");
         }
     }
@@ -1597,7 +1597,7 @@ public final class ServerFeaturesSteps {
     public void i_attempt_to_access_restricted_resources() {
         try {
             var params = Json.createObjectBuilder().add("uri", "file:///restricted").build();
-            activeConnection.request(clientId, RequestMethod.RESOURCES_READ, params);
+            activeConnection.client(clientId).request(RequestMethod.RESOURCES_READ, params, Duration.ofSeconds(5));
             unauthorizedDenied = true;
             errorMessageProvided = true;
         } catch (Exception e) {
@@ -1656,7 +1656,7 @@ public final class ServerFeaturesSteps {
 
     @Given("the server supports multiple capabilities")
     public void the_server_supports_multiple_capabilities() {
-        var caps = activeConnection.serverCapabilities(clientId);
+        var caps = activeConnection.client(clientId).serverCapabilities();
         if (caps.size() < 2) {
             throw new AssertionError("insufficient capabilities");
         }

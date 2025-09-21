@@ -280,12 +280,8 @@ public final class UtilitiesSteps {
     @When("I send a ping request with ID {string}")
     public void i_send_a_ping_request_with_id(String id) throws Exception {
         lastPingId = id;
-        lastPingResponse = activeConnection.request(
-                clientId,
-                new RequestId.StringId(id),
-                RequestMethod.PING,
-                null
-        );
+        lastPingResponse = activeConnection.client(clientId)
+                .request(new RequestId.StringId(id), RequestMethod.PING, null, Duration.ofSeconds(5));
         var m = java.util.regex.Pattern.compile("id=([^,]+)")
                 .matcher(lastPingResponse.toString());
         lastPingResponseId = m.find() ? m.group(1) : null;
@@ -304,7 +300,7 @@ public final class UtilitiesSteps {
             }
         }
         try {
-            var msg = activeConnection.request(clientId, RequestMethod.PING, b.build());
+            var msg = activeConnection.client(clientId).request(RequestMethod.PING, b.build(), Duration.ofSeconds(5));
             var repr = msg.toString();
             var m = java.util.regex.Pattern.compile("code=(-?\\d+), message=([^,\\]]+)").matcher(repr);
             if (m.find()) {
@@ -331,7 +327,7 @@ public final class UtilitiesSteps {
     public void i_send_a_ping_request_with_empty_parameters() {
         try {
             var params = Json.createObjectBuilder().build();
-            var msg = activeConnection.request(clientId, RequestMethod.PING, params);
+            var msg = activeConnection.client(clientId).request(RequestMethod.PING, params, Duration.ofSeconds(5));
             var repr = msg.toString();
             var m = java.util.regex.Pattern.compile("code=(-?\\d+), message=([^,\\]]+)").matcher(repr);
             if (m.find()) {
@@ -732,7 +728,7 @@ public final class UtilitiesSteps {
             try {
                 var id = RequestId.parse(e.getKey());
                 var params = Json.createObjectBuilder().add("progressToken", e.getValue()).build();
-                var msg = activeConnection.request(clientId, id, RequestMethod.PING, params);
+                var msg = activeConnection.client(clientId).request(id, RequestMethod.PING, params, Duration.ofSeconds(5));
                 if ("JsonRpcError".equals(msg.getClass().getSimpleName())) {
                     duplicateTokenDetected = true;
                 }
@@ -791,7 +787,7 @@ public final class UtilitiesSteps {
     @When("I attempt to send the request with misplaced progress token")
     public void i_attempt_to_send_the_request_with_misplaced_progress_token() {
         try {
-            activeConnection.request(clientId, RequestMethod.PING, misplacedProgressParams);
+            activeConnection.client(clientId).request(RequestMethod.PING, misplacedProgressParams, Duration.ofSeconds(5));
         } catch (IllegalArgumentException e) {
             progressTokenErrorCode = -32602;
             progressTokenErrorMessage = e.getMessage();
@@ -1103,7 +1099,7 @@ public final class UtilitiesSteps {
                 default -> throw new IllegalArgumentException("unknown cursor type: " + type);
             }
             try {
-                var msg = activeConnection.request(clientId, RequestMethod.TOOLS_LIST, b.build());
+                var msg = activeConnection.client(clientId).request(RequestMethod.TOOLS_LIST, b.build(), Duration.ofSeconds(5));
                 var repr = msg.toString();
                 var m = Pattern.compile("code=(-?\\d+), message=([^,\\]]+)").matcher(repr);
                 paginationErrors.put(type, m.find() ? m.group(1) : "0");

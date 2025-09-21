@@ -7,6 +7,8 @@ import com.amannmalik.mcp.core.*;
 import com.amannmalik.mcp.jsonrpc.*;
 import com.amannmalik.mcp.prompts.ListPromptsResult;
 import com.amannmalik.mcp.prompts.PromptListChangedNotification;
+import com.amannmalik.mcp.resources.ReadResourceResult;
+import com.amannmalik.mcp.resources.ResourceListChangedNotification;
 import com.amannmalik.mcp.roots.RootsManager;
 import com.amannmalik.mcp.spi.*;
 import com.amannmalik.mcp.transport.StdioTransport;
@@ -15,14 +17,17 @@ import com.amannmalik.mcp.util.*;
 import jakarta.json.*;
 import jakarta.json.stream.JsonParsingException;
 
-import java.io.EOFException;
-import java.io.IOException;
+import java.io.*;
 import java.lang.System.Logger;
+import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Function;
+import java.util.function.Supplier;
 
 /// - [Server](specification/2025-06-18/server/index.mdx)
 /// - [MCP server conformance test](src/test/resources/com/amannmalik/mcp/mcp_conformance.feature:6-34)
@@ -54,15 +59,20 @@ public final class McpServer extends JsonRpcEndpoint implements AutoCloseable {
                     new PromptAbstractEntityCodec(),
                     (page, meta) -> new ListPromptsResult(page.items(), page.nextCursor(), meta));
     private static final Logger LOG = PlatformLog.get(McpServer.class);
-
+    private static final JsonCodec<ResourceListChangedNotification> RESOURCE_LIST_CHANGED_NOTIFICATION_JSON_CODEC = new ResourceListChangedNotificationJsonCodec();
+    private static final JsonCodec<ResourceUpdatedNotification> RESOURCE_UPDATED_NOTIFICATION_JSON_CODEC = new ResourceUpdatedNotificationAbstractEntityCodec();
+    private static final CallToolRequestAbstractEntityCodec CALL_TOOL_REQUEST_CODEC = new CallToolRequestAbstractEntityCodec();
+    private static final JsonCodec<ToolResult> TOOL_RESULT_CODEC = new ToolResultAbstractEntityCodec();
     private final McpServerConfiguration config;
     private final Set<ServerCapability> serverCapabilities;
-    private final ResourceOrchestrator resourceOrchestrator;
+    private final ResourceProvider resources;
+    private final ResourceAccessPolicy resourceAccess;
+    private final Map<URI, AutoCloseable> resourceSubscriptions = new ConcurrentHashMap<>();
     private final ToolProvider tools;
     private final PromptProvider prompts;
     private final CompletionProvider completions;
     private final SamplingProvider sampling;
-    private final ToolCallHandler toolHandler;
+    private final RateLimiter toolLimiter;
     private final RootsManager rootsManager;
     private final SamplingAccessPolicy samplingAccess;
     private final Principal principal;
@@ -70,6 +80,7 @@ public final class McpServer extends JsonRpcEndpoint implements AutoCloseable {
     private final RateLimiter logLimiter;
     private final ServerLifecycle lifecycle;
     private final AtomicReference<LoggingLevel> logLevel = new AtomicReference<>();
+    private AutoCloseable resourceListSubscription;
     private AutoCloseable toolListSubscription;
     private AutoCloseable promptsSubscription;
 
@@ -81,10 +92,6 @@ public final class McpServer extends JsonRpcEndpoint implements AutoCloseable {
                      SamplingProvider sampling,
                      ResourceAccessPolicy resourceAccess,
                      Principal principal,
-                     // Instructions describing how to use the server and its features
-                     // This can be used by clients to improve the LLM's understanding of available tools, resources, etc.
-                     // It can be thought of like a "hint" to the model.
-                     // For example, this information MAY be added to the system prompt.
                      String instructions) throws Exception {
         super(createTransport(config),
                 new ProgressManager(new RateLimiter(config.progressPerSecond(),
@@ -108,13 +115,14 @@ public final class McpServer extends JsonRpcEndpoint implements AutoCloseable {
         this.sampling = sampling;
         this.principal = principal;
         this.lifecycle = new ServerLifecycle(config.supportedVersions(), serverCapabilities, serverInfo, instructions);
-        this.toolHandler = createToolHandler(tools, config, principal);
+        this.toolLimiter = limiter(config.toolsPerSecond(), config.rateLimiterWindowMs());
         this.samplingAccess = config.samplingAccessPolicy();
         this.logLevel.set(config.initialLogLevel());
         this.rootsManager = new RootsManager(lifecycle::clientCapabilities, this::request);
-        this.resourceOrchestrator = resources == null ? null :
-                new ResourceOrchestrator(resources, resourceAccess, principal, rootsManager, lifecycle::state, (method, params) -> send(new JsonRpcNotification(method.method(), params)), progress);
+        this.resources = resources;
+        this.resourceAccess = resourceAccess;
         subscribeListChanges(tools, prompts);
+        subscribeResourceListChanges(resources);
         registerHandlers(resources, tools, prompts, completions);
     }
 
@@ -179,6 +187,21 @@ public final class McpServer extends JsonRpcEndpoint implements AutoCloseable {
         return PlatformLog.toPlatformLevel(l);
     }
 
+    private static <S extends AutoCloseable> S subscribeListChanges0(
+            Supplier<LifecycleState> state,
+            Function<Runnable, S> factory,
+            Runnable listener) {
+        Objects.requireNonNull(state, "state");
+        Objects.requireNonNull(factory, "factory");
+        Objects.requireNonNull(listener, "listener");
+        return factory.apply(() -> {
+            if (state.get() != LifecycleState.OPERATION) {
+                return;
+            }
+            listener.run();
+        });
+    }
+
     public void serve() throws IOException {
         while (lifecycle.state() != LifecycleState.SHUTDOWN) {
             var obj = receiveMessage();
@@ -199,38 +222,51 @@ public final class McpServer extends JsonRpcEndpoint implements AutoCloseable {
         }
     }
 
-    private ToolCallHandler createToolHandler(ToolProvider tools,
-                                              McpServerConfiguration config,
-                                              Principal principal) {
-        if (tools == null) {
-            return null;
-        }
-        return new ToolCallHandler(
-                tools,
-                config.toolAccessPolicy(),
-                limiter(config.toolsPerSecond(), config.rateLimiterWindowMs()),
-                principal,
-                config,
-                lifecycle::clientCapabilities,
-                this::elicit);
-    }
-
     private void subscribeListChanges(ToolProvider tools, PromptProvider prompts) {
         if (tools != null && tools.supportsListChanged()) {
-            toolListSubscription = SubscriptionUtil.subscribeListChanges(
+            toolListSubscription = subscribeListChanges0(
                     lifecycle::state,
                     tools::onListChanged,
-                    () -> send(new JsonRpcNotification(
-                            NotificationMethod.TOOLS_LIST_CHANGED.method(),
-                            TOOL_LIST_CHANGED_NOTIFICATION_JSON_CODEC.toJson(new ToolListChangedNotification()))));
+                    () -> {
+                        try {
+                            send(new JsonRpcNotification(
+                                    NotificationMethod.TOOLS_LIST_CHANGED.method(),
+                                    TOOL_LIST_CHANGED_NOTIFICATION_JSON_CODEC.toJson(new ToolListChangedNotification())));
+                        } catch (IOException e) {
+                            throw new UncheckedIOException(e);
+                        }
+                    });
         }
         if (prompts != null && prompts.supportsListChanged()) {
-            promptsSubscription = SubscriptionUtil.subscribeListChanges(
+            promptsSubscription = subscribeListChanges0(
                     lifecycle::state,
                     prompts::onListChanged,
-                    () -> send(new JsonRpcNotification(
-                            NotificationMethod.PROMPTS_LIST_CHANGED.method(),
-                            PromptListChangedNotification.CODEC.toJson(new PromptListChangedNotification()))));
+                    () -> {
+                        try {
+                            send(new JsonRpcNotification(
+                                    NotificationMethod.PROMPTS_LIST_CHANGED.method(),
+                                    PromptListChangedNotification.CODEC.toJson(new PromptListChangedNotification())));
+                        } catch (IOException e) {
+                            throw new UncheckedIOException(e);
+                        }
+                    });
+        }
+    }
+
+    private void subscribeResourceListChanges(ResourceProvider resources) {
+        if (resources != null && resources.supportsListChanged()) {
+            resourceListSubscription = subscribeListChanges0(
+                    lifecycle::state,
+                    resources::onListChanged,
+                    () -> {
+                        try {
+                            send(new JsonRpcNotification(
+                                    NotificationMethod.RESOURCES_LIST_CHANGED.method(),
+                                    RESOURCE_LIST_CHANGED_NOTIFICATION_JSON_CODEC.toJson(new ResourceListChangedNotification())));
+                        } catch (IOException e) {
+                            throw new UncheckedIOException(e);
+                        }
+                    });
         }
     }
 
@@ -244,8 +280,14 @@ public final class McpServer extends JsonRpcEndpoint implements AutoCloseable {
         registerNotification(NotificationMethod.CANCELLED, this::cancelled);
         registerNotification(NotificationMethod.ROOTS_LIST_CHANGED, n -> rootsManager.listChangedNotification());
 
-        if (resourceOrchestrator != null) {
-            resourceOrchestrator.register(this);
+        if (resources != null) {
+            registerRequest(RequestMethod.RESOURCES_LIST, this::listResources);
+            registerRequest(RequestMethod.RESOURCES_READ, this::readResource);
+            registerRequest(RequestMethod.RESOURCES_TEMPLATES_LIST, this::listResourceTemplates);
+            if (resources.supportsSubscribe()) {
+                registerRequest(RequestMethod.RESOURCES_SUBSCRIBE, this::subscribeResource);
+                registerRequest(RequestMethod.RESOURCES_UNSUBSCRIBE, this::unsubscribeResource);
+            }
         }
         if (tools != null) {
             registerRequest(RequestMethod.TOOLS_LIST, this::listTools);
@@ -356,10 +398,10 @@ public final class McpServer extends JsonRpcEndpoint implements AutoCloseable {
 
     private Set<ServerFeature> serverFeatures() {
         var f = EnumSet.noneOf(ServerFeature.class);
-        if (resourceOrchestrator != null && resourceOrchestrator.supportsSubscribe()) {
+        if (resources != null && resources.supportsSubscribe()) {
             f.add(ServerFeature.RESOURCES_SUBSCRIBE);
         }
-        if (resourceOrchestrator != null && resourceOrchestrator.supportsListChanged()) {
+        if (resources != null && resources.supportsListChanged()) {
             f.add(ServerFeature.RESOURCES_LIST_CHANGED);
         }
         if (tools != null && tools.supportsListChanged()) {
@@ -430,9 +472,63 @@ public final class McpServer extends JsonRpcEndpoint implements AutoCloseable {
         }
     }
 
+    private JsonRpcMessage handleToolCall(JsonRpcRequest req) {
+        CallToolRequest callRequest;
+        try {
+            callRequest = CALL_TOOL_REQUEST_CODEC.fromJson(req.params());
+        } catch (IllegalArgumentException e) {
+            return JsonRpcError.of(req.id(), JsonRpcErrorCode.INVALID_PARAMS, e.getMessage());
+        }
+        var limit = rateLimit(toolLimiter, callRequest.name());
+        if (limit.isPresent()) {
+            return JsonRpcError.of(req.id(), config.rateLimitErrorCode(), limit.get());
+        }
+        var tool = tools.find(callRequest.name()).orElse(null);
+        if (tool == null) {
+            return JsonRpcError.of(req.id(), JsonRpcErrorCode.INVALID_PARAMS, "Unknown tool: " + callRequest.name());
+        }
+        try {
+            config.toolAccessPolicy().requireAllowed(principal, tool);
+        } catch (SecurityException e) {
+            return JsonRpcError.of(req.id(), JsonRpcErrorCode.INTERNAL_ERROR, config.errorAccessDenied());
+        }
+        return invokeTool(req, tool, callRequest.arguments());
+    }
+
+    private JsonRpcMessage invokeTool(JsonRpcRequest req, Tool tool, JsonObject args) {
+        try {
+            var result = tools.call(tool.name(), args);
+            return new JsonRpcResponse(req.id(), TOOL_RESULT_CODEC.toJson(result));
+        } catch (IllegalArgumentException e) {
+            return recoverTool(req, tool, e);
+        }
+    }
+
+    private JsonRpcMessage recoverTool(JsonRpcRequest req, Tool tool, IllegalArgumentException failure) {
+        if (!lifecycle.clientCapabilities().contains(ClientCapability.ELICITATION)) {
+            return JsonRpcError.of(req.id(), JsonRpcErrorCode.INVALID_PARAMS, failure.getMessage());
+        }
+        try {
+            var er = new ElicitRequest(
+                    "Provide arguments for tool '" + tool.name() + "'",
+                    tool.inputSchema(),
+                    null);
+            var res = elicit(er);
+            if (res.action() != ElicitationAction.ACCEPT) {
+                return JsonRpcError.of(req.id(), JsonRpcErrorCode.INVALID_PARAMS, "Tool invocation cancelled");
+            }
+            var result = tools.call(tool.name(), res.content());
+            return new JsonRpcResponse(req.id(), TOOL_RESULT_CODEC.toJson(result));
+        } catch (IllegalArgumentException e) {
+            return JsonRpcError.of(req.id(), JsonRpcErrorCode.INVALID_PARAMS, e.getMessage());
+        } catch (Exception e) {
+            return JsonRpcError.of(req.id(), JsonRpcErrorCode.INTERNAL_ERROR, e.getMessage());
+        }
+    }
+
     private JsonRpcMessage callTool(JsonRpcRequest req) {
         requireServerCapability(ServerCapability.TOOLS);
-        return toolHandler.handle(req);
+        return handleToolCall(req);
     }
 
     private JsonRpcMessage listPrompts(JsonRpcRequest req) {
@@ -460,6 +556,174 @@ public final class McpServer extends JsonRpcEndpoint implements AutoCloseable {
         } catch (IllegalArgumentException e) {
             return JsonRpcError.of(req.id(), JsonRpcErrorCode.INVALID_PARAMS, e.getMessage());
         }
+    }
+
+    private JsonRpcMessage listResources(JsonRpcRequest req) {
+        if (lifecycle.state() != LifecycleState.OPERATION) {
+            return JsonRpcError.of(req.id(), -32002, "Server not initialized");
+        }
+        var progressToken = ProgressToken.fromMeta(req.params());
+        try {
+            var pageReq = PaginatedRequest.CODEC.fromJson(req.params());
+            var cursor = CursorUtil.sanitize(pageReq.cursor());
+            progressToken.ifPresent(t -> sendResourceProgress(t, 0.0, "Starting resource list"));
+            var page = resources.list(cursor);
+            progressToken.ifPresent(t -> sendResourceProgress(t, 0.5, "Filtering resources"));
+            var filtered = page.items().stream()
+                    .filter(r -> resourceAllowed(r.annotations()) && withinRoots(r.uri()))
+                    .toList();
+            progressToken.ifPresent(t -> sendResourceProgress(t, 1.0, "Completed resource list"));
+            var result = new ListResourcesResult(filtered, page.nextCursor(), null);
+            return new JsonRpcResponse(req.id(), AbstractEntityCodec.paginatedResult(
+                    "resources",
+                    "resource",
+                    r -> new Pagination.Page<>(r.resources(), r.nextCursor()),
+                    ListResourcesResult::_meta,
+                    new ResourceAbstractEntityCodec(),
+                    (p, meta) -> new ListResourcesResult(p.items(), p.nextCursor(), meta)).toJson(result));
+        } catch (IllegalArgumentException e) {
+            return JsonRpcError.of(req.id(), JsonRpcErrorCode.INVALID_PARAMS, e.getMessage());
+        }
+    }
+
+    private JsonRpcMessage readResource(JsonRpcRequest req) {
+        ReadResourceRequest rrr;
+        try {
+            rrr = (new ReadResourceRequestAbstractEntityCodec()).fromJson(req.params());
+        } catch (IllegalArgumentException e) {
+            return JsonRpcError.of(req.id(), JsonRpcErrorCode.INVALID_PARAMS, "Invalid params");
+        }
+        return withExistingResource(req, rrr.uri(), block -> {
+            var result = new ReadResourceResult(List.of(block), null);
+            return new JsonRpcResponse(req.id(), new ReadResourceResultJsonCodec().toJson(result));
+        });
+    }
+
+    private JsonRpcMessage listResourceTemplates(JsonRpcRequest req) {
+        try {
+            var pageReq = PaginatedRequest.CODEC.fromJson(req.params());
+            var cursor = CursorUtil.sanitize(pageReq.cursor());
+            var page = resources.listTemplates(cursor);
+            var filtered = page.items().stream()
+                    .filter(t -> resourceAllowed(t.annotations()))
+                    .toList();
+            var result = new ListResourceTemplatesResult(filtered, page.nextCursor(), null);
+            return new JsonRpcResponse(req.id(), AbstractEntityCodec.paginatedResult(
+                    "resourceTemplates",
+                    "resourceTemplate",
+                    r -> new Pagination.Page<>(r.resourceTemplates(), r.nextCursor()),
+                    ListResourceTemplatesResult::_meta,
+                    new ResourceTemplateAbstractEntityCodec(),
+                    (p, meta) -> new ListResourceTemplatesResult(p.items(), p.nextCursor(), meta)).toJson(result));
+        } catch (IllegalArgumentException e) {
+            return JsonRpcError.of(req.id(), JsonRpcErrorCode.INVALID_PARAMS, e.getMessage());
+        }
+    }
+
+    private JsonRpcMessage subscribeResource(JsonRpcRequest req) {
+        SubscribeRequest sr;
+        try {
+            sr = (new SubscribeRequestAbstractEntityCodec()).fromJson(req.params());
+        } catch (IllegalArgumentException e) {
+            return JsonRpcError.of(req.id(), JsonRpcErrorCode.INVALID_PARAMS, e.getMessage());
+        }
+        var uri = sr.uri();
+        return withAccessibleUri(req, uri, () -> {
+            if (resources.get(uri).isEmpty()) {
+                return JsonRpcError.of(req.id(), -32002, "Resource not found",
+                        Json.createObjectBuilder().add("uri", uri.toString()).build());
+            }
+            if (resourceSubscriptions.containsKey(uri)) {
+                return JsonRpcError.of(req.id(), -32602, "Already subscribed to resource",
+                        Json.createObjectBuilder().add("uri", uri.toString()).build());
+            }
+            try {
+                var sub = resources.subscribe(uri, update -> {
+                    try {
+                        var n = new ResourceUpdatedNotification(update.uri(), update.title());
+                        send(new JsonRpcNotification(NotificationMethod.RESOURCES_UPDATED.method(),
+                                RESOURCE_UPDATED_NOTIFICATION_JSON_CODEC.toJson(n)));
+                    } catch (IOException e) {
+                        throw new RuntimeException(e);
+                    }
+                });
+                resourceSubscriptions.put(uri, sub);
+            } catch (Exception e) {
+                return JsonRpcError.of(req.id(), JsonRpcErrorCode.INTERNAL_ERROR, e.getMessage());
+            }
+            return new JsonRpcResponse(req.id(), JsonValue.EMPTY_JSON_OBJECT);
+        });
+    }
+
+    private JsonRpcMessage unsubscribeResource(JsonRpcRequest req) {
+        UnsubscribeRequest ur;
+        try {
+            ur = (new UnsubscribeRequestAbstractEntityCodec()).fromJson(req.params());
+        } catch (IllegalArgumentException e) {
+            return JsonRpcError.of(req.id(), JsonRpcErrorCode.INVALID_PARAMS, e.getMessage());
+        }
+        var uri = ur.uri();
+        return withAccessibleUri(req, uri, () -> {
+            if (!resourceSubscriptions.containsKey(uri)) {
+                return JsonRpcError.of(req.id(), -32602, "No active subscription for resource",
+                        Json.createObjectBuilder().add("uri", uri.toString()).build());
+            }
+            var sub = resourceSubscriptions.remove(uri);
+            CloseUtil.close(sub);
+            return new JsonRpcResponse(req.id(), JsonValue.EMPTY_JSON_OBJECT);
+        });
+    }
+
+    private boolean resourceAllowed(Annotations ann) {
+        try {
+            resourceAccess.requireAllowed(principal, ann);
+            return true;
+        } catch (SecurityException e) {
+            return false;
+        }
+    }
+
+    private boolean withinRoots(URI uri) {
+        return RootChecker.withinRoots(uri, rootsManager.roots());
+    }
+
+    private boolean canAccessResource(URI uri) {
+        if (!withinRoots(uri)) {
+            return false;
+        }
+        return resources.get(uri)
+                .map(Resource::annotations)
+                .map(this::resourceAllowed)
+                .orElse(true);
+    }
+
+    private void sendResourceProgress(ProgressToken token, double current, String message) {
+        try {
+            progress.send(new ProgressNotification(token, current, null, message),
+                    (method, payload) -> send(new JsonRpcNotification(method.method(), payload)));
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private JsonRpcMessage withAccessibleUri(JsonRpcRequest req, URI uri, Supplier<JsonRpcMessage> action) {
+        if (!canAccessResource(uri)) {
+            return JsonRpcError.of(req.id(), -32002, "Resource not found",
+                    Json.createObjectBuilder().add("uri", uri.toString()).build());
+        }
+        return action.get();
+    }
+
+    private JsonRpcMessage withExistingResource(JsonRpcRequest req, URI uri, Function<ResourceBlock, JsonRpcMessage> action) {
+        var block = resources.read(uri);
+        if (block == null) {
+            return JsonRpcError.of(req.id(), -32002, "Resource not found",
+                    Json.createObjectBuilder().add("uri", uri.toString()).build());
+        }
+        if (!canAccessResource(uri)) {
+            return JsonRpcError.of(req.id(), JsonRpcErrorCode.INTERNAL_ERROR, "Access denied");
+        }
+        return action.apply(block);
     }
 
     private JsonRpcMessage setLogLevel(JsonRpcRequest req) {
@@ -573,7 +837,14 @@ public final class McpServer extends JsonRpcEndpoint implements AutoCloseable {
     @Override
     public void close() throws IOException {
         shutdown();
-        CloseUtil.close(resourceOrchestrator);
+        resourceSubscriptions.values().forEach(CloseUtil::close);
+        if (resourceListSubscription != null) {
+            CloseUtil.close(resourceListSubscription);
+            resourceListSubscription = null;
+        }
+        if (resources != null) {
+            resources.close();
+        }
         if (toolListSubscription != null) {
             CloseUtil.close(toolListSubscription);
             toolListSubscription = null;

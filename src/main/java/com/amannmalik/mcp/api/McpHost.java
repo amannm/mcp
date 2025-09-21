@@ -220,29 +220,15 @@ public final class McpHost implements AutoCloseable {
     }
 
     public JsonObject createMessage(String clientId, JsonObject params) throws IOException {
-        var client = requireConnectedClient(clientId);
+        var client = requireClient(clientId);
+        if (!client.connected()) {
+            throw new IllegalStateException("Client not connected: " + clientId);
+        }
         requireCapability(client, ClientCapability.SAMPLING);
         consents.requireConsent(principal, "sampling");
         samplingAccess.requireAllowed(principal);
         var resp = JsonRpc.expectResponse(client.request(RequestMethod.SAMPLING_CREATE_MESSAGE, params, TIMEOUT));
         return resp.result();
-    }
-
-    public void setClientLogLevel(String clientId, LoggingLevel level) throws IOException {
-        var client = requireConnectedClient(clientId);
-        client.setLogLevel(level);
-    }
-
-    public JsonRpcMessage request(String id, RequestMethod method, JsonObject params) throws IOException {
-        return requireClientForMethod(id, method).request(method, params, TIMEOUT);
-    }
-
-    public JsonRpcMessage request(String id, RequestId reqId, RequestMethod method, JsonObject params) throws IOException {
-        return requireClientForMethod(id, method).request(reqId, method, params, TIMEOUT);
-    }
-
-    public void notify(String id, NotificationMethod method, JsonObject params) throws IOException {
-        requireClientForMethod(id, method).sendNotification(method, params);
     }
 
     public void grantConsent(String scope) {
@@ -281,55 +267,14 @@ public final class McpHost implements AutoCloseable {
         return Collections.unmodifiableSet(clients.keySet());
     }
 
+    public McpClient client(String id) {
+        return requireClient(id);
+    }
+
     private McpClient requireClient(String id) {
         var client = clients.get(id);
         if (client == null) {
             throw new IllegalArgumentException("Unknown client: " + id);
-        }
-        return client;
-    }
-
-    public Set<ServerCapability> serverCapabilities(String id) {
-        return EnumSet.copyOf(requireClient(id).serverCapabilities());
-    }
-
-    public Set<ServerFeature> serverFeatures(String id) {
-        return EnumSet.copyOf(requireClient(id).serverFeatures());
-    }
-
-    public String getProtocolVersion(String clientId) {
-        return requireClient(clientId).protocolVersion();
-    }
-
-    public ServerInfo getServerInfo(String clientId) {
-        return requireClient(clientId).serverInfo();
-    }
-
-    public Set<String> getServerCapabilityNames(String clientId) {
-        return requireClient(clientId).serverCapabilityNames();
-    }
-
-    public Map<String, String> getServerInfoMap(String clientId) {
-        return requireClient(clientId).serverInfoMap();
-    }
-
-    private McpClient requireConnectedClient(String id) {
-        var client = requireClient(id);
-        if (!client.connected()) {
-            throw new IllegalStateException("Client not connected: " + id);
-        }
-        return client;
-    }
-
-    private McpClient requireClientForMethod(String id, JsonRpcMethod method) {
-        var client = requireConnectedClient(id);
-        if (method instanceof RequestMethod rm) {
-            for (var cap : rm.serverCapabilities()) {
-                requireCapability(client, cap);
-            }
-        }
-        for (var cap : method.clientCapabilities()) {
-            requireCapability(client, cap);
         }
         return client;
     }

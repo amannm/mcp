@@ -282,7 +282,7 @@ public final class HostCommand {
                             if (parts.length != 2) {
                                 System.out.println("Usage: protocol-version <client-id>");
                             } else {
-                                System.out.println(host.getProtocolVersion(parts[1]));
+                                System.out.println(host.client(parts[1]).protocolVersion());
                             }
                         }
                         case "grant-consent" -> {
@@ -359,35 +359,35 @@ public final class HostCommand {
                             if (parts.length != 2) {
                                 System.out.println("Usage: server-capabilities <client-id>");
                             } else {
-                                System.out.println(host.serverCapabilities(parts[1]));
+                                System.out.println(host.client(parts[1]).serverCapabilities());
                             }
                         }
                         case "server-capability-names" -> {
                             if (parts.length != 2) {
                                 System.out.println("Usage: server-capability-names <client-id>");
                             } else {
-                                System.out.println(host.getServerCapabilityNames(parts[1]));
+                                System.out.println(host.client(parts[1]).serverCapabilityNames());
                             }
                         }
                         case "server-features" -> {
                             if (parts.length != 2) {
                                 System.out.println("Usage: server-features <client-id>");
                             } else {
-                                System.out.println(host.serverFeatures(parts[1]));
+                                System.out.println(host.client(parts[1]).serverFeatures());
                             }
                         }
                         case "server-info" -> {
                             if (parts.length != 2) {
                                 System.out.println("Usage: server-info <client-id>");
                             } else {
-                                System.out.println(host.getServerInfo(parts[1]));
+                                System.out.println(host.client(parts[1]).serverInfo());
                             }
                         }
                         case "server-info-map" -> {
                             if (parts.length != 2) {
                                 System.out.println("Usage: server-info-map <client-id>");
                             } else {
-                                System.out.println(host.getServerInfoMap(parts[1]));
+                                System.out.println(host.client(parts[1]).serverInfoMap());
                             }
                         }
                         case "call-tool" -> {
@@ -467,7 +467,7 @@ public final class HostCommand {
                             } else {
                                 try {
                                     var level = LoggingLevel.valueOf(parts[2].toUpperCase());
-                                    host.setClientLogLevel(parts[1], level);
+                                    host.client(parts[1]).setLogLevel(level);
                                     System.out.println("Set log level for " + parts[1] + " to " + level);
                                 } catch (IllegalArgumentException e) {
                                     System.out.println("Invalid level. Valid values: " + Arrays.toString(LoggingLevel.values()));
@@ -507,7 +507,7 @@ public final class HostCommand {
                                 var params = parts.length > 3 ?
                                         Json.createReader(new StringReader(parts[3])).readObject() :
                                         JsonValue.EMPTY_JSON_OBJECT;
-                                System.out.println(host.request(parts[1], RequestMethod.from(parts[2]).orElseThrow(), params));
+                                System.out.println(host.client(parts[1]).request(RequestMethod.from(parts[2]).orElseThrow(), params, Duration.ofSeconds(5)));
                             }
                         }
                         case "notify" -> {
@@ -517,7 +517,7 @@ public final class HostCommand {
                                 var params = parts.length > 3 ?
                                         Json.createReader(new StringReader(parts[3])).readObject() :
                                         JsonValue.EMPTY_JSON_OBJECT;
-                                host.notify(parts[1], NotificationMethod.from(parts[2]).orElseThrow(), params);
+                                host.client(parts[1]).sendNotification(NotificationMethod.from(parts[2]).orElseThrow(), params);
                                 System.out.println("Notification sent");
                             }
                         }

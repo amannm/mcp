@@ -8,7 +8,7 @@ import com.amannmalik.mcp.util.InitializeResponse;
 import java.util.*;
 
 /**
- * Coordinates lifecycle transitions and negotiation details for {@link com.amannmalik.mcp.api.McpServer}.
+ * Coordinates lifecycle transitions and negotiation details for {@link McpServer}.
  */
 public final class ServerLifecycle {
     private static final int NOT_INITIALIZED_ERROR = -32002;
