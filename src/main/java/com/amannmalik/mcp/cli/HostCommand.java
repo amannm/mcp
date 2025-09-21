@@ -124,7 +124,7 @@ public final class HostCommand {
 
             try (var host = new McpHost(config)) {
                 for (var clientConfig : clientConfigs) {
-                    host.connect(clientConfig.clientId());
+                    host.client(clientConfig.clientId()).connect();
                     if (verbose || clientConfig.verbose()) {
                         LOG.log(Logger.Level.INFO, "Registered client: " + clientConfig.clientId());
                     }
