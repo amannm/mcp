@@ -215,10 +215,12 @@ public final class McpServer extends JsonRpcEndpoint implements AutoCloseable {
                 handleInvalidRequest(e);
             } catch (IOException e) {
                 LOG.log(Logger.Level.ERROR, () -> config.errorProcessing() + ": " + e.getMessage());
-                sendLog(LoggingLevel.ERROR, config.serverLoggerName(), Json.createValue(e.getMessage()));
+                var data = Json.createValue(e.getMessage());
+                sendLog(new LoggingMessageNotification(LoggingLevel.ERROR, config.serverLoggerName(), data));
             } catch (Exception e) {
                 LOG.log(Logger.Level.ERROR, () -> "Unexpected " + config.errorProcessing().toLowerCase(Locale.ROOT) + ": " + e.getMessage());
-                sendLog(LoggingLevel.ERROR, config.serverLoggerName(), Json.createValue(e.getMessage()));
+                var data = Json.createValue(e.getMessage());
+                sendLog(new LoggingMessageNotification(LoggingLevel.ERROR, config.serverLoggerName(), data));
             }
         }
     }
@@ -280,7 +282,6 @@ public final class McpServer extends JsonRpcEndpoint implements AutoCloseable {
         registerRequest(RequestMethod.PING, this::ping);
         registerNotification(NotificationMethod.CANCELLED, this::cancelled);
         registerNotification(NotificationMethod.ROOTS_LIST_CHANGED, n -> rootsManager.listChangedNotification());
-
         if (resources != null) {
             registerRequest(RequestMethod.RESOURCES_LIST, this::listResources);
             registerRequest(RequestMethod.RESOURCES_READ, this::readResource);
@@ -309,13 +310,14 @@ public final class McpServer extends JsonRpcEndpoint implements AutoCloseable {
         try {
             return Optional.of(transport.receive());
         } catch (EOFException e) {
-            shutdown();
+            lifecycle.shutdown();
         } catch (JsonParsingException e) {
             handleParseError(e);
         } catch (IOException e) {
             LOG.log(Logger.Level.ERROR, () -> config.errorProcessing() + ": " + e.getMessage());
             try {
-                sendLog(LoggingLevel.ERROR, config.serverLoggerName(), Json.createValue(e.getMessage()));
+                JsonValue data = Json.createValue(e.getMessage());
+                sendLog(new LoggingMessageNotification(LoggingLevel.ERROR, config.serverLoggerName(), data));
             } catch (IOException ioe) {
                 LOG.log(Logger.Level.ERROR, () -> "Failed to send error: " + ioe.getMessage());
             }
@@ -331,7 +333,7 @@ public final class McpServer extends JsonRpcEndpoint implements AutoCloseable {
                                String message) {
         LOG.log(level(logLevel), prefix + ": " + message);
         try {
-            sendLog(logLevel, logger, Json.createValue(message));
+            sendLog(new LoggingMessageNotification(logLevel, logger, (JsonValue) Json.createValue(message)));
             send(JsonRpcError.of(id, code, message));
         } catch (IOException ioe) {
             LOG.log(Logger.Level.ERROR, () -> "Failed to send error: " + ioe.getMessage());
@@ -358,27 +360,15 @@ public final class McpServer extends JsonRpcEndpoint implements AutoCloseable {
                 e.getMessage());
     }
 
-    private InitializeResponse initialize(InitializeRequest request) {
-        return lifecycle.initialize(request, serverFeatures());
-    }
-
-    private void initialized() {
-        lifecycle.confirmInitialized();
-    }
-
-    private void shutdown() {
-        lifecycle.shutdown();
-    }
-
     private JsonRpcMessage initialize(JsonRpcRequest req) {
         var init = INITIALIZE_REQUEST_CODEC.fromJson(req.params());
-        var resp = initialize(init);
+        var resp = lifecycle.initialize(init, serverFeatures());
         var json = INITIALIZE_RESPONSE_CODEC.toJson(resp);
         return new JsonRpcResponse(req.id(), json);
     }
 
     private void initialized(JsonRpcNotification ignored) {
-        initialized();
+        lifecycle.confirmInitialized();
         rootsManager.refreshAsync();
     }
 
@@ -391,10 +381,6 @@ public final class McpServer extends JsonRpcEndpoint implements AutoCloseable {
             }
         }
         return new JsonRpcResponse(req.id(), Json.createObjectBuilder().build());
-    }
-
-    private void requireClientCapability(ClientCapability cap) {
-        lifecycle.requireClientCapability(cap);
     }
 
     private Set<ServerFeature> serverFeatures() {
@@ -420,14 +406,6 @@ public final class McpServer extends JsonRpcEndpoint implements AutoCloseable {
         }
     }
 
-    private Optional<JsonRpcError> checkInitialized(RequestId id) {
-        return lifecycle.ensureInitialized(id, config.errorNotInitialized());
-    }
-
-    private Optional<JsonRpcMessage> ensureInitialized(JsonRpcRequest req) {
-        return checkInitialized(req.id()).map(error -> (JsonRpcMessage) error);
-    }
-
     private Duration normalizeTimeout(Duration timeout) {
         if (timeout == null || timeout.isZero() || timeout.isNegative()) {
             return config.defaultTimeoutMs();
@@ -450,14 +428,14 @@ public final class McpServer extends JsonRpcEndpoint implements AutoCloseable {
         progress.release(cn.requestId());
         try {
             var payload = reason.<JsonValue>map(Json::createValue).orElse(JsonValue.NULL);
-            sendLog(LoggingLevel.INFO, config.cancellationLoggerName(), payload);
+            sendLog(new LoggingMessageNotification(LoggingLevel.INFO, config.cancellationLoggerName(), payload));
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
     }
 
     private JsonRpcMessage listTools(JsonRpcRequest req) {
-        var initCheck = ensureInitialized(req);
+        var initCheck = lifecycle.ensureInitialized(req.id(), config.errorNotInitialized()).map(error -> (JsonRpcMessage) error);
         if (initCheck.isPresent()) {
             return initCheck.get();
         }
@@ -471,29 +449,6 @@ public final class McpServer extends JsonRpcEndpoint implements AutoCloseable {
         } catch (IllegalArgumentException e) {
             return JsonRpcError.of(req.id(), JsonRpcErrorCode.INVALID_PARAMS, e.getMessage());
         }
-    }
-
-    private JsonRpcMessage handleToolCall(JsonRpcRequest req) {
-        CallToolRequest callRequest;
-        try {
-            callRequest = CALL_TOOL_REQUEST_CODEC.fromJson(req.params());
-        } catch (IllegalArgumentException e) {
-            return JsonRpcError.of(req.id(), JsonRpcErrorCode.INVALID_PARAMS, e.getMessage());
-        }
-        var limit = rateLimit(toolLimiter, callRequest.name());
-        if (limit.isPresent()) {
-            return JsonRpcError.of(req.id(), config.rateLimitErrorCode(), limit.get());
-        }
-        var tool = tools.find(callRequest.name()).orElse(null);
-        if (tool == null) {
-            return JsonRpcError.of(req.id(), JsonRpcErrorCode.INVALID_PARAMS, "Unknown tool: " + callRequest.name());
-        }
-        try {
-            config.toolAccessPolicy().requireAllowed(principal, tool);
-        } catch (SecurityException e) {
-            return JsonRpcError.of(req.id(), JsonRpcErrorCode.INTERNAL_ERROR, config.errorAccessDenied());
-        }
-        return invokeTool(req, tool, callRequest.arguments());
     }
 
     private JsonRpcMessage invokeTool(JsonRpcRequest req, Tool tool, JsonObject args) {
@@ -529,11 +484,30 @@ public final class McpServer extends JsonRpcEndpoint implements AutoCloseable {
 
     private JsonRpcMessage callTool(JsonRpcRequest req) {
         requireServerCapability(ServerCapability.TOOLS);
-        return handleToolCall(req);
+        CallToolRequest callRequest;
+        try {
+            callRequest = CALL_TOOL_REQUEST_CODEC.fromJson(req.params());
+        } catch (IllegalArgumentException e) {
+            return JsonRpcError.of(req.id(), JsonRpcErrorCode.INVALID_PARAMS, e.getMessage());
+        }
+        var limit = rateLimit(toolLimiter, callRequest.name());
+        if (limit.isPresent()) {
+            return JsonRpcError.of(req.id(), config.rateLimitErrorCode(), limit.get());
+        }
+        var tool = tools.find(callRequest.name()).orElse(null);
+        if (tool == null) {
+            return JsonRpcError.of(req.id(), JsonRpcErrorCode.INVALID_PARAMS, "Unknown tool: " + callRequest.name());
+        }
+        try {
+            config.toolAccessPolicy().requireAllowed(principal, tool);
+        } catch (SecurityException e) {
+            return JsonRpcError.of(req.id(), JsonRpcErrorCode.INTERNAL_ERROR, config.errorAccessDenied());
+        }
+        return invokeTool(req, tool, callRequest.arguments());
     }
 
     private JsonRpcMessage listPrompts(JsonRpcRequest req) {
-        var initCheck = ensureInitialized(req);
+        var initCheck = lifecycle.ensureInitialized(req.id(), config.errorNotInitialized()).map(error -> (JsonRpcMessage) error);
         if (initCheck.isPresent()) {
             return initCheck.get();
         }
@@ -571,7 +545,7 @@ public final class McpServer extends JsonRpcEndpoint implements AutoCloseable {
             var page = resources.list(cursor);
             progressToken.ifPresent(t -> sendResourceProgress(t, 0.5, "Filtering resources"));
             var filtered = page.items().stream()
-                    .filter(r -> resourceAllowed(r.annotations()) && withinRoots(r.uri()))
+                    .filter(r -> resourceAllowed(r.annotations()) && RootChecker.withinRoots(r.uri(), rootsManager.roots()))
                     .toList();
             progressToken.ifPresent(t -> sendResourceProgress(t, 1.0, "Completed resource list"));
             var result = new ListResourcesResult(filtered, page.nextCursor(), null);
@@ -684,12 +658,8 @@ public final class McpServer extends JsonRpcEndpoint implements AutoCloseable {
         }
     }
 
-    private boolean withinRoots(URI uri) {
-        return RootChecker.withinRoots(uri, rootsManager.roots());
-    }
-
     private boolean canAccessResource(URI uri) {
-        if (!withinRoots(uri)) {
+        if (!RootChecker.withinRoots(uri, rootsManager.roots())) {
             return false;
         }
         return resources.get(uri)
@@ -751,10 +721,6 @@ public final class McpServer extends JsonRpcEndpoint implements AutoCloseable {
         send(new JsonRpcNotification(NotificationMethod.MESSAGE.method(), params));
     }
 
-    private void sendLog(LoggingLevel level, String logger, JsonValue data) throws IOException {
-        sendLog(new LoggingMessageNotification(level, logger, data));
-    }
-
     private JsonRpcMessage complete(JsonRpcRequest req) {
         if (!serverCapabilities.contains(ServerCapability.COMPLETIONS)) {
             return JsonRpcError.of(req.id(), JsonRpcErrorCode.METHOD_NOT_FOUND, "Capability not supported");
@@ -797,7 +763,7 @@ public final class McpServer extends JsonRpcEndpoint implements AutoCloseable {
     }
 
     private ElicitResult elicit(ElicitRequest req) throws IOException {
-        requireClientCapability(ClientCapability.ELICITATION);
+        lifecycle.requireClientCapability(ClientCapability.ELICITATION);
         var msg = request(RequestMethod.ELICITATION_CREATE, new ElicitRequestJsonCodec().toJson(req), config.defaultTimeoutMs());
         if (msg instanceof JsonRpcResponse resp) {
             var er = new ElicitResultJsonCodec().fromJson(resp.result());
@@ -810,7 +776,7 @@ public final class McpServer extends JsonRpcEndpoint implements AutoCloseable {
     }
 
     private CreateMessageResponse createMessage(CreateMessageRequest req) throws IOException {
-        requireClientCapability(ClientCapability.SAMPLING);
+        lifecycle.requireClientCapability(ClientCapability.SAMPLING);
         samplingAccess.requireAllowed(principal);
         try {
             return sampling.createMessage(req, config.defaultTimeoutMs());
@@ -837,7 +803,7 @@ public final class McpServer extends JsonRpcEndpoint implements AutoCloseable {
 
     @Override
     public void close() throws IOException {
-        shutdown();
+        lifecycle.shutdown();
         resourceSubscriptions.values().forEach(CloseUtil::close);
         if (resourceListSubscription != null) {
             CloseUtil.close(resourceListSubscription);
