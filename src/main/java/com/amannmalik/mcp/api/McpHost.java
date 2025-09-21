@@ -80,35 +80,11 @@ public final class McpHost implements AutoCloseable {
         }
     }
 
-    private static void requireCapability(McpClient client, ServerCapability cap) {
-        if (!client.serverCapabilities().contains(cap)) {
-            throw new IllegalStateException("Server capability not supported: " + cap);
-        }
-    }
-
-    private static void requireCapability(McpClient client, ClientCapability cap) {
-        if (!client.capabilities().contains(cap)) {
-            throw new IllegalStateException("Client capability not supported: " + cap);
-        }
-    }
-
     @Override
     public void close() throws IOException {
         for (var id : Set.copyOf(clients.keySet())) {
             unregister(id);
         }
-    }
-
-    private void register(String id, McpClient client, McpClientConfiguration clientConfig) {
-        consents.requireConsent(principal, client.info().name());
-        if (clients.putIfAbsent(id, client) != null) {
-            throw new IllegalArgumentException("Client already registered: " + id);
-        }
-        client.setPrincipal(principal);
-        client.setSamplingAccessPolicy(samplingAccess);
-        client.configurePing(
-                clientConfig.pingInterval(),
-                clientConfig.pingTimeout());
     }
 
     public void connect(String id) throws IOException {
@@ -191,34 +167,6 @@ public final class McpHost implements AutoCloseable {
         return TOOL_RESULT_ABSTRACT_ENTITY_CODEC.fromJson(resp.result());
     }
 
-    private Optional<Tool> findTool(String clientId, String name) throws IOException {
-        Cursor cursor = Cursor.Start.INSTANCE;
-        do {
-            var page = listTools(clientId, cursor);
-            for (var t : page.tools()) {
-                if (t.name().equals(name)) {
-                    return Optional.of(t);
-                }
-            }
-            cursor = page.nextCursor();
-        } while (!(cursor instanceof Cursor.End));
-        return Optional.empty();
-    }
-
-    private Optional<Resource> findResource(McpClient client, URI uri) throws IOException {
-        Cursor cursor = Cursor.Start.INSTANCE;
-        do {
-            var page = client.listResources(cursor);
-            for (var resource : page.resources()) {
-                if (resource.uri().equals(uri)) {
-                    return Optional.of(resource);
-                }
-            }
-            cursor = page.nextCursor();
-        } while (!(cursor instanceof Cursor.End));
-        return Optional.empty();
-    }
-
     public JsonObject createMessage(String clientId, JsonObject params) throws IOException {
         var client = requireClient(clientId);
         if (!client.connected()) {
@@ -271,6 +219,58 @@ public final class McpHost implements AutoCloseable {
         return requireClient(id);
     }
 
+    private void register(String id, McpClient client, McpClientConfiguration clientConfig) {
+        consents.requireConsent(principal, client.info().name());
+        if (clients.putIfAbsent(id, client) != null) {
+            throw new IllegalArgumentException("Client already registered: " + id);
+        }
+        client.setPrincipal(principal);
+        client.setSamplingAccessPolicy(samplingAccess);
+        client.configurePing(
+                clientConfig.pingInterval(),
+                clientConfig.pingTimeout());
+    }
+
+    private static void requireCapability(McpClient client, ServerCapability cap) {
+        if (!client.serverCapabilities().contains(cap)) {
+            throw new IllegalStateException("Server capability not supported: " + cap);
+        }
+    }
+
+    private static void requireCapability(McpClient client, ClientCapability cap) {
+        if (!client.capabilities().contains(cap)) {
+            throw new IllegalStateException("Client capability not supported: " + cap);
+        }
+    }
+
+    private Optional<Tool> findTool(String clientId, String name) throws IOException {
+        Cursor cursor = Cursor.Start.INSTANCE;
+        do {
+            var page = listTools(clientId, cursor);
+            for (var t : page.tools()) {
+                if (t.name().equals(name)) {
+                    return Optional.of(t);
+                }
+            }
+            cursor = page.nextCursor();
+        } while (!(cursor instanceof Cursor.End));
+        return Optional.empty();
+    }
+
+    private Optional<Resource> findResource(McpClient client, URI uri) throws IOException {
+        Cursor cursor = Cursor.Start.INSTANCE;
+        do {
+            var page = client.listResources(cursor);
+            for (var resource : page.resources()) {
+                if (resource.uri().equals(uri)) {
+                    return Optional.of(resource);
+                }
+            }
+            cursor = page.nextCursor();
+        } while (!(cursor instanceof Cursor.End));
+        return Optional.empty();
+    }
+
     private McpClient requireClient(String id) {
         var client = clients.get(id);
         if (client == null) {
@@ -287,5 +287,4 @@ public final class McpHost implements AutoCloseable {
             return false;
         }
     }
-
 }
