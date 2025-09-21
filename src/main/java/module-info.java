@@ -10,4 +10,5 @@ module mcp.main {
     exports com.amannmalik.mcp.cli;
     exports com.amannmalik.mcp.api;
     exports com.amannmalik.mcp.spi;
+    exports com.amannmalik.mcp.api.config;
 }

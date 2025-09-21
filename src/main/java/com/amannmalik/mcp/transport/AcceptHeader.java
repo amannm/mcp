@@ -1,10 +1,6 @@
 package com.amannmalik.mcp.transport;
 
-import java.util.LinkedHashSet;
-import java.util.Locale;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 
 final class AcceptHeader {
     static final String APPLICATION_JSON = "application/json";
@@ -26,14 +22,6 @@ final class AcceptHeader {
             throw new IllegalArgumentException("No media types present");
         }
         return new AcceptHeader(Set.copyOf(types));
-    }
-
-    boolean matchesExactly(String... requiredTypes) {
-        Set<String> expected = new LinkedHashSet<>(requiredTypes.length);
-        for (var type : requiredTypes) {
-            expected.add(normalizeType(type));
-        }
-        return mediaTypes.equals(Set.copyOf(expected));
     }
 
     private static Optional<String> normalize(String token) {
@@ -60,6 +48,14 @@ final class AcceptHeader {
     private static String normalizeType(String type) {
         Objects.requireNonNull(type, "type");
         return type.toLowerCase(Locale.ROOT);
+    }
+
+    boolean matchesExactly(String... requiredTypes) {
+        Set<String> expected = new LinkedHashSet<>(requiredTypes.length);
+        for (var type : requiredTypes) {
+            expected.add(normalizeType(type));
+        }
+        return mediaTypes.equals(Set.copyOf(expected));
     }
 }
 

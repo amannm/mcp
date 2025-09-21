@@ -5,9 +5,7 @@ import com.amannmalik.mcp.spi.Root;
 import java.net.URI;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.Collection;
-import java.util.Objects;
-import java.util.Optional;
+import java.util.*;
 import java.util.stream.Stream;
 
 public final class RootChecker {

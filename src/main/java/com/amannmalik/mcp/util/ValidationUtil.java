@@ -4,10 +4,7 @@ import jakarta.json.JsonObject;
 
 import java.net.URI;
 import java.time.Duration;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Set;
+import java.util.*;
 import java.util.regex.Pattern;
 
 public final class ValidationUtil {

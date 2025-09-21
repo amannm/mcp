@@ -1,4 +1,6 @@
-package com.amannmalik.mcp.api;
+package com.amannmalik.mcp.api.config;
+
+import com.amannmalik.mcp.api.ClientCapability;
 
 import java.time.Duration;
 import java.util.*;

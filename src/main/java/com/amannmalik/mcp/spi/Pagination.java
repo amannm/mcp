@@ -1,6 +1,6 @@
 package com.amannmalik.mcp.spi;
 
-import com.amannmalik.mcp.api.McpHostConfiguration;
+import com.amannmalik.mcp.api.config.McpHostConfiguration;
 import com.amannmalik.mcp.util.Immutable;
 
 import java.util.List;

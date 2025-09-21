@@ -1,6 +1,7 @@
 package com.amannmalik.mcp.cli;
 
 import com.amannmalik.mcp.api.*;
+import com.amannmalik.mcp.api.config.*;
 import com.amannmalik.mcp.spi.*;
 import com.amannmalik.mcp.util.PlatformLog;
 import jakarta.json.Json;
@@ -274,254 +275,254 @@ public final class HostCommand {
 
                 try {
                     switch (parts[0]) {
-                    case "help" -> printHelp();
-                    case "clients" -> System.out.println("Active clients: " + host.clientIds());
-                    case "context" -> System.out.println(host.aggregateContext());
-                    case "protocol-version" -> {
-                        if (parts.length != 2) {
-                            System.out.println("Usage: protocol-version <client-id>");
-                        } else {
-                            System.out.println(host.getProtocolVersion(parts[1]));
-                        }
-                    }
-                    case "grant-consent" -> {
-                        if (parts.length != 2) {
-                            System.out.println("Usage: grant-consent <scope>");
-                        } else {
-                            host.grantConsent(parts[1]);
-                            System.out.println("Granted consent for: " + parts[1]);
-                        }
-                    }
-                    case "revoke-consent" -> {
-                        if (parts.length != 2) {
-                            System.out.println("Usage: revoke-consent <scope>");
-                        } else {
-                            host.revokeConsent(parts[1]);
-                            System.out.println("Revoked consent for: " + parts[1]);
-                        }
-                    }
-                    case "allow-tool" -> {
-                        if (parts.length != 2) {
-                            System.out.println("Usage: allow-tool <tool>");
-                        } else {
-                            host.allowTool(parts[1]);
-                            System.out.println("Allowed tool: " + parts[1]);
-                        }
-                    }
-                    case "revoke-tool" -> {
-                        if (parts.length != 2) {
-                            System.out.println("Usage: revoke-tool <tool>");
-                        } else {
-                            host.revokeTool(parts[1]);
-                            System.out.println("Revoked tool: " + parts[1]);
-                        }
-                    }
-                    case "allow-sampling" -> {
-                        host.allowSampling();
-                        System.out.println("Sampling allowed");
-                    }
-                    case "revoke-sampling" -> {
-                        host.revokeSampling();
-                        System.out.println("Sampling revoked");
-                    }
-                    case "list-tools" -> {
-                        if (parts.length < 2) {
-                            System.out.println("Usage: list-tools <client-id> [cursor]");
-                        } else {
-                            var token = parts.length > 2 ? parts[2] : null;
-                            var cursor = token == null ? Cursor.Start.INSTANCE : new Cursor.Token(token);
-                            var page = host.listTools(parts[1], cursor);
-                            System.out.println(page);
-                        }
-                    }
-                    case "list-resources" -> {
-                        if (parts.length < 2) {
-                            System.out.println("Usage: list-resources <client-id> [cursor]");
-                        } else {
-                            var token = parts.length > 2 ? parts[2] : null;
-                            var cursor = token == null ? Cursor.Start.INSTANCE : new Cursor.Token(token);
-                            var page = host.listResources(parts[1], cursor);
-                            System.out.println(page);
-                        }
-                    }
-                    case "list-resource-templates" -> {
-                        if (parts.length < 2) {
-                            System.out.println("Usage: list-resource-templates <client-id> [cursor]");
-                        } else {
-                            var token = parts.length > 2 ? parts[2] : null;
-                            var cursor = token == null ? Cursor.Start.INSTANCE : new Cursor.Token(token);
-                            var page = host.listResourceTemplates(parts[1], cursor);
-                            System.out.println(page);
-                        }
-                    }
-                    case "server-capabilities" -> {
-                        if (parts.length != 2) {
-                            System.out.println("Usage: server-capabilities <client-id>");
-                        } else {
-                            System.out.println(host.serverCapabilities(parts[1]));
-                        }
-                    }
-                    case "server-capability-names" -> {
-                        if (parts.length != 2) {
-                            System.out.println("Usage: server-capability-names <client-id>");
-                        } else {
-                            System.out.println(host.getServerCapabilityNames(parts[1]));
-                        }
-                    }
-                    case "server-features" -> {
-                        if (parts.length != 2) {
-                            System.out.println("Usage: server-features <client-id>");
-                        } else {
-                            System.out.println(host.serverFeatures(parts[1]));
-                        }
-                    }
-                    case "server-info" -> {
-                        if (parts.length != 2) {
-                            System.out.println("Usage: server-info <client-id>");
-                        } else {
-                            System.out.println(host.getServerInfo(parts[1]));
-                        }
-                    }
-                    case "server-info-map" -> {
-                        if (parts.length != 2) {
-                            System.out.println("Usage: server-info-map <client-id>");
-                        } else {
-                            System.out.println(host.getServerInfoMap(parts[1]));
-                        }
-                    }
-                    case "call-tool" -> {
-                        if (parts.length < 3) {
-                            System.out.println("Usage: call-tool <client-id> <tool-name> [json-args]");
-                        } else {
-                            var args = parts.length > 3 ?
-                                    Json.createReader(new StringReader(parts[3])).readObject() :
-                                    null;
-                            var result = host.callTool(parts[1], parts[2], args);
-                            System.out.println(result);
-                        }
-                    }
-                    case "subscribe-resource" -> {
-                        if (parts.length != 3) {
-                            System.out.println("Usage: subscribe-resource <client-id> <resource-uri>");
-                        } else {
-                            var clientId = parts[1];
-                            URI uri;
-                            try {
-                                uri = URI.create(parts[2]);
-                            } catch (IllegalArgumentException e) {
-                                System.out.println("Invalid URI: " + parts[2]);
-                                break;
-                            }
-                            var key = subscriptionKey(clientId, uri);
-                            if (resourceSubscriptions.containsKey(key)) {
-                                System.out.println("Already subscribed to resource: " + uri);
-                                break;
-                            }
-                            var subscription = host.subscribeToResource(clientId, uri, update -> {
-                                var title = update.title();
-                                var suffix = (title == null || title.isBlank()) ? "" : " (" + title + ")";
-                                System.out.println("Resource updated [" + clientId + "]: " + update.uri() + suffix);
-                            });
-                            resourceSubscriptions.put(key, subscription);
-                            System.out.println("Subscribed to resource: " + uri);
-                        }
-                    }
-                    case "unsubscribe-resource" -> {
-                        if (parts.length != 3) {
-                            System.out.println("Usage: unsubscribe-resource <client-id> <resource-uri>");
-                        } else {
-                            var clientId = parts[1];
-                            URI uri;
-                            try {
-                                uri = URI.create(parts[2]);
-                            } catch (IllegalArgumentException e) {
-                                System.out.println("Invalid URI: " + parts[2]);
-                                break;
-                            }
-                            var key = subscriptionKey(clientId, uri);
-                            var subscription = resourceSubscriptions.remove(key);
-                            if (subscription == null) {
-                                System.out.println("No active subscription for: " + uri);
+                        case "help" -> printHelp();
+                        case "clients" -> System.out.println("Active clients: " + host.clientIds());
+                        case "context" -> System.out.println(host.aggregateContext());
+                        case "protocol-version" -> {
+                            if (parts.length != 2) {
+                                System.out.println("Usage: protocol-version <client-id>");
                             } else {
+                                System.out.println(host.getProtocolVersion(parts[1]));
+                            }
+                        }
+                        case "grant-consent" -> {
+                            if (parts.length != 2) {
+                                System.out.println("Usage: grant-consent <scope>");
+                            } else {
+                                host.grantConsent(parts[1]);
+                                System.out.println("Granted consent for: " + parts[1]);
+                            }
+                        }
+                        case "revoke-consent" -> {
+                            if (parts.length != 2) {
+                                System.out.println("Usage: revoke-consent <scope>");
+                            } else {
+                                host.revokeConsent(parts[1]);
+                                System.out.println("Revoked consent for: " + parts[1]);
+                            }
+                        }
+                        case "allow-tool" -> {
+                            if (parts.length != 2) {
+                                System.out.println("Usage: allow-tool <tool>");
+                            } else {
+                                host.allowTool(parts[1]);
+                                System.out.println("Allowed tool: " + parts[1]);
+                            }
+                        }
+                        case "revoke-tool" -> {
+                            if (parts.length != 2) {
+                                System.out.println("Usage: revoke-tool <tool>");
+                            } else {
+                                host.revokeTool(parts[1]);
+                                System.out.println("Revoked tool: " + parts[1]);
+                            }
+                        }
+                        case "allow-sampling" -> {
+                            host.allowSampling();
+                            System.out.println("Sampling allowed");
+                        }
+                        case "revoke-sampling" -> {
+                            host.revokeSampling();
+                            System.out.println("Sampling revoked");
+                        }
+                        case "list-tools" -> {
+                            if (parts.length < 2) {
+                                System.out.println("Usage: list-tools <client-id> [cursor]");
+                            } else {
+                                var token = parts.length > 2 ? parts[2] : null;
+                                var cursor = token == null ? Cursor.Start.INSTANCE : new Cursor.Token(token);
+                                var page = host.listTools(parts[1], cursor);
+                                System.out.println(page);
+                            }
+                        }
+                        case "list-resources" -> {
+                            if (parts.length < 2) {
+                                System.out.println("Usage: list-resources <client-id> [cursor]");
+                            } else {
+                                var token = parts.length > 2 ? parts[2] : null;
+                                var cursor = token == null ? Cursor.Start.INSTANCE : new Cursor.Token(token);
+                                var page = host.listResources(parts[1], cursor);
+                                System.out.println(page);
+                            }
+                        }
+                        case "list-resource-templates" -> {
+                            if (parts.length < 2) {
+                                System.out.println("Usage: list-resource-templates <client-id> [cursor]");
+                            } else {
+                                var token = parts.length > 2 ? parts[2] : null;
+                                var cursor = token == null ? Cursor.Start.INSTANCE : new Cursor.Token(token);
+                                var page = host.listResourceTemplates(parts[1], cursor);
+                                System.out.println(page);
+                            }
+                        }
+                        case "server-capabilities" -> {
+                            if (parts.length != 2) {
+                                System.out.println("Usage: server-capabilities <client-id>");
+                            } else {
+                                System.out.println(host.serverCapabilities(parts[1]));
+                            }
+                        }
+                        case "server-capability-names" -> {
+                            if (parts.length != 2) {
+                                System.out.println("Usage: server-capability-names <client-id>");
+                            } else {
+                                System.out.println(host.getServerCapabilityNames(parts[1]));
+                            }
+                        }
+                        case "server-features" -> {
+                            if (parts.length != 2) {
+                                System.out.println("Usage: server-features <client-id>");
+                            } else {
+                                System.out.println(host.serverFeatures(parts[1]));
+                            }
+                        }
+                        case "server-info" -> {
+                            if (parts.length != 2) {
+                                System.out.println("Usage: server-info <client-id>");
+                            } else {
+                                System.out.println(host.getServerInfo(parts[1]));
+                            }
+                        }
+                        case "server-info-map" -> {
+                            if (parts.length != 2) {
+                                System.out.println("Usage: server-info-map <client-id>");
+                            } else {
+                                System.out.println(host.getServerInfoMap(parts[1]));
+                            }
+                        }
+                        case "call-tool" -> {
+                            if (parts.length < 3) {
+                                System.out.println("Usage: call-tool <client-id> <tool-name> [json-args]");
+                            } else {
+                                var args = parts.length > 3 ?
+                                        Json.createReader(new StringReader(parts[3])).readObject() :
+                                        null;
+                                var result = host.callTool(parts[1], parts[2], args);
+                                System.out.println(result);
+                            }
+                        }
+                        case "subscribe-resource" -> {
+                            if (parts.length != 3) {
+                                System.out.println("Usage: subscribe-resource <client-id> <resource-uri>");
+                            } else {
+                                var clientId = parts[1];
+                                URI uri;
                                 try {
-                                    subscription.close();
-                                    System.out.println("Unsubscribed from resource: " + uri);
-                                } catch (Exception e) {
-                                    System.out.println("Failed to unsubscribe: " + e.getMessage());
+                                    uri = URI.create(parts[2]);
+                                } catch (IllegalArgumentException e) {
+                                    System.out.println("Invalid URI: " + parts[2]);
+                                    break;
+                                }
+                                var key = subscriptionKey(clientId, uri);
+                                if (resourceSubscriptions.containsKey(key)) {
+                                    System.out.println("Already subscribed to resource: " + uri);
+                                    break;
+                                }
+                                var subscription = host.subscribeToResource(clientId, uri, update -> {
+                                    var title = update.title();
+                                    var suffix = (title == null || title.isBlank()) ? "" : " (" + title + ")";
+                                    System.out.println("Resource updated [" + clientId + "]: " + update.uri() + suffix);
+                                });
+                                resourceSubscriptions.put(key, subscription);
+                                System.out.println("Subscribed to resource: " + uri);
+                            }
+                        }
+                        case "unsubscribe-resource" -> {
+                            if (parts.length != 3) {
+                                System.out.println("Usage: unsubscribe-resource <client-id> <resource-uri>");
+                            } else {
+                                var clientId = parts[1];
+                                URI uri;
+                                try {
+                                    uri = URI.create(parts[2]);
+                                } catch (IllegalArgumentException e) {
+                                    System.out.println("Invalid URI: " + parts[2]);
+                                    break;
+                                }
+                                var key = subscriptionKey(clientId, uri);
+                                var subscription = resourceSubscriptions.remove(key);
+                                if (subscription == null) {
+                                    System.out.println("No active subscription for: " + uri);
+                                } else {
+                                    try {
+                                        subscription.close();
+                                        System.out.println("Unsubscribed from resource: " + uri);
+                                    } catch (Exception e) {
+                                        System.out.println("Failed to unsubscribe: " + e.getMessage());
+                                    }
                                 }
                             }
                         }
-                    }
-                    case "create-message" -> {
-                        if (parts.length < 3) {
-                            System.out.println("Usage: create-message <client-id> <json-params>");
-                        } else {
-                            var params = Json.createReader(new StringReader(parts[2])).readObject();
-                            System.out.println(host.createMessage(parts[1], params));
-                        }
-                    }
-                    case "set-log-level" -> {
-                        if (parts.length != 3) {
-                            System.out.println("Usage: set-log-level <client-id> <level>");
-                        } else {
-                            try {
-                                var level = LoggingLevel.valueOf(parts[2].toUpperCase());
-                                host.setClientLogLevel(parts[1], level);
-                                System.out.println("Set log level for " + parts[1] + " to " + level);
-                            } catch (IllegalArgumentException e) {
-                                System.out.println("Invalid level. Valid values: " + Arrays.toString(LoggingLevel.values()));
+                        case "create-message" -> {
+                            if (parts.length < 3) {
+                                System.out.println("Usage: create-message <client-id> <json-params>");
+                            } else {
+                                var params = Json.createReader(new StringReader(parts[2])).readObject();
+                                System.out.println(host.createMessage(parts[1], params));
                             }
                         }
-                    }
-                    case "allow-audience" -> {
-                        if (parts.length != 2) {
-                            System.out.println("Usage: allow-audience <audience>");
-                        } else {
-                            try {
-                                var audience = Role.valueOf(parts[1].toUpperCase());
-                                host.allowAudience(audience);
-                                System.out.println("Allowed audience: " + audience);
-                            } catch (IllegalArgumentException e) {
-                                System.out.println("Invalid audience. Valid values: " + Arrays.toString(Role.values()));
+                        case "set-log-level" -> {
+                            if (parts.length != 3) {
+                                System.out.println("Usage: set-log-level <client-id> <level>");
+                            } else {
+                                try {
+                                    var level = LoggingLevel.valueOf(parts[2].toUpperCase());
+                                    host.setClientLogLevel(parts[1], level);
+                                    System.out.println("Set log level for " + parts[1] + " to " + level);
+                                } catch (IllegalArgumentException e) {
+                                    System.out.println("Invalid level. Valid values: " + Arrays.toString(LoggingLevel.values()));
+                                }
                             }
                         }
-                    }
-                    case "revoke-audience" -> {
-                        if (parts.length != 2) {
-                            System.out.println("Usage: revoke-audience <audience>");
-                        } else {
-                            try {
-                                var audience = Role.valueOf(parts[1].toUpperCase());
-                                host.revokeAudience(audience);
-                                System.out.println("Revoked audience: " + audience);
-                            } catch (IllegalArgumentException e) {
-                                System.out.println("Invalid audience. Valid values: " + Arrays.toString(Role.values()));
+                        case "allow-audience" -> {
+                            if (parts.length != 2) {
+                                System.out.println("Usage: allow-audience <audience>");
+                            } else {
+                                try {
+                                    var audience = Role.valueOf(parts[1].toUpperCase());
+                                    host.allowAudience(audience);
+                                    System.out.println("Allowed audience: " + audience);
+                                } catch (IllegalArgumentException e) {
+                                    System.out.println("Invalid audience. Valid values: " + Arrays.toString(Role.values()));
+                                }
                             }
                         }
-                    }
-                    case "request" -> {
-                        if (parts.length < 3) {
-                            System.out.println("Usage: request <client-id> <method> [json-params]");
-                        } else {
-                            var params = parts.length > 3 ?
-                                    Json.createReader(new StringReader(parts[3])).readObject() :
-                                    JsonValue.EMPTY_JSON_OBJECT;
-                            System.out.println(host.request(parts[1], RequestMethod.from(parts[2]).orElseThrow(), params));
+                        case "revoke-audience" -> {
+                            if (parts.length != 2) {
+                                System.out.println("Usage: revoke-audience <audience>");
+                            } else {
+                                try {
+                                    var audience = Role.valueOf(parts[1].toUpperCase());
+                                    host.revokeAudience(audience);
+                                    System.out.println("Revoked audience: " + audience);
+                                } catch (IllegalArgumentException e) {
+                                    System.out.println("Invalid audience. Valid values: " + Arrays.toString(Role.values()));
+                                }
+                            }
                         }
-                    }
-                    case "notify" -> {
-                        if (parts.length < 3) {
-                            System.out.println("Usage: notify <client-id> <method> [json-params]");
-                        } else {
-                            var params = parts.length > 3 ?
-                                    Json.createReader(new StringReader(parts[3])).readObject() :
-                                    JsonValue.EMPTY_JSON_OBJECT;
-                            host.notify(parts[1], NotificationMethod.from(parts[2]).orElseThrow(), params);
-                            System.out.println("Notification sent");
+                        case "request" -> {
+                            if (parts.length < 3) {
+                                System.out.println("Usage: request <client-id> <method> [json-params]");
+                            } else {
+                                var params = parts.length > 3 ?
+                                        Json.createReader(new StringReader(parts[3])).readObject() :
+                                        JsonValue.EMPTY_JSON_OBJECT;
+                                System.out.println(host.request(parts[1], RequestMethod.from(parts[2]).orElseThrow(), params));
+                            }
                         }
+                        case "notify" -> {
+                            if (parts.length < 3) {
+                                System.out.println("Usage: notify <client-id> <method> [json-params]");
+                            } else {
+                                var params = parts.length > 3 ?
+                                        Json.createReader(new StringReader(parts[3])).readObject() :
+                                        JsonValue.EMPTY_JSON_OBJECT;
+                                host.notify(parts[1], NotificationMethod.from(parts[2]).orElseThrow(), params);
+                                System.out.println("Notification sent");
+                            }
+                        }
+                        default -> System.out.println("Unknown command: " + parts[0] + ". Type 'help' for available commands.");
                     }
-                    default -> System.out.println("Unknown command: " + parts[0] + ". Type 'help' for available commands.");
-                }
                 } catch (Exception e) {
                     System.out.println("Error: " + e.getMessage());
                 }

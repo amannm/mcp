@@ -1,5 +1,6 @@
 package com.amannmalik.mcp.api;
 
+import com.amannmalik.mcp.api.config.McpServerConfiguration;
 import com.amannmalik.mcp.codec.*;
 import com.amannmalik.mcp.jsonrpc.*;
 import com.amannmalik.mcp.spi.*;

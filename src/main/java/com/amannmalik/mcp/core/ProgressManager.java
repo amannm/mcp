@@ -1,22 +1,13 @@
 package com.amannmalik.mcp.core;
 
-import com.amannmalik.mcp.api.NotificationMethod;
-import com.amannmalik.mcp.api.ProgressNotification;
-import com.amannmalik.mcp.api.ProgressToken;
-import com.amannmalik.mcp.api.RequestId;
+import com.amannmalik.mcp.api.*;
 import com.amannmalik.mcp.codec.ProgressNotificationJsonCodec;
-import com.amannmalik.mcp.util.NotificationSender;
-import com.amannmalik.mcp.util.PlatformLog;
-import com.amannmalik.mcp.util.RateLimiter;
+import com.amannmalik.mcp.util.*;
 import jakarta.json.JsonObject;
 
 import java.io.IOException;
 import java.lang.System.Logger;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
@@ -24,14 +15,20 @@ import java.util.concurrent.locks.ReentrantLock;
 
 public final class ProgressManager {
     private static final Logger LOG = PlatformLog.get(ProgressManager.class);
+    private static final ProgressNotificationJsonCodec NOTIFICATION_CODEC = new ProgressNotificationJsonCodec();
     private final Map<ProgressToken, TokenState> tokensByProgress = new ConcurrentHashMap<>();
     private final Map<RequestId, RequestRegistration> requests = new ConcurrentHashMap<>();
     private final Set<RequestId> used = ConcurrentHashMap.newKeySet();
     private final RateLimiter limiter;
-    private static final ProgressNotificationJsonCodec NOTIFICATION_CODEC = new ProgressNotificationJsonCodec();
 
     public ProgressManager(RateLimiter limiter) {
         this.limiter = Objects.requireNonNull(limiter, "limiter");
+    }
+
+    private static void ensureProgressTokenPlacement(JsonObject params) {
+        if (params != null && params.containsKey("progressToken")) {
+            throw new IllegalArgumentException("progressToken must be in _meta");
+        }
     }
 
     public Optional<ProgressToken> register(RequestId id, JsonObject params) {
@@ -55,12 +52,6 @@ public final class ProgressManager {
             throw e;
         }
         return token;
-    }
-
-    private static void ensureProgressTokenPlacement(JsonObject params) {
-        if (params != null && params.containsKey("progressToken")) {
-            throw new IllegalArgumentException("progressToken must be in _meta");
-        }
     }
 
     public void release(RequestId id) {

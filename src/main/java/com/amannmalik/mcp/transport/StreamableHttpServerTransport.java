@@ -1,6 +1,7 @@
 package com.amannmalik.mcp.transport;
 
 import com.amannmalik.mcp.api.*;
+import com.amannmalik.mcp.api.config.McpServerConfiguration;
 import com.amannmalik.mcp.auth.AuthorizationManager;
 import com.amannmalik.mcp.core.MessageDispatcher;
 import com.amannmalik.mcp.core.MessageRouter;
@@ -27,13 +28,8 @@ import java.security.cert.X509Certificate;
 import java.security.interfaces.ECKey;
 import java.security.interfaces.RSAKey;
 import java.time.Duration;
-import java.util.List;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.Set;
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.TimeUnit;
+import java.util.*;
+import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 public final class StreamableHttpServerTransport implements Transport {
@@ -110,6 +106,26 @@ public final class StreamableHttpServerTransport implements Transport {
         }
     }
 
+    private static void startJetty(Server server) throws Exception {
+        try {
+            server.start();
+        } catch (Exception e) {
+            server.stop();
+            server.destroy();
+            throw e;
+        }
+    }
+
+    private static List<String> authorizationServers(McpServerConfiguration config, boolean https) {
+        if (config.authServers().isEmpty()) {
+            return List.of();
+        }
+        if (https && config.authServers().stream().anyMatch(u -> u.startsWith("http://"))) {
+            throw new IllegalArgumentException("HTTPS required for authorization server URLs");
+        }
+        return List.copyOf(config.authServers());
+    }
+
     private ServletContextHandler servletContext(McpServerConfiguration config) {
         var ctx = new ServletContextHandler();
         for (var path : config.servletPaths()) {
@@ -178,16 +194,6 @@ public final class StreamableHttpServerTransport implements Transport {
         return new ServerBindings(server, http, https);
     }
 
-    private static void startJetty(Server server) throws Exception {
-        try {
-            server.start();
-        } catch (Exception e) {
-            server.stop();
-            server.destroy();
-            throw e;
-        }
-    }
-
     private String metadataUrl(McpServerConfiguration config,
                                String scheme,
                                int port,
@@ -203,16 +209,6 @@ public final class StreamableHttpServerTransport implements Transport {
             throw new IllegalArgumentException("HTTPS required for resource metadata URL");
         }
         return config.resourceMetadataUrl();
-    }
-
-    private static List<String> authorizationServers(McpServerConfiguration config, boolean https) {
-        if (config.authServers().isEmpty()) {
-            return List.of();
-        }
-        if (https && config.authServers().stream().anyMatch(u -> u.startsWith("http://"))) {
-            throw new IllegalArgumentException("HTTPS required for authorization server URLs");
-        }
-        return List.copyOf(config.authServers());
     }
 
     public String canonicalResource() {

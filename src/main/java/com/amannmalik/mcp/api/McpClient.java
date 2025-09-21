@@ -1,5 +1,6 @@
 package com.amannmalik.mcp.api;
 
+import com.amannmalik.mcp.api.config.McpClientConfiguration;
 import com.amannmalik.mcp.codec.*;
 import com.amannmalik.mcp.core.*;
 import com.amannmalik.mcp.jsonrpc.*;
@@ -19,8 +20,7 @@ import java.net.http.*;
 import java.nio.file.Path;
 import java.time.Duration;
 import java.util.*;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
@@ -66,7 +66,9 @@ public final class McpClient extends JsonRpcEndpoint implements AutoCloseable {
     private AutoCloseable rootsSubscription;
     private SamplingAccessPolicy samplingAccess;
     private Principal principal;
-    private ClientBackgroundTasks background;
+    private Thread readerThread;
+    private ScheduledExecutorService pingScheduler;
+    private int pingFailures;
     private Duration pingInterval;
     private Duration pingTimeout;
     private Set<ServerCapability> serverCapabilities = Set.of();
@@ -214,8 +216,7 @@ public final class McpClient extends JsonRpcEndpoint implements AutoCloseable {
             handleUnauthorized(e);
             throw e;
         }
-        background = new ClientBackgroundTasks(this, pingInterval, pingTimeout);
-        background.start();
+        startBackgroundTasks();
         subscribeRootsIfNeeded();
         notifyInitialized();
     }
@@ -225,15 +226,80 @@ public final class McpClient extends JsonRpcEndpoint implements AutoCloseable {
             return;
         }
         connected.set(false);
-        if (background != null) {
-            background.close();
-            background = null;
-        }
+        stopBackgroundTasks();
         transport.close();
         resourceListeners.clear();
         if (rootsSubscription != null) {
             CloseUtil.close(rootsSubscription);
             rootsSubscription = null;
+        }
+    }
+
+    private void startBackgroundTasks() {
+        readerThread = new Thread(this::readLoop);
+        readerThread.setDaemon(true);
+        readerThread.start();
+        if (pingInterval != null && pingInterval.isPositive()) {
+            pingScheduler = Executors.newSingleThreadScheduledExecutor();
+            pingFailures = 0;
+            pingScheduler.scheduleAtFixedRate(this::pingTick,
+                    pingInterval.toMillis(),
+                    pingInterval.toMillis(),
+                    TimeUnit.MILLISECONDS);
+        }
+    }
+
+    private void stopBackgroundTasks() {
+        if (pingScheduler != null) {
+            pingScheduler.shutdownNow();
+            pingScheduler = null;
+        }
+        if (readerThread != null) {
+            try {
+                readerThread.join(100);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                LOG.log(Logger.Level.WARNING, "Interrupted while waiting for reader", e);
+            }
+            readerThread = null;
+        }
+    }
+
+    private void readLoop() {
+        while (connected()) {
+            try {
+                var msg = JsonRpcEndpoint.CODEC.fromJson(transport.receive());
+                process(msg);
+            } catch (IOException e) {
+                pending.values().forEach(f -> f.completeExceptionally(e));
+                break;
+            }
+        }
+    }
+
+    private void pingTick() {
+        try {
+            ping(pingTimeout);
+            pingFailures = 0;
+        } catch (IOException | RuntimeException e) {
+            handlePingFailure(e);
+        }
+    }
+
+    private void handlePingFailure(Exception e) {
+        pingFailures++;
+        LOG.log(Logger.Level.WARNING, "Ping failure", e);
+        if (pingFailures >= 3) {
+            pingFailures = 0;
+            disconnectAfterPingFailures();
+        }
+    }
+
+    private void disconnectAfterPingFailures() {
+        try {
+            disconnect();
+        } catch (IOException e) {
+            LOG.log(Logger.Level.ERROR, "Disconnect failed", e);
         }
     }
 

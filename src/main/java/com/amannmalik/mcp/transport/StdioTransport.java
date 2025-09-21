@@ -1,10 +1,8 @@
 package com.amannmalik.mcp.transport;
 
-import com.amannmalik.mcp.api.McpHostConfiguration;
 import com.amannmalik.mcp.api.Transport;
-import com.amannmalik.mcp.util.CloseUtil;
-import com.amannmalik.mcp.util.PlatformLog;
-import com.amannmalik.mcp.util.ValidationUtil;
+import com.amannmalik.mcp.api.config.McpHostConfiguration;
+import com.amannmalik.mcp.util.*;
 import jakarta.json.Json;
 import jakarta.json.JsonObject;
 

@@ -10,30 +10,17 @@ import com.amannmalik.mcp.jsonrpc.JsonRpcErrorCode;
 import com.amannmalik.mcp.util.CloseUtil;
 import com.amannmalik.mcp.util.PlatformLog;
 import jakarta.json.JsonObject;
-import jakarta.servlet.AsyncContext;
-import jakarta.servlet.AsyncEvent;
-import jakarta.servlet.AsyncListener;
+import jakarta.servlet.*;
 
 import java.io.IOException;
 import java.lang.System.Logger;
-import java.util.List;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.Set;
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.LinkedBlockingQueue;
+import java.util.*;
+import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicReference;
 
 final class SseClients {
     static final JsonCodec<JsonRpcMessage> CODEC = new JsonRpcMessageJsonCodec();
     private static final Logger LOG = PlatformLog.get(SseClients.class);
-
-    @FunctionalInterface
-    interface ClientFactory {
-        SseClient create(AsyncContext context) throws IOException;
-    }
-
     private final Set<SseClient> general = ConcurrentHashMap.newKeySet();
     private final ConcurrentHashMap<RequestId, SseClient> request = new ConcurrentHashMap<>();
     private final ConcurrentHashMap<String, SseClient> byPrefix = new ConcurrentHashMap<>();
@@ -228,64 +215,36 @@ final class SseClients {
         byPrefix.put(client.prefix(), client);
     }
 
-    private final class RoutesView implements MessageRouter.Routes {
-        @Override
-        public Optional<SseClient> requestClient(RequestId id) {
-            Objects.requireNonNull(id, "id");
-            return Optional.ofNullable(SseClients.this.requestClient(id));
-        }
-
-        @Override
-        public Optional<BlockingQueue<JsonObject>> takeResponseQueue(RequestId id) {
-            Objects.requireNonNull(id, "id");
-            return SseClients.this.takeResponseQueue(id);
-        }
-
-        @Override
-        public Iterable<SseClient> generalClients() {
-            return SseClients.this.generalSnapshot();
-        }
-
-        @Override
-        public Optional<SseClient> pendingGeneralClient() {
-            return SseClients.this.lastGeneralClient();
-        }
-
-        @Override
-        public void removeRequestClient(RequestId id, SseClient client) {
-            Objects.requireNonNull(id, "id");
-            Objects.requireNonNull(client, "client");
-            SseClients.this.removeRequest(id, client);
-        }
+    @FunctionalInterface
+    interface ClientFactory {
+        SseClient create(AsyncContext context) throws IOException;
     }
 
-    private static final class CleanupAsyncListener implements AsyncListener {
-        private final Runnable cleanup;
+    private record CleanupAsyncListener(Runnable cleanup) implements AsyncListener {
+            private CleanupAsyncListener(Runnable cleanup) {
+                this.cleanup = Objects.requireNonNull(cleanup, "cleanup");
+            }
 
-        private CleanupAsyncListener(Runnable cleanup) {
-            this.cleanup = Objects.requireNonNull(cleanup, "cleanup");
-        }
+            @Override
+            public void onComplete(AsyncEvent event) {
+                cleanup.run();
+            }
 
-        @Override
-        public void onComplete(AsyncEvent event) {
-            cleanup.run();
-        }
+            @Override
+            public void onTimeout(AsyncEvent event) {
+                cleanup.run();
+            }
 
-        @Override
-        public void onTimeout(AsyncEvent event) {
-            cleanup.run();
-        }
+            @Override
+            public void onError(AsyncEvent event) {
+                cleanup.run();
+            }
 
-        @Override
-        public void onError(AsyncEvent event) {
-            cleanup.run();
+            @Override
+            public void onStartAsync(AsyncEvent event) {
+                Objects.requireNonNull(event, "event").getAsyncContext().addListener(this);
+            }
         }
-
-        @Override
-        public void onStartAsync(AsyncEvent event) {
-            Objects.requireNonNull(event, "event").getAsyncContext().addListener(this);
-        }
-    }
 
     private record SseLastEventId(String prefix, long eventId) {
         private static Optional<SseLastEventId> parse(String header) {
@@ -315,6 +274,37 @@ final class SseClients {
                 LOG.log(Logger.Level.WARNING, "Invalid Last-Event-ID: " + header, cause);
             }
             return Optional.empty();
+        }
+    }
+
+    private final class RoutesView implements MessageRouter.Routes {
+        @Override
+        public Optional<SseClient> requestClient(RequestId id) {
+            Objects.requireNonNull(id, "id");
+            return Optional.ofNullable(SseClients.this.requestClient(id));
+        }
+
+        @Override
+        public Optional<BlockingQueue<JsonObject>> takeResponseQueue(RequestId id) {
+            Objects.requireNonNull(id, "id");
+            return SseClients.this.takeResponseQueue(id);
+        }
+
+        @Override
+        public Iterable<SseClient> generalClients() {
+            return SseClients.this.generalSnapshot();
+        }
+
+        @Override
+        public Optional<SseClient> pendingGeneralClient() {
+            return SseClients.this.lastGeneralClient();
+        }
+
+        @Override
+        public void removeRequestClient(RequestId id, SseClient client) {
+            Objects.requireNonNull(id, "id");
+            Objects.requireNonNull(client, "client");
+            SseClients.this.removeRequest(id, client);
         }
     }
 }

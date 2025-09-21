@@ -9,11 +9,7 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.lang.System.Logger;
 import java.security.SecureRandom;
-import java.util.ArrayDeque;
-import java.util.ArrayList;
-import java.util.Deque;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -82,9 +78,6 @@ public final class SseClient implements AutoCloseable {
         synchronized (transmissionLock) {
             completeContext(Logger.Level.ERROR, "SSE close failed");
         }
-    }
-
-    private record SseEvent(long id, JsonObject msg) {
     }
 
     private SseEvent recordEvent(JsonObject msg) {
@@ -162,11 +155,6 @@ public final class SseClient implements AutoCloseable {
         completeContext(Logger.Level.WARNING, "SSE context completion failed");
     }
 
-    @FunctionalInterface
-    private interface TransmissionTask {
-        void accept(PrintWriter writer) throws Exception;
-    }
-
     private void completeContext(Logger.Level failureLevel, String failureMessage) {
         var currentContext = context;
         try {
@@ -179,5 +167,13 @@ public final class SseClient implements AutoCloseable {
             context = null;
             out = null;
         }
+    }
+
+    @FunctionalInterface
+    private interface TransmissionTask {
+        void accept(PrintWriter writer) throws Exception;
+    }
+
+    private record SseEvent(long id, JsonObject msg) {
     }
 }

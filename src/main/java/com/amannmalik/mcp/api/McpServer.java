@@ -1,5 +1,6 @@
 package com.amannmalik.mcp.api;
 
+import com.amannmalik.mcp.api.config.McpServerConfiguration;
 import com.amannmalik.mcp.auth.*;
 import com.amannmalik.mcp.codec.*;
 import com.amannmalik.mcp.core.*;
@@ -117,26 +118,6 @@ public final class McpServer extends JsonRpcEndpoint implements AutoCloseable {
         registerHandlers(resources, tools, prompts, completions);
     }
 
-    public void serve() throws IOException {
-        while (lifecycle.state() != LifecycleState.SHUTDOWN) {
-            var obj = receiveMessage();
-            if (obj.isEmpty()) {
-                continue;
-            }
-            try {
-                process(CODEC.fromJson(obj.get()));
-            } catch (IllegalArgumentException e) {
-                handleInvalidRequest(e);
-            } catch (IOException e) {
-                LOG.log(Logger.Level.ERROR, () -> config.errorProcessing() + ": " + e.getMessage());
-                sendLog(LoggingLevel.ERROR, config.serverLoggerName(), Json.createValue(e.getMessage()));
-            } catch (Exception e) {
-                LOG.log(Logger.Level.ERROR, () -> "Unexpected " + config.errorProcessing().toLowerCase(Locale.ROOT) + ": " + e.getMessage());
-                sendLog(LoggingLevel.ERROR, config.serverLoggerName(), Json.createValue(e.getMessage()));
-            }
-        }
-    }
-
     private static RateLimiter limiter(int perSecond, long windowMs) {
         return new RateLimiter(perSecond, windowMs);
     }
@@ -196,6 +177,26 @@ public final class McpServer extends JsonRpcEndpoint implements AutoCloseable {
 
     private static Logger.Level level(LoggingLevel l) {
         return PlatformLog.toPlatformLevel(l);
+    }
+
+    public void serve() throws IOException {
+        while (lifecycle.state() != LifecycleState.SHUTDOWN) {
+            var obj = receiveMessage();
+            if (obj.isEmpty()) {
+                continue;
+            }
+            try {
+                process(CODEC.fromJson(obj.get()));
+            } catch (IllegalArgumentException e) {
+                handleInvalidRequest(e);
+            } catch (IOException e) {
+                LOG.log(Logger.Level.ERROR, () -> config.errorProcessing() + ": " + e.getMessage());
+                sendLog(LoggingLevel.ERROR, config.serverLoggerName(), Json.createValue(e.getMessage()));
+            } catch (Exception e) {
+                LOG.log(Logger.Level.ERROR, () -> "Unexpected " + config.errorProcessing().toLowerCase(Locale.ROOT) + ": " + e.getMessage());
+                sendLog(LoggingLevel.ERROR, config.serverLoggerName(), Json.createValue(e.getMessage()));
+            }
+        }
     }
 
     private ToolCallHandler createToolHandler(ToolProvider tools,

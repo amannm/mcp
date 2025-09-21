@@ -1,5 +1,7 @@
-package com.amannmalik.mcp.api;
+package com.amannmalik.mcp.api.config;
 
+import com.amannmalik.mcp.api.CertificateValidationMode;
+import com.amannmalik.mcp.api.ClientCapability;
 import com.amannmalik.mcp.spi.SamplingAccessPolicy;
 import com.amannmalik.mcp.util.ValidationUtil;
 

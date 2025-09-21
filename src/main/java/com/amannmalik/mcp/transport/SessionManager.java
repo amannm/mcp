@@ -1,6 +1,6 @@
 package com.amannmalik.mcp.transport;
 
-import com.amannmalik.mcp.api.McpServerConfiguration;
+import com.amannmalik.mcp.api.config.McpServerConfiguration;
 import com.amannmalik.mcp.spi.Principal;
 import com.amannmalik.mcp.util.Base64Util;
 import com.amannmalik.mcp.util.ValidationUtil;
@@ -187,6 +187,7 @@ final class SessionManager {
 
     private record SessionState(String id, String owner, Principal principal) {
     }
+
     private record SanitizedHeaders(String sessionId, String version) {
     }
 }

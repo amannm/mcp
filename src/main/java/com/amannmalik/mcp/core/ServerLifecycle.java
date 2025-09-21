@@ -1,23 +1,11 @@
 package com.amannmalik.mcp.core;
 
-import com.amannmalik.mcp.api.ClientCapability;
-import com.amannmalik.mcp.api.RequestId;
-import com.amannmalik.mcp.api.ServerCapability;
-import com.amannmalik.mcp.api.ServerFeature;
-import com.amannmalik.mcp.api.ServerInfo;
+import com.amannmalik.mcp.api.*;
 import com.amannmalik.mcp.jsonrpc.JsonRpcError;
 import com.amannmalik.mcp.util.InitializeRequest;
 import com.amannmalik.mcp.util.InitializeResponse;
 
-import java.util.Collection;
-import java.util.Comparator;
-import java.util.EnumSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.Set;
-import java.util.TreeSet;
+import java.util.*;
 
 /**
  * Coordinates lifecycle transitions and negotiation details for {@link com.amannmalik.mcp.api.McpServer}.
@@ -44,6 +32,36 @@ public final class ServerLifecycle {
         this.serverInfo = Objects.requireNonNull(serverInfo, "serverInfo");
         this.instructions = instructions == null ? "" : instructions;
         this.protocolVersion = this.supportedVersions.get(0);
+    }
+
+    private static List<String> normaliseSupportedVersions(Collection<String> versions) {
+        if (versions == null) {
+            throw new IllegalArgumentException("supportedVersions required");
+        }
+        var sorted = new TreeSet<String>(Comparator.reverseOrder());
+        sorted.addAll(versions);
+        if (sorted.isEmpty()) {
+            throw new IllegalArgumentException("supportedVersions required");
+        }
+        return List.copyOf(sorted);
+    }
+
+    private static Set<ServerCapability> normaliseServerCapabilities(Set<ServerCapability> capabilities) {
+        if (capabilities == null || capabilities.isEmpty()) {
+            return EnumSet.noneOf(ServerCapability.class);
+        }
+        return EnumSet.copyOf(capabilities);
+    }
+
+    private static Set<ClientCapability> normaliseClientCapabilities(Capabilities requested) {
+        if (requested == null) {
+            return EnumSet.noneOf(ClientCapability.class);
+        }
+        var caps = requested.client();
+        if (caps.isEmpty()) {
+            return EnumSet.noneOf(ClientCapability.class);
+        }
+        return EnumSet.copyOf(caps);
     }
 
     public InitializeResponse initialize(InitializeRequest request, Set<ServerFeature> features) {
@@ -117,36 +135,6 @@ public final class ServerLifecycle {
                 declaredCapabilities,
                 Map.of(),
                 Map.of());
-    }
-
-    private static List<String> normaliseSupportedVersions(Collection<String> versions) {
-        if (versions == null) {
-            throw new IllegalArgumentException("supportedVersions required");
-        }
-        var sorted = new TreeSet<String>(Comparator.reverseOrder());
-        sorted.addAll(versions);
-        if (sorted.isEmpty()) {
-            throw new IllegalArgumentException("supportedVersions required");
-        }
-        return List.copyOf(sorted);
-    }
-
-    private static Set<ServerCapability> normaliseServerCapabilities(Set<ServerCapability> capabilities) {
-        if (capabilities == null || capabilities.isEmpty()) {
-            return EnumSet.noneOf(ServerCapability.class);
-        }
-        return EnumSet.copyOf(capabilities);
-    }
-
-    private static Set<ClientCapability> normaliseClientCapabilities(Capabilities requested) {
-        if (requested == null) {
-            return EnumSet.noneOf(ClientCapability.class);
-        }
-        var caps = requested.client();
-        if (caps.isEmpty()) {
-            return EnumSet.noneOf(ClientCapability.class);
-        }
-        return EnumSet.copyOf(caps);
     }
 
     private String negotiateProtocolVersion(String requested) {

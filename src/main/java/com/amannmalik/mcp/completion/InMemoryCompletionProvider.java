@@ -1,6 +1,6 @@
 package com.amannmalik.mcp.completion;
 
-import com.amannmalik.mcp.api.McpHostConfiguration;
+import com.amannmalik.mcp.api.config.McpHostConfiguration;
 import com.amannmalik.mcp.codec.ArgumentJsonCodec;
 import com.amannmalik.mcp.codec.ContextJsonCodec;
 import com.amannmalik.mcp.core.InMemoryProvider;
