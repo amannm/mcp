@@ -312,6 +312,16 @@ public final class StreamableHttpServerTransport implements Transport {
         }
     }
 
+    @Override
+    public void listen() {
+        // do nothing
+    }
+
+    @Override
+    public void setProtocolVersion(String version) {
+        // do nothing
+    }
+
     Optional<Principal> authorize(HttpServletRequest req, HttpServletResponse resp) throws IOException {
         return AuthorizationUtil.authorize(
                 authManager,

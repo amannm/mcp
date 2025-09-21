@@ -120,6 +120,16 @@ public final class StdioTransport implements Transport {
         CloseUtil.closeAll(out, in, resources);
     }
 
+    @Override
+    public void listen() {
+        // do nothing
+    }
+
+    @Override
+    public void setProtocolVersion(String version) {
+        // do nothing
+    }
+
     private enum Detached implements ProcessResources {
         INSTANCE;
 

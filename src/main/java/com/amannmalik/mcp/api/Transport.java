@@ -19,4 +19,8 @@ public sealed interface Transport extends AutoCloseable permits
 
     @Override
     void close() throws IOException;
+
+    void listen() throws IOException;
+
+    void setProtocolVersion(String version);
 }
