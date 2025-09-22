@@ -1,5 +1,6 @@
 package com.amannmalik.mcp.api;
 
+import com.amannmalik.mcp.api.config.LoggingLevel;
 import com.amannmalik.mcp.api.config.McpClientConfiguration;
 import com.amannmalik.mcp.api.config.McpHostConfiguration;
 import com.amannmalik.mcp.codec.*;
@@ -10,6 +11,7 @@ import com.amannmalik.mcp.sampling.InteractiveSamplingProvider;
 import com.amannmalik.mcp.security.*;
 import com.amannmalik.mcp.spi.*;
 import com.amannmalik.mcp.util.PlatformLog;
+import jakarta.json.Json;
 import jakarta.json.JsonObject;
 
 import java.io.IOException;
@@ -18,6 +20,8 @@ import java.net.URI;
 import java.time.Duration;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
@@ -39,6 +43,7 @@ public final class McpHost implements AutoCloseable {
     private final ToolAccessController toolAccess;
     private final ResourceAccessController privacyBoundary;
     private final SamplingAccessController samplingAccess;
+    private final Map<String, Events> events = new ConcurrentHashMap<>();
 
     public McpHost(McpHostConfiguration config) throws IOException {
         this.principal = new Principal(config.hostPrincipal(), Set.of());
@@ -51,14 +56,40 @@ public final class McpHost implements AutoCloseable {
             var samplingProvider = new InteractiveSamplingProvider(clientConfig.interactiveSampling());
             var roots = clientConfig.rootDirectories().stream().map(dir -> new Root(URI.create("file://" + dir), dir, null)).toList();
             var rootsProvider = new InMemoryRootsProvider(roots);
-            var listener = (clientConfig.verbose() || config.globalVerbose()) ? new McpClientListener() {
+            var listener = new McpClientListener() {
+                @Override
+                public void onProgress(ProgressNotification notification) {
+                    events.computeIfAbsent(clientConfig.clientId(), k -> new Events()).messages.add(
+                            new LoggingMessageNotification(LoggingLevel.INFO, "progress",
+                                    Json.createValue(notification.message() == null ? "" : notification.message())));
+                }
+
                 @Override
                 public void onMessage(LoggingMessageNotification notification) {
-                    var logger = notification.logger() == null ? "" : ":" + notification.logger();
-                    var level = PlatformLog.toPlatformLevel(notification.level());
-                    LOG.log(level, () -> "[" + clientConfig.clientId() + "]" + logger + " " + notification.data());
+                    var ev = events.computeIfAbsent(clientConfig.clientId(), k -> new Events());
+                    ev.messages.add(notification);
+                    if (clientConfig.verbose() || config.globalVerbose()) {
+                        var logger = notification.logger() == null ? "" : ":" + notification.logger();
+                        var level = PlatformLog.toPlatformLevel(notification.level());
+                        LOG.log(level, () -> "[" + clientConfig.clientId() + "]" + logger + " " + notification.data());
+                    }
                 }
-            } : null;
+
+                @Override
+                public void onResourceListChanged() {
+                    events.computeIfAbsent(clientConfig.clientId(), k -> new Events()).resourceListChanged.set(true);
+                }
+
+                @Override
+                public void onToolListChanged() {
+                    events.computeIfAbsent(clientConfig.clientId(), k -> new Events()).toolListChanged.set(true);
+                }
+
+                @Override
+                public void onPromptsListChanged() {
+                    events.computeIfAbsent(clientConfig.clientId(), k -> new Events()).promptsListChanged.set(true);
+                }
+            };
             var elicitationProvider = new InteractiveElicitationProvider();
             var client = new McpClient(
                     clientConfig,
@@ -236,6 +267,10 @@ public final class McpHost implements AutoCloseable {
         return requireClient(id);
     }
 
+    public Events events(String id) {
+        return events.computeIfAbsent(id, k -> new Events());
+    }
+
     private static void requireCapability(McpClient client, ServerCapability cap) {
         if (!client.serverCapabilities().contains(cap)) {
             throw new IllegalStateException("Server capability not supported: " + cap);
@@ -275,5 +310,19 @@ public final class McpHost implements AutoCloseable {
         } catch (SecurityException e) {
             return false;
         }
+    }
+    /// Test-visible event collector for assertions in integration tests.
+    public static final class Events {
+        final List<LoggingMessageNotification> messages = new CopyOnWriteArrayList<>();
+        final AtomicBoolean resourceListChanged = new AtomicBoolean();
+        final AtomicBoolean toolListChanged = new AtomicBoolean();
+        final AtomicBoolean promptsListChanged = new AtomicBoolean();
+
+        public Events() {}
+
+        public List<LoggingMessageNotification> messages() { return List.copyOf(messages); }
+        public boolean resourceListChanged() { return resourceListChanged.get(); }
+        public boolean toolListChanged() { return toolListChanged.get(); }
+        public boolean promptsListChanged() { return promptsListChanged.get(); }
     }
 }

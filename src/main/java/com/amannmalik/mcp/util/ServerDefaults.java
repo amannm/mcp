@@ -71,6 +71,15 @@ public final class ServerDefaults {
                 5L,
                 annotations,
                 null);
+        var projectFile = new Resource(
+                URI.create("file:///project/src/main.rs"),
+                "main_rs",
+                null,
+                null,
+                "text/plain",
+                7L,
+                annotations,
+                null);
         var webResource = new Resource(
                 URI.create("https://example.com/resource"),
                 "web",
@@ -92,11 +101,12 @@ public final class ServerDefaults {
 
         var content = Map.<URI, ResourceBlock>of(
                 sampleFile.uri(), new ResourceBlock.Text(sampleFile.uri(), "text/plain", "hello", null),
+                projectFile.uri(), new ResourceBlock.Text(projectFile.uri(), "text/plain", "fn main() {}", null),
                 webResource.uri(), new ResourceBlock.Text(webResource.uri(), "text/plain", "web", null),
                 gitResource.uri(), new ResourceBlock.Text(gitResource.uri(), "text/plain", "repo", null));
 
         var template = new ResourceTemplate(
-                "file:///sample/template",
+                "file:///{path}",
                 "example_template",
                 null,
                 null,
@@ -105,7 +115,7 @@ public final class ServerDefaults {
                 null);
 
         var provider = new InMemoryResourceProvider(
-                List.of(sampleFile, webResource, gitResource),
+                List.of(sampleFile, projectFile, webResource, gitResource),
                 content,
                 List.of(template));
 
@@ -165,16 +175,33 @@ public final class ServerDefaults {
 
     private static PromptProvider createPromptProvider() {
         var provider = new InMemoryPromptProvider();
+        // test_prompt retained
         var argument = new PromptArgument("test_arg", null, null, true, null);
         var prompt = new Prompt("test_prompt", "Test Prompt", null, List.of(argument), null);
         var message = new PromptMessageTemplate(Role.USER, new ContentBlock.Text("hello", null, null));
         provider.add(new PromptTemplate(prompt, List.of(message)));
+        var codeArg = new PromptArgument("code", null, null, true, null);
+        var langArg = new PromptArgument("language", null, null, false, null);
+        var codeReview = new Prompt("code_review", "Code Review", null, List.of(codeArg, langArg), null);
+        var codeMsg = new PromptMessageTemplate(Role.USER, new ContentBlock.Text("Review the code in the given language.", null, null));
+        provider.add(new PromptTemplate(codeReview, List.of(codeMsg)));
+        var mLang = new PromptArgument("language", null, null, true, null);
+        var mFramework = new PromptArgument("framework", null, null, false, null);
+        var multi = new Prompt("multi", "Multi Arg", null, List.of(mLang, mFramework), null);
+        var multiMsg = new PromptMessageTemplate(Role.USER, new ContentBlock.Text("Choose a framework.", null, null));
+        provider.add(new PromptTemplate(multi, List.of(multiMsg)));
         return provider;
     }
 
     private static CompletionProvider createCompletionProvider() {
         var provider = new InMemoryCompletionProvider();
         provider.add(new Ref.PromptRef("test_prompt", null, null), "test_arg", Map.of(), List.of("test_completion"));
+        provider.add(new Ref.PromptRef("code_review", null, null), "language", Map.of(), List.of("python", "java", "rust"));
+        provider.add(new Ref.ResourceRef("file:///{path}"), "path", Map.of(), List.of("src/", "build/", "specification/"));
+        provider.add(new Ref.PromptRef("multi", null, null), "framework", Map.of("language", "python"), List.of("flask", "fastapi", "falcon"));
+        List<String> many = new ArrayList<>();
+        for (int i = 0; i < 120; i++) many.add("item" + i);
+        provider.add(new Ref.PromptRef("many", null, null), "value", Map.of(), many);
         return provider;
     }
 
