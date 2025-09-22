@@ -9,9 +9,11 @@ import io.cucumber.java.en.*;
 import jakarta.json.*;
 
 import java.io.IOException;
+import java.net.URI;
 import java.nio.file.Path;
 import java.time.Duration;
 import java.util.*;
+import java.util.function.BooleanSupplier;
 import java.util.stream.Stream;
 
 public final class ServerFeaturesSteps {
@@ -60,7 +62,7 @@ public final class ServerFeaturesSteps {
     private List<JsonObject> resourceTemplates = List.of();
     private boolean resourceSubscriptionConfirmed;
     private boolean resourceUnsubscriptionConfirmed;
-    private boolean resourceUpdatedNotification;
+    private volatile boolean resourceUpdatedNotification;
     private boolean resourceListChangedNotification;
     private List<JsonObject> resourceAnnotations = List.of();
     private List<JsonObject> availablePrompts = List.of();
@@ -76,6 +78,7 @@ public final class ServerFeaturesSteps {
     private boolean accessControlsConfigured;
     private boolean unauthorizedDenied;
     private boolean errorMessageProvided;
+    private AutoCloseable resourceSubscriptionHandle;
 
     @Given("an established MCP connection with server capabilities")
     public void an_established_mcp_connection_with_server_capabilities() throws Exception {
@@ -83,7 +86,9 @@ public final class ServerFeaturesSteps {
         var java = System.getProperty("java.home") + "/bin/java";
         var jar = Path.of("build", "libs", "mcp-0.1.0.jar").toString();
         var cmd = java + " -jar " + jar + " server --stdio --test-mode";
-        var roots = Stream.concat(base.rootDirectories().stream(), Stream.of("/sample")).toList();
+        var roots = Stream.concat(
+                base.rootDirectories().stream(),
+                Stream.of("/sample", "/project")).toList();
         var tlsConfig = new TlsConfiguration(
                 "", "", "PKCS12", "", "", "PKCS12",
                 List.of("TLSv1.3", "TLSv1.2"), List.of("TLS_AES_128_GCM_SHA256", "TLS_AES_256_GCM_SHA384")
@@ -438,7 +443,13 @@ public final class ServerFeaturesSteps {
         if (!subscribedToToolUpdates) {
             throw new IllegalStateException("not subscribed");
         }
-        toolListChangedNotification = false; // TODO: requires provider emitting listChanged
+        lastToolException = null;
+        var events = activeConnection.events(clientId);
+        events.resetToolListChanged();
+        toolListChangedNotification = awaitCondition(events::toolListChanged, Duration.ofSeconds(5));
+        if (!toolListChangedNotification) {
+            lastToolException = new IllegalStateException("Timed out waiting for tool list change");
+        }
     }
 
     @Then("I should receive a \"notifications\\/tools\\/list_changed\" notification")
@@ -460,13 +471,7 @@ public final class ServerFeaturesSteps {
             try {
                 var r = activeConnection.callTool(clientId, tool.name(), Json.createObjectBuilder().build());
                 for (var v : r.content()) {
-                    if (v instanceof JsonObject) {
-                        var obj = v.asJsonObject();
-                        var type = obj.getString("type", null);
-                        if (type != null && !contentTypeSamples.containsKey(type)) {
-                            contentTypeSamples.put(type, obj);
-                        }
-                    }
+                    recordContentTypeSample(v);
                 }
             } catch (Exception ignore) {
             }
@@ -747,8 +752,12 @@ public final class ServerFeaturesSteps {
     @When("I send a \"resources\\/subscribe\" request for the resource URI")
     public void i_send_a_resources_subscribe_request_for_the_resource_uri() throws Exception {
         try {
-            var params = Json.createObjectBuilder().add("uri", resourceUri).build();
-            activeConnection.client(clientId).request(RequestMethod.RESOURCES_SUBSCRIBE, params, Duration.ofSeconds(5));
+            if (resourceSubscriptionHandle != null) {
+                resourceSubscriptionHandle.close();
+            }
+            var uri = URI.create(resourceUri);
+            resourceUpdatedNotification = false;
+            resourceSubscriptionHandle = activeConnection.subscribeToResource(clientId, uri, update -> resourceUpdatedNotification = true);
             resourceSubscriptionConfirmed = true;
         } catch (Exception e) {
             resourceSubscriptionConfirmed = false;
@@ -764,8 +773,7 @@ public final class ServerFeaturesSteps {
 
     @Then("when the resource changes, I should receive \"notifications\\/resources\\/updated\"")
     public void when_the_resource_changes_i_should_receive_notifications_resources_updated() {
-        resourceUpdatedNotification = false; // TODO: requires real server update event
-        if (!resourceUpdatedNotification) {
+        if (!awaitCondition(() -> resourceUpdatedNotification, Duration.ofSeconds(5))) {
             throw new AssertionError("update notification not received");
         }
     }
@@ -775,6 +783,10 @@ public final class ServerFeaturesSteps {
         try {
             var params = Json.createObjectBuilder().add("uri", resourceUri).build();
             resourceUnsubscriptionConfirmed = !"JsonRpcError".equals(activeConnection.client(clientId).request(RequestMethod.RESOURCES_UNSUBSCRIBE, params, Duration.ofSeconds(5)).getClass().getSimpleName());
+            if (resourceSubscriptionHandle != null) {
+                resourceSubscriptionHandle.close();
+                resourceSubscriptionHandle = null;
+            }
         } catch (Exception e) {
             resourceUnsubscriptionConfirmed = false;
         }
@@ -798,7 +810,9 @@ public final class ServerFeaturesSteps {
 
     @When("the server's resource list changes")
     public void the_server_s_resource_list_changes() {
-        resourceListChangedNotification = false; // TODO: requires provider emitting listChanged
+        var events = activeConnection.events(clientId);
+        events.resetResourceListChanged();
+        resourceListChangedNotification = awaitCondition(events::resourceListChanged, Duration.ofSeconds(5));
     }
 
     @Then("I should receive a \"notifications\\/resources\\/list_changed\" notification")
@@ -1069,27 +1083,27 @@ public final class ServerFeaturesSteps {
         // Attempt to fetch a real prompt and record actual content blocks present
         contentTypeSamples.clear();
         i_send_a_prompts_list_request();
-        if (!availablePrompts.isEmpty()) {
-            var first = availablePrompts.getFirst();
+        for (var prompt : availablePrompts) {
             var req = Json.createObjectBuilder()
-                    .add("name", first.getString("name"))
+                    .add("name", prompt.getString("name"))
                     .add("arguments", Json.createObjectBuilder().build())
                     .build();
             try {
                 var msg = activeConnection.client(clientId).request(RequestMethod.PROMPTS_GET, req, Duration.ofSeconds(5));
                 var res = extractResult(msg);
                 var messages = res == null ? null : res.getJsonArray("messages");
-                if (messages != null && !messages.isEmpty()) {
-                    var content = messages.getJsonObject(0).getJsonArray("content");
-                    if (content != null) {
-                        for (var v : content) {
-                            if (v instanceof JsonObject o) {
-                                var t = o.getString("type", null);
-                                if (t != null && !contentTypeSamples.containsKey(t)) {
-                                    contentTypeSamples.put(t, o);
-                                }
-                            }
+                if (messages == null) {
+                    continue;
+                }
+                for (var entry : messages) {
+                    var message = entry.asJsonObject();
+                    var contentValue = message.get("content");
+                    if (contentValue instanceof JsonArray array) {
+                        for (var v : array) {
+                            recordContentTypeSample(v);
                         }
+                    } else {
+                        recordContentTypeSample(contentValue);
                     }
                 }
             } catch (Exception ignore) {
@@ -1114,6 +1128,17 @@ public final class ServerFeaturesSteps {
         }
     }
 
+    private void recordContentTypeSample(JsonValue value) {
+        if (!(value instanceof JsonObject obj)) {
+            return;
+        }
+        var type = obj.getString("type", null);
+        if (type == null) {
+            return;
+        }
+        contentTypeSamples.putIfAbsent(type, obj);
+    }
+
     @Given("the server has prompts capability with \"listChanged\" enabled")
     public void the_server_has_prompts_capability_with_list_changed_enabled() {
         if (!activeConnection.client(clientId).serverFeatures().contains(ServerFeature.PROMPTS_LIST_CHANGED)) {
@@ -1123,7 +1148,9 @@ public final class ServerFeaturesSteps {
 
     @When("the server's prompt list changes")
     public void the_server_s_prompt_list_changes() {
-        promptListChangedNotification = false; // TODO: requires provider emitting listChanged
+        var events = activeConnection.events(clientId);
+        events.resetPromptsListChanged();
+        promptListChangedNotification = awaitCondition(events::promptsListChanged, Duration.ofSeconds(5));
     }
 
     @Then("I should receive a \"notifications\\/prompts\\/list_changed\" notification")
@@ -1221,14 +1248,15 @@ public final class ServerFeaturesSteps {
         logMessages.clear();
         // Generate a server-side INFO log via cancellation notification
         try {
+            var events = activeConnection.events(clientId);
+            events.clearMessages();
             var payload = Json.createObjectBuilder()
                     .add("requestId", new RequestId.NumericId(999).toString())
                     .add("reason", "test")
                     .build();
             activeConnection.client(clientId).sendNotification(NotificationMethod.CANCELLED, payload);
-            // collect from host events
-            var ev = activeConnection.events(clientId);
-            for (var n : ev.messages()) {
+            awaitCondition(() -> !activeConnection.events(clientId).messages().isEmpty(), Duration.ofSeconds(5));
+            for (var n : activeConnection.events(clientId).messages()) {
                 logMessages.add(Json.createObjectBuilder()
                         .add("level", n.level().name().toLowerCase())
                         .add("logger", n.logger() == null ? "" : n.logger())
@@ -1248,11 +1276,14 @@ public final class ServerFeaturesSteps {
     public void the_server_generates_log_messages() {
         logMessages.clear();
         try {
+            var events = activeConnection.events(clientId);
+            events.clearMessages();
             var payload = Json.createObjectBuilder()
                     .add("requestId", new RequestId.NumericId(1000).toString())
                     .add("reason", "hello")
                     .build();
             activeConnection.client(clientId).sendNotification(NotificationMethod.CANCELLED, payload);
+            awaitCondition(() -> !activeConnection.events(clientId).messages().isEmpty(), Duration.ofSeconds(5));
             for (var n : activeConnection.events(clientId).messages()) {
                 logMessages.add(Json.createObjectBuilder()
                         .add("level", n.level().name().toLowerCase())
@@ -1394,10 +1425,11 @@ public final class ServerFeaturesSteps {
                 .add("type", row.get("ref_type"))
                 .add("name", row.get("ref_name"))
                 .build();
-        var args = Json.createObjectBuilder()
-                .add(row.get("argument_name"), row.get("argument_value"))
+        var argument = Json.createObjectBuilder()
+                .add("name", row.get("argument_name"))
+                .add("value", row.get("argument_value"))
                 .build();
-        var params = Json.createObjectBuilder().add("ref", ref).add("arguments", args).build();
+        var params = Json.createObjectBuilder().add("ref", ref).add("argument", argument).build();
         try {
             var msg = activeConnection.client(clientId).request(RequestMethod.COMPLETION_COMPLETE, params, Duration.ofSeconds(5));
             lastCompletion = extractResult(msg);
@@ -1434,10 +1466,11 @@ public final class ServerFeaturesSteps {
                 .add("type", row.get("ref_type"))
                 .add("uri", row.get("ref_uri"))
                 .build();
-        var args = Json.createObjectBuilder()
-                .add(row.get("argument_name"), row.get("argument_value"))
+        var argument = Json.createObjectBuilder()
+                .add("name", row.get("argument_name"))
+                .add("value", row.get("argument_value"))
                 .build();
-        var params = Json.createObjectBuilder().add("ref", ref).add("arguments", args).build();
+        var params = Json.createObjectBuilder().add("ref", ref).add("argument", argument).build();
         try {
             var msg = activeConnection.client(clientId).request(RequestMethod.COMPLETION_COMPLETE, params, Duration.ofSeconds(5));
             lastCompletion = extractResult(msg);
@@ -1464,8 +1497,24 @@ public final class ServerFeaturesSteps {
         for (var row : table.asMaps(String.class, String.class)) {
             args.add(row.get("argument"), row.get("value"));
         }
+        var rows = table.asMaps(String.class, String.class);
+        var argumentRow = rows.getLast();
+        var contextBuilder = Json.createObjectBuilder();
+        for (int i = 0; i < rows.size() - 1; i++) {
+            var row = rows.get(i);
+            contextBuilder.add(row.get("argument"), row.get("value"));
+        }
         var ref = Json.createObjectBuilder().add("type", "ref/prompt").add("name", "multi").build();
-        var params = Json.createObjectBuilder().add("ref", ref).add("arguments", args.build()).build();
+        var argument = Json.createObjectBuilder()
+                .add("name", argumentRow.get("argument"))
+                .add("value", argumentRow.get("value"))
+                .build();
+        var paramsBuilder = Json.createObjectBuilder().add("ref", ref).add("argument", argument);
+        var contextArgs = contextBuilder.build();
+        if (!contextArgs.isEmpty()) {
+            paramsBuilder.add("context", Json.createObjectBuilder().add("arguments", contextArgs).build());
+        }
+        var params = paramsBuilder.build();
         try {
             var msg = activeConnection.client(clientId).request(RequestMethod.COMPLETION_COMPLETE, params, Duration.ofSeconds(5));
             lastCompletion = extractResult(msg);
@@ -1492,7 +1541,9 @@ public final class ServerFeaturesSteps {
     public void i_request_completions_that_have_many_matches() throws Exception {
         var ref = Json.createObjectBuilder().add("type", "ref/prompt").add("name", "many").build();
         try {
-            var msg = activeConnection.client(clientId).request(RequestMethod.COMPLETION_COMPLETE, Json.createObjectBuilder().add("ref", ref).build(), Duration.ofSeconds(5));
+            var argument = Json.createObjectBuilder().add("name", "value").add("value", "").build();
+            var msg = activeConnection.client(clientId).request(RequestMethod.COMPLETION_COMPLETE,
+                    Json.createObjectBuilder().add("ref", ref).add("argument", argument).build(), Duration.ofSeconds(5));
             lastCompletion = extractResult(msg);
         } catch (Exception e) {
             lastCompletion = null;
@@ -1750,9 +1801,34 @@ public final class ServerFeaturesSteps {
         serverCapabilities.clear();
         serverFeatures.clear();
         availableTools = List.of();
+        if (resourceSubscriptionHandle != null) {
+            try {
+                resourceSubscriptionHandle.close();
+            } catch (Exception ignore) {
+            }
+            resourceSubscriptionHandle = null;
+        }
     }
 
     private record ErrorCheck(String scenario, int expectedCode, String expectedMessage, int actualCode, String actualMessage) {
+    }
+
+    private boolean awaitCondition(BooleanSupplier condition, Duration timeout) {
+        Objects.requireNonNull(condition, "condition");
+        Objects.requireNonNull(timeout, "timeout");
+        var deadline = System.nanoTime() + timeout.toNanos();
+        while (System.nanoTime() < deadline) {
+            if (condition.getAsBoolean()) {
+                return true;
+            }
+            try {
+                Thread.sleep(50);
+            } catch (InterruptedException ie) {
+                Thread.currentThread().interrupt();
+                break;
+            }
+        }
+        return condition.getAsBoolean();
     }
 
     private static JsonObject extractResult(com.amannmalik.mcp.api.JsonRpcMessage msg) {

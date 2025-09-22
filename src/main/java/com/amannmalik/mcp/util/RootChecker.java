@@ -21,7 +21,7 @@ public final class RootChecker {
             return true;
         }
         if (roots.isEmpty()) {
-            return false;
+            return true;
         }
 
         var targetPath = filePath(uri).orElse(null);

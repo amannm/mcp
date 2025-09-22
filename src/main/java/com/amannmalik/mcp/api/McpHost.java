@@ -324,5 +324,9 @@ public final class McpHost implements AutoCloseable {
         public boolean resourceListChanged() { return resourceListChanged.get(); }
         public boolean toolListChanged() { return toolListChanged.get(); }
         public boolean promptsListChanged() { return promptsListChanged.get(); }
+        public void clearMessages() { messages.clear(); }
+        public void resetResourceListChanged() { resourceListChanged.set(false); }
+        public void resetToolListChanged() { toolListChanged.set(false); }
+        public void resetPromptsListChanged() { promptsListChanged.set(false); }
     }
 }

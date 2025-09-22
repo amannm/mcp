@@ -84,6 +84,9 @@ public final class McpServer extends JsonRpcEndpoint implements AutoCloseable {
     private AutoCloseable resourceListSubscription;
     private AutoCloseable toolListSubscription;
     private AutoCloseable promptsSubscription;
+    private Runnable toolListChangedEmitter;
+    private Runnable promptsListChangedEmitter;
+    private Runnable resourceListChangedEmitter;
 
     public McpServer(McpServerConfiguration config,
                      ResourceProvider resources,
@@ -215,11 +218,11 @@ public final class McpServer extends JsonRpcEndpoint implements AutoCloseable {
                 handleInvalidRequest(e);
             } catch (IOException e) {
                 LOG.log(Logger.Level.ERROR, () -> config.errorProcessing() + ": " + e.getMessage());
-                var data = Json.createValue(e.getMessage());
+                var data = normalizeLogData(Json.createValue(e.getMessage()));
                 sendLog(new LoggingMessageNotification(LoggingLevel.ERROR, config.serverLoggerName(), data));
             } catch (Exception e) {
                 LOG.log(Logger.Level.ERROR, () -> "Unexpected " + config.errorProcessing().toLowerCase(Locale.ROOT) + ": " + e.getMessage());
-                var data = Json.createValue(e.getMessage());
+                var data = normalizeLogData(Json.createValue(e.getMessage()));
                 sendLog(new LoggingMessageNotification(LoggingLevel.ERROR, config.serverLoggerName(), data));
             }
         }
@@ -227,49 +230,52 @@ public final class McpServer extends JsonRpcEndpoint implements AutoCloseable {
 
     private void subscribeListChanges(ToolProvider tools, PromptProvider prompts) {
         if (tools != null && tools.supportsListChanged()) {
+            toolListChangedEmitter = () -> {
+                try {
+                    send(new JsonRpcNotification(
+                            NotificationMethod.TOOLS_LIST_CHANGED.method(),
+                            TOOL_LIST_CHANGED_NOTIFICATION_JSON_CODEC.toJson(new ToolListChangedNotification())));
+                } catch (IOException e) {
+                    throw new UncheckedIOException(e);
+                }
+            };
             toolListSubscription = subscribeListChanges0(
                     lifecycle::state,
                     tools::onListChanged,
-                    () -> {
-                        try {
-                            send(new JsonRpcNotification(
-                                    NotificationMethod.TOOLS_LIST_CHANGED.method(),
-                                    TOOL_LIST_CHANGED_NOTIFICATION_JSON_CODEC.toJson(new ToolListChangedNotification())));
-                        } catch (IOException e) {
-                            throw new UncheckedIOException(e);
-                        }
-                    });
+                    toolListChangedEmitter);
         }
         if (prompts != null && prompts.supportsListChanged()) {
+            promptsListChangedEmitter = () -> {
+                try {
+                    send(new JsonRpcNotification(
+                            NotificationMethod.PROMPTS_LIST_CHANGED.method(),
+                            PromptListChangedNotification.CODEC.toJson(new PromptListChangedNotification())));
+                } catch (IOException e) {
+                    throw new UncheckedIOException(e);
+                }
+            };
             promptsSubscription = subscribeListChanges0(
                     lifecycle::state,
                     prompts::onListChanged,
-                    () -> {
-                        try {
-                            send(new JsonRpcNotification(
-                                    NotificationMethod.PROMPTS_LIST_CHANGED.method(),
-                                    PromptListChangedNotification.CODEC.toJson(new PromptListChangedNotification())));
-                        } catch (IOException e) {
-                            throw new UncheckedIOException(e);
-                        }
-                    });
+                    promptsListChangedEmitter);
         }
     }
 
     private void subscribeResourceListChanges(ResourceProvider resources) {
         if (resources != null && resources.supportsListChanged()) {
+            resourceListChangedEmitter = () -> {
+                try {
+                    send(new JsonRpcNotification(
+                            NotificationMethod.RESOURCES_LIST_CHANGED.method(),
+                            RESOURCE_LIST_CHANGED_NOTIFICATION_JSON_CODEC.toJson(new ResourceListChangedNotification())));
+                } catch (IOException e) {
+                    throw new UncheckedIOException(e);
+                }
+            };
             resourceListSubscription = subscribeListChanges0(
                     lifecycle::state,
                     resources::onListChanged,
-                    () -> {
-                        try {
-                            send(new JsonRpcNotification(
-                                    NotificationMethod.RESOURCES_LIST_CHANGED.method(),
-                                    RESOURCE_LIST_CHANGED_NOTIFICATION_JSON_CODEC.toJson(new ResourceListChangedNotification())));
-                        } catch (IOException e) {
-                            throw new UncheckedIOException(e);
-                        }
-                    });
+                    resourceListChangedEmitter);
         }
     }
 
@@ -316,7 +322,7 @@ public final class McpServer extends JsonRpcEndpoint implements AutoCloseable {
         } catch (IOException e) {
             LOG.log(Logger.Level.ERROR, () -> config.errorProcessing() + ": " + e.getMessage());
             try {
-                JsonValue data = Json.createValue(e.getMessage());
+                JsonValue data = normalizeLogData(Json.createValue(e.getMessage()));
                 sendLog(new LoggingMessageNotification(LoggingLevel.ERROR, config.serverLoggerName(), data));
             } catch (IOException ioe) {
                 LOG.log(Logger.Level.ERROR, () -> "Failed to send error: " + ioe.getMessage());
@@ -333,11 +339,60 @@ public final class McpServer extends JsonRpcEndpoint implements AutoCloseable {
                                String message) {
         LOG.log(level(logLevel), prefix + ": " + message);
         try {
-            sendLog(new LoggingMessageNotification(logLevel, logger, (JsonValue) Json.createValue(message)));
+            sendLog(new LoggingMessageNotification(logLevel, logger, normalizeLogData(Json.createValue(message))));
             send(JsonRpcError.of(id, code, message));
         } catch (IOException ioe) {
             LOG.log(Logger.Level.ERROR, () -> "Failed to send error: " + ioe.getMessage());
         }
+    }
+
+    private void emitInitialListChangedNotifications() {
+        emitListChanged(toolListChangedEmitter);
+        emitListChanged(promptsListChangedEmitter);
+        emitListChanged(resourceListChangedEmitter);
+    }
+
+    private void emitListChanged(Runnable emitter) {
+        if (emitter == null) {
+            return;
+        }
+        try {
+            emitter.run();
+        } catch (UncheckedIOException e) {
+            LOG.log(Logger.Level.WARNING, () -> "Failed to send list changed notification: " + e.getMessage());
+        }
+    }
+
+    private void scheduleResourceSnapshot(URI uri) {
+        CompletableFuture.runAsync(() -> {
+            try {
+                Thread.sleep(50);
+                if (!resourceSubscriptions.containsKey(uri)) {
+                    return;
+                }
+                var title = resources.get(uri).map(Resource::title).orElse(null);
+                send(new JsonRpcNotification(
+                        NotificationMethod.RESOURCES_UPDATED.method(),
+                        RESOURCE_UPDATED_NOTIFICATION_JSON_CODEC.toJson(new ResourceUpdatedNotification(uri, title))));
+            } catch (IOException e) {
+                LOG.log(Logger.Level.WARNING, () -> "Failed to send initial resource update: " + e.getMessage());
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            }
+        });
+    }
+
+    private JsonValue normalizeLogData(JsonValue value) {
+        if (value instanceof JsonObject) {
+            return value;
+        }
+        if (value instanceof JsonString js) {
+            return Json.createObjectBuilder().add("message", js.getString()).build();
+        }
+        if (value == null || value.getValueType() == JsonValue.ValueType.NULL) {
+            return Json.createObjectBuilder().build();
+        }
+        return Json.createObjectBuilder().add("value", value.toString()).build();
     }
 
     private void handleParseError(JsonParsingException e) {
@@ -369,6 +424,7 @@ public final class McpServer extends JsonRpcEndpoint implements AutoCloseable {
 
     private void initialized(JsonRpcNotification ignored) {
         lifecycle.confirmInitialized();
+        emitInitialListChangedNotifications();
         rootsManager.refreshAsync();
     }
 
@@ -428,7 +484,7 @@ public final class McpServer extends JsonRpcEndpoint implements AutoCloseable {
         progress.release(cn.requestId());
         try {
             var payload = reason.<JsonValue>map(Json::createValue).orElse(JsonValue.NULL);
-            sendLog(new LoggingMessageNotification(LoggingLevel.INFO, config.cancellationLoggerName(), payload));
+            sendLog(new LoggingMessageNotification(LoggingLevel.INFO, config.cancellationLoggerName(), normalizeLogData(payload)));
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
@@ -623,6 +679,7 @@ public final class McpServer extends JsonRpcEndpoint implements AutoCloseable {
                     }
                 });
                 resourceSubscriptions.put(uri, sub);
+                scheduleResourceSnapshot(uri);
             } catch (Exception e) {
                 return JsonRpcError.of(req.id(), JsonRpcErrorCode.INTERNAL_ERROR, e.getMessage());
             }
