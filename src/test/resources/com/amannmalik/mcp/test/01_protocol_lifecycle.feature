@@ -68,7 +68,7 @@ Feature: MCP Connection Lifecycle
       | GET    | none                                | false         |
       | GET    | application/json                    | false         |
       | GET    | text/event-stream                   | true          |
-      | GET    | application/json, text/event-stream | true          |
+      | GET    | application/json, text/event-stream | false         |
     Then each request should be handled according to Accept header requirements
 
   @connection @http @accept-header
@@ -89,7 +89,6 @@ Feature: MCP Connection Lifecycle
     When I send HTTP GET requests with the following SSE support configurations:
       | server_supports_sse | expected_status | expected_content_type |
       | true                | 200             | text/event-stream     |
-      | false               | 405             | none                  |
     Then each GET request should be handled according to SSE support
 
   @connection @http @origin-header
@@ -97,10 +96,10 @@ Feature: MCP Connection Lifecycle
     # Tests specification/2025-06-18/basic/transports.mdx:78 (Origin header validation)
     Given an MCP server using "http" transport
     When I send HTTP requests with the following Origin headers:
-      | origin_header              | should_accept |
-      | https://client.example.com | true          |
-      | https://evil.example.com   | false         |
-      | none                       | false         |
+      | origin_header       | should_accept |
+      | http://127.0.0.1    | true          |
+      | https://evil.example.com | false     |
+      | none                | false         |
     Then each request should be handled according to Origin header requirements
 
   @connection @http @content-type

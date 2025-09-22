@@ -1,7 +1,10 @@
 package com.amannmalik.mcp.spi;
 
 import com.amannmalik.mcp.util.ValidationUtil;
+import jakarta.json.JsonNumber;
 import jakarta.json.JsonObject;
+import jakarta.json.JsonString;
+import jakarta.json.JsonValue;
 
 public record ElicitResult(ElicitationAction action, JsonObject content, JsonObject _meta) implements Result {
 
@@ -17,10 +20,10 @@ public record ElicitResult(ElicitationAction action, JsonObject content, JsonObj
                 ValidationUtil.requireClean(entry.getKey());
                 var value = entry.getValue();
                 switch (value) {
-                    case jakarta.json.JsonString js -> ValidationUtil.requireClean(js.getString());
-                    case jakarta.json.JsonNumber ignored -> {
+                    case JsonString js -> ValidationUtil.requireClean(js.getString());
+                    case JsonNumber ignored -> {
                     }
-                    case jakarta.json.JsonValue jv when jv == jakarta.json.JsonValue.TRUE || jv == jakarta.json.JsonValue.FALSE -> {
+                    case JsonValue jv when jv == JsonValue.TRUE || jv == JsonValue.FALSE -> {
                     }
                     default -> throw new IllegalArgumentException("content values must be primitive");
                 }
