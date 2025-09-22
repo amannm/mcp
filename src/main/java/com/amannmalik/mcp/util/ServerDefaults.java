@@ -12,6 +12,7 @@ import jakarta.json.Json;
 import jakarta.json.JsonObject;
 
 import java.net.URI;
+import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.*;
 import java.util.function.Consumer;
@@ -163,7 +164,7 @@ public final class ServerDefaults {
         var handlers = Map.<String, Function<JsonObject, ToolResult>>ofEntries(
                 Map.entry("test_tool", args -> structuredMessageResult("ok")),
                 Map.entry("error_tool", args -> errorResult("fail")),
-                Map.entry("echo_tool", args -> textResult(args.getString("msg"))),
+                Map.entry("echo_tool", args -> textResult(sanitize(args.getString("msg")))),
                 Map.entry("slow_tool", args -> slowResult()),
                 Map.entry("image_tool", args -> binaryResult("image")),
                 Map.entry("audio_tool", args -> binaryResult("audio")),
@@ -190,6 +191,24 @@ public final class ServerDefaults {
         var multi = new Prompt("multi", "Multi Arg", null, List.of(mLang, mFramework), null);
         var multiMsg = new PromptMessageTemplate(Role.USER, new ContentBlock.Text("Choose a framework.", null, null));
         provider.add(new PromptTemplate(multi, List.of(multiMsg)));
+        var textPrompt = new Prompt("text_prompt", "Text Prompt", null, List.of(), null);
+        var textMsg = new PromptMessageTemplate(Role.USER, new ContentBlock.Text("Sample text", null, null));
+        provider.add(new PromptTemplate(textPrompt, List.of(textMsg)));
+        var imagePrompt = new Prompt("image_prompt", "Image Prompt", null, List.of(), null);
+        var imageMsg = new PromptMessageTemplate(Role.USER,
+                new ContentBlock.Image("sample".getBytes(StandardCharsets.UTF_8), "image/png", null, null));
+        provider.add(new PromptTemplate(imagePrompt, List.of(imageMsg)));
+        var audioPrompt = new Prompt("audio_prompt", "Audio Prompt", null, List.of(), null);
+        var audioMsg = new PromptMessageTemplate(Role.USER,
+                new ContentBlock.Audio("sound".getBytes(StandardCharsets.UTF_8), "audio/wav", null, null));
+        provider.add(new PromptTemplate(audioPrompt, List.of(audioMsg)));
+        var sampleBlock = RESOURCE_DEFAULTS.provider().read(RESOURCE_DEFAULTS.sampleResource().uri());
+        if (sampleBlock != null) {
+            var resourcePrompt = new Prompt("resource_prompt", "Resource Prompt", null, List.of(), null);
+            var resourceMsg = new PromptMessageTemplate(Role.USER,
+                    new ContentBlock.EmbeddedResource(sampleBlock, null, null));
+            provider.add(new PromptTemplate(resourcePrompt, List.of(resourceMsg)));
+        }
         return provider;
     }
 
@@ -233,6 +252,17 @@ public final class ServerDefaults {
                 null,
                 false,
                 null);
+    }
+
+    private static String sanitize(String value) {
+        if (value == null) {
+            return "";
+        }
+        var normalized = value.toLowerCase(Locale.ROOT);
+        if (normalized.contains("<script")) {
+            throw new IllegalArgumentException("disallowed input");
+        }
+        return value.replace("<", "&lt;").replace(">", "&gt;");
     }
 
     private static ToolResult slowResult() {
