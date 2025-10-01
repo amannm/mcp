@@ -107,6 +107,7 @@ public final class StdioTransport implements Transport {
             throw new IOException("Interrupted while waiting for input", e);
         }
         if (line == null) {
+            resources.checkAlive();
             throw new EOFException();
         }
         try (var reader = Json.createReader(new StringReader(line))) {
