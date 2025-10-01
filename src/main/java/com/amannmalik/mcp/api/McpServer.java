@@ -579,6 +579,11 @@ public final class McpServer extends JsonRpcEndpoint implements AutoCloseable {
     }
 
     private JsonRpcMessage getPrompt(JsonRpcRequest req) {
+        var initCheck = lifecycle.ensureInitialized(req.id(), config.errorNotInitialized())
+                .map(error -> (JsonRpcMessage) error);
+        if (initCheck.isPresent()) {
+            return initCheck.get();
+        }
         requireServerCapability(ServerCapability.PROMPTS);
         try {
             var getRequest = GET_PROMPT_REQUEST_JSON_CODEC.fromJson(req.params());
