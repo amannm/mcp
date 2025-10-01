@@ -64,7 +64,6 @@ tasks.test {
     useJUnitPlatform()
     javaLauncher.set(javaToolchains.launcherFor(java.toolchain))
     dependsOn(tasks.jar)
-    finalizedBy(tasks.jacocoTestReport)
     val agentFile = configurations.jacocoAgent.get().singleFile.absolutePath.replace(".jar", "-runtime.jar")
     systemProperty("jacoco.agent.jar", agentFile)
     systemProperty("jacoco.exec.file", "${layout.buildDirectory.get()}/jacoco/test.exec")
@@ -120,6 +119,10 @@ tasks.jacocoTestReport {
     doFirst {
         mkdir("${layout.buildDirectory.get()}/jacoco")
     }
+}
+
+tasks.check {
+    dependsOn(tasks.jacocoTestReport)
 }
 
 jmh {
