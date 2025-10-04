@@ -362,8 +362,8 @@ public final class StreamableHttpServerTransport implements Transport {
 
     boolean validateAccept(HttpServletRequest req, HttpServletResponse resp, boolean post) throws IOException {
         return post
-                ? requireAcceptHeader(req, resp, AcceptHeader.APPLICATION_JSON, AcceptHeader.TEXT_EVENT_STREAM)
-                : requireAcceptHeader(req, resp, AcceptHeader.TEXT_EVENT_STREAM);
+                ? requireAcceptHeader(req, resp, true, AcceptHeader.APPLICATION_JSON, AcceptHeader.TEXT_EVENT_STREAM)
+                : requireAcceptHeader(req, resp, false, AcceptHeader.TEXT_EVENT_STREAM);
     }
 
     boolean validateSession(HttpServletRequest req,
@@ -375,6 +375,7 @@ public final class StreamableHttpServerTransport implements Transport {
 
     private boolean requireAcceptHeader(HttpServletRequest req,
                                         HttpServletResponse resp,
+                                        boolean allowAdditional,
                                         String... expectedTypes) throws IOException {
         var header = req.getHeader("Accept");
         if (header == null) {
@@ -388,7 +389,10 @@ public final class StreamableHttpServerTransport implements Transport {
             resp.sendError(HttpServletResponse.SC_NOT_ACCEPTABLE);
             return false;
         }
-        if (!parsed.matchesExactly(expectedTypes)) {
+        var valid = allowAdditional
+                ? parsed.containsAll(expectedTypes)
+                : parsed.matchesExactly(expectedTypes);
+        if (!valid) {
             resp.sendError(HttpServletResponse.SC_NOT_ACCEPTABLE);
             return false;
         }

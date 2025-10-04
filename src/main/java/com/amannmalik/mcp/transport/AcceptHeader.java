@@ -50,12 +50,25 @@ final class AcceptHeader {
         return type.toLowerCase(Locale.ROOT);
     }
 
+    boolean containsAll(String... requiredTypes) {
+        for (var type : requiredTypes) {
+            var normalized = normalizeType(type);
+            if (!mediaTypes.contains(normalized)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
     boolean matchesExactly(String... requiredTypes) {
         Set<String> expected = new LinkedHashSet<>(requiredTypes.length);
         for (var type : requiredTypes) {
             expected.add(normalizeType(type));
         }
-        return mediaTypes.equals(Set.copyOf(expected));
+        if (!mediaTypes.equals(Set.copyOf(expected))) {
+            return false;
+        }
+        return true;
     }
 }
 
