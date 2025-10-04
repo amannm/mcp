@@ -37,7 +37,7 @@ public final class ProtocolLifecycleSteps {
     private final List<Boolean> postMessageBodiesEmpty = new ArrayList<>();
     private final List<Boolean> expectedPostMessageBodiesEmpty = new ArrayList<>();
     // HTTP harness
-    private ServerHardness http;
+    private ServerHarness http;
     private java.net.http.HttpClient httpClient;
     private java.net.URI httpEndpoint;
     private String httpSessionId;
@@ -471,7 +471,7 @@ public final class ProtocolLifecycleSteps {
         if ("http".equalsIgnoreCase(transportType)) {
             try {
                 if (http == null) {
-                    http = ServerHardness.start();
+                    http = ServerHarness.start();
                     httpEndpoint = http.endpoint();
                     httpClient = java.net.http.HttpClient.newHttpClient();
                 }
@@ -496,7 +496,7 @@ public final class ProtocolLifecycleSteps {
         }
         try {
             if (http == null) {
-                http = ServerHardness.start();
+                http = ServerHarness.start();
                 httpEndpoint = http.endpoint();
                 httpClient = java.net.http.HttpClient.newHttpClient();
             }

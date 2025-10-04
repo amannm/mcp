@@ -19,16 +19,16 @@ import java.util.Set;
 import java.util.function.Consumer;
 
 /** In-process HTTP server using minimal providers, MIXED HTTPS mode. */
-public final class ServerHardness implements Closeable {
+public final class ServerHarness implements Closeable {
     private final McpServer server;
     private final int port;
 
-    private ServerHardness(McpServer server, int port) {
+    private ServerHarness(McpServer server, int port) {
         this.server = server;
         this.port = port;
     }
 
-    public static ServerHardness start() throws Exception {
+    public static ServerHarness start() throws Exception {
         int port = freePort();
         var base = McpServerConfiguration.defaultConfiguration();
         var config = new McpServerConfiguration(
@@ -167,7 +167,7 @@ public final class ServerHardness implements Closeable {
         Thread.ofVirtual().start(() -> {
             try { server.serve(); } catch (IOException ignore) { }
         });
-        return new ServerHardness(server, port);
+        return new ServerHarness(server, port);
     }
 
     public URI endpoint() { return URI.create("http://127.0.0.1:" + port + "/"); }
