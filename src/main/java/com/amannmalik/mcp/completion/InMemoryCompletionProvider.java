@@ -21,12 +21,11 @@ public final class InMemoryCompletionProvider extends InMemoryProvider<Ref> impl
     private final List<Entry> entries = new CopyOnWriteArrayList<>();
 
     private static boolean refEquals(Ref a, Ref b) {
-        if (a instanceof Ref.PromptRef(var aName, var _, var _) &&
-                b instanceof Ref.PromptRef(var bName, var _, var _)) {
-            return aName.equals(bName);
+        if (a instanceof Ref.PromptRef promptA && b instanceof Ref.PromptRef promptB) {
+            return promptA.name().equals(promptB.name());
         }
-        if (a instanceof Ref.ResourceRef(var aUri) && b instanceof Ref.ResourceRef(var bUri)) {
-            return aUri.equals(bUri);
+        if (a instanceof Ref.ResourceRef resourceA && b instanceof Ref.ResourceRef resourceB) {
+            return resourceA.uri().equals(resourceB.uri());
         }
         return false;
     }

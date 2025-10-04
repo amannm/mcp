@@ -20,9 +20,9 @@ public sealed interface Cursor permits Cursor.Start, Cursor.End, Cursor.Token {
     static int index(Cursor cursor) {
         return switch (cursor) {
             case null -> 0;
-            case Start _ -> 0;
+            case Start ignored -> 0;
             case Token(var value) -> decode(value);
-            case End _ -> throw new IllegalArgumentException("Invalid cursor");
+            case End ignored -> throw new IllegalArgumentException("Invalid cursor");
         };
     }
 
