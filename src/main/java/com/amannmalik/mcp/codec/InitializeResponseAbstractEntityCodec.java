@@ -68,19 +68,19 @@ public final class InitializeResponseAbstractEntityCodec extends AbstractEntityC
         if (capsObj != null) {
             var res = capsObj.getJsonObject(ServerCapability.RESOURCES.code());
             if (res != null) {
-                if (res.getBoolean("subscribe", false)) {
+                if (getBoolean(res, "subscribe", false)) {
                     features.add(ServerFeature.RESOURCES_SUBSCRIBE);
                 }
-                if (res.getBoolean("listChanged", false)) {
+                if (getBoolean(res, "listChanged", false)) {
                     features.add(ServerFeature.RESOURCES_LIST_CHANGED);
                 }
             }
             var tools = capsObj.getJsonObject(ServerCapability.TOOLS.code());
-            if (tools != null && tools.getBoolean("listChanged", false)) {
+            if (tools != null && getBoolean(tools, "listChanged", false)) {
                 features.add(ServerFeature.TOOLS_LIST_CHANGED);
             }
             var prompts = capsObj.getJsonObject(ServerCapability.PROMPTS.code());
-            if (prompts != null && prompts.getBoolean("listChanged", false)) {
+            if (prompts != null && getBoolean(prompts, "listChanged", false)) {
                 features.add(ServerFeature.PROMPTS_LIST_CHANGED);
             }
         }

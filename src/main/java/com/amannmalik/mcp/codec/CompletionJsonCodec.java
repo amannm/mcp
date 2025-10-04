@@ -28,7 +28,7 @@ class CompletionJsonCodec implements JsonCodec<Completion> {
                 .map(JsonString::getString)
                 .toList();
         var total = obj.containsKey("total") ? obj.getInt("total") : null;
-        var hasMore = obj.containsKey("hasMore") ? obj.getBoolean("hasMore") : null;
+        var hasMore = AbstractEntityCodec.findBoolean(obj, "hasMore").orElse(null);
         return new Completion(values, total, hasMore);
     }
 }

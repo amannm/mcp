@@ -4,6 +4,7 @@ import com.amannmalik.mcp.spi.*;
 import jakarta.json.*;
 
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.function.*;
 
@@ -104,6 +105,31 @@ public sealed abstract class AbstractEntityCodec<T> implements JsonCodec<T> perm
 
     protected static JsonObject getObject(JsonObject obj, String key) {
         return obj.getJsonObject(key);
+    }
+
+    protected static boolean getBoolean(JsonObject obj, String key, boolean defaultValue) {
+        if (!obj.containsKey(key)) {
+            return defaultValue;
+        }
+        return toBoolean(key, obj.get(key));
+    }
+
+    protected static Optional<Boolean> findBoolean(JsonObject obj, String key) {
+        if (!obj.containsKey(key)) {
+            return Optional.empty();
+        }
+        return Optional.of(Boolean.valueOf(toBoolean(key, obj.get(key))));
+    }
+
+    private static boolean toBoolean(String key, JsonValue value) {
+        if (value == null) {
+            throw new IllegalArgumentException(key + " required");
+        }
+        return switch (value.getValueType()) {
+            case TRUE -> true;
+            case FALSE -> false;
+            default -> throw new IllegalArgumentException(key + " must be boolean");
+        };
     }
 
     protected static Role requireRole(JsonObject obj) {

@@ -35,10 +35,10 @@ public final class ToolAnnotationsAbstractEntityCodec extends AbstractEntityCode
         }
         requireOnlyKeys(obj, Set.of("title", "readOnlyHint", "destructiveHint", "idempotentHint", "openWorldHint"));
         var title = obj.getString("title", null);
-        var readOnly = obj.containsKey("readOnlyHint") ? obj.getBoolean("readOnlyHint") : null;
-        var destructive = obj.containsKey("destructiveHint") ? obj.getBoolean("destructiveHint") : null;
-        var idempotent = obj.containsKey("idempotentHint") ? obj.getBoolean("idempotentHint") : null;
-        var openWorld = obj.containsKey("openWorldHint") ? obj.getBoolean("openWorldHint") : null;
+        var readOnly = findBoolean(obj, "readOnlyHint").orElse(null);
+        var destructive = findBoolean(obj, "destructiveHint").orElse(null);
+        var idempotent = findBoolean(obj, "idempotentHint").orElse(null);
+        var openWorld = findBoolean(obj, "openWorldHint").orElse(null);
         return new ToolAnnotations(title, readOnly, destructive, idempotent, openWorld);
     }
 }
