@@ -34,7 +34,7 @@ public final class PromptArgumentAbstractEntityCodec extends AbstractEntityCodec
         var name = requireString(obj, "name");
         var title = obj.getString("title", null);
         var description = obj.getString("description", null);
-        var required = obj.getBoolean("required", false);
+        var required = getBoolean(obj, "required", false);
         var meta = obj.getJsonObject("_meta");
         return new PromptArgument(name, title, description, required, meta);
     }

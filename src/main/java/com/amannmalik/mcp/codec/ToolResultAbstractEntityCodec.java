@@ -34,7 +34,7 @@ public final class ToolResultAbstractEntityCodec extends AbstractEntityCodec<Too
             throw new IllegalArgumentException("content required");
         }
         var structured = obj.getJsonObject("structuredContent");
-        var isError = obj.getBoolean("isError", false);
+        var isError = getBoolean(obj, "isError", false);
         var meta = obj.getJsonObject("_meta");
         return new ToolResult(content, structured, isError, meta);
     }

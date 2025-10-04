@@ -49,7 +49,7 @@ public final class InitializeRequestAbstractEntityCodec extends AbstractEntityCo
                     var c = cap.get();
                     client.add(c);
                     if (c == ClientCapability.ROOTS) {
-                        rootsList = v.getBoolean("listChanged", false);
+                        rootsList = getBoolean(v, "listChanged", false);
                     }
                 } else {
                     experimental.put(k, v);
