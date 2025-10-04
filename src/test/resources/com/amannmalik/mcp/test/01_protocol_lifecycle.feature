@@ -65,6 +65,7 @@ Feature: MCP Connection Lifecycle
       | POST   | application/json                    | false         |
       | POST   | text/event-stream                   | false         |
       | POST   | application/json, text/event-stream | true          |
+      | POST   | application/json, text/event-stream, */* | true          |
       | GET    | none                                | false         |
       | GET    | application/json                    | false         |
       | GET    | text/event-stream                   | true          |
