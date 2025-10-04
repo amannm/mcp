@@ -27,7 +27,7 @@ public class ProgressNotificationJsonCodec implements JsonCodec<ProgressNotifica
     public ProgressNotification fromJson(JsonObject obj) {
         var pt = obj.get("progressToken");
         ProgressToken token = switch (pt) {
-            case JsonString js -> new ProgressToken.StringToken(ValidationUtil.requireClean(js.getString()));
+            case JsonString js -> new ProgressToken.StringToken(ValidationUtil.requireNonBlank(js.getString()));
             case JsonNumber num -> {
                 if (!num.isIntegral()) {
                     throw new IllegalArgumentException("progressToken must be an integer");

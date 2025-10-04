@@ -38,7 +38,7 @@ public sealed interface ProgressToken permits
 
     record StringToken(String value) implements ProgressToken {
         public StringToken {
-            value = ValidationUtil.requireClean(value);
+            value = ValidationUtil.requireNonBlank(value);
         }
     }
 
