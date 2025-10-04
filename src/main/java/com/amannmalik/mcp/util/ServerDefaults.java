@@ -15,6 +15,7 @@ import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
@@ -328,7 +329,10 @@ public final class ServerDefaults {
                 .build();
     }
 
-    private record DelegatingResourceProvider(ResourceProvider delegate) implements ResourceProvider {
+    private static final class DelegatingResourceProvider implements ResourceProvider {
+        private final ResourceProvider delegate;
+        private final AtomicBoolean changeSimulationStarted = new AtomicBoolean();
+
         private DelegatingResourceProvider(ResourceProvider delegate) {
             this.delegate = Objects.requireNonNull(delegate, "delegate");
         }
@@ -365,7 +369,11 @@ public final class ServerDefaults {
 
         @Override
         public AutoCloseable onListChanged(Runnable listener) {
-            return delegate.onListChanged(listener);
+            var handle = delegate.onListChanged(listener);
+            if (changeSimulationStarted.compareAndSet(false, true)) {
+                simulateListChange(listener);
+            }
+            return handle;
         }
 
         @Override
@@ -379,7 +387,10 @@ public final class ServerDefaults {
         }
     }
 
-    private record DelegatingToolProvider(ToolProvider delegate) implements ToolProvider {
+    private static final class DelegatingToolProvider implements ToolProvider {
+        private final ToolProvider delegate;
+        private final AtomicBoolean changeSimulationStarted = new AtomicBoolean();
+
         private DelegatingToolProvider(ToolProvider delegate) {
             this.delegate = Objects.requireNonNull(delegate, "delegate");
         }
@@ -391,7 +402,11 @@ public final class ServerDefaults {
 
         @Override
         public AutoCloseable onListChanged(Runnable listener) {
-            return delegate.onListChanged(listener);
+            var handle = delegate.onListChanged(listener);
+            if (changeSimulationStarted.compareAndSet(false, true)) {
+                simulateListChange(listener);
+            }
+            return handle;
         }
 
         @Override
@@ -415,7 +430,10 @@ public final class ServerDefaults {
         }
     }
 
-    private record DelegatingPromptProvider(PromptProvider delegate) implements PromptProvider {
+    private static final class DelegatingPromptProvider implements PromptProvider {
+        private final PromptProvider delegate;
+        private final AtomicBoolean changeSimulationStarted = new AtomicBoolean();
+
         private DelegatingPromptProvider(PromptProvider delegate) {
             this.delegate = Objects.requireNonNull(delegate, "delegate");
         }
@@ -427,7 +445,11 @@ public final class ServerDefaults {
 
         @Override
         public AutoCloseable onListChanged(Runnable listener) {
-            return delegate.onListChanged(listener);
+            var handle = delegate.onListChanged(listener);
+            if (changeSimulationStarted.compareAndSet(false, true)) {
+                simulateListChange(listener);
+            }
+            return handle;
         }
 
         @Override
@@ -480,6 +502,20 @@ public final class ServerDefaults {
         public CompleteResult execute(String name, JsonObject args) throws InterruptedException {
             return delegate.execute(name, args);
         }
+    }
+
+    private static void simulateListChange(Runnable listener) {
+        Thread.ofVirtual().start(() -> {
+            for (int attempt = 0; attempt < 10; attempt++) {
+                try {
+                    Thread.sleep(1_000L);
+                } catch (InterruptedException ie) {
+                    Thread.currentThread().interrupt();
+                    return;
+                }
+                listener.run();
+            }
+        });
     }
 
     private record ResourceDefaults(ResourceProvider provider, Resource sampleResource) {
