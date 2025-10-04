@@ -8,8 +8,8 @@ import jakarta.json.Json;
 public non-sealed interface CompletionProvider extends ExecutingProvider<Ref, CompleteResult> {
     static String encode(Ref ref) {
         return switch (ref) {
-            case Ref.PromptRef(var name, var _, var _) -> "prompt:" + name;
-            case Ref.ResourceRef(var uri) -> "resource:" + uri;
+            case Ref.PromptRef prompt -> "prompt:" + prompt.name();
+            case Ref.ResourceRef resource -> "resource:" + resource.uri();
         };
     }
 

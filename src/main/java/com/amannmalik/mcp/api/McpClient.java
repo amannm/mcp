@@ -90,14 +90,14 @@ public final class McpClient extends JsonRpcEndpoint implements AutoCloseable {
         if (this.capabilities.contains(ClientCapability.ROOTS) && roots == null) {
             throw new IllegalArgumentException("roots capability requires provider");
         }
-        this.roots = roots == null ? _ -> {
+        this.roots = roots == null ? ignored -> {
             throw new UnsupportedOperationException("Roots not supported");
         } : roots;
         this.rootsListChangedSupported = this.capabilities.contains(ClientCapability.ROOTS) && this.roots.supportsListChanged();
         if (this.capabilities.contains(ClientCapability.ELICITATION) && elicitation == null) {
             throw new IllegalArgumentException("elicitation capability requires provider");
         }
-        this.elicitation = elicitation == null ? (_, _) -> {
+        this.elicitation = elicitation == null ? (ignoredClient, ignoredRequest) -> {
             throw new UnsupportedOperationException("Elicitation not supported");
         } : elicitation;
         this.listener = listener == null ? new McpClientListener() {

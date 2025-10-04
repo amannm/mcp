@@ -57,6 +57,7 @@ java {
 }
 
 tasks.withType<JavaCompile>().configureEach {
+    options.release.set(21)
     options.compilerArgs.addAll(listOf("-Xlint:all", "-Xlint:-serial"))
 }
 
