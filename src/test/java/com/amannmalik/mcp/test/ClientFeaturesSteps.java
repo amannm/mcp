@@ -8,7 +8,9 @@ import io.cucumber.java.After;
 import io.cucumber.java.en.*;
 
 import java.io.IOException;
+import java.net.URI;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.time.Duration;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -294,17 +296,17 @@ public final class ClientFeaturesSteps {
     @When("I check access for URI {string}")
     public void i_check_access_for_uri(String uri) {
         try {
-            var target = java.net.URI.create(uri);
+            var target = URI.create(uri);
             if (!"file".equalsIgnoreCase(target.getScheme())) {
                 rootAccessAllowed = true;
                 return;
             }
-            var targetPath = java.nio.file.Paths.get(target).toRealPath();
+            var targetPath = Paths.get(target).toRealPath();
             rootAccessAllowed = configuredRoots.stream()
                     .map(r -> r.get("uri"))
                     .filter(Objects::nonNull)
-                    .map(java.net.URI::create)
-                    .map(java.nio.file.Paths::get)
+                    .map(URI::create)
+                    .map(Paths::get)
                     .map(p -> {
                         try {
                             return p.toRealPath();

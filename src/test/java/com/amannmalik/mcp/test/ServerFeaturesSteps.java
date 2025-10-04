@@ -9,11 +9,13 @@ import io.cucumber.java.en.*;
 import jakarta.json.*;
 
 import java.io.IOException;
+import java.io.StringReader;
 import java.net.URI;
 import java.nio.file.Path;
 import java.time.Duration;
 import java.util.*;
 import java.util.function.BooleanSupplier;
+import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
 public final class ServerFeaturesSteps {
@@ -910,7 +912,7 @@ public final class ServerFeaturesSteps {
                     default -> throw new IllegalArgumentException("Unknown scenario: " + scenario);
                 };
                 var repr = msg.toString();
-                var m = java.util.regex.Pattern.compile("code=(-?\\d+), message=([^,\\]]+)").matcher(repr);
+                var m = Pattern.compile("code=(-?\\d+), message=([^,\\]]+)").matcher(repr);
                 if (m.find()) {
                     actualCode = Integer.parseInt(m.group(1));
                     actualMessage = m.group(2);
@@ -1386,7 +1388,7 @@ public final class ServerFeaturesSteps {
                     default -> throw new IllegalArgumentException("Unknown scenario: " + scenario);
                 };
                 var repr = msg.toString();
-                var m = java.util.regex.Pattern.compile("code=(-?\\d+), message=([^,\\]]+)").matcher(repr);
+                var m = Pattern.compile("code=(-?\\d+), message=([^,\\]]+)").matcher(repr);
                 if (m.find()) {
                     actualCode = Integer.parseInt(m.group(1));
                     actualMessage = m.group(2);
@@ -1831,7 +1833,7 @@ public final class ServerFeaturesSteps {
         return condition.getAsBoolean();
     }
 
-    private static JsonObject extractResult(com.amannmalik.mcp.api.JsonRpcMessage msg) {
+    private static JsonObject extractResult(JsonRpcMessage msg) {
         // Fallback: parse result JSON from record toString representation
         // Example: JsonRpcResponse[id=..., result={...}]
         var s = msg == null ? null : msg.toString();
@@ -1842,7 +1844,7 @@ public final class ServerFeaturesSteps {
         int end = s.lastIndexOf('}');
         if (start < 0 || end <= start) return null;
         var json = s.substring(start, end + 1);
-        try (var r = jakarta.json.Json.createReader(new java.io.StringReader(json))) {
+        try (var r = Json.createReader(new StringReader(json))) {
             return r.readObject();
         } catch (Exception ignore) {
             return null;

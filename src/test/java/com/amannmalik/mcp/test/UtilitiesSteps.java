@@ -281,7 +281,7 @@ public final class UtilitiesSteps {
         lastPingId = id;
         lastPingResponse = activeConnection.client(clientId)
                 .request(new RequestId.StringId(id), RequestMethod.PING, null, Duration.ofSeconds(5));
-        var m = java.util.regex.Pattern.compile("id=([^,]+)")
+        var m = Pattern.compile("id=([^,]+)")
                 .matcher(lastPingResponse.toString());
         lastPingResponseId = m.find() ? m.group(1) : null;
     }
@@ -301,7 +301,7 @@ public final class UtilitiesSteps {
         try {
             var msg = activeConnection.client(clientId).request(RequestMethod.PING, b.build(), Duration.ofSeconds(5));
             var repr = msg.toString();
-            var m = java.util.regex.Pattern.compile("code=(-?\\d+), message=([^,\\]]+)").matcher(repr);
+            var m = Pattern.compile("code=(-?\\d+), message=([^,\\]]+)").matcher(repr);
             if (m.find()) {
                 pingErrorCode = Integer.parseInt(m.group(1));
                 pingErrorMessage = m.group(2);
@@ -309,7 +309,7 @@ public final class UtilitiesSteps {
                 lastPingResponseId = null;
             } else {
                 lastPingResponse = msg;
-                m = java.util.regex.Pattern.compile("id=([^,]+)").matcher(repr);
+                m = Pattern.compile("id=([^,]+)").matcher(repr);
                 lastPingResponseId = m.find() ? m.group(1) : null;
             }
         } catch (IllegalArgumentException e) {
@@ -328,7 +328,7 @@ public final class UtilitiesSteps {
             var params = Json.createObjectBuilder().build();
             var msg = activeConnection.client(clientId).request(RequestMethod.PING, params, Duration.ofSeconds(5));
             var repr = msg.toString();
-            var m = java.util.regex.Pattern.compile("code=(-?\\d+), message=([^,\\]]+)").matcher(repr);
+            var m = Pattern.compile("code=(-?\\d+), message=([^,\\]]+)").matcher(repr);
             if (m.find()) {
                 pingErrorCode = Integer.parseInt(m.group(1));
                 pingErrorMessage = m.group(2);
@@ -336,7 +336,7 @@ public final class UtilitiesSteps {
                 lastPingResponseId = null;
             } else {
                 lastPingResponse = msg;
-                m = java.util.regex.Pattern.compile("id=([^,]+)").matcher(repr);
+                m = Pattern.compile("id=([^,]+)").matcher(repr);
                 lastPingResponseId = m.find() ? m.group(1) : null;
             }
         } catch (IllegalArgumentException e) {

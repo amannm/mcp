@@ -1,10 +1,7 @@
 package com.amannmalik.mcp.spi;
 
 import com.amannmalik.mcp.util.ValidationUtil;
-import jakarta.json.JsonNumber;
-import jakarta.json.JsonObject;
-import jakarta.json.JsonString;
-import jakarta.json.JsonValue;
+import jakarta.json.*;
 
 public record ElicitResult(ElicitationAction action, JsonObject content, JsonObject _meta) implements Result {
 

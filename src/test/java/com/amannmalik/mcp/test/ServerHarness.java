@@ -3,7 +3,6 @@ package com.amannmalik.mcp.test;
 import com.amannmalik.mcp.api.McpServer;
 import com.amannmalik.mcp.api.config.*;
 import com.amannmalik.mcp.spi.*;
-
 import jakarta.json.Json;
 import jakarta.json.JsonObject;
 
@@ -12,10 +11,7 @@ import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.URI;
 import java.time.Duration;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 import java.util.function.Consumer;
 
 /** In-process HTTP server using minimal providers, MIXED HTTPS mode. */

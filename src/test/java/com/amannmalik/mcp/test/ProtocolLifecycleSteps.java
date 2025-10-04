@@ -9,6 +9,10 @@ import io.cucumber.java.en.*;
 import jakarta.json.*;
 
 import java.io.*;
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
 import java.nio.file.Path;
 import java.time.Duration;
 import java.util.*;
@@ -38,30 +42,30 @@ public final class ProtocolLifecycleSteps {
     private final List<Boolean> expectedPostMessageBodiesEmpty = new ArrayList<>();
     // HTTP harness
     private ServerHarness http;
-    private java.net.http.HttpClient httpClient;
-    private java.net.URI httpEndpoint;
+    private HttpClient httpClient;
+    private URI httpEndpoint;
     private String httpSessionId;
     private String httpProtocolVersion;
 
     private void httpEnsureInitialized() {
         if (httpClient == null || httpEndpoint == null) throw new IllegalStateException("HTTP server not started");
         if (httpSessionId != null && httpProtocolVersion != null) return;
-        var payload = jakarta.json.Json.createObjectBuilder()
+        var payload = Json.createObjectBuilder()
                 .add("jsonrpc", "2.0")
                 .add("id", 1)
                 .add("method", "initialize")
-                .add("params", jakarta.json.Json.createObjectBuilder().build())
+                .add("params", Json.createObjectBuilder().build())
                 .build().toString();
-        var req = java.net.http.HttpRequest.newBuilder(httpEndpoint)
+        var req = HttpRequest.newBuilder(httpEndpoint)
                 .header("Origin", "http://127.0.0.1")
                 .header("Accept", "application/json, text/event-stream")
                 .header("Content-Type", "application/json")
-                .POST(java.net.http.HttpRequest.BodyPublishers.ofString(payload))
+                .POST(HttpRequest.BodyPublishers.ofString(payload))
                 .build();
         int attempts = 0;
         while (attempts++ < 10 && (httpSessionId == null || httpProtocolVersion == null)) {
             try {
-                var resp = httpClient.send(req, java.net.http.HttpResponse.BodyHandlers.ofInputStream());
+                var resp = httpClient.send(req, HttpResponse.BodyHandlers.ofInputStream());
                 if (resp.statusCode() == 200) {
                     this.httpSessionId = resp.headers().firstValue("Mcp-Session-Id").orElse(null);
                     this.httpProtocolVersion = resp.headers().firstValue("MCP-Protocol-Version").orElse(null);
@@ -473,7 +477,7 @@ public final class ProtocolLifecycleSteps {
                 if (http == null) {
                     http = ServerHarness.start();
                     httpEndpoint = http.endpoint();
-                    httpClient = java.net.http.HttpClient.newHttpClient();
+                    httpClient = HttpClient.newHttpClient();
                 }
                 httpEnsureInitialized();
             } catch (Exception e) {
@@ -498,7 +502,7 @@ public final class ProtocolLifecycleSteps {
             if (http == null) {
                 http = ServerHarness.start();
                 httpEndpoint = http.endpoint();
-                httpClient = java.net.http.HttpClient.newHttpClient();
+                httpClient = HttpClient.newHttpClient();
             }
             httpEnsureInitialized();
         } catch (Exception e) {
@@ -517,30 +521,30 @@ public final class ProtocolLifecycleSteps {
             var expected = Boolean.parseBoolean(row.get("should_accept"));
             expectedAcceptResults.add(expected);
             try {
-                var builder = java.net.http.HttpRequest.newBuilder(httpEndpoint)
+                var builder = HttpRequest.newBuilder(httpEndpoint)
                         .header("Origin", "http://127.0.0.1");
                 if (!"none".equalsIgnoreCase(header)) {
                     builder.header("Accept", header);
                 }
-                java.net.http.HttpResponse<java.io.InputStream> resp = null;
+                HttpResponse<InputStream> resp = null;
                 if ("POST".equalsIgnoreCase(method)) {
                     // Non-initialize POST requires session headers
                     httpEnsureInitialized();
                     if (httpSessionId != null) builder.header("Mcp-Session-Id", httpSessionId);
                     if (httpProtocolVersion != null) builder.header("MCP-Protocol-Version", httpProtocolVersion);
-                    var body = jakarta.json.Json.createObjectBuilder()
+                    var body = Json.createObjectBuilder()
                             .add("jsonrpc", "2.0")
                             .add("method", "ping")
                             .build().toString();
                     builder.header("Content-Type", "application/json");
-                    resp = httpClient.send(builder.POST(java.net.http.HttpRequest.BodyPublishers.ofString(body)).build(),
-                            java.net.http.HttpResponse.BodyHandlers.ofInputStream());
+                    resp = httpClient.send(builder.POST(HttpRequest.BodyPublishers.ofString(body)).build(),
+                            HttpResponse.BodyHandlers.ofInputStream());
                     acceptHeaderResults.add(resp.statusCode() == 202);
                 } else if ("GET".equalsIgnoreCase(method)) {
                     httpEnsureInitialized();
                     if (httpSessionId != null) builder.header("Mcp-Session-Id", httpSessionId);
                     if (httpProtocolVersion != null) builder.header("MCP-Protocol-Version", httpProtocolVersion);
-                    resp = httpClient.send(builder.GET().build(), java.net.http.HttpResponse.BodyHandlers.ofInputStream());
+                    resp = httpClient.send(builder.GET().build(), HttpResponse.BodyHandlers.ofInputStream());
                     acceptHeaderResults.add(resp.statusCode() == 200 && resp.headers().firstValue("Content-Type").orElse("").startsWith("text/event-stream"));
                 } else {
                     acceptHeaderResults.add(false);
@@ -572,14 +576,14 @@ public final class ProtocolLifecycleSteps {
             expectedGetStatuses.add(Integer.parseInt(row.get("expected_status")));
             expectedGetContentTypes.add(row.get("expected_content_type"));
             try {
-                var req = java.net.http.HttpRequest.newBuilder(httpEndpoint)
+                var req = HttpRequest.newBuilder(httpEndpoint)
                         .header("Origin", "http://127.0.0.1")
                         .header("Accept", "text/event-stream")
                         .header("Mcp-Session-Id", httpSessionId)
                         .header("MCP-Protocol-Version", httpProtocolVersion)
                         .GET()
                         .build();
-                var resp = httpClient.send(req, java.net.http.HttpResponse.BodyHandlers.ofInputStream());
+                var resp = httpClient.send(req, HttpResponse.BodyHandlers.ofInputStream());
                 getStatuses.add(resp.statusCode());
                 getContentTypes.add(resp.headers().firstValue("Content-Type").orElse("none"));
                 resp.body().close();
@@ -614,7 +618,7 @@ public final class ProtocolLifecycleSteps {
             var expected = Boolean.parseBoolean(row.get("should_accept"));
             expectedOriginResults.add(expected);
             try {
-                var b = java.net.http.HttpRequest.newBuilder(httpEndpoint);
+                var b = HttpRequest.newBuilder(httpEndpoint);
                 if (!"none".equalsIgnoreCase(header)) {
                     b.header("Origin", header);
                 }
@@ -622,7 +626,7 @@ public final class ProtocolLifecycleSteps {
                 httpEnsureInitialized();
                 if (httpSessionId != null) b.header("Mcp-Session-Id", httpSessionId);
                 if (httpProtocolVersion != null) b.header("MCP-Protocol-Version", httpProtocolVersion);
-                var resp = httpClient.send(b.GET().build(), java.net.http.HttpResponse.BodyHandlers.ofInputStream());
+                var resp = httpClient.send(b.GET().build(), HttpResponse.BodyHandlers.ofInputStream());
                 originHeaderResults.add(resp.statusCode() == 200);
                 resp.body().close();
             } catch (Exception e) {
@@ -650,7 +654,7 @@ public final class ProtocolLifecycleSteps {
             expectedContentTypeResults.add(expected);
             try {
                 var desired = row.get("content_type");
-                java.net.http.HttpRequest req;
+                HttpRequest req;
                 if ("application/json".equalsIgnoreCase(desired)) {
                     // We already validated a successful initialize in httpEnsureInitialized.
                     // Treat application/json as accepted.
@@ -658,38 +662,38 @@ public final class ProtocolLifecycleSteps {
                     continue;
                 } else if ("text/event-stream".equalsIgnoreCase(desired)) {
                     httpEnsureInitialized();
-                    var body = jakarta.json.Json.createObjectBuilder()
+                    var body = Json.createObjectBuilder()
                             .add("jsonrpc", "2.0")
                             .add("id", 42)
                             .add("method", "ping")
                             .build().toString();
-                    var b = java.net.http.HttpRequest.newBuilder(httpEndpoint)
+                    var b = HttpRequest.newBuilder(httpEndpoint)
                             .header("Origin", "http://127.0.0.1")
                             .header("Accept", "application/json, text/event-stream")
                             .header("Content-Type", "application/json");
                     if (httpSessionId != null) b.header("Mcp-Session-Id", httpSessionId);
                     if (httpProtocolVersion != null) b.header("MCP-Protocol-Version", httpProtocolVersion);
-                    req = b.POST(java.net.http.HttpRequest.BodyPublishers.ofString(body)).build();
+                    req = b.POST(HttpRequest.BodyPublishers.ofString(body)).build();
                 } else {
-                    var b = java.net.http.HttpRequest.newBuilder(httpEndpoint)
+                    var b = HttpRequest.newBuilder(httpEndpoint)
                             .header("Origin", "http://127.0.0.1")
                             .header("Content-Type", "application/json");
-                    var body = jakarta.json.Json.createObjectBuilder()
+                    var body = Json.createObjectBuilder()
                             .add("jsonrpc", "2.0")
                             .add("id", 1)
                             .add("method", "initialize")
-                            .add("params", jakarta.json.Json.createObjectBuilder().build())
+                            .add("params", Json.createObjectBuilder().build())
                             .build().toString();
                     if (!"none".equalsIgnoreCase(desired)) {
                         b.header("Accept", desired);
                     }
-                    req = b.POST(java.net.http.HttpRequest.BodyPublishers.ofString(body)).build();
+                    req = b.POST(HttpRequest.BodyPublishers.ofString(body)).build();
                 }
-                var resp = httpClient.send(req, java.net.http.HttpResponse.BodyHandlers.ofInputStream());
+                var resp = httpClient.send(req, HttpResponse.BodyHandlers.ofInputStream());
                 var ct = resp.headers().firstValue("Content-Type" ).orElse("");
-                boolean accepted = switch (desired.toLowerCase(java.util.Locale.ROOT)) {
-                    case "application/json" -> (resp.statusCode() == 200 && ct.toLowerCase(java.util.Locale.ROOT).startsWith("application/json"));
-                    case "text/event-stream" -> (resp.statusCode() == 200 && ct.toLowerCase(java.util.Locale.ROOT).startsWith("text/event-stream"));
+                boolean accepted = switch (desired.toLowerCase(Locale.ROOT)) {
+                    case "application/json" -> (resp.statusCode() == 200 && ct.toLowerCase(Locale.ROOT).startsWith("application/json"));
+                    case "text/event-stream" -> (resp.statusCode() == 200 && ct.toLowerCase(Locale.ROOT).startsWith("text/event-stream"));
                     default -> false; // invalid or none should not be accepted
                 };
                 contentTypeResults.add(accepted);
@@ -722,30 +726,30 @@ public final class ProtocolLifecycleSteps {
             expectedPostMessageStatuses.add(accept ? 202 : 400);
             expectedPostMessageBodiesEmpty.add(accept);
             try {
-                jakarta.json.JsonObject payload;
+                JsonObject payload;
                 switch (scenario) {
-                    case "notification" -> payload = jakarta.json.Json.createObjectBuilder()
+                    case "notification" -> payload = Json.createObjectBuilder()
                             .add("jsonrpc", "2.0")
                             .add("method", "ping")
                             .build();
-                    case "response" -> payload = jakarta.json.Json.createObjectBuilder()
+                    case "response" -> payload = Json.createObjectBuilder()
                             .add("jsonrpc", "2.0")
                             .add("id", 1)
-                            .add("result", jakarta.json.Json.createObjectBuilder().build())
+                            .add("result", Json.createObjectBuilder().build())
                             .build();
-                    default -> payload = jakarta.json.Json.createObjectBuilder()
+                    default -> payload = Json.createObjectBuilder()
                             .add("oops", true)
                             .build();
                 }
-                var req = java.net.http.HttpRequest.newBuilder(httpEndpoint)
+                var req = HttpRequest.newBuilder(httpEndpoint)
                         .header("Origin", "http://127.0.0.1")
                         .header("Accept", "application/json, text/event-stream")
                         .header("Content-Type", "application/json")
                         .header("Mcp-Session-Id", httpSessionId)
                         .header("MCP-Protocol-Version", httpProtocolVersion)
-                        .POST(java.net.http.HttpRequest.BodyPublishers.ofString(payload.toString()))
+                        .POST(HttpRequest.BodyPublishers.ofString(payload.toString()))
                         .build();
-                var resp = httpClient.send(req, java.net.http.HttpResponse.BodyHandlers.ofInputStream());
+                var resp = httpClient.send(req, HttpResponse.BodyHandlers.ofInputStream());
                 postMessageStatuses.add(resp.statusCode());
                 // Expect empty body for 202
                 var hasBody = resp.headers().firstValue("Content-Length").map(s -> !"0".equals(s)).orElse(true);
