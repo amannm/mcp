@@ -1434,9 +1434,7 @@ public final class ProtocolLifecycleSteps {
         // Create a large test payload
         var largePayload = new StringBuilder();
         var chunk = "x".repeat(1024); // 1KB chunk
-        for (var i = 0; i < payloadSizeMB * 1024; i++) {
-            largePayload.append(chunk);
-        }
+        largePayload.append(chunk.repeat(Math.max(0, payloadSizeMB * 1024)));
 
         var params = Json.createObjectBuilder()
                 .add("largeData", largePayload.toString())
