@@ -14,7 +14,10 @@ public sealed interface ProgressToken permits
         if (params == null || !params.containsKey("_meta")) {
             return Optional.empty();
         }
-        var meta = params.getJsonObject("_meta");
+        var metaValue = params.get("_meta");
+        if (!(metaValue instanceof JsonObject meta)) {
+            throw new IllegalArgumentException("_meta must be an object");
+        }
         ValidationUtil.requireMeta(meta);
         if (!meta.containsKey("progressToken")) {
             return Optional.empty();
