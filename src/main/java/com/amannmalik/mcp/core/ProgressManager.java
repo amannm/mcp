@@ -101,9 +101,17 @@ public final class ProgressManager {
         Objects.requireNonNull(note, "note");
         var state = requireActiveState(note.token());
         state.advance(note.progress());
-        if (note.progress() >= 1.0) {
+        if (isComplete(note)) {
             completeToken(note.token(), state);
         }
+    }
+
+    private static boolean isComplete(ProgressNotification note) {
+        var total = note.total();
+        if (total != null) {
+            return note.progress() >= total;
+        }
+        return note.progress() >= 1.0;
     }
 
     private void completeToken(ProgressToken token, TokenState state) {
