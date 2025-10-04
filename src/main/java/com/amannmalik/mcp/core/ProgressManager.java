@@ -99,10 +99,15 @@ public final class ProgressManager {
 
     public void record(ProgressNotification note) {
         Objects.requireNonNull(note, "note");
-        var state = requireActiveState(note.token());
-        state.advance(note.progress());
+        var state = findActiveState(note.token());
+        if (state.isEmpty()) {
+            LOG.log(Logger.Level.DEBUG, "Ignoring progress update for unknown token: {0}", note.token());
+            return;
+        }
+        var tokenState = state.get();
+        tokenState.advance(note.progress());
         if (isComplete(note)) {
-            completeToken(note.token(), state);
+            completeToken(note.token(), tokenState);
         }
     }
 
