@@ -26,11 +26,19 @@ public final class InitializeRequestAbstractEntityCodec extends AbstractEntityCo
             caps.add(c.code(), b.build());
         }
         req.capabilities().clientExperimental().forEach(caps::add);
-        return Json.createObjectBuilder()
+        var builder = Json.createObjectBuilder()
                 .add("protocolVersion", req.protocolVersion())
                 .add("capabilities", caps.build())
-                .add("clientInfo", CLIENT_INFO_JSON_CODEC.toJson(req.clientInfo()))
-                .build();
+                .add("clientInfo", CLIENT_INFO_JSON_CODEC.toJson(req.clientInfo()));
+
+        if (req.features().rootsListChanged()) {
+            var roots = Json.createObjectBuilder()
+                    .add("listChanged", true)
+                    .build();
+            builder.add("features", Json.createObjectBuilder().add("roots", roots).build());
+        }
+
+        return builder.build();
     }
 
     @Override
@@ -48,12 +56,19 @@ public final class InitializeRequestAbstractEntityCodec extends AbstractEntityCo
                 if (cap.isPresent()) {
                     var c = cap.get();
                     client.add(c);
-                    if (c == ClientCapability.ROOTS) {
-                        rootsList = getBoolean(v, "listChanged", false);
+                    if (c == ClientCapability.ROOTS && getBoolean(v, "listChanged", false)) {
+                        rootsList = true;
                     }
                 } else {
                     experimental.put(k, v);
                 }
+            }
+        }
+        var featuresObj = obj.getJsonObject("features");
+        if (featuresObj != null) {
+            var roots = featuresObj.getJsonObject("roots");
+            if (roots != null && getBoolean(roots, "listChanged", false)) {
+                rootsList = true;
             }
         }
         var caps = new Capabilities(
