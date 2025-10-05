@@ -65,6 +65,11 @@ final class SessionManager {
         return validateVersion(initializing, sanitized.version(), resp);
     }
 
+    Optional<String> currentSessionId() {
+        var state = current.get();
+        return state == null ? Optional.empty() : Optional.of(state.id());
+    }
+
     private boolean handleMissingSession(HttpServletRequest req,
                                          HttpServletResponse resp,
                                          Principal principal,

@@ -254,6 +254,10 @@ public final class StreamableHttpServerTransport implements Transport {
         clients.removeResponseQueue(id);
     }
 
+    Optional<String> sessionId() {
+        return sessions.currentSessionId();
+    }
+
     SseClient registerGeneralClient(AsyncContext context, String lastEventId) throws IOException {
         return clients.registerGeneral(context, lastEventId, this::createClient);
     }

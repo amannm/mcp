@@ -133,7 +133,7 @@ final class McpServlet extends HttpServlet {
         resp.setStatus(HttpServletResponse.SC_OK);
         resp.setContentType("text/event-stream;charset=UTF-8");
         resp.setHeader("Cache-Control", "no-cache");
-        resp.setHeader(TransportHeaders.PROTOCOL_VERSION, transport.protocolVersion());
+        applySessionHeaders(resp);
         resp.flushBuffer();
         var ac = req.startAsync();
         ac.setTimeout(0);
@@ -144,10 +144,16 @@ final class McpServlet extends HttpServlet {
         try {
             transport.submitIncoming(obj);
             resp.setStatus(HttpServletResponse.SC_ACCEPTED);
+            applySessionHeaders(resp);
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             resp.sendError(HttpServletResponse.SC_SERVICE_UNAVAILABLE);
         }
+    }
+
+    private void applySessionHeaders(HttpServletResponse resp) {
+        transport.sessionId().ifPresent(id -> resp.setHeader(TransportHeaders.SESSION_ID, id));
+        resp.setHeader(TransportHeaders.PROTOCOL_VERSION, transport.protocolVersion());
     }
 
     private void handleRequest(JsonObject obj,
