@@ -400,11 +400,8 @@ public final class McpClient extends JsonRpcEndpoint implements AutoCloseable {
         if (connected.get()) {
             throw new IllegalStateException("already connected");
         }
-        if (intervalMillis.isNegative() || timeoutMillis.isNegative()) {
-            throw new IllegalArgumentException("invalid ping settings");
-        }
-        this.pingInterval = intervalMillis;
-        this.pingTimeout = timeoutMillis;
+        this.pingInterval = ValidationUtil.requirePositive(intervalMillis, "Ping interval");
+        this.pingTimeout = ValidationUtil.requirePositive(timeoutMillis, "Ping timeout");
     }
 
     public void setSamplingAccessPolicy(SamplingAccessPolicy policy) {
