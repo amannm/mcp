@@ -11,6 +11,9 @@ public final class CursorUtil {
             return Cursor.Start.INSTANCE;
         }
         var clean = ValidationUtil.cleanNullable(cursor);
+        if (clean == null || clean.isBlank()) {
+            return Cursor.Start.INSTANCE;
+        }
         return new Cursor.Token(clean);
     }
 }

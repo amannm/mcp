@@ -339,6 +339,14 @@ Feature: MCP Protocol Utilities
     Then the response should include the current page of results
     And the response should not include a nextCursor field
 
+  @pagination @blank-cursor
+  Scenario: Blank cursor defaults to the first page
+    # Tests specification/2025-06-18/server/utilities/pagination.mdx:43-56 (Request format)
+    Given an established MCP connection
+    And I am handling pagination requests
+    When I request the tools list with a blank cursor
+    Then the tools list request should succeed
+
   @pagination @supported-operations
   Scenario: Operations supporting pagination
     # Tests specification/2025-06-18/server/utilities/pagination.mdx:72-80 (Supported operations)

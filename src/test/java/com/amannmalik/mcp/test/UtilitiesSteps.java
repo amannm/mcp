@@ -83,6 +83,8 @@ public final class UtilitiesSteps {
     private boolean lifecycleTokenActive;
     private double lastProgressValue;
     private LoggingLevel loggingLevel;
+    private JsonRpcMessage lastToolsListResponse;
+    private boolean toolsListRequestFailed;
 
     // --- Cancellation ----------------------------------------------------
 
@@ -1105,6 +1107,35 @@ public final class UtilitiesSteps {
             } catch (Exception e) {
                 throw new RuntimeException(e);
             }
+        }
+    }
+
+    @When("I request the tools list with a blank cursor")
+    public void i_request_the_tools_list_with_a_blank_cursor() {
+        var params = Json.createObjectBuilder().add("cursor", "").build();
+        try {
+            lastToolsListResponse = activeConnection.client(clientId)
+                    .request(RequestMethod.TOOLS_LIST, params, Duration.ofSeconds(5));
+            toolsListRequestFailed = false;
+        } catch (Exception e) {
+            toolsListRequestFailed = true;
+            lastToolsListResponse = null;
+        }
+    }
+
+    @Then("the tools list request should succeed")
+    public void the_tools_list_request_should_succeed() {
+        if (toolsListRequestFailed) {
+            throw new AssertionError("tools list request failed");
+        }
+        if (lastToolsListResponse == null) {
+            throw new AssertionError("missing response");
+        }
+        if (!"JsonRpcResponse".equals(lastToolsListResponse.getClass().getSimpleName())) {
+            throw new AssertionError("unexpected response type: " + lastToolsListResponse.getClass());
+        }
+        if (!lastToolsListResponse.toString().contains("\"tools\"")) {
+            throw new AssertionError("missing tools in response");
         }
     }
 
