@@ -1,7 +1,6 @@
 package com.amannmalik.mcp.api.config;
 
 import com.amannmalik.mcp.api.ClientCapability;
-import com.amannmalik.mcp.spi.SamplingAccessPolicy;
 import com.amannmalik.mcp.util.ValidationUtil;
 
 import java.time.Duration;
@@ -34,7 +33,6 @@ public record McpClientConfiguration(
         boolean verbose,
         boolean interactiveSampling,
         List<String> rootDirectories,
-        SamplingAccessPolicy samplingAccessPolicy,
         TlsConfiguration tlsConfiguration,
         CertificateValidationMode certificateValidationMode,
         List<String> certificatePins,
@@ -69,9 +67,6 @@ public record McpClientConfiguration(
         }
         rateLimiterWindow = ValidationUtil.requirePositive(rateLimiterWindow, "Rate limiter window");
         rootDirectories = List.copyOf(rootDirectories);
-        if (samplingAccessPolicy == null) {
-            throw new IllegalArgumentException("Sampling access policy is required");
-        }
         if (tlsConfiguration == null) {
             throw new IllegalArgumentException("TLS configuration required");
         }
@@ -108,7 +103,6 @@ public record McpClientConfiguration(
                 false,
                 false,
                 List.of(),
-                SamplingAccessPolicy.PERMISSIVE,
                 new TlsConfiguration(
                         "",
                         "",

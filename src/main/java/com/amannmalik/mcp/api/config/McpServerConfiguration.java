@@ -1,8 +1,6 @@
 package com.amannmalik.mcp.api.config;
 
 import com.amannmalik.mcp.api.Protocol;
-import com.amannmalik.mcp.spi.SamplingAccessPolicy;
-import com.amannmalik.mcp.spi.ToolAccessPolicy;
 import com.amannmalik.mcp.util.ValidationUtil;
 
 import java.time.Duration;
@@ -34,8 +32,6 @@ public record McpServerConfiguration(
         String parserLoggerName,
         String cancellationLoggerName,
         LoggingLevel initialLogLevel,
-        ToolAccessPolicy toolAccessPolicy,
-        SamplingAccessPolicy samplingAccessPolicy,
         String defaultPrincipal,
         String defaultBoundary,
         String transportType,
@@ -91,7 +87,7 @@ public record McpServerConfiguration(
         if (rateLimitErrorCode >= 0) {
             throw new IllegalArgumentException("Rate limit error code must be negative");
         }
-        if (initialLogLevel == null || toolAccessPolicy == null || samplingAccessPolicy == null) {
+        if (initialLogLevel == null) {
             throw new IllegalArgumentException("Invalid policy configuration");
         }
         if (serverPort < 0 || serverPort > 65_535) {
@@ -174,8 +170,6 @@ public record McpServerConfiguration(
                 "parser",
                 "cancellation",
                 LoggingLevel.INFO,
-                ToolAccessPolicy.PERMISSIVE,
-                SamplingAccessPolicy.PERMISSIVE,
                 "default",
                 "default",
                 "stdio",
@@ -255,8 +249,6 @@ public record McpServerConfiguration(
                 parserLoggerName,
                 cancellationLoggerName,
                 initialLogLevel,
-                toolAccessPolicy,
-                samplingAccessPolicy,
                 defaultPrincipal,
                 defaultBoundary,
                 transportType,
@@ -318,8 +310,6 @@ public record McpServerConfiguration(
                 parserLoggerName,
                 cancellationLoggerName,
                 initialLogLevel,
-                toolAccessPolicy,
-                samplingAccessPolicy,
                 defaultPrincipal,
                 defaultBoundary,
                 transportType,

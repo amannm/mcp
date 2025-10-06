@@ -116,7 +116,7 @@ public final class ServerFeaturesSteps {
                 base.defaultOriginHeader(), base.httpRequestTimeout(), base.enableKeepAlive(),
                 base.sessionIdByteLength(), base.initializeRequestTimeout(), base.strictVersionValidation(),
                 base.pingTimeout(), base.pingInterval(), base.progressPerSecond(), base.rateLimiterWindow(),
-                base.verbose(), base.interactiveSampling(), roots, base.samplingAccessPolicy(),
+                base.verbose(), base.interactiveSampling(), roots,
                 tlsConfig, CertificateValidationMode.STRICT, List.of(), true
         );
         var hostConfig = new McpHostConfiguration(

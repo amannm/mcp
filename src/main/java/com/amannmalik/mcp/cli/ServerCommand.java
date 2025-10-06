@@ -205,6 +205,8 @@ public final class ServerCommand {
                     completions,
                     sampling,
                     privacyBoundary(config.defaultBoundary()),
+                    ToolAccessPolicy.PERMISSIVE,
+                    SamplingAccessPolicy.PERMISSIVE,
                     defaultPrincipal(),
                     instructions)) {
                 server.serve();
