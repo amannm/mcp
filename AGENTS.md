@@ -44,6 +44,7 @@ description: MCP Specification Expert
 - NEVER introduce unchecked casts.
 - NEVER use `Optional<T>` outside of nullable method returns and their handling.
 - NEVER use `java.lang.reflect`.
+- Avoid introducing `default` interface methods.
 
 # Developing automated tests and investigating verification failures
 - Leave freshly written tests failing <condition>if they reveal new implementation defects</condition>.
