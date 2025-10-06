@@ -12,7 +12,6 @@ public record ListRootsResult(List<Root> roots, JsonObject _meta) implements Res
         ValidationUtil.requireMeta(_meta);
     }
 
-    /// Return an immutable view to avoid exposing internal representation.
     @Override
     public List<Root> roots() {
         return List.copyOf(roots);

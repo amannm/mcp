@@ -16,7 +16,6 @@ public record ListPromptsResult(List<Prompt> prompts,
         ValidationUtil.requireMeta(_meta);
     }
 
-    /// Return an immutable view to avoid exposing internal representation.
     @Override
     public List<Prompt> prompts() {
         return List.copyOf(prompts);

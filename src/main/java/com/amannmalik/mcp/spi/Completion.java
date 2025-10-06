@@ -17,7 +17,6 @@ public record Completion(List<String> values, Integer total, Boolean hasMore) {
         }
     }
 
-    /// Return an immutable view to avoid exposing internal representation.
     @Override
     public List<String> values() {
         return List.copyOf(values);

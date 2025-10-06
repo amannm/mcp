@@ -21,7 +21,6 @@ public record InitializeResponse(
         features = Immutable.enumSet(features);
     }
 
-    /// Return an immutable view to avoid exposing internal representation.
     @Override
     public Set<ServerFeature> features() {
         return Set.copyOf(features);

@@ -15,7 +15,6 @@ public record ReadResourceResult(List<ResourceBlock> contents, JsonObject _meta)
         ValidationUtil.requireMeta(_meta);
     }
 
-    /// Return an immutable view to avoid exposing internal representation.
     @Override
     public List<ResourceBlock> contents() {
         return List.copyOf(contents);

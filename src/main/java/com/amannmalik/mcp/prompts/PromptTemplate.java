@@ -30,7 +30,6 @@ public record PromptTemplate(Prompt prompt, List<PromptMessageTemplate> messages
         return result;
     }
 
-    /// Return an immutable view to avoid exposing internal representation.
     @Override
     public List<PromptMessageTemplate> messages() {
         return List.copyOf(messages);

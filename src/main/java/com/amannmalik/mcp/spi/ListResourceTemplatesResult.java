@@ -15,7 +15,6 @@ public record ListResourceTemplatesResult(List<ResourceTemplate> resourceTemplat
         ValidationUtil.requireMeta(_meta);
     }
 
-    /// Return an immutable view to avoid exposing internal representation.
     @Override
     public List<ResourceTemplate> resourceTemplates() {
         return List.copyOf(resourceTemplates);

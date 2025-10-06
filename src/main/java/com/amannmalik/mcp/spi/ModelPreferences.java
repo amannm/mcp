@@ -24,7 +24,6 @@ public record ModelPreferences(
         }
     }
 
-    /// Return an immutable view to avoid exposing internal representation.
     @Override
     public List<ModelHint> hints() {
         return List.copyOf(hints);

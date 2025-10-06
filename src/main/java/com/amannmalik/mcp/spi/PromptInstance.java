@@ -9,7 +9,6 @@ public record PromptInstance(String description, List<PromptMessage> messages) {
         messages = Immutable.list(messages);
     }
 
-    /// Return an immutable view to avoid exposing internal representation.
     @Override
     public List<PromptMessage> messages() {
         return List.copyOf(messages);

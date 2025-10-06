@@ -15,7 +15,6 @@ public record ListResourcesResult(List<Resource> resources,
         ValidationUtil.requireMeta(_meta);
     }
 
-    /// Return an immutable view to avoid exposing internal representation.
     @Override
     public List<Resource> resources() {
         return List.copyOf(resources);

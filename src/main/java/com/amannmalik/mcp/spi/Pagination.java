@@ -30,7 +30,6 @@ public final class Pagination {
             nextCursor = nextCursor == null ? Cursor.End.INSTANCE : nextCursor;
         }
 
-        /// Return an immutable view to avoid exposing internal representation.
         @Override
         public List<T> items() {
             return List.copyOf(items);
