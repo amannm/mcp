@@ -235,9 +235,11 @@ public final class ServerHarness implements Closeable {
             }
         };
 
-        var access = (ResourceAccessPolicy) (principal1, annotations) -> { /* allow all */ };
-
         var principal = new Principal(base.defaultPrincipal(), Set.of());
+
+        var resourceAccess = loadSingleton(ResourceAccessPolicy.class);
+        var toolAccess = loadSingleton(ToolAccessPolicy.class);
+        var samplingAccessPolicy = loadSingleton(SamplingAccessPolicy.class);
 
         var server = new McpServer(
                 config,
@@ -246,9 +248,9 @@ public final class ServerHarness implements Closeable {
                 prompts,
                 completions,
                 sampling,
-                access,
-                ToolAccessPolicy.PERMISSIVE,
-                SamplingAccessPolicy.PERMISSIVE,
+                resourceAccess,
+                toolAccess,
+                samplingAccessPolicy,
                 principal,
                 null);
         Thread.ofVirtual().start(() -> {
@@ -264,6 +266,22 @@ public final class ServerHarness implements Closeable {
         try (var s = new ServerSocket(0)) {
             return s.getLocalPort();
         }
+    }
+
+    private static <T> T loadSingleton(Class<T> type) {
+        Objects.requireNonNull(type, "type");
+        var loader = ServiceLoader.load(type);
+        var iterator = loader.iterator();
+        if (!iterator.hasNext()) {
+            throw new IllegalStateException("No implementation of " + type.getName()
+                    + " is registered as a JPMS service for tests.");
+        }
+        var service = iterator.next();
+        if (iterator.hasNext()) {
+            throw new IllegalStateException("Multiple implementations of " + type.getName()
+                    + " detected in tests.");
+        }
+        return service;
     }
 
     public URI endpoint() {
