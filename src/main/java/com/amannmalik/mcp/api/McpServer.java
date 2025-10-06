@@ -75,6 +75,7 @@ public final class McpServer extends JsonRpcEndpoint implements AutoCloseable {
     private final SamplingProvider sampling;
     private final RateLimiter toolLimiter;
     private final RootsManager rootsManager;
+    private final ToolAccessPolicy toolAccessPolicy;
     private final SamplingAccessPolicy samplingAccess;
     private final Principal principal;
     private final RateLimiter completionLimiter;
@@ -95,6 +96,8 @@ public final class McpServer extends JsonRpcEndpoint implements AutoCloseable {
                      CompletionProvider completions,
                      SamplingProvider sampling,
                      ResourceAccessPolicy resourceAccess,
+                     ToolAccessPolicy toolAccessPolicy,
+                     SamplingAccessPolicy samplingAccessPolicy,
                      Principal principal,
                      String instructions) throws Exception {
         super(createTransport(config),
@@ -120,7 +123,8 @@ public final class McpServer extends JsonRpcEndpoint implements AutoCloseable {
         this.principal = principal;
         this.lifecycle = new ServerLifecycle(config.supportedVersions(), serverCapabilities, serverInfo, instructions);
         this.toolLimiter = limiter(config.toolsPerSecond(), config.rateLimiterWindowMs());
-        this.samplingAccess = config.samplingAccessPolicy();
+        this.toolAccessPolicy = toolAccessPolicy == null ? ToolAccessPolicy.PERMISSIVE : toolAccessPolicy;
+        this.samplingAccess = samplingAccessPolicy == null ? SamplingAccessPolicy.PERMISSIVE : samplingAccessPolicy;
         this.logLevel.set(config.initialLogLevel());
         this.rootsManager = new RootsManager(lifecycle::clientCapabilities, this::request);
         this.resources = resources;
@@ -555,7 +559,7 @@ public final class McpServer extends JsonRpcEndpoint implements AutoCloseable {
             return JsonRpcError.of(req.id(), JsonRpcErrorCode.INVALID_PARAMS, "Unknown tool: " + callRequest.name());
         }
         try {
-            config.toolAccessPolicy().requireAllowed(principal, tool);
+            toolAccessPolicy.requireAllowed(principal, tool);
         } catch (SecurityException e) {
             return JsonRpcError.of(req.id(), JsonRpcErrorCode.INTERNAL_ERROR, config.errorAccessDenied());
         }

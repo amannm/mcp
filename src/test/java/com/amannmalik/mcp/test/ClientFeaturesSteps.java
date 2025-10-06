@@ -80,7 +80,7 @@ public final class ClientFeaturesSteps {
                 base.defaultOriginHeader(), base.httpRequestTimeout(), base.enableKeepAlive(),
                 base.sessionIdByteLength(), base.initializeRequestTimeout(), base.strictVersionValidation(),
                 base.pingTimeout(), base.pingInterval(), base.progressPerSecond(), base.rateLimiterWindow(),
-                base.verbose(), base.interactiveSampling(), base.rootDirectories(), base.samplingAccessPolicy(),
+                base.verbose(), base.interactiveSampling(), base.rootDirectories(),
                 tlsConfig, CertificateValidationMode.STRICT, List.of(), true
         );
         var hostConfig = new McpHostConfiguration(

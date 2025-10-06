@@ -51,8 +51,6 @@ public final class ServerHarness implements Closeable {
                 base.parserLoggerName(),
                 base.cancellationLoggerName(),
                 LoggingLevel.INFO,
-                ToolAccessPolicy.PERMISSIVE,
-                SamplingAccessPolicy.PERMISSIVE,
                 base.defaultPrincipal(),
                 base.defaultBoundary(),
                 "http",
@@ -241,7 +239,18 @@ public final class ServerHarness implements Closeable {
 
         var principal = new Principal(base.defaultPrincipal(), Set.of());
 
-        var server = new McpServer(config, resources, tools, prompts, completions, sampling, access, principal, null);
+        var server = new McpServer(
+                config,
+                resources,
+                tools,
+                prompts,
+                completions,
+                sampling,
+                access,
+                ToolAccessPolicy.PERMISSIVE,
+                SamplingAccessPolicy.PERMISSIVE,
+                principal,
+                null);
         Thread.ofVirtual().start(() -> {
             try {
                 server.serve();

@@ -245,7 +245,6 @@ public final class HostCommand {
                     clientVerbose,
                     false,
                     List.of(System.getProperty("user.dir")),
-                    SamplingAccessPolicy.PERMISSIVE,
                     tlsConfig,
                     tls.validationMode(),
                     tls.pins(),
