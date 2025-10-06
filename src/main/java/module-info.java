@@ -18,4 +18,7 @@ module mcp.main {
     uses com.amannmalik.mcp.spi.SamplingProvider;
     uses com.amannmalik.mcp.spi.RootsProvider;
     uses com.amannmalik.mcp.spi.ElicitationProvider;
+    uses com.amannmalik.mcp.spi.ResourceAccessPolicy;
+    uses com.amannmalik.mcp.spi.ToolAccessPolicy;
+    uses com.amannmalik.mcp.spi.SamplingAccessPolicy;
 }

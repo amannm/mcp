@@ -123,8 +123,12 @@ public final class McpServer extends JsonRpcEndpoint implements AutoCloseable {
         this.principal = principal;
         this.lifecycle = new ServerLifecycle(config.supportedVersions(), serverCapabilities, serverInfo, instructions);
         this.toolLimiter = limiter(config.toolsPerSecond(), config.rateLimiterWindowMs());
-        this.toolAccessPolicy = toolAccessPolicy == null ? ToolAccessPolicy.PERMISSIVE : toolAccessPolicy;
-        this.samplingAccess = samplingAccessPolicy == null ? SamplingAccessPolicy.PERMISSIVE : samplingAccessPolicy;
+        this.toolAccessPolicy = toolAccessPolicy == null
+                ? ServiceLoaders.loadSingleton(ToolAccessPolicy.class)
+                : toolAccessPolicy;
+        this.samplingAccess = samplingAccessPolicy == null
+                ? ServiceLoaders.loadSingleton(SamplingAccessPolicy.class)
+                : samplingAccessPolicy;
         this.logLevel.set(config.initialLogLevel());
         this.rootsManager = new RootsManager(lifecycle::clientCapabilities, this::request);
         this.resources = resources;

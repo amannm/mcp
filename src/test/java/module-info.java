@@ -16,4 +16,10 @@ open module mcp.test {
     provides com.amannmalik.mcp.spi.SamplingProvider with com.amannmalik.mcp.test.impl.DefaultSamplingProvider;
     provides com.amannmalik.mcp.spi.RootsProvider with com.amannmalik.mcp.test.impl.DefaultRootsProvider;
     provides com.amannmalik.mcp.spi.ElicitationProvider with com.amannmalik.mcp.test.impl.DefaultElicitationProvider;
+    provides com.amannmalik.mcp.spi.ResourceAccessPolicy with com.amannmalik.mcp.test.impl.PermissiveResourceAccessPolicy;
+    provides com.amannmalik.mcp.spi.ToolAccessPolicy with com.amannmalik.mcp.test.impl.PermissiveToolAccessPolicy;
+    provides com.amannmalik.mcp.spi.SamplingAccessPolicy with com.amannmalik.mcp.test.impl.PermissiveSamplingAccessPolicy;
+    uses com.amannmalik.mcp.spi.ResourceAccessPolicy;
+    uses com.amannmalik.mcp.spi.ToolAccessPolicy;
+    uses com.amannmalik.mcp.spi.SamplingAccessPolicy;
 }

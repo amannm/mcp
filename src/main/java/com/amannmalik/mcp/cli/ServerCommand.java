@@ -199,14 +199,16 @@ public final class ServerCommand {
             var prompts = ServiceLoaders.loadSingleton(PromptProvider.class);
             var completions = ServiceLoaders.loadSingleton(CompletionProvider.class);
             var sampling = ServiceLoaders.loadSingleton(SamplingProvider.class);
+            var toolAccess = ServiceLoaders.loadSingleton(ToolAccessPolicy.class);
+            var samplingAccessPolicy = ServiceLoaders.loadSingleton(SamplingAccessPolicy.class);
             try (var server = new McpServer(config, resources,
                     tools,
                     prompts,
                     completions,
                     sampling,
                     privacyBoundary(config.defaultBoundary()),
-                    ToolAccessPolicy.PERMISSIVE,
-                    SamplingAccessPolicy.PERMISSIVE,
+                    toolAccess,
+                    samplingAccessPolicy,
                     defaultPrincipal(),
                     instructions)) {
                 server.serve();
