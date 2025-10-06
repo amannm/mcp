@@ -65,10 +65,7 @@ final class AcceptHeader {
         for (var type : requiredTypes) {
             expected.add(normalizeType(type));
         }
-        if (!mediaTypes.equals(Set.copyOf(expected))) {
-            return false;
-        }
-        return true;
+        return mediaTypes.equals(Set.copyOf(expected));
     }
 }
 

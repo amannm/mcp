@@ -2,13 +2,11 @@ package com.amannmalik.mcp.api;
 
 import com.amannmalik.mcp.api.config.*;
 import com.amannmalik.mcp.codec.*;
-import com.amannmalik.mcp.elicitation.InteractiveElicitationProvider;
 import com.amannmalik.mcp.jsonrpc.JsonRpc;
-import com.amannmalik.mcp.roots.InMemoryRootsProvider;
-import com.amannmalik.mcp.sampling.InteractiveSamplingProvider;
 import com.amannmalik.mcp.security.*;
 import com.amannmalik.mcp.spi.*;
 import com.amannmalik.mcp.util.PlatformLog;
+import com.amannmalik.mcp.util.ServiceLoaders;
 import jakarta.json.Json;
 import jakarta.json.JsonObject;
 
@@ -51,9 +49,17 @@ public final class McpHost implements AutoCloseable {
         this.samplingAccess = new SamplingAccessController();
         for (var clientConfig : config.clientConfigurations()) {
             grantConsent(clientConfig.serverName());
-            var samplingProvider = new InteractiveSamplingProvider(clientConfig.interactiveSampling());
-            var roots = clientConfig.rootDirectories().stream().map(dir -> new Root(URI.create("file://" + dir), dir, null)).toList();
-            var rootsProvider = new InMemoryRootsProvider(roots);
+            SamplingProvider samplingProvider = null;
+            if (clientConfig.clientCapabilities().contains(ClientCapability.SAMPLING)) {
+                samplingProvider = ServiceLoaders.loadSingleton(SamplingProvider.class);
+            }
+            RootsProvider rootsProvider = null;
+            if (clientConfig.clientCapabilities().contains(ClientCapability.ROOTS)) {
+                var roots = clientConfig.rootDirectories().stream()
+                        .map(dir -> new Root(URI.create("file://" + dir), dir, null))
+                        .toList();
+                rootsProvider = new ClientRootsProvider(roots);
+            }
             var listener = new McpClientListener() {
                 @Override
                 public void onProgress(ProgressNotification notification) {
@@ -88,7 +94,10 @@ public final class McpHost implements AutoCloseable {
                     events.computeIfAbsent(clientConfig.clientId(), k -> new Events()).promptsListChanged.set(true);
                 }
             };
-            var elicitationProvider = new InteractiveElicitationProvider();
+            ElicitationProvider elicitationProvider = null;
+            if (clientConfig.clientCapabilities().contains(ClientCapability.ELICITATION)) {
+                elicitationProvider = ServiceLoaders.loadSingleton(ElicitationProvider.class);
+            }
             var client = new McpClient(
                     clientConfig,
                     config.globalVerbose(),
@@ -97,6 +106,18 @@ public final class McpHost implements AutoCloseable {
                     elicitationProvider,
                     listener);
             register(clientConfig.clientId(), client, clientConfig);
+        }
+    }
+
+    private static void requireCapability(McpClient client, ServerCapability cap) {
+        if (!client.serverCapabilities().contains(cap)) {
+            throw new IllegalStateException("Server capability not supported: " + cap);
+        }
+    }
+
+    private static void requireCapability(McpClient client, ClientCapability cap) {
+        if (!client.capabilities().contains(cap)) {
+            throw new IllegalStateException("Client capability not supported: " + cap);
         }
     }
 
@@ -269,18 +290,6 @@ public final class McpHost implements AutoCloseable {
         return events.computeIfAbsent(id, k -> new Events());
     }
 
-    private static void requireCapability(McpClient client, ServerCapability cap) {
-        if (!client.serverCapabilities().contains(cap)) {
-            throw new IllegalStateException("Server capability not supported: " + cap);
-        }
-    }
-
-    private static void requireCapability(McpClient client, ClientCapability cap) {
-        if (!client.capabilities().contains(cap)) {
-            throw new IllegalStateException("Client capability not supported: " + cap);
-        }
-    }
-
     private void register(String id, McpClient client, McpClientConfiguration clientConfig) {
         consents.requireConsent(principal, client.info().name());
         if (clients.putIfAbsent(id, client) != null) {
@@ -309,22 +318,77 @@ public final class McpHost implements AutoCloseable {
             return false;
         }
     }
-    /// Test-visible event collector for assertions in integration tests.
+
+    private static final class ClientRootsProvider implements RootsProvider {
+        private final CopyOnWriteArrayList<Root> roots;
+        private final CopyOnWriteArrayList<Runnable> listeners = new CopyOnWriteArrayList<>();
+
+        private ClientRootsProvider(List<Root> initial) {
+            this.roots = new CopyOnWriteArrayList<>(initial);
+        }
+
+        @Override
+        public Pagination.Page<Root> list(Cursor cursor) {
+            return Pagination.page(roots, cursor == null ? Cursor.Start.INSTANCE : cursor, Pagination.DEFAULT_PAGE_SIZE);
+        }
+
+        @Override
+        public AutoCloseable onListChanged(Runnable listener) {
+            Objects.requireNonNull(listener, "listener");
+            listeners.add(listener);
+            return () -> listeners.remove(listener);
+        }
+
+        @Override
+        public boolean supportsListChanged() {
+            return true;
+        }
+
+        @Override
+        public void close() {
+            listeners.clear();
+        }
+    }
+
     public static final class Events {
         final List<LoggingMessageNotification> messages = new CopyOnWriteArrayList<>();
         final AtomicBoolean resourceListChanged = new AtomicBoolean();
         final AtomicBoolean toolListChanged = new AtomicBoolean();
         final AtomicBoolean promptsListChanged = new AtomicBoolean();
 
-        public Events() {}
+        public Events() {
+        }
 
-        public List<LoggingMessageNotification> messages() { return List.copyOf(messages); }
-        public boolean resourceListChanged() { return resourceListChanged.get(); }
-        public boolean toolListChanged() { return toolListChanged.get(); }
-        public boolean promptsListChanged() { return promptsListChanged.get(); }
-        public void clearMessages() { messages.clear(); }
-        public void resetResourceListChanged() { resourceListChanged.set(false); }
-        public void resetToolListChanged() { toolListChanged.set(false); }
-        public void resetPromptsListChanged() { promptsListChanged.set(false); }
+        public List<LoggingMessageNotification> messages() {
+            return List.copyOf(messages);
+        }
+
+        public boolean resourceListChanged() {
+            return resourceListChanged.get();
+        }
+
+        public boolean toolListChanged() {
+            return toolListChanged.get();
+        }
+
+        public boolean promptsListChanged() {
+            return promptsListChanged.get();
+        }
+
+        public void clearMessages() {
+            messages.clear();
+        }
+
+        public void resetResourceListChanged() {
+            resourceListChanged.set(false);
+        }
+
+        public void resetToolListChanged() {
+            toolListChanged.set(false);
+        }
+
+        public void resetPromptsListChanged() {
+            promptsListChanged.set(false);
+        }
     }
 }

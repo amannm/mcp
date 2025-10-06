@@ -14,7 +14,9 @@ import java.time.Duration;
 import java.util.*;
 import java.util.function.Consumer;
 
-/** In-process HTTP server using minimal providers, MIXED HTTPS mode. */
+/**
+ * In-process HTTP server using minimal providers, MIXED HTTPS mode.
+ */
 public final class ServerHarness implements Closeable {
     private final McpServer server;
     private final int port;
@@ -85,74 +87,154 @@ public final class ServerHarness implements Closeable {
 
         var resources = new ResourceProvider() {
             @Override
-            public ResourceBlock read(URI uri) { return null; }
+            public ResourceBlock read(URI uri) {
+                return null;
+            }
+
             @Override
-            public Optional<Resource> get(URI uri) { return Optional.empty(); }
+            public Optional<Resource> get(URI uri) {
+                return Optional.empty();
+            }
+
             @Override
-            public Pagination.Page<Resource> list(Cursor cursor) { return new Pagination.Page<>(List.of(), Cursor.End.INSTANCE); }
+            public Pagination.Page<Resource> list(Cursor cursor) {
+                return new Pagination.Page<>(List.of(), Cursor.End.INSTANCE);
+            }
+
             @Override
-            public Pagination.Page<ResourceTemplate> listTemplates(Cursor cursor) { return new Pagination.Page<>(List.of(), Cursor.End.INSTANCE); }
+            public Pagination.Page<ResourceTemplate> listTemplates(Cursor cursor) {
+                return new Pagination.Page<>(List.of(), Cursor.End.INSTANCE);
+            }
+
             @Override
-            public AutoCloseable subscribe(URI uri, Consumer<ResourceUpdate> listener) { return () -> {}; }
+            public AutoCloseable subscribe(URI uri, Consumer<ResourceUpdate> listener) {
+                return () -> {
+                };
+            }
+
             @Override
-            public boolean supportsSubscribe() { return false; }
+            public boolean supportsSubscribe() {
+                return false;
+            }
+
             @Override
-            public AutoCloseable onListChanged(Runnable listener) { return () -> {}; }
+            public AutoCloseable onListChanged(Runnable listener) {
+                return () -> {
+                };
+            }
+
             @Override
-            public boolean supportsListChanged() { return false; }
+            public boolean supportsListChanged() {
+                return false;
+            }
+
             @Override
-            public void close() { }
+            public void close() {
+            }
         };
 
         var tools = new ToolProvider() {
-            final Tool echo = new Tool("echo", "Echo", "Echo tool", Json.createObjectBuilder().add("type","object").build(), null, null, null);
+            final Tool echo = new Tool("echo", "Echo", "Echo tool", Json.createObjectBuilder().add("type", "object").build(), null, null, null);
+
             @Override
-            public Pagination.Page<Tool> list(Cursor cursor) { return new Pagination.Page<>(List.of(echo), Cursor.End.INSTANCE); }
+            public Pagination.Page<Tool> list(Cursor cursor) {
+                return new Pagination.Page<>(List.of(echo), Cursor.End.INSTANCE);
+            }
+
             @Override
-            public AutoCloseable onListChanged(Runnable listener) { return () -> {}; }
+            public AutoCloseable onListChanged(Runnable listener) {
+                return () -> {
+                };
+            }
+
             @Override
-            public boolean supportsListChanged() { return true; }
+            public boolean supportsListChanged() {
+                return true;
+            }
+
             @Override
-            public void close() { }
+            public void close() {
+            }
+
             @Override
-            public Optional<Tool> find(String name) { return Optional.of(echo); }
+            public Optional<Tool> find(String name) {
+                return Optional.of(echo);
+            }
+
             @Override
-            public ToolResult call(String name, JsonObject arguments) { return new ToolResult(Json.createArrayBuilder().build(), null, false, null); }
+            public ToolResult call(String name, JsonObject arguments) {
+                return new ToolResult(Json.createArrayBuilder().build(), null, false, null);
+            }
         };
 
         var prompts = new PromptProvider() {
             @Override
-            public Pagination.Page<Prompt> list(Cursor cursor) { return new Pagination.Page<>(List.of(), Cursor.End.INSTANCE); }
+            public Pagination.Page<Prompt> list(Cursor cursor) {
+                return new Pagination.Page<>(List.of(), Cursor.End.INSTANCE);
+            }
+
             @Override
-            public AutoCloseable onListChanged(Runnable listener) { return () -> {}; }
+            public AutoCloseable onListChanged(Runnable listener) {
+                return () -> {
+                };
+            }
+
             @Override
-            public boolean supportsListChanged() { return true; }
+            public boolean supportsListChanged() {
+                return true;
+            }
+
             @Override
-            public void close() { }
+            public void close() {
+            }
+
             @Override
-            public Optional<Prompt> find(String name) { return Optional.empty(); }
+            public Optional<Prompt> find(String name) {
+                return Optional.empty();
+            }
+
             @Override
-            public PromptInstance get(String name, Map<String, String> arguments) { return new PromptInstance("desc", List.of()); }
+            public PromptInstance get(String name, Map<String, String> arguments) {
+                return new PromptInstance("desc", List.of());
+            }
         };
 
         var completions = new CompletionProvider() {
             @Override
-            public Pagination.Page<Ref> list(Cursor cursor) { return new Pagination.Page<>(List.of(), Cursor.End.INSTANCE); }
+            public Pagination.Page<Ref> list(Cursor cursor) {
+                return new Pagination.Page<>(List.of(), Cursor.End.INSTANCE);
+            }
+
             @Override
-            public AutoCloseable onListChanged(Runnable listener) { return () -> {}; }
+            public AutoCloseable onListChanged(Runnable listener) {
+                return () -> {
+                };
+            }
+
             @Override
-            public boolean supportsListChanged() { return true; }
+            public boolean supportsListChanged() {
+                return true;
+            }
+
             @Override
-            public void close() { }
+            public void close() {
+            }
+
             @Override
-            public CompleteResult execute(String name, JsonObject args) { return new CompleteResult(new Completion(List.of(), 0, false), null); }
+            public CompleteResult execute(String name, JsonObject args) {
+                return new CompleteResult(new Completion(List.of(), 0, false), null);
+            }
         };
 
         var sampling = new SamplingProvider() {
             @Override
-            public void close() { }
+            public void close() {
+            }
+
             @Override
-            public CreateMessageResponse createMessage(CreateMessageRequest request, Duration timeoutMillis) { return new CreateMessageResponse(Role.ASSISTANT, new ContentBlock.Text("ok", null, null), "model", "stop", null); }
+            public CreateMessageResponse createMessage(CreateMessageRequest request, Duration timeoutMillis) {
+                return new CreateMessageResponse(Role.ASSISTANT, new ContentBlock.Text("ok", null, null), "model", "stop", null);
+            }
         };
 
         var access = (ResourceAccessPolicy) (principal1, annotations) -> { /* allow all */ };
@@ -161,16 +243,30 @@ public final class ServerHarness implements Closeable {
 
         var server = new McpServer(config, resources, tools, prompts, completions, sampling, access, principal, null);
         Thread.ofVirtual().start(() -> {
-            try { server.serve(); } catch (IOException ignore) { }
+            try {
+                server.serve();
+            } catch (IOException ignore) {
+            }
         });
         return new ServerHarness(server, port);
     }
 
-    public URI endpoint() { return URI.create("http://127.0.0.1:" + port + "/"); }
-    public int port() { return port; }
+    private static int freePort() throws IOException {
+        try (var s = new ServerSocket(0)) {
+            return s.getLocalPort();
+        }
+    }
+
+    public URI endpoint() {
+        return URI.create("http://127.0.0.1:" + port + "/");
+    }
+
+    public int port() {
+        return port;
+    }
 
     @Override
-    public void close() throws IOException { server.close(); }
-
-    private static int freePort() throws IOException { try (var s = new ServerSocket(0)) { return s.getLocalPort(); } }
+    public void close() throws IOException {
+        server.close();
+    }
 }

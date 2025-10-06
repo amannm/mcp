@@ -3,7 +3,9 @@ package com.amannmalik.mcp.cli;
 import com.amannmalik.mcp.api.McpServer;
 import com.amannmalik.mcp.api.config.McpServerConfiguration;
 import com.amannmalik.mcp.api.config.TlsConfiguration;
-import com.amannmalik.mcp.util.ServerDefaults;
+import com.amannmalik.mcp.security.ResourceAccessController;
+import com.amannmalik.mcp.spi.*;
+import com.amannmalik.mcp.util.ServiceLoaders;
 import picocli.CommandLine;
 import picocli.CommandLine.Model.CommandSpec;
 import picocli.CommandLine.Model.OptionSpec;
@@ -11,8 +13,7 @@ import picocli.CommandLine.ParseResult;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
 
 /// - [Server](specification/2025-06-18/server/index.mdx)
 /// - [Conformance Suite](src/test/resources/com/amannmalik/mcp/mcp.feature)
@@ -193,13 +194,18 @@ public final class ServerCommand {
             config = config.withTls(httpsPort, tlsConfig, requireClientAuth);
             Path instructionsFile = parseResult.matchedOptionValue("--instructions", null);
             var instructions = instructionsFile == null ? null : Files.readString(instructionsFile);
-            try (var server = new McpServer(config, ServerDefaults.resources(),
-                    ServerDefaults.tools(),
-                    ServerDefaults.prompts(),
-                    ServerDefaults.completions(),
-                    ServerDefaults.sampling(),
-                    ServerDefaults.privacyBoundary(config.defaultBoundary()),
-                    ServerDefaults.principal(),
+            var resources = ServiceLoaders.loadSingleton(ResourceProvider.class);
+            var tools = ServiceLoaders.loadSingleton(ToolProvider.class);
+            var prompts = ServiceLoaders.loadSingleton(PromptProvider.class);
+            var completions = ServiceLoaders.loadSingleton(CompletionProvider.class);
+            var sampling = ServiceLoaders.loadSingleton(SamplingProvider.class);
+            try (var server = new McpServer(config, resources,
+                    tools,
+                    prompts,
+                    completions,
+                    sampling,
+                    privacyBoundary(config.defaultBoundary()),
+                    defaultPrincipal(),
                     instructions)) {
                 server.serve();
             }
@@ -207,6 +213,18 @@ public final class ServerCommand {
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
+    }
+
+    private static ResourceAccessPolicy privacyBoundary(String principalId) {
+        var controller = new ResourceAccessController();
+        for (var role : Role.values()) {
+            controller.allow(principalId, role);
+        }
+        return controller;
+    }
+
+    private static Principal defaultPrincipal() {
+        return new Principal(McpServerConfiguration.defaultConfiguration().defaultPrincipal(), Set.of());
     }
 
 }

@@ -9,7 +9,6 @@ import io.cucumber.java.en.*;
 
 import java.io.IOException;
 import java.net.URI;
-import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Duration;
 import java.util.*;
@@ -70,9 +69,7 @@ public final class ClientFeaturesSteps {
     @Given("I have established an MCP connection")
     public void i_have_established_an_mcp_connection() throws Exception {
         var base = McpClientConfiguration.defaultConfiguration("client", "client", "default");
-        var java = System.getProperty("java.home") + "/bin/java";
-        var jar = Path.of("build", "libs", "mcp-0.1.0.jar").toString();
-        var cmd = java + " -jar " + jar + " server --stdio --test-mode";
+        var cmd = CommandSpecs.stdioServer();
         var tlsConfig = new TlsConfiguration(
                 "", "", "PKCS12", "", "", "PKCS12",
                 List.of("TLSv1.3", "TLSv1.2"), List.of("TLS_AES_128_GCM_SHA256", "TLS_AES_256_GCM_SHA384")
@@ -420,7 +417,7 @@ public final class ClientFeaturesSteps {
         samplingErrorScenarios.addAll(table.asMaps(String.class, String.class));
         if (!samplingErrorScenarios.isEmpty()) {
             lastErrorCode = -32601;
-            lastErrorMessage = samplingErrorScenarios.get(0).get("expected_error");
+            lastErrorMessage = samplingErrorScenarios.getFirst().get("expected_error");
         }
     }
 

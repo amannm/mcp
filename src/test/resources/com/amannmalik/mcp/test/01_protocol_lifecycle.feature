@@ -60,16 +60,16 @@ Feature: MCP Connection Lifecycle
   # Tests specification/2025-06-18/basic/transports.mdx:126-127 (GET Accept header requirement)
     Given an MCP server using "http" transport
     When I send HTTP requests with the following Accept headers:
-      | method | accept_header                       | should_accept |
-      | POST   | none                                | false         |
-      | POST   | application/json                    | false         |
-      | POST   | text/event-stream                   | false         |
-      | POST   | application/json, text/event-stream | true          |
+      | method | accept_header                            | should_accept |
+      | POST   | none                                     | false         |
+      | POST   | application/json                         | false         |
+      | POST   | text/event-stream                        | false         |
+      | POST   | application/json, text/event-stream      | true          |
       | POST   | application/json, text/event-stream, */* | true          |
-      | GET    | none                                | false         |
-      | GET    | application/json                    | false         |
-      | GET    | text/event-stream                   | true          |
-      | GET    | application/json, text/event-stream | false         |
+      | GET    | none                                     | false         |
+      | GET    | application/json                         | false         |
+      | GET    | text/event-stream                        | true          |
+      | GET    | application/json, text/event-stream      | false         |
     Then each request should be handled according to Accept header requirements
 
   @connection @http @accept-header
@@ -97,10 +97,10 @@ Feature: MCP Connection Lifecycle
     # Tests specification/2025-06-18/basic/transports.mdx:78 (Origin header validation)
     Given an MCP server using "http" transport
     When I send HTTP requests with the following Origin headers:
-      | origin_header       | should_accept |
-      | http://127.0.0.1    | true          |
-      | https://evil.example.com | false     |
-      | none                | false         |
+      | origin_header            | should_accept |
+      | http://127.0.0.1         | true          |
+      | https://evil.example.com | false         |
+      | none                     | false         |
     Then each request should be handled according to Origin header requirements
 
   @connection @http @content-type

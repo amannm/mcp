@@ -3,9 +3,7 @@ package com.amannmalik.mcp.codec;
 import com.amannmalik.mcp.spi.*;
 import jakarta.json.*;
 
-import java.util.Objects;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 import java.util.function.*;
 
 public sealed abstract class AbstractEntityCodec<T> implements JsonCodec<T> permits

@@ -31,6 +31,14 @@ public final class ProgressManager {
         }
     }
 
+    private static boolean isComplete(ProgressNotification note) {
+        var total = note.total();
+        if (total != null) {
+            return note.progress() >= total;
+        }
+        return note.progress() >= 1.0;
+    }
+
     public Optional<ProgressToken> register(RequestId id, JsonObject params) {
         Objects.requireNonNull(id, "id");
         ensureProgressTokenPlacement(params);
@@ -104,14 +112,6 @@ public final class ProgressManager {
         if (isComplete(note)) {
             completeToken(note.token(), state);
         }
-    }
-
-    private static boolean isComplete(ProgressNotification note) {
-        var total = note.total();
-        if (total != null) {
-            return note.progress() >= total;
-        }
-        return note.progress() >= 1.0;
     }
 
     private void completeToken(ProgressToken token, TokenState state) {

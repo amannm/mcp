@@ -11,7 +11,6 @@ import jakarta.json.*;
 import java.io.IOException;
 import java.io.StringReader;
 import java.net.URI;
-import java.nio.file.Path;
 import java.time.Duration;
 import java.util.*;
 import java.util.function.BooleanSupplier;
@@ -82,12 +81,28 @@ public final class ServerFeaturesSteps {
     private boolean errorMessageProvided;
     private AutoCloseable resourceSubscriptionHandle;
 
+    private static JsonObject extractResult(JsonRpcMessage msg) {
+        // Fallback: parse result JSON from record toString representation
+        // Example: JsonRpcResponse[id=..., result={...}]
+        var s = msg == null ? null : msg.toString();
+        if (s == null) return null;
+        int idx = s.indexOf("result=");
+        if (idx < 0) return null;
+        int start = s.indexOf('{', idx);
+        int end = s.lastIndexOf('}');
+        if (start < 0 || end <= start) return null;
+        var json = s.substring(start, end + 1);
+        try (var r = Json.createReader(new StringReader(json))) {
+            return r.readObject();
+        } catch (Exception ignore) {
+            return null;
+        }
+    }
+
     @Given("an established MCP connection with server capabilities")
     public void an_established_mcp_connection_with_server_capabilities() throws Exception {
         var base = McpClientConfiguration.defaultConfiguration("client", "client", "default");
-        var java = System.getProperty("java.home") + "/bin/java";
-        var jar = Path.of("build", "libs", "mcp-0.1.0.jar").toString();
-        var cmd = java + " -jar " + jar + " server --stdio --test-mode";
+        var cmd = CommandSpecs.stdioServer();
         var roots = Stream.concat(
                 base.rootDirectories().stream(),
                 Stream.of("/sample", "/project")).toList();
@@ -502,6 +517,8 @@ public final class ServerFeaturesSteps {
         }
     }
 
+    // --- Resources -------------------------------------------------------
+
     @Given("the server supports resources functionality")
     public void the_server_supports_resources_functionality() throws Exception {
         if (activeConnection == null || clientId == null) {
@@ -509,8 +526,6 @@ public final class ServerFeaturesSteps {
         }
         activeConnection.client(clientId).request(RequestMethod.RESOURCES_LIST, Json.createObjectBuilder().build(), Duration.ofSeconds(5));
     }
-
-    // --- Resources -------------------------------------------------------
 
     @Given("the server has resources capability enabled")
     public void the_server_has_resources_capability_enabled() {
@@ -960,6 +975,8 @@ public final class ServerFeaturesSteps {
         }
     }
 
+    // --- Prompts --------------------------------------------------------
+
     @Given("the server supports prompts functionality")
     public void the_server_supports_prompts_functionality() throws Exception {
         if (activeConnection == null || clientId == null) {
@@ -967,8 +984,6 @@ public final class ServerFeaturesSteps {
         }
         activeConnection.client(clientId).request(RequestMethod.PROMPTS_LIST, Json.createObjectBuilder().build(), Duration.ofSeconds(5));
     }
-
-    // --- Prompts --------------------------------------------------------
 
     @Given("the server has prompts capability enabled")
     public void the_server_has_prompts_capability_enabled() {
@@ -1197,12 +1212,12 @@ public final class ServerFeaturesSteps {
         }
     }
 
+    // --- Logging --------------------------------------------------------
+
     @Given("the server supports logging functionality")
     public void the_server_supports_logging_functionality() throws Exception {
         activeConnection.client(clientId).request(RequestMethod.LOGGING_SET_LEVEL, Json.createObjectBuilder().add("level", "info").build(), Duration.ofSeconds(5));
     }
-
-    // --- Logging --------------------------------------------------------
 
     @Given("the server has logging capability enabled")
     public void the_server_has_logging_capability_enabled() {
@@ -1399,14 +1414,14 @@ public final class ServerFeaturesSteps {
         }
     }
 
+    // --- Completion -----------------------------------------------------
+
     @Given("the server supports completion functionality")
     public void the_server_supports_completion_functionality() throws Exception {
         activeConnection.client(clientId).request(RequestMethod.COMPLETION_COMPLETE, Json.createObjectBuilder()
                 .add("ref", Json.createObjectBuilder().add("type", "ref/prompt").add("name", "test").build())
                 .build(), Duration.ofSeconds(5));
     }
-
-    // --- Completion -----------------------------------------------------
 
     @Given("the server has completion capability enabled")
     public void the_server_has_completion_capability_enabled() {
@@ -1586,14 +1601,14 @@ public final class ServerFeaturesSteps {
         currentErrorScenarios.addAll(completionErrorScenarios);
     }
 
+    // --- Security ------------------------------------------------------
+
     @Given("the server has security controls enabled")
     public void the_server_has_security_controls_enabled() {
         maliciousInputSanitized = false;
         maliciousInputRejected = false;
         rateLimited = false;
     }
-
-    // --- Security ------------------------------------------------------
 
     @When("I send requests with potentially malicious input")
     public void i_send_requests_with_potentially_malicious_input() {
@@ -1747,6 +1762,8 @@ public final class ServerFeaturesSteps {
         }
     }
 
+    // --- Integration ----------------------------------------------------
+
     @Given("the server supports multiple capabilities")
     public void the_server_supports_multiple_capabilities() {
         var caps = activeConnection.client(clientId).serverCapabilities();
@@ -1754,8 +1771,6 @@ public final class ServerFeaturesSteps {
             throw new AssertionError("insufficient capabilities");
         }
     }
-
-    // --- Integration ----------------------------------------------------
 
     @When("I use tools that reference resources and prompts")
     public void i_use_tools_that_reference_resources_and_prompts() {
@@ -1812,9 +1827,6 @@ public final class ServerFeaturesSteps {
         }
     }
 
-    private record ErrorCheck(String scenario, int expectedCode, String expectedMessage, int actualCode, String actualMessage) {
-    }
-
     private boolean awaitCondition(BooleanSupplier condition, Duration timeout) {
         Objects.requireNonNull(condition, "condition");
         Objects.requireNonNull(timeout, "timeout");
@@ -1833,21 +1845,6 @@ public final class ServerFeaturesSteps {
         return condition.getAsBoolean();
     }
 
-    private static JsonObject extractResult(JsonRpcMessage msg) {
-        // Fallback: parse result JSON from record toString representation
-        // Example: JsonRpcResponse[id=..., result={...}]
-        var s = msg == null ? null : msg.toString();
-        if (s == null) return null;
-        int idx = s.indexOf("result=");
-        if (idx < 0) return null;
-        int start = s.indexOf('{', idx);
-        int end = s.lastIndexOf('}');
-        if (start < 0 || end <= start) return null;
-        var json = s.substring(start, end + 1);
-        try (var r = Json.createReader(new StringReader(json))) {
-            return r.readObject();
-        } catch (Exception ignore) {
-            return null;
-        }
+    private record ErrorCheck(String scenario, int expectedCode, String expectedMessage, int actualCode, String actualMessage) {
     }
 }

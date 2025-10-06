@@ -11,7 +11,6 @@ import jakarta.json.*;
 import java.io.IOException;
 import java.io.StringReader;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.Path;
 import java.time.Duration;
 import java.util.*;
 import java.util.regex.Pattern;
@@ -92,9 +91,7 @@ public final class UtilitiesSteps {
     public void an_established_mcp_connection() throws Exception {
         if (activeConnection != null) return;
         var base = McpClientConfiguration.defaultConfiguration("client", "client", "default");
-        var java = System.getProperty("java.home") + "/bin/java";
-        var jar = Path.of("build", "libs", "mcp-0.1.0.jar").toString();
-        var cmd = java + " -jar " + jar + " server --stdio --test-mode";
+        var cmd = CommandSpecs.stdioServer();
         var tlsConfig = new TlsConfiguration(
                 "", "", "PKCS12", "", "", "PKCS12",
                 List.of("TLSv1.3", "TLSv1.2"), List.of("TLS_AES_128_GCM_SHA256", "TLS_AES_256_GCM_SHA384")

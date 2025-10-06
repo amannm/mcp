@@ -10,10 +10,7 @@ import jakarta.json.*;
 
 import java.io.*;
 import java.net.URI;
-import java.net.http.HttpClient;
-import java.net.http.HttpRequest;
-import java.net.http.HttpResponse;
-import java.nio.file.Path;
+import java.net.http.*;
 import java.time.Duration;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -40,53 +37,18 @@ public final class ProtocolLifecycleSteps {
     private final List<Integer> expectedPostMessageStatuses = new ArrayList<>();
     private final List<Boolean> postMessageBodiesEmpty = new ArrayList<>();
     private final List<Boolean> expectedPostMessageBodiesEmpty = new ArrayList<>();
-    // HTTP harness
-    private ServerHarness http;
-    private HttpClient httpClient;
-    private URI httpEndpoint;
-    private String httpSessionId;
-    private String httpProtocolVersion;
-
-    private void httpEnsureInitialized() {
-        if (httpClient == null || httpEndpoint == null) throw new IllegalStateException("HTTP server not started");
-        if (httpSessionId != null && httpProtocolVersion != null) return;
-        var payload = Json.createObjectBuilder()
-                .add("jsonrpc", "2.0")
-                .add("id", 1)
-                .add("method", "initialize")
-                .add("params", Json.createObjectBuilder().build())
-                .build().toString();
-        var req = HttpRequest.newBuilder(httpEndpoint)
-                .header("Origin", "http://127.0.0.1")
-                .header("Accept", "application/json, text/event-stream")
-                .header("Content-Type", "application/json")
-                .POST(HttpRequest.BodyPublishers.ofString(payload))
-                .build();
-        int attempts = 0;
-        while (attempts++ < 10 && (httpSessionId == null || httpProtocolVersion == null)) {
-            try {
-                var resp = httpClient.send(req, HttpResponse.BodyHandlers.ofInputStream());
-                if (resp.statusCode() == 200) {
-                    this.httpSessionId = resp.headers().firstValue("Mcp-Session-Id").orElse(null);
-                    this.httpProtocolVersion = resp.headers().firstValue("MCP-Protocol-Version").orElse(null);
-                }
-                resp.body().close();
-            } catch (Exception ignore) {
-            }
-            if (httpSessionId == null || httpProtocolVersion == null) {
-                try { Thread.sleep(100L); } catch (InterruptedException ie) { Thread.currentThread().interrupt(); }
-            }
-        }
-        if (httpSessionId == null || httpProtocolVersion == null) {
-            throw new RuntimeException("Failed to initialize HTTP session");
-        }
-    }
     private final List<RequestId> concurrentRequestIds = new ArrayList<>();
     private final Map<RequestId, JsonObject> concurrentResponses = new HashMap<>();
     private final List<Map<String, String>> dependentRequests = new ArrayList<>();
     private final Map<String, JsonObject> requestResponses = new HashMap<>();
     private final List<Boolean> preInitAllowedResults = new ArrayList<>();
     private final List<Boolean> expectedPreInitAllowedResults = new ArrayList<>();
+    // HTTP harness
+    private ServerHarness http;
+    private HttpClient httpClient;
+    private URI httpEndpoint;
+    private String httpSessionId;
+    private String httpProtocolVersion;
     private McpClientConfiguration clientConfig;
     private McpHostConfiguration hostConfig;
     private McpHost activeConnection;
@@ -119,6 +81,45 @@ public final class ProtocolLifecycleSteps {
     private Exception newlineError;
     private Exception invalidResponseError;
     private boolean serverInitialized = true;
+
+    private void httpEnsureInitialized() {
+        if (httpClient == null || httpEndpoint == null) throw new IllegalStateException("HTTP server not started");
+        if (httpSessionId != null && httpProtocolVersion != null) return;
+        var payload = Json.createObjectBuilder()
+                .add("jsonrpc", "2.0")
+                .add("id", 1)
+                .add("method", "initialize")
+                .add("params", Json.createObjectBuilder().build())
+                .build().toString();
+        var req = HttpRequest.newBuilder(httpEndpoint)
+                .header("Origin", "http://127.0.0.1")
+                .header("Accept", "application/json, text/event-stream")
+                .header("Content-Type", "application/json")
+                .POST(HttpRequest.BodyPublishers.ofString(payload))
+                .build();
+        int attempts = 0;
+        while (attempts++ < 10 && (httpSessionId == null || httpProtocolVersion == null)) {
+            try {
+                var resp = httpClient.send(req, HttpResponse.BodyHandlers.ofInputStream());
+                if (resp.statusCode() == 200) {
+                    this.httpSessionId = resp.headers().firstValue("Mcp-Session-Id").orElse(null);
+                    this.httpProtocolVersion = resp.headers().firstValue("MCP-Protocol-Version").orElse(null);
+                }
+                resp.body().close();
+            } catch (Exception ignore) {
+            }
+            if (httpSessionId == null || httpProtocolVersion == null) {
+                try {
+                    Thread.sleep(100L);
+                } catch (InterruptedException ie) {
+                    Thread.currentThread().interrupt();
+                }
+            }
+        }
+        if (httpSessionId == null || httpProtocolVersion == null) {
+            throw new RuntimeException("Failed to initialize HTTP session");
+        }
+    }
 
     private Set<ClientCapability> parseClientCapabilities(String capabilities) {
         if (capabilities == null || capabilities.trim().isEmpty()) {
@@ -279,9 +280,7 @@ public final class ProtocolLifecycleSteps {
     @Given("a transport mechanism is available")
     public void a_transport_mechanism_is_available() {
         var base = McpClientConfiguration.defaultConfiguration("client", "client", "default");
-        var java = System.getProperty("java.home") + "/bin/java";
-        var jar = Path.of("build", "libs", "mcp-0.1.0.jar").toString();
-        var cmd = java + " -jar " + jar + " server --stdio --test-mode";
+        var cmd = CommandSpecs.stdioServer();
         clientConfig = configureWithCommand(base, cmd);
         updateHostConfiguration();
     }
@@ -690,7 +689,7 @@ public final class ProtocolLifecycleSteps {
                     req = b.POST(HttpRequest.BodyPublishers.ofString(body)).build();
                 }
                 var resp = httpClient.send(req, HttpResponse.BodyHandlers.ofInputStream());
-                var ct = resp.headers().firstValue("Content-Type" ).orElse("");
+                var ct = resp.headers().firstValue("Content-Type").orElse("");
                 boolean accepted = switch (desired.toLowerCase(Locale.ROOT)) {
                     case "application/json" -> (resp.statusCode() == 200 && ct.toLowerCase(Locale.ROOT).startsWith("application/json"));
                     case "text/event-stream" -> (resp.statusCode() == 200 && ct.toLowerCase(Locale.ROOT).startsWith("text/event-stream"));

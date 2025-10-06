@@ -51,7 +51,7 @@ description: MCP Specification Expert
 
 # Environment features
 - Unrestricted internet access enabled.
-- Java toolchain: `graalvm-jdk-24` with `gradle` .
+- Java toolchain: `graalvm-jdk-24` with `gradle`.
 
 # Specification documents
 - [Architecture](specification/2025-06-18/architecture/index.mdx)
