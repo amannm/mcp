@@ -62,7 +62,9 @@ tasks.withType<JavaCompile>().configureEach {
 }
 
 tasks.test {
-    useJUnitPlatform()
+    useJUnitPlatform {
+        includeEngines("junit-platform-suite", "cucumber", "junit-jupiter")
+    }
     javaLauncher.set(javaToolchains.launcherFor(java.toolchain))
     dependsOn(tasks.jar)
     val agentFile = configurations.jacocoAgent.get().singleFile.absolutePath.replace(".jar", "-runtime.jar")
@@ -123,6 +125,7 @@ tasks.jacocoTestReport {
 }
 
 tasks.check {
+    dependsOn(tasks.test)
     dependsOn(tasks.jacocoTestReport)
 }
 
