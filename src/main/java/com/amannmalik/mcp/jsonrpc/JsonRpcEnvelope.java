@@ -6,14 +6,10 @@ import jakarta.json.JsonObject;
 import java.util.Objects;
 import java.util.Optional;
 
-/**
- * Lightweight classifier for JSON-RPC messages that extracts the request id and method, if present.
- */
 public final class JsonRpcEnvelope {
     private final JsonObject message;
-    // Avoid Optional as fields; store nullable and expose via Optional accessors
-    private final RequestId id; // nullable
-    private final String method; // nullable
+    private final RequestId id;
+    private final String method;
     private final Type type;
 
     private JsonRpcEnvelope(JsonObject message) {
