@@ -1,6 +1,6 @@
 package com.amannmalik.mcp.codec;
 
-import com.amannmalik.mcp.api.GetPromptRequest;
+import com.amannmalik.mcp.api.Request.GetPromptRequest;
 import com.amannmalik.mcp.util.ValidationUtil;
 import jakarta.json.*;
 

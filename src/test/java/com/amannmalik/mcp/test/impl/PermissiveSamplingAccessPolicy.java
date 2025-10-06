@@ -1,6 +1,7 @@
 package com.amannmalik.mcp.test.impl;
 
-import com.amannmalik.mcp.spi.*;
+import com.amannmalik.mcp.spi.Principal;
+import com.amannmalik.mcp.spi.SamplingAccessPolicy;
 
 public final class PermissiveSamplingAccessPolicy implements SamplingAccessPolicy {
     @Override

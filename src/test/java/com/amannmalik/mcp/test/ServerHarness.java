@@ -90,11 +90,6 @@ public final class ServerHarness implements Closeable {
             }
 
             @Override
-            public Optional<Resource> get(URI uri) {
-                return Optional.empty();
-            }
-
-            @Override
             public Pagination.Page<Resource> list(Cursor cursor) {
                 return new Pagination.Page<>(List.of(), Cursor.End.INSTANCE);
             }
@@ -110,25 +105,6 @@ public final class ServerHarness implements Closeable {
                 };
             }
 
-            @Override
-            public boolean supportsSubscribe() {
-                return false;
-            }
-
-            @Override
-            public AutoCloseable onListChanged(Runnable listener) {
-                return () -> {
-                };
-            }
-
-            @Override
-            public boolean supportsListChanged() {
-                return false;
-            }
-
-            @Override
-            public void close() {
-            }
         };
 
         var tools = new ToolProvider() {
@@ -140,18 +116,8 @@ public final class ServerHarness implements Closeable {
             }
 
             @Override
-            public AutoCloseable onListChanged(Runnable listener) {
-                return () -> {
-                };
-            }
-
-            @Override
             public boolean supportsListChanged() {
                 return true;
-            }
-
-            @Override
-            public void close() {
             }
 
             @Override
@@ -172,18 +138,8 @@ public final class ServerHarness implements Closeable {
             }
 
             @Override
-            public AutoCloseable onListChanged(Runnable listener) {
-                return () -> {
-                };
-            }
-
-            @Override
             public boolean supportsListChanged() {
                 return true;
-            }
-
-            @Override
-            public void close() {
             }
 
             @Override
@@ -204,18 +160,8 @@ public final class ServerHarness implements Closeable {
             }
 
             @Override
-            public AutoCloseable onListChanged(Runnable listener) {
-                return () -> {
-                };
-            }
-
-            @Override
             public boolean supportsListChanged() {
                 return true;
-            }
-
-            @Override
-            public void close() {
             }
 
             @Override
@@ -225,9 +171,6 @@ public final class ServerHarness implements Closeable {
         };
 
         var sampling = new SamplingProvider() {
-            @Override
-            public void close() {
-            }
 
             @Override
             public CreateMessageResponse createMessage(CreateMessageRequest request, Duration timeoutMillis) {

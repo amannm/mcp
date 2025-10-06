@@ -1,6 +1,7 @@
 package com.amannmalik.mcp.test;
 
 import com.amannmalik.mcp.api.*;
+import com.amannmalik.mcp.api.Notification.ProgressNotification;
 import com.amannmalik.mcp.api.config.*;
 import com.amannmalik.mcp.spi.Cursor;
 import io.cucumber.datatable.DataTable;
@@ -934,9 +935,8 @@ public final class UtilitiesSteps {
     public void i_send_a_continuation_request_with_that_cursor() {
         var decoded = Base64.getDecoder().decode(nextCursor);
         var json = new String(decoded, StandardCharsets.UTF_8);
-        var page = Integer.parseInt(json.replaceAll("[^0-9]", ""));
-        var start = page;
-        var end = Math.min(page + 3, dataset.size());
+        var start = Integer.parseInt(json.replaceAll("[^0-9]", ""));
+        var end = Math.min(start + 3, dataset.size());
         currentPage = dataset.subList(start, end);
         if (end < dataset.size()) {
             var next = "{\"page\":" + end + "}";
@@ -954,7 +954,7 @@ public final class UtilitiesSteps {
     @Then("the server should handle the cursor appropriately")
     public void the_server_should_handle_the_cursor_appropriately() {
         if (currentPage == null || currentPage.isEmpty()) throw new AssertionError("no page data");
-        if (!"item-4".equals(currentPage.get(0))) throw new AssertionError("cursor not applied");
+        if (!"item-4".equals(currentPage.getFirst())) throw new AssertionError("cursor not applied");
     }
 
     @Then("may provide another nextCursor for further pages")

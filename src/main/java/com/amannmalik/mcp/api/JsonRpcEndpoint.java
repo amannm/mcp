@@ -1,5 +1,7 @@
 package com.amannmalik.mcp.api;
 
+import com.amannmalik.mcp.api.Notification.CancelledNotification;
+import com.amannmalik.mcp.api.Notification.ProgressNotification;
 import com.amannmalik.mcp.codec.CancelledNotificationJsonCodec;
 import com.amannmalik.mcp.codec.JsonRpcMessageJsonCodec;
 import com.amannmalik.mcp.core.DuplicateRequestException;
@@ -219,4 +221,3 @@ sealed class JsonRpcEndpoint implements AutoCloseable permits McpClient, McpServ
         transport.close();
     }
 }
-
