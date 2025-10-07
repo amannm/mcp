@@ -726,4 +726,21 @@ public final class McpClient extends JsonRpcEndpoint implements AutoCloseable {
                                    Set<ServerFeature> features,
                                    String instructions) {
     }
+
+    public interface McpClientListener {
+        default void onProgress(ProgressNotification notification) {
+        }
+
+        default void onMessage(LoggingMessageNotification notification) {
+        }
+
+        default void onResourceListChanged() {
+        }
+
+        default void onToolListChanged() {
+        }
+
+        default void onPromptsListChanged() {
+        }
+    }
 }

@@ -65,7 +65,7 @@ public final class McpHost implements AutoCloseable {
                         .toList();
                 rootsProvider = new ClientRootsProvider(roots);
             }
-            var listener = new McpClientListener() {
+            var listener = new McpClient.McpClientListener() {
                 @Override
                 public void onProgress(ProgressNotification notification) {
                     events.computeIfAbsent(clientConfig.clientId(), k -> new Events()).messages.add(
