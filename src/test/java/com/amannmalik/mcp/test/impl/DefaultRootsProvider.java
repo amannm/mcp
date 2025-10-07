@@ -38,10 +38,6 @@ public final class DefaultRootsProvider implements RootsProvider {
         return true;
     }
 
-    @Override
-    public void close() {
-    }
-
     private void startSimulation() {
         if (changeSimulationStarted.compareAndSet(false, true)) {
             Thread.ofVirtual().start(() -> {

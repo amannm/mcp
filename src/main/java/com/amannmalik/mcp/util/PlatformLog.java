@@ -4,11 +4,6 @@ import com.amannmalik.mcp.api.config.LoggingLevel;
 
 import java.lang.System.Logger;
 
-/**
- * Central helpers for Java Platform Logging.
- * <p>
- * Purpose: remove duplication and keep level conversions consistent.
- */
 public final class PlatformLog {
     private PlatformLog() {
     }

@@ -1,6 +1,6 @@
 package com.amannmalik.mcp.codec;
 
-import com.amannmalik.mcp.api.ToolListChangedNotification;
+import com.amannmalik.mcp.api.Notification.ToolListChangedNotification;
 import jakarta.json.JsonObject;
 import jakarta.json.JsonValue;
 
@@ -18,4 +18,3 @@ public final class ToolListChangedNotificationJsonCodec implements JsonCodec<Too
         return new ToolListChangedNotification();
     }
 }
-

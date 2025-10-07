@@ -1,6 +1,6 @@
 package com.amannmalik.mcp.codec;
 
-import com.amannmalik.mcp.api.UnsubscribeRequest;
+import com.amannmalik.mcp.api.Request.UnsubscribeRequest;
 import jakarta.json.Json;
 import jakarta.json.JsonObject;
 

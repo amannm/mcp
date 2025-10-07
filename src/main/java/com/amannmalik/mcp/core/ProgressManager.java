@@ -1,5 +1,6 @@
 package com.amannmalik.mcp.core;
 
+import com.amannmalik.mcp.api.Notification.ProgressNotification;
 import com.amannmalik.mcp.api.*;
 import com.amannmalik.mcp.codec.ProgressNotificationJsonCodec;
 import com.amannmalik.mcp.util.*;
