@@ -1,6 +1,9 @@
 package com.amannmalik.mcp.spi;
 
-@FunctionalInterface
 public interface ResourceAccessPolicy {
+    void allow(String principalId, Role audience);
+
+    void revoke(String principalId, Role audience);
+
     void requireAllowed(Principal principal, Annotations annotations);
 }

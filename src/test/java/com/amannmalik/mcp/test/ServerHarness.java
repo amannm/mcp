@@ -256,7 +256,10 @@ public final class ServerHarness implements Closeable {
         Thread.ofVirtual().start(() -> {
             try {
                 server.serve();
-            } catch (IOException ignore) {
+            } catch (IOException e) {
+                // ignored: server shutdown
+            } catch (Throwable t) {
+                t.printStackTrace();
             }
         });
         return new ServerHarness(server, port);
