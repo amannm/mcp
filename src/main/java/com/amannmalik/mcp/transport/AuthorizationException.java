@@ -1,4 +1,4 @@
-package com.amannmalik.mcp.auth;
+package com.amannmalik.mcp.transport;
 
 public final class AuthorizationException extends Exception {
     private final int status;

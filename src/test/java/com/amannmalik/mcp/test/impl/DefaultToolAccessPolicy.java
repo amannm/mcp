@@ -1,8 +1,6 @@
 package com.amannmalik.mcp.test.impl;
 
-import com.amannmalik.mcp.spi.Principal;
-import com.amannmalik.mcp.spi.Tool;
-import com.amannmalik.mcp.spi.ToolAccessPolicy;
+import com.amannmalik.mcp.spi.*;
 
 public final class DefaultToolAccessPolicy implements ToolAccessPolicy {
     @Override

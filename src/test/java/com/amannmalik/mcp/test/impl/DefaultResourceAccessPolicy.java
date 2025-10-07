@@ -1,9 +1,6 @@
 package com.amannmalik.mcp.test.impl;
 
-import com.amannmalik.mcp.spi.Annotations;
-import com.amannmalik.mcp.spi.Principal;
-import com.amannmalik.mcp.spi.ResourceAccessPolicy;
-import com.amannmalik.mcp.spi.Role;
+import com.amannmalik.mcp.spi.*;
 
 public final class DefaultResourceAccessPolicy implements ResourceAccessPolicy {
     @Override
@@ -20,7 +17,6 @@ public final class DefaultResourceAccessPolicy implements ResourceAccessPolicy {
             throw new IllegalArgumentException("principal required");
         }
         if (annotations == null) {
-            return;
         }
     }
 }

@@ -720,13 +720,6 @@ public final class McpClient extends JsonRpcEndpoint implements AutoCloseable {
                 LOG.log(Logger.Level.INFO, () -> "Request " + cn.requestId() + " cancelled: " + value));
     }
 
-    private record HandshakeResult(String protocolVersion,
-                                   ServerInfo serverInfo,
-                                   Set<ServerCapability> capabilities,
-                                   Set<ServerFeature> features,
-                                   String instructions) {
-    }
-
     public interface McpClientListener {
         default void onProgress(ProgressNotification notification) {
         }
@@ -742,5 +735,12 @@ public final class McpClient extends JsonRpcEndpoint implements AutoCloseable {
 
         default void onPromptsListChanged() {
         }
+    }
+
+    private record HandshakeResult(String protocolVersion,
+                                   ServerInfo serverInfo,
+                                   Set<ServerCapability> capabilities,
+                                   Set<ServerFeature> features,
+                                   String instructions) {
     }
 }

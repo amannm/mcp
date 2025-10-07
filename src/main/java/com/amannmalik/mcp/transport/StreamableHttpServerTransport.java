@@ -2,7 +2,6 @@ package com.amannmalik.mcp.transport;
 
 import com.amannmalik.mcp.api.*;
 import com.amannmalik.mcp.api.config.McpServerConfiguration;
-import com.amannmalik.mcp.auth.AuthorizationManager;
 import com.amannmalik.mcp.core.MessageDispatcher;
 import com.amannmalik.mcp.core.MessageRouter;
 import com.amannmalik.mcp.spi.Principal;
