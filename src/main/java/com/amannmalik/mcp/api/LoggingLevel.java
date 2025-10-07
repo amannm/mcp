@@ -1,4 +1,4 @@
-package com.amannmalik.mcp.api.config;
+package com.amannmalik.mcp.api;
 
 import java.util.Locale;
 

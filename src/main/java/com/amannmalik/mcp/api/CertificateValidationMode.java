@@ -1,4 +1,4 @@
-package com.amannmalik.mcp.api.config;
+package com.amannmalik.mcp.api;
 
 public enum CertificateValidationMode {
     STRICT,

@@ -2,7 +2,6 @@ package com.amannmalik.mcp.api;
 
 import com.amannmalik.mcp.api.Notification.*;
 import com.amannmalik.mcp.api.Request.*;
-import com.amannmalik.mcp.api.config.*;
 import com.amannmalik.mcp.codec.*;
 import com.amannmalik.mcp.core.*;
 import com.amannmalik.mcp.jsonrpc.*;

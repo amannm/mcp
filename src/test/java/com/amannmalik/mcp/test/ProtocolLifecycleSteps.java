@@ -1,7 +1,6 @@
 package com.amannmalik.mcp.test;
 
 import com.amannmalik.mcp.api.*;
-import com.amannmalik.mcp.api.config.*;
 import com.amannmalik.mcp.spi.Cursor;
 import io.cucumber.datatable.DataTable;
 import io.cucumber.java.After;

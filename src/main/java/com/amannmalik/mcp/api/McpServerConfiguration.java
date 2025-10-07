@@ -1,6 +1,5 @@
-package com.amannmalik.mcp.api.config;
+package com.amannmalik.mcp.api;
 
-import com.amannmalik.mcp.api.Protocol;
 import com.amannmalik.mcp.util.ValidationUtil;
 
 import java.time.Duration;

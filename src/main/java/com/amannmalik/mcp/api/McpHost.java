@@ -4,7 +4,6 @@ import com.amannmalik.mcp.api.Notification.LoggingMessageNotification;
 import com.amannmalik.mcp.api.Notification.ProgressNotification;
 import com.amannmalik.mcp.api.Request.CallToolRequest;
 import com.amannmalik.mcp.api.Request.PaginatedRequest;
-import com.amannmalik.mcp.api.config.*;
 import com.amannmalik.mcp.codec.*;
 import com.amannmalik.mcp.jsonrpc.JsonRpc;
 import com.amannmalik.mcp.spi.*;
