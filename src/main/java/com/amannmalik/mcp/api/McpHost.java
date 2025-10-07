@@ -7,7 +7,6 @@ import com.amannmalik.mcp.api.Request.PaginatedRequest;
 import com.amannmalik.mcp.api.config.*;
 import com.amannmalik.mcp.codec.*;
 import com.amannmalik.mcp.jsonrpc.JsonRpc;
-import com.amannmalik.mcp.security.*;
 import com.amannmalik.mcp.spi.*;
 import com.amannmalik.mcp.util.PlatformLog;
 import com.amannmalik.mcp.util.ServiceLoaders;
@@ -39,18 +38,20 @@ public final class McpHost implements AutoCloseable {
     private static final Logger LOG = PlatformLog.get(McpHost.class);
     private final Map<String, McpClient> clients = new ConcurrentHashMap<>();
     private final Principal principal;
-    private final ConsentController consents;
-    private final ToolAccessController toolAccess;
-    private final ResourceAccessController privacyBoundary;
-    private final SamplingAccessController samplingAccess;
+    private final Map<String, Set<String>> consents = new ConcurrentHashMap<>();
+    private final ToolAccessPolicy toolAccess;
+    private final ResourceAccessPolicy privacyBoundary;
+    private final SamplingAccessPolicy samplingAccess;
+    private final Set<String> allowedTools = ConcurrentHashMap.newKeySet();
+    private final Set<Role> allowedAudiences = ConcurrentHashMap.newKeySet();
+    private final AtomicBoolean samplingAllowed = new AtomicBoolean();
     private final Map<String, Events> events = new ConcurrentHashMap<>();
 
     public McpHost(McpHostConfiguration config) throws IOException {
         this.principal = new Principal(config.hostPrincipal(), Set.of());
-        this.consents = new ConsentController();
-        this.toolAccess = new ToolAccessController();
-        this.privacyBoundary = new ResourceAccessController();
-        this.samplingAccess = new SamplingAccessController();
+        this.toolAccess = ServiceLoaders.loadSingleton(ToolAccessPolicy.class);
+        this.privacyBoundary = ServiceLoaders.loadSingleton(ResourceAccessPolicy.class);
+        this.samplingAccess = ServiceLoaders.loadSingleton(SamplingAccessPolicy.class);
         for (var clientConfig : config.clientConfigurations()) {
             grantConsent(clientConfig.serverName());
             SamplingProvider samplingProvider = null;
@@ -198,6 +199,7 @@ public final class McpHost implements AutoCloseable {
             result = Optional.empty();
         }
         var resource = result.orElseThrow(() -> new IllegalArgumentException("Resource not found: " + uri));
+        ensureAudienceAllowed(resource.annotations());
         privacyBoundary.requireAllowed(principal, resource.annotations());
         return client.subscribeResource(uri, listener);
     }
@@ -213,7 +215,7 @@ public final class McpHost implements AutoCloseable {
     public ToolResult callTool(String clientId, String name, JsonObject args) throws IOException {
         var client = requireClient(clientId);
         requireCapability(client, ServerCapability.TOOLS);
-        consents.requireConsent(principal, "tool:" + name);
+        requireConsent(principal, "tool:" + name);
         Optional<Tool> result = Optional.empty();
         boolean finished = false;
         Cursor cursor = Cursor.Start.INSTANCE;
@@ -233,6 +235,7 @@ public final class McpHost implements AutoCloseable {
             result = Optional.empty();
         }
         var tool = result.orElseThrow(() -> new IllegalArgumentException("Tool not found: " + name));
+        ensureToolAllowed(tool.name());
         toolAccess.requireAllowed(principal, tool);
         var resp = JsonRpc.expectResponse(client.request(RequestMethod.TOOLS_CALL, CALL_TOOL_REQUEST_CODEC.toJson(new CallToolRequest(name, args, null)), TIMEOUT));
         return TOOL_RESULT_ABSTRACT_ENTITY_CODEC.fromJson(resp.result());
@@ -244,41 +247,48 @@ public final class McpHost implements AutoCloseable {
             throw new IllegalStateException("Client not connected: " + clientId);
         }
         requireCapability(client, ClientCapability.SAMPLING);
-        consents.requireConsent(principal, "sampling");
+        requireConsent(principal, "sampling");
+        ensureSamplingAllowed();
         samplingAccess.requireAllowed(principal);
         var resp = JsonRpc.expectResponse(client.request(RequestMethod.SAMPLING_CREATE_MESSAGE, params, TIMEOUT));
         return resp.result();
     }
 
     public void grantConsent(String scope) {
-        consents.grant(principal.id(), scope);
+        grant(principal.id(), scope);
     }
 
     public void revokeConsent(String scope) {
-        consents.revoke(principal.id(), scope);
+        revoke(principal.id(), scope);
     }
 
     public void allowTool(String tool) {
+        allowedTools.add(tool);
         toolAccess.allow(principal.id(), tool);
     }
 
     public void revokeTool(String tool) {
+        allowedTools.remove(tool);
         toolAccess.revoke(principal.id(), tool);
     }
 
     public void allowSampling() {
+        samplingAllowed.set(true);
         samplingAccess.allow(principal.id());
     }
 
     public void revokeSampling() {
+        samplingAllowed.set(false);
         samplingAccess.revoke(principal.id());
     }
 
     public void allowAudience(Role audience) {
+        allowedAudiences.add(audience);
         privacyBoundary.allow(principal.id(), audience);
     }
 
     public void revokeAudience(Role audience) {
+        allowedAudiences.remove(audience);
         privacyBoundary.revoke(principal.id(), audience);
     }
 
@@ -295,7 +305,7 @@ public final class McpHost implements AutoCloseable {
     }
 
     private void register(String id, McpClient client, McpClientConfiguration clientConfig) {
-        consents.requireConsent(principal, client.info().name());
+        requireConsent(principal, client.info().name());
         if (clients.putIfAbsent(id, client) != null) {
             throw new IllegalArgumentException("Client already registered: " + id);
         }
@@ -314,12 +324,75 @@ public final class McpHost implements AutoCloseable {
         return client;
     }
 
+    private void grant(String principalId, String scope) {
+        if (principalId == null || principalId.isBlank()) {
+            throw new IllegalArgumentException("principalId required");
+        }
+        if (scope == null || scope.isBlank()) {
+            throw new IllegalArgumentException("scope required");
+        }
+        consents.computeIfAbsent(principalId, k -> ConcurrentHashMap.newKeySet()).add(scope);
+    }
+
+    private void revoke(String principalId, String scope) {
+        if (principalId == null || principalId.isBlank()) {
+            throw new IllegalArgumentException("principalId required");
+        }
+        if (scope == null || scope.isBlank()) {
+            throw new IllegalArgumentException("scope required");
+        }
+        var set = consents.get(principalId);
+        if (set != null) {
+            set.remove(scope);
+        }
+    }
+
+    private void requireConsent(Principal principal, String scope) {
+        if (principal == null) {
+            throw new IllegalArgumentException("principal required");
+        }
+        if (scope == null || scope.isBlank()) {
+            throw new IllegalArgumentException("scope required");
+        }
+        var set = consents.get(principal.id());
+        if (set == null || !set.contains(scope)) {
+            throw new SecurityException("User consent required: " + scope);
+        }
+    }
+
     private boolean allowed(Annotations annotations) {
         try {
+            ensureAudienceAllowed(annotations);
             privacyBoundary.requireAllowed(principal, annotations);
             return true;
         } catch (SecurityException e) {
             return false;
+        }
+    }
+
+    private void ensureToolAllowed(String name) {
+        if (name == null || name.isBlank()) {
+            throw new IllegalArgumentException("tool required");
+        }
+        if (!allowedTools.contains(name)) {
+            throw new SecurityException("Tool not authorized: " + name);
+        }
+    }
+
+    private void ensureSamplingAllowed() {
+        if (!samplingAllowed.get()) {
+            throw new SecurityException("Sampling not authorized");
+        }
+    }
+
+    private void ensureAudienceAllowed(Annotations annotations) {
+        if (annotations == null || annotations.audience().isEmpty()) {
+            return;
+        }
+        for (var role : annotations.audience()) {
+            if (!allowedAudiences.contains(role)) {
+                throw new SecurityException("Audience not permitted: " + annotations.audience());
+            }
         }
     }
 

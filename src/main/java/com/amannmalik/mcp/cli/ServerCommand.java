@@ -3,7 +3,6 @@ package com.amannmalik.mcp.cli;
 import com.amannmalik.mcp.api.McpServer;
 import com.amannmalik.mcp.api.config.McpServerConfiguration;
 import com.amannmalik.mcp.api.config.TlsConfiguration;
-import com.amannmalik.mcp.security.ResourceAccessController;
 import com.amannmalik.mcp.spi.*;
 import com.amannmalik.mcp.util.ServiceLoaders;
 import picocli.CommandLine;
@@ -220,7 +219,7 @@ public final class ServerCommand {
     }
 
     private static ResourceAccessPolicy privacyBoundary(String principalId) {
-        var controller = new ResourceAccessController();
+        var controller = ServiceLoaders.loadSingleton(ResourceAccessPolicy.class);
         for (var role : Role.values()) {
             controller.allow(principalId, role);
         }

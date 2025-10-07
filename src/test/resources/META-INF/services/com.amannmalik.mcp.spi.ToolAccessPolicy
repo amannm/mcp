@@ -1,1 +1,1 @@
-com.amannmalik.mcp.test.impl.PermissiveToolAccessPolicy
+com.amannmalik.mcp.test.impl.DefaultToolAccessPolicy

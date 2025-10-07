@@ -16,10 +16,19 @@ public final class ServiceLoaders {
                         + " is registered as a JPMS service. Provide a module that declares 'provides "
                         + type.getName() + " with ...'.");
             }
-            var service = iterator.next();
-            if (iterator.hasNext()) {
-                throw new IllegalStateException("Multiple implementations of " + type.getName()
-                        + " detected on the module path. Configure the host to expose only one implementation.");
+            T service = null;
+            Class<?> implementation = null;
+            while (iterator.hasNext()) {
+                var candidate = iterator.next();
+                if (service == null) {
+                    service = candidate;
+                    implementation = candidate.getClass();
+                    continue;
+                }
+                if (!candidate.getClass().equals(implementation)) {
+                    throw new IllegalStateException("Multiple implementations of " + type.getName()
+                            + " detected on the module path. Configure the host to expose only one implementation.");
+                }
             }
             return service;
         } catch (ServiceConfigurationError error) {

@@ -1,1 +1,1 @@
-com.amannmalik.mcp.test.impl.PermissiveSamplingAccessPolicy
+com.amannmalik.mcp.test.impl.DefaultSamplingAccessPolicy
