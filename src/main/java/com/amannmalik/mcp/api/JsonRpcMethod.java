@@ -7,7 +7,5 @@ public sealed interface JsonRpcMethod permits
         NotificationMethod {
     String method();
 
-    default EnumSet<ClientCapability> clientCapabilities() {
-        return EnumSet.noneOf(ClientCapability.class);
-    }
+    EnumSet<ClientCapability> clientCapabilities();
 }

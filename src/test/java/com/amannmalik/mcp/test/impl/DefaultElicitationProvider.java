@@ -28,7 +28,7 @@ public final class DefaultElicitationProvider implements ElicitationProvider {
             case "object" -> Json.createObjectBuilder().build();
             case "array" -> Json.createArrayBuilder().build();
             default -> {
-                if (property.getJsonArray("enum") instanceof JsonArray values &&
+                if (property.get("enum") instanceof JsonArray values &&
                         !values.isEmpty() && values.getFirst() instanceof JsonValue first) {
                     yield first;
                 }

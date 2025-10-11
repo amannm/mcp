@@ -16,7 +16,5 @@ public final class DefaultResourceAccessPolicy implements ResourceAccessPolicy {
         if (principal == null) {
             throw new IllegalArgumentException("principal required");
         }
-        if (annotations == null) {
-        }
     }
 }
