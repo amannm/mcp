@@ -1,6 +1,6 @@
 package com.amannmalik.mcp.spi;
 
-import com.amannmalik.mcp.prompts.ListPromptsResult;
+import com.amannmalik.mcp.core.ListPromptsResult;
 
 import java.util.List;
 

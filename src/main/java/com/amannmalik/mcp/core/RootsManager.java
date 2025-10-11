@@ -1,4 +1,4 @@
-package com.amannmalik.mcp.roots;
+package com.amannmalik.mcp.core;
 
 import com.amannmalik.mcp.api.ClientCapability;
 import com.amannmalik.mcp.api.RequestMethod;

@@ -1,6 +1,6 @@
 package com.amannmalik.mcp.codec;
 
-import com.amannmalik.mcp.resources.ResourceListChangedNotification;
+import com.amannmalik.mcp.core.ResourceListChangedNotification;
 import jakarta.json.JsonObject;
 import jakarta.json.JsonValue;
 

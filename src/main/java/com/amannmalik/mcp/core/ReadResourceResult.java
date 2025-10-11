@@ -1,4 +1,4 @@
-package com.amannmalik.mcp.resources;
+package com.amannmalik.mcp.core;
 
 import com.amannmalik.mcp.spi.ResourceBlock;
 import com.amannmalik.mcp.spi.Result;

@@ -1,4 +1,4 @@
-package com.amannmalik.mcp.prompts;
+package com.amannmalik.mcp.core;
 
 import com.amannmalik.mcp.codec.AbstractEntityCodec;
 import com.amannmalik.mcp.codec.JsonCodec;

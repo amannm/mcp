@@ -1,4 +1,4 @@
-package com.amannmalik.mcp.resources;
+package com.amannmalik.mcp.core;
 
 public record ResourceListChangedNotification() {
 }

@@ -5,7 +5,6 @@ import com.amannmalik.mcp.api.Request.*;
 import com.amannmalik.mcp.codec.*;
 import com.amannmalik.mcp.core.*;
 import com.amannmalik.mcp.jsonrpc.*;
-import com.amannmalik.mcp.resources.ResourceListChangedNotification;
 import com.amannmalik.mcp.spi.*;
 import com.amannmalik.mcp.transport.StdioTransport;
 import com.amannmalik.mcp.transport.StreamableHttpClientTransport;
