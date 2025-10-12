@@ -1,6 +1,6 @@
 package com.amannmalik.mcp.spi;
 
-import com.amannmalik.mcp.util.SpiPreconditions;
+import com.amannmalik.mcp.util.ValidationUtil;
 import jakarta.json.JsonObject;
 
 import java.util.List;
@@ -13,15 +13,15 @@ public record Prompt(
         JsonObject _meta
 ) implements DisplayNameProvider {
     public Prompt {
-        name = SpiPreconditions.requireClean(name);
-        arguments = SpiPreconditions.immutableList(arguments);
-        title = SpiPreconditions.cleanNullable(title);
-        description = SpiPreconditions.cleanNullable(description);
-        SpiPreconditions.requireMeta(_meta);
+        name = ValidationUtil.requireClean(name);
+        arguments = ValidationUtil.immutableList(arguments);
+        title = ValidationUtil.cleanNullable(title);
+        description = ValidationUtil.cleanNullable(description);
+        ValidationUtil.requireMeta(_meta);
     }
 
     @Override
     public List<PromptArgument> arguments() {
-        return SpiPreconditions.copyList(arguments);
+        return ValidationUtil.copyList(arguments);
     }
 }

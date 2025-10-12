@@ -1,16 +1,16 @@
 package com.amannmalik.mcp.spi;
 
-import com.amannmalik.mcp.util.SpiPreconditions;
+import com.amannmalik.mcp.util.ValidationUtil;
 import jakarta.json.JsonObject;
 
 import java.net.URI;
 
 public record Root(URI uri, String name, JsonObject _meta) {
     public Root {
-        uri = SpiPreconditions.requireFileUri(uri);
+        uri = ValidationUtil.requireFileUri(uri);
         if (name != null) {
-            name = SpiPreconditions.requireClean(name);
+            name = ValidationUtil.requireClean(name);
         }
-        SpiPreconditions.requireMeta(_meta);
+        ValidationUtil.requireMeta(_meta);
     }
 }

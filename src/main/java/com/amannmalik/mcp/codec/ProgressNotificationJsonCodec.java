@@ -6,6 +6,9 @@ import com.amannmalik.mcp.util.ValidationUtil;
 import jakarta.json.*;
 
 public class ProgressNotificationJsonCodec implements JsonCodec<ProgressNotification> {
+    public ProgressNotificationJsonCodec() {
+    }
+
     @Override
     public JsonObject toJson(ProgressNotification note) {
         var b = Json.createObjectBuilder();

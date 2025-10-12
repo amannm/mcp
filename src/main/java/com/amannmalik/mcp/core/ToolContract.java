@@ -1,7 +1,7 @@
 package com.amannmalik.mcp.core;
 
 import com.amannmalik.mcp.spi.ToolAnnotations;
-import com.amannmalik.mcp.util.SpiPreconditions;
+import com.amannmalik.mcp.util.ValidationUtil;
 import jakarta.json.JsonObject;
 
 public final class ToolContract {
@@ -9,7 +9,7 @@ public final class ToolContract {
     }
 
     public static JsonObject requireInputSchema(JsonObject inputSchema) {
-        return SpiPreconditions.requireNonNull(inputSchema, "inputSchema is required");
+        return ValidationUtil.requireNonNull(inputSchema, "inputSchema is required");
     }
 
     public static ToolAnnotations normalizeAnnotations(ToolAnnotations annotations) {

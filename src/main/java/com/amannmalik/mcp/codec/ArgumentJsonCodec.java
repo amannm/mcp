@@ -5,6 +5,9 @@ import jakarta.json.Json;
 import jakarta.json.JsonObject;
 
 public class ArgumentJsonCodec implements JsonCodec<Argument> {
+    public ArgumentJsonCodec() {
+    }
+
     @Override
     public JsonObject toJson(Argument arg) {
         return Json.createObjectBuilder()

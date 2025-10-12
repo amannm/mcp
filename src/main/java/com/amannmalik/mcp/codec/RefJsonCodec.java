@@ -5,6 +5,9 @@ import jakarta.json.Json;
 import jakarta.json.JsonObject;
 
 public class RefJsonCodec implements JsonCodec<Ref> {
+    public RefJsonCodec() {
+    }
+
     @Override
     public JsonObject toJson(Ref ref) {
         return switch (ref) {

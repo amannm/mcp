@@ -1,7 +1,7 @@
 package com.amannmalik.mcp.core;
 
 import com.amannmalik.mcp.spi.SamplingMessage;
-import com.amannmalik.mcp.util.SpiPreconditions;
+import com.amannmalik.mcp.util.ValidationUtil;
 
 import java.util.List;
 
@@ -10,21 +10,21 @@ public final class CreateMessageRequestContract {
     }
 
     public static List<SamplingMessage> sanitizeMessages(List<SamplingMessage> messages) {
-        return SpiPreconditions.immutableList(messages);
+        return ValidationUtil.immutableList(messages);
     }
 
     public static String sanitizeSystemPrompt(String systemPrompt) {
-        return SpiPreconditions.cleanNullable(systemPrompt);
+        return ValidationUtil.cleanNullable(systemPrompt);
     }
 
     public static List<String> sanitizeStopSequences(List<String> stopSequences) {
         var cleaned = stopSequences == null ? null : stopSequences.stream()
-                .map(SpiPreconditions::requireClean)
+                .map(ValidationUtil::requireClean)
                 .toList();
-        return SpiPreconditions.immutableList(cleaned);
+        return ValidationUtil.immutableList(cleaned);
     }
 
     public static int normalizeMaxTokens(int maxTokens) {
-        return SpiPreconditions.requirePositive(maxTokens, "maxTokens");
+        return ValidationUtil.requirePositive(maxTokens, "maxTokens");
     }
 }

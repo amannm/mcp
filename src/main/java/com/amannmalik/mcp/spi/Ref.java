@@ -1,6 +1,6 @@
 package com.amannmalik.mcp.spi;
 
-import com.amannmalik.mcp.util.SpiPreconditions;
+import com.amannmalik.mcp.util.ValidationUtil;
 import jakarta.json.JsonObject;
 
 public sealed interface Ref permits
@@ -10,10 +10,10 @@ public sealed interface Ref permits
 
     record PromptRef(String name, String title, JsonObject _meta) implements Ref {
         public PromptRef {
-            SpiPreconditions.requireNonNull(name, "name required");
-            name = SpiPreconditions.requireClean(name);
-            title = SpiPreconditions.cleanNullable(title);
-            SpiPreconditions.requireMeta(_meta);
+            ValidationUtil.requireNonNull(name, "name required");
+            name = ValidationUtil.requireClean(name);
+            title = ValidationUtil.cleanNullable(title);
+            ValidationUtil.requireMeta(_meta);
         }
 
         @Override
@@ -24,8 +24,8 @@ public sealed interface Ref permits
 
     record ResourceRef(String uri) implements Ref {
         public ResourceRef {
-            SpiPreconditions.requireNonNull(uri, "uri required");
-            uri = SpiPreconditions.requireAbsoluteTemplate(uri);
+            ValidationUtil.requireNonNull(uri, "uri required");
+            uri = ValidationUtil.requireAbsoluteTemplate(uri);
         }
 
         @Override

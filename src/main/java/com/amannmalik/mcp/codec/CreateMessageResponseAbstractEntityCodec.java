@@ -7,6 +7,9 @@ import jakarta.json.JsonObject;
 import java.util.Set;
 
 public final class CreateMessageResponseAbstractEntityCodec extends AbstractEntityCodec<CreateMessageResponse> {
+    public CreateMessageResponseAbstractEntityCodec() {
+    }
+
     @Override
     public JsonObject toJson(CreateMessageResponse resp) {
         var b = Json.createObjectBuilder()

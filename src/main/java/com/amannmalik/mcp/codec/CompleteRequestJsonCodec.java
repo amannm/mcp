@@ -9,6 +9,9 @@ public class CompleteRequestJsonCodec implements JsonCodec<CompleteRequest> {
     private static final RefJsonCodec REF_CODEC = new RefJsonCodec();
     private static final ContextJsonCodec CONTEXT_CODEC = new ContextJsonCodec();
 
+    public CompleteRequestJsonCodec() {
+    }
+
     @Override
     public JsonObject toJson(CompleteRequest req) {
         var b = Json.createObjectBuilder()

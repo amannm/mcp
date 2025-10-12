@@ -7,6 +7,9 @@ import jakarta.json.JsonObject;
 import java.util.Set;
 
 public final class ToolAnnotationsAbstractEntityCodec extends AbstractEntityCodec<ToolAnnotations> {
+    public ToolAnnotationsAbstractEntityCodec() {
+    }
+
     @Override
     public JsonObject toJson(ToolAnnotations ann) {
         var b = Json.createObjectBuilder();

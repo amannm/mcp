@@ -8,6 +8,9 @@ import java.net.URI;
 import java.util.Set;
 
 public final class RootAbstractEntityCodec extends AbstractEntityCodec<Root> {
+    public RootAbstractEntityCodec() {
+    }
+
     @Override
     public JsonObject toJson(Root root) {
         var b = Json.createObjectBuilder().add("uri", root.uri().toString());

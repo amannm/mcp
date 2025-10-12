@@ -8,6 +8,9 @@ import jakarta.json.JsonObject;
 public class CompleteResultJsonCodec implements JsonCodec<CompleteResult> {
     private static final JsonCodec<Completion> COMPLETION_JSON_CODEC = new CompletionJsonCodec();
 
+    public CompleteResultJsonCodec() {
+    }
+
     @Override
     public JsonObject toJson(CompleteResult res) {
         var b = Json.createObjectBuilder()

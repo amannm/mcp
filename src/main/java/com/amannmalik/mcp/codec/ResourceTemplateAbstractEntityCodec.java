@@ -5,6 +5,9 @@ import jakarta.json.Json;
 import jakarta.json.JsonObject;
 
 public final class ResourceTemplateAbstractEntityCodec extends AbstractEntityCodec<ResourceTemplate> {
+    public ResourceTemplateAbstractEntityCodec() {
+    }
+
     @Override
     public JsonObject toJson(ResourceTemplate t) {
         var b = Json.createObjectBuilder()

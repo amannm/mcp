@@ -1,11 +1,11 @@
 package com.amannmalik.mcp.spi;
 
-import com.amannmalik.mcp.util.SpiPreconditions;
+import com.amannmalik.mcp.util.ValidationUtil;
 
 public record ModelHint(String name) {
     public ModelHint {
         if (name != null) {
-            name = SpiPreconditions.requireClean(name);
+            name = ValidationUtil.requireClean(name);
         }
     }
 }

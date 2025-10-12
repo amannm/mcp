@@ -1,6 +1,6 @@
 package com.amannmalik.mcp.core;
 
-import com.amannmalik.mcp.util.SpiPreconditions;
+import com.amannmalik.mcp.util.ValidationUtil;
 
 import java.util.List;
 
@@ -9,9 +9,9 @@ public final class CompletionContract {
     }
 
     public static List<String> sanitizeValues(List<String> values) {
-        return SpiPreconditions.immutableList(values)
+        return ValidationUtil.immutableList(values)
                 .stream()
-                .map(SpiPreconditions::requireClean)
+                .map(ValidationUtil::requireClean)
                 .toList();
     }
 
@@ -19,7 +19,7 @@ public final class CompletionContract {
         if (total == null) {
             return null;
         }
-        var sanitized = SpiPreconditions.requireNonNegative(total, "total");
+        var sanitized = ValidationUtil.requireNonNegative(total, "total");
         if (sanitized < valuesSize) {
             throw new IllegalArgumentException("total must be >= values length");
         }

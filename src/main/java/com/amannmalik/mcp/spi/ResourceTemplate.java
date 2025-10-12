@@ -1,6 +1,6 @@
 package com.amannmalik.mcp.spi;
 
-import com.amannmalik.mcp.util.SpiPreconditions;
+import com.amannmalik.mcp.util.ValidationUtil;
 import jakarta.json.JsonObject;
 
 public record ResourceTemplate(
@@ -13,12 +13,12 @@ public record ResourceTemplate(
         JsonObject _meta
 ) implements DisplayNameProvider {
     public ResourceTemplate {
-        uriTemplate = SpiPreconditions.requireAbsoluteTemplate(uriTemplate);
-        name = SpiPreconditions.requireClean(name);
-        title = SpiPreconditions.cleanNullable(title);
-        description = SpiPreconditions.cleanNullable(description);
-        mimeType = SpiPreconditions.cleanNullable(mimeType);
-        annotations = SpiPreconditions.annotationsOrEmpty(annotations);
-        SpiPreconditions.requireMeta(_meta);
+        uriTemplate = ValidationUtil.requireAbsoluteTemplate(uriTemplate);
+        name = ValidationUtil.requireClean(name);
+        title = ValidationUtil.cleanNullable(title);
+        description = ValidationUtil.cleanNullable(description);
+        mimeType = ValidationUtil.cleanNullable(mimeType);
+        annotations = ValidationUtil.annotationsOrEmpty(annotations);
+        ValidationUtil.requireMeta(_meta);
     }
 }

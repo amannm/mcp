@@ -8,6 +8,9 @@ import java.net.URI;
 import java.util.Set;
 
 public final class ReadResourceRequestAbstractEntityCodec extends AbstractEntityCodec<ReadResourceRequest> {
+    public ReadResourceRequestAbstractEntityCodec() {
+    }
+
     @Override
     public JsonObject toJson(ReadResourceRequest req) {
         var b = Json.createObjectBuilder().add("uri", req.uri().toString());

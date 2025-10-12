@@ -7,6 +7,9 @@ import jakarta.json.JsonObject;
 import java.util.Set;
 
 public final class SamplingMessageAbstractEntityCodec extends AbstractEntityCodec<SamplingMessage> {
+    public SamplingMessageAbstractEntityCodec() {
+    }
+
     @Override
     public JsonObject toJson(SamplingMessage m) {
         return Json.createObjectBuilder()

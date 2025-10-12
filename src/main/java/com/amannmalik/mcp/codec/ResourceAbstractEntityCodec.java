@@ -7,6 +7,9 @@ import jakarta.json.JsonObject;
 import java.net.URI;
 
 public non-sealed class ResourceAbstractEntityCodec extends AbstractEntityCodec<Resource> {
+    public ResourceAbstractEntityCodec() {
+    }
+
     @Override
     public JsonObject toJson(Resource r) {
         var b = Json.createObjectBuilder()

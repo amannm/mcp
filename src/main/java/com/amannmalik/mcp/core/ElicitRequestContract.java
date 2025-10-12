@@ -1,7 +1,7 @@
 package com.amannmalik.mcp.core;
 
 import com.amannmalik.mcp.util.ElicitSchemaValidator;
-import com.amannmalik.mcp.util.SpiPreconditions;
+import com.amannmalik.mcp.util.ValidationUtil;
 import jakarta.json.JsonObject;
 
 public final class ElicitRequestContract {
@@ -9,18 +9,18 @@ public final class ElicitRequestContract {
     }
 
     public static String sanitizeMessage(String message) {
-        SpiPreconditions.requireNonNull(message, "message and requestedSchema are required");
-        return SpiPreconditions.requireClean(message);
+        ValidationUtil.requireNonNull(message, "message and requestedSchema are required");
+        return ValidationUtil.requireClean(message);
     }
 
     public static JsonObject sanitizeSchema(JsonObject schema) {
-        SpiPreconditions.requireNonNull(schema, "message and requestedSchema are required");
+        ValidationUtil.requireNonNull(schema, "message and requestedSchema are required");
         ElicitSchemaValidator.requireElicitSchema(schema);
         return schema;
     }
 
     public static JsonObject requireMeta(JsonObject meta) {
-        SpiPreconditions.requireMeta(meta);
+        ValidationUtil.requireMeta(meta);
         return meta;
     }
 }

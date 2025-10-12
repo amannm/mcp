@@ -10,6 +10,9 @@ public class CreateMessageRequestJsonCodec implements JsonCodec<CreateMessageReq
     static final JsonCodec<SamplingMessage> SAMPLING_MESSAGE_JSON_CODEC = new SamplingMessageAbstractEntityCodec();
     static final JsonCodec<ModelPreferences> MODEL_PREFERENCES_JSON_CODEC = new ModelPreferencesJsonCodec();
 
+    public CreateMessageRequestJsonCodec() {
+    }
+
     @Override
     public JsonObject toJson(CreateMessageRequest req) {
         var msgs = Json.createArrayBuilder();

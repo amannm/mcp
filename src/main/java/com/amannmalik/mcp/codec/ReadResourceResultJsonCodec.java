@@ -10,6 +10,9 @@ import java.util.ArrayList;
 public class ReadResourceResultJsonCodec implements JsonCodec<ReadResourceResult> {
     private static final ResourceBlockJsonCodec RESOURCE_BLOCK_CODEC = new ResourceBlockJsonCodec();
 
+    public ReadResourceResultJsonCodec() {
+    }
+
     @Override
     public JsonObject toJson(ReadResourceResult r) {
         var arr = Json.createArrayBuilder();

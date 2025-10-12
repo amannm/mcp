@@ -8,6 +8,9 @@ import jakarta.json.JsonObject;
 import java.util.Set;
 
 public class ElicitResultJsonCodec implements JsonCodec<ElicitResult> {
+    public ElicitResultJsonCodec() {
+    }
+
     @Override
     public JsonObject toJson(ElicitResult r) {
         var b = Json.createObjectBuilder()

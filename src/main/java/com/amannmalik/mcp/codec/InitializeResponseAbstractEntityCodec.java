@@ -12,6 +12,9 @@ import java.util.*;
 public final class InitializeResponseAbstractEntityCodec extends AbstractEntityCodec<InitializeResponse> {
     private static final JsonCodec<ServerInfo> SERVER_INFO_CODEC = new ServerInfoAbstractEntityCodec();
 
+    public InitializeResponseAbstractEntityCodec() {
+    }
+
     @Override
     public JsonObject toJson(InitializeResponse resp) {
         var server = Json.createObjectBuilder();

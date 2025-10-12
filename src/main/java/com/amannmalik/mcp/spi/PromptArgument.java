@@ -1,6 +1,6 @@
 package com.amannmalik.mcp.spi;
 
-import com.amannmalik.mcp.util.SpiPreconditions;
+import com.amannmalik.mcp.util.ValidationUtil;
 import jakarta.json.JsonObject;
 
 public record PromptArgument(
@@ -11,9 +11,9 @@ public record PromptArgument(
         JsonObject _meta
 ) implements DisplayNameProvider {
     public PromptArgument {
-        name = SpiPreconditions.requireClean(name);
-        title = SpiPreconditions.cleanNullable(title);
-        description = SpiPreconditions.cleanNullable(description);
-        SpiPreconditions.requireMeta(_meta);
+        name = ValidationUtil.requireClean(name);
+        title = ValidationUtil.cleanNullable(title);
+        description = ValidationUtil.cleanNullable(description);
+        ValidationUtil.requireMeta(_meta);
     }
 }

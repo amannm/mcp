@@ -8,6 +8,9 @@ import jakarta.json.JsonObject;
 import java.util.Set;
 
 public final class SetLevelRequestAbstractEntityCodec extends AbstractEntityCodec<SetLevelRequest> {
+    public SetLevelRequestAbstractEntityCodec() {
+    }
+
     @Override
     public JsonObject toJson(SetLevelRequest req) {
         var b = Json.createObjectBuilder().add("level", req.level().name().toLowerCase());

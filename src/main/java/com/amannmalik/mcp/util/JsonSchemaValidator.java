@@ -150,7 +150,6 @@ public final class JsonSchemaValidator {
                                     String field,
                                     JsonValue.ValueType... allowed) {
         for (var t : allowed) {
-            // Prefer class/constant checks over enum-based lookups.
             switch (t) {
                 case STRING -> {
                     if (value instanceof JsonString) return;

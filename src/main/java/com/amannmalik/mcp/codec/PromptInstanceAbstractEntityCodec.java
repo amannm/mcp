@@ -11,6 +11,9 @@ import java.util.Set;
 public final class PromptInstanceAbstractEntityCodec extends AbstractEntityCodec<PromptInstance> {
     static final JsonCodec<PromptMessage> CODEC = new PromptMessageAbstractEntityCodec();
 
+    public PromptInstanceAbstractEntityCodec() {
+    }
+
     @Override
     public JsonObject toJson(PromptInstance inst) {
         var msgs = Json.createArrayBuilder();

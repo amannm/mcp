@@ -8,6 +8,9 @@ import jakarta.json.JsonObject;
 import java.util.Set;
 
 public non-sealed class LoggingMessageNotificationAbstractEntityCodec extends AbstractEntityCodec<LoggingMessageNotification> {
+    public LoggingMessageNotificationAbstractEntityCodec() {
+    }
+
     @Override
     public JsonObject toJson(LoggingMessageNotification n) {
         var b = Json.createObjectBuilder()

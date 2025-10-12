@@ -1,5 +1,7 @@
 package com.amannmalik.mcp.util;
 
+import com.amannmalik.mcp.codec.AnnotationsJsonCodec;
+import com.amannmalik.mcp.spi.Annotations;
 import jakarta.json.JsonObject;
 
 import java.net.URI;
@@ -8,13 +10,29 @@ import java.util.*;
 import java.util.regex.Pattern;
 
 public final class ValidationUtil {
-    private static final Pattern LABEL =
-            Pattern.compile("[A-Za-z](?:[A-Za-z0-9-]*[A-Za-z0-9])?");
-    private static final Pattern NAME =
-            Pattern.compile("(?:[A-Za-z0-9](?:[A-Za-z0-9._-]*[A-Za-z0-9])?)?");
+    private static final Pattern LABEL = Pattern.compile("[A-Za-z](?:[A-Za-z0-9-]*[A-Za-z0-9])?");
+    private static final Pattern NAME = Pattern.compile("(?:[A-Za-z0-9](?:[A-Za-z0-9._-]*[A-Za-z0-9])?)?");
     private static final Set<String> RESERVED_META_PREFIXES = Set.of("modelcontextprotocol", "mcp");
 
     private ValidationUtil() {
+    }
+
+    public static <T> T requireNonNull(T value, String message) {
+        if (value == null) {
+            throw new IllegalArgumentException(message);
+        }
+        return value;
+    }
+
+    public static void requireAllNonNull(String message, Object... values) {
+        if (values == null) {
+            throw new IllegalArgumentException(message);
+        }
+        for (var value : values) {
+            if (value == null) {
+                throw new IllegalArgumentException(message);
+            }
+        }
     }
 
     public static boolean containsNonVisibleAscii(String value) {
@@ -89,6 +107,45 @@ public final class ValidationUtil {
         }
     }
 
+    public static <T> List<T> immutableList(Collection<? extends T> items) {
+        return Immutable.list(items);
+    }
+
+    public static <T> Set<T> immutableSet(Set<? extends T> items) {
+        return Immutable.set(items);
+    }
+
+    public static <E extends Enum<E>> Set<E> immutableEnumSet(Collection<? extends E> items) {
+        return Immutable.enumSet(items);
+    }
+
+    public static <T> List<T> copyList(List<T> values) {
+        return List.copyOf(values);
+    }
+
+    public static <T> Set<T> copySet(Set<T> values) {
+        return Set.copyOf(values);
+    }
+
+    public static Map<String, String> copyMap(Map<String, String> values) {
+        return Map.copyOf(values);
+    }
+
+    public static Annotations annotationsOrEmpty(Annotations value) {
+        return Objects.requireNonNullElse(value, AnnotationsJsonCodec.EMPTY);
+    }
+
+    public static byte[] requireData(byte[] data, String field) {
+        if (data == null) {
+            throw new IllegalArgumentException(field + " is required");
+        }
+        return data.clone();
+    }
+
+    public static byte[] clone(byte[] data) {
+        return data == null ? null : data.clone();
+    }
+
     public static URI requireAbsoluteUri(URI uri) {
         if (uri == null) {
             throw new IllegalArgumentException("uri is required");
@@ -137,12 +194,6 @@ public final class ValidationUtil {
         return allowedOrigins.contains(norm);
     }
 
-    public static void requireAllowedOrigin(String origin, Set<String> allowedOrigins) {
-        if (!isAllowedOrigin(origin, allowedOrigins)) {
-            throw new SecurityException("Invalid origin: " + origin);
-        }
-    }
-
     public static String requireAbsoluteTemplate(String template) {
         if (template == null) {
             throw new IllegalArgumentException("uriTemplate is required");
@@ -162,24 +213,6 @@ public final class ValidationUtil {
             throw new IllegalArgumentException("URI template must not contain fragment: " + template);
         }
         return template;
-    }
-
-    private static void checkBraces(String template) {
-        var depth = 0;
-        for (var i = 0; i < template.length(); i++) {
-            var c = template.charAt(i);
-            if (c == '{') {
-                depth++;
-            } else if (c == '}') {
-                depth--;
-            }
-            if (depth < 0) {
-                throw new IllegalArgumentException("Unmatched braces in URI template: " + template);
-            }
-        }
-        if (depth != 0) {
-            throw new IllegalArgumentException("Unmatched braces in URI template: " + template);
-        }
     }
 
     public static Duration requirePositive(Duration value, String field) {
@@ -236,6 +269,32 @@ public final class ValidationUtil {
             throw new IllegalArgumentException(field + " must be between 0.0 and 1.0");
         }
         return value;
+    }
+
+    public static Double fractionOrNull(Double value, String field) {
+        return value == null ? null : requireFraction(value, field);
+    }
+
+    public static Long nonNegativeOrNull(Long value, String field) {
+        return value == null ? null : requireNonNegative(value, field);
+    }
+
+    private static void checkBraces(String template) {
+        var depth = 0;
+        for (var i = 0; i < template.length(); i++) {
+            var c = template.charAt(i);
+            if (c == '{') {
+                depth++;
+            } else if (c == '}') {
+                depth--;
+            }
+            if (depth < 0) {
+                throw new IllegalArgumentException("Unmatched braces in URI template: " + template);
+            }
+        }
+        if (depth != 0) {
+            throw new IllegalArgumentException("Unmatched braces in URI template: " + template);
+        }
     }
 
     private static void validateMetaPrefix(String prefix, String key) {

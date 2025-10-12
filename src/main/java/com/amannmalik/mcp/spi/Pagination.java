@@ -2,7 +2,7 @@ package com.amannmalik.mcp.spi;
 
 import com.amannmalik.mcp.api.McpHostConfiguration;
 import com.amannmalik.mcp.core.CursorCodec;
-import com.amannmalik.mcp.util.SpiPreconditions;
+import com.amannmalik.mcp.util.ValidationUtil;
 
 import java.util.List;
 
@@ -27,13 +27,13 @@ public final class Pagination {
 
     public record Page<T>(List<T> items, Cursor nextCursor) {
         public Page {
-            items = SpiPreconditions.immutableList(items);
+            items = ValidationUtil.immutableList(items);
             nextCursor = CursorCodec.requireCursor(nextCursor);
         }
 
         @Override
         public List<T> items() {
-            return SpiPreconditions.copyList(items);
+            return ValidationUtil.copyList(items);
         }
     }
 }

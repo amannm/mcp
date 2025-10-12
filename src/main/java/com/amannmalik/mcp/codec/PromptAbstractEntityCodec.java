@@ -8,6 +8,9 @@ import jakarta.json.JsonObject;
 import java.util.*;
 
 public final class PromptAbstractEntityCodec extends AbstractEntityCodec<Prompt> {
+    public PromptAbstractEntityCodec() {
+    }
+
     @Override
     public JsonObject toJson(Prompt prompt) {
         var b = Json.createObjectBuilder().add("name", prompt.name());

@@ -14,6 +14,9 @@ import java.util.*;
 public final class InitializeRequestAbstractEntityCodec extends AbstractEntityCodec<InitializeRequest> {
     static final JsonCodec<ClientInfo> CLIENT_INFO_JSON_CODEC = new ClientInfoAbstractEntityCodec();
 
+    public InitializeRequestAbstractEntityCodec() {
+    }
+
     @Override
     public JsonObject toJson(InitializeRequest req) {
         var caps = Json.createObjectBuilder();

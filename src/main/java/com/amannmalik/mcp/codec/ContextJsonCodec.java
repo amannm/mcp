@@ -8,6 +8,10 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class ContextJsonCodec implements JsonCodec<Context> {
+
+    public ContextJsonCodec() {
+    }
+
     @Override
     public JsonObject toJson(Context ctx) {
         var args = Json.createObjectBuilder();

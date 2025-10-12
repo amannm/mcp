@@ -40,6 +40,9 @@ public sealed abstract class AbstractEntityCodec<T> implements JsonCodec<T> perm
     protected static final Set<String> REQUEST_KEYS = Set.of("cursor", "_meta");
     protected static final Set<String> META_KEYS = Set.of("_meta");
 
+    public AbstractEntityCodec() {
+    }
+
     public static <T> JsonObject paginated(String field, Pagination.Page<T> page, Function<T, JsonValue> encoder, JsonObject meta) {
         var arr = Json.createArrayBuilder();
         page.items().forEach(item -> arr.add(encoder.apply(item)));

@@ -9,6 +9,9 @@ import java.net.URI;
 import java.util.Set;
 
 public class ResourceBlockJsonCodec implements JsonCodec<ResourceBlock> {
+    public ResourceBlockJsonCodec() {
+    }
+
     @Override
     public JsonObject toJson(ResourceBlock block) {
         var b = Json.createObjectBuilder().add("uri", block.uri().toString());

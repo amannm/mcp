@@ -8,6 +8,9 @@ import java.net.URI;
 import java.util.Set;
 
 public final class UnsubscribeRequestAbstractEntityCodec extends AbstractEntityCodec<UnsubscribeRequest> {
+    public UnsubscribeRequestAbstractEntityCodec() {
+    }
+
     @Override
     public JsonObject toJson(UnsubscribeRequest req) {
         var b = Json.createObjectBuilder().add("uri", req.uri().toString());

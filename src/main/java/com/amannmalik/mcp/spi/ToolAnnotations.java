@@ -1,6 +1,6 @@
 package com.amannmalik.mcp.spi;
 
-import com.amannmalik.mcp.util.SpiPreconditions;
+import com.amannmalik.mcp.util.ValidationUtil;
 
 public record ToolAnnotations(
         String title,
@@ -10,6 +10,6 @@ public record ToolAnnotations(
         Boolean openWorldHint
 ) {
     public ToolAnnotations {
-        title = SpiPreconditions.cleanNullable(title);
+        title = ValidationUtil.cleanNullable(title);
     }
 }

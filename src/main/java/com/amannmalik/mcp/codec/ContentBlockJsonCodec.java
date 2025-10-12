@@ -12,6 +12,9 @@ public class ContentBlockJsonCodec implements JsonCodec<ContentBlock> {
     private final ResourceBlockJsonCodec RESOURCE_BLOCK_CODEC = new ResourceBlockJsonCodec();
     private final ResourceAbstractEntityCodec RESOURCE_ENTITY_CODEC = new ResourceAbstractEntityCodec();
 
+    public ContentBlockJsonCodec() {
+    }
+
     @Override
     public JsonObject toJson(ContentBlock content) {
         var b = Json.createObjectBuilder().add("type", content.type());

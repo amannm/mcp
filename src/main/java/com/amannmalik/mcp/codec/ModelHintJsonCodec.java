@@ -7,6 +7,9 @@ import jakarta.json.JsonObject;
 import java.util.Set;
 
 public class ModelHintJsonCodec implements JsonCodec<ModelHint> {
+    public ModelHintJsonCodec() {
+    }
+
     @Override
     public JsonObject toJson(ModelHint h) {
         var b = Json.createObjectBuilder();

@@ -7,6 +7,9 @@ import jakarta.json.JsonObject;
 import java.util.Set;
 
 public final class PromptArgumentAbstractEntityCodec extends AbstractEntityCodec<PromptArgument> {
+    public PromptArgumentAbstractEntityCodec() {
+    }
+
     @Override
     public JsonObject toJson(PromptArgument a) {
         var b = Json.createObjectBuilder().add("name", a.name());

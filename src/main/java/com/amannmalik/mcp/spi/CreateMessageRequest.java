@@ -1,7 +1,7 @@
 package com.amannmalik.mcp.spi;
 
 import com.amannmalik.mcp.core.CreateMessageRequestContract;
-import com.amannmalik.mcp.util.SpiPreconditions;
+import com.amannmalik.mcp.util.ValidationUtil;
 import jakarta.json.JsonObject;
 
 import java.util.List;
@@ -22,17 +22,17 @@ public record CreateMessageRequest(
         systemPrompt = CreateMessageRequestContract.sanitizeSystemPrompt(systemPrompt);
         stopSequences = CreateMessageRequestContract.sanitizeStopSequences(stopSequences);
         maxTokens = CreateMessageRequestContract.normalizeMaxTokens(maxTokens);
-        SpiPreconditions.requireMeta(_meta);
+        ValidationUtil.requireMeta(_meta);
     }
 
     @Override
     public List<SamplingMessage> messages() {
-        return SpiPreconditions.copyList(messages);
+        return ValidationUtil.copyList(messages);
     }
 
     @Override
     public List<String> stopSequences() {
-        return SpiPreconditions.copyList(stopSequences);
+        return ValidationUtil.copyList(stopSequences);
     }
 
     public enum IncludeContext {NONE, THIS_SERVER, ALL_SERVERS}

@@ -5,6 +5,9 @@ import jakarta.json.Json;
 import jakarta.json.JsonObject;
 
 public final class ServerInfoAbstractEntityCodec extends AbstractEntityCodec<ServerInfo> {
+    public ServerInfoAbstractEntityCodec() {
+    }
+
     @Override
     public JsonObject toJson(ServerInfo info) {
         var b = Json.createObjectBuilder()

@@ -7,6 +7,9 @@ import jakarta.json.JsonObject;
 import java.util.Set;
 
 public final class CallToolRequestAbstractEntityCodec extends AbstractEntityCodec<CallToolRequest> {
+    public CallToolRequestAbstractEntityCodec() {
+    }
+
     @Override
     public JsonObject toJson(CallToolRequest req) {
         var b = Json.createObjectBuilder()

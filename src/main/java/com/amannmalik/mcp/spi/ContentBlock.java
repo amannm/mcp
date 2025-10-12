@@ -1,7 +1,7 @@
 package com.amannmalik.mcp.spi;
 
 import com.amannmalik.mcp.core.ContentBlockContract;
-import com.amannmalik.mcp.util.SpiPreconditions;
+import com.amannmalik.mcp.util.ValidationUtil;
 import jakarta.json.JsonObject;
 
 public sealed interface ContentBlock permits
@@ -73,7 +73,7 @@ public sealed interface ContentBlock permits
     record ResourceLink(Resource resource)
             implements ContentBlock, PromptContent {
         public ResourceLink {
-            SpiPreconditions.requireNonNull(resource, "resource is required");
+            ValidationUtil.requireNonNull(resource, "resource is required");
         }
 
         @Override
@@ -95,7 +95,7 @@ public sealed interface ContentBlock permits
     record EmbeddedResource(ResourceBlock resource, Annotations annotations, JsonObject _meta)
             implements ContentBlock, PromptContent {
         public EmbeddedResource {
-            SpiPreconditions.requireNonNull(resource, "resource is required");
+            ValidationUtil.requireNonNull(resource, "resource is required");
             ContentBlockContract.requireMeta(_meta);
             annotations = ContentBlockContract.normalizeAnnotations(annotations);
         }

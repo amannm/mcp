@@ -1,7 +1,7 @@
 package com.amannmalik.mcp.core;
 
 import com.amannmalik.mcp.spi.Annotations;
-import com.amannmalik.mcp.util.SpiPreconditions;
+import com.amannmalik.mcp.util.ValidationUtil;
 import jakarta.json.JsonObject;
 
 public final class ContentBlockContract {
@@ -9,29 +9,29 @@ public final class ContentBlockContract {
     }
 
     public static String requireText(String text) {
-        SpiPreconditions.requireNonNull(text, "text is required");
-        return SpiPreconditions.requireClean(text);
+        ValidationUtil.requireNonNull(text, "text is required");
+        return ValidationUtil.requireClean(text);
     }
 
     public static byte[] requireData(byte[] data) {
-        return SpiPreconditions.requireData(data, "data");
+        return ValidationUtil.requireData(data, "data");
     }
 
     public static String requireMimeType(String mimeType) {
-        SpiPreconditions.requireNonNull(mimeType, "mimeType is required");
-        return SpiPreconditions.requireClean(mimeType);
+        ValidationUtil.requireNonNull(mimeType, "mimeType is required");
+        return ValidationUtil.requireClean(mimeType);
     }
 
     public static Annotations normalizeAnnotations(Annotations annotations) {
-        return SpiPreconditions.annotationsOrEmpty(annotations);
+        return ValidationUtil.annotationsOrEmpty(annotations);
     }
 
     public static JsonObject requireMeta(JsonObject meta) {
-        SpiPreconditions.requireMeta(meta);
+        ValidationUtil.requireMeta(meta);
         return meta;
     }
 
     public static byte[] copy(byte[] value) {
-        return SpiPreconditions.clone(value);
+        return ValidationUtil.clone(value);
     }
 }

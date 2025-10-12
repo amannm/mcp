@@ -1,7 +1,6 @@
 package com.amannmalik.mcp.core;
 
 import com.amannmalik.mcp.spi.ElicitationAction;
-import com.amannmalik.mcp.util.SpiPreconditions;
 import com.amannmalik.mcp.util.ValidationUtil;
 import jakarta.json.*;
 
@@ -10,7 +9,7 @@ public final class ElicitResultContract {
     }
 
     public static void validate(ElicitationAction action, JsonObject content, JsonObject meta) {
-        SpiPreconditions.requireNonNull(action, "action is required");
+        ValidationUtil.requireNonNull(action, "action is required");
         if (action == ElicitationAction.ACCEPT && content == null) {
             throw new IllegalArgumentException("content required for ACCEPT action");
         }
@@ -27,6 +26,6 @@ public final class ElicitResultContract {
                 }
             });
         }
-        SpiPreconditions.requireMeta(meta);
+        ValidationUtil.requireMeta(meta);
     }
 }

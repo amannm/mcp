@@ -7,6 +7,9 @@ import jakarta.json.*;
 import java.util.*;
 
 public final class GetPromptRequestAbstractEntityCodec extends AbstractEntityCodec<GetPromptRequest> {
+    public GetPromptRequestAbstractEntityCodec() {
+    }
+
     @Override
     public JsonObject toJson(GetPromptRequest req) {
         var b = Json.createObjectBuilder().add("name", req.name());

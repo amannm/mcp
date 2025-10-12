@@ -1,6 +1,6 @@
 package com.amannmalik.mcp.spi;
 
-import com.amannmalik.mcp.util.SpiPreconditions;
+import com.amannmalik.mcp.util.ValidationUtil;
 import jakarta.json.JsonObject;
 
 public record CompleteRequest(
@@ -9,7 +9,7 @@ public record CompleteRequest(
         Context context,
         JsonObject _meta) {
     public CompleteRequest {
-        SpiPreconditions.requireAllNonNull("ref and argument are required", ref, argument);
-        SpiPreconditions.requireMeta(_meta);
+        ValidationUtil.requireAllNonNull("ref and argument are required", ref, argument);
+        ValidationUtil.requireMeta(_meta);
     }
 }

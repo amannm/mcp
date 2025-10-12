@@ -7,6 +7,9 @@ import jakarta.json.JsonObject;
 import java.net.URI;
 
 public final class ResourceUpdatedNotificationAbstractEntityCodec extends AbstractEntityCodec<ResourceUpdatedNotification> {
+    public ResourceUpdatedNotificationAbstractEntityCodec() {
+    }
+
     @Override
     public JsonObject toJson(ResourceUpdatedNotification n) {
         var b = Json.createObjectBuilder().add("uri", n.uri().toString());

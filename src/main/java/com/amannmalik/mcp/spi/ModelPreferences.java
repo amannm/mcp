@@ -1,6 +1,6 @@
 package com.amannmalik.mcp.spi;
 
-import com.amannmalik.mcp.util.SpiPreconditions;
+import com.amannmalik.mcp.util.ValidationUtil;
 
 import java.util.List;
 
@@ -11,14 +11,14 @@ public record ModelPreferences(
         Double intelligencePriority
 ) {
     public ModelPreferences {
-        hints = SpiPreconditions.immutableList(hints);
-        costPriority = SpiPreconditions.fractionOrNull(costPriority, "costPriority");
-        speedPriority = SpiPreconditions.fractionOrNull(speedPriority, "speedPriority");
-        intelligencePriority = SpiPreconditions.fractionOrNull(intelligencePriority, "intelligencePriority");
+        hints = ValidationUtil.immutableList(hints);
+        costPriority = ValidationUtil.fractionOrNull(costPriority, "costPriority");
+        speedPriority = ValidationUtil.fractionOrNull(speedPriority, "speedPriority");
+        intelligencePriority = ValidationUtil.fractionOrNull(intelligencePriority, "intelligencePriority");
     }
 
     @Override
     public List<ModelHint> hints() {
-        return SpiPreconditions.copyList(hints);
+        return ValidationUtil.copyList(hints);
     }
 }
