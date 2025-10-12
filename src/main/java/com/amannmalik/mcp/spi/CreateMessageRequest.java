@@ -1,7 +1,7 @@
 package com.amannmalik.mcp.spi;
 
-import com.amannmalik.mcp.spi.internal.CreateMessageRequestContract;
-import com.amannmalik.mcp.spi.internal.SpiPreconditions;
+import com.amannmalik.mcp.core.CreateMessageRequestContract;
+import com.amannmalik.mcp.core.SpiPreconditions;
 import jakarta.json.JsonObject;
 
 import java.util.List;

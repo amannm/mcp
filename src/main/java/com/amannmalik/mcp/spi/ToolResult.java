@@ -1,6 +1,6 @@
 package com.amannmalik.mcp.spi;
 
-import com.amannmalik.mcp.spi.internal.ToolResultContract;
+import com.amannmalik.mcp.core.ToolResultContract;
 import jakarta.json.JsonArray;
 import jakarta.json.JsonObject;
 

@@ -1,4 +1,4 @@
-package com.amannmalik.mcp.spi.internal;
+package com.amannmalik.mcp.core;
 
 import com.amannmalik.mcp.codec.ContentBlockJsonCodec;
 import com.amannmalik.mcp.codec.JsonCodec;

@@ -1,4 +1,4 @@
-package com.amannmalik.mcp.spi.internal;
+package com.amannmalik.mcp.core;
 
 import java.util.List;
 

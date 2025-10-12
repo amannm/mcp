@@ -1,7 +1,7 @@
 package com.amannmalik.mcp.spi;
 
-import com.amannmalik.mcp.spi.internal.ContentBlockContract;
-import com.amannmalik.mcp.spi.internal.SpiPreconditions;
+import com.amannmalik.mcp.core.ContentBlockContract;
+import com.amannmalik.mcp.core.SpiPreconditions;
 import jakarta.json.JsonObject;
 
 public sealed interface ContentBlock permits

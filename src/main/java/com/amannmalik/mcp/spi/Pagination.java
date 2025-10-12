@@ -1,8 +1,8 @@
 package com.amannmalik.mcp.spi;
 
 import com.amannmalik.mcp.api.McpHostConfiguration;
-import com.amannmalik.mcp.spi.internal.CursorCodec;
-import com.amannmalik.mcp.spi.internal.SpiPreconditions;
+import com.amannmalik.mcp.core.CursorCodec;
+import com.amannmalik.mcp.core.SpiPreconditions;
 
 import java.util.List;
 

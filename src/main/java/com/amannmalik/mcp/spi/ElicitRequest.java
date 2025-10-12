@@ -1,6 +1,6 @@
 package com.amannmalik.mcp.spi;
 
-import com.amannmalik.mcp.spi.internal.ElicitRequestContract;
+import com.amannmalik.mcp.core.ElicitRequestContract;
 import jakarta.json.JsonObject;
 
 public record ElicitRequest(String message, JsonObject requestedSchema, JsonObject _meta) {

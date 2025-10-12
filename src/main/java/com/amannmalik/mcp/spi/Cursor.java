@@ -1,6 +1,6 @@
 package com.amannmalik.mcp.spi;
 
-import com.amannmalik.mcp.spi.internal.CursorCodec;
+import com.amannmalik.mcp.core.CursorCodec;
 
 public sealed interface Cursor permits Cursor.Start, Cursor.End, Cursor.Token {
     static Cursor of(String value) {

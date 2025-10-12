@@ -1,7 +1,7 @@
 package com.amannmalik.mcp.spi;
 
-import com.amannmalik.mcp.spi.internal.SpiPreconditions;
-import com.amannmalik.mcp.spi.internal.ToolContract;
+import com.amannmalik.mcp.core.SpiPreconditions;
+import com.amannmalik.mcp.core.ToolContract;
 import jakarta.json.JsonObject;
 
 public record Tool(String name,
