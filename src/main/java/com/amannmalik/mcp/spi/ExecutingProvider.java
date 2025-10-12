@@ -9,7 +9,6 @@ sealed interface ExecutingProvider<T, R> extends Provider<T> permits
         ElicitationProvider,
         SamplingProvider,
         ToolProvider {
-
     @Override
     default Pagination.Page<T> list(Cursor cursor) {
         return new Pagination.Page<>(List.of(), Cursor.End.INSTANCE);

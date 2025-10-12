@@ -10,7 +10,6 @@ import java.net.URI;
 import java.util.*;
 
 public final class SpiPreconditions {
-
     private SpiPreconditions() {
     }
 

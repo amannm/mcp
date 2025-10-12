@@ -13,7 +13,6 @@ public enum NotificationMethod implements JsonRpcMethod {
     PROMPTS_LIST_CHANGED("notifications/prompts/list_changed"),
     MESSAGE("notifications/message"),
     ROOTS_LIST_CHANGED("notifications/roots/list_changed", EnumSet.of(ClientCapability.ROOTS));
-
     private final String method;
     private final EnumSet<ClientCapability> clientCapabilities;
 
@@ -53,4 +52,3 @@ public enum NotificationMethod implements JsonRpcMethod {
         return clientCapabilities.clone();
     }
 }
-

@@ -8,7 +8,6 @@ import jakarta.json.JsonObject;
 import java.util.Set;
 
 public class ContentBlockJsonCodec implements JsonCodec<ContentBlock> {
-
     private final AnnotationsJsonCodec ANNOTATIONS_CODEC = new AnnotationsJsonCodec();
     private final ResourceBlockJsonCodec RESOURCE_BLOCK_CODEC = new ResourceBlockJsonCodec();
     private final ResourceAbstractEntityCodec RESOURCE_ENTITY_CODEC = new ResourceAbstractEntityCodec();

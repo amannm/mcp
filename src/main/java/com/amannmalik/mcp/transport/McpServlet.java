@@ -24,7 +24,6 @@ final class McpServlet extends HttpServlet {
     @Serial
     private static final long serialVersionUID = 1L;
     private static final Logger LOG = PlatformLog.get(McpServlet.class);
-
     private transient final StreamableHttpServerTransport transport;
     private final int responseQueueCapacity;
 
@@ -43,7 +42,6 @@ final class McpServlet extends HttpServlet {
             return;
         }
         var principal = principalOpt.get();
-
         var payload = readJson(req, resp);
         if (payload.isEmpty()) {
             return;
@@ -53,11 +51,9 @@ final class McpServlet extends HttpServlet {
         var initializing = envelope.method()
                 .map(RequestMethod.INITIALIZE.method()::equals)
                 .orElse(false);
-
         if (!transport.validateSession(req, resp, principal, initializing)) {
             return;
         }
-
         switch (envelope.type()) {
             case NOTIFICATION, RESPONSE -> enqueue(obj, resp);
             case REQUEST -> handleRequest(obj, envelope, initializing, req, resp);

@@ -7,7 +7,6 @@ import java.util.List;
 import java.util.Set;
 
 public class CreateMessageRequestJsonCodec implements JsonCodec<CreateMessageRequest> {
-
     static final JsonCodec<SamplingMessage> SAMPLING_MESSAGE_JSON_CODEC = new SamplingMessageAbstractEntityCodec();
     static final JsonCodec<ModelPreferences> MODEL_PREFERENCES_JSON_CODEC = new ModelPreferencesJsonCodec();
 

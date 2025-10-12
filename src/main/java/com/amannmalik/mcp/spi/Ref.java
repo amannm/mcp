@@ -6,7 +6,6 @@ import jakarta.json.JsonObject;
 public sealed interface Ref permits
         Ref.PromptRef,
         Ref.ResourceRef {
-
     String type();
 
     record PromptRef(String name, String title, JsonObject _meta) implements Ref {
@@ -34,5 +33,4 @@ public sealed interface Ref permits
             return "ref/resource";
         }
     }
-
 }

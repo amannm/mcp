@@ -6,7 +6,6 @@ import com.amannmalik.mcp.jsonrpc.*;
 import jakarta.json.*;
 
 public class JsonRpcMessageJsonCodec implements JsonCodec<JsonRpcMessage> {
-
     static void validateVersion(JsonObject obj) {
         var version = obj.getString("jsonrpc", null);
         if (!JsonRpc.VERSION.equals(version)) {
@@ -135,5 +134,4 @@ public class JsonRpcMessageJsonCodec implements JsonCodec<JsonRpcMessage> {
             case ERROR -> new JsonRpcError(optionalId(idValue), errorDetail(obj.getJsonObject("error")));
         };
     }
-
 }

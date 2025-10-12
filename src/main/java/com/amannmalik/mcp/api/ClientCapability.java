@@ -7,7 +7,6 @@ public enum ClientCapability {
     SAMPLING("sampling"),
     ELICITATION("elicitation"),
     EXPERIMENTAL("experimental");
-
     private final String code;
 
     ClientCapability(String code) {

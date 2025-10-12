@@ -7,7 +7,6 @@ import java.util.regex.Pattern;
 public final class UnauthorizedException extends IOException {
     private static final Pattern RESOURCE_METADATA =
             Pattern.compile("resource_metadata=\"([^\"]+)\"");
-
     private final String wwwAuthenticate;
 
     public UnauthorizedException(String wwwAuthenticate) {
@@ -30,4 +29,3 @@ public final class UnauthorizedException extends IOException {
         return Optional.empty();
     }
 }
-

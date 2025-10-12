@@ -82,9 +82,7 @@ public final class ServerHarness implements Closeable {
                 base.servletProducedContentTypes(),
                 base.servletEnableAsyncProcessing()
         );
-
         var resources = new ResourceProvider() {
-
             @Override
             public Optional<Resource> find(String name) {
                 if (name == null) {
@@ -133,9 +131,7 @@ public final class ServerHarness implements Closeable {
             public boolean supportsSubscribe() {
                 return false;
             }
-
         };
-
         var tools = new ToolProvider() {
             final Tool echo = new Tool("echo", "Echo", "Echo tool", Json.createObjectBuilder().add("type", "object").build(), null, null, null);
 
@@ -159,7 +155,6 @@ public final class ServerHarness implements Closeable {
                 return new ToolResult(Json.createArrayBuilder().build(), null, false, null);
             }
         };
-
         var prompts = new PromptProvider() {
             @Override
             public Pagination.Page<Prompt> list(Cursor cursor) {
@@ -181,7 +176,6 @@ public final class ServerHarness implements Closeable {
                 return new PromptInstance("desc", List.of());
             }
         };
-
         var completions = new CompletionProvider() {
             @Override
             public CompleteResult complete(CompleteRequest request) throws InterruptedException {
@@ -203,9 +197,7 @@ public final class ServerHarness implements Closeable {
                 return new CompleteResult(new Completion(List.of(), 0, false), null);
             }
         };
-
         var sampling = new SamplingProvider() {
-
             @Override
             public CreateMessageResponse createMessage(CreateMessageRequest request, Duration timeoutMillis) {
                 return new CreateMessageResponse(Role.ASSISTANT, new ContentBlock.Text("ok", null, null), "model", "stop", null);
@@ -221,13 +213,10 @@ public final class ServerHarness implements Closeable {
                 return createMessage(new CreateMessageRequestJsonCodec().fromJson(args), Duration.ZERO);
             }
         };
-
         var principal = new Principal(base.defaultPrincipal(), Set.of());
-
         var resourceAccess = loadSingleton(ResourceAccessPolicy.class);
         var toolAccess = loadSingleton(ToolAccessPolicy.class);
         var samplingAccessPolicy = loadSingleton(SamplingAccessPolicy.class);
-
         var server = McpServer.create(
                 config,
                 resources,

@@ -23,12 +23,10 @@ public final class RootChecker {
         if (roots.isEmpty()) {
             return true;
         }
-
         var targetPath = filePath(uri).orElse(null);
         if (targetPath == null) {
             return false;
         }
-
         return roots.stream()
                 .map(Root::uri)
                 .flatMap(RootChecker::filePathStream)

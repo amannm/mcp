@@ -17,7 +17,6 @@ public record McpHostConfiguration(
         boolean globalVerbose,
         List<McpClientConfiguration> clientConfigurations
 ) {
-
     public McpHostConfiguration {
         hostClientCapabilities = Set.copyOf(hostClientCapabilities);
         clientConfigurations = List.copyOf(clientConfigurations);

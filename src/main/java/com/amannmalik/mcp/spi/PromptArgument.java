@@ -10,12 +10,10 @@ public record PromptArgument(
         boolean required,
         JsonObject _meta
 ) implements DisplayNameProvider {
-
     public PromptArgument {
         name = SpiPreconditions.requireClean(name);
         title = SpiPreconditions.cleanNullable(title);
         description = SpiPreconditions.cleanNullable(description);
         SpiPreconditions.requireMeta(_meta);
     }
-
 }

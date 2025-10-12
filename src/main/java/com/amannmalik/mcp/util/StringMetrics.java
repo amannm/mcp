@@ -10,11 +10,9 @@ public final class StringMetrics {
     public static int levenshtein(String a, String b) {
         Objects.requireNonNull(a, "a");
         Objects.requireNonNull(b, "b");
-
         if (a.equals(b)) {
             return 0;
         }
-
         var prev = new int[b.length() + 1];
         var curr = new int[b.length() + 1];
         for (var j = 0; j <= b.length(); j++) {

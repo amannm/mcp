@@ -9,7 +9,6 @@ import jakarta.json.JsonObject;
 import java.util.List;
 
 public record ReadResourceResult(List<ResourceBlock> contents, JsonObject _meta) implements Result {
-
     public ReadResourceResult {
         contents = Immutable.list(contents);
         ValidationUtil.requireMeta(_meta);

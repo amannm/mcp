@@ -232,7 +232,6 @@ Feature: MCP Protocol Utilities
     When I create a progress notification with progress 150 and total 100
     Then the progress notification should be rejected
 
-
   @progress @behavior-requirements
   Scenario: Progress notification behavior requirements
     # Tests specification/2025-06-18/basic/utilities/progress.mdx:60-71 (Behavior requirements)

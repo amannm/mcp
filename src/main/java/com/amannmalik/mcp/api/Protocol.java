@@ -10,4 +10,3 @@ public final class Protocol {
     private Protocol() {
     }
 }
-

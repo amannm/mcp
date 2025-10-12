@@ -5,7 +5,6 @@ import java.util.*;
 final class AcceptHeader {
     static final String APPLICATION_JSON = "application/json";
     static final String TEXT_EVENT_STREAM = "text/event-stream";
-
     private final Set<String> mediaTypes;
 
     private AcceptHeader(Set<String> mediaTypes) {
@@ -68,4 +67,3 @@ final class AcceptHeader {
         return mediaTypes.equals(Set.copyOf(expected));
     }
 }
-

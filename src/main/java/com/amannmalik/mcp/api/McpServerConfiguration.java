@@ -63,7 +63,6 @@ public record McpServerConfiguration(
         boolean servletEnableAsyncProcessing
 ) {
 
-
     public McpServerConfiguration {
         supportedVersions = List.copyOf(supportedVersions);
         allowedOrigins = List.copyOf(allowedOrigins);
@@ -141,7 +140,6 @@ public record McpServerConfiguration(
             throw new IllegalArgumentException("HTTP response queue capacity must be positive");
         }
     }
-
 
     public static McpServerConfiguration defaultConfiguration() {
         return new McpServerConfiguration(

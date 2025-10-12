@@ -86,7 +86,6 @@ public final class UtilitiesSteps {
     private boolean toolsListRequestFailed;
 
     // --- Cancellation ----------------------------------------------------
-
     @Given("an established MCP connection")
     public void an_established_mcp_connection() throws Exception {
         if (activeConnection != null) return;
@@ -262,7 +261,6 @@ public final class UtilitiesSteps {
     }
 
     // --- Ping ------------------------------------------------------------
-
     @Given("I want to verify connection health")
     public void i_want_to_verify_connection_health() {
         lastPingId = null;
@@ -487,7 +485,6 @@ public final class UtilitiesSteps {
     }
 
     // --- Logging ---------------------------------------------------------
-
     @When("I set the logging level to {string}")
     public void i_set_the_logging_level_to(String level) {
         try {
@@ -534,7 +531,6 @@ public final class UtilitiesSteps {
     }
 
     // --- Progress -------------------------------------------------------
-
     @Given("I want to track progress for a long-running operation")
     public void i_want_to_track_progress_for_a_long_running_operation() {
         progressNotifications.clear();
@@ -876,7 +872,6 @@ public final class UtilitiesSteps {
     }
 
     // --- Pagination -----------------------------------------------------
-
     @Given("the server has a large dataset to return")
     public void the_server_has_a_large_dataset_to_return() {
         dataset = new ArrayList<>();
@@ -1148,7 +1143,6 @@ public final class UtilitiesSteps {
     }
 
     // --- Integration and lifecycle -------------------------------------
-
     @Given("I have operations that use multiple utilities")
     public void i_have_operations_that_use_multiple_utilities() {
         combinedOperations.clear();

@@ -15,7 +15,6 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 public final class ProtocolLifecycleSteps {
-
     private final Set<RequestId> usedRequestIds = new HashSet<>();
     private final Set<RequestId> sentRequestIds = new HashSet<>();
     private final List<String> serverSupportedVersions = new ArrayList<>();
@@ -232,21 +231,17 @@ public final class ProtocolLifecycleSteps {
             if (activeConnection != null) activeConnection.close();
         } catch (IOException ignore) {
         }
-
         activeConnection = null;
         clientId = null;
         clientConfig = null;
         hostConfig = null;
         connectionClosed = false;
-
         requestedVersion = null;
         negotiatedVersion = null;
         serverSupportedVersions.clear();
-
         clientCapabilities = EnumSet.noneOf(ClientCapability.class);
         serverCapabilities = EnumSet.noneOf(ServerCapability.class);
         availableFeatures = EnumSet.noneOf(ServerCapability.class);
-
         lastRequestId = null;
         lastRequest = null;
         lastResponse = null;
@@ -255,7 +250,6 @@ public final class ProtocolLifecycleSteps {
         lastErrorCode = 0;
         usedRequestIds.clear();
         sentRequestIds.clear();
-
         if (currentConfiguration == null) {
             capabilityConfigurations.clear();
             errorScenarios.clear();
@@ -311,7 +305,6 @@ public final class ProtocolLifecycleSteps {
     public void i_establish_a_connection_with_the_server() throws Exception {
         if (hostConfig == null) return;
         activeConnection = McpHost.create(hostConfig);
-
         // Grant consent for server connection in test environment
         activeConnection.grantConsent("server");
         activeConnection.grantConsent("tool:test_tool");
@@ -319,7 +312,6 @@ public final class ProtocolLifecycleSteps {
         activeConnection.grantConsent("tool:echo_tool");
         activeConnection.grantConsent("tool:slow_tool");
         activeConnection.grantConsent("sampling");
-
         clientId = clientConfig.clientId();
         activeConnection.connect(clientId);
     }
@@ -340,7 +332,6 @@ public final class ProtocolLifecycleSteps {
         if (activeConnection == null || clientId == null) {
             throw new IllegalStateException("connection not established");
         }
-
         var hasServerCapabilities = false;
         try {
             activeConnection.listTools(clientId, Cursor.Start.INSTANCE);
@@ -354,9 +345,7 @@ public final class ProtocolLifecycleSteps {
             hasServerCapabilities = true;
         } catch (Exception ignore) {
         }
-
         availableFeatures.addAll(serverCapabilities);
-
         var context = activeConnection.aggregateContext();
         if (context == null) {
             throw new AssertionError("missing server implementation info");
@@ -368,9 +357,7 @@ public final class ProtocolLifecycleSteps {
         if (activeConnection == null || clientId == null) {
             throw new IllegalStateException("connection not established");
         }
-
         activeConnection.client(clientId).sendNotification(NotificationMethod.INITIALIZED, Json.createObjectBuilder().build());
-
         var response = activeConnection.client(clientId).request(RequestMethod.PING, Json.createObjectBuilder().build(), Duration.ofSeconds(5));
         if (response == null) {
             throw new AssertionError("message exchange failed");
@@ -1356,7 +1343,6 @@ public final class ProtocolLifecycleSteps {
         for (var config : capabilityConfigurations) {
             currentConfiguration = config;
             var serverCapability = config.get("server_capability");
-
             a_clean_mcp_environment();
             a_transport_mechanism_is_available();
             the_server_offers_features(serverCapability);
@@ -1377,7 +1363,6 @@ public final class ProtocolLifecycleSteps {
                     throw new AssertionError("Expected features not available: %s".formatted(expected));
                 }
             }
-
             var unavailableFeature = config.get("unavailable_feature");
             if (!"none".equals(unavailableFeature)) {
                 var expectedUnavailable = parseServerCapabilities(unavailableFeature);
@@ -1403,7 +1388,6 @@ public final class ProtocolLifecycleSteps {
             var errorSituation = scenario.get("error_situation");
             var errorType = scenario.get("error_type");
             var errorCode = Integer.parseInt(scenario.get("error_code"));
-
             error_occurs_during_communication(errorSituation);
             i_should_receive_a_proper_error_response_indicating(errorType, errorCode);
         }
@@ -1428,21 +1412,17 @@ public final class ProtocolLifecycleSteps {
     @When("I send a request with a large payload of {int}MB")
     public void i_send_a_request_with_a_large_payload_of_mb(int payloadSizeMB) {
         largePayloadSize = payloadSizeMB * 1024L * 1024L; // Convert to bytes
-
         // Create a large test payload
         var largePayload = new StringBuilder();
         var chunk = "x".repeat(1024); // 1KB chunk
         largePayload.append(chunk.repeat(Math.max(0, payloadSizeMB * 1024)));
-
         var params = Json.createObjectBuilder()
                 .add("largeData", largePayload.toString())
                 .build();
-
         RequestId requestId = new RequestId.StringId("large-message-test");
         lastRequest = createRequest(requestId, "test/large_message", params);
         lastRequestId = requestId;
         lastResponse = createResponse(requestId, Json.createObjectBuilder().build());
-
         try {
             // Simulate sending large message
             largeMessageHandled = true;
@@ -1485,16 +1465,13 @@ public final class ProtocolLifecycleSteps {
     public void i_send_concurrent_requests_with_unique_ids(int requestCount) {
         concurrentRequestIds.clear();
         concurrentResponses.clear();
-
         for (var i = 0; i < requestCount; i++) {
             RequestId requestId = new RequestId.StringId("concurrent-req-" + i);
             concurrentRequestIds.add(requestId);
-
             var request = createRequest(requestId, "ping", null);
             var response = createResponse(requestId, Json.createObjectBuilder().build());
             concurrentResponses.put(requestId, response);
         }
-
         allConcurrentRequestsProcessed = true;
         noIdConflicts = concurrentRequestIds.size() == concurrentRequestIds.stream().distinct().count();
     }
@@ -1532,19 +1509,15 @@ public final class ProtocolLifecycleSteps {
     public void i_send_a_sequence_of_dependent_requests(DataTable dataTable) {
         dependentRequests.clear();
         requestResponses.clear();
-
         var requests = dataTable.asMaps(String.class, String.class);
         dependentRequests.addAll(requests);
-
         // Simulate sending dependent requests
         for (var reqData : requests) {
             var reqId = reqData.get("request_id");
             var method = reqData.get("method");
-
             RequestId requestId = new RequestId.StringId(reqId);
             var request = createRequest(requestId, method, null);
             var response = createResponse(requestId, Json.createObjectBuilder().build());
-
             requestResponses.put(reqId, response);
         }
     }

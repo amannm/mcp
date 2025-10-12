@@ -12,7 +12,6 @@ public sealed interface Notification permits
         Notification.ResourceUpdatedNotification,
         Notification.RootsListChangedNotification,
         Notification.ToolListChangedNotification {
-
     record CancelledNotification(RequestId requestId, String reason) implements Notification {
         public CancelledNotification {
             if (requestId == null) {
@@ -37,7 +36,6 @@ public sealed interface Notification permits
             Double total,
             String message
     ) implements Notification {
-
         public ProgressNotification {
             if (token == null) {
                 throw new IllegalArgumentException("token is required");

@@ -17,7 +17,6 @@ public record CreateMessageRequest(
         JsonObject metadata,
         JsonObject _meta
 ) {
-
     public CreateMessageRequest {
         messages = CreateMessageRequestContract.sanitizeMessages(messages);
         systemPrompt = CreateMessageRequestContract.sanitizeSystemPrompt(systemPrompt);
@@ -37,5 +36,4 @@ public record CreateMessageRequest(
     }
 
     public enum IncludeContext {NONE, THIS_SERVER, ALL_SERVERS}
-
 }

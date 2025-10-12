@@ -13,11 +13,9 @@ public final class Entrypoint {
     public static void main(String[] args) {
         var mainSpec = CommandSpec.create()
                 .name("mcp");
-
         var commandLine = new CommandLine(mainSpec);
         commandLine.addSubcommand("server", ServerCommand.createCommandSpec());
         commandLine.addSubcommand("host", HostCommand.createCommandSpec());
-
         try {
             var parseResult = commandLine.parseArgs(args);
             var helpExitCode = CommandLine.executeHelpRequest(parseResult);
@@ -48,7 +46,6 @@ public final class Entrypoint {
                 default -> throw new IllegalStateException("Unknown subcommand: " + name);
             };
         }
-
         CommandLine.usage(parseResult.commandSpec(), System.out);
         return 0;
     }

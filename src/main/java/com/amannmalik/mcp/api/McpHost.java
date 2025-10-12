@@ -11,7 +11,6 @@ import java.util.Set;
 import java.util.function.Consumer;
 
 public interface McpHost extends AutoCloseable {
-
     static McpHost create(McpHostConfiguration config) throws IOException {
         return new HostRuntime(config);
     }

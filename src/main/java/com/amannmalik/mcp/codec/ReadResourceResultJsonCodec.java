@@ -8,7 +8,6 @@ import jakarta.json.JsonObject;
 import java.util.ArrayList;
 
 public class ReadResourceResultJsonCodec implements JsonCodec<ReadResourceResult> {
-
     private static final ResourceBlockJsonCodec RESOURCE_BLOCK_CODEC = new ResourceBlockJsonCodec();
 
     @Override

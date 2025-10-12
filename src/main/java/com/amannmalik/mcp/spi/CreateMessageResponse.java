@@ -10,10 +10,8 @@ public record CreateMessageResponse(
         String stopReason,
         JsonObject _meta
 ) implements Result {
-
     public CreateMessageResponse {
         SpiPreconditions.requireAllNonNull("role, content, and model are required", role, content, model);
         SpiPreconditions.requireMeta(_meta);
     }
-
 }

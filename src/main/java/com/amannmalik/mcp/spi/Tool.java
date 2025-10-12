@@ -11,7 +11,6 @@ public record Tool(String name,
                    JsonObject outputSchema,
                    ToolAnnotations annotations,
                    JsonObject _meta) implements DisplayNameProvider {
-
     public Tool {
         name = SpiPreconditions.requireClean(name);
         inputSchema = ToolContract.requireInputSchema(inputSchema);
@@ -31,5 +30,4 @@ public record Tool(String name,
         }
         return name;
     }
-
 }

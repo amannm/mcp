@@ -191,4 +191,3 @@ final class SessionManager {
     private record SanitizedHeaders(String sessionId, String version) {
     }
 }
-

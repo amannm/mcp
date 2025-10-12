@@ -11,4 +11,3 @@ import java.time.Duration;
 public interface RequestSender {
     JsonRpcMessage send(RequestMethod method, JsonObject params, Duration timeout) throws IOException;
 }
-

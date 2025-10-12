@@ -9,7 +9,6 @@ import java.util.Optional;
 public sealed interface ProgressToken permits
         ProgressToken.StringToken,
         ProgressToken.NumericToken {
-
     static Optional<ProgressToken> fromMeta(JsonObject params) {
         if (params == null || !params.containsKey("_meta")) {
             return Optional.empty();

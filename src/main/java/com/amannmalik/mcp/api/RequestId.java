@@ -10,7 +10,6 @@ public sealed interface RequestId permits
         RequestId.StringId,
         RequestId.NumericId,
         RequestId.NullId {
-
     Logger LOG = PlatformLog.get(RequestId.class);
 
     static RequestId parse(String raw) {

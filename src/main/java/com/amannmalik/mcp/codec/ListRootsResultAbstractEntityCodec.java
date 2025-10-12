@@ -8,7 +8,6 @@ import java.util.List;
 import java.util.Set;
 
 public final class ListRootsResultAbstractEntityCodec extends AbstractEntityCodec<ListRootsResult> {
-
     static final JsonCodec<Root> CODEC = new RootAbstractEntityCodec();
 
     @Override

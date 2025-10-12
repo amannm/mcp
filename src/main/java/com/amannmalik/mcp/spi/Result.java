@@ -12,4 +12,3 @@ public sealed interface Result permits PaginatedResult,
         ReadResourceResult {
     JsonObject _meta();
 }
-

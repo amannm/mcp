@@ -10,7 +10,6 @@ import jakarta.json.JsonObject;
 import java.util.*;
 
 public final class InitializeResponseAbstractEntityCodec extends AbstractEntityCodec<InitializeResponse> {
-
     private static final JsonCodec<ServerInfo> SERVER_INFO_CODEC = new ServerInfoAbstractEntityCodec();
 
     @Override

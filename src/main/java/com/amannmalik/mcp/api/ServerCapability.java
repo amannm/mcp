@@ -9,7 +9,6 @@ public enum ServerCapability {
     LOGGING("logging"),
     COMPLETIONS("completions"),
     EXPERIMENTAL("experimental");
-
     private final String code;
 
     ServerCapability(String code) {

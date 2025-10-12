@@ -109,7 +109,6 @@ public final class HostCommand {
         if (helpExitCode != null) {
             return helpExitCode;
         }
-
         try {
             boolean verbose = parseResult.matchedOptionValue("--verbose", false);
             List<String> clientSpecs = parseResult.matchedOptionValue("--client", Collections.emptyList());
@@ -117,11 +116,9 @@ public final class HostCommand {
             if (clientSpecs.isEmpty()) {
                 throw new IllegalArgumentException("--client required");
             }
-
             var tls = extractTlsSettings(parseResult);
             var clientConfigs = parseClientConfigs(clientSpecs, verbose, tls);
             var config = McpHostConfiguration.withClientConfigurations(clientConfigs);
-
             try (var host = McpHost.create(config)) {
                 for (var clientConfig : clientConfigs) {
                     host.client(clientConfig.clientId()).connect();
@@ -194,16 +191,13 @@ public final class HostCommand {
             if (parts.length < 2) {
                 throw new IllegalArgumentException("id:command expected: " + spec);
             }
-
             var clientId = parts[0];
             var command = parts[1];
             var clientVerbose = parts.length > 2 ? Boolean.parseBoolean(parts[2]) : verbose;
-
             Set<ClientCapability> capabilities = EnumSet.of(
                     ClientCapability.SAMPLING,
                     ClientCapability.ROOTS,
                     ClientCapability.ELICITATION);
-
             if (parts.length > 3 && !parts[3].isEmpty()) {
                 capabilities = Arrays.stream(parts[3].split(","))
                         .map(String::trim)
@@ -211,7 +205,6 @@ public final class HostCommand {
                         .map(ClientCapability::valueOf)
                         .collect(Collectors.toCollection(() -> EnumSet.noneOf(ClientCapability.class)));
             }
-
             var tlsConfig = new TlsConfiguration(
                     tls.keystorePath(),
                     tls.keystorePassword(),
@@ -259,7 +252,6 @@ public final class HostCommand {
         var reader = new BufferedReader(new InputStreamReader(System.in, StandardCharsets.UTF_8));
         System.out.println("MCP Host Interactive Mode. Type 'help' for commands, 'quit' to exit.");
         Map<String, AutoCloseable> resourceSubscriptions = new ConcurrentHashMap<>();
-
         try {
             while (true) {
                 System.out.print("mcp> ");
@@ -267,12 +259,10 @@ public final class HostCommand {
                 if (line == null || "quit".equals(line.trim())) {
                     break;
                 }
-
                 var parts = line.trim().split("\\s+");
                 if (parts.length == 0) {
                     continue;
                 }
-
                 try {
                     switch (parts[0]) {
                         case "help" -> printHelp();

@@ -512,5 +512,4 @@ public final class HostRuntime implements McpHost {
             promptsListChanged.set(false);
         }
     }
-
 }

@@ -37,7 +37,6 @@ public record McpClientConfiguration(
         List<String> certificatePins,
         boolean verifyHostname
 ) {
-
     public McpClientConfiguration {
         if (clientId == null || clientId.isBlank()) {
             throw new IllegalArgumentException("Client ID is required");

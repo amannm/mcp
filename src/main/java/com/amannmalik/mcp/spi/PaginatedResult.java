@@ -12,4 +12,3 @@ public sealed interface PaginatedResult<T> extends Result permits ListResourcesR
 
     Cursor nextCursor();
 }
-

@@ -7,4 +7,3 @@ public interface SamplingAccessPolicy {
 
     void requireAllowed(Principal principal);
 }
-

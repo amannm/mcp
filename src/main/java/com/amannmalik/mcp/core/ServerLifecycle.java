@@ -8,13 +8,11 @@ import java.util.*;
 
 public final class ServerLifecycle {
     private static final int NOT_INITIALIZED_ERROR = -32002;
-
     private final List<String> supportedVersions;
     private final Set<ServerCapability> declaredCapabilities;
     private final ServerInfo serverInfo;
     private final String instructions;
     private final EnumSet<ClientCapability> clientCapabilities = EnumSet.noneOf(ClientCapability.class);
-
     private LifecycleState state = LifecycleState.INIT;
     private ClientFeatures clientFeatures = ClientFeatures.EMPTY;
     private String protocolVersion;
@@ -64,12 +62,10 @@ public final class ServerLifecycle {
         Objects.requireNonNull(request, "request");
         Objects.requireNonNull(features, "features");
         requireState(LifecycleState.INIT);
-
         clientCapabilities.clear();
         clientCapabilities.addAll(normaliseClientCapabilities(request.capabilities()));
         clientFeatures = Objects.requireNonNullElse(request.features(), ClientFeatures.EMPTY);
         protocolVersion = negotiateProtocolVersion(request.protocolVersion());
-
         return new InitializeResponse(
                 protocolVersion,
                 negotiatedCapabilities(),
@@ -140,4 +136,3 @@ public final class ServerLifecycle {
         return supportedVersions.getFirst();
     }
 }
-

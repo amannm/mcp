@@ -9,7 +9,6 @@ import java.util.List;
 import java.util.Set;
 
 public class ModelPreferencesJsonCodec implements JsonCodec<ModelPreferences> {
-
     public static final JsonCodec<ModelHint> MODEL_HINT_JSON_CODEC = new ModelHintJsonCodec();
 
     @Override

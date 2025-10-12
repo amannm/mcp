@@ -6,7 +6,6 @@ import jakarta.json.Json;
 import jakarta.json.JsonObject;
 
 public class CompleteResultJsonCodec implements JsonCodec<CompleteResult> {
-
     private static final JsonCodec<Completion> COMPLETION_JSON_CODEC = new CompletionJsonCodec();
 
     @Override

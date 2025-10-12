@@ -20,7 +20,6 @@ public enum RequestMethod implements JsonRpcMethod {
     SAMPLING_CREATE_MESSAGE("sampling/createMessage", EnumSet.noneOf(ServerCapability.class), EnumSet.of(ClientCapability.SAMPLING)),
     ROOTS_LIST("roots/list", EnumSet.noneOf(ServerCapability.class), EnumSet.of(ClientCapability.ROOTS)),
     ELICITATION_CREATE("elicitation/create", EnumSet.noneOf(ServerCapability.class), EnumSet.of(ClientCapability.ELICITATION));
-
     private final String method;
     private final EnumSet<ServerCapability> serverCapabilities;
     private final EnumSet<ClientCapability> clientCapabilities;

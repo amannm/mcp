@@ -20,7 +20,6 @@ public final class MessageRouter {
 
     public RouteOutcome route(JsonObject message) {
         Objects.requireNonNull(message, "message");
-
         var envelope = JsonRpcEnvelope.of(message);
         return switch (envelope.type()) {
             case REQUEST -> routeRequest(envelope);
@@ -136,4 +135,3 @@ public final class MessageRouter {
         void removeRequestClient(RequestId id, SseClient client);
     }
 }
-

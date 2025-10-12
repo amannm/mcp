@@ -43,7 +43,6 @@ public final class ServerRuntime extends JsonRpcEndpoint implements McpServer {
                     ListToolsResult::_meta,
                     new ToolAbstractEntityCodec(),
                     (page, meta) -> new ListToolsResult(page.items(), page.nextCursor(), meta));
-
     private static final JsonCodec<ListPromptsResult> LIST_PROMPTS_RESULT_CODEC =
             AbstractEntityCodec.paginatedResult(
                     "prompts",

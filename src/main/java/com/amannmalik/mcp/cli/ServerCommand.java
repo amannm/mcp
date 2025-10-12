@@ -137,7 +137,6 @@ public final class ServerCommand {
         if (helpExitCode != null) {
             return helpExitCode;
         }
-
         try {
             boolean stdio = parseResult.matchedOptionValue("--stdio", false);
             boolean verbose = parseResult.matchedOptionValue("--verbose", false);
@@ -227,5 +226,4 @@ public final class ServerCommand {
     private static Principal defaultPrincipal() {
         return new Principal(McpServerConfiguration.defaultConfiguration().defaultPrincipal(), Set.of());
     }
-
 }

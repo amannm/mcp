@@ -8,7 +8,6 @@ public record ToolResult(JsonArray content,
                          JsonObject structuredContent,
                          Boolean isError,
                          JsonObject _meta) implements Result {
-
     public ToolResult {
         content = ToolResultContract.sanitizeContent(content);
         isError = ToolResultContract.normalizeErrorFlag(isError);

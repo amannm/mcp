@@ -517,7 +517,6 @@ public final class ServerFeaturesSteps {
     }
 
     // --- Resources -------------------------------------------------------
-
     @Given("the server supports resources functionality")
     public void the_server_supports_resources_functionality() throws Exception {
         if (activeConnection == null || clientId == null) {
@@ -975,7 +974,6 @@ public final class ServerFeaturesSteps {
     }
 
     // --- Prompts --------------------------------------------------------
-
     @Given("the server supports prompts functionality")
     public void the_server_supports_prompts_functionality() throws Exception {
         if (activeConnection == null || clientId == null) {
@@ -1212,7 +1210,6 @@ public final class ServerFeaturesSteps {
     }
 
     // --- Logging --------------------------------------------------------
-
     @Given("the server supports logging functionality")
     public void the_server_supports_logging_functionality() throws Exception {
         activeConnection.client(clientId).request(RequestMethod.LOGGING_SET_LEVEL, Json.createObjectBuilder().add("level", "info").build(), Duration.ofSeconds(5));
@@ -1414,7 +1411,6 @@ public final class ServerFeaturesSteps {
     }
 
     // --- Completion -----------------------------------------------------
-
     @Given("the server supports completion functionality")
     public void the_server_supports_completion_functionality() throws Exception {
         activeConnection.client(clientId).request(RequestMethod.COMPLETION_COMPLETE, Json.createObjectBuilder()
@@ -1601,7 +1597,6 @@ public final class ServerFeaturesSteps {
     }
 
     // --- Security ------------------------------------------------------
-
     @Given("the server has security controls enabled")
     public void the_server_has_security_controls_enabled() {
         maliciousInputSanitized = false;
@@ -1762,7 +1757,6 @@ public final class ServerFeaturesSteps {
     }
 
     // --- Integration ----------------------------------------------------
-
     @Given("the server supports multiple capabilities")
     public void the_server_supports_multiple_capabilities() {
         var caps = activeConnection.client(clientId).serverCapabilities();

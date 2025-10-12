@@ -299,7 +299,6 @@ public final class StreamableHttpClientTransport implements Transport {
     }
 
     private record PinnedTrustManager(X509TrustManager delegate, Set<String> pins) implements X509TrustManager {
-
         @Override
         public void checkClientTrusted(X509Certificate[] chain, String authType) throws CertificateException {
             delegate.checkClientTrusted(chain, authType);

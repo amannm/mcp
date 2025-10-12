@@ -8,7 +8,6 @@ import java.net.URI;
 public sealed interface ResourceBlock permits
         ResourceBlock.Text,
         ResourceBlock.Binary {
-
     URI uri();
 
     String mimeType();
@@ -37,5 +36,4 @@ public sealed interface ResourceBlock permits
             return SpiPreconditions.clone(blob);
         }
     }
-
 }

@@ -12,7 +12,6 @@ public record ResourceTemplate(
         Annotations annotations,
         JsonObject _meta
 ) implements DisplayNameProvider {
-
     public ResourceTemplate {
         uriTemplate = SpiPreconditions.requireAbsoluteTemplate(uriTemplate);
         name = SpiPreconditions.requireClean(name);
@@ -22,5 +21,4 @@ public record ResourceTemplate(
         annotations = SpiPreconditions.annotationsOrEmpty(annotations);
         SpiPreconditions.requireMeta(_meta);
     }
-
 }

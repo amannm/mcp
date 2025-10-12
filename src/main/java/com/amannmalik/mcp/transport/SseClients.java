@@ -31,7 +31,6 @@ final class SseClients {
     SseClient registerGeneral(AsyncContext context, String lastEventId, ClientFactory factory) throws IOException {
         Objects.requireNonNull(context, "context");
         Objects.requireNonNull(factory, "factory");
-
         var client = resumeOrCreate(lastEventId, context, factory);
         return registerClient(client, context,
                 () -> registerGeneral(client),
@@ -42,7 +41,6 @@ final class SseClients {
         Objects.requireNonNull(key, "key");
         Objects.requireNonNull(context, "context");
         Objects.requireNonNull(factory, "factory");
-
         var client = factory.create(context);
         return registerClient(client, context,
                 () -> registerRequest(key, client),
@@ -176,14 +174,12 @@ final class SseClients {
         Objects.requireNonNull(context, "context");
         Objects.requireNonNull(registration, "registration");
         Objects.requireNonNull(cleanup, "cleanup");
-
         try {
             registration.run();
         } catch (RuntimeException e) {
             CloseUtil.close(client);
             throw e;
         }
-
         try {
             addCleanupListener(context, cleanup);
         } catch (RuntimeException listenerFailure) {
@@ -194,7 +190,6 @@ final class SseClients {
             }
             throw listenerFailure;
         }
-
         return client;
     }
 

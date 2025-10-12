@@ -14,7 +14,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 final class SseReader implements Runnable {
     private static final Logger LOG = PlatformLog.get(SseReader.class);
-
     private final InputStream input;
     private final BlockingQueue<JsonObject> queue;
     private final Set<SseReader> container;
@@ -62,12 +61,10 @@ final class SseReader implements Runnable {
             LOG.log(Logger.Level.WARNING, "Invalid SSE payload", e);
             return;
         }
-
         if (!queue.offer(message)) {
             LOG.log(Logger.Level.WARNING, "Dropping SSE message because queue is full");
             return;
         }
-
         if (eventId != null) {
             lastEventId = eventId;
         }

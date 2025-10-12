@@ -9,12 +9,9 @@ import java.io.Serial;
 import java.util.Objects;
 
 final class MetadataServlet extends HttpServlet {
-
     @Serial
     private static final long serialVersionUID = 133742069L;
-
     private static final ResourceMetadataJsonCodec METADATA_CODEC = new ResourceMetadataJsonCodec();
-
     private transient final StreamableHttpServerTransport transport;
 
     MetadataServlet(StreamableHttpServerTransport transport) {
@@ -34,4 +31,3 @@ final class MetadataServlet extends HttpServlet {
         resp.getWriter().write(body.toString());
     }
 }
-

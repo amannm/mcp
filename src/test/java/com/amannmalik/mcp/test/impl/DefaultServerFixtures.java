@@ -23,7 +23,6 @@ final class DefaultServerFixtures {
     static final Map<String, PromptInstance> PROMPT_INSTANCES;
     static final List<Ref> COMPLETION_REFS;
     static final List<CompletionEntry> COMPLETION_ENTRIES;
-
     private static final int MAX_COMPLETION_VALUES = 100;
 
     static {
@@ -71,7 +70,6 @@ final class DefaultServerFixtures {
                 projectFile.uri(), new ResourceBlock.Text(projectFile.uri(), "text/plain", "fn main() {}", null),
                 webResource.uri(), new ResourceBlock.Text(webResource.uri(), "text/plain", "web", null),
                 gitResource.uri(), new ResourceBlock.Text(gitResource.uri(), "text/plain", "repo", null));
-
         var template = new ResourceTemplate(
                 "file:///{path}",
                 "example_template",
@@ -81,15 +79,12 @@ final class DefaultServerFixtures {
                 null,
                 null);
         RESOURCE_TEMPLATES = List.of(template);
-
         TOOLS = createTools();
         TOOL_HANDLERS = createToolHandlers();
-
         var promptTemplates = createPrompts();
         PROMPTS = promptTemplates.stream().map(PromptTemplateData::prompt).toList();
         PROMPT_INSTANCES = promptTemplates.stream()
                 .collect(Collectors.toUnmodifiableMap(PromptTemplateData::name, PromptTemplateData::instance));
-
         var completionData = createCompletionEntries();
         COMPLETION_ENTRIES = completionData.entries();
         COMPLETION_REFS = completionData.refs();
@@ -219,21 +214,18 @@ final class DefaultServerFixtures {
         var schema = Json.createObjectBuilder()
                 .add("type", "object")
                 .build();
-
         var outputSchema = Json.createObjectBuilder()
                 .add("type", "object")
                 .add("properties", Json.createObjectBuilder()
                         .add("message", Json.createObjectBuilder().add("type", "string")))
                 .add("required", Json.createArrayBuilder().add("message"))
                 .build();
-
         var echoSchema = Json.createObjectBuilder()
                 .add("type", "object")
                 .add("properties", Json.createObjectBuilder()
                         .add("msg", Json.createObjectBuilder().add("type", "string")))
                 .add("required", Json.createArrayBuilder().add("msg"))
                 .build();
-
         return List.of(
                 new Tool(
                         "test_tool",
@@ -266,14 +258,12 @@ final class DefaultServerFixtures {
 
     private static List<PromptTemplateData> createPrompts() {
         var templates = new ArrayList<PromptTemplateData>();
-
         var testArgument = new PromptArgument("test_arg", null, null, true, null);
         var testPrompt = new Prompt("test_prompt", "Test Prompt", null, List.of(testArgument), null);
         var testInstance = new PromptInstance(
                 null,
                 List.of(new PromptMessage(Role.USER, new ContentBlock.Text("hello", null, null))));
         templates.add(new PromptTemplateData(testPrompt.name(), testPrompt, testInstance));
-
         var codeArg = new PromptArgument("code", null, null, true, null);
         var langArg = new PromptArgument("language", null, null, false, null);
         var codeReview = new Prompt("code_review", "Code Review", null, List.of(codeArg, langArg), null);
@@ -281,7 +271,6 @@ final class DefaultServerFixtures {
                 null,
                 List.of(new PromptMessage(Role.USER, new ContentBlock.Text("Review the code in the given language.", null, null))));
         templates.add(new PromptTemplateData(codeReview.name(), codeReview, codeInstance));
-
         var multiLang = new PromptArgument("language", null, null, true, null);
         var multiFramework = new PromptArgument("framework", null, null, false, null);
         var multiPrompt = new Prompt("multi", "Multi Arg", null, List.of(multiLang, multiFramework), null);
@@ -289,27 +278,23 @@ final class DefaultServerFixtures {
                 null,
                 List.of(new PromptMessage(Role.USER, new ContentBlock.Text("Choose a framework.", null, null))));
         templates.add(new PromptTemplateData(multiPrompt.name(), multiPrompt, multiInstance));
-
         var textPrompt = new Prompt("text_prompt", "Text Prompt", null, List.of(), null);
         var textInstance = new PromptInstance(
                 null,
                 List.of(new PromptMessage(Role.USER, new ContentBlock.Text("Sample text", null, null))));
         templates.add(new PromptTemplateData(textPrompt.name(), textPrompt, textInstance));
-
         var imagePrompt = new Prompt("image_prompt", "Image Prompt", null, List.of(), null);
         var imageInstance = new PromptInstance(
                 null,
                 List.of(new PromptMessage(Role.USER,
                         new ContentBlock.Image("sample".getBytes(StandardCharsets.UTF_8), "image/png", null, null))));
         templates.add(new PromptTemplateData(imagePrompt.name(), imagePrompt, imageInstance));
-
         var audioPrompt = new Prompt("audio_prompt", "Audio Prompt", null, List.of(), null);
         var audioInstance = new PromptInstance(
                 null,
                 List.of(new PromptMessage(Role.USER,
                         new ContentBlock.Audio("sound".getBytes(StandardCharsets.UTF_8), "audio/wav", null, null))));
         templates.add(new PromptTemplateData(audioPrompt.name(), audioPrompt, audioInstance));
-
         if (RESOURCE_CONTENT.containsKey(SAMPLE_RESOURCE.uri())) {
             var resourcePrompt = new Prompt("resource_prompt", "Resource Prompt", null, List.of(), null);
             var resourceBlock = RESOURCE_CONTENT.get(SAMPLE_RESOURCE.uri());
@@ -319,37 +304,30 @@ final class DefaultServerFixtures {
                             new ContentBlock.EmbeddedResource(resourceBlock, null, null))));
             templates.add(new PromptTemplateData(resourcePrompt.name(), resourcePrompt, resourceInstance));
         }
-
         return List.copyOf(templates);
     }
 
     private static CompletionData createCompletionEntries() {
         var entries = new ArrayList<CompletionEntry>();
         var refs = new ArrayList<Ref>();
-
         var testRef = new Ref.PromptRef("test_prompt", null, null);
         entries.add(new CompletionEntry(testRef, "test_arg", Map.of(), List.of("test_completion")));
         refs.add(testRef);
-
         var codeRef = new Ref.PromptRef("code_review", null, null);
         entries.add(new CompletionEntry(codeRef, "language", Map.of(), List.of("python", "java", "rust")));
         refs.add(codeRef);
-
         var resourceRef = new Ref.ResourceRef("file:///{path}");
         entries.add(new CompletionEntry(resourceRef, "path", Map.of(), List.of("src/", "build/", "specification/")));
         refs.add(resourceRef);
-
         var multiRef = new Ref.PromptRef("multi", null, null);
         entries.add(new CompletionEntry(multiRef, "framework", Map.of("language", "python"), List.of("flask", "fastapi", "falcon")));
         refs.add(multiRef);
-
         var manyRef = new Ref.PromptRef("many", null, null);
         var manyValues = IntStream.range(0, 120)
                 .mapToObj(i -> "item" + i)
                 .toList();
         entries.add(new CompletionEntry(manyRef, "value", Map.of(), manyValues));
         refs.add(manyRef);
-
         return new CompletionData(List.copyOf(entries), List.copyOf(new LinkedHashSet<>(refs)));
     }
 

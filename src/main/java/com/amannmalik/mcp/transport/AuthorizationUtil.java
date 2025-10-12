@@ -23,7 +23,6 @@ final class AuthorizationUtil {
         Objects.requireNonNull(req, "req");
         Objects.requireNonNull(resp, "resp");
         Objects.requireNonNull(defaultPrincipal, "defaultPrincipal");
-
         if (manager == null) {
             return Optional.of(defaultPrincipal);
         }

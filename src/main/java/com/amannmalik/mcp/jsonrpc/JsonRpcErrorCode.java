@@ -10,7 +10,6 @@ public enum JsonRpcErrorCode {
     INVALID_PARAMS(-32602),
     INTERNAL_ERROR(-32603),
     LIFECYCLE_ERROR(0);
-
     private static final Map<Integer, JsonRpcErrorCode> BY_CODE;
 
     static {

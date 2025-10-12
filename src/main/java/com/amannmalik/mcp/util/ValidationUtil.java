@@ -72,10 +72,8 @@ public final class ValidationUtil {
         if (slash >= 0 && key.indexOf('/', slash + 1) >= 0) {
             throw new IllegalArgumentException("_meta key may contain at most one '/' character: " + key);
         }
-
         var prefix = slash >= 0 ? key.substring(0, slash) : null;
         var name = slash >= 0 ? key.substring(slash + 1) : key;
-
         if (prefix != null) {
             validateMetaPrefix(prefix, key);
         }

@@ -12,7 +12,6 @@ import java.util.Set;
 import java.util.function.Consumer;
 
 public interface McpClient extends AutoCloseable {
-
     static McpClient create(McpClientConfiguration config,
                             boolean globalVerbose,
                             SamplingProvider sampling,

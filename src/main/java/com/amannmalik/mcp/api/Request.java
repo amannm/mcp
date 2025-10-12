@@ -17,7 +17,6 @@ public sealed interface Request permits
         Request.SetLevelRequest,
         Request.SubscribeRequest,
         Request.UnsubscribeRequest {
-
     record CallToolRequest(String name, JsonObject arguments, JsonObject _meta) implements Request {
         public CallToolRequest {
             if (name == null) {

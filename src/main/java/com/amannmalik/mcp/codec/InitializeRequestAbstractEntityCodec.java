@@ -12,7 +12,6 @@ import jakarta.json.JsonObject;
 import java.util.*;
 
 public final class InitializeRequestAbstractEntityCodec extends AbstractEntityCodec<InitializeRequest> {
-
     static final JsonCodec<ClientInfo> CLIENT_INFO_JSON_CODEC = new ClientInfoAbstractEntityCodec();
 
     @Override
@@ -30,14 +29,12 @@ public final class InitializeRequestAbstractEntityCodec extends AbstractEntityCo
                 .add("protocolVersion", req.protocolVersion())
                 .add("capabilities", caps.build())
                 .add("clientInfo", CLIENT_INFO_JSON_CODEC.toJson(req.clientInfo()));
-
         if (req.features().rootsListChanged()) {
             var roots = Json.createObjectBuilder()
                     .add("listChanged", true)
                     .build();
             builder.add("features", Json.createObjectBuilder().add("roots", roots).build());
         }
-
         return builder.build();
     }
 

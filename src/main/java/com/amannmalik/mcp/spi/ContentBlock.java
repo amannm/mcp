@@ -10,7 +10,6 @@ public sealed interface ContentBlock permits
         ContentBlock.Audio,
         ContentBlock.ResourceLink,
         ContentBlock.EmbeddedResource {
-
     String type();
 
     Annotations annotations();

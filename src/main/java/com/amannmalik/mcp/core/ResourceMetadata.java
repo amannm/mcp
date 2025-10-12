@@ -12,5 +12,4 @@ public record ResourceMetadata(String resource, List<String> authorizationServer
         }
         authorizationServers = List.copyOf(authorizationServers);
     }
-
 }

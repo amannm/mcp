@@ -6,7 +6,6 @@ import com.amannmalik.mcp.spi.*;
 import java.io.IOException;
 
 public interface McpServer extends AutoCloseable {
-
     static McpServer create(McpServerConfiguration config,
                             ResourceProvider resources,
                             ToolProvider tools,

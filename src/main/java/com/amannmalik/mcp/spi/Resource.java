@@ -15,7 +15,6 @@ public record Resource(
         Annotations annotations,
         JsonObject _meta
 ) implements DisplayNameProvider {
-
     public Resource {
         uri = SpiPreconditions.requireAbsoluteUri(uri);
         name = SpiPreconditions.requireClean(name);
@@ -26,5 +25,4 @@ public record Resource(
         annotations = SpiPreconditions.annotationsOrEmpty(annotations);
         SpiPreconditions.requireMeta(_meta);
     }
-
 }

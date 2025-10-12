@@ -36,9 +36,7 @@ public sealed abstract class AbstractEntityCodec<T> implements JsonCodec<T> perm
         ToolAnnotationsAbstractEntityCodec,
         ToolResultAbstractEntityCodec,
         UnsubscribeRequestAbstractEntityCodec {
-
     protected static final JsonCodec<ContentBlock> CONTENT_BLOCK_CODEC = new ContentBlockJsonCodec();
-
     protected static final Set<String> REQUEST_KEYS = Set.of("cursor", "_meta");
     protected static final Set<String> META_KEYS = Set.of("_meta");
 
