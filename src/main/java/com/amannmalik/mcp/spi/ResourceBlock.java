@@ -1,6 +1,6 @@
 package com.amannmalik.mcp.spi;
 
-import com.amannmalik.mcp.core.SpiPreconditions;
+import com.amannmalik.mcp.util.SpiPreconditions;
 import jakarta.json.JsonObject;
 
 import java.net.URI;

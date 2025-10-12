@@ -1,6 +1,7 @@
 package com.amannmalik.mcp.core;
 
 import com.amannmalik.mcp.spi.ToolAnnotations;
+import com.amannmalik.mcp.util.SpiPreconditions;
 import jakarta.json.JsonObject;
 
 public final class ToolContract {

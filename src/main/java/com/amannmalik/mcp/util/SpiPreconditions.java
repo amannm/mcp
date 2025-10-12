@@ -1,9 +1,7 @@
-package com.amannmalik.mcp.core;
+package com.amannmalik.mcp.util;
 
 import com.amannmalik.mcp.codec.AnnotationsJsonCodec;
 import com.amannmalik.mcp.spi.Annotations;
-import com.amannmalik.mcp.util.Immutable;
-import com.amannmalik.mcp.util.ValidationUtil;
 import jakarta.json.JsonObject;
 
 import java.net.URI;

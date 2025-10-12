@@ -1,6 +1,6 @@
 package com.amannmalik.mcp.spi;
 
-import com.amannmalik.mcp.core.SpiPreconditions;
+import com.amannmalik.mcp.util.SpiPreconditions;
 
 public record ModelHint(String name) {
     public ModelHint {

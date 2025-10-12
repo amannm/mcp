@@ -1,7 +1,7 @@
 package com.amannmalik.mcp.spi;
 
 import com.amannmalik.mcp.core.CompletionContract;
-import com.amannmalik.mcp.core.SpiPreconditions;
+import com.amannmalik.mcp.util.SpiPreconditions;
 
 import java.util.List;
 

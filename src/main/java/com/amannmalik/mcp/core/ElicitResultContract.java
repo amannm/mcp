@@ -1,6 +1,7 @@
 package com.amannmalik.mcp.core;
 
 import com.amannmalik.mcp.spi.ElicitationAction;
+import com.amannmalik.mcp.util.SpiPreconditions;
 import com.amannmalik.mcp.util.ValidationUtil;
 import jakarta.json.*;
 
