@@ -6,7 +6,6 @@ import jakarta.json.Json;
 import jakarta.json.JsonObject;
 
 import java.util.ArrayList;
-import java.util.List;
 
 public class ReadResourceResultJsonCodec implements JsonCodec<ReadResourceResult> {
 

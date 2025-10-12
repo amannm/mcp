@@ -5,10 +5,7 @@ import com.amannmalik.mcp.codec.JsonCodec;
 import com.amannmalik.mcp.spi.ContentBlock;
 import com.amannmalik.mcp.spi.ToolResult;
 import com.amannmalik.mcp.util.PlatformLog;
-import jakarta.json.Json;
-import jakarta.json.JsonArray;
-import jakarta.json.JsonObject;
-import jakarta.json.JsonValue;
+import jakarta.json.*;
 
 import java.lang.System.Logger;
 

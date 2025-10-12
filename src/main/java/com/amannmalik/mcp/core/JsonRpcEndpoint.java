@@ -1,37 +1,19 @@
 package com.amannmalik.mcp.core;
 
-import com.amannmalik.mcp.api.JsonRpcMessage;
+import com.amannmalik.mcp.api.*;
 import com.amannmalik.mcp.api.Notification.CancelledNotification;
 import com.amannmalik.mcp.api.Notification.ProgressNotification;
-import com.amannmalik.mcp.api.NotificationMethod;
-import com.amannmalik.mcp.api.ProgressToken;
-import com.amannmalik.mcp.api.RequestId;
-import com.amannmalik.mcp.api.RequestMethod;
-import com.amannmalik.mcp.api.Transport;
 import com.amannmalik.mcp.codec.CancelledNotificationJsonCodec;
 import com.amannmalik.mcp.codec.JsonRpcMessageJsonCodec;
-import com.amannmalik.mcp.jsonrpc.JsonRpcError;
-import com.amannmalik.mcp.jsonrpc.JsonRpcErrorCode;
-import com.amannmalik.mcp.jsonrpc.JsonRpcNotification;
-import com.amannmalik.mcp.jsonrpc.JsonRpcRequest;
-import com.amannmalik.mcp.jsonrpc.JsonRpcResponse;
+import com.amannmalik.mcp.jsonrpc.*;
 import jakarta.json.JsonObject;
 
 import java.io.IOException;
 import java.time.Duration;
-import java.util.EnumMap;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
+import java.util.*;
+import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicLong;
-import java.util.function.Consumer;
-import java.util.function.Function;
-import java.util.function.Supplier;
+import java.util.function.*;
 
 public abstract sealed class JsonRpcEndpoint implements AutoCloseable permits ClientRuntime, ServerRuntime {
     protected static final JsonRpcMessageJsonCodec CODEC = new JsonRpcMessageJsonCodec();
@@ -47,6 +29,14 @@ public abstract sealed class JsonRpcEndpoint implements AutoCloseable permits Cl
         this.transport = Objects.requireNonNull(transport, "transport required");
         this.progress = Objects.requireNonNull(progress, "progress required");
         this.counter = new AtomicLong(initialId);
+    }
+
+    private static IOException unwrapExecutionException(ExecutionException e) {
+        var cause = e.getCause();
+        if (cause instanceof IOException io) {
+            return io;
+        }
+        return new IOException(cause);
     }
 
     protected final synchronized void send(JsonRpcMessage msg) throws IOException {
@@ -131,14 +121,6 @@ public abstract sealed class JsonRpcEndpoint implements AutoCloseable permits Cl
         } finally {
             pending.remove(id);
         }
-    }
-
-    private static IOException unwrapExecutionException(ExecutionException e) {
-        var cause = e.getCause();
-        if (cause instanceof IOException io) {
-            return io;
-        }
-        return new IOException(cause);
     }
 
     private JsonRpcMessage getCompleted(CompletableFuture<JsonRpcMessage> future) throws IOException {

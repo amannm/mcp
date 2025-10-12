@@ -27,16 +27,16 @@ public record JsonRpcError(RequestId id, ErrorDetail error) implements JsonRpcMe
         return new JsonRpcError(id, new ErrorDetail(code, message, data));
     }
 
+    @Override
+    public String jsonrpc() {
+        return JsonRpc.VERSION;
+    }
+
     public record ErrorDetail(int code, String message, JsonValue data) {
         public ErrorDetail {
             if (message == null) {
                 throw new IllegalArgumentException("message is required");
             }
         }
-    }
-
-    @Override
-    public String jsonrpc() {
-        return JsonRpc.VERSION;
     }
 }

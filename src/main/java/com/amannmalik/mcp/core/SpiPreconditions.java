@@ -7,15 +7,8 @@ import com.amannmalik.mcp.util.ValidationUtil;
 import jakarta.json.JsonObject;
 
 import java.net.URI;
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Set;
+import java.util.*;
 
-/**
- * Centralises contract enforcement for the exported SPI so that the public API stays declarative.
- */
 public final class SpiPreconditions {
 
     private SpiPreconditions() {

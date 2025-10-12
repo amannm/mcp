@@ -1,15 +1,11 @@
 package com.amannmalik.mcp.core;
 
 import com.amannmalik.mcp.spi.*;
-import com.amannmalik.mcp.util.Immutable;
 
-import java.util.*;
-import java.util.stream.Collectors;
+import java.util.List;
+import java.util.Map;
 
 public record PromptTemplate(Prompt prompt, List<PromptMessageTemplate> messages) {
-    public PromptTemplate {
-        messages = Immutable.list(messages);
-    }
 
     private static PromptContent instantiate(PromptContent tmpl, Map<String, String> args) {
         return switch (tmpl) {
@@ -18,7 +14,6 @@ public record PromptTemplate(Prompt prompt, List<PromptMessageTemplate> messages
             case ContentBlock.Audio a -> new ContentBlock.Audio(a.data(), a.mimeType(), a.annotations(), a._meta());
             case ContentBlock.EmbeddedResource r -> new ContentBlock.EmbeddedResource(r.resource(), r.annotations(), r._meta());
             case ContentBlock.ResourceLink l -> new ContentBlock.ResourceLink(l.resource());
-            default -> tmpl;
         };
     }
 
@@ -35,31 +30,4 @@ public record PromptTemplate(Prompt prompt, List<PromptMessageTemplate> messages
         return List.copyOf(messages);
     }
 
-    PromptInstance instantiate(Map<String, String> args) {
-        var provided = Immutable.map(args);
-
-        if (!prompt.arguments().isEmpty()) {
-            var allowed = prompt.arguments().stream()
-                    .map(PromptArgument::name)
-                    .collect(Collectors.toUnmodifiableSet());
-
-            for (var name : provided.keySet()) {
-                if (!allowed.contains(name)) {
-                    throw new IllegalArgumentException("unknown argument: " + name);
-                }
-            }
-
-            for (var a : prompt.arguments()) {
-                if (a.required() && !provided.containsKey(a.name())) {
-                    throw new IllegalArgumentException("missing argument: " + a.name());
-                }
-            }
-        }
-
-        List<PromptMessage> list = new ArrayList<>(messages.size());
-        for (var t : messages) {
-            list.add(new PromptMessage(t.role(), instantiate(t.content(), provided)));
-        }
-        return new PromptInstance(prompt.description(), list);
-    }
 }

@@ -2,10 +2,7 @@ package com.amannmalik.mcp.core;
 
 import com.amannmalik.mcp.spi.ElicitationAction;
 import com.amannmalik.mcp.util.ValidationUtil;
-import jakarta.json.JsonNumber;
-import jakarta.json.JsonObject;
-import jakarta.json.JsonString;
-import jakarta.json.JsonValue;
+import jakarta.json.*;
 
 public final class ElicitResultContract {
     private ElicitResultContract() {

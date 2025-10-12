@@ -5,7 +5,8 @@ import com.amannmalik.mcp.spi.PromptMessage;
 import jakarta.json.Json;
 import jakarta.json.JsonObject;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Set;
 
 public final class PromptInstanceAbstractEntityCodec extends AbstractEntityCodec<PromptInstance> {
 

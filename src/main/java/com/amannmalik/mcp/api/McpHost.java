@@ -1,13 +1,7 @@
 package com.amannmalik.mcp.api;
 
 import com.amannmalik.mcp.core.HostRuntime;
-import com.amannmalik.mcp.spi.Cursor;
-import com.amannmalik.mcp.spi.ListResourceTemplatesResult;
-import com.amannmalik.mcp.spi.ListResourcesResult;
-import com.amannmalik.mcp.spi.ListToolsResult;
-import com.amannmalik.mcp.spi.ResourceUpdate;
-import com.amannmalik.mcp.spi.Role;
-import com.amannmalik.mcp.spi.ToolResult;
+import com.amannmalik.mcp.spi.*;
 import jakarta.json.JsonObject;
 
 import java.io.IOException;

@@ -4,7 +4,8 @@ import com.amannmalik.mcp.spi.Cursor;
 import com.amannmalik.mcp.spi.Pagination;
 import jakarta.json.JsonObject;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Set;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 
