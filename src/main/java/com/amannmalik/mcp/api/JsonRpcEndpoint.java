@@ -154,7 +154,6 @@ abstract sealed class JsonRpcEndpoint implements AutoCloseable permits McpClient
         if (req == null) {
             throw new IllegalArgumentException("request required");
         }
-
         final Optional<ProgressToken> token;
         try {
             token = progress.register(req.id(), req.params());
@@ -165,7 +164,6 @@ abstract sealed class JsonRpcEndpoint implements AutoCloseable permits McpClient
             progress.release(req.id());
             return Optional.of(JsonRpcError.of(req.id(), JsonRpcErrorCode.INVALID_PARAMS, e.getMessage()));
         }
-
         try {
             token.ifPresent(t -> sendProgress(t, 0.0));
             if (cancellable && progress.isCancelled(req.id())) {
