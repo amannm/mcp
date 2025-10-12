@@ -1,6 +1,5 @@
 package com.amannmalik.mcp.spi;
 
-import com.amannmalik.mcp.codec.ElicitRequestJsonCodec;
 import jakarta.json.JsonObject;
 
 /// - [Elicitation](specification/2025-06-18/client/elicitation.mdx)
@@ -8,12 +7,8 @@ import jakarta.json.JsonObject;
 public non-sealed interface ElicitationProvider extends ExecutingProvider<ElicitRequest, ElicitResult> {
     ElicitResult elicit(ElicitRequest request, long timeoutMillis) throws InterruptedException;
 
-    default ElicitResult elicit(ElicitRequest request) throws InterruptedException {
-        return elicit(request, 0);
-    }
+    ElicitResult elicit(ElicitRequest request) throws InterruptedException;
 
     @Override
-    default ElicitResult execute(String name, JsonObject args) throws InterruptedException {
-        return elicit(new ElicitRequestJsonCodec().fromJson(args), 0);
-    }
+    ElicitResult execute(String name, JsonObject args) throws InterruptedException;
 }

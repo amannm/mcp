@@ -19,15 +19,4 @@ public record Tool(String name,
         annotations = ToolContract.normalizeAnnotations(annotations);
         SpiPreconditions.requireMeta(_meta);
     }
-
-    @Override
-    public String displayName() {
-        if (title != null) {
-            return title;
-        }
-        if (annotations != null && annotations.title() != null) {
-            return annotations.title();
-        }
-        return name;
-    }
 }

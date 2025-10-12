@@ -181,6 +181,11 @@ public final class ServerHarness implements Closeable {
             public ToolResult call(String name, JsonObject arguments) {
                 return new ToolResult(Json.createArrayBuilder().build(), null, false, null);
             }
+
+            @Override
+            public ToolResult execute(String name, JsonObject args) {
+                return call(name, args);
+            }
         };
         var prompts = new PromptProvider() {
             @Override
@@ -271,6 +276,11 @@ public final class ServerHarness implements Closeable {
             @Override
             public CreateMessageResponse createMessage(CreateMessageRequest request) {
                 return createMessage(request, Duration.ZERO);
+            }
+
+            @Override
+            public Pagination.Page<SamplingMessage> list(Cursor cursor) {
+                return new Pagination.Page<>(List.of(), Cursor.End.INSTANCE);
             }
 
             @Override

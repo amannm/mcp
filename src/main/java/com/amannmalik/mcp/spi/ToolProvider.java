@@ -8,7 +8,5 @@ public non-sealed interface ToolProvider extends ExecutingProvider<Tool, ToolRes
     ToolResult call(String name, JsonObject arguments);
 
     @Override
-    default ToolResult execute(String name, JsonObject args) {
-        return call(name, args);
-    }
+    ToolResult execute(String name, JsonObject args);
 }

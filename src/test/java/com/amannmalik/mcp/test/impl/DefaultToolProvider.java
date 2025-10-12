@@ -70,6 +70,11 @@ public final class DefaultToolProvider implements ToolProvider {
         return result;
     }
 
+    @Override
+    public ToolResult execute(String name, JsonObject args) {
+        return call(name, args);
+    }
+
     private void validateArguments(Tool tool, JsonObject args) {
         var schema = tool.inputSchema();
         if (schema == null || !"object".equals(schema.getString("type", null))) {

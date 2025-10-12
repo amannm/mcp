@@ -7,6 +7,7 @@ import jakarta.json.JsonObject;
 import java.io.Closeable;
 import java.io.IOException;
 import java.time.Duration;
+import java.util.List;
 
 public final class DefaultSamplingProvider implements SamplingProvider {
     @Override
@@ -31,6 +32,11 @@ public final class DefaultSamplingProvider implements SamplingProvider {
     @Override
     public CreateMessageResponse createMessage(CreateMessageRequest request) throws InterruptedException {
         return createMessage(request, Duration.ZERO);
+    }
+
+    @Override
+    public Pagination.Page<SamplingMessage> list(Cursor cursor) {
+        return new Pagination.Page<>(List.of(), Cursor.End.INSTANCE);
     }
 
     @Override

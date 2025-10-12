@@ -1,5 +1,6 @@
 package com.amannmalik.mcp.test.impl;
 
+import com.amannmalik.mcp.codec.ElicitRequestJsonCodec;
 import com.amannmalik.mcp.spi.*;
 import jakarta.json.*;
 
@@ -20,6 +21,21 @@ public final class DefaultElicitationProvider implements ElicitationProvider {
             }
         }
         return new ElicitResult(ElicitationAction.ACCEPT, builder.build(), null);
+    }
+
+    @Override
+    public Pagination.Page<ElicitRequest> list(Cursor cursor) {
+        return null;
+    }
+
+    @Override
+    public ElicitResult elicit(ElicitRequest request) {
+        return elicit(request, 0);
+    }
+
+    @Override
+    public ElicitResult execute(String name, JsonObject args) throws InterruptedException {
+        return elicit(new ElicitRequestJsonCodec().fromJson(args), 0);
     }
 
     private JsonValue defaultValue(JsonObject property) {
