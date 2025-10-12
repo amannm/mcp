@@ -122,7 +122,7 @@ public final class HostCommand {
             var clientConfigs = parseClientConfigs(clientSpecs, verbose, tls);
             var config = McpHostConfiguration.withClientConfigurations(clientConfigs);
 
-            try (var host = new McpHost(config)) {
+            try (var host = McpHost.create(config)) {
                 for (var clientConfig : clientConfigs) {
                     host.client(clientConfig.clientId()).connect();
                     if (verbose || clientConfig.verbose()) {

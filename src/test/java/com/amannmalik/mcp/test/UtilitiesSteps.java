@@ -119,7 +119,7 @@ public final class UtilitiesSteps {
                 false,
                 List.of(clientConfig)
         );
-        activeConnection = new McpHost(hostConfig);
+        activeConnection = McpHost.create(hostConfig);
         activeConnection.grantConsent("server");
         clientId = clientConfig.clientId();
         activeConnection.connect(clientId);

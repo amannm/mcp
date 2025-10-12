@@ -1,15 +1,13 @@
 package com.amannmalik.mcp.spi;
 
-import com.amannmalik.mcp.util.ValidationUtil;
+import com.amannmalik.mcp.spi.internal.SpiPreconditions;
 
 public record Argument(String name, String value) {
 
-    public Argument(String name, String value) {
-        if (name == null || value == null) {
-            throw new IllegalArgumentException("name and value are required");
-        }
-        this.name = ValidationUtil.requireClean(name);
-        this.value = ValidationUtil.requireClean(value);
+    public Argument {
+        SpiPreconditions.requireAllNonNull("name and value are required", name, value);
+        name = SpiPreconditions.requireClean(name);
+        value = SpiPreconditions.requireClean(value);
     }
 
 }

@@ -198,7 +198,7 @@ public final class ServerCommand {
             var sampling = ServiceLoaders.loadSingleton(SamplingProvider.class);
             var toolAccess = ServiceLoaders.loadSingleton(ToolAccessPolicy.class);
             var samplingAccessPolicy = ServiceLoaders.loadSingleton(SamplingAccessPolicy.class);
-            try (var server = new McpServer(config, resources,
+            try (var server = McpServer.create(config, resources,
                     tools,
                     prompts,
                     completions,

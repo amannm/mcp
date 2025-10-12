@@ -1,7 +1,6 @@
 package com.amannmalik.mcp.spi;
 
-import com.amannmalik.mcp.codec.AnnotationsJsonCodec;
-import com.amannmalik.mcp.util.ValidationUtil;
+import com.amannmalik.mcp.spi.internal.SpiPreconditions;
 import jakarta.json.JsonObject;
 
 import java.net.URI;
@@ -18,16 +17,14 @@ public record Resource(
 ) implements DisplayNameProvider {
 
     public Resource {
-        uri = ValidationUtil.requireAbsoluteUri(uri);
-        name = ValidationUtil.requireClean(name);
-        title = ValidationUtil.cleanNullable(title);
-        description = ValidationUtil.cleanNullable(description);
-        mimeType = ValidationUtil.cleanNullable(mimeType);
-        if (size != null) {
-            size = ValidationUtil.requireNonNegative(size, "size");
-        }
-        annotations = annotations == null ? AnnotationsJsonCodec.EMPTY : annotations;
-        ValidationUtil.requireMeta(_meta);
+        uri = SpiPreconditions.requireAbsoluteUri(uri);
+        name = SpiPreconditions.requireClean(name);
+        title = SpiPreconditions.cleanNullable(title);
+        description = SpiPreconditions.cleanNullable(description);
+        mimeType = SpiPreconditions.cleanNullable(mimeType);
+        size = SpiPreconditions.nonNegativeOrNull(size, "size");
+        annotations = SpiPreconditions.annotationsOrEmpty(annotations);
+        SpiPreconditions.requireMeta(_meta);
     }
 
 }

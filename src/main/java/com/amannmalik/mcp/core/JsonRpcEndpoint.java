@@ -1,22 +1,39 @@
-package com.amannmalik.mcp.api;
+package com.amannmalik.mcp.core;
 
+import com.amannmalik.mcp.api.JsonRpcMessage;
 import com.amannmalik.mcp.api.Notification.CancelledNotification;
 import com.amannmalik.mcp.api.Notification.ProgressNotification;
+import com.amannmalik.mcp.api.NotificationMethod;
+import com.amannmalik.mcp.api.ProgressToken;
+import com.amannmalik.mcp.api.RequestId;
+import com.amannmalik.mcp.api.RequestMethod;
+import com.amannmalik.mcp.api.Transport;
 import com.amannmalik.mcp.codec.CancelledNotificationJsonCodec;
 import com.amannmalik.mcp.codec.JsonRpcMessageJsonCodec;
-import com.amannmalik.mcp.core.DuplicateRequestException;
-import com.amannmalik.mcp.core.ProgressManager;
-import com.amannmalik.mcp.jsonrpc.*;
+import com.amannmalik.mcp.jsonrpc.JsonRpcError;
+import com.amannmalik.mcp.jsonrpc.JsonRpcErrorCode;
+import com.amannmalik.mcp.jsonrpc.JsonRpcNotification;
+import com.amannmalik.mcp.jsonrpc.JsonRpcRequest;
+import com.amannmalik.mcp.jsonrpc.JsonRpcResponse;
 import jakarta.json.JsonObject;
 
 import java.io.IOException;
 import java.time.Duration;
-import java.util.*;
-import java.util.concurrent.*;
+import java.util.EnumMap;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicLong;
-import java.util.function.*;
+import java.util.function.Consumer;
+import java.util.function.Function;
+import java.util.function.Supplier;
 
-abstract sealed class JsonRpcEndpoint implements AutoCloseable permits McpClient, McpServer {
+public abstract sealed class JsonRpcEndpoint implements AutoCloseable permits ClientRuntime, ServerRuntime {
     protected static final JsonRpcMessageJsonCodec CODEC = new JsonRpcMessageJsonCodec();
     protected static final CancelledNotificationJsonCodec CANCEL_CODEC = new CancelledNotificationJsonCodec();
     protected final Transport transport;
@@ -47,6 +64,7 @@ abstract sealed class JsonRpcEndpoint implements AutoCloseable permits McpClient
             case JsonRpcNotification note -> handleNotification(note);
             case JsonRpcResponse resp -> complete(resp.id(), resp);
             case JsonRpcError err -> complete(err.id(), err);
+            default -> throw new IllegalStateException("Unsupported message type: " + msg);
         }
     }
 

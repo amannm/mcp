@@ -1,7 +1,7 @@
 package com.amannmalik.mcp.spi;
 
-import com.amannmalik.mcp.util.Immutable;
-import com.amannmalik.mcp.util.ValidationUtil;
+import com.amannmalik.mcp.spi.internal.CursorCodec;
+import com.amannmalik.mcp.spi.internal.SpiPreconditions;
 import jakarta.json.JsonObject;
 
 import java.util.List;
@@ -10,18 +10,18 @@ public record ListResourceTemplatesResult(List<ResourceTemplate> resourceTemplat
                                           Cursor nextCursor,
                                           JsonObject _meta) implements PaginatedResult<ResourceTemplate> {
     public ListResourceTemplatesResult {
-        resourceTemplates = Immutable.list(resourceTemplates);
-        nextCursor = nextCursor == null ? Cursor.End.INSTANCE : nextCursor;
-        ValidationUtil.requireMeta(_meta);
+        resourceTemplates = SpiPreconditions.immutableList(resourceTemplates);
+        nextCursor = CursorCodec.requireCursor(nextCursor);
+        SpiPreconditions.requireMeta(_meta);
     }
 
     @Override
     public List<ResourceTemplate> resourceTemplates() {
-        return List.copyOf(resourceTemplates);
+        return SpiPreconditions.copyList(resourceTemplates);
     }
 
     @Override
     public List<ResourceTemplate> items() {
-        return List.copyOf(resourceTemplates);
+        return SpiPreconditions.copyList(resourceTemplates);
     }
 }

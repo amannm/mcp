@@ -1,7 +1,7 @@
 package com.amannmalik.mcp.spi;
 
-import com.amannmalik.mcp.util.Immutable;
-import com.amannmalik.mcp.util.ValidationUtil;
+import com.amannmalik.mcp.spi.internal.CreateMessageRequestContract;
+import com.amannmalik.mcp.spi.internal.SpiPreconditions;
 import jakarta.json.JsonObject;
 
 import java.util.List;
@@ -19,23 +19,21 @@ public record CreateMessageRequest(
 ) {
 
     public CreateMessageRequest {
-        messages = Immutable.list(messages);
-        systemPrompt = ValidationUtil.cleanNullable(systemPrompt);
-        stopSequences = Immutable.list(stopSequences == null
-                ? null
-                : stopSequences.stream().map(ValidationUtil::requireClean).toList());
-        maxTokens = ValidationUtil.requirePositive(maxTokens, "maxTokens");
-        ValidationUtil.requireMeta(_meta);
+        messages = CreateMessageRequestContract.sanitizeMessages(messages);
+        systemPrompt = CreateMessageRequestContract.sanitizeSystemPrompt(systemPrompt);
+        stopSequences = CreateMessageRequestContract.sanitizeStopSequences(stopSequences);
+        maxTokens = CreateMessageRequestContract.normalizeMaxTokens(maxTokens);
+        SpiPreconditions.requireMeta(_meta);
     }
 
     @Override
     public List<SamplingMessage> messages() {
-        return List.copyOf(messages);
+        return SpiPreconditions.copyList(messages);
     }
 
     @Override
     public List<String> stopSequences() {
-        return List.copyOf(stopSequences);
+        return SpiPreconditions.copyList(stopSequences);
     }
 
     public enum IncludeContext {NONE, THIS_SERVER, ALL_SERVERS}

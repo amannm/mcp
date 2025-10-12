@@ -310,7 +310,7 @@ public final class ProtocolLifecycleSteps {
     @When("I establish a connection with the server")
     public void i_establish_a_connection_with_the_server() throws Exception {
         if (hostConfig == null) return;
-        activeConnection = new McpHost(hostConfig);
+        activeConnection = McpHost.create(hostConfig);
 
         // Grant consent for server connection in test environment
         activeConnection.grantConsent("server");

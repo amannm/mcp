@@ -1,16 +1,16 @@
 package com.amannmalik.mcp.spi;
 
-import com.amannmalik.mcp.util.Immutable;
+import com.amannmalik.mcp.spi.internal.SpiPreconditions;
 
 import java.util.List;
 
 public record PromptInstance(String description, List<PromptMessage> messages) {
     public PromptInstance {
-        messages = Immutable.list(messages);
+        messages = SpiPreconditions.immutableList(messages);
     }
 
     @Override
     public List<PromptMessage> messages() {
-        return List.copyOf(messages);
+        return SpiPreconditions.copyList(messages);
     }
 }

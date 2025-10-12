@@ -217,7 +217,7 @@ public final class ServerHarness implements Closeable {
         var toolAccess = loadSingleton(ToolAccessPolicy.class);
         var samplingAccessPolicy = loadSingleton(SamplingAccessPolicy.class);
 
-        var server = new McpServer(
+        var server = McpServer.create(
                 config,
                 resources,
                 tools,

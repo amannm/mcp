@@ -1,18 +1,12 @@
 package com.amannmalik.mcp.spi;
 
-import com.amannmalik.mcp.util.ElicitSchemaValidator;
-import com.amannmalik.mcp.util.ValidationUtil;
+import com.amannmalik.mcp.spi.internal.ElicitRequestContract;
 import jakarta.json.JsonObject;
 
 public record ElicitRequest(String message, JsonObject requestedSchema, JsonObject _meta) {
-    public ElicitRequest(String message, JsonObject requestedSchema, JsonObject _meta) {
-        if (message == null || requestedSchema == null) {
-            throw new IllegalArgumentException("message and requestedSchema are required");
-        }
-        this.message = ValidationUtil.requireClean(message);
-        ElicitSchemaValidator.requireElicitSchema(requestedSchema);
-        this.requestedSchema = requestedSchema;
-        ValidationUtil.requireMeta(_meta);
-        this._meta = _meta;
+    public ElicitRequest {
+        message = ElicitRequestContract.sanitizeMessage(message);
+        requestedSchema = ElicitRequestContract.sanitizeSchema(requestedSchema);
+        _meta = ElicitRequestContract.requireMeta(_meta);
     }
 }

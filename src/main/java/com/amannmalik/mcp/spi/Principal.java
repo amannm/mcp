@@ -1,19 +1,17 @@
 package com.amannmalik.mcp.spi;
 
-import com.amannmalik.mcp.util.Immutable;
+import com.amannmalik.mcp.spi.internal.SpiPreconditions;
 
 import java.util.Set;
 
 public record Principal(String id, Set<String> scopes) {
     public Principal {
-        if (id == null) {
-            throw new IllegalArgumentException("id is required");
-        }
-        scopes = Immutable.set(scopes);
+        SpiPreconditions.requireNonNull(id, "id is required");
+        scopes = SpiPreconditions.immutableSet(scopes);
     }
 
     @Override
     public Set<String> scopes() {
-        return Set.copyOf(scopes);
+        return SpiPreconditions.copySet(scopes);
     }
 }

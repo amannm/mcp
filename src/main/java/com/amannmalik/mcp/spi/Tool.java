@@ -1,6 +1,7 @@
 package com.amannmalik.mcp.spi;
 
-import com.amannmalik.mcp.util.ValidationUtil;
+import com.amannmalik.mcp.spi.internal.SpiPreconditions;
+import com.amannmalik.mcp.spi.internal.ToolContract;
 import jakarta.json.JsonObject;
 
 public record Tool(String name,
@@ -12,20 +13,12 @@ public record Tool(String name,
                    JsonObject _meta) implements DisplayNameProvider {
 
     public Tool {
-        name = ValidationUtil.requireClean(name);
-        if (inputSchema == null) {
-            throw new IllegalArgumentException("inputSchema is required");
-        }
-        title = ValidationUtil.cleanNullable(title);
-        description = ValidationUtil.cleanNullable(description);
-        annotations = annotations == null || (
-                annotations.title() == null &&
-                        annotations.readOnlyHint() == null &&
-                        annotations.destructiveHint() == null &&
-                        annotations.idempotentHint() == null &&
-                        annotations.openWorldHint() == null
-        ) ? null : annotations;
-        ValidationUtil.requireMeta(_meta);
+        name = SpiPreconditions.requireClean(name);
+        inputSchema = ToolContract.requireInputSchema(inputSchema);
+        title = SpiPreconditions.cleanNullable(title);
+        description = SpiPreconditions.cleanNullable(description);
+        annotations = ToolContract.normalizeAnnotations(annotations);
+        SpiPreconditions.requireMeta(_meta);
     }
 
     @Override

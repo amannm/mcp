@@ -1,6 +1,6 @@
 package com.amannmalik.mcp.spi;
 
-import com.amannmalik.mcp.util.ValidationUtil;
+import com.amannmalik.mcp.spi.internal.SpiPreconditions;
 import jakarta.json.JsonObject;
 
 import java.net.URI;
@@ -17,27 +17,24 @@ public sealed interface ResourceBlock permits
 
     record Text(URI uri, String mimeType, String text, JsonObject _meta) implements ResourceBlock {
         public Text {
-            uri = ValidationUtil.requireAbsoluteUri(uri);
-            mimeType = ValidationUtil.cleanNullable(mimeType);
-            text = ValidationUtil.requireClean(text);
-            ValidationUtil.requireMeta(_meta);
+            uri = SpiPreconditions.requireAbsoluteUri(uri);
+            mimeType = SpiPreconditions.cleanNullable(mimeType);
+            text = SpiPreconditions.requireClean(text);
+            SpiPreconditions.requireMeta(_meta);
         }
     }
 
     record Binary(URI uri, String mimeType, byte[] blob, JsonObject _meta) implements ResourceBlock {
         public Binary {
-            uri = ValidationUtil.requireAbsoluteUri(uri);
-            mimeType = ValidationUtil.cleanNullable(mimeType);
-            if (blob == null) {
-                throw new IllegalArgumentException("blob is required");
-            }
-            blob = blob.clone();
-            ValidationUtil.requireMeta(_meta);
+            uri = SpiPreconditions.requireAbsoluteUri(uri);
+            mimeType = SpiPreconditions.cleanNullable(mimeType);
+            blob = SpiPreconditions.requireData(blob, "blob");
+            SpiPreconditions.requireMeta(_meta);
         }
 
         @Override
         public byte[] blob() {
-            return blob.clone();
+            return SpiPreconditions.clone(blob);
         }
     }
 

@@ -132,7 +132,7 @@ public final class ServerFeaturesSteps {
                 false,
                 List.of(clientConfig)
         );
-        activeConnection = new McpHost(hostConfig);
+        activeConnection = McpHost.create(hostConfig);
         activeConnection.allowAudience(Role.USER);
         activeConnection.grantConsent("server");
         activeConnection.grantConsent("tool:test_tool");

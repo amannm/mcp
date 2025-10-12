@@ -1,7 +1,7 @@
 package com.amannmalik.mcp.spi;
 
-import com.amannmalik.mcp.codec.AnnotationsJsonCodec;
-import com.amannmalik.mcp.util.ValidationUtil;
+import com.amannmalik.mcp.spi.internal.ContentBlockContract;
+import com.amannmalik.mcp.spi.internal.SpiPreconditions;
 import jakarta.json.JsonObject;
 
 public sealed interface ContentBlock permits
@@ -10,27 +10,6 @@ public sealed interface ContentBlock permits
         ContentBlock.Audio,
         ContentBlock.ResourceLink,
         ContentBlock.EmbeddedResource {
-    private static Annotations orEmpty(Annotations annotations) {
-        return annotations == null ? AnnotationsJsonCodec.EMPTY : annotations;
-    }
-
-    private static void validateMeta(JsonObject meta) {
-        ValidationUtil.requireMeta(meta);
-    }
-
-    private static byte[] requireData(byte[] data) {
-        if (data == null) {
-            throw new IllegalArgumentException("data is required");
-        }
-        return data.clone();
-    }
-
-    private static String requireMimeType(String mimeType) {
-        if (mimeType == null) {
-            throw new IllegalArgumentException("mimeType is required");
-        }
-        return ValidationUtil.requireClean(mimeType);
-    }
 
     String type();
 
@@ -41,12 +20,9 @@ public sealed interface ContentBlock permits
     record Text(String text, Annotations annotations, JsonObject _meta)
             implements ContentBlock, PromptContent, MessageContent {
         public Text {
-            if (text == null) {
-                throw new IllegalArgumentException("text is required");
-            }
-            text = ValidationUtil.requireClean(text);
-            validateMeta(_meta);
-            annotations = orEmpty(annotations);
+            text = ContentBlockContract.requireText(text);
+            ContentBlockContract.requireMeta(_meta);
+            annotations = ContentBlockContract.normalizeAnnotations(annotations);
         }
 
         @Override
@@ -58,10 +34,10 @@ public sealed interface ContentBlock permits
     record Image(byte[] data, String mimeType, Annotations annotations, JsonObject _meta)
             implements ContentBlock, PromptContent, MessageContent {
         public Image {
-            data = requireData(data);
-            mimeType = requireMimeType(mimeType);
-            validateMeta(_meta);
-            annotations = orEmpty(annotations);
+            data = ContentBlockContract.requireData(data);
+            mimeType = ContentBlockContract.requireMimeType(mimeType);
+            ContentBlockContract.requireMeta(_meta);
+            annotations = ContentBlockContract.normalizeAnnotations(annotations);
         }
 
         @Override
@@ -71,17 +47,17 @@ public sealed interface ContentBlock permits
 
         @Override
         public byte[] data() {
-            return data.clone();
+            return ContentBlockContract.copy(data);
         }
     }
 
     record Audio(byte[] data, String mimeType, Annotations annotations, JsonObject _meta)
             implements ContentBlock, PromptContent, MessageContent {
         public Audio {
-            data = requireData(data);
-            mimeType = requireMimeType(mimeType);
-            validateMeta(_meta);
-            annotations = orEmpty(annotations);
+            data = ContentBlockContract.requireData(data);
+            mimeType = ContentBlockContract.requireMimeType(mimeType);
+            ContentBlockContract.requireMeta(_meta);
+            annotations = ContentBlockContract.normalizeAnnotations(annotations);
         }
 
         @Override
@@ -91,16 +67,14 @@ public sealed interface ContentBlock permits
 
         @Override
         public byte[] data() {
-            return data.clone();
+            return ContentBlockContract.copy(data);
         }
     }
 
     record ResourceLink(Resource resource)
             implements ContentBlock, PromptContent {
         public ResourceLink {
-            if (resource == null) {
-                throw new IllegalArgumentException("resource is required");
-            }
+            SpiPreconditions.requireNonNull(resource, "resource is required");
         }
 
         @Override
@@ -122,11 +96,9 @@ public sealed interface ContentBlock permits
     record EmbeddedResource(ResourceBlock resource, Annotations annotations, JsonObject _meta)
             implements ContentBlock, PromptContent {
         public EmbeddedResource {
-            if (resource == null) {
-                throw new IllegalArgumentException("resource is required");
-            }
-            validateMeta(_meta);
-            annotations = orEmpty(annotations);
+            SpiPreconditions.requireNonNull(resource, "resource is required");
+            ContentBlockContract.requireMeta(_meta);
+            annotations = ContentBlockContract.normalizeAnnotations(annotations);
         }
 
         @Override

@@ -1,6 +1,6 @@
 package com.amannmalik.mcp.spi;
 
-import com.amannmalik.mcp.util.ValidationUtil;
+import com.amannmalik.mcp.spi.internal.SpiPreconditions;
 import jakarta.json.JsonObject;
 
 public record CreateMessageResponse(
@@ -12,10 +12,8 @@ public record CreateMessageResponse(
 ) implements Result {
 
     public CreateMessageResponse {
-        if (role == null || content == null || model == null) {
-            throw new IllegalArgumentException("role, content, and model are required");
-        }
-        ValidationUtil.requireMeta(_meta);
+        SpiPreconditions.requireAllNonNull("role, content, and model are required", role, content, model);
+        SpiPreconditions.requireMeta(_meta);
     }
 
 }
