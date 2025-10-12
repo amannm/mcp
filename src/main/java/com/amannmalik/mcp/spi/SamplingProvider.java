@@ -1,6 +1,5 @@
 package com.amannmalik.mcp.spi;
 
-import com.amannmalik.mcp.codec.CreateMessageRequestJsonCodec;
 import jakarta.json.JsonObject;
 
 import java.time.Duration;
@@ -10,12 +9,8 @@ import java.time.Duration;
 public non-sealed interface SamplingProvider extends ExecutingProvider<SamplingMessage, CreateMessageResponse> {
     CreateMessageResponse createMessage(CreateMessageRequest request, Duration timeoutMillis) throws InterruptedException;
 
-    default CreateMessageResponse createMessage(CreateMessageRequest request) throws InterruptedException {
-        return createMessage(request, Duration.ZERO);
-    }
+    CreateMessageResponse createMessage(CreateMessageRequest request) throws InterruptedException;
 
     @Override
-    default CreateMessageResponse execute(String name, JsonObject args) throws InterruptedException {
-        return createMessage(new CreateMessageRequestJsonCodec().fromJson(args), Duration.ZERO);
-    }
+    CreateMessageResponse execute(String name, JsonObject args) throws InterruptedException;
 }

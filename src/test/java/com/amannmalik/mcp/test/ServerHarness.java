@@ -1,6 +1,7 @@
 package com.amannmalik.mcp.test;
 
 import com.amannmalik.mcp.api.*;
+import com.amannmalik.mcp.codec.CreateMessageRequestJsonCodec;
 import com.amannmalik.mcp.spi.*;
 import jakarta.json.Json;
 import jakarta.json.JsonObject;
@@ -208,6 +209,16 @@ public final class ServerHarness implements Closeable {
             @Override
             public CreateMessageResponse createMessage(CreateMessageRequest request, Duration timeoutMillis) {
                 return new CreateMessageResponse(Role.ASSISTANT, new ContentBlock.Text("ok", null, null), "model", "stop", null);
+            }
+
+            @Override
+            public CreateMessageResponse createMessage(CreateMessageRequest request) {
+                return createMessage(request, Duration.ZERO);
+            }
+
+            @Override
+            public CreateMessageResponse execute(String name, JsonObject args) {
+                return createMessage(new CreateMessageRequestJsonCodec().fromJson(args), Duration.ZERO);
             }
         };
 

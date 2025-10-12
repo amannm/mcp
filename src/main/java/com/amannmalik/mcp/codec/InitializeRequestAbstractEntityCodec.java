@@ -3,9 +3,9 @@ package com.amannmalik.mcp.codec;
 import com.amannmalik.mcp.api.ClientCapability;
 import com.amannmalik.mcp.api.ClientInfo;
 import com.amannmalik.mcp.core.Capabilities;
-import com.amannmalik.mcp.core.ClientFeatures;
+import com.amannmalik.mcp.spi.ClientFeatures;
+import com.amannmalik.mcp.spi.InitializeRequest;
 import com.amannmalik.mcp.util.Immutable;
-import com.amannmalik.mcp.util.InitializeRequest;
 import jakarta.json.Json;
 import jakarta.json.JsonObject;
 

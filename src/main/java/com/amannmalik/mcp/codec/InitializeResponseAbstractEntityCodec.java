@@ -2,8 +2,8 @@ package com.amannmalik.mcp.codec;
 
 import com.amannmalik.mcp.api.*;
 import com.amannmalik.mcp.core.Capabilities;
+import com.amannmalik.mcp.spi.InitializeResponse;
 import com.amannmalik.mcp.util.Immutable;
-import com.amannmalik.mcp.util.InitializeResponse;
 import jakarta.json.Json;
 import jakarta.json.JsonObject;
 

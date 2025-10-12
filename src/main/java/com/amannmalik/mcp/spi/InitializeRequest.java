@@ -1,8 +1,7 @@
-package com.amannmalik.mcp.util;
+package com.amannmalik.mcp.spi;
 
 import com.amannmalik.mcp.api.ClientInfo;
 import com.amannmalik.mcp.core.Capabilities;
-import com.amannmalik.mcp.core.ClientFeatures;
 
 import java.util.Objects;
 

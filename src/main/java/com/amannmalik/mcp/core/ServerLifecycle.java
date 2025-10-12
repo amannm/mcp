@@ -2,8 +2,7 @@ package com.amannmalik.mcp.core;
 
 import com.amannmalik.mcp.api.*;
 import com.amannmalik.mcp.jsonrpc.JsonRpcError;
-import com.amannmalik.mcp.util.InitializeRequest;
-import com.amannmalik.mcp.util.InitializeResponse;
+import com.amannmalik.mcp.spi.*;
 
 import java.util.*;
 
@@ -28,7 +27,7 @@ public final class ServerLifecycle {
         this.declaredCapabilities = normaliseServerCapabilities(declaredCapabilities);
         this.serverInfo = Objects.requireNonNull(serverInfo, "serverInfo");
         this.instructions = instructions == null ? "" : instructions;
-        this.protocolVersion = this.supportedVersions.get(0);
+        this.protocolVersion = this.supportedVersions.getFirst();
     }
 
     private static List<String> normaliseSupportedVersions(Collection<String> versions) {
@@ -138,7 +137,7 @@ public final class ServerLifecycle {
         if (requested != null && supportedVersions.contains(requested)) {
             return requested;
         }
-        return supportedVersions.get(0);
+        return supportedVersions.getFirst();
     }
 }
 

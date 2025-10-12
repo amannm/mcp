@@ -10,6 +10,7 @@ module mcp.main {
     exports com.amannmalik.mcp.cli;
     exports com.amannmalik.mcp.api;
     exports com.amannmalik.mcp.spi;
+    exports com.amannmalik.mcp.codec;
     uses com.amannmalik.mcp.spi.ResourceProvider;
     uses com.amannmalik.mcp.spi.ToolProvider;
     uses com.amannmalik.mcp.spi.PromptProvider;

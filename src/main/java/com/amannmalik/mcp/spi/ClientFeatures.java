@@ -1,4 +1,4 @@
-package com.amannmalik.mcp.core;
+package com.amannmalik.mcp.spi;
 
 public record ClientFeatures(
         boolean rootsListChanged
