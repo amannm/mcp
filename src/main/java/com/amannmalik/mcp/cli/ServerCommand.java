@@ -190,23 +190,7 @@ public final class ServerCommand {
             config = config.withTls(httpsPort, tlsConfig, requireClientAuth);
             Path instructionsFile = parseResult.matchedOptionValue("--instructions", null);
             var instructions = instructionsFile == null ? null : Files.readString(instructionsFile);
-            var resources = ServiceLoaders.loadSingleton(ResourceProvider.class);
-            var tools = ServiceLoaders.loadSingleton(ToolProvider.class);
-            var prompts = ServiceLoaders.loadSingleton(PromptProvider.class);
-            var completions = ServiceLoaders.loadSingleton(CompletionProvider.class);
-            var sampling = ServiceLoaders.loadSingleton(SamplingProvider.class);
-            var toolAccess = ServiceLoaders.loadSingleton(ToolAccessPolicy.class);
-            var samplingAccessPolicy = ServiceLoaders.loadSingleton(SamplingAccessPolicy.class);
-            try (var server = McpServer.create(config, resources,
-                    tools,
-                    prompts,
-                    completions,
-                    sampling,
-                    privacyBoundary(config.defaultBoundary()),
-                    toolAccess,
-                    samplingAccessPolicy,
-                    defaultPrincipal(),
-                    instructions)) {
+            try (var server = McpServer.create(config, defaultPrincipal(), instructions)) {
                 server.serve();
             }
             return 0;

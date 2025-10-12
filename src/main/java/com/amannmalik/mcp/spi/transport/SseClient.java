@@ -1,4 +1,4 @@
-package com.amannmalik.mcp.transport;
+package com.amannmalik.mcp.spi.transport;
 
 import com.amannmalik.mcp.util.Base64Util;
 import com.amannmalik.mcp.util.PlatformLog;

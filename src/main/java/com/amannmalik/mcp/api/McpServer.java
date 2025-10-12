@@ -1,33 +1,17 @@
 package com.amannmalik.mcp.api;
 
 import com.amannmalik.mcp.core.ServerRuntime;
-import com.amannmalik.mcp.spi.*;
+import com.amannmalik.mcp.spi.Principal;
 
 import java.io.Closeable;
 import java.io.IOException;
 
 public interface McpServer extends Closeable {
     static McpServer create(McpServerConfiguration config,
-                            ResourceProvider resources,
-                            ToolProvider tools,
-                            PromptProvider prompts,
-                            CompletionProvider completions,
-                            SamplingProvider sampling,
-                            ResourceAccessPolicy resourceAccess,
-                            ToolAccessPolicy toolAccessPolicy,
-                            SamplingAccessPolicy samplingAccessPolicy,
                             Principal principal,
                             String instructions) throws Exception {
         return new ServerRuntime(
                 config,
-                resources,
-                tools,
-                prompts,
-                completions,
-                sampling,
-                resourceAccess,
-                toolAccessPolicy,
-                samplingAccessPolicy,
                 principal,
                 instructions);
     }

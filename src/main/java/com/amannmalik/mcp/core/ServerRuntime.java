@@ -6,7 +6,7 @@ import com.amannmalik.mcp.api.Request.*;
 import com.amannmalik.mcp.codec.*;
 import com.amannmalik.mcp.jsonrpc.*;
 import com.amannmalik.mcp.spi.*;
-import com.amannmalik.mcp.transport.*;
+import com.amannmalik.mcp.spi.transport.*;
 import com.amannmalik.mcp.util.*;
 import jakarta.json.*;
 import jakarta.json.stream.JsonParsingException;
@@ -60,7 +60,7 @@ public final class ServerRuntime extends JsonRpcEndpoint implements McpServer {
     private final McpServerConfiguration config;
     private final Set<ServerCapability> serverCapabilities;
     private final ResourceProvider resources;
-    private final ResourceAccessPolicy resourceAccess;
+    private final ResourceAccessPolicy resourceAccessPolicy;
     private final Map<URI, Closeable> resourceSubscriptions = new ConcurrentHashMap<>();
     private final ToolProvider tools;
     private final PromptProvider prompts;
@@ -69,7 +69,7 @@ public final class ServerRuntime extends JsonRpcEndpoint implements McpServer {
     private final RateLimiter toolLimiter;
     private final RootsManager rootsManager;
     private final ToolAccessPolicy toolAccessPolicy;
-    private final SamplingAccessPolicy samplingAccess;
+    private final SamplingAccessPolicy samplingAccessPolicy;
     private final Principal principal;
     private final RateLimiter completionLimiter;
     private final RateLimiter logLimiter;
@@ -83,14 +83,6 @@ public final class ServerRuntime extends JsonRpcEndpoint implements McpServer {
     private Runnable resourceListChangedEmitter;
 
     public ServerRuntime(McpServerConfiguration config,
-                         ResourceProvider resources,
-                         ToolProvider tools,
-                         PromptProvider prompts,
-                         CompletionProvider completions,
-                         SamplingProvider sampling,
-                         ResourceAccessPolicy resourceAccess,
-                         ToolAccessPolicy toolAccessPolicy,
-                         SamplingAccessPolicy samplingAccessPolicy,
                          Principal principal,
                          String instructions) throws Exception {
         super(createTransport(config),
@@ -104,28 +96,24 @@ public final class ServerRuntime extends JsonRpcEndpoint implements McpServer {
         this.logLimiter = limiter(
                 config.logsPerSecond(),
                 config.rateLimiterWindowMs());
-        this.serverCapabilities = capabilities(resources, tools, prompts, completions);
         var serverInfo = new ServerInfo(
                 config.serverName(),
                 config.serverDescription(),
                 config.serverVersion());
-        this.tools = tools;
-        this.prompts = prompts;
-        this.completions = completions;
-        this.sampling = sampling;
+        this.prompts = ServiceLoaders.loadSingleton(PromptProvider.class);
+        this.completions = ServiceLoaders.loadSingleton(CompletionProvider.class);
+        this.sampling = ServiceLoaders.loadSingleton(SamplingProvider.class);
+        this.samplingAccessPolicy = ServiceLoaders.loadSingleton(SamplingAccessPolicy.class);
+        this.tools = ServiceLoaders.loadSingleton(ToolProvider.class);
+        this.toolAccessPolicy = ServiceLoaders.loadSingleton(ToolAccessPolicy.class);
+        this.resources = ServiceLoaders.loadSingleton(ResourceProvider.class);
+        this.resourceAccessPolicy = ServiceLoaders.loadSingleton(ResourceAccessPolicy.class);
         this.principal = principal;
+        this.serverCapabilities = capabilities(resources, tools, prompts, completions);
         this.lifecycle = new ServerLifecycle(config.supportedVersions(), serverCapabilities, serverInfo, instructions);
         this.toolLimiter = limiter(config.toolsPerSecond(), config.rateLimiterWindowMs());
-        this.toolAccessPolicy = toolAccessPolicy == null
-                ? ServiceLoaders.loadSingleton(ToolAccessPolicy.class)
-                : toolAccessPolicy;
-        this.samplingAccess = samplingAccessPolicy == null
-                ? ServiceLoaders.loadSingleton(SamplingAccessPolicy.class)
-                : samplingAccessPolicy;
         this.logLevel.set(config.initialLogLevel());
         this.rootsManager = new RootsManager(lifecycle::clientCapabilities, this::request);
-        this.resources = resources;
-        this.resourceAccess = resourceAccess;
         subscribeListChanges(tools, prompts);
         subscribeResourceListChanges(resources);
         registerHandlers(resources, tools, prompts, completions);
@@ -715,7 +703,7 @@ public final class ServerRuntime extends JsonRpcEndpoint implements McpServer {
 
     private boolean resourceAllowed(Annotations ann) {
         try {
-            resourceAccess.requireAllowed(principal, ann);
+            resourceAccessPolicy.requireAllowed(principal, ann);
             return true;
         } catch (SecurityException e) {
             return false;
@@ -841,7 +829,7 @@ public final class ServerRuntime extends JsonRpcEndpoint implements McpServer {
 
     private CreateMessageResponse createMessage(CreateMessageRequest req) throws IOException {
         lifecycle.requireClientCapability(ClientCapability.SAMPLING);
-        samplingAccess.requireAllowed(principal);
+        samplingAccessPolicy.requireAllowed(principal);
         try {
             return sampling.createMessage(req, config.defaultTimeoutMs());
         } catch (InterruptedException e) {

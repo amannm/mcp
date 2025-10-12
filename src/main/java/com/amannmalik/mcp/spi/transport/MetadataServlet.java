@@ -1,4 +1,4 @@
-package com.amannmalik.mcp.transport;
+package com.amannmalik.mcp.spi.transport;
 
 import com.amannmalik.mcp.codec.ResourceMetadataJsonCodec;
 import com.amannmalik.mcp.core.ResourceMetadata;

@@ -2,7 +2,7 @@ package com.amannmalik.mcp.core;
 
 import com.amannmalik.mcp.api.RequestId;
 import com.amannmalik.mcp.jsonrpc.JsonRpcEnvelope;
-import com.amannmalik.mcp.transport.SseClient;
+import com.amannmalik.mcp.spi.transport.SseClient;
 import jakarta.json.JsonObject;
 
 import java.util.Objects;

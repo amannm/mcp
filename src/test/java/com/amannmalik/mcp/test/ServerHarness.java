@@ -1,22 +1,16 @@
 package com.amannmalik.mcp.test;
 
 import com.amannmalik.mcp.api.*;
-import com.amannmalik.mcp.codec.CreateMessageRequestJsonCodec;
-import com.amannmalik.mcp.spi.*;
-import jakarta.json.Json;
-import jakarta.json.JsonObject;
+import com.amannmalik.mcp.spi.Principal;
 
 import java.io.Closeable;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.URI;
 import java.time.Duration;
-import java.util.*;
-import java.util.function.Consumer;
+import java.util.List;
+import java.util.Set;
 
-/**
- * In-process HTTP server using minimal providers, MIXED HTTPS mode.
- */
 public final class ServerHarness implements Closeable {
     private final McpServer server;
     private final int port;
@@ -82,226 +76,9 @@ public final class ServerHarness implements Closeable {
                 base.servletProducedContentTypes(),
                 base.servletEnableAsyncProcessing()
         );
-        var resources = new ResourceProvider() {
-            @Override
-            public void close() throws IOException {
-
-            }
-
-            @Override
-            public Optional<Resource> find(String name) {
-                if (name == null) {
-                    throw new IllegalArgumentException("name required");
-                }
-                Cursor cursor = Cursor.Start.INSTANCE;
-                do {
-                    var page = list(cursor);
-                    for (var item : page.items()) {
-                        if (item.name().equals(name)) {
-                            return Optional.of(item);
-                        }
-                    }
-                    cursor = page.nextCursor();
-                } while (!(cursor instanceof Cursor.End));
-                return Optional.empty();
-            }
-
-            @Override
-            public ResourceBlock read(URI uri) {
-                return null;
-            }
-
-            @Override
-            public Optional<Resource> get(URI uri) {
-                return Optional.empty();
-            }
-
-            @Override
-            public Pagination.Page<Resource> list(Cursor cursor) {
-                return new Pagination.Page<>(List.of(), Cursor.End.INSTANCE);
-            }
-
-            @Override
-            public Closeable onListChanged(Runnable listener) {
-                return () -> {
-                };
-            }
-
-            @Override
-            public boolean supportsListChanged() {
-                return false;
-            }
-
-            @Override
-            public Pagination.Page<ResourceTemplate> listTemplates(Cursor cursor) {
-                return new Pagination.Page<>(List.of(), Cursor.End.INSTANCE);
-            }
-
-            @Override
-            public Closeable subscribe(URI uri, Consumer<ResourceUpdate> listener) {
-                return () -> {
-                };
-            }
-
-            @Override
-            public boolean supportsSubscribe() {
-                return false;
-            }
-        };
-        var tools = new ToolProvider() {
-            final Tool echo = new Tool("echo", "Echo", "Echo tool", Json.createObjectBuilder().add("type", "object").build(), null, null, null);
-
-            @Override
-            public void close() throws IOException {
-
-            }
-
-            @Override
-            public Pagination.Page<Tool> list(Cursor cursor) {
-                return new Pagination.Page<>(List.of(echo), Cursor.End.INSTANCE);
-            }
-
-            @Override
-            public Closeable onListChanged(Runnable listener) {
-                return () -> {
-                };
-            }
-
-            @Override
-            public boolean supportsListChanged() {
-                return true;
-            }
-
-            @Override
-            public Optional<Tool> find(String name) {
-                return Optional.of(echo);
-            }
-
-            @Override
-            public ToolResult call(String name, JsonObject arguments) {
-                return new ToolResult(Json.createArrayBuilder().build(), null, false, null);
-            }
-
-            @Override
-            public ToolResult execute(String name, JsonObject args) {
-                return call(name, args);
-            }
-        };
-        var prompts = new PromptProvider() {
-            @Override
-            public void close() throws IOException {
-
-            }
-
-            @Override
-            public Pagination.Page<Prompt> list(Cursor cursor) {
-                return new Pagination.Page<>(List.of(), Cursor.End.INSTANCE);
-            }
-
-            @Override
-            public Closeable onListChanged(Runnable listener) {
-                return () -> {
-                };
-            }
-
-            @Override
-            public boolean supportsListChanged() {
-                return true;
-            }
-
-            @Override
-            public Optional<Prompt> find(String name) {
-                return Optional.empty();
-            }
-
-            @Override
-            public PromptInstance get(String name, Map<String, String> arguments) {
-                return new PromptInstance("desc", List.of());
-            }
-        };
-        var completions = new CompletionProvider() {
-            @Override
-            public void close() throws IOException {
-
-            }
-
-            @Override
-            public CompleteResult complete(CompleteRequest request) throws InterruptedException {
-                return null;
-            }
-
-            @Override
-            public Pagination.Page<Ref> list(Cursor cursor) {
-                return new Pagination.Page<>(List.of(), Cursor.End.INSTANCE);
-            }
-
-            @Override
-            public Closeable onListChanged(Runnable listener) {
-                return () -> {
-                };
-            }
-
-            @Override
-            public boolean supportsListChanged() {
-                return true;
-            }
-
-            @Override
-            public CompleteResult execute(String name, JsonObject args) {
-                return new CompleteResult(new Completion(List.of(), 0, false), null);
-            }
-        };
-        var sampling = new SamplingProvider() {
-            @Override
-            public void close() throws IOException {
-
-            }
-
-            @Override
-            public Closeable onListChanged(Runnable listener) {
-                return () -> {
-                };
-            }
-
-            @Override
-            public boolean supportsListChanged() {
-                return false;
-            }
-
-            @Override
-            public CreateMessageResponse createMessage(CreateMessageRequest request, Duration timeoutMillis) {
-                return new CreateMessageResponse(Role.ASSISTANT, new ContentBlock.Text("ok", null, null), "model", "stop", null);
-            }
-
-            @Override
-            public CreateMessageResponse createMessage(CreateMessageRequest request) {
-                return createMessage(request, Duration.ZERO);
-            }
-
-            @Override
-            public Pagination.Page<SamplingMessage> list(Cursor cursor) {
-                return new Pagination.Page<>(List.of(), Cursor.End.INSTANCE);
-            }
-
-            @Override
-            public CreateMessageResponse execute(String name, JsonObject args) {
-                return createMessage(new CreateMessageRequestJsonCodec().fromJson(args), Duration.ZERO);
-            }
-        };
         var principal = new Principal(base.defaultPrincipal(), Set.of());
-        var resourceAccess = loadSingleton(ResourceAccessPolicy.class);
-        var toolAccess = loadSingleton(ToolAccessPolicy.class);
-        var samplingAccessPolicy = loadSingleton(SamplingAccessPolicy.class);
         var server = McpServer.create(
                 config,
-                resources,
-                tools,
-                prompts,
-                completions,
-                sampling,
-                resourceAccess,
-                toolAccess,
-                samplingAccessPolicy,
                 principal,
                 null);
         Thread.ofVirtual().start(() -> {
@@ -320,22 +97,6 @@ public final class ServerHarness implements Closeable {
         try (var s = new ServerSocket(0)) {
             return s.getLocalPort();
         }
-    }
-
-    private static <T> T loadSingleton(Class<T> type) {
-        Objects.requireNonNull(type, "type");
-        var loader = ServiceLoader.load(type);
-        var iterator = loader.iterator();
-        if (!iterator.hasNext()) {
-            throw new IllegalStateException("No implementation of " + type.getName()
-                    + " is registered as a JPMS service for tests.");
-        }
-        var service = iterator.next();
-        if (iterator.hasNext()) {
-            throw new IllegalStateException("Multiple implementations of " + type.getName()
-                    + " detected in tests.");
-        }
-        return service;
     }
 
     public URI endpoint() {

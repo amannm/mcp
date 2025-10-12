@@ -1,6 +1,6 @@
 package com.amannmalik.mcp.api;
 
-import com.amannmalik.mcp.transport.*;
+import com.amannmalik.mcp.spi.transport.*;
 import jakarta.json.JsonObject;
 
 import java.io.Closeable;

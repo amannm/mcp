@@ -12,9 +12,7 @@ public final class ServiceLoaders {
             var loader = ServiceLoader.load(type);
             var iterator = loader.iterator();
             if (!iterator.hasNext()) {
-                throw new IllegalStateException("No implementation of " + type.getName()
-                        + " is registered as a JPMS service. Provide a module that declares 'provides "
-                        + type.getName() + " with ...'.");
+                throw new IllegalStateException("No implementation of " + type.getName() + " is registered as a JPMS service. Provide a module that declares 'provides " + type.getName() + " with ...'.");
             }
             T service = null;
             Class<?> implementation = null;
@@ -26,8 +24,7 @@ public final class ServiceLoaders {
                     continue;
                 }
                 if (!candidate.getClass().equals(implementation)) {
-                    throw new IllegalStateException("Multiple implementations of " + type.getName()
-                            + " detected on the module path. Configure the host to expose only one implementation.");
+                    throw new IllegalStateException("Multiple implementations of " + type.getName() + " detected on the module path. Configure the host to expose only one implementation.");
                 }
             }
             return service;

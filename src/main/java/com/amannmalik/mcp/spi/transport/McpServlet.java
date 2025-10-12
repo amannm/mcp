@@ -1,4 +1,4 @@
-package com.amannmalik.mcp.transport;
+package com.amannmalik.mcp.spi.transport;
 
 import com.amannmalik.mcp.api.RequestMethod;
 import com.amannmalik.mcp.jsonrpc.JsonRpcEnvelope;

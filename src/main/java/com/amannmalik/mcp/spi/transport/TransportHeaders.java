@@ -1,4 +1,4 @@
-package com.amannmalik.mcp.transport;
+package com.amannmalik.mcp.spi.transport;
 
 final class TransportHeaders {
     public static final String PROTOCOL_VERSION = "MCP-Protocol-Version";
