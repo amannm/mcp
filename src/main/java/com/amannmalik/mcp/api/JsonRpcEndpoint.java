@@ -16,7 +16,7 @@ import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.*;
 
-sealed class JsonRpcEndpoint implements AutoCloseable permits McpClient, McpServer {
+abstract sealed class JsonRpcEndpoint implements AutoCloseable permits McpClient, McpServer {
     protected static final JsonRpcMessageJsonCodec CODEC = new JsonRpcMessageJsonCodec();
     protected static final CancelledNotificationJsonCodec CANCEL_CODEC = new CancelledNotificationJsonCodec();
     protected final Transport transport;
@@ -32,19 +32,29 @@ sealed class JsonRpcEndpoint implements AutoCloseable permits McpClient, McpServ
         this.counter = new AtomicLong(initialId);
     }
 
-    private static IOException unwrapExecutionException(ExecutionException e) {
-        var cause = e.getCause();
-        if (cause instanceof IOException io) {
-            return io;
+    protected final synchronized void send(JsonRpcMessage msg) throws IOException {
+        transport.send(CODEC.toJson(msg));
+    }
+
+    protected final void process(JsonRpcMessage msg) throws IOException {
+        switch (msg) {
+            case JsonRpcRequest req -> {
+                var resp = handleRequest(req, true);
+                if (resp.isPresent()) {
+                    send(resp.get());
+                }
+            }
+            case JsonRpcNotification note -> handleNotification(note);
+            case JsonRpcResponse resp -> complete(resp.id(), resp);
+            case JsonRpcError err -> complete(err.id(), err);
         }
-        return new IOException(cause);
     }
 
     protected final RequestId nextId() {
         return new RequestId.NumericId(counter.getAndIncrement());
     }
 
-    public final void registerRequest(RequestMethod method, Function<JsonRpcRequest, JsonRpcMessage> handler) {
+    protected final void registerRequest(RequestMethod method, Function<JsonRpcRequest, JsonRpcMessage> handler) {
         Objects.requireNonNull(method, "method");
         Objects.requireNonNull(handler, "handler");
         var previous = requests.putIfAbsent(method, handler);
@@ -62,7 +72,7 @@ sealed class JsonRpcEndpoint implements AutoCloseable permits McpClient, McpServ
         }
     }
 
-    protected JsonRpcMessage await(RequestId id, CompletableFuture<JsonRpcMessage> future, Duration timeout) throws IOException {
+    protected final JsonRpcMessage await(RequestId id, CompletableFuture<JsonRpcMessage> future, Duration timeout) throws IOException {
         try {
             return future.get(timeout.toMillis(), TimeUnit.MILLISECONDS);
         } catch (TimeoutException e) {
@@ -105,6 +115,14 @@ sealed class JsonRpcEndpoint implements AutoCloseable permits McpClient, McpServ
         }
     }
 
+    private static IOException unwrapExecutionException(ExecutionException e) {
+        var cause = e.getCause();
+        if (cause instanceof IOException io) {
+            return io;
+        }
+        return new IOException(cause);
+    }
+
     private JsonRpcMessage getCompleted(CompletableFuture<JsonRpcMessage> future) throws IOException {
         try {
             return future.get();
@@ -122,24 +140,6 @@ sealed class JsonRpcEndpoint implements AutoCloseable permits McpClient, McpServ
             send(new JsonRpcNotification(NotificationMethod.CANCELLED.method(), params));
         } catch (IOException e) {
             throw new RuntimeException(e);
-        }
-    }
-
-    protected final synchronized void send(JsonRpcMessage msg) throws IOException {
-        transport.send(CODEC.toJson(msg));
-    }
-
-    public final void process(JsonRpcMessage msg) throws IOException {
-        switch (msg) {
-            case JsonRpcRequest req -> {
-                var resp = handleRequest(req, true);
-                if (resp.isPresent()) {
-                    send(resp.get());
-                }
-            }
-            case JsonRpcNotification note -> handleNotification(note);
-            case JsonRpcResponse resp -> complete(resp.id(), resp);
-            case JsonRpcError err -> complete(err.id(), err);
         }
     }
 
