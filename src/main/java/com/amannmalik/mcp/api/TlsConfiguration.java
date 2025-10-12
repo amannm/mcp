@@ -16,8 +16,7 @@ public record TlsConfiguration(
 ) {
 
     private static final Set<String> ALLOWED_PROTOCOLS = Set.of("TLSv1.2", "TLSv1.3");
-    private static final Pattern WEAK_CIPHERS = Pattern.compile(
-            ".*_(NULL|RC4|DES|3DES|MD5|CBC|EXPORT|anon)_.*", Pattern.CASE_INSENSITIVE);
+    private static final Pattern WEAK_CIPHERS = Pattern.compile(".*_(NULL|RC4|DES|3DES|MD5|CBC|EXPORT|anon)_.*", Pattern.CASE_INSENSITIVE);
 
     public TlsConfiguration {
         tlsProtocols = List.copyOf(tlsProtocols);
