@@ -9,6 +9,7 @@ import com.amannmalik.mcp.spi.Root;
 import com.amannmalik.mcp.util.EventSupport;
 import com.amannmalik.mcp.util.PlatformLog;
 
+import java.io.Closeable;
 import java.io.IOException;
 import java.lang.System.Logger;
 import java.time.Duration;
@@ -44,7 +45,7 @@ public final class RootsManager {
         return List.copyOf(fetched);
     }
 
-    public AutoCloseable onListChanged(Runnable listener) {
+    public Closeable onListChanged(Runnable listener) {
         return listChangeSupport.subscribe(listener);
     }
 

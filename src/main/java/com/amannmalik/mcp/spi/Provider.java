@@ -1,18 +1,12 @@
 package com.amannmalik.mcp.spi;
 
-public sealed interface Provider<T> extends AutoCloseable permits NamedProvider, RootsProvider, ExecutingProvider {
+import java.io.Closeable;
+
+public sealed interface Provider<T> extends Closeable permits NamedProvider, RootsProvider, ExecutingProvider {
     Pagination.Page<T> list(Cursor cursor);
 
-    default AutoCloseable onListChanged(Runnable listener) {
-        return () -> {
-        };
-    }
+    Closeable onListChanged(Runnable listener);
 
-    default boolean supportsListChanged() {
-        return false;
-    }
+    boolean supportsListChanged();
 
-    @Override
-    default void close() {
-    }
 }

@@ -3,6 +3,7 @@ package com.amannmalik.mcp.test.impl;
 import com.amannmalik.mcp.spi.*;
 import jakarta.json.JsonObject;
 
+import java.io.Closeable;
 import java.util.*;
 import java.util.concurrent.CopyOnWriteArrayList;
 
@@ -17,7 +18,7 @@ public final class DefaultCompletionProvider implements CompletionProvider {
     }
 
     @Override
-    public AutoCloseable onListChanged(Runnable listener) {
+    public Closeable onListChanged(Runnable listener) {
         Objects.requireNonNull(listener, "listener");
         listChangedListeners.add(listener);
         return () -> listChangedListeners.remove(listener);

@@ -1,12 +1,13 @@
 package com.amannmalik.mcp.util;
 
+import java.io.Closeable;
 import java.io.IOException;
 
 public final class CloseUtil {
     private CloseUtil() {
     }
 
-    public static void close(AutoCloseable closeable) {
+    public static void close(Closeable closeable) {
         if (closeable == null) {
             return;
         }
@@ -17,7 +18,7 @@ public final class CloseUtil {
         }
     }
 
-    public static void closeAll(AutoCloseable... closeables) throws IOException {
+    public static void closeAll(Closeable... closeables) throws IOException {
         IOException ex = null;
         for (var c : closeables) {
             if (c == null) {

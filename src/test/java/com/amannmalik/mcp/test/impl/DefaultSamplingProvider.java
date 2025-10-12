@@ -4,6 +4,8 @@ import com.amannmalik.mcp.codec.CreateMessageRequestJsonCodec;
 import com.amannmalik.mcp.spi.*;
 import jakarta.json.JsonObject;
 
+import java.io.Closeable;
+import java.io.IOException;
 import java.time.Duration;
 
 public final class DefaultSamplingProvider implements SamplingProvider {
@@ -34,5 +36,21 @@ public final class DefaultSamplingProvider implements SamplingProvider {
     @Override
     public CreateMessageResponse execute(String name, JsonObject args) throws InterruptedException {
         return createMessage(new CreateMessageRequestJsonCodec().fromJson(args), Duration.ZERO);
+    }
+
+    @Override
+    public Closeable onListChanged(Runnable listener) {
+        return () -> {
+        };
+    }
+
+    @Override
+    public boolean supportsListChanged() {
+        return false;
+    }
+
+    @Override
+    public void close() throws IOException {
+
     }
 }

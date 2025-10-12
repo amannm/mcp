@@ -12,8 +12,7 @@ import com.amannmalik.mcp.util.*;
 import jakarta.json.Json;
 import jakarta.json.JsonObject;
 
-import java.io.IOException;
-import java.io.InputStream;
+import java.io.*;
 import java.lang.System.Logger;
 import java.net.URI;
 import java.net.http.*;
@@ -52,7 +51,7 @@ public final class ClientRuntime extends JsonRpcEndpoint implements McpClient {
     private final Duration requestTimeout;
     private final AtomicBoolean connected = new AtomicBoolean();
     private final AtomicReference<ResourceMetadata> resourceMetadata = new AtomicReference<>();
-    private AutoCloseable rootsSubscription;
+    private Closeable rootsSubscription;
     private SamplingAccessPolicy samplingAccess;
     private Principal principal;
     private Thread readerThread;
@@ -88,16 +87,12 @@ public final class ClientRuntime extends JsonRpcEndpoint implements McpClient {
         if (this.capabilities.contains(ClientCapability.ROOTS) && roots == null) {
             throw new IllegalArgumentException("roots capability requires provider");
         }
-        this.roots = roots == null ? ignored -> {
-            throw new UnsupportedOperationException("Roots not supported");
-        } : roots;
+        this.roots = roots;
         this.rootsListChangedSupported = this.capabilities.contains(ClientCapability.ROOTS) && this.roots.supportsListChanged();
         if (this.capabilities.contains(ClientCapability.ELICITATION) && elicitation == null) {
             throw new IllegalArgumentException("elicitation capability requires provider");
         }
-        this.elicitation = elicitation == null ? (ignoredClient, ignoredRequest) -> {
-            throw new UnsupportedOperationException("Elicitation not supported");
-        } : elicitation;
+        this.elicitation = elicitation;
         this.listener = listener == null ? new Listener() {
             @Override
             public void onProgress(ProgressNotification notification) {
@@ -534,7 +529,7 @@ public final class ClientRuntime extends JsonRpcEndpoint implements McpClient {
     }
 
     @Override
-    public AutoCloseable subscribeResource(URI uri, Consumer<ResourceUpdate> listener) throws IOException {
+    public Closeable subscribeResource(URI uri, Consumer<ResourceUpdate> listener) throws IOException {
         if (!serverFeatures.contains(ServerFeature.RESOURCES_SUBSCRIBE)) {
             throw new IllegalStateException("resource subscribe not supported");
         }

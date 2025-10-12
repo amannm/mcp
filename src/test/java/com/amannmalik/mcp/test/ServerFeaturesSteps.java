@@ -7,8 +7,7 @@ import io.cucumber.java.After;
 import io.cucumber.java.en.*;
 import jakarta.json.*;
 
-import java.io.IOException;
-import java.io.StringReader;
+import java.io.*;
 import java.net.URI;
 import java.time.Duration;
 import java.util.*;
@@ -78,7 +77,7 @@ public final class ServerFeaturesSteps {
     private boolean accessControlsConfigured;
     private boolean unauthorizedDenied;
     private boolean errorMessageProvided;
-    private AutoCloseable resourceSubscriptionHandle;
+    private Closeable resourceSubscriptionHandle;
 
     private static JsonObject extractResult(JsonRpcMessage msg) {
         // Fallback: parse result JSON from record toString representation

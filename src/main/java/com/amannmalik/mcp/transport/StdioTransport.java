@@ -142,7 +142,7 @@ public final class StdioTransport implements Transport {
         }
     }
 
-    private sealed interface ProcessResources extends AutoCloseable permits Detached, Spawned {
+    private sealed interface ProcessResources extends Closeable permits Detached, Spawned {
         void checkAlive() throws IOException;
 
         @Override

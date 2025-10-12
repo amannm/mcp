@@ -2,6 +2,7 @@ package com.amannmalik.mcp.test.impl;
 
 import com.amannmalik.mcp.spi.*;
 
+import java.io.Closeable;
 import java.util.*;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -19,7 +20,7 @@ public final class DefaultPromptProvider implements PromptProvider {
     }
 
     @Override
-    public AutoCloseable onListChanged(Runnable listener) {
+    public Closeable onListChanged(Runnable listener) {
         Objects.requireNonNull(listener, "listener");
         listChangedListeners.add(listener);
         startSimulation();

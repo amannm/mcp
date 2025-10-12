@@ -1,5 +1,6 @@
 package com.amannmalik.mcp.util;
 
+import java.io.Closeable;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -8,7 +9,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 public final class EventSupport {
     private final List<Runnable> listeners = new CopyOnWriteArrayList<>();
 
-    public AutoCloseable subscribe(Runnable listener) {
+    public Closeable subscribe(Runnable listener) {
         var subscription = new Subscription(Objects.requireNonNull(listener, "listener"));
         listeners.add(listener);
         return subscription;
@@ -20,7 +21,7 @@ public final class EventSupport {
         }
     }
 
-    private final class Subscription implements AutoCloseable {
+    private final class Subscription implements Closeable {
         private final Runnable listener;
         private final AtomicBoolean closed = new AtomicBoolean();
 

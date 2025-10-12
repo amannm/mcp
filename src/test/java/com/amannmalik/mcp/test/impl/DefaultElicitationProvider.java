@@ -3,6 +3,9 @@ package com.amannmalik.mcp.test.impl;
 import com.amannmalik.mcp.spi.*;
 import jakarta.json.*;
 
+import java.io.Closeable;
+import java.io.IOException;
+
 public final class DefaultElicitationProvider implements ElicitationProvider {
     @Override
     public ElicitResult elicit(ElicitRequest request, long timeoutMillis) {
@@ -35,5 +38,20 @@ public final class DefaultElicitationProvider implements ElicitationProvider {
                 yield Json.createValue("value");
             }
         };
+    }
+
+    @Override
+    public Closeable onListChanged(Runnable listener) {
+        return () -> {
+        };
+    }
+
+    @Override
+    public boolean supportsListChanged() {
+        return false;
+    }
+
+    @Override
+    public void close() throws IOException {
     }
 }

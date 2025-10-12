@@ -3,11 +3,12 @@ package com.amannmalik.mcp.api;
 import com.amannmalik.mcp.transport.*;
 import jakarta.json.JsonObject;
 
+import java.io.Closeable;
 import java.io.IOException;
 import java.time.Duration;
 
 /// - [Transports](specification/2025-06-18/basic/transports.mdx)
-public sealed interface Transport extends AutoCloseable permits
+public sealed interface Transport extends Closeable permits
         StdioTransport,
         StreamableHttpClientTransport,
         StreamableHttpServerTransport {

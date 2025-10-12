@@ -2,6 +2,8 @@ package com.amannmalik.mcp.test.impl;
 
 import com.amannmalik.mcp.spi.*;
 
+import java.io.Closeable;
+import java.io.IOException;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -26,7 +28,7 @@ public final class DefaultRootsProvider implements RootsProvider {
     }
 
     @Override
-    public AutoCloseable onListChanged(Runnable listener) {
+    public Closeable onListChanged(Runnable listener) {
         Objects.requireNonNull(listener, "listener");
         listeners.add(listener);
         startSimulation();
@@ -54,5 +56,10 @@ public final class DefaultRootsProvider implements RootsProvider {
                 }
             });
         }
+    }
+
+    @Override
+    public void close() throws IOException {
+
     }
 }

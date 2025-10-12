@@ -13,6 +13,7 @@ import com.amannmalik.mcp.util.ServiceLoaders;
 import jakarta.json.Json;
 import jakarta.json.JsonObject;
 
+import java.io.Closeable;
 import java.io.IOException;
 import java.lang.System.Logger;
 import java.net.URI;
@@ -184,7 +185,7 @@ public final class HostRuntime implements McpHost {
     }
 
     @Override
-    public AutoCloseable subscribeToResource(String clientId, URI uri, Consumer<ResourceUpdate> listener) throws IOException {
+    public Closeable subscribeToResource(String clientId, URI uri, Consumer<ResourceUpdate> listener) throws IOException {
         var client = requireClient(clientId);
         requireCapability(client, ServerCapability.RESOURCES);
         Optional<Resource> result = Optional.empty();
@@ -431,7 +432,7 @@ public final class HostRuntime implements McpHost {
         }
 
         @Override
-        public AutoCloseable onListChanged(Runnable listener) {
+        public Closeable onListChanged(Runnable listener) {
             Objects.requireNonNull(listener, "listener");
             listeners.add(listener);
             return () -> listeners.remove(listener);

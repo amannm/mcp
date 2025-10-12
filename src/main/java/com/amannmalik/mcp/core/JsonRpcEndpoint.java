@@ -8,6 +8,7 @@ import com.amannmalik.mcp.codec.JsonRpcMessageJsonCodec;
 import com.amannmalik.mcp.jsonrpc.*;
 import jakarta.json.JsonObject;
 
+import java.io.Closeable;
 import java.io.IOException;
 import java.time.Duration;
 import java.util.*;
@@ -15,7 +16,7 @@ import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.*;
 
-public abstract sealed class JsonRpcEndpoint implements AutoCloseable permits ClientRuntime, ServerRuntime {
+public abstract sealed class JsonRpcEndpoint implements Closeable permits ClientRuntime, ServerRuntime {
     protected static final JsonRpcMessageJsonCodec CODEC = new JsonRpcMessageJsonCodec();
     protected static final CancelledNotificationJsonCodec CANCEL_CODEC = new CancelledNotificationJsonCodec();
     protected final Transport transport;

@@ -4,13 +4,14 @@ import com.amannmalik.mcp.core.HostRuntime;
 import com.amannmalik.mcp.spi.*;
 import jakarta.json.JsonObject;
 
+import java.io.Closeable;
 import java.io.IOException;
 import java.net.URI;
 import java.util.List;
 import java.util.Set;
 import java.util.function.Consumer;
 
-public interface McpHost extends AutoCloseable {
+public interface McpHost extends Closeable {
     static McpHost create(McpHostConfiguration config) throws IOException {
         return new HostRuntime(config);
     }
@@ -28,7 +29,7 @@ public interface McpHost extends AutoCloseable {
 
     ListResourceTemplatesResult listResourceTemplates(String clientId, Cursor cursor) throws IOException;
 
-    AutoCloseable subscribeToResource(String clientId, URI uri, Consumer<ResourceUpdate> listener) throws IOException;
+    Closeable subscribeToResource(String clientId, URI uri, Consumer<ResourceUpdate> listener) throws IOException;
 
     ListToolsResult listTools(String clientId, Cursor cursor) throws IOException;
 

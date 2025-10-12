@@ -4,6 +4,7 @@ import com.amannmalik.mcp.core.ClientRuntime;
 import com.amannmalik.mcp.spi.*;
 import jakarta.json.JsonObject;
 
+import java.io.Closeable;
 import java.io.IOException;
 import java.net.URI;
 import java.time.Duration;
@@ -11,7 +12,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.function.Consumer;
 
-public interface McpClient extends AutoCloseable {
+public interface McpClient extends Closeable {
     static McpClient create(McpClientConfiguration config,
                             boolean globalVerbose,
                             SamplingProvider sampling,
@@ -74,7 +75,7 @@ public interface McpClient extends AutoCloseable {
 
     void setPrincipal(Principal principal);
 
-    AutoCloseable subscribeResource(URI uri, Consumer<ResourceUpdate> listener) throws IOException;
+    Closeable subscribeResource(URI uri, Consumer<ResourceUpdate> listener) throws IOException;
 
     interface Listener {
         void onProgress(Notification.ProgressNotification notification);

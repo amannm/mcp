@@ -251,7 +251,7 @@ public final class HostCommand {
     private static void runInteractiveMode(McpHost host) throws IOException {
         var reader = new BufferedReader(new InputStreamReader(System.in, StandardCharsets.UTF_8));
         System.out.println("MCP Host Interactive Mode. Type 'help' for commands, 'quit' to exit.");
-        Map<String, AutoCloseable> resourceSubscriptions = new ConcurrentHashMap<>();
+        Map<String, Closeable> resourceSubscriptions = new ConcurrentHashMap<>();
         try {
             while (true) {
                 System.out.print("mcp> ");

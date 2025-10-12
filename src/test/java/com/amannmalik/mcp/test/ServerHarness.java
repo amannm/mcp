@@ -84,6 +84,11 @@ public final class ServerHarness implements Closeable {
         );
         var resources = new ResourceProvider() {
             @Override
+            public void close() throws IOException {
+
+            }
+
+            @Override
             public Optional<Resource> find(String name) {
                 if (name == null) {
                     throw new IllegalArgumentException("name required");
@@ -117,12 +122,23 @@ public final class ServerHarness implements Closeable {
             }
 
             @Override
+            public Closeable onListChanged(Runnable listener) {
+                return () -> {
+                };
+            }
+
+            @Override
+            public boolean supportsListChanged() {
+                return false;
+            }
+
+            @Override
             public Pagination.Page<ResourceTemplate> listTemplates(Cursor cursor) {
                 return new Pagination.Page<>(List.of(), Cursor.End.INSTANCE);
             }
 
             @Override
-            public AutoCloseable subscribe(URI uri, Consumer<ResourceUpdate> listener) {
+            public Closeable subscribe(URI uri, Consumer<ResourceUpdate> listener) {
                 return () -> {
                 };
             }
@@ -136,8 +152,19 @@ public final class ServerHarness implements Closeable {
             final Tool echo = new Tool("echo", "Echo", "Echo tool", Json.createObjectBuilder().add("type", "object").build(), null, null, null);
 
             @Override
+            public void close() throws IOException {
+
+            }
+
+            @Override
             public Pagination.Page<Tool> list(Cursor cursor) {
                 return new Pagination.Page<>(List.of(echo), Cursor.End.INSTANCE);
+            }
+
+            @Override
+            public Closeable onListChanged(Runnable listener) {
+                return () -> {
+                };
             }
 
             @Override
@@ -157,8 +184,19 @@ public final class ServerHarness implements Closeable {
         };
         var prompts = new PromptProvider() {
             @Override
+            public void close() throws IOException {
+
+            }
+
+            @Override
             public Pagination.Page<Prompt> list(Cursor cursor) {
                 return new Pagination.Page<>(List.of(), Cursor.End.INSTANCE);
+            }
+
+            @Override
+            public Closeable onListChanged(Runnable listener) {
+                return () -> {
+                };
             }
 
             @Override
@@ -178,6 +216,11 @@ public final class ServerHarness implements Closeable {
         };
         var completions = new CompletionProvider() {
             @Override
+            public void close() throws IOException {
+
+            }
+
+            @Override
             public CompleteResult complete(CompleteRequest request) throws InterruptedException {
                 return null;
             }
@@ -185,6 +228,12 @@ public final class ServerHarness implements Closeable {
             @Override
             public Pagination.Page<Ref> list(Cursor cursor) {
                 return new Pagination.Page<>(List.of(), Cursor.End.INSTANCE);
+            }
+
+            @Override
+            public Closeable onListChanged(Runnable listener) {
+                return () -> {
+                };
             }
 
             @Override
@@ -198,6 +247,22 @@ public final class ServerHarness implements Closeable {
             }
         };
         var sampling = new SamplingProvider() {
+            @Override
+            public void close() throws IOException {
+
+            }
+
+            @Override
+            public Closeable onListChanged(Runnable listener) {
+                return () -> {
+                };
+            }
+
+            @Override
+            public boolean supportsListChanged() {
+                return false;
+            }
+
             @Override
             public CreateMessageResponse createMessage(CreateMessageRequest request, Duration timeoutMillis) {
                 return new CreateMessageResponse(Role.ASSISTANT, new ContentBlock.Text("ok", null, null), "model", "stop", null);

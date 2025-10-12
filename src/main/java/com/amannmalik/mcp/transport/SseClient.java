@@ -5,15 +5,14 @@ import com.amannmalik.mcp.util.PlatformLog;
 import jakarta.json.JsonObject;
 import jakarta.servlet.AsyncContext;
 
-import java.io.IOException;
-import java.io.PrintWriter;
+import java.io.*;
 import java.lang.System.Logger;
 import java.security.SecureRandom;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 
-public final class SseClient implements AutoCloseable {
+public final class SseClient implements Closeable {
     private static final SecureRandom RANDOM = new SecureRandom();
     private static final Logger LOG = PlatformLog.get(SseClient.class);
     private final String prefix;

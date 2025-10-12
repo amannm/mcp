@@ -3,9 +3,10 @@ package com.amannmalik.mcp.api;
 import com.amannmalik.mcp.core.ServerRuntime;
 import com.amannmalik.mcp.spi.*;
 
+import java.io.Closeable;
 import java.io.IOException;
 
-public interface McpServer extends AutoCloseable {
+public interface McpServer extends Closeable {
     static McpServer create(McpServerConfiguration config,
                             ResourceProvider resources,
                             ToolProvider tools,

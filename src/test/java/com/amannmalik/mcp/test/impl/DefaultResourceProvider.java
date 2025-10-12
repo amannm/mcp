@@ -2,6 +2,7 @@ package com.amannmalik.mcp.test.impl;
 
 import com.amannmalik.mcp.spi.*;
 
+import java.io.Closeable;
 import java.net.URI;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -45,7 +46,7 @@ public final class DefaultResourceProvider implements ResourceProvider {
     }
 
     @Override
-    public AutoCloseable subscribe(URI uri, Consumer<ResourceUpdate> listener) {
+    public Closeable subscribe(URI uri, Consumer<ResourceUpdate> listener) {
         Objects.requireNonNull(uri, "uri");
         Objects.requireNonNull(listener, "listener");
         var listeners = subscribers.computeIfAbsent(uri, ignored -> new CopyOnWriteArrayList<>());
@@ -59,7 +60,7 @@ public final class DefaultResourceProvider implements ResourceProvider {
     }
 
     @Override
-    public AutoCloseable onListChanged(Runnable listener) {
+    public Closeable onListChanged(Runnable listener) {
         Objects.requireNonNull(listener, "listener");
         listChangedListeners.add(listener);
         startSimulation();

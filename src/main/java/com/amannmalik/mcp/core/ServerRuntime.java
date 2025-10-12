@@ -61,7 +61,7 @@ public final class ServerRuntime extends JsonRpcEndpoint implements McpServer {
     private final Set<ServerCapability> serverCapabilities;
     private final ResourceProvider resources;
     private final ResourceAccessPolicy resourceAccess;
-    private final Map<URI, AutoCloseable> resourceSubscriptions = new ConcurrentHashMap<>();
+    private final Map<URI, Closeable> resourceSubscriptions = new ConcurrentHashMap<>();
     private final ToolProvider tools;
     private final PromptProvider prompts;
     private final CompletionProvider completions;
@@ -75,9 +75,9 @@ public final class ServerRuntime extends JsonRpcEndpoint implements McpServer {
     private final RateLimiter logLimiter;
     private final ServerLifecycle lifecycle;
     private final AtomicReference<LoggingLevel> logLevel = new AtomicReference<>();
-    private AutoCloseable resourceListSubscription;
-    private AutoCloseable toolListSubscription;
-    private AutoCloseable promptsSubscription;
+    private Closeable resourceListSubscription;
+    private Closeable toolListSubscription;
+    private Closeable promptsSubscription;
     private Runnable toolListChangedEmitter;
     private Runnable promptsListChangedEmitter;
     private Runnable resourceListChangedEmitter;
@@ -192,7 +192,7 @@ public final class ServerRuntime extends JsonRpcEndpoint implements McpServer {
         return PlatformLog.toPlatformLevel(l);
     }
 
-    private static <S extends AutoCloseable> S subscribeListChanges0(
+    private static <S extends Closeable> S subscribeListChanges0(
             Supplier<LifecycleState> state,
             Function<Runnable, S> factory,
             Runnable listener) {
