@@ -47,7 +47,7 @@ public final class ClientRuntime extends JsonRpcEndpoint implements McpClient {
     private final RootsProvider roots;
     private final boolean rootsListChangedSupported;
     private final ElicitationProvider elicitation;
-    private final McpClientListener listener;
+    private final Listener listener;
     private final Map<URI, Consumer<ResourceUpdate>> resourceListeners = new ConcurrentHashMap<>();
     private final Duration initializationTimeout;
     private final Duration requestTimeout;
@@ -72,7 +72,7 @@ public final class ClientRuntime extends JsonRpcEndpoint implements McpClient {
                          SamplingProvider sampling,
                          RootsProvider roots,
                          ElicitationProvider elicitation,
-                         McpClientListener listener) throws IOException {
+                         Listener listener) throws IOException {
         super(createTransport(config, globalVerbose),
                 new ProgressManager(new RateLimiter(
                         config.progressPerSecond(),
@@ -99,7 +99,26 @@ public final class ClientRuntime extends JsonRpcEndpoint implements McpClient {
         this.elicitation = elicitation == null ? (ignoredClient, ignoredRequest) -> {
             throw new UnsupportedOperationException("Elicitation not supported");
         } : elicitation;
-        this.listener = listener == null ? new McpClientListener() {
+        this.listener = listener == null ? new Listener() {
+            @Override
+            public void onProgress(ProgressNotification notification) {
+            }
+
+            @Override
+            public void onMessage(LoggingMessageNotification notification) {
+            }
+
+            @Override
+            public void onResourceListChanged() {
+            }
+
+            @Override
+            public void onToolListChanged() {
+            }
+
+            @Override
+            public void onPromptsListChanged() {
+            }
         } : listener;
         this.principal = new Principal(config.principal(), Set.of());
         this.pingInterval = config.pingInterval();

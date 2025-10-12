@@ -67,7 +67,7 @@ public final class HostRuntime implements McpHost {
                         .toList();
                 rootsProvider = new ClientRootsProvider(roots);
             }
-            var listener = new McpClient.McpClientListener() {
+            var listener = new McpClient.Listener() {
                 @Override
                 public void onProgress(ProgressNotification notification) {
                     events.computeIfAbsent(clientConfig.clientId(), k -> new EventLog()).addMessage(

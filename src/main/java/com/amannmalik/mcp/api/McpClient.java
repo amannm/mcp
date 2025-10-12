@@ -18,7 +18,7 @@ public interface McpClient extends AutoCloseable {
                             SamplingProvider sampling,
                             RootsProvider roots,
                             ElicitationProvider elicitation,
-                            McpClientListener listener) throws IOException {
+                            Listener listener) throws IOException {
         return new ClientRuntime(
                 config,
                 globalVerbose,
@@ -77,20 +77,15 @@ public interface McpClient extends AutoCloseable {
 
     AutoCloseable subscribeResource(URI uri, Consumer<ResourceUpdate> listener) throws IOException;
 
-    interface McpClientListener {
-        default void onProgress(Notification.ProgressNotification notification) {
-        }
+    interface Listener {
+        void onProgress(Notification.ProgressNotification notification);
 
-        default void onMessage(Notification.LoggingMessageNotification notification) {
-        }
+        void onMessage(Notification.LoggingMessageNotification notification);
 
-        default void onResourceListChanged() {
-        }
+        void onResourceListChanged();
 
-        default void onToolListChanged() {
-        }
+        void onToolListChanged();
 
-        default void onPromptsListChanged() {
-        }
+        void onPromptsListChanged();
     }
 }
