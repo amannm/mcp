@@ -53,14 +53,14 @@ public class JsonRpcMessageJsonCodec implements JsonCodec<JsonRpcMessage> {
         if (value == null || value == JsonValue.NULL) {
             throw new IllegalArgumentException("id is required for response");
         }
-        return RequestId.from(value);
+        return RequestIdCodec.from(value);
     }
 
     static RequestId optionalId(JsonValue value) {
         if (value == null || value == JsonValue.NULL) {
             return RequestId.NullId.INSTANCE;
         }
-        return RequestId.from(value);
+        return RequestIdCodec.from(value);
     }
 
     static JsonRpcError.ErrorDetail errorDetail(JsonObject obj) {
@@ -86,7 +86,7 @@ public class JsonRpcMessageJsonCodec implements JsonCodec<JsonRpcMessage> {
         var builder = Json.createObjectBuilder().add("jsonrpc", JsonRpc.VERSION);
         return switch (msg) {
             case JsonRpcRequest r -> {
-                builder.add("id", RequestId.toJsonValue(r.id()));
+                builder.add("id", RequestIdCodec.toJsonValue(r.id()));
                 builder.add("method", r.method());
                 if (r.params() != null) {
                     builder.add("params", r.params());
@@ -101,12 +101,12 @@ public class JsonRpcMessageJsonCodec implements JsonCodec<JsonRpcMessage> {
                 yield builder.build();
             }
             case JsonRpcResponse r -> {
-                builder.add("id", RequestId.toJsonValue(r.id()));
+                builder.add("id", RequestIdCodec.toJsonValue(r.id()));
                 builder.add("result", r.result());
                 yield builder.build();
             }
             case JsonRpcError e -> {
-                builder.add("id", RequestId.toJsonValue(e.id()));
+                builder.add("id", RequestIdCodec.toJsonValue(e.id()));
                 var err = e.error();
                 var errBuilder = Json.createObjectBuilder()
                         .add("code", err.code())
@@ -128,7 +128,7 @@ public class JsonRpcMessageJsonCodec implements JsonCodec<JsonRpcMessage> {
         var params = params(obj.get("params"));
         var kind = kind(method, idValue, obj.containsKey("result"), obj.containsKey("error"));
         return switch (kind) {
-            case REQUEST -> new JsonRpcRequest(RequestId.from(idValue), method, params);
+            case REQUEST -> new JsonRpcRequest(RequestIdCodec.from(idValue), method, params);
             case NOTIFICATION -> new JsonRpcNotification(method, params);
             case RESPONSE -> new JsonRpcResponse(requestId(idValue), result(obj.get("result")));
             case ERROR -> new JsonRpcError(optionalId(idValue), errorDetail(obj.getJsonObject("error")));

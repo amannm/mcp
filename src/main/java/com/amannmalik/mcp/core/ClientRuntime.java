@@ -34,8 +34,7 @@ public final class ClientRuntime extends JsonRpcEndpoint implements McpClient {
     private static final JsonCodec<SubscribeRequest> SUBSCRIBE_REQUEST_JSON_CODEC = new SubscribeRequestAbstractEntityCodec();
     private static final JsonCodec<UnsubscribeRequest> UNSUBSCRIBE_REQUEST_JSON_CODEC = new UnsubscribeRequestAbstractEntityCodec();
     private static final JsonCodec<SetLevelRequest> SET_LEVEL_REQUEST_JSON_CODEC = new SetLevelRequestAbstractEntityCodec();
-    private static final JsonCodec<PaginatedRequest> PAGINATED_REQUEST_CODEC =
-            AbstractEntityCodec.paginatedRequest(PaginatedRequest::cursor, PaginatedRequest::_meta, PaginatedRequest::new);
+    private static final JsonCodec<PaginatedRequest> PAGINATED_REQUEST_CODEC = PaginatedRequestCodec.INSTANCE;
     private static final CancelledNotificationJsonCodec CANCELLED_NOTIFICATION_JSON_CODEC = new CancelledNotificationJsonCodec();
     private static final JsonCodec<LoggingMessageNotification> LOGGING_MESSAGE_NOTIFICATION_JSON_CODEC = new LoggingMessageNotificationAbstractEntityCodec();
     private static final JsonCodec<ProgressNotification> PROGRESS_NOTIFICATION_JSON_CODEC = new ProgressNotificationJsonCodec();

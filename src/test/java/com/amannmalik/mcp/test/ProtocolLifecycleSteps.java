@@ -1,6 +1,7 @@
 package com.amannmalik.mcp.test;
 
 import com.amannmalik.mcp.api.*;
+import com.amannmalik.mcp.codec.RequestIdCodec;
 import com.amannmalik.mcp.spi.Cursor;
 import io.cucumber.datatable.DataTable;
 import io.cucumber.java.After;
@@ -147,7 +148,7 @@ public final class ProtocolLifecycleSteps {
     private JsonObject createRequest(RequestId id, String method, JsonObject params) {
         var builder = Json.createObjectBuilder()
                 .add("jsonrpc", "2.0")
-                .add("id", RequestId.toJsonValue(id))
+                .add("id", RequestIdCodec.toJsonValue(id))
                 .add("method", method);
         if (params != null) {
             builder.add("params", params);
@@ -158,7 +159,7 @@ public final class ProtocolLifecycleSteps {
     private JsonObject createResponse(RequestId id, JsonObject result) {
         return Json.createObjectBuilder()
                 .add("jsonrpc", "2.0")
-                .add("id", RequestId.toJsonValue(id))
+                .add("id", RequestIdCodec.toJsonValue(id))
                 .add("result", result != null ? result : Json.createObjectBuilder().build())
                 .build();
     }
@@ -873,7 +874,7 @@ public final class ProtocolLifecycleSteps {
                 .add("method", RequestMethod.PING.method())
                 .build();
         try {
-            RequestId.from(Json.createValue(id));
+            RequestIdCodec.from(Json.createValue(id));
             lastErrorCode = 0;
             lastErrorMessage = null;
         } catch (IllegalArgumentException e) {
@@ -894,7 +895,7 @@ public final class ProtocolLifecycleSteps {
                 .add("method", RequestMethod.PING.method())
                 .build();
         try {
-            lastRequestId = RequestId.from(idValue);
+            lastRequestId = RequestIdCodec.from(idValue);
             lastErrorCode = 0;
             lastErrorMessage = null;
         } catch (IllegalArgumentException e) {
@@ -916,7 +917,7 @@ public final class ProtocolLifecycleSteps {
                 .add("method", RequestMethod.PING.method())
                 .build();
         try {
-            RequestId.from(id);
+            RequestIdCodec.from(id);
             lastErrorCode = 0;
             lastErrorMessage = null;
         } catch (RuntimeException e) {
@@ -964,7 +965,7 @@ public final class ProtocolLifecycleSteps {
 
     @Then("the response should match my request identifier")
     public void the_response_should_match_my_request_identifier() {
-        if (lastResponse == null || !Objects.equals(lastResponse.get("id"), RequestId.toJsonValue(lastRequestId))) {
+        if (lastResponse == null || !Objects.equals(lastResponse.get("id"), RequestIdCodec.toJsonValue(lastRequestId))) {
             throw new AssertionError("response id mismatch: expected %s".formatted(lastRequestId));
         }
     }
@@ -1164,7 +1165,7 @@ public final class ProtocolLifecycleSteps {
     @Then("I should send a cancellation notification")
     public void i_should_send_a_cancellation_notification() {
         var params = Json.createObjectBuilder()
-                .add("id", RequestId.toJsonValue(lastRequestId))
+                .add("id", RequestIdCodec.toJsonValue(lastRequestId))
                 .build();
         lastNotification = createNotification(NotificationMethod.CANCELLED.method(), params);
     }
@@ -1550,7 +1551,7 @@ public final class ProtocolLifecycleSteps {
     public void i_receive_a_response_containing_both_result_and_error() {
         var response = Json.createObjectBuilder()
                 .add("jsonrpc", "2.0")
-                .add("id", RequestId.toJsonValue(new RequestId.NumericId(1)))
+                .add("id", RequestIdCodec.toJsonValue(new RequestId.NumericId(1)))
                 .add("result", Json.createObjectBuilder().build())
                 .add("error", Json.createObjectBuilder().add("code", -1).add("message", "oops").build())
                 .build();
@@ -1563,7 +1564,7 @@ public final class ProtocolLifecycleSteps {
     public void i_receive_an_error_response_with_non_integer_code(double code) {
         var response = Json.createObjectBuilder()
                 .add("jsonrpc", "2.0")
-                .add("id", RequestId.toJsonValue(new RequestId.NumericId(1)))
+                .add("id", RequestIdCodec.toJsonValue(new RequestId.NumericId(1)))
                 .add("error", Json.createObjectBuilder().add("code", code).add("message", "oops").build())
                 .build();
         try {
@@ -1580,7 +1581,7 @@ public final class ProtocolLifecycleSteps {
     public void i_receive_an_error_response_missing_code() {
         var response = Json.createObjectBuilder()
                 .add("jsonrpc", "2.0")
-                .add("id", RequestId.toJsonValue(new RequestId.NumericId(1)))
+                .add("id", RequestIdCodec.toJsonValue(new RequestId.NumericId(1)))
                 .add("error", Json.createObjectBuilder().add("message", "oops").build())
                 .build();
         try {
@@ -1597,7 +1598,7 @@ public final class ProtocolLifecycleSteps {
     public void i_receive_an_error_response_with_non_string_message(int message) {
         var response = Json.createObjectBuilder()
                 .add("jsonrpc", "2.0")
-                .add("id", RequestId.toJsonValue(new RequestId.NumericId(1)))
+                .add("id", RequestIdCodec.toJsonValue(new RequestId.NumericId(1)))
                 .add("error", Json.createObjectBuilder().add("code", -1).add("message", message).build())
                 .build();
         try {
@@ -1614,7 +1615,7 @@ public final class ProtocolLifecycleSteps {
     public void i_receive_an_error_response_missing_message() {
         var response = Json.createObjectBuilder()
                 .add("jsonrpc", "2.0")
-                .add("id", RequestId.toJsonValue(new RequestId.NumericId(1)))
+                .add("id", RequestIdCodec.toJsonValue(new RequestId.NumericId(1)))
                 .add("error", Json.createObjectBuilder().add("code", -1).build())
                 .build();
         try {

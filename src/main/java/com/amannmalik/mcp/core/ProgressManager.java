@@ -3,6 +3,7 @@ package com.amannmalik.mcp.core;
 import com.amannmalik.mcp.api.Notification.ProgressNotification;
 import com.amannmalik.mcp.api.*;
 import com.amannmalik.mcp.codec.ProgressNotificationJsonCodec;
+import com.amannmalik.mcp.codec.ProgressTokenCodec;
 import com.amannmalik.mcp.util.*;
 import jakarta.json.JsonObject;
 
@@ -43,7 +44,7 @@ public final class ProgressManager {
     public Optional<ProgressToken> register(RequestId id, JsonObject params) {
         Objects.requireNonNull(id, "id");
         ensureProgressTokenPlacement(params);
-        var tokenOpt = ProgressToken.fromMeta(params);
+        var tokenOpt = ProgressTokenCodec.fromMeta(params);
         if (!used.add(id)) {
             throw new DuplicateRequestException(id);
         }

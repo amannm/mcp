@@ -56,8 +56,7 @@ public final class ServerRuntime extends JsonRpcEndpoint implements McpServer {
     private static final JsonCodec<ResourceUpdatedNotification> RESOURCE_UPDATED_NOTIFICATION_JSON_CODEC = new ResourceUpdatedNotificationAbstractEntityCodec();
     private static final CallToolRequestAbstractEntityCodec CALL_TOOL_REQUEST_CODEC = new CallToolRequestAbstractEntityCodec();
     private static final JsonCodec<ToolResult> TOOL_RESULT_CODEC = new ToolResultAbstractEntityCodec();
-    private static final JsonCodec<PaginatedRequest> PAGINATED_REQUEST_CODEC =
-            AbstractEntityCodec.paginatedRequest(PaginatedRequest::cursor, PaginatedRequest::_meta, PaginatedRequest::new);
+    private static final JsonCodec<PaginatedRequest> PAGINATED_REQUEST_CODEC = PaginatedRequestCodec.INSTANCE;
     private final McpServerConfiguration config;
     private final Set<ServerCapability> serverCapabilities;
     private final ResourceProvider resources;
@@ -601,7 +600,7 @@ public final class ServerRuntime extends JsonRpcEndpoint implements McpServer {
         if (lifecycle.state() != LifecycleState.OPERATION) {
             return JsonRpcError.of(req.id(), -32002, "Server not initialized");
         }
-        var progressToken = ProgressToken.fromMeta(req.params());
+        var progressToken = ProgressTokenCodec.fromMeta(req.params());
         try {
             var pageReq = PAGINATED_REQUEST_CODEC.fromJson(req.params());
             var cursor = CursorUtil.sanitize(pageReq.cursor());

@@ -2,6 +2,7 @@ package com.amannmalik.mcp.test;
 
 import com.amannmalik.mcp.api.*;
 import com.amannmalik.mcp.api.Notification.ProgressNotification;
+import com.amannmalik.mcp.codec.ProgressTokenCodec;
 import com.amannmalik.mcp.spi.Cursor;
 import io.cucumber.datatable.DataTable;
 import io.cucumber.java.After;
@@ -758,7 +759,7 @@ public final class UtilitiesSteps {
                     .add("_meta", Json.createObjectBuilder().add("progressToken", tokenValue))
                     .build();
             try {
-                ProgressToken.fromMeta(params).orElseThrow();
+                ProgressTokenCodec.fromMeta(params).orElseThrow();
                 if (!expected) tokenTypeValidationPassed = false;
             } catch (Exception ex) {
                 if (expected) tokenTypeValidationPassed = false;

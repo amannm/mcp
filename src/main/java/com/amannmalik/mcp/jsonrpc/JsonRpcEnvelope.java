@@ -1,6 +1,7 @@
 package com.amannmalik.mcp.jsonrpc;
 
 import com.amannmalik.mcp.api.RequestId;
+import com.amannmalik.mcp.codec.RequestIdCodec;
 import jakarta.json.JsonObject;
 
 import java.util.Objects;
@@ -14,7 +15,7 @@ public final class JsonRpcEnvelope {
 
     private JsonRpcEnvelope(JsonObject message) {
         this.message = Objects.requireNonNull(message, "message");
-        this.id = RequestId.fromNullable(message.get("id")).orElse(null);
+        this.id = RequestIdCodec.fromNullable(message.get("id")).orElse(null);
         this.method = message.getString("method", null);
         this.type = classify(message, method != null, id != null);
     }

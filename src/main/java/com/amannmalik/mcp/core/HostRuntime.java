@@ -34,8 +34,7 @@ public final class HostRuntime implements McpHost {
             ListToolsResult::_meta,
             new ToolAbstractEntityCodec(),
             (page, meta) -> new ListToolsResult(page.items(), page.nextCursor(), meta));
-    private static final JsonCodec<PaginatedRequest> PAGINATED_REQUEST_CODEC =
-            AbstractEntityCodec.paginatedRequest(PaginatedRequest::cursor, PaginatedRequest::_meta, PaginatedRequest::new);
+    private static final JsonCodec<PaginatedRequest> PAGINATED_REQUEST_CODEC = PaginatedRequestCodec.INSTANCE;
     private static final Duration TIMEOUT = Duration.ofSeconds(5);
     private static final Logger LOG = PlatformLog.get(HostRuntime.class);
     private final Map<String, McpClient> clients = new ConcurrentHashMap<>();
