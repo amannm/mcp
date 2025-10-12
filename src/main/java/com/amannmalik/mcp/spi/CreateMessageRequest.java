@@ -28,7 +28,6 @@ public record CreateMessageRequest(
         ValidationUtil.requireMeta(_meta);
     }
 
-    /// Return immutable views to avoid exposing internal representation.
     @Override
     public List<SamplingMessage> messages() {
         return List.copyOf(messages);

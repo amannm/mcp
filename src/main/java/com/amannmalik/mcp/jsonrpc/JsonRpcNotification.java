@@ -9,4 +9,9 @@ public record JsonRpcNotification(String method, JsonObject params) implements J
             throw new IllegalArgumentException("method is required");
         }
     }
+
+    @Override
+    public String jsonrpc() {
+        return JsonRpc.VERSION;
+    }
 }

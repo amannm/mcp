@@ -45,8 +45,8 @@ public final class InitializeRequestAbstractEntityCodec extends AbstractEntityCo
     public InitializeRequest fromJson(JsonObject obj) {
         var version = requireString(obj, "protocolVersion");
         var capsObj = obj.getJsonObject("capabilities");
-        Set<ClientCapability> client = EnumSet.noneOf(ClientCapability.class);
-        Map<String, JsonObject> experimental = new HashMap<>();
+        var client = EnumSet.noneOf(ClientCapability.class);
+        var experimental = new HashMap<String, JsonObject>();
         var rootsList = false;
         if (capsObj != null) {
             for (var entry : capsObj.entrySet()) {

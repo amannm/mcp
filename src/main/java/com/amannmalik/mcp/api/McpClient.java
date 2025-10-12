@@ -529,7 +529,7 @@ public final class McpClient extends JsonRpcEndpoint implements AutoCloseable {
 
     private void fetchResourceMetadata(String url) throws IOException {
         var uri = URI.create(url);
-        HttpClient client = httpClientFor(url, uri);
+        var client = httpClientFor(url, uri);
         var req = HttpRequest.newBuilder(uri)
                 .header("Accept", "application/json")
                 .GET()

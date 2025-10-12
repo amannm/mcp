@@ -13,4 +13,8 @@ public record JsonRpcResponse(RequestId id, JsonObject result) implements JsonRp
             throw new IllegalArgumentException("result is required");
         }
     }
+    @Override
+    public String jsonrpc() {
+        return JsonRpc.VERSION;
+    }
 }

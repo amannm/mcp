@@ -9,15 +9,11 @@ import java.util.function.Consumer;
 public non-sealed interface ResourceProvider extends NamedProvider<Resource> {
     ResourceBlock read(URI uri);
 
-    default Optional<Resource> get(URI uri) {
-        return Optional.empty();
-    }
+    Optional<Resource> get(URI uri);
 
     Pagination.Page<ResourceTemplate> listTemplates(Cursor cursor);
 
     AutoCloseable subscribe(URI uri, Consumer<ResourceUpdate> listener);
 
-    default boolean supportsSubscribe() {
-        return false;
-    }
+    boolean supportsSubscribe();
 }

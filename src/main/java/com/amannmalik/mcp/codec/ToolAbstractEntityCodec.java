@@ -48,8 +48,7 @@ public final class ToolAbstractEntityCodec extends AbstractEntityCodec<Tool> {
         var title = obj.getString("title", null);
         var description = obj.getString("description", null);
         var outputSchema = obj.getJsonObject("outputSchema");
-        var ann = obj.containsKey("annotations") ?
-                TOOL_ANNOTATIONS_JSON_CODEC.fromJson(getObject(obj, "annotations")) : null;
+        var ann = obj.containsKey("annotations") ? TOOL_ANNOTATIONS_JSON_CODEC.fromJson(getObject(obj, "annotations")) : null;
         var meta = obj.getJsonObject("_meta");
         return new Tool(name, title, description, inputSchema, outputSchema, ann, meta);
     }

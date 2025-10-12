@@ -32,7 +32,7 @@ public class ReadResourceResultJsonCodec implements JsonCodec<ReadResourceResult
         if (arr == null) {
             throw new IllegalArgumentException("contents required");
         }
-        List<ResourceBlock> contents = new ArrayList<>();
+        var contents = new ArrayList<ResourceBlock>();
         for (var v : arr) {
             if (!(v instanceof JsonObject)) {
                 throw new IllegalArgumentException("content must be object");

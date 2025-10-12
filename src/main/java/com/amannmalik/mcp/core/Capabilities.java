@@ -19,7 +19,6 @@ public record Capabilities(Set<ClientCapability> client,
         serverExperimental = Immutable.map(serverExperimental);
     }
 
-    /// Return immutable views to avoid exposing internal representation.
     @Override
     public Set<ClientCapability> client() {
         return Set.copyOf(client);

@@ -147,7 +147,7 @@ public final class ServerCommand {
                 httpPort = 0;
             }
             String expectedAudience = parseResult.matchedOptionValue("--audience", null);
-            String jwtSecret = parseResult.matchedOptionValue("--jwt-secret", "");
+            var jwtSecret = parseResult.matchedOptionValue("--jwt-secret", "");
             String resourceMetadataUrl = parseResult.matchedOptionValue("--resource-metadata", null);
             List<String> authServers = parseResult.matchedOptionValue("--auth-server", Collections.emptyList());
             boolean testMode = parseResult.matchedOptionValue("--test-mode", false);

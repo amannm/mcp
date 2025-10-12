@@ -25,7 +25,7 @@ public class JsonRpcMessageJsonCodec implements JsonCodec<JsonRpcMessage> {
     }
 
     static JsonObject result(JsonValue value) {
-        if (value == null || !(value instanceof JsonObject)) {
+        if (!(value instanceof JsonObject)) {
             throw new IllegalArgumentException("result must be an object");
         }
         return value.asJsonObject();

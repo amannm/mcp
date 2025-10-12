@@ -15,7 +15,6 @@ import java.io.Serial;
 import java.lang.System.Logger;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.TimeUnit;
 
 /// - [Transports](specification/2025-06-18/basic/transports.mdx)
@@ -172,7 +171,7 @@ final class McpServlet extends HttpServlet {
                                   JsonRpcEnvelope envelope,
                                   HttpServletResponse resp) throws IOException {
         var id = envelope.requireId();
-        BlockingQueue<JsonObject> queue = transport.registerResponseQueue(id, responseQueueCapacity);
+        var queue = transport.registerResponseQueue(id, responseQueueCapacity);
         try {
             transport.submitIncoming(obj);
             var timeoutSeconds = transport.initializeRequestTimeout().toSeconds();
@@ -205,7 +204,7 @@ final class McpServlet extends HttpServlet {
                                      HttpServletResponse resp) throws IOException {
         var ac = initSse(req, resp);
         var key = envelope.requireId();
-        SseClient client = transport.registerRequestClient(key, ac);
+        var client = transport.registerRequestClient(key, ac);
         try {
             transport.submitIncoming(obj);
         } catch (InterruptedException e) {

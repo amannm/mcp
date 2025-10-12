@@ -39,7 +39,7 @@ public final class ResourceEntityFieldCodec<I, R> extends AbstractEntityCodec<R>
         if (arr == null) {
             throw new IllegalArgumentException(field + " required");
         }
-        List<I> items = new ArrayList<>();
+        var items = new ArrayList<I>();
         for (var v : arr) {
             if (!(v instanceof JsonObject)) {
                 throw new IllegalArgumentException(itemName + " must be object");

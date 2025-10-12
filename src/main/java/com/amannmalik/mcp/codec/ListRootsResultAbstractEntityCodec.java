@@ -29,8 +29,8 @@ public final class ListRootsResultAbstractEntityCodec extends AbstractEntityCode
         }
         requireOnlyKeys(obj, Set.of("roots", "_meta"));
         var arr = obj.getJsonArray("roots");
-        List<Root> roots = arr == null || arr.isEmpty()
-                ? List.of()
+        var roots = arr == null || arr.isEmpty()
+                ? List.<Root>of()
                 : arr.stream().map(JsonValue::asJsonObject).map(CODEC::fromJson).toList();
         return new ListRootsResult(roots, getObject(obj, "_meta"));
     }

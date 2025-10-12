@@ -32,7 +32,7 @@ public final class PromptInstanceAbstractEntityCodec extends AbstractEntityCodec
         if (arr == null) {
             throw new IllegalArgumentException("messages required");
         }
-        List<PromptMessage> msgs = new ArrayList<>();
+        var msgs = new ArrayList<PromptMessage>();
         for (var v : arr) {
             if (!(v instanceof JsonObject)) {
                 throw new IllegalArgumentException("message must be object");

@@ -108,6 +108,11 @@ public final class ServerHarness implements Closeable {
             }
 
             @Override
+            public Optional<Resource> get(URI uri) {
+                return Optional.empty();
+            }
+
+            @Override
             public Pagination.Page<Resource> list(Cursor cursor) {
                 return new Pagination.Page<>(List.of(), Cursor.End.INSTANCE);
             }
@@ -121,6 +126,11 @@ public final class ServerHarness implements Closeable {
             public AutoCloseable subscribe(URI uri, Consumer<ResourceUpdate> listener) {
                 return () -> {
                 };
+            }
+
+            @Override
+            public boolean supportsSubscribe() {
+                return false;
             }
 
         };

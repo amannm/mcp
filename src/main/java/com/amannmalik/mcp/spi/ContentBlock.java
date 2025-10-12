@@ -69,7 +69,6 @@ public sealed interface ContentBlock permits
             return "image";
         }
 
-        /// Return a defensive copy to avoid exposing internal representation.
         @Override
         public byte[] data() {
             return data.clone();
@@ -90,7 +89,6 @@ public sealed interface ContentBlock permits
             return "audio";
         }
 
-        /// Return a defensive copy to avoid exposing internal representation.
         @Override
         public byte[] data() {
             return data.clone();

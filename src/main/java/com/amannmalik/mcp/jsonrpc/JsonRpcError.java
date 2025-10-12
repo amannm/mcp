@@ -34,4 +34,9 @@ public record JsonRpcError(RequestId id, ErrorDetail error) implements JsonRpcMe
             }
         }
     }
+
+    @Override
+    public String jsonrpc() {
+        return JsonRpc.VERSION;
+    }
 }

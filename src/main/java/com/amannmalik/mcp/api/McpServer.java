@@ -323,7 +323,7 @@ public final class McpServer extends JsonRpcEndpoint implements AutoCloseable {
         } catch (IOException e) {
             LOG.log(Logger.Level.ERROR, () -> config.errorProcessing() + ": " + e.getMessage());
             try {
-                JsonValue data = normalizeLogData(Json.createValue(e.getMessage()));
+                var data = normalizeLogData(Json.createValue(e.getMessage()));
                 sendLog(new LoggingMessageNotification(LoggingLevel.ERROR, config.serverLoggerName(), data));
             } catch (IOException ioe) {
                 LOG.log(Logger.Level.ERROR, () -> "Failed to send error: " + ioe.getMessage());

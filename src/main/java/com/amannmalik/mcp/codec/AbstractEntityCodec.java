@@ -116,7 +116,7 @@ public sealed abstract class AbstractEntityCodec<T> implements JsonCodec<T> perm
         if (!obj.containsKey(key)) {
             return Optional.empty();
         }
-        return Optional.of(Boolean.valueOf(toBoolean(key, obj.get(key))));
+        return Optional.of(toBoolean(key, obj.get(key)));
     }
 
     private static boolean toBoolean(String key, JsonValue value) {

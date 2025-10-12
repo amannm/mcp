@@ -58,8 +58,8 @@ public final class InitializeResponseAbstractEntityCodec extends AbstractEntityC
     public InitializeResponse fromJson(JsonObject obj) {
         var version = requireString(obj, "protocolVersion");
         var capsObj = obj.getJsonObject("capabilities");
-        Set<ServerCapability> server = EnumSet.noneOf(ServerCapability.class);
-        Map<String, JsonObject> experimental = new HashMap<>();
+        var server = EnumSet.noneOf(ServerCapability.class);
+        var experimental = new HashMap<String, JsonObject>();
         if (capsObj != null) {
             capsObj.forEach((k, v) -> ServerCapability.from(k)
                     .ifPresentOrElse(server::add, () -> experimental.put(k, v.asJsonObject())));

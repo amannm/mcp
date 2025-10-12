@@ -39,14 +39,14 @@ public final class PromptAbstractEntityCodec extends AbstractEntityCodec<Prompt>
         var description = obj.getString("description", null);
         var meta = obj.getJsonObject("_meta");
         var argsArr = obj.getJsonArray("arguments");
-        List<PromptArgument> args = List.of();
+        var args = List.<PromptArgument>of();
         if (argsArr != null && !argsArr.isEmpty()) {
-            List<PromptArgument> tmp = new ArrayList<>();
+            var tmp = new ArrayList<PromptArgument>();
             for (var v : argsArr) {
                 if (!(v instanceof JsonObject)) {
                     throw new IllegalArgumentException("argument must be object");
                 }
-                tmp.add(((JsonCodec<PromptArgument>) new PromptArgumentAbstractEntityCodec()).fromJson(v.asJsonObject()));
+                tmp.add(new PromptArgumentAbstractEntityCodec().fromJson(v.asJsonObject()));
             }
             args = List.copyOf(tmp);
         }

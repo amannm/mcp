@@ -29,9 +29,9 @@ public final class GetPromptRequestAbstractEntityCodec extends AbstractEntityCod
         requireOnlyKeys(obj, Set.of("name", "arguments", "_meta"));
         var name = requireString(obj, "name");
         var argsObj = obj.getJsonObject("arguments");
-        Map<String, String> args = Map.of();
+        var args = Map.<String, String>of();
         if (argsObj != null) {
-            Map<String, String> tmp = new HashMap<>();
+            var tmp = new HashMap<String, String>();
             argsObj.forEach((k, v) -> {
                 if (!(v instanceof JsonString js)) {
                     throw new IllegalArgumentException("argument values must be strings");

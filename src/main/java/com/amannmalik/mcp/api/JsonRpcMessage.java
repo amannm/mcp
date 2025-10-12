@@ -7,7 +7,5 @@ public sealed interface JsonRpcMessage permits
         JsonRpcNotification,
         JsonRpcResponse,
         JsonRpcError {
-    default String jsonrpc() {
-        return JsonRpc.VERSION;
-    }
+    String jsonrpc();
 }

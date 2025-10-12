@@ -26,7 +26,7 @@ public class ElicitRequestJsonCodec implements JsonCodec<ElicitRequest> {
             throw new IllegalArgumentException("message required");
         }
         var schemaVal = obj.get("requestedSchema");
-        if (schemaVal == null || !(schemaVal instanceof JsonObject)) {
+        if (!(schemaVal instanceof JsonObject)) {
             throw new IllegalArgumentException("requestedSchema must be object");
         }
         return new ElicitRequest(message, schemaVal.asJsonObject(), AbstractEntityCodec.meta(obj));

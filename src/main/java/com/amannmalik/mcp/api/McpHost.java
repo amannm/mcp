@@ -180,7 +180,7 @@ public final class McpHost implements AutoCloseable {
         var client = requireClient(clientId);
         requireCapability(client, ServerCapability.RESOURCES);
         Optional<Resource> result = Optional.empty();
-        boolean finished = false;
+        var finished = false;
         Cursor cursor = Cursor.Start.INSTANCE;
         do {
             var page = client.listResources(cursor);
@@ -216,7 +216,7 @@ public final class McpHost implements AutoCloseable {
         requireCapability(client, ServerCapability.TOOLS);
         requireConsent(principal, "tool:" + name);
         Optional<Tool> result = Optional.empty();
-        boolean finished = false;
+        var finished = false;
         Cursor cursor = Cursor.Start.INSTANCE;
         do {
             var page = listTools(clientId, cursor);

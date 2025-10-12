@@ -45,9 +45,7 @@ public non-sealed class ResourceAbstractEntityCodec extends AbstractEntityCodec<
         var description = obj.getString("description", null);
         var mimeType = obj.getString("mimeType", null);
         var size = obj.containsKey("size") ? obj.getJsonNumber("size").longValue() : null;
-        var annotations = obj.containsKey("annotations")
-                ? new AnnotationsJsonCodec().fromJson(getObject(obj, "annotations"))
-                : AnnotationsJsonCodec.EMPTY;
+        var annotations = obj.containsKey("annotations") ? new AnnotationsJsonCodec().fromJson(getObject(obj, "annotations")) : AnnotationsJsonCodec.EMPTY;
         var meta = obj.getJsonObject("_meta");
         return new Resource(uri, name, title, description, mimeType, size, annotations, meta);
     }
